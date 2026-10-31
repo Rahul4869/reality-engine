@@ -1,0 +1,108 @@
+"""Presentation-format controls for Reality Engine (v8.2). Defaults to the Reality Engine hybrid.
+
+Switch: the Settings cell PRESENTATION_FORMAT (reality_engine | classic). The environment variable WHATIFS_PRESENTATION_FORMAT, if set, wins.
+v8.1: the format is now CHECKED by code (check_script), not only requested in the prompt; the instructions are placed before the JSON
+reply format (inject) instead of after it; rewrite steps may not drop speaker labels (labels_preserved).
+"""
+from __future__ import annotations
+import os, re
+
+FORMAT_ID = "reality_engine"
+FORMAT_NAME = "The Impossible Incident / Reality Engine"
+
+REALITY_ENGINE = """
+PRESENTATION FORMAT — THE IMPOSSIBLE INCIDENT / REALITY ENGINE
+Core promise: each episode is a cinematic simulation of one impossible hypothetical, not a generic podcast and not fake real-world news.
+Recurring original roles:
+- [DIRECTOR] = the simulation director, an expert explaining to someone bright and curious: calm, concrete, warm, sets the rules and summarizes evidence. Sometimes asks for patience ('hold on, watch this part') before a payoff, using the delivery tag [patient].
+- [SKEPTIC] = THE CURIOUS ONE (the label stays [SKEPTIC]): young, excitable, honest. Asks the question the audience is actually thinking, doubts out loud, pushes consequences further, and reacts the way a real person would AT THAT EXACT MOMENT of the picture. Not equally curious about everything: some things bore or worry them, some blow their mind. Never synthetic enthusiasm.
+These are fictional presenter roles, not real named experts. Never claim either is a real scientist or expert. The Curious One is a young adult, never a child.
+Voice rule for this format: the 'one sharp, warm person talking to a friend' voice applies to EACH role separately. The Director talks like a calm expert friend; the Curious One like a bright, honest friend. The two of them are the whole show: no third voice, no announcer.
+Audience asks: exactly three short, witty, in-story moments (a like, a subscribe, a share), each spoken by one of the two roles in its own voice, placed after a payoff (never at a peak or a death), never begging, never a menu.
+Reaction rules:
+- Delivery tags for the Curious One's reactions: [wow] [gasp] [awe] [laugh] [doubt]. 4 to 6 reaction lines per video, spaced out, never on every beat. Each reaction line is SHORT and sounds spoken: 'Whoa!', 'Wait... wait. No way.', 'Oh no.', 'Okay, that is wicked.' Spell sounds so a voice engine can say them (Whoa, Wow, Ohhh); no long stretched vowels. The pop-up word on screen is the first word of the line, so open with the reaction word.
+- Put a reaction line RIGHT AFTER each peak (the Kling moments and the biggest reveal). The Director places the big shot on the line before it. At least once, the Director first asks for patience, then the payoff lands, then the Curious One reacts.
+- A reaction must match what a real viewer feels at that point (awe at scale, dread at a bad turn, a laugh at a harmless absurdity). If nothing surprising happened, the Curious One stays quiet or just asks a question.
+- Original reactions only: never quote a film, show, meme or real person's catchphrase.
+Dialogue requirements:
+- Write natural back-and-forth. Each spoken dialogue line MUST begin with [DIRECTOR] or [SKEPTIC], then an optional delivery tag such as [calm], [tension], [reveal], [aside], or [callback]. Example: [SKEPTIC] [tension] Wait. That assumes the atmosphere stays put.
+- Alternate speakers when useful, not mechanically. Each character must add reasoning, a counterpoint, or a new question; no empty 'wow', repetitive agreement, or fake disagreement.
+- The opening hook may be an unlabelled narrator line. No greetings or long setup.
+Story engine: establish the scenario's rules; begin the simulation; show consequences in escalating stages; challenge a key assumption; reveal an unintuitive consequence; distinguish likely outcomes from speculative branches; end with a clear verdict and honest uncertainty.
+Visual grammar:
+- The studio/control room is a recurring home base, not the whole video. Target approximately 20–30% presenter/control-room visuals, 50–60% scenario visualizations, and the remainder maps, timelines, diagrams, evidence, transitions, and payoff shots. Treat these as planning guidance, not quotas that override the story.
+- Build a distinct original visual language: restrained simulation timestamps, simple state indicators, a recurring world-map/timeline motif, consistent palette and camera language, and clean cinematic framing. No fake YouTube UI, no copied franchise look, no real logos, no cluttered HUD.
+- Visualize consequences whenever the narration introduces a meaningful physical change. Use wide establishing shots, close-up evidence, scale comparisons, and cause/effect transitions. Avoid endless talking-head coverage and generic stock-like AI imagery.
+- Make the scenario itself the thumbnail's main promise; recurring characters are supporting brand anchors, not the only focal point.
+- PRESENTERS ARE NEVER SHOWN AS REALISTIC FACES. Image models cannot keep one face identical across shots, and drifting faces make the channel look cheap. Show the roles only as silhouettes, hands on a console, backs of heads, over-the-shoulder framing, or lit control-room screens. The video itself marks who is speaking with a code-drawn speaker tag, so no face is needed.
+Scientific integrity: establish assumptions; separate established physics from inference and speculation; do not invent measurements or citations; do not portray fictional events as real breaking news. If a conclusion depends on assumptions, say so.
+Shorts: extract a self-contained mini-investigation or a surprising claim-and-verdict, not merely a random excerpt. The Short must make sense without the full episode and may then invite viewers to watch the full simulation.
+""".strip()
+
+CLASSIC = "Presentation format: classic What If narration. Preserve all existing storytelling, science, visual, packaging, and Shorts rules."
+
+def mode() -> str:
+    value = os.getenv("WHATIFS_PRESENTATION_FORMAT", "").strip()
+    if not value:
+        try:
+            from whatifs.core import S
+            value = S("PRESENTATION_FORMAT") or FORMAT_ID
+        except Exception: value = FORMAT_ID
+    return "classic" if value.strip().lower() in {"classic", "legacy", "off", "0", "false"} else FORMAT_ID
+
+def inject(prompt: str, role: str = "general") -> str:
+    """Put the format block BEFORE the prompt's 'Return JSON' line so the reply format stays the last thing the model reads."""
+    block = instructions(role)
+    i = prompt.rfind("\nReturn JSON")
+    return prompt + "\n\n" + block if i < 0 else prompt[:i] + "\n\n" + block + "\n" + prompt[i:]
+
+def _units(script):
+    from whatifs.voice import parse_script
+    return parse_script(re.sub(r"^##.*$", "", script or "", flags=re.M))
+
+def label_count(script) -> int:
+    return sum(1 for u in _units(script) if u.speaker in ("DIRECTOR", "SKEPTIC"))
+
+def labels_preserved(old: str, new: str) -> bool:
+    """A rewrite (humanize, length fix, extension) may not silently drop the speaker labels: at least 85 percent must survive."""
+    if mode() == "classic": return True
+    o = label_count(old)
+    return o == 0 or label_count(new) >= 0.85 * o
+
+def check_script(script: str) -> dict:
+    """Code-side check of the two-role format. ok=False means the writer must be asked once to fix it."""
+    if mode() == "classic": return {"ok": True, "issues": [], "units": 0, "labeled": 0, "director": 0, "skeptic": 0}
+    us = _units(script); n = max(1, len(us))
+    d = sum(1 for u in us if u.speaker == "DIRECTOR"); k = sum(1 for u in us if u.speaker == "SKEPTIC"); lab = d + k
+    issues = []
+    if lab / n < 0.45: issues.append(f"only {lab} of {len(us)} spoken lines carry a [DIRECTOR] or [SKEPTIC] label (need at least 45 percent)")
+    if min(d, k) < max(3, int(0.12 * lab)): issues.append(f"one role barely speaks (DIRECTOR {d}, SKEPTIC {k}); both must contribute reasoning")
+    return {"ok": not issues, "issues": issues, "units": len(us), "labeled": lab, "director": d, "skeptic": k}
+
+def instructions(role: str = "general") -> str:
+    base = CLASSIC if mode() == "classic" else REALITY_ENGINE
+    role_notes = {
+        "showrunner": "Showrunner: include presentation_format='reality_engine', director_role, skeptic_role, scenario_rules, escalation_steps, and a payoff in the spine. Do not make the format overwhelm the premise.",
+        "memo": "Department memo: keep your advice consistent with the two recurring presenter roles (Director, Skeptic) and the faceless presenter rule.",
+        "bible": "Production bible: include recurring character descriptions (silhouette / hands / console style, never realistic faces) and their contrasting goals, recurring studio/control-room motif, palette, and 3–5 distinct scenario visual beats. Keep character designs original and repeatable.",
+        "writer": "Writer: preserve the existing beat structure and target length. Label dialogue lines [DIRECTOR] or [SKEPTIC]. Use unlabelled text only for the opening hook or brief neutral narration. Do not add labels as spoken words. Give each beat at least one new visual event or meaningful turn; don't force both characters into every beat.",
+        "director": "Director: use the studio/control room for setup, debate, and verdict; use scenario visualizations for physical consequences. Ensure shot prompts make the consequence visually legible; presenter shots show NO realistic faces (silhouette, hands, back of head, console glow) and reuse the same description every time; and reserve the strongest motion for a genuine story peak. Do not create fake real-world news graphics.",
+        "packager": "Packager: sell the impossible scenario and its consequence, not 'a podcast'. Use the recurring characters only if they strengthen the thumbnail. Titles must remain accurate to the actual scenario and uncertainty.",
+        "reels": "Reel producer: label every voice line [DIRECTOR] or [SKEPTIC]. Prioritize one self-contained mini-investigation, disagreement, or surprising consequence with a clear payoff. Start on the strongest scenario visual, not a studio greeting; do not imply an answer the full episode does not support.",
+        "critic": "Critic: assess whether the two roles contribute distinct reasoning, the simulation escalates visually, the premise is clear immediately, and the conclusion distinguishes fact from speculation. Penalize empty dialogue, repetitive studio coverage, and format gimmicks that delay the payoff.",
+        "continuity": "Continuity check: confirm the recurring presenter roles and visual motif stay consistent, the timeline/state indicators agree with the narration, and the episode never presents the fictional scenario as actual news.",
+    }
+    if mode() == "classic":
+        return base
+    return base + "\n\nROLE-SPECIFIC REQUIREMENTS: " + role_notes.get(role, "Keep the simulation visually legible, character-driven, original, and scientifically honest.")
+
+def enrich_spine(spine: dict) -> dict:
+    """Add safe metadata without removing or replacing fields from the existing spine."""
+    out = dict(spine or {})
+    out.setdefault("presentation_format", mode())
+    if mode() != "classic":
+        out.setdefault("format_name", FORMAT_NAME)
+        out.setdefault("director_role", "The Simulation Director")
+        out.setdefault("skeptic_role", "The Curious One")
+        out.setdefault("scenario_rules", "State what changes, what stays constant, and the key assumptions.")
+    return out

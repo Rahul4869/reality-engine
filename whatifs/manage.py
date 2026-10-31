@@ -1,0 +1,850 @@
+"""whatifs/manage.py v8.9 - scheduler, release (reels at launch + reels 3-4 on the next days), packaging rescue, hold/resume on pause, trend scout, learning loop, strategy evolution, guardian,
+money reminders, monthly brief, setup + self-test. All automatic; the owner is emailed only for money, launch, monthly brief."""
+from __future__ import annotations
+import os, json, random, re, datetime as dt, statistics
+import requests
+from zoneinfo import ZoneInfo
+import hashlib
+from whatifs.core import S, store, log, iso, parse_iso, now_utc, set_setting, status, flush_log, JOB, FAKE, env, DEFAULTS, TABS, month_spend, gheaders, WORK, scrub
+from whatifs import prompts as P
+from whatifs.models import ask, discover_models
+from whatifs import publish as PUB
+from whatifs import governor as G
+from whatifs import growth as GR
+from whatifs import playbook as PB
+from whatifs.checkpoint import attempts as _attempts
+from whatifs import checkpoint as _CK
+
+ET = ZoneInfo("America/New_York")
+DAYS = {"Mon": 0, "Tue": 1, "Wed": 2, "Thu": 3, "Fri": 4, "Sat": 5, "Sun": 6}
+
+def paused():
+    if S("PAUSED", bool): return True
+    pu = parse_iso(S("PAUSED_UNTIL"))
+    if pu and pu > now_utc(): return True
+    return False
+
+def next_slots(n=3, after=None):
+    after = after or now_utc()
+    try: hh, mm = [int(x) for x in (S("PUBLISH_HOUR_ET").strip() + ":0").split(":")[:2]]   # '10:00' or '10:00:00' (Sheets time)
+    except Exception: hh, mm = 10, 0
+    days = [DAYS[d.strip()[:3]] for d in S("PUBLISH_DAYS").split(",") if d.strip()[:3] in DAYS]
+    out, d0 = [], after.astimezone(ET).date()
+    for k in range(0, 21):
+        day = d0 + dt.timedelta(days=k)
+        if day.weekday() not in days: continue
+        rng = random.Random(str(day)); jit = rng.randint(-S("PUBLISH_JITTER_MIN", int), S("PUBLISH_JITTER_MIN", int))
+        t = dt.datetime(day.year, day.month, day.day, hh, mm, tzinfo=ET) + dt.timedelta(minutes=jit)
+        t = t.replace(minute=(t.minute // 5) * 5, second=0)
+        if t.astimezone(dt.timezone.utc) > after: out.append(t.astimezone(dt.timezone.utc))
+        if len(out) >= n: break
+    return out
+
+def _note(e, add):
+    n = str(e.get("notes") or "")
+    return (n + " | " + add).strip(" |")[:400] if add not in n else n
+
+def kill_check():
+    """Owner typed KILL: the video goes private and is never released. Runs even while paused."""
+    if not S("KILL_CHECK", bool): return
+    st = store()
+    for e in st.rows("Episodes"):
+        if e.get("status") in ("SCHEDULED", "HELD", "UPLOADED") and str(e.get("kill", "")).upper().startswith("KILL") and e.get("yt_id"):
+            PUB.yt_set_privacy(e["yt_id"], "private"); st.update("Episodes", "episode_id", e["episode_id"], {"status": "KILLED", "updated": iso()})
+            log(f"{e['episode_id']} killed by owner before release")
+        elif e.get("status") == "HOLD_QC" and str(e.get("kill", "")).upper().startswith("KILL"):      # v8.2: a held video is dropped by typing KILL (nothing was uploaded)
+            st.update("Episodes", "episode_id", e["episode_id"], {"status": "KILLED", "updated": iso()}); log(f"{e['episode_id']} (held) dropped by owner")
+            _CK.clear(e["episode_id"])          # v8.3: its saved pictures and clips no longer sit in Drive for ever
+
+def hold_scheduled(reason="paused"):
+    """While paused, videos already on YouTube's schedule are switched to private so they do NOT publish on their own."""
+    st = store(); n = 0
+    for e in st.rows("Episodes"):
+        t = parse_iso(e.get("slot_et"))
+        if e.get("status") == "SCHEDULED" and e.get("yt_id") and t and t > now_utc():
+            if PUB.yt_set_privacy(e["yt_id"], "private"):
+                st.update("Episodes", "episode_id", e["episode_id"], {"status": "HELD", "notes": _note(e, f"held: {reason}"), "updated": iso()}); n += 1
+                log(f"{e['episode_id']} held ({reason}) - it will be re-scheduled when the pause ends")
+    return n
+
+def resume_held():
+    """Pause is over: put held videos back on the schedule (their own slot if still ahead, else the next free slot)."""
+    st = store(); eps = st.rows("Episodes")
+    held = [e for e in eps if e.get("status") == "HELD" and e.get("yt_id")]
+    if not held: return
+    taken = {e.get("slot_et") for e in eps if e.get("status") in ("SCHEDULED", "LIVE1", "LIVE")}
+    for e in sorted(held, key=lambda x: x.get("slot_et", "")):
+        t = parse_iso(e.get("slot_et")); new = e.get("slot_et")
+        if not t or t < now_utc() + dt.timedelta(minutes=45) or new in taken:
+            new = next((s.strftime("%Y-%m-%dT%H:%M:%SZ") for s in next_slots(12, now_utc() + dt.timedelta(minutes=45))
+                        if s.strftime("%Y-%m-%dT%H:%M:%SZ") not in taken), None)
+        if not new: continue
+        try:
+            PUB.yt_schedule(e["yt_id"], new); taken.add(new)
+            st.update("Episodes", "episode_id", e["episode_id"], {"status": "SCHEDULED", "slot_et": new, "notes": _note(e, f"re-scheduled {new}"), "updated": iso()})
+            log(f"{e['episode_id']} re-scheduled for {new}")
+        except Exception as x: log(f"re-schedule of {e['episode_id']} failed: {x}", "WARN")
+
+def _give_up_stuck(eps):
+    """A release that keeps failing must never block new videos. After RELEASE_GIVEUP_HOURS it is closed with a note."""
+    st = store(); g = dt.timedelta(hours=S("RELEASE_GIVEUP_HOURS", float))
+    for e in eps:
+        t = parse_iso(e.get("slot_et"))
+        if not t: continue
+        if e.get("status") == "SCHEDULED" and now_utc() > t + g:
+            try: pub = PUB.yt_status(e["yt_id"]) == "public"
+            except Exception: pub = False
+            if pub:
+                st.update("Episodes", "episode_id", e["episode_id"], {"status": "LIVE", "notes": _note(e, "reels skipped: release kept failing"), "updated": iso()})
+                log(f"{e['episode_id']}: reels given up after {g}", "WARN")
+            else:
+                st.update("Episodes", "episode_id", e["episode_id"], {"status": "STUCK_PRIVATE", "notes": _note(e, "video never became public"), "updated": iso()})
+                PUB.email("A video is stuck on Private", f"<p>Episode {e['episode_id']} (<a href='https://studio.youtube.com/video/{e['yt_id']}/edit'>open in Studio</a>) "
+                          "did not become public at its slot. The usual cause is that the Google Cloud project has not passed the YouTube API audit yet "
+                          "(uploads from unaudited projects are locked to Private). See SETUP_CHECKLIST Step 4b. New videos keep being made.</p>")
+            e["status"] = "closed"
+        elif e.get("status") == "LIVE1" and now_utc() > t + dt.timedelta(minutes=S("REEL2_DELAY_MIN", int)) + g:
+            st.update("Episodes", "episode_id", e["episode_id"], {"status": "LIVE", "notes": _note(e, "reel 2 skipped: release kept failing"), "updated": iso()})
+            log(f"{e['episode_id']}: reel 2 given up", "WARN"); e["status"] = "closed"
+
+AUDIT_WORDS = {"approved": "approved - uploads can go public",
+               "sent": "SENT - waiting for Google (days to weeks). Videos stay private until it is approved. It flips to approved by itself when a video goes public",
+               "not_sent": "NOT SENT YET - do SETUP_CHECKLIST Step 4b: send the audit form the same day the first video is uploaded (it stays private); videos cannot go public until Google approves"}
+def audit_state():
+    a = str(S("API_AUDIT_STATUS")).strip().lower().replace(" ", "_")
+    return a if a in AUDIT_WORDS else "not_sent"
+def audit_seen_public():
+    """v8.4: a video of this project has just been confirmed public, so the YouTube API audit must have passed. Records it (Settings + Setup_Status) once."""
+    try:
+        if audit_state() == "approved": return
+        set_setting("API_AUDIT_STATUS", "approved"); status("youtube_api_audit", True, AUDIT_WORDS["approved"])
+        log("YouTube API audit: a video is public, so the audit is approved")
+    except Exception as x: log(f"audit status update skipped: {scrub(x)}", "WARN")
+_AUDIT_TEST = [False]        # tests switch this on; in fake mode the gate is otherwise off so the offline rehearsal can make many videos
+def audit_gate(eps):
+    """(ok, why). Videos uploaded by a project the YouTube API audit has not approved are locked to Private for good (YouTube allows no appeal; they would have to be
+    uploaded again by hand). So before approval only AUDIT_PRE_APPROVAL_EPISODES videos (default 1: the one you film for the audit form) are produced; the rest wait,
+    and no money is spent on videos that could never be seen."""
+    if audit_state() == "approved" or (FAKE and not _AUDIT_TEST[0]): return True, ""
+    try: lim = S("AUDIT_PRE_APPROVAL_EPISODES", int)
+    except Exception: lim = 1
+    n = sum(1 for e in eps if e.get("yt_id"))
+    return (n < lim), f"{n} video(s) uploaded and the YouTube API audit is not approved yet (limit {lim}); new videos wait so no money is spent on videos that would stay private"
+def audit_nudge(eps):
+    """The audit form is the one setup step that is easy to forget and that nothing else forces. Once a video has been uploaded (so there is something to film for the form)
+    and the audit is not approved, one email a week says exactly what to do. Never blocks anything."""
+    st_ = audit_state()
+    if st_ == "approved" or not any(e.get("yt_id") for e in eps): return
+    last = parse_iso(S("AUDIT_NUDGE_AT"))
+    if last and now_utc() - last < dt.timedelta(days=6): return
+    if st_ == "not_sent":
+        PUB.email("Reminder: send the YouTube API audit form", "<p>Your first video is uploaded but stays <b>private</b>, and new videos are paused, until Google approves this project (the YouTube API audit).</p>"
+                  "<p>The form is not sent yet. Open <b>SETUP_CHECKLIST.md, Step 4b, Part B</b> (or tell your Claude setup chat: \"do Step 4b Part B\"); it takes about 20 minutes and every answer is written out. "
+                  "After sending it, set <b>Settings -> API_AUDIT_STATUS = sent</b>.</p>")
+    else:
+        PUB.email("Waiting for the YouTube API audit", "<p>The audit form was sent. New videos are paused until Google approves it, so no money is spent on videos that would stay private.</p>"
+                  "<p>When Google's approval email arrives, set <b>Settings -> API_AUDIT_STATUS = approved</b>; production restarts by itself within 30 minutes. "
+                  "If three weeks pass with no reply, check the inbox and spam of the account that sent the form and answer anything Google asked.</p>")
+    set_setting("AUDIT_NUDGE_AT", iso())
+
+def recover_stuck(eps):
+    """v8.3: a video that stayed private (usually the API audit was still pending) is checked again about twice a day for 30 days. If it has become public it is
+    closed as LIVE so learning counts it; its reels are skipped (their moment passed)."""
+    st = store()
+    for e in eps:
+        if e.get("status") != "STUCK_PRIVATE" or not e.get("yt_id"): continue
+        t = parse_iso(e.get("slot_et")); last = parse_iso(e.get("updated"))
+        if not t or now_utc() - t > dt.timedelta(days=30): continue
+        if last and now_utc() - last < dt.timedelta(hours=12): continue
+        try: pub = PUB.yt_status(e["yt_id"]) == "public"
+        except Exception: pub = False
+        st.update("Episodes", "episode_id", e["episode_id"], dict({"updated": iso()}, **({"status": "LIVE", "notes": ((e.get("notes") or "") + " became public late; reels skipped").strip()} if pub else {})))
+        if pub: log(f"{e['episode_id']} is public now (it had been stuck on private)"); audit_seen_public()
+
+def clean_dead_checkpoints(eps):
+    """v8.3: the saved bundle of an episode that failed for good (its slot has passed) is deleted from Drive."""
+    for e in eps:
+        t = parse_iso(e.get("slot_et"))
+        if e.get("status") == "FAILED" and t and now_utc() > t + dt.timedelta(hours=6) and _CK.has(e):
+            _CK.clear(e["episode_id"])
+
+def tick():
+    """Every 30 min. Decides whether a release is due AND (independently) whether to produce the next episode."""
+    JOB["name"] = "tick"
+    kill_check()
+    if paused():
+        n = hold_scheduled("paused"); log(f"paused - nothing to do ({n} scheduled video(s) held)"); return {"action": "paused"}
+    resume_held()
+    if not S("VOICE"):
+        t = parse_iso(S("VOICE_SAMPLES_AT"))
+        if not t: return {"action": "waiting_for_voice_samples"}
+        if now_utc() - t > dt.timedelta(hours=S("VOICE_WAIT_HOURS", float)):
+            set_setting("VOICE", "A"); log("no voice picked in time - using A")
+        else:
+            return {"action": "waiting_for_voice_pick"}
+    eps = store().rows("Episodes")
+    _give_up_stuck(eps)
+    try: recover_stuck(eps); clean_dead_checkpoints(eps)
+    except Exception as x: log(f"housekeeping skipped: {scrub(x)}", "WARN")
+    try: audit_nudge(eps)
+    except Exception as x: log(f"audit reminder skipped: {scrub(x)}", "WARN")
+    due = []
+    for e in eps:
+        if e.get("status") == "SCHEDULED":
+            t = parse_iso(e.get("slot_et"))
+            if t and now_utc() >= t + dt.timedelta(minutes=S("REEL1_DELAY_MIN", int)): due.append(("release1", e["episode_id"]))
+        if e.get("status") == "LIVE1":
+            t = parse_iso(e.get("slot_et"))
+            if t and now_utc() >= t + dt.timedelta(minutes=S("REEL2_DELAY_MIN", int)): due.append(("release2", e["episode_id"]))
+        for k in (2, 3):
+            if extra_reel_due(e, k): due.append((f"release{k+1}", e["episode_id"]))
+    prod = _produce_slot(eps)
+    if due:
+        a = {"action": due[0][0], "episode": due[0][1]}
+        if prod and prod != "busy": a["slot"] = prod          # a release never blocks production (both jobs run)
+        return a
+    if prod == "busy": return {"action": "busy"}
+    if prod: return {"action": "produce", "slot": prod}
+    return {"action": "idle"}
+
+def _produce_slot(eps):
+    busy = [e for e in eps if e.get("status") in ("PLANNING", "VOICING", "VISUALS", "UPLOADED")]
+    stale = [e for e in busy if (now_utc() - (parse_iso(e.get("updated")) or now_utc())).total_seconds() > 6 * 3600]
+    for e in stale:
+        if e.get("yt_id"):
+            try: PUB.yt_set_privacy(e["yt_id"], "private")    # a half-finished upload must never publish on its own
+            except Exception as x: log(f"could not make {e['yt_id']} private: {x}", "WARN")
+        store().update("Episodes", "episode_id", e["episode_id"], {"status": "FAILED", "notes": "timed out", "updated": iso()})
+    if [e for e in busy if e not in stale]: return "busy"
+    held = [e for e in eps if e.get("status") == "HOLD_QC"]
+    if held and len(held) < max(1, S("HOLD_BLOCK_AFTER", int)):
+        log(f"{len(held)} video(s) held by final QC - the next slot still goes ahead (production stops at {S('HOLD_BLOCK_AFTER', int)} held)", "WARN")
+        held = []
+    if held:       # several holds in a row may mean something systemic: no new paid work until the owner clicks the fix link or types KILL. One reminder per day.
+        last = parse_iso(S("HOLD_MAIL_AT"))
+        if not last or now_utc() - last > dt.timedelta(days=1):
+            from whatifs.episode import _fix_link
+            PUB.email("Reminder: a video is waiting for your fix click", "".join(f"<p>{e['episode_id']}: <a href='{_fix_link(e['episode_id'])}'>click to fix</a> (or type KILL in its kill cell). New videos are paused until then.</p>" for e in held))
+            set_setting("HOLD_MAIL_AT", iso())
+        log(f"{len(held)} video(s) held by final QC - not starting a new episode", "WARN"); return None
+    ok_a, why_a = audit_gate(eps)
+    if not ok_a: log(f"audit gate: {why_a}", "WARN"); return None
+    ok, why = G.can_start_episode()          # v8.1: the cap is checked BEFORE an episode row exists, so a full month never creates failed rows or half-paid videos
+    if not ok:
+        log(f"budget gate: not starting a new episode - {why}", "WARN")
+        mk = now_utc().strftime("%Y-%m")
+        if S("BUDGET_MAIL_MONTH") != mk:
+            PUB.email("Monthly budget reached", f"<p>{why}.</p><p>Videos that are already scheduled still publish. New videos resume on the 1st of next month, "
+                      "or raise BUDGET_FLOOR_INR / BUDGET_CEILING_INR in Settings if you want to spend more. Nothing else is needed.</p>")
+            set_setting("BUDGET_MAIL_MONTH", mk)
+        return None
+    taken = {e.get("slot_et") for e in eps if e.get("status") in ("SCHEDULED", "LIVE1", "LIVE", "HELD", "HOLD_QC")}
+    for slot in next_slots(4):
+        s = slot.strftime("%Y-%m-%dT%H:%M:%SZ")
+        if s in taken: continue
+        hours = (slot - now_utc()).total_seconds() / 3600
+        tries = sum(_attempts(e) for e in eps if e.get("slot_et") == s and e.get("status") == "FAILED")      # v8.2: a resumed attempt reuses its row, so attempts are counted, not rows
+        if hours <= S("PRODUCE_AHEAD_HOURS", float) and tries < 2: return s
+        if tries >= 2: continue
+        break
+    return None
+
+def release(ep_id, which):
+    """Reel k goes to YouTube Shorts + Instagram + Facebook once the long video is live. Posts the channel comment on the long video
+    (YouTube's API cannot pin comments; pin it in Studio if you like)."""
+    JOB["name"] = "release"; JOB["episode"] = ep_id
+    st = store(); e = next(x for x in st.rows("Episodes") if x["episode_id"] == ep_id)
+    want = {"release1": "SCHEDULED", "release2": "LIVE1"}.get(which, "LIVE")
+    if e.get("status") != want: log(f"{which} skipped: status is {e.get('status')} (already done or closed)"); return
+    if S("KILL_CHECK", bool) and str(e.get("kill", "")).upper().startswith("KILL"):
+        PUB.yt_set_privacy(e["yt_id"], "private"); st.update("Episodes", "episode_id", ep_id, {"status": "KILLED", "updated": iso()}); log("killed by owner"); return
+    k = {"release1": 0, "release2": 1, "release3": 2, "release4": 3}[which]
+    if k >= 2: return _release_extra(st, e, k)
+    if k == 0:
+        if PUB.yt_status(e["yt_id"]) != "public":
+            t = parse_iso(e.get("slot_et"))
+            if t and now_utc() > t + dt.timedelta(hours=S("PRIVATE_ALERT_HOURS", float)) and "private alert sent" not in str(e.get("notes", "")):
+                PUB.email("Video not public yet", f"<p>Episode {ep_id} should be public by now but YouTube still shows it as private. "
+                          "For the first videos this usually means the Google Cloud project still needs the YouTube API audit (SETUP_CHECKLIST Step 4b). "
+                          f"The reels wait; after {S('RELEASE_GIVEUP_HOURS')} h the release is closed so new videos are never blocked.</p>")
+                st.update("Episodes", "episode_id", ep_id, {"notes": _note(e, "private alert sent")})
+            log("long video not public yet - waiting", "WARN"); return
+        audit_seen_public()
+    rel = _fetch_release(ep_id, e.get("assets"))
+    if k == 0:
+        PUB.yt_comment(e["yt_id"], rel.get("pinned", ""))
+    long_url = f"https://youtu.be/{e['yt_id']}"
+    upd = {"status": "LIVE1" if k == 0 else "LIVE", "updated": iso()}
+    if k < len(rel.get("reels", [])):
+        sid, ig, fb = _post_reel(rel["reels"][k], rel, long_url)
+        if sid: upd[f"reel{k+1}_yt"] = sid
+        if ig: upd[f"ig{k+1}"] = ig
+        if fb: upd[f"fb{k+1}"] = fb
+    st.update("Episodes", "episode_id", ep_id, upd)
+    if not S("LAUNCH_DONE", bool) and k == 0:
+        PUB.email("We're live", f"<p>Your first video is live: <a href='{long_url}'>{long_url}</a></p><p>Nothing to do. The channel now runs on its own.</p>")
+        set_setting("LAUNCH_DONE", "TRUE")
+    flush_log()
+
+def _post_reel(r, rel, long_url):
+    """Upload one reel: YouTube Shorts (+ a comment with the full-video link) and, if META_ON, Instagram + Facebook. Returns (shorts id, ig id, fb id); failures are logged."""
+    sid = ig = fb = ""; path = r["file"]
+    cap = f"{cap_hashtags(r['caption'])}\n\nFull video: {long_url}"
+    if S("REEL1_SHORTS_ON", bool):
+        try:
+            sid = PUB.yt_upload(path, (r.get("hook") or rel["title"])[:80] + " #shorts", cap + "\n#shorts", ["shorts", "what if"], ai_label=S("AI_LABEL_DEFAULT", bool), short=True)
+            PUB.yt_comment(sid, f"Full video: {long_url}")
+        except Exception as x: log(f"short upload failed: {x}", "WARN")
+    else: log("YouTube Shorts copy switched off (REEL1_SHORTS_ON = FALSE)")
+    if S("META_ON", bool):          # v8.9.1 (fix): Instagram and Facebook are tried separately (one failing no longer skips the other), the reel file is sent
+        opened, links = [], {}        # directly, a public Drive link is made only if a platform needs it, and every link made is closed again in 'finally'
+        def link(p):
+            if p not in links:
+                fid, url = PUB.drive_upload(p, os.path.basename(p), public=True); opened.append(fid); links[p] = url
+            return links[p]
+        try:
+            curl = None
+            if r.get("cover"):
+                try: curl = link(r["cover"])
+                except Exception as x: log(f"reel cover link skipped: {scrub(x)}", "WARN")
+            try: ig = PUB.ig_reel(None, cap.replace(long_url, "link in bio"), curl, video_path=path, url_fn=lambda: link(path))
+            except Exception as x: log(f"instagram post failed: {scrub(x)}", "WARN")
+            try: fb = PUB.fb_reel(None, cap, video_path=path, url_fn=lambda: link(path))
+            except Exception as x: log(f"facebook post failed: {scrub(x)}", "WARN")
+        finally:
+            for fid in opened:
+                try: PUB.drive_private(fid)
+                except Exception as x: log(f"could not make a Drive link private again: {scrub(x)}", "WARN")
+    return sid, ig, fb
+
+def extra_reel_due(e, k, now=None):
+    """v8.5: reel k (2 or 3, i.e. reel 3 or 4) is due when the long video's first two reels are done (status LIVE), its delay has passed, the reel file was
+    actually made (its Drive id is in assets: older episodes have none, and nothing is downloaded to find that out) and it has not been tried yet."""
+    if k + 1 > max(2, min(4, S("REELS_PER_VIDEO", int))) or e.get("status") != "LIVE" or not e.get("yt_id"): return False
+    if f"reel{k+1}_yt" not in e: return False
+    if re.search(r"reels skipped|became public late", str(e.get("notes") or "")): return False
+    if str(e.get("kill", "")).upper().startswith("KILL"): return False      # KILL typed after launch: no more Shorts for it      # the launch reels were given up: the extra ones stay quiet too         # the Sheet has no v8.5 columns yet (run Setup once): without the cell to mark, a Short could be posted twice
+    if str(e.get(f"reel{k+1}_yt") or "").strip(): return False
+    try: assets = e.get("assets") if isinstance(e.get("assets"), dict) else json.loads(e.get("assets") or "{}")
+    except Exception: assets = {}
+    if f"reel{k}.mp4" not in assets: return False
+    t = parse_iso(e.get("slot_et")); now = now or now_utc()
+    if not t or now < t + dt.timedelta(minutes=S(f"REEL{k+1}_DELAY_MIN", int)): return False
+    if now > t + dt.timedelta(minutes=S(f"REEL{k+1}_DELAY_MIN", int)) + dt.timedelta(hours=S("RELEASE_GIVEUP_HOURS", float)): return False
+    return True
+
+def _release_extra(st, e, k):
+    """v8.5: reels 3 and 4 go out on the following days (a Short on 6 of 7 days with Tue/Sat videos). One try each: the cell is marked before anything is
+    posted, so a crash can never post a Short twice; the long video's status is never changed."""
+    ep_id = e["episode_id"]; col = f"reel{k+1}_yt"
+    if not extra_reel_due(e, k): log(f"release{k+1} skipped: not due or already tried"); return
+    st.update("Episodes", "episode_id", ep_id, {col: "trying " + iso(), "updated": iso()})
+    upd = {}
+    try:
+        rel = _fetch_release(ep_id, e.get("assets")); reels = rel.get("reels", [])
+        if k >= len(reels): upd[col] = "none"; log(f"release{k+1}: this episode has no reel {k+1}")
+        else:
+            sid, ig, fb = _post_reel(reels[k], rel, f"https://youtu.be/{e['yt_id']}")
+            upd = {col: sid or ("off" if not S("REEL1_SHORTS_ON", bool) else "failed"), f"ig{k+1}": ig, f"fb{k+1}": fb}
+    except Exception as x: upd[col] = "failed"; log(f"release{k+1} failed: {scrub(x)}", "WARN")
+    upd["updated"] = iso(); st.update("Episodes", "episode_id", ep_id, upd); flush_log()
+
+def _fetch_release(ep_id, assets=None):
+    d = os.path.join(WORK, ep_id); os.makedirs(d, exist_ok=True); path = os.path.join(d, "release.json")
+    if not os.path.exists(path):
+        ids = assets if isinstance(assets, dict) else json.loads(assets or "{}")
+        for name, fid in ids.items():
+            if name.startswith("_"): continue          # archive entries, not release files
+            PUB.drive_download(fid, os.path.join(d, name))
+    rel = json.load(open(path))
+    for r in rel.get("reels", []):
+        for key in ("file", "cover"):
+            if r.get(key): r[key] = os.path.join(d, os.path.basename(r[key]))
+    return rel
+
+def cap_hashtags(text, n=5):
+    """v8.9: Instagram enforces at most 5 hashtags per Reel (Dec 2025; extra tags can stop publishing or reach). Keep the first n, drop the rest."""
+    seen = []
+    def keep(m):
+        seen.append(m.group(0)); return m.group(0) if len(seen) <= n else ""
+    return re.sub(r"\s{2,}", " ", re.sub(r"#\w+", keep, str(text or ""))).strip()
+
+# ---------------- v8.9: change-ready email + one-click merge (for Claude Code and the Repair Bot) ----------------
+def pr_ready():
+    """Runs in the Checks workflow after Plan Guard, every unit test and the rehearsal passed on a pull request. Emails the owner a review link and a
+    one-click merge link (a pre-filled 'MERGE #n' issue: pressing Submit runs the Merge workflow, owner-only). Never raises."""
+    JOB["name"] = "prready"
+    if not S("PR_MAIL_ON", bool): log("change-ready email switched off (PR_MAIL_ON)"); return None
+    from urllib.parse import quote
+    repo, n, title, url = env("GH_REPO"), env("PR_NUMBER"), env("PR_TITLE")[:120], env("PR_URL")
+    if not (repo and n.isdigit()): log("not a pull request run - no email"); return None
+    merge = f"https://github.com/{repo}/issues/new?title={quote('MERGE #' + n)}&body={quote('Press Submit new issue. The robot merges the change only if every check is still green.')}"
+    html = (f"<p><b>A code change passed every check</b> (Plan Guard, all unit tests, the full offline rehearsal):<br>#{n} {title}</p>"
+            f"<p><a href='{merge}'>Merge it: click, then press the green <b>Submit new issue</b></a></p><p><a href='{url}'>Review it on GitHub first</a> "
+            "(the green Merge button there works too).</p><p>After the merge the next half-hourly run uses the new pipeline by itself. To drop the change, close the pull request.</p>")
+    try: PUB.email(f"Change ready to merge: #{n}", html); return merge
+    except Exception as x: log(f"change-ready email failed: {scrub(x)}", "WARN"); return None
+
+# ---------------- trend scout (weekly) ----------------
+def trend_scout():
+    JOB["name"] = "trends"
+    api = []
+    try:   # weekly model refresh (K11: model names discovered live, never typed)
+        m = discover_models(); set_setting("MODELS_REFRESHED_AT", iso()); log(f"models refreshed: {m}")
+    except Exception as e: log(f"weekly model refresh failed: {e}", "WARN")
+    if not FAKE:
+        try:
+            after = (now_utc() - dt.timedelta(days=10)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            for q in ["what if", "what would happen if", "science explained", "space facts"]:
+                r = requests.get("https://www.googleapis.com/youtube/v3/search", headers=gheaders(), params={"part": "snippet", "q": q, "type": "video",
+                                 "order": "viewCount", "publishedAfter": after, "maxResults": 10, "relevanceLanguage": "en", "regionCode": "US"}, timeout=30).json()
+                ids = ",".join(i["id"]["videoId"] for i in r.get("items", []))
+                if ids:
+                    v = requests.get("https://www.googleapis.com/youtube/v3/videos", headers=gheaders(), params={"part": "snippet,statistics,contentDetails", "id": ids}, timeout=30).json()
+                    for x in v.get("items", []):
+                        api.append({"title": x["snippet"]["title"], "channel": x["snippet"]["channelTitle"], "views": x["statistics"].get("viewCount"),
+                                    "len": x["contentDetails"]["duration"]})
+            ch = requests.get("https://www.googleapis.com/youtube/v3/videos", headers=gheaders(), params={"part": "snippet,statistics", "chart": "mostPopular",
+                              "regionCode": "US", "videoCategoryId": "28", "maxResults": 15}, timeout=30).json()
+            for x in ch.get("items", []): api.append({"chart": "US science top", "title": x["snippet"]["title"], "channel": x["snippet"]["channelTitle"], "views": x["statistics"].get("viewCount")})
+            api += _outliers()
+        except Exception as e: log(f"youtube trend pull failed: {e}", "WARN")
+        try:
+            rss = requests.get("https://trends.google.com/trending/rss?geo=US", timeout=30).text
+            api.append({"google_trends_us": re.findall(r"<title>([^<]+)</title>", rss)[1:20]})
+        except Exception as e: log(f"google trends failed: {e}", "WARN")
+    rep = ask("research", P.fill(P.TRENDS, channels=S("TREND_CHANNELS"), api=json.dumps(api[:40])), "Research now. Return the JSON only.",
+              search=True, fake_key="research", temperature=0.3)
+    wk = now_utc().strftime("%G-W%V"); rows = []
+    for x in rep.get("exploding", [])[:12]: rows.append({"week": wk, "kind": "exploding", "item": x.get("title", ""), "detail": json.dumps(x.get("patterns", {}))[:900], "source": x.get("channel", "")})
+    for x in rep.get("rules_for_room", [])[:8]: rows.append({"week": wk, "kind": "rule", "item": x, "detail": "", "source": "trend scout"})
+    for x in rep.get("rising_angles", [])[:6]: rows.append({"week": wk, "kind": "angle", "item": x, "detail": "", "source": "trend scout"})
+    crit = []
+    for x in rep.get("platform_changes", [])[:8]:
+        rows.append({"week": wk, "kind": "platform", "item": x.get("change", ""), "detail": x.get("severity", ""), "source": x.get("source", "")})
+        if x.get("severity") == "critical" and _official(x.get("source", "")) and re.search(r"\b(ai|synthetic|inauthentic|mass[- ]produced|repetitive)\b", x.get("change", "").lower()) and "monet" in x.get("change", "").lower():
+            crit.append(x)
+    store().append("Trend_Brief", rows)
+    PB.ensure_seed(); PB.research()                          # v8.7: the proactive, evidence-graded playbook research (never raises, inside the cap)
+    if crit:
+        seen = [x for x in S("GUARDIAN_SEEN").split("|") if x]
+        def sig(x): return hashlib.md5(re.sub(r"[^a-z]", "", (x.get("change", "") + x.get("platform", "")).lower())[:160].encode()).hexdigest()[:10]
+        new = [x for x in crit if sig(x) not in seen]
+        if new:
+            set_setting("GUARDIAN_SEEN", "|".join((seen + [sig(x) for x in new])[-40:]))
+            guardian(new)
+        else: log("policy items already acted on before - no new pause")
+    flush_log(); return rep
+
+def _official(src):
+    """v8.3: the channel is paused only for a policy change reported by an official YouTube / Google page (a search headline alone could be planted by anyone).
+    v8.7: the same strict test as the Playbook (playbook.is_official): any creator's youtube.com/watch link no longer counts as official."""
+    if not S("GUARDIAN_NEEDS_OFFICIAL", bool): return True
+    from whatifs.playbook import is_official
+    return is_official(src)
+
+def _outliers():
+    """Latest uploads of the watched channels; flag videos with views >= 2x the channel's recent median (exploding)."""
+    out, missing = [], []
+    for h in [x.strip() for x in S("TREND_CHANNELS").split(",") if x.strip()][:10]:
+        try:
+            c = requests.get("https://www.googleapis.com/youtube/v3/channels", headers=gheaders(), params={"part": "contentDetails", "forHandle": h}, timeout=30).json()
+            up = c["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
+            pl = requests.get("https://www.googleapis.com/youtube/v3/playlistItems", headers=gheaders(), params={"part": "contentDetails", "playlistId": up, "maxResults": 15}, timeout=30).json()
+            ids = ",".join(i["contentDetails"]["videoId"] for i in pl.get("items", []))
+            v = requests.get("https://www.googleapis.com/youtube/v3/videos", headers=gheaders(), params={"part": "snippet,statistics,contentDetails", "id": ids}, timeout=30).json().get("items", [])
+            views = [int(x["statistics"].get("viewCount", 0)) for x in v]
+            if not views: continue
+            med = statistics.median(views) or 1
+            for x in v:
+                r = int(x["statistics"].get("viewCount", 0)) / med
+                if r >= 2: out.append({"channel": h, "title": x["snippet"]["title"], "x_median": round(r, 1), "len": x["contentDetails"]["duration"]})
+        except Exception as e: log(f"outlier scan {h} failed: {e}", "WARN"); missing.append(h)
+    status("trend_channels", not missing, ("not found: " + ", ".join(missing)) if missing else "all watched channels found")
+    return out
+
+def guardian(items):
+    """Option B: pause only on a serious AI-monetisation rule change; auto-resume after 7 days."""
+    until = (now_utc() + dt.timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    set_setting("PAUSED_UNTIL", until)
+    held = hold_scheduled("policy watch")
+    PUB.email("Paused for 7 days (policy watch)", "<p>A possible change to AI-content monetisation rules was found:</p><ul>" +
+              "".join(f"<li>{i.get('change')} ({i.get('source')})</li>" for i in items) +
+              f"</ul><p>{held} already-scheduled video(s) were switched to private so they do not go out. "
+              f"Publishing resumes automatically on {until[:10]} and held videos are re-scheduled. To resume now, set PAUSED_UNTIL to blank in Settings.</p>")
+    log(f"guardian pause until {until}", "WARN")
+
+# ---------------- learning loop (daily) ----------------
+def learn():
+    JOB["name"] = "learn"; st = store()
+    try: st.ensure_tabs()                                       # v8.6: new tabs/columns appear by themselves (no manual Setup run needed)
+    except Exception as x: log(f"could not refresh Sheet tabs: {scrub(x)}", "WARN")
+    _top_up(st)                                                 # v8.7: new strategies (rhythm, sound) and the playbook seed reach older Sheets by themselves
+    try: pkg_rescue()
+    except Exception as x: log(f"packaging check skipped: {scrub(x)}", "WARN")
+    eps = [e for e in st.rows("Episodes") if e.get("status") in ("LIVE1", "LIVE") and e.get("yt_id")]
+    old = st.rows("Analytics"); done = {a["episode_id"] for a in old}
+    hist = [a for a in old if str(a.get("data_note") or "ok") == "ok" and GR._num(a.get("views")) is not None]
+    rows = []
+    for e in eps:
+        t = parse_iso(e.get("slot_et"))
+        if not t or e["episode_id"] in done or now_utc() - t < dt.timedelta(hours=72): continue
+        dd = json.loads(e.get("draw_json") or "{}") if not isinstance(e.get("draw_json"), dict) else e["draw_json"]
+        dur = dd.get("duration_sec") or dd.get("runtime_sec")
+        m = _analytics(e["yt_id"], t, dur) if dur else _analytics(e["yt_id"], t)
+        if not m or m.get("pending"):                           # v8.6: YouTube Analytics lags; missing data is retried, never invented
+            if now_utc() - t > dt.timedelta(days=S("ANALYTICS_GIVEUP_DAYS", int)):
+                rows.append({"episode_id": e["episode_id"], "yt_id": e["yt_id"], "pulled": iso(), "score": "", "diagnosis": "insufficient data",
+                             "data_note": f"no data after {S('ANALYTICS_GIVEUP_DAYS', int)} days"})
+            continue
+        try: m.update(_shorts_stats(e, t))
+        except Exception as x: log(f"Shorts stats skipped for {e['episode_id']}: {scrub(x)}", "WARN")
+        if m.get("ctr_kind") != "real" and GR._num(m.get("views")) is not None:
+            prev = [GR._num(a.get("views")) for a in (hist + rows)[-10:] if GR._num(a.get("views")) is not None]
+            base = (sorted(prev)[len(prev) // 2] if prev else 0) or max(1.0, float(m["views"]))
+            m["ctr"] = round(min(0.15, 0.05 * float(m["views"]) / base), 4); m["ctr_kind"] = "proxy: 72h views vs channel median"
+        if m.get("ctr_kind") == "real" and GR._num(m.get("ctr")) and GR._num(m.get("avg_view_sec")):
+            m["wtpi"] = round(float(m["ctr"]) * float(m["avg_view_sec"]), 3)      # v8.7: watch seconds per impression = what YouTube's own A/B test judges by
+        sc = GR.dim_scores(m, hist + rows); score = GR.composite(sc)
+        diag, les = GR.diagnose(dict(m, title=e.get("title"), episode_id=e["episode_id"]), hist + rows)
+        m.update({"episode_id": e["episode_id"], "yt_id": e["yt_id"], "pulled": iso(), "score": "" if score is None else score,
+                  "diagnosis": diag, "data_note": m.get("data_note") or "ok"}); rows.append(m)
+        d = json.loads(e.get("draw_json") or "{}")
+        swapped = str(_pkg(e).get("action", "")).startswith("swapped")
+        if les: st.append("Lessons", [{"ts": iso(), "lesson": les, "evidence": f"{e['episode_id']} vs channel medians", "applies_to": GR.DIAG_ROUTE[diag]}])
+        dl = GR.dip_lesson(m.get("curve"), d.get("beat_map"), d.get("duration_sec") or d.get("runtime_sec"), e.get("title") or e["episode_id"])      # v8.7: WHERE viewers left
+        if dl: st.append("Lessons", [{"ts": iso(), "lesson": dl, "evidence": f"{e['episode_id']} retention curve", "applies_to": "holding"}])
+        try: PB.credit(d.get("playbook") or {}, sc, st)       # v8.7: trial rules are credited on their own metric (missing data is never credited)
+        except Exception as x: log(f"playbook credit skipped: {scrub(x)}", "WARN")
+        if m.get("from_shorts") is not None:
+            st.append("Lessons", [{"ts": iso(), "lesson": f"{e['episode_id']}: {m['from_shorts']} long-video views came from Shorts, Shorts gained {m.get('shorts_subs', '?')} subscribers "
+                                   f"(reel style {d.get('reel_style', 'teaser')}, formats {', '.join(d.get('reel_formats', [])) or '?'})",
+                                   "evidence": "YouTube Analytics (traffic source SHORTS; per-Short subscribers)", "applies_to": "reels"}])
+        _credit_strategies(st, strategy_credits(d, sc, swapped))      # v8.9.1: each (dimension, name) credited once per video, matched on BOTH columns
+    if rows: st.append("Analytics", rows)
+    try: _reaction_learning([r for r in rows if r.get("data_note") == "ok"])
+    except Exception as x: log(f"reaction learning skipped: {scrub(x)}", "WARN")
+    _evolve()
+    try: PB.judge(st)
+    except Exception as x: log(f"playbook judging skipped: {scrub(x)}", "WARN")
+    flush_log()
+
+def strategy_credits(d, sc, swapped=False):
+    """{(dimension, name): score} for one analysed video. v8.9.1: built first and de-duplicated, so a strategy is credited at most once per video
+    (a reel format listed twice, or named both in the draw and in reel_formats, used to be counted twice)."""
+    out = {}
+    for dim, name in (d.get("strategies") or {}).items():
+        if not name or (swapped and dim in ("title", "thumb")): continue      # v8.5: the measured result belongs to the runner-up package
+        v = GR.score_for(dim, sc)                                            # v8.6: each dimension is judged on the metric it can move
+        if v is not None: out[(dim, name)] = v                               # missing data never counts as a play
+    if sc.get("shorts") is not None:                                         # v8.6: every reel format used is credited with the Shorts result
+        for name in dict.fromkeys(d.get("reel_formats") or []):
+            if name: out.setdefault(("reel", name), sc["shorts"])
+    return out
+
+def _credit_strategies(st, credits):
+    """Apply the credits with FRESH values (re-read once) and an update matched on dimension AND name (v8.9.1: matching on the name alone could
+    update another dimension's row that shares the name)."""
+    if not credits: return 0
+    cur = {(r.get("dimension"), r.get("name")): r for r in st.rows("Strategies")}; n = 0
+    for (dim, name), v in credits.items():
+        r = cur.get((dim, name))
+        if not r: continue
+        st.update_where("Strategies", {"dimension": dim, "name": name}, {"plays": int(float(r.get("plays") or 0)) + 1,
+                        "score_sum": round(float(r.get("score_sum") or 0) + v, 4), "score_n": int(float(r.get("score_n") or 0)) + 1}); n += 1
+    return n
+
+def _top_up(st):
+    """v8.7: an older Sheet gets the strategies and playbook rules introduced by newer versions (no manual Setup run needed)."""
+    try:
+        from whatifs.data import strategy_rows
+        have = {r["name"] for r in st.rows("Strategies")}; new = [r for r in strategy_rows() if r["name"] not in have]
+        if have and new: st.append("Strategies", new); log(f"{len(new)} new strategy option(s) added to the Strategies tab")
+    except Exception as x: log(f"strategy top-up skipped: {scrub(x)}", "WARN")
+    PB.ensure_seed(st)
+
+_YT_ID = re.compile(r"^[A-Za-z0-9_-]{11}$")
+
+def _shorts_stats(e, t):
+    """v8.6: views and subscribers gained by this video's own Shorts (reel1..reel4), summed. Only real Short ids are read; nothing is invented."""
+    ids = [str(e.get(f"reel{k}_yt") or "").strip() for k in range(1, 5)]
+    if FAKE:
+        r = random.Random(e.get("yt_id")); return {"shorts_views": r.randint(500, 20000), "shorts_subs": r.randint(0, 40)}
+    ids = [i for i in ids if _YT_ID.match(i)]
+    if not ids: return {}
+    v = s_ = 0; got = False
+    for vid in ids:
+        p = {"ids": "channel==MINE", "startDate": t.strftime("%Y-%m-%d"), "endDate": now_utc().strftime("%Y-%m-%d"), "filters": f"video=={vid}", "metrics": "views,subscribersGained"}
+        a = requests.get("https://youtubeanalytics.googleapis.com/v2/reports", headers=gheaders(), params=p, timeout=30).json()
+        if a.get("rows"): v += float(a["rows"][0][0]); s_ += float(a["rows"][0][1]); got = True
+    return {"shorts_views": int(v), "shorts_subs": int(s_)} if got else {}
+
+def _fetch_some(ep_id, assets, names):
+    """v8.5: download only the named release files (not the reels) from the private Drive. Returns {name: local path} for those that exist."""
+    d = os.path.join(WORK, ep_id); os.makedirs(d, exist_ok=True); out = {}
+    try: ids = assets if isinstance(assets, dict) else json.loads(assets or "{}")
+    except Exception: ids = {}
+    for n in names:
+        p = os.path.join(d, n)
+        if not os.path.exists(p) and ids.get(n):
+            try: PUB.drive_download(ids[n], p)
+            except Exception as x: log(f"could not fetch {n}: {scrub(x)}", "WARN")
+        if os.path.exists(p): out[n] = p
+    return out
+
+def _pkg(e):
+    try: return json.loads(e.get("pkg_check") or "{}") if not isinstance(e.get("pkg_check"), dict) else e["pkg_check"]
+    except Exception: return {}
+
+def pkg_rescue(now=None):
+    """v8.5 packaging rescue (daily, from the learning job). Once per video, at about PKG_RESCUE_HOURS old, its view PACE (views per hour since the slot) is compared
+    with the median pace of earlier videos measured the same way. Clearly behind (below PKG_RESCUE_RATIO) = the title and thumbnail are swapped ONCE to the
+    Packager's runner-up (2nd title + the B thumbnail made with the video). No history, a missing runner-up or an unreadable count = no swap, never a guess.
+    Results go to the Episodes 'pkg_check' cell and, for a swap, to Lessons (private), so the Packager learns which promise failed."""
+    if not S("PKG_RESCUE_ON", bool): return []
+    st = store(); eps = st.rows("Episodes"); now = now or now_utc(); done = []
+    if eps and "pkg_check" not in eps[0]: log("packaging rescue waits: the Sheet does not have the v8.5 columns yet (the daily learning job adds them by itself)", "WARN"); return []
+    hrs = S("PKG_RESCUE_HOURS", float)
+    hist = [float(c["pace"]) for c in (_pkg(e) for e in eps) if c.get("pace") is not None]
+    for e in eps:
+        if e.get("status") not in ("LIVE1", "LIVE") or not e.get("yt_id") or str(e.get("pkg_check") or "").strip(): continue
+        t = parse_iso(e.get("slot_et"))
+        if not t: continue
+        age = (now - t).total_seconds() / 3600
+        if age < hrs: continue
+        if age > hrs + 48:                                         # too old to compare fairly (e.g. published before v8.5): recorded, never swapped
+            st.update("Episodes", "episode_id", e["episode_id"], {"pkg_check": {"action": "not checked: too old for a fair comparison"}}); continue
+        v = PUB.yt_views(e["yt_id"])
+        if v is None: continue                                     # try again tomorrow (still inside the window)
+        pace = v / max(1.0, age); rec = {"views": v, "age_h": round(age, 1), "pace": round(pace, 3), "at": iso()}
+        need = max(1, S("PKG_RESCUE_MIN_HISTORY", int))
+        if len(hist) < need: rec["action"] = f"kept: only {len(hist)} earlier videos measured (needs {need})"
+        else:
+            med = statistics.median(hist); ratio = pace / med if med > 0 else 1.0
+            rec.update(median_pace=round(med, 3), ratio=round(ratio, 2))
+            recent = hist[-3:]
+            if ratio >= S("PKG_RESCUE_RATIO", float): rec["action"] = "kept: on pace"
+            elif S("PKG_DIP_GUARD_ON", bool) and len(recent) == 3 and all(p < S("PKG_RESCUE_RATIO", float) * med for p in recent):
+                rec["action"] = "kept: channel-wide dip (the last 3 videos were all behind too), not a packaging problem"
+            else: rec["action"] = _swap(st, e, rec)
+        hist.append(pace)
+        st.update("Episodes", "episode_id", e["episode_id"], {"pkg_check": rec, "updated": iso()}); done.append((e["episode_id"], rec["action"]))
+        log(f"packaging check {e['episode_id']}: {rec['action']} (pace {rec.get('ratio', '-')}x the median)", public=f"packaging check {e['episode_id']}: {rec['action'].split(':')[0]}")
+    try: done += _judge_swaps(st, now)
+    except Exception as x: log(f"swap evaluation skipped: {scrub(x)}", "WARN")
+    return done
+
+def _judge_swaps(st, now):
+    """v8.6: a swap is judged once, at least a day later: views per hour SINCE the swap vs the pace before it. Views normally slow down with age, so a higher
+    pace after the swap is a real sign it helped ('helped'); anything else is recorded as 'unclear' (never called a failure, because age alone lowers the pace)."""
+    out = []
+    for e in st.rows("Episodes"):
+        rec = _pkg(e)
+        if not str(rec.get("action", "")).startswith("swapped") or "after" in rec or not e.get("yt_id"): continue
+        t = parse_iso(rec.get("at"))
+        if not t or now - t < dt.timedelta(hours=24): continue
+        v = PUB.yt_views(e["yt_id"])
+        if v is None: continue
+        hrs = (now - t).total_seconds() / 3600; after = max(0.0, (v - float(rec.get("views") or 0)) / max(1.0, hrs))
+        rec["after"] = {"views": v, "pace": round(after, 3), "hours": round(hrs, 1), "verdict": "helped" if after > float(rec.get("pace") or 0) else "unclear"}
+        st.update("Episodes", "episode_id", e["episode_id"], {"pkg_check": rec, "updated": iso()}); out.append((e["episode_id"], "judged: " + rec["after"]["verdict"]))
+        if rec["after"]["verdict"] == "helped":
+            st.append("Lessons", [{"ts": iso(), "lesson": f"packaging: the runner-up package lifted '{e.get('title', '')}' from {rec.get('pace')} to {after:.2f} views/hour; "
+                                   "the first package had undersold it", "evidence": "pkg_check before/after", "applies_to": "packaging"}])
+    return out
+
+def _swap(st, e, rec):
+    got = _fetch_some(e["episode_id"], e.get("assets"), ["release.json", "thumb_b.jpg"])
+    try: rel = json.load(open(got["release.json"])) if "release.json" in got else {}
+    except Exception: rel = {}
+    title_b = str(rel.get("title_b") or "").strip(); thumb_b = got.get("thumb_b.jpg") if rel.get("thumb_b") else None
+    if not title_b and not thumb_b: return "kept: behind pace but no runner-up package was made"
+    changed = []
+    if title_b and PUB.yt_set_title(e["yt_id"], title_b): changed.append("title")
+    if thumb_b and PUB.yt_thumbnail(e["yt_id"], thumb_b): changed.append("thumbnail")
+    if not changed: return "kept: behind pace but the swap was refused by YouTube (see Run_Log)"
+    old = e.get("title", "")
+    upd = {"notes": _note(e, "packaging swapped to the runner-up (" + " + ".join(changed) + ")")}
+    if "title" in changed: upd["title"] = title_b
+    st.update("Episodes", "episode_id", e["episode_id"], upd)
+    st.append("Lessons", [{"ts": iso(), "lesson": f"packaging: '{old}' ran at {rec.get('ratio')}x the usual pace at {rec['age_h']} h; swapped to "
+                           + (f"'{title_b}'" if "title" in changed else "the same title") + (" + the B thumbnail" if "thumbnail" in changed else ""),
+                           "evidence": f"{rec['views']} views at {rec['age_h']} h, median pace {rec.get('median_pace')}", "applies_to": "title"}])
+    return "swapped " + " + ".join(changed)
+
+def _reaction_learning(rows):
+    """v8.3: for each analysed video, compare how many viewers stayed just before vs just after each reaction moment, per kind, and write it to Lessons."""
+    from whatifs import reactions as RX
+    st = store(); rmap = st.rows("Reaction_Map")
+    for m in rows:
+        curve = m.get("curve") or []
+        ev = [r for r in rmap if r.get("episode_id") == m["episode_id"]]
+        if not ev or len(curve) < 20: continue
+        try: total = float(ev[0].get("total_sec") or 0)
+        except Exception: total = 0.0
+        for les in RX.reaction_lessons(curve, [{"t": float(r["t"]), "kind": r["kind"]} for r in ev], total, label=f"{m['episode_id']}: "):
+            st.append("Lessons", [{"ts": iso(), "lesson": les, "evidence": f"{len(ev)} reactions", "applies_to": "reactions"}])
+
+def _analytics(vid, t, dur=None):
+    if FAKE:
+        r = random.Random(vid); return {"views": r.randint(200, 9000), "avg_view_pct": r.uniform(25, 55), "avg_view_sec": r.uniform(120, 330), "ret30": r.uniform(0.5, 0.8),
+                                        "ctr": 0.0, "ctr_kind": "proxy", "likes": 10, "shares": 2, "subs": 3, "from_shorts": r.randint(0, 150)}
+    try:
+        p = {"ids": "channel==MINE", "startDate": t.strftime("%Y-%m-%d"), "endDate": now_utc().strftime("%Y-%m-%d"), "filters": f"video=={vid}",
+             "metrics": "views,averageViewPercentage,averageViewDuration,likes,shares,subscribersGained"}
+        a = requests.get("https://youtubeanalytics.googleapis.com/v2/reports", headers=gheaders(), params=p, timeout=30).json()
+        if a.get("error"): log(f"analytics error for {vid}: {str(a['error'])[:200]}", "WARN"); return None
+        if not a.get("rows"): return {"pending": True}               # v8.6: no rows yet (Analytics lags); never recorded as 0 views
+        row = a["rows"][0]
+        rp = dict(p, metrics="audienceWatchRatio", dimensions="elapsedVideoTimeRatio")
+        ret = requests.get("https://youtubeanalytics.googleapis.com/v2/reports", headers=gheaders(), params=rp, timeout=30).json().get("rows", [])
+        cut = min(0.5, 30.0 / float(dur)) if dur and float(dur) > 60 else 0.05      # v8.7: exactly 30 s when the video's length is known (YouTube's Intro moment)
+        ret30 = next((r[1] for r in ret if r[0] >= cut), None)    # v8.6: no curve = unknown (was a made-up 0.6)
+        from_shorts = None
+        try:                                                     # v8.5: how many long-video views arrived from our Shorts (traffic source SHORTS)
+            tp = dict(p, metrics="views", dimensions="insightTrafficSourceType")
+            tr = requests.get("https://youtubeanalytics.googleapis.com/v2/reports", headers=gheaders(), params=tp, timeout=30).json()
+            if "rows" in tr: from_shorts = int(sum(float(r[1]) for r in tr["rows"] if str(r[0]).upper() == "SHORTS"))
+        except Exception: pass
+        ctr, kind, imp = 0.0, "proxy", None
+        try:          # v8.7: impressions too, so the CTR unit can be checked (percentage vs ratio) instead of assumed
+            cp = dict(p, metrics="videoThumbnailImpressions,videoThumbnailImpressionsClickRate"); cr = requests.get("https://youtubeanalytics.googleapis.com/v2/reports", headers=gheaders(), params=cp, timeout=30).json()
+            r0 = cr["rows"][0]; imp = float(r0[0]) if len(r0) > 1 else None
+            c = GR.ctr_ratio(r0[-1], imp, row[0])
+            if c is not None: ctr = c; kind = "real"
+        except Exception: pass
+        rel30 = rel_avg = None
+        try:          # v8.7: retention compared with ALL YouTube videos of similar length (0.5 = typical): a benchmark from the very first video
+            rr = requests.get("https://youtubeanalytics.googleapis.com/v2/reports", headers=gheaders(), params=dict(p, metrics="relativeRetentionPerformance", dimensions="elapsedVideoTimeRatio"), timeout=30).json().get("rows", [])
+            if rr:
+                rel30 = next((float(r[1]) for r in rr if float(r[0]) >= cut), None); rel_avg = round(sum(float(r[1]) for r in rr) / len(rr), 4)
+        except Exception: pass
+        return {"ctr_kind": kind, "views": row[0], "avg_view_pct": row[1], "avg_view_sec": row[2], "likes": row[3], "shares": row[4], "subs": row[5], "ret30": None if ret30 is None else float(ret30), "ctr": ctr if kind == "real" else None, "from_shorts": from_shorts,
+                "impressions": imp, "rel30": rel30, "rel_avg": rel_avg,
+                "curve": [(float(r[0]), float(r[1])) for r in ret if len(r) > 1]}
+    except Exception as e: log(f"analytics failed for {vid}: {e}", "WARN"); return None
+
+def _evolve():
+    """Cut a clearly weak strategy (>=5 plays, mean < pool mean - 0.08) and invent a replacement (the number of active strategies never drops).
+    v8.6: first judge earlier replacements (rolled back once if worse), log every change in Strategy_Log, never re-retire a strategy restored in the last 30 days."""
+    try:
+        for new_name, old_name in GR.rollbacks(): log(f"strategy rollback: {new_name} -> {old_name}")
+    except Exception as x: log(f"strategy rollback check skipped: {scrub(x)}", "WARN")
+    st = store(); rows = st.rows("Strategies")
+    rules = [r["item"] for r in st.rows("Trend_Brief") if r["kind"] == "rule"][-8:]
+    for dim in {r["dimension"] for r in rows}:
+        act = [r for r in rows if r["dimension"] == dim and r["status"] == "ACTIVE"]
+        scored = [r for r in act if float(r.get("score_n") or 0) >= 5]
+        if len(scored) < 3: continue
+        means = {r["name"]: float(r["score_sum"]) / float(r["score_n"]) for r in scored}
+        pool = statistics.mean(means.values()); worst = min(means, key=means.get)
+        if means[worst] < pool - 0.08 and not GR.recently_restored(worst):
+            st.update_where("Strategies", {"dimension": dim, "name": worst}, {"status": "RETIRED"})
+            best = sorted(means, key=means.get, reverse=True)[:2]
+            try:
+                new = ask("sonnet", P.fill(P.STRATEGY_NEW, dim=dim, best=json.dumps({b: next(r["definition"] for r in act if r["name"] == b) for b in best}),
+                          rules=json.dumps(rules), names=[r["name"] for r in rows if r["dimension"] == dim]), "Invent now.", fake_key="strategy")
+                nm = re.sub(r"[^A-Za-z0-9_]+", "_", str(new.get("name") or "")).strip("_")[:40]
+                if nm and nm in {r["name"] for r in rows}: nm = (nm[:30] + "_" + dim)[:40]      # v8.9.1: names stay unique across ALL dimensions
+                if nm and new.get("definition") and nm not in {r["name"] for r in rows}:
+                    new["name"] = nm
+                    st.append("Strategies", [{"dimension": dim, "name": new["name"][:40], "definition": new["definition"][:400], "status": "ACTIVE",
+                                              "plays": 0, "score_sum": 0, "score_n": 0, "created": iso(), "source": "learned"}])
+                    st.append("Lessons", [{"ts": iso(), "lesson": f"{dim}: retired {worst}, added {new['name']}", "evidence": json.dumps(means), "applies_to": dim}])
+                    GR.log_change(dim, "retired", worst, "", round(means[worst], 4), f"mean {means[worst]:.3f} < pool {pool:.3f} - 0.08")
+                    GR.log_change(dim, "invented", new["name"][:40], worst, round(means[worst], 4), "judged after STRATEGY_EVAL_PLAYS plays")
+                else:          # v8.9.1 (fix): an empty or clashing invention used to leave the weak strategy retired with no replacement (the pool shrank, K19)
+                    st.update_where("Strategies", {"dimension": dim, "name": worst}, {"status": "ACTIVE"}); log(f"no usable new {dim} strategy - kept {worst}", "WARN")
+            except Exception as e:
+                st.update_where("Strategies", {"dimension": dim, "name": worst}, {"status": "ACTIVE"}); log(f"evolve failed, kept {worst}: {e}", "WARN")
+
+# ---------------- money ----------------
+def failure_watch():
+    """One email if 3 episodes in a row failed (repair bot may be capped). Never more than once per 3 days."""
+    eps = store().rows("Episodes")[-3:]
+    if len(eps) == 3 and all(e.get("status") == "FAILED" for e in eps):
+        last = parse_iso(S("FAIL_MAIL_AT")) if "FAIL_MAIL_AT" in settings_keys() else None
+        if not last or now_utc() - last > dt.timedelta(days=3):
+            PUB.email("Needs a look (3 failed tries)", "<p>The last 3 episode attempts failed. Reasons:</p><ul>" +
+                      "".join(f"<li>{e.get('notes','')[:200]}</li>" for e in eps) +
+                      "</ul><p>Paste the Run_Log tab into your Claude setup chat: it will tell you whether it is an account/key issue (fix by clicking) or a code issue (a separate Claude code chat). Publishing retries hourly.</p>")
+            set_setting("FAIL_MAIL_AT", iso())
+
+def settings_keys():
+    return {r["key"] for r in store().rows("Settings")}
+
+def money_check():
+    JOB["name"] = "money"; msgs = []
+    failure_watch()
+    if S("AUTO_RELOAD_ON", bool): return
+    for prov, url, name in (("fal", "https://fal.ai/dashboard/billing", "fal.ai"), ("anthropic", "https://platform.claude.com/settings/billing", "Anthropic")):
+        days = G.runway_days(prov)
+        if days <= S("REFILL_WARN_DAYS", int):
+            msgs.append(f"<li><b>{name}</b>: about {days:.0f} days left. <a href='{url}'>Top up here</a>, then add the amount to the {prov.upper() if prov=='fal' else 'ANTHROPIC'}_FUNDED_USD cell (or switch on auto-reload and set AUTO_RELOAD_ON to TRUE).</li>")
+    if msgs: PUB.email("Top-up reminder", "<ul>" + "".join(msgs) + "</ul><p>If you do nothing: videos already scheduled still publish, but NO new video can be made once fal.ai credit or Anthropic credit runs out (pictures have no free fallback; writing falls back to Gemini).</p>")
+
+def monthly_brief():
+    JOB["name"] = "brief"; st = store()
+    rev = [dict(r, month=G.month_key(r.get("month")) or r.get("month"), inr_received=G.money_num(r.get("inr_received"))) for r in st.rows("Revenue_Log")[-3:]]
+    data = {"analytics": st.rows("Analytics")[-15:], "spend_month": month_spend(), "cap": G.cap_inr(), "revenue": rev,
+            "lessons": st.rows("Lessons")[-10:], "trends": [r["item"] for r in st.rows("Trend_Brief")[-15:]]}
+    txt = ask("sonnet", P.fill(P.BRIEF, data=json.dumps(data, default=str)[:20000]), "Write it.", want_json=False, fake_key="brief")
+    PUB.email("Monthly brief", "<pre style='font-family:sans-serif;white-space:pre-wrap'>" + txt + "</pre>")
+
+# ---------------- setup ----------------
+def setup():
+    JOB["name"] = "setup"; st = store()
+    st.ensure_tabs()
+    for tab, col in (("Revenue_Log", 0), ("Revenue_Log", 2), ("Settings", 1)):
+        try: st.plain_text(tab, col)      # typed '2027-03' / '10:00' stay text, not dates
+        except Exception as e: log(f"plain-text format for {tab} skipped: {scrub(e)}", "WARN")
+    have = {r["key"] for r in st.rows("Settings")}
+    st.append("Settings", [{"key": k, "value": v[0], "note": v[1]} for k, v in DEFAULTS.items() if k not in have])
+    if env("OWNER_EMAIL") and not S("OPERATOR_EMAIL"): set_setting("OPERATOR_EMAIL", env("OWNER_EMAIL"))
+    from whatifs.data import premise_rows, BANNED, strategy_rows
+    if not st.rows("Premises"): st.append("Premises", premise_rows())
+    if not st.rows("Banned"): st.append("Banned", [{"phrase": p, "reason": r} for p, r in BANNED])
+    have_s = {r["name"] for r in st.rows("Strategies")}       # v8.2: also adds strategies introduced by newer versions (banter styles, reel formats) to an older Sheet
+    new_s = [r for r in strategy_rows() if r["name"] not in have_s]
+    if new_s: st.append("Strategies", new_s)
+    PB.ensure_seed(st)                                         # v8.7: the research-graded playbook starts with its seed rules
+    status("sheet_ready", True, f"{len(TABS)} tabs")
+    status("youtube_api_audit", audit_state() == "approved", AUDIT_WORDS[audit_state()])      # v8.4: the audit form has its own Setup_Status row, so it cannot be forgotten
+    if not FAKE:
+        from whatifs.models import selftest
+        selftest()
+        try:
+            ch = PUB.yt_channel(); status("youtube_connected", bool(ch.get("id")), ch.get("snippet", {}).get("title", ""))
+            lv = ch.get("status", {}).get("longUploadsStatus", "")
+            status("youtube_phone_verified", lv in ("allowed", "eligible"), lv or "unknown - verify at youtube.com/verify")
+        except Exception as e: status("youtube_connected", False, str(e)[:300])
+        try:
+            r = requests.get("https://api.anthropic.com/v1/models", headers={"x-api-key": env("ANTHROPIC_KEY"), "anthropic-version": "2023-06-01"}, timeout=20)
+            status("anthropic_key", r.status_code == 200, r.status_code)
+        except Exception as e: status("anthropic_key", False, str(e))
+        try:
+            from whatifs.media import still
+            p, u = still("a small blue marble on black velvet", "fal_test.jpg", "setup", seed="t", w=256, h=256)
+            status("fal_works", os.path.exists(p), "test image made")
+        except Exception as e: status("fal_works", False, str(e)[:300])
+        if S("META_ON", bool): _meta_ids()
+        status("pexels_key", bool(env("PEXELS_KEY")), "optional")
+    flush_log()
+
+def _meta_ids():
+    try:
+        k = env("META_PAGE_KEY"); GV = PUB.gv()
+        me = requests.get(GV + "me", headers={"Authorization": "Bearer " + k}, params={"fields": "id,name,instagram_business_account"}, timeout=30).json()
+        if "id" in me: set_setting("FB_PAGE_ID", me["id"])
+        ig = (me.get("instagram_business_account") or {}).get("id")
+        if ig: set_setting("IG_USER_ID", ig)
+        status("meta_connected", bool(me.get("id") and ig), json.dumps({"page": me.get("name"), "ig": ig, "graph": PUB.graph_version()}))
+        try:   # v7.3: posts from an app in Development mode are seen only by the app's own team
+            app = requests.get(GV + "app", headers={"Authorization": "Bearer " + k}, timeout=30).json()
+            live = requests.get(GV + str(app.get("id", "")), headers={"Authorization": "Bearer " + k}, params={"fields": "name,app_mode"}, timeout=30).json() if app.get("id") else {}
+            mode = str(live.get("app_mode") or "").lower()
+            if mode: status("meta_app_live", mode == "live", mode + (" - switch the app to Live (SETUP_CHECKLIST Step 8.8)" if mode != "live" else ""))
+            else: status("meta_app_live", False, "unknown - check in developers.facebook.com that App Mode = Live (SETUP_CHECKLIST Step 8.8)")
+        except Exception as e: status("meta_app_live", False, "unknown - check App Mode = Live (SETUP_CHECKLIST Step 8.8): " + str(e)[:200])
+    except Exception as e: status("meta_connected", False, str(e)[:300])
+

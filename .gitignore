@@ -1,0 +1,28 @@
+# Python and test artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Runtime output and local rehearsal data
+work/
+rh/
+rh_tests/
+work_*/
+local_sheet.json
+*.wav
+*.mp4
+*.srt
+*.ass
+
+# Local credentials and environment files (use GitHub Actions Secrets instead)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# OS/editor noise
+.DS_Store
+Thumbs.db

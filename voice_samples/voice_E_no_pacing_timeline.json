@@ -1,0 +1,662 @@
+{
+ "voiceprint": "WI-VOICE-10EB16BE8E",
+ "blend": {
+  "af_heart": 0.5,
+  "af_bella": 0.3,
+  "af_nicole": 0.2
+ },
+ "speaker_blends": {},
+ "voice_fallback": [],
+ "style": "slow_burn",
+ "humanized": false,
+ "duration": 35.6,
+ "units": [
+  {
+   "i": 0,
+   "text": "Right now, about eight billion people have fingernails.",
+   "tag": "calm",
+   "speaker": "NARRATOR",
+   "speed": 1.0,
+   "start": 0.35,
+   "end": 3.609,
+   "words": [
+    {
+     "w": "Right",
+     "s": 0.385,
+     "e": 0.783
+    },
+    {
+     "w": "now,",
+     "s": 0.783,
+     "e": 1.182
+    },
+    {
+     "w": "about",
+     "s": 1.182,
+     "e": 1.581
+    },
+    {
+     "w": "eight",
+     "s": 1.581,
+     "e": 1.98
+    },
+    {
+     "w": "billion",
+     "s": 1.98,
+     "e": 2.378
+    },
+    {
+     "w": "people",
+     "s": 2.378,
+     "e": 2.777
+    },
+    {
+     "w": "have",
+     "s": 2.777,
+     "e": 3.176
+    },
+    {
+     "w": "fingernails.",
+     "s": 3.176,
+     "e": 3.575
+    }
+   ],
+   "pause_before": 0.0,
+   "pause_before_reasons": [],
+   "pause_after": 0.0,
+   "pause_after_reasons": []
+  },
+  {
+   "i": 1,
+   "text": "And every week",
+   "tag": "calm",
+   "speaker": "NARRATOR",
+   "speed": 1.0,
+   "start": 3.859,
+   "end": 4.741,
+   "words": [
+    {
+     "w": "And",
+     "s": 3.894,
+     "e": 4.164
+    },
+    {
+     "w": "every",
+     "s": 4.164,
+     "e": 4.435
+    },
+    {
+     "w": "week",
+     "s": 4.435,
+     "e": 4.706
+    }
+   ],
+   "pause_before": 0.25,
+   "pause_before_reasons": [],
+   "pause_after": 0.0,
+   "pause_after_reasons": []
+  },
+  {
+   "i": 2,
+   "text": "we cut a little bit off.",
+   "tag": "calm",
+   "speaker": "NARRATOR",
+   "speed": 1.0,
+   "start": 4.991,
+   "end": 6.452,
+   "words": [
+    {
+     "w": "we",
+     "s": 5.025,
+     "e": 5.257
+    },
+    {
+     "w": "cut",
+     "s": 5.257,
+     "e": 5.489
+    },
+    {
+     "w": "a",
+     "s": 5.489,
+     "e": 5.721
+    },
+    {
+     "w": "little",
+     "s": 5.721,
+     "e": 5.953
+    },
+    {
+     "w": "bit",
+     "s": 5.953,
+     "e": 6.185
+    },
+    {
+     "w": "off.",
+     "s": 6.185,
+     "e": 6.417
+    }
+   ],
+   "pause_before": 0.25,
+   "pause_before_reasons": [],
+   "pause_after": 0.0,
+   "pause_after_reasons": []
+  },
+  {
+   "i": 3,
+   "text": "So picture this.",
+   "tag": "tension",
+   "speaker": "NARRATOR",
+   "speed": 1.0,
+   "start": 6.702,
+   "end": 7.7,
+   "words": [
+    {
+     "w": "So",
+     "s": 6.737,
+     "e": 7.046
+    },
+    {
+     "w": "picture",
+     "s": 7.046,
+     "e": 7.355
+    },
+    {
+     "w": "this.",
+     "s": 7.355,
+     "e": 7.665
+    }
+   ],
+   "pause_before": 0.25,
+   "pause_before_reasons": [],
+   "pause_after": 0.0,
+   "pause_after_reasons": []
+  },
+  {
+   "i": 4,
+   "text": "At exactly noon, everyone on Earth drops their clippings into the ocean.",
+   "tag": "tension",
+   "speaker": "NARRATOR",
+   "speed": 1.0,
+   "start": 7.95,
+   "end": 12.195,
+   "words": [
+    {
+     "w": "At",
+     "s": 7.984,
+     "e": 8.332
+    },
+    {
+     "w": "exactly",
+     "s": 8.332,
+     "e": 8.68
+    },
+    {
+     "w": "noon,",
+     "s": 8.68,
+     "e": 9.028
+    },
+    {
+     "w": "everyone",
+     "s": 9.028,
+     "e": 9.376
+    },
+    {
+     "w": "on",
+     "s": 9.376,
+     "e": 9.724
+    },
+    {
+     "w": "Earth",
+     "s": 9.724,
+     "e": 10.072
+    },
+    {
+     "w": "drops",
+     "s": 10.072,
+     "e": 10.42
+    },
+    {
+     "w": "their",
+     "s": 10.42,
+     "e": 10.768
+    },
+    {
+     "w": "clippings",
+     "s": 10.768,
+     "e": 11.116
+    },
+    {
+     "w": "into",
+     "s": 11.116,
+     "e": 11.464
+    },
+    {
+     "w": "the",
+     "s": 11.464,
+     "e": 11.812
+    },
+    {
+     "w": "ocean.",
+     "s": 11.812,
+     "e": 12.16
+    }
+   ],
+   "pause_before": 0.25,
+   "pause_before_reasons": [],
+   "pause_after": 0.0,
+   "pause_after_reasons": []
+  },
+  {
+   "i": 5,
+   "text": "At once.",
+   "tag": "tension",
+   "speaker": "NARRATOR",
+   "speed": 1.0,
+   "start": 12.445,
+   "end": 12.979,
+   "words": [
+    {
+     "w": "At",
+     "s": 12.48,
+     "e": 12.712
+    },
+    {
+     "w": "once.",
+     "s": 12.712,
+     "e": 12.944
+    }
+   ],
+   "pause_before": 0.25,
+   "pause_before_reasons": [],
+   "pause_after": 0.0,
+   "pause_after_reasons": []
+  },
+  {
+   "i": 6,
+   "text": "That's roughly two hundred tonnes of keratin, hitting the water in the same second.",
+   "tag": "reveal",
+   "speaker": "NARRATOR",
+   "speed": 1.0,
+   "start": 14.829,
+   "end": 19.712,
+   "words": [
+    {
+     "w": "That's",
+     "s": 14.863,
+     "e": 15.207
+    },
+    {
+     "w": "roughly",
+     "s": 15.207,
+     "e": 15.551
+    },
+    {
+     "w": "two",
+     "s": 15.551,
+     "e": 15.895
+    },
+    {
+     "w": "hundred",
+     "s": 15.895,
+     "e": 16.239
+    },
+    {
+     "w": "tonnes",
+     "s": 16.239,
+     "e": 16.582
+    },
+    {
+     "w": "of",
+     "s": 16.582,
+     "e": 16.926
+    },
+    {
+     "w": "keratin,",
+     "s": 16.926,
+     "e": 17.27
+    },
+    {
+     "w": "hitting",
+     "s": 17.27,
+     "e": 17.614
+    },
+    {
+     "w": "the",
+     "s": 17.614,
+     "e": 17.958
+    },
+    {
+     "w": "water",
+     "s": 17.958,
+     "e": 18.302
+    },
+    {
+     "w": "in",
+     "s": 18.302,
+     "e": 18.646
+    },
+    {
+     "w": "the",
+     "s": 18.646,
+     "e": 18.989
+    },
+    {
+     "w": "same",
+     "s": 18.989,
+     "e": 19.333
+    },
+    {
+     "w": "second.",
+     "s": 19.333,
+     "e": 19.677
+    }
+   ],
+   "pause_before": 1.85,
+   "pause_before_reasons": [
+    "explicit_pause"
+   ],
+   "pause_after": 0.0,
+   "pause_after_reasons": []
+  },
+  {
+   "i": 7,
+   "text": "And the ocean does",
+   "tag": "aside",
+   "speaker": "NARRATOR",
+   "speed": 1.0,
+   "start": 19.962,
+   "end": 21.075,
+   "words": [
+    {
+     "w": "And",
+     "s": 19.997,
+     "e": 20.258
+    },
+    {
+     "w": "the",
+     "s": 20.258,
+     "e": 20.519
+    },
+    {
+     "w": "ocean",
+     "s": 20.519,
+     "e": 20.78
+    },
+    {
+     "w": "does",
+     "s": 20.78,
+     "e": 21.041
+    }
+   ],
+   "pause_before": 0.25,
+   "pause_before_reasons": [],
+   "pause_after": 0.0,
+   "pause_after_reasons": []
+  },
+  {
+   "i": 8,
+   "text": "absolutely nothing.",
+   "tag": "aside",
+   "speaker": "NARRATOR",
+   "speed": 1.0,
+   "start": 21.325,
+   "end": 22.497,
+   "words": [
+    {
+     "w": "absolutely",
+     "s": 21.36,
+     "e": 21.911
+    },
+    {
+     "w": "nothing.",
+     "s": 21.911,
+     "e": 22.462
+    }
+   ],
+   "pause_before": 0.25,
+   "pause_before_reasons": [],
+   "pause_after": 0.0,
+   "pause_after_reasons": []
+  },
+  {
+   "i": 9,
+   "text": "Which, if you've ever sent a long heartfelt text and got back \"k\", is a feeling you already know.",
+   "tag": "aside",
+   "speaker": "NARRATOR",
+   "speed": 1.0,
+   "start": 22.747,
+   "end": 28.442,
+   "words": [
+    {
+     "w": "Which,",
+     "s": 22.782,
+     "e": 23.078
+    },
+    {
+     "w": "if",
+     "s": 23.078,
+     "e": 23.374
+    },
+    {
+     "w": "you've",
+     "s": 23.374,
+     "e": 23.67
+    },
+    {
+     "w": "ever",
+     "s": 23.67,
+     "e": 23.966
+    },
+    {
+     "w": "sent",
+     "s": 23.966,
+     "e": 24.262
+    },
+    {
+     "w": "a",
+     "s": 24.262,
+     "e": 24.558
+    },
+    {
+     "w": "long",
+     "s": 24.558,
+     "e": 24.854
+    },
+    {
+     "w": "heartfelt",
+     "s": 24.854,
+     "e": 25.15
+    },
+    {
+     "w": "text",
+     "s": 25.15,
+     "e": 25.447
+    },
+    {
+     "w": "and",
+     "s": 25.447,
+     "e": 25.743
+    },
+    {
+     "w": "got",
+     "s": 25.743,
+     "e": 26.039
+    },
+    {
+     "w": "back",
+     "s": 26.039,
+     "e": 26.335
+    },
+    {
+     "w": "\"k\",",
+     "s": 26.335,
+     "e": 26.631
+    },
+    {
+     "w": "is",
+     "s": 26.631,
+     "e": 26.927
+    },
+    {
+     "w": "a",
+     "s": 26.927,
+     "e": 27.223
+    },
+    {
+     "w": "feeling",
+     "s": 27.223,
+     "e": 27.519
+    },
+    {
+     "w": "you",
+     "s": 27.519,
+     "e": 27.815
+    },
+    {
+     "w": "already",
+     "s": 27.815,
+     "e": 28.111
+    },
+    {
+     "w": "know.",
+     "s": 28.111,
+     "e": 28.408
+    }
+   ],
+   "pause_before": 0.25,
+   "pause_before_reasons": [],
+   "pause_after": 0.0,
+   "pause_after_reasons": []
+  },
+  {
+   "i": 10,
+   "text": "But two hundred tonnes doesn't just vanish.",
+   "tag": "tension",
+   "speaker": "NARRATOR",
+   "speed": 1.0,
+   "start": 28.692,
+   "end": 31.256,
+   "words": [
+    {
+     "w": "But",
+     "s": 28.727,
+     "e": 29.083
+    },
+    {
+     "w": "two",
+     "s": 29.083,
+     "e": 29.44
+    },
+    {
+     "w": "hundred",
+     "s": 29.44,
+     "e": 29.796
+    },
+    {
+     "w": "tonnes",
+     "s": 29.796,
+     "e": 30.152
+    },
+    {
+     "w": "doesn't",
+     "s": 30.152,
+     "e": 30.509
+    },
+    {
+     "w": "just",
+     "s": 30.509,
+     "e": 30.865
+    },
+    {
+     "w": "vanish.",
+     "s": 30.865,
+     "e": 31.221
+    }
+   ],
+   "pause_before": 0.25,
+   "pause_before_reasons": [],
+   "pause_after": 0.0,
+   "pause_after_reasons": []
+  },
+  {
+   "i": 11,
+   "text": "It sinks.",
+   "tag": "tension",
+   "speaker": "NARRATOR",
+   "speed": 1.0,
+   "start": 31.506,
+   "end": 32.097,
+   "words": [
+    {
+     "w": "It",
+     "s": 31.541,
+     "e": 31.802
+    },
+    {
+     "w": "sinks.",
+     "s": 31.802,
+     "e": 32.063
+    }
+   ],
+   "pause_before": 0.25,
+   "pause_before_reasons": [],
+   "pause_after": 0.0,
+   "pause_after_reasons": []
+  },
+  {
+   "i": 12,
+   "text": "And down there, something is waiting for it.",
+   "tag": "tension",
+   "speaker": "NARRATOR",
+   "speed": 1.0,
+   "start": 32.347,
+   "end": 34.969,
+   "words": [
+    {
+     "w": "And",
+     "s": 32.382,
+     "e": 32.701
+    },
+    {
+     "w": "down",
+     "s": 32.701,
+     "e": 33.02
+    },
+    {
+     "w": "there,",
+     "s": 33.02,
+     "e": 33.339
+    },
+    {
+     "w": "something",
+     "s": 33.339,
+     "e": 33.658
+    },
+    {
+     "w": "is",
+     "s": 33.658,
+     "e": 33.977
+    },
+    {
+     "w": "waiting",
+     "s": 33.977,
+     "e": 34.296
+    },
+    {
+     "w": "for",
+     "s": 34.296,
+     "e": 34.615
+    },
+    {
+     "w": "it.",
+     "s": 34.615,
+     "e": 34.934
+    }
+   ],
+   "pause_before": 0.25,
+   "pause_before_reasons": [],
+   "pause_after": 0.0,
+   "pause_after_reasons": []
+  }
+ ]
+}
