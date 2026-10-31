@@ -1,0 +1,47 @@
+name: Repair Bot
+on:
+  workflow_run:
+    workflows: [Pipeline, Setup, Learning Loop, Trend Scout, Monthly Brief]
+    types: [completed]
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+jobs:
+  repair:
+    if: github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_KEY }}
+      GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
+      SHEET_ID: ${{ secrets.SHEET_ID }}
+      G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
+      G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
+      G_REFRESH: ${{ secrets.G_REFRESH }}
+      OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+      GH_TOKEN: ${{ github.token }}
+      WI_WORK: rh
+      MAX_REPAIRS: "3"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: sudo apt-get update -y -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
+      - run: pip install -q "numpy>=1.26,<2.1" opencv-python-headless pillow soundfile requests pytest pyyaml
+      - name: Get the error
+        env:
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh run download "$RUN_ID" --repo "$REPO" --name "error-$RUN_ID" --dir err || gh run download "$RUN_ID" --repo "$REPO" --dir err || true
+          f=$(find err -name last_error.txt | head -1)
+          if [ -z "$f" ]; then gh run view "$RUN_ID" --repo "$REPO" --log-failed | tail -200 > last_error.txt; else cp "$f" last_error.txt; fi
+      - name: Skip non-code failures
+        id: k
+        run: |
+          if grep -qiE "credit is empty|images failed|quota|(sign-in failed \(|sheets |fal submit |claude |gemini |youtube (start|chunk) |reschedule failed |http |status[ :=]+)(401|403|429|500|502|503|504|529)\b|overloaded|rate limit|Google sign-in failed|timed out|policy risk|not public yet|uploadLimitExceeded|forbidden|monthly budget|budget cap|scout failed|all models failed|fact check|character voice|No space left|pre-flight|slot .* already has" last_error.txt; then echo "skip=1" >> $GITHUB_OUTPUT; fi
+      - name: Repair with Claude
+        if: steps.k.outputs.skip != '1'
+        run: python tools/repair.py

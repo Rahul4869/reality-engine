@@ -1,0 +1,52 @@
+name: Checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  guard_and_rehearsal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: sudo apt-get update -y -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
+      - run: pip install -q "numpy>=1.26,<2.1" opencv-python-headless pillow soundfile requests pytest pyyaml python-docx
+      - name: Restore code from Word copies (this job only, nothing is committed)
+        run: |
+          python - <<'EOF'
+          import glob, os, docx
+          n = 0
+          for d in glob.glob("**/*.docx", recursive=True):
+              if d.replace(os.sep, "/").split("/")[0] not in ("whatifs", "tools", "tests"): continue      # only the code folders
+              lines = [p.text for p in docx.Document(d).paragraphs]
+              with open(d[:-5] + ".py", "w", encoding="utf-8", newline="\n") as f:
+                  f.write("\n".join(lines))
+              os.remove(d); n += 1
+          print("restored", n, "files")
+          EOF
+      - name: Plan Guard
+        run: python tools/plan_guard.py
+      - name: Unit tests (hooks, research evidence, cut map, failure paths; no keys, no network)
+        run: python -m pytest tests -q
+      - name: Free rehearsal (fake AI, fake images, full pipeline)
+        env:
+          WI_FAKE: "1"
+          WI_SMALL: "1"
+          WI_WORK: rh
+        run: python -m whatifs.cli rehearsal
+      - name: Change-ready email with a one-click merge link (pull requests only, after every check above passed)
+        if: github.event_name == 'pull_request' && success()
+        env:
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+          G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
+          G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
+          G_REFRESH: ${{ secrets.G_REFRESH }}
+          OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: python -m whatifs.cli prready || true

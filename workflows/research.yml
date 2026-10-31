@@ -1,0 +1,26 @@
+name: Research Brief
+# Optional, manual only. The Pipeline already runs the research stage by itself when its newest brief is older than RESEARCH_MAX_AGE_DAYS.
+# Use this to look at a fresh brief without waiting for the next video. Costs: YouTube API quota (about 300 units) and one cheap AI call.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SHEET_ID: ${{ secrets.SHEET_ID }}
+      G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
+      G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
+      G_REFRESH: ${{ secrets.G_REFRESH }}
+      ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_KEY }}
+      GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
+      OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: pip install -q requests
+      - run: python -m whatifs.cli research
