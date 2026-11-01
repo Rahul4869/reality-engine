@@ -7,7 +7,7 @@ import os, re, sys, subprocess, json, time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from whatifs import prompts as P
 
-SECRET_ENVS = ("G_CLIENT_ID", "G_CLIENT_KEY", "G_REFRESH", "ANTHROPIC_KEY", "GEMINI_KEY", "FAL_KEY", "PEXELS_KEY", "META_PAGE_KEY",
+SECRET_ENVS = ("G_CLIENT_ID", "G_CLIENT_KEY", "G_REFRESH", "G_REFRESH_DRIVE", "ANTHROPIC_KEY", "GEMINI_KEY", "FAL_KEY", "PEXELS_KEY", "META_PAGE_KEY",
                "SHEET_ID", "GH_TOKEN", "GITHUB_TOKEN", "OWNER_EMAIL")
 # v8.3: files that guard money, quality and publishing are NEVER merged automatically, whatever the setting says: the owner (or Claude, with the owner) reads the change first.
 PROTECTED = ("whatifs/qc.py", "whatifs/governor.py", "whatifs/fixes.py", "whatifs/publish.py", "whatifs/episode.py", "whatifs/core.py", "whatifs/models.py",
