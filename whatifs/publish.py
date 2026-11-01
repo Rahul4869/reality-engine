@@ -1,7 +1,9 @@
 """whatifs/publish.py v8.5 - YouTube (resumable upload, scheduled publishAt, thumbnail, captions, playlist, AI label, title swap),
 Instagram Reels + Facebook Reels (Graph API), Google Drive archive, Gmail notices. All calls retried; failures never block the next episode."""
 from __future__ import annotations
-import os, re, json, time, base64, email.mime.text, email.mime.multipart
+import os, re, json, time, base64
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import requests
 from whatifs.core import gheaders, gdrive_headers, env, log, S, FAKE, retry, WORK
 
@@ -318,6 +320,5 @@ def email(subject, html, kind="essential"):
     return True
 
 def email_mime(to, subject, html):
-    m = email.mime.multipart.MIMEMultipart("alternative"); m["To"] = to; m["Subject"] = "[Reality Engine] " + subject
-    m.attach(email.mime.text.MIMEText(html, "html")); return m
-
+    m = MIMEMultipart("alternative"); m["To"] = to; m["Subject"] = "[Reality Engine] " + subject
+    m.attach(MIMEText(html, "html")); return m
