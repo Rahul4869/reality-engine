@@ -19,6 +19,7 @@ jobs:
       G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
       G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
       G_REFRESH: ${{ secrets.G_REFRESH }}
+      G_REFRESH_DRIVE: ${{ secrets.G_REFRESH_DRIVE }}
       OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
       GH_TOKEN: ${{ github.token }}
       WI_WORK: rh

@@ -14,6 +14,7 @@ jobs:
       G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
       G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
       G_REFRESH: ${{ secrets.G_REFRESH }}
+      G_REFRESH_DRIVE: ${{ secrets.G_REFRESH_DRIVE }}
       ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_KEY }}
       GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
       FAL_KEY: ${{ secrets.FAL_KEY }}
@@ -46,6 +47,7 @@ jobs:
       G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
       G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
       G_REFRESH: ${{ secrets.G_REFRESH }}
+      G_REFRESH_DRIVE: ${{ secrets.G_REFRESH_DRIVE }}
       ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_KEY }}
       GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
       FAL_KEY: ${{ secrets.FAL_KEY }}
@@ -97,6 +99,7 @@ jobs:
       G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
       G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
       G_REFRESH: ${{ secrets.G_REFRESH }}
+      G_REFRESH_DRIVE: ${{ secrets.G_REFRESH_DRIVE }}
       ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_KEY }}
       GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
       FAL_KEY: ${{ secrets.FAL_KEY }}
