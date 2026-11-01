@@ -18,24 +18,29 @@ def parse_iso(s: str) -> dt.datetime | None:
 def env(name: str, default: str = "") -> str: return (os.environ.get(name) or default).strip()
 
 # ---------------- Google sign-in (one long-life code, refreshed automatically) ----------------
-_gtok = {"v": None, "exp": 0}
+_gtok = {"main": {"v": None, "exp": 0, "scope": ""}, "drive": {"v": None, "exp": 0, "scope": ""}}
+# v8.9.2: Google refuses drive.file in the same consent as the YouTube permissions, so Drive has its own key (G_REFRESH_DRIVE).
+# A G_REFRESH made before that rule (it already holds drive.file) keeps working for Drive when G_REFRESH_DRIVE is not set.
 GOOGLE_SCOPES = ["https://www.googleapis.com/auth/youtube",
                  "https://www.googleapis.com/auth/youtube.upload",
                  "https://www.googleapis.com/auth/youtube.force-ssl",
                  "https://www.googleapis.com/auth/yt-analytics.readonly",
                  "https://www.googleapis.com/auth/spreadsheets",
-                 "https://www.googleapis.com/auth/drive.file",
                  "https://www.googleapis.com/auth/gmail.send"]
-def google_access() -> str:
-    if _gtok["v"] and time.time() < _gtok["exp"] - 120: return _gtok["v"]
+DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive.file"]
+def google_access(kind: str = "main") -> str:
+    t = _gtok[kind]
+    if t["v"] and time.time() < t["exp"] - 120: return t["v"]
+    rt = (env("G_REFRESH_DRIVE") or env("G_REFRESH")) if kind == "drive" else env("G_REFRESH")
     data = {"client_id": env("G_CLIENT_ID"), f"client_{SC}": env("G_CLIENT_KEY"),
-            f"refresh_{TK}": env("G_REFRESH"), "grant_type": f"refresh_{TK}"}
+            f"refresh_{TK}": rt, "grant_type": f"refresh_{TK}"}
     r = requests.post(f"https://oauth2.googleapis.com/{TK}", data=data, timeout=30)
     if r.status_code != 200:
-        raise RuntimeError(f"Google sign-in failed ({r.status_code}): {r.text[:300]}")
-    j = r.json(); _gtok["v"] = j[f"access_{TK}"]; _gtok["exp"] = time.time() + int(j.get("expires_in", 3600))
-    return _gtok["v"]
+        raise RuntimeError(f"Google {'Drive ' if kind == 'drive' else ''}sign-in failed ({r.status_code}): {r.text[:300]}")
+    j = r.json(); t["v"] = j[f"access_{TK}"]; t["exp"] = time.time() + int(j.get("expires_in", 3600)); t["scope"] = j.get("scope", "")
+    return t["v"]
 def gheaders() -> dict: return {"Authorization": "Bearer " + google_access()}
+def gdrive_headers() -> dict: return {"Authorization": "Bearer " + google_access("drive")}
 
 # ---------------- storage ----------------
 TABS = {
@@ -401,7 +406,7 @@ def set_setting(key, value):
 # ---------------- logging ----------------
 _logbuf, _lock = [], threading.Lock()
 JOB = {"name": "job", "episode": ""}
-_SECRET_ENVS = ("G_CLIENT_KEY", "G_REFRESH", "ANTHROPIC_KEY", "GEMINI_KEY", "FAL_KEY", "PEXELS_KEY", "META_PAGE_KEY", "G_CLIENT_ID", "SHEET_ID")
+_SECRET_ENVS = ("G_CLIENT_KEY", "G_REFRESH", "G_REFRESH_DRIVE", "ANTHROPIC_KEY", "GEMINI_KEY", "FAL_KEY", "PEXELS_KEY", "META_PAGE_KEY", "G_CLIENT_ID", "SHEET_ID")
 def scrub(text):
     """Never let a key reach a log, the Sheet, an email or an error file."""
     s = str(text)

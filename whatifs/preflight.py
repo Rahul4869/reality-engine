@@ -28,9 +28,13 @@ def run(need_voice=True):
     if need_voice:
         try: import kokoro, soundfile; add("voice engine", True, "Kokoro importable")
         except Exception as e: add("voice engine", False, scrub(e)[:120])
+    try:                                               # v8.9.2: Drive has its own Google key (G_REFRESH_DRIVE); a warning, never a block
+        from whatifs.core import google_access, _gtok; google_access("drive"); dok = "drive.file" in _gtok["drive"]["scope"]
+    except Exception: dok = False
+    add("drive sign-in", dok, "Drive allowed" if dok else "no Drive permission: run Google Sign-in link 2 and save G_REFRESH_DRIVE", critical=False)
     try:                                               # v8.3: Drive space (the archive and the held-video bundles live there); a warning, never a block
-        from whatifs.core import gheaders; import requests
-        q = requests.get("https://www.googleapis.com/drive/v3/about?fields=storageQuota", headers=gheaders(), timeout=20).json().get("storageQuota", {})
+        from whatifs.core import gdrive_headers; import requests
+        q = requests.get("https://www.googleapis.com/drive/v3/about?fields=storageQuota", headers=gdrive_headers(), timeout=20).json().get("storageQuota", {})
         if q.get("limit"):
             left = (int(q["limit"]) - int(q.get("usage", 0))) / 1e9
             add("drive space", left >= 3.0, f"{left:.1f} GB free in Drive (need 3)", critical=False)

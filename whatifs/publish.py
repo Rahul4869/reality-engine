@@ -3,7 +3,7 @@ Instagram Reels + Facebook Reels (Graph API), Google Drive archive, Gmail notice
 from __future__ import annotations
 import os, re, json, time, base64, email.mime.text, email.mime.multipart
 import requests
-from whatifs.core import gheaders, env, log, S, FAKE, retry, WORK
+from whatifs.core import gheaders, gdrive_headers, env, log, S, FAKE, retry, WORK
 
 YT = "https://www.googleapis.com/youtube/v3/"
 UP = "https://www.googleapis.com/upload/youtube/v3/"
@@ -174,17 +174,17 @@ def _fake_drive(): d = os.path.join(WORK, "_drive"); os.makedirs(d, exist_ok=Tru
 def drive_upload(path, name, public=False):
     if FAKE:      # rehearsal: a local folder stands in for Drive, so checkpoints and fixes can be tested end to end
         import shutil; shutil.copyfile(path, os.path.join(_fake_drive(), name)); return name, "https://example.invalid/" + name
-    h = gheaders(); meta = {"name": name}
+    h = gdrive_headers(); meta = {"name": name}
     if S("DRIVE_FOLDER_ID"): meta["parents"] = [S("DRIVE_FOLDER_ID")]
     mime = ("video/mp4" if path.endswith(".mp4") else "image/jpeg" if path.endswith(".jpg") else "audio/mpeg" if path.endswith(".mp3")
             else "text/plain" if path.endswith((".srt", ".md")) else "application/json")
     h.update({"Content-Type": "application/json; charset=UTF-8", "X-Upload-Content-Type": mime})
     r = requests.post("https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable", headers=h, json=meta, timeout=60)
     r.raise_for_status()
-    rr = requests.put(r.headers["Location"], headers={"Authorization": gheaders()["Authorization"]}, data=open(path, "rb"), timeout=1800)
+    rr = requests.put(r.headers["Location"], headers={"Authorization": gdrive_headers()["Authorization"]}, data=open(path, "rb"), timeout=1800)
     rr.raise_for_status(); fid = rr.json()["id"]
     if public:
-        requests.post(f"https://www.googleapis.com/drive/v3/files/{fid}/permissions", headers=gheaders(), json={"role": "reader", "type": "anyone"}, timeout=30)
+        requests.post(f"https://www.googleapis.com/drive/v3/files/{fid}/permissions", headers=gdrive_headers(), json={"role": "reader", "type": "anyone"}, timeout=30)
     return fid, f"https://drive.usercontent.google.com/download?id={fid}&export=download&confirm=t"
 
 def drive_download(fid, path):
@@ -192,7 +192,7 @@ def drive_download(fid, path):
         import shutil; src = os.path.join(_fake_drive(), str(fid))
         if not os.path.exists(src): raise RuntimeError("fake mode: no such drive file")
         shutil.copyfile(src, path); return path
-    with requests.get(f"https://www.googleapis.com/drive/v3/files/{fid}?alt=media", headers=gheaders(), stream=True, timeout=600) as r:
+    with requests.get(f"https://www.googleapis.com/drive/v3/files/{fid}?alt=media", headers=gdrive_headers(), stream=True, timeout=600) as r:
         r.raise_for_status()
         with open(path, "wb") as f:
             for c in r.iter_content(1 << 20): f.write(c)
@@ -203,15 +203,15 @@ def drive_delete(fid):
         try: os.remove(os.path.join(_fake_drive(), str(fid)))
         except OSError: pass
         return
-    try: requests.delete(f"https://www.googleapis.com/drive/v3/files/{fid}", headers=gheaders(), timeout=30)
+    try: requests.delete(f"https://www.googleapis.com/drive/v3/files/{fid}", headers=gdrive_headers(), timeout=30)
     except Exception: pass
 
 def drive_private(fid):
     if FAKE: return
     try:
-        p = requests.get(f"https://www.googleapis.com/drive/v3/files/{fid}/permissions", headers=gheaders(), timeout=30).json()
+        p = requests.get(f"https://www.googleapis.com/drive/v3/files/{fid}/permissions", headers=gdrive_headers(), timeout=30).json()
         for x in p.get("permissions", []):
-            if x.get("type") == "anyone": requests.delete(f"https://www.googleapis.com/drive/v3/files/{fid}/permissions/{x['id']}", headers=gheaders(), timeout=30)
+            if x.get("type") == "anyone": requests.delete(f"https://www.googleapis.com/drive/v3/files/{fid}/permissions/{x['id']}", headers=gdrive_headers(), timeout=30)
     except Exception: pass
 
 # ---------------- Instagram + Facebook ----------------
