@@ -70,35 +70,57 @@ def parse_json(text):
             except Exception: pass
     raise ValueError(f"model did not return valid JSON (length {len(t)}; content not logged)")
 
+# v8.9.3: Claude Sonnet 5.5 / Opus 5.5 (and Gemini thinking models) think before answering, and the thinking shares the output limit with the answer.
+# Every caller's max_tokens is sized for the ANSWER, so this much extra room is added on top. It is only a ceiling: unused room costs nothing.
+THINK_ROOM = 16000
+OUT_CEILING = 64000
+_NO_SAMPLING = set()              # models that rejected temperature once: not sent to them again in this job (saves a refused request per call)
+
+class Declined(Exception):
+    """The model declined (stop_reason 'refusal'). Asking the same model again would be paid twice for the same answer: the next model is used instead."""
+
 def _claude(role, system, prompt, max_tokens, temperature, search, episode):
     mid = model(role)
     if not mid: raise RuntimeError(f"no {role} model")
-    body = {"model": mid, "max_tokens": max_tokens, "temperature": temperature,
+    room = min(OUT_CEILING, int(max_tokens) + THINK_ROOM)
+    body = {"model": mid, "max_tokens": room, "temperature": temperature,
             "system": system,
             "messages": [{"role": "user", "content": prompt}]}
+    if mid in _NO_SAMPLING: body.pop("temperature")
     if search: body["tools"] = [{"type": S("ANTH_SEARCH_TOOL") or "web_search_20250305", "name": "web_search", "max_uses": 4}]
-    r = requests.post(ANTH + "messages", headers=AH(), json=body, timeout=900)
-    if r.status_code == 400 and "temperature" in r.text:
-        body.pop("temperature"); r = requests.post(ANTH + "messages", headers=AH(), json=body, timeout=900)
+    def post(): return requests.post(ANTH + "messages", headers=AH(), json=body, timeout=900)
+    r = post()
+    if r.status_code == 400 and "temperature" in body and re.search(r"temperature|top_p|top_k|sampling", r.text, re.I):
+        _NO_SAMPLING.add(mid); body.pop("temperature"); r = post()          # Opus 5.5 / Sonnet 5.5 refuse temperature
+    if r.status_code == 400 and body["max_tokens"] != max_tokens and "max_tokens" in r.text:
+        body["max_tokens"] = room = int(max_tokens); r = post()            # an older model with a smaller output limit: the caller's own size
     if r.status_code == 400 and search and "tool" in r.text.lower():
         log("Claude web-search tool version rejected - answering without search (update ANTH_SEARCH_TOOL)", "WARN", episode)
-        body.pop("tools", None); r = requests.post(ANTH + "messages", headers=AH(), json=body, timeout=900)
-    if r.status_code != 200: raise RuntimeError(f"Claude {r.status_code}: {r.text[:300]}")
-    j = r.json(); u = j.get("usage", {})
-    pin, pout = (S("PRICE_OPUS_IN", float), S("PRICE_OPUS_OUT", float)) if role == "opus" else (S("PRICE_SONNET_IN", float), S("PRICE_SONNET_OUT", float))
-    usd = (u.get("input_tokens", 0) * pin + u.get("cache_creation_input_tokens", 0) * pin * 1.25 +
-           u.get("cache_read_input_tokens", 0) * pin * 0.1 + u.get("output_tokens", 0) * pout) / 1e6
-    usd += (u.get("server_tool_use") or {}).get("web_search_requests", 0) * 0.01
-    cost(f"claude_{role}", "anthropic", u.get("output_tokens", 0), usd, episode)
-    txt = "".join(b.get("text", "") for b in j.get("content", []) if b.get("type") == "text")
-    if j.get("stop_reason") == "max_tokens": raise Truncated(f"Claude {role} reply was cut at {max_tokens} tokens")
+        body.pop("tools", None); r = post()
+    txt, content = "", []
+    for hop in range(4):                                                   # a long web search can pause the turn: it is continued, at most 3 times
+        if r.status_code != 200: raise RuntimeError(f"Claude {r.status_code}: {r.text[:300]}")
+        j = r.json(); u = j.get("usage", {})
+        pin, pout = (S("PRICE_OPUS_IN", float), S("PRICE_OPUS_OUT", float)) if role == "opus" else (S("PRICE_SONNET_IN", float), S("PRICE_SONNET_OUT", float))
+        usd = (u.get("input_tokens", 0) * pin + u.get("cache_creation_input_tokens", 0) * pin * 1.25 +
+               u.get("cache_read_input_tokens", 0) * pin * 0.1 + u.get("output_tokens", 0) * pout) / 1e6      # output_tokens includes the thinking
+        usd += (u.get("server_tool_use") or {}).get("web_search_requests", 0) * 0.01
+        cost(f"claude_{role}", "anthropic", u.get("output_tokens", 0), usd, episode)
+        txt += "".join(b.get("text", "") for b in j.get("content", []) if b.get("type") == "text")      # thinking blocks are skipped
+        stop = j.get("stop_reason")
+        if stop != "pause_turn" or hop == 3: break
+        content += j.get("content", [])
+        body["messages"] = [{"role": "user", "content": prompt}, {"role": "assistant", "content": content}]; r = post()
+    if stop == "max_tokens": raise Truncated(f"Claude {role} reply was cut at {room} tokens")
+    if stop == "refusal": raise Declined(f"Claude {role} declined this request")
+    if stop in ("pause_turn", "model_context_window_exceeded"): raise RuntimeError(f"Claude {role} stopped early ({stop})")
     return txt
 
 def _gemini(role, system, prompt, max_tokens, temperature, search, want_json, images=None):
     mid = model(role) or model("gem_flash")
     body = {"systemInstruction": {"parts": [{"text": system}]},
             "contents": [{"role": "user", "parts": [{"text": prompt}] + [{"inlineData": {"mimeType": m, "data": b}} for m, b in (images or [])]}],
-            "generationConfig": {"temperature": temperature, "maxOutputTokens": max_tokens}}
+            "generationConfig": {"temperature": temperature, "maxOutputTokens": min(OUT_CEILING, int(max_tokens) + THINK_ROOM)}}      # v8.9.3: thinking shares this limit
     if search: body["tools"] = [{"google_search": {}}]
     elif want_json: body["generationConfig"]["responseMimeType"] = "application/json"
     r = requests.post(GEM + f"models/{mid}:generateContent", headers={"x-goog-api-key": env("GEMINI_KEY")}, json=body, timeout=600)
@@ -110,7 +132,7 @@ def _gemini(role, system, prompt, max_tokens, temperature, search, want_json, im
         out_tok = int(u.get("candidatesTokenCount", 0) or 0) + int(u.get("thoughtsTokenCount", 0) or 0)
         cost("gemini_" + ("pro" if pro else "flash"), "google", out_tok, (int(u.get("promptTokenCount", 0) or 0) * pin + out_tok * pout) / 1e6)
     except Exception: pass
-    if str(c.get("finishReason", "")).upper() == "MAX_TOKENS": raise Truncated(f"Gemini {role} reply was cut at {max_tokens} tokens")
+    if str(c.get("finishReason", "")).upper() == "MAX_TOKENS": raise Truncated(f"Gemini {role} reply was cut at {body['generationConfig']['maxOutputTokens']} tokens")
     return "".join(p.get("text", "") for p in c.get("content", {}).get("parts", []))
 
 MAINTENANCE_JOBS = ("trends", "learn", "brief", "research", "money", "setup", "voices")     # may use the small reserve above the cap (policy guard, learning)
@@ -143,6 +165,8 @@ def ask(role, system, prompt, want_json=True, max_tokens=6000, temperature=0.8, 
                 res = parse_json(txt) if want_json else txt
                 if (prov, r) != first and role in ("opus", "sonnet", "critic"): note_degraded(f"{role} answered by backup model {r}")
                 return res
+            except Declined as e:
+                last = e; log(f"{role} via {r}: {e} - trying the next model", "WARN", episode); break
             except Truncated as e:
                 last = e; log(f"{role} via {r}: {e} - retrying once with more room", "WARN", episode)
                 mt = min(32000, int(mt * 1.7)); continue      # a cut reply is a sizing problem, not a model problem: same model, bigger limit, no sleep
@@ -177,8 +201,15 @@ def ask_many(jobs, workers=4):
 def selftest():
     m = discover_models()
     status("models_found", bool(m.get("sonnet") and m.get("gem_pro")), json.dumps(m))
-    for name, fn in (("anthropic_works", lambda: _claude("sonnet", "Reply OK.", "OK?", 5, 0, False, "selftest")),
-                     ("gemini_works", lambda: _gemini("gem_flash", "Reply {\"ok\":true}", "ping", 50, 0, False, True))):
+    def claude_both():                         # v8.9.3: both Claude roles the pipeline uses; the answer room no longer has to hold the thinking too
+        out = []
+        for role in ("sonnet", "opus"):
+            t = _claude(role, "Reply with the single word OK.", "OK?", 200, 0, False, "selftest")
+            if not t.strip(): raise RuntimeError(f"Claude {role} ({model(role)}) answered with no text")
+            out.append(f"{role} {model(role)}: {t.strip()[:20]}")
+        return "; ".join(out)
+    for name, fn in (("anthropic_works", claude_both),
+                     ("gemini_works", lambda: _gemini("gem_flash", "Reply {\"ok\":true}", "ping", 200, 0, False, True))):
         try: t = fn(); status(name, bool(t), t[:120])
         except Exception as e: status(name, False, str(e)[:300])
 

@@ -15,12 +15,23 @@ def fal_run(model_id, args, timeout=900):
     j = r.json(); st_url, res_url = j.get("status_url"), j.get("response_url")
     t0 = time.time()
     while time.time() - t0 < timeout:
-        s = requests.get(st_url, headers=FH(), timeout=30).json()
+        try: s = requests.get(st_url, headers=FH(), timeout=30).json()
+        except (requests.RequestException, ValueError) as e:          # v8.9.3: one bad status answer no longer abandons a job that is already paid for
+            log(f"fal status check failed ({str(e)[:120]}) - asking again", "WARN"); time.sleep(5); continue
         if s.get("status") == "COMPLETED": break
         if s.get("status") in ("FAILED", "ERROR"): raise RuntimeError(f"fal failed: {s}")
         time.sleep(3)
     else: raise RuntimeError("fal timeout")
-    return requests.get(res_url, headers=FH(), timeout=60).json()
+    res = None
+    for a in range(3):
+        try:
+            res = requests.get(res_url, headers=FH(), timeout=60)
+            if res.status_code < 500: break
+        except requests.RequestException as e: log(f"fal result fetch failed ({str(e)[:120]})", "WARN")
+        time.sleep(5 * (a + 1))
+    if res is None or res.status_code >= 400:                         # v8.9.3: a failed generation answers here with an error, not with images
+        raise RuntimeError(f"fal result {getattr(res, 'status_code', 'unreachable')}: {(res.text if res is not None else '')[:300]}")
+    return res.json()
 
 def _dl(url, path):
     with requests.get(url, stream=True, timeout=300) as r:
