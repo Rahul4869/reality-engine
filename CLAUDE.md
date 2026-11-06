@@ -4,10 +4,10 @@ You are the code fixer for **Reality Engine**, a fully automated faceless YouTub
 The owner is not technical. Talk plainly, short answers, one decision at a time. The owner discusses an idea with you, you agree on it together,
 then YOU implement it end to end. The owner's only action is the merge click (email link or the green Merge button on the pull request).
 
-The locked rules are in `docs/KERNEL.md` (rule numbers K1-K78). Quote the K# when you rely on one. A rule changes only when the owner says "AMEND K#".
+The locked rules are in `docs/KERNEL.md` (rule numbers K1-K88). Quote the K# when you rely on one. A rule changes only when the owner says "AMEND K#".
 
 ## Hard constraints (never break, never "temporarily")
-1. Money: **₹3,500 per month TOTAL**, everything included (retries, failures, repair runs, research). Production stops ₹100 below the cap,
+1. Money: **₹4,000 per month TOTAL** (v8.10; Gemini TTS and thinking tokens included), everything included (retries, failures, repair runs, research). Production stops ₹100 below the cap,
    maintenance at the cap (`whatifs/governor.py`, K21, K36). Any new paid call must be logged with `core.cost`, counted in `episode.est_cost_inr`
    / `governor.min_episode_cost_inr`, and shown in a per-video and per-month cost table in your pull request.
 2. Zero manual work for the owner after setup. If a manual step is ever agreed, it must be ONE click from an email (copy the FIX / MERGE patterns).
@@ -42,8 +42,15 @@ After the merge, the next half-hourly Pipeline run uses the new code. Nothing re
 - **Swap an AI tool**: image/clip models are Settings cells (`FAL_STILL_MODEL`, `FAL_PREMIUM_MODEL`, `FAL_LIVING_MODEL`, `FAL_HERO_MODEL`) with price cells
   (`PRICE_*`). Text models are discovered live (`models.discover_models`, `models.CHAINS`). A new provider = a call function with cost logging,
   a place in `CHAINS`, a pre-flight check (`preflight.py`), a Settings switch, fake replies (`fakes.py`), tests. Verify prices on the provider's page.
-- **Voices**: `episode.BLENDS` (Director A-D) and `data.GUESTS` (rotating Curious One). Clear, single dominant Kokoro voices only. After a change,
-  run the Voices workflow so the owner can listen.
+- **Text models (v8.11)**: route a room role by its job in `models.ROUTES` (never a hard-coded model name); pass the system prompt as a `prompts.Packed`
+  (GLOBAL / EPISODE / ROLE) or a HOUSE-based string so it is cached; calls that share a prefix must keep the same role (same model + effort). Check Cache_Stats.
+- **v9.1 features**: gate every new feature with `v91.on(flag)` and wrap it in `v91.guard(flag, episode)`; add the flag to V91_FLAGS in tests/test_v91_matrix.py; keep tests/golden (v9 frames, v9 paid calls, v9 Sheet schema) unchanged unless a change is intended and reported.
+- **v9.1 features**: gate every v9.1 feature with `v91.on(FLAG)` and wrap it in `v91.guard(FLAG, episode)`; it must never add a paid call unless its own flag is on (tests/test_v91_paidcalls.py) and must leave the v9 pixels untouched when off (tests/golden). Atmosphere work belongs in `atmosphere.py` at 1/8 resolution (performance budget).
+- **v9 trial format**: the Show Plan is part of the Showrunner's JSON (never a new AI role); validate it with `show.validate`; show tags are data (voice.Unit.show / timeline "show"),
+  never spoken; render devices live in `showfx.py` (code only); community text is untrusted; every new paid step needs a Settings flag, an estimator line
+  (`costguard.estimate_lines`), a Cost_Log item, bounded retries and a test. SHOW_MODE = off must reproduce v8.11.
+- **Voices**: v8.10 = Gemini TTS with the Cast tab (`whatifs/cast.py`, `whatifs/tts_gemini.py`); Kokoro `episode.BLENDS` / `data.GUESTS` are the fallback.
+  After a change, run the Voices workflow so the owner can listen (it also refreshes the Voice_Check tab).
 - **Look and motion**: `STYLE_LOCK` (Settings), `data.THUMB_STYLE`, `data.ATMOS` / `LIVING_MOTION`, `render.MOVES_HIGH` / `MOVES_CALM`, `CAMERA_MOTION`.
 - **Premium tier (future)**: each draw records `tier` ("public"). When the channel is eligible for memberships, research the CURRENT YouTube API
   (members-only visibility may not be settable by API; then propose the smallest one-click owner step). Plan: a `PREMIUM_EVERY` Setting, a separate
