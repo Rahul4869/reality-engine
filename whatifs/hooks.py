@@ -83,7 +83,7 @@ def combine(sc):
 def _generate(script, spine, n, avoid, ask_fn, episode):
     from whatifs import prompts as P
     av = ("Do not repeat or rephrase these rejected lines: " + json.dumps(avoid)) if avoid else ""
-    out = ask_fn("sonnet", P.fill(P.HOOKS, n=n, script=_script_text(script)[:24000], spine=json.dumps(spine or {}, ensure_ascii=False)[:2500], avoid=av),
+    out = ask_fn("hooks", P.fill(P.HOOKS, n=n, script=_script_text(script)[:24000], spine=json.dumps(spine or {}, ensure_ascii=False)[:2500], avoid=av),
                  "Write the opening lines now.", episode=episode, fake_key="hooks", temperature=0.9, max_tokens=3000)
     res = []
     for c in (out.get("candidates") if isinstance(out, dict) else None) or []:

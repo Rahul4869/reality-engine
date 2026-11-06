@@ -1,4 +1,4 @@
-"""whatifs/cli.py v8.9 - entry point for every GitHub workflow.  python -m whatifs.cli <command>"""
+"""whatifs/cli.py v8.10 - entry point for every GitHub workflow.  python -m whatifs.cli <command>"""
 import sys, os, json, traceback
 from whatifs.core import JOB, log, flush_log
 
@@ -52,6 +52,14 @@ def main():
             res = fix_held(m.group(1)); print(json.dumps({k: res.get(k) for k in ("ok", "held", "episode", "yt", "problems")}, default=str))
         elif cmd == "prready":                                            # v8.9: change-ready email with a one-click merge link
             from whatifs.manage import pr_ready; pr_ready()
+        elif cmd == "preview":                                            # v8.10: Script Preview (scout + writers' room only, emailed as a DRAFT)
+            from whatifs.preview import run as pv; print(json.dumps(pv(), default=str)[:300])
+        elif cmd == "sheets":                                             # v9: the one-time character sheets (manual workflow only, lifetime image cap)
+            from whatifs.sheets import run as sh; print(json.dumps(sh(), default=str))
+        elif cmd == "previewdecide":
+            from whatifs.preview import decide; print(decide(sys.argv[2] if len(sys.argv) > 2 else ""))
+        elif cmd == "voicecheck":                                         # v8.10: which Gemini voices this key can use
+            from whatifs.tts_gemini import voice_check; print(voice_check())
         elif cmd == "models":
             from whatifs.models import discover_models; print(discover_models())
         elif cmd == "rehearsal":

@@ -185,4 +185,16 @@ def full_check(c):
     run = reuse_runs(c["shots"], c.get("own", set())); info["max_reuse_run"] = run
     if run > S("FREE_SHOT_MAX_RUN", int) + 2: probs.append(problem("reuse_run", f"{run} shots in a row show the same picture", "paid"))
     vp, vi = vision_check(c["master"], c["units"], c["shots"], c.get("episode", "")); probs += vp; info.update(vi)
+    if c.get("show_plan"):                                                    # v9: the trial devices, measured on the voiced timeline and the master
+        from whatifs import showfx as SFX
+        sq = SFX.show_qc(c["units"], c["show_plan"], c.get("teacups"))                    # targets: reported, never a held video (no skipped slots)
+        info["show_targets"] = [f"{code}: {det}" for code, det in sq]
+        if sq:
+            from whatifs.core import note_degraded
+            note_degraded("show targets missed: " + "; ".join(code for code, _ in sq))
+        if c.get("atmosphere") is not None:                                  # v9.1: the PULSE caps, re-checked on what was drawn (a failure HOLDS the video)
+            from whatifs import atmosphere as AT
+            for code, det in AT.pulse_qc(c["atmosphere"]): probs.append(problem(code, det, "none"))
+        if S("PHOTOSENSITIVITY_QC_ON", bool):
+            for code, det, t in SFX.photosensitivity(c["master"]): probs.append(problem(code, det, "none", t=t))
     return {"ok": not probs, "problems": probs, "info": info}

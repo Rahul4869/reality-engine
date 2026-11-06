@@ -152,3 +152,94 @@ def texture(kind, sec, seed="", sr=48000):
     f = min(int(0.25 * sr), m // 3)
     if f > 1: ramp = np.linspace(0, 1, f, dtype=np.float32)[:, None]; out[:f] *= ramp; out[-f:] *= ramp[::-1]
     return out.astype(np.float32)
+
+# =====================================================================================================================================
+# v8.10 immersive layers (SOUND_IMMERSIVE_ON; all code-generated = original, free, no licence risk): ambient beds per scene, close-mic textures under key
+# lines, tactile ASMR-style foley at key moments, the impact recipe, a stereo Doppler pass for POV rushes. The voice always stays on top (the mixer ducks
+# every layer under it) and the master is loudness-normalised as before.
+# =====================================================================================================================================
+AMBIENCE = ("wind", "hum", "rumble", "rain", "crackle", "drip")
+FOLEY = ("creak", "fabric", "tap")
+AMB_LEVEL = 0.022          # a low-level bed: felt more than heard
+CLOSE_LEVEL = 0.03
+FOLEY_LEVEL = 0.06
+
+def _ambience_of(text):
+    k = guess(text)
+    return k if k in AMBIENCE else None
+
+def immersive(shots, units, total, seed=""):
+    """Design additions: ambience [(kind, a, b)] per scene (>= 25 s, a scene changes when what we see changes), close [(kind, a, b)] under [close] / whisper /
+    hushed lines, foley [(kind, t)] at reveals and POV moments (>= 20 s apart, at most 8), impacts [t] (the impact recipe also shapes the bed)."""
+    total = float(total); n = min(len(shots), len(units)); rng = np.random.default_rng(_seed(f"{seed}|amb"))
+    amb, cur, start = [], None, 0.0
+    for i in range(n):
+        k = _ambience_of(str(units[i].get("text", "")) + " " + str(shots[i].get("prompt") or "")) or cur or AMBIENCE[int(rng.integers(0, 2))]
+        t = float(units[i]["start"])
+        if cur is None: cur, start = k, 0.0
+        elif k != cur and t - start >= 25.0: amb.append((cur, start, t)); cur, start = k, t
+    if cur: amb.append((cur, start, total))
+    close = []
+    for u in units:
+        c = set(u.get("curve") or [])
+        if u.get("tag") == "close" or c & {"whisper", "hushed"}:
+            close.append(("tick" if len(close) % 2 else "drip", float(u["start"]), float(u.get("end", u["start"])) + 0.4))
+    foley, last = [], -99.0
+    for i in range(n):
+        t = float(units[i]["start"])
+        if (units[i].get("tag") == "reveal" or shots[i].get("pov") or shots[i].get("pov_fx")) and t - last >= 20.0 and len(foley) < 8:
+            foley.append((FOLEY[len(foley) % len(FOLEY)], max(0.0, t - 0.15))); last = t
+    impacts = [float(units[i]["start"]) for i in range(n) if shots[i].get("pov_fx") == "impact_shake"][:3]
+    return {"ambience": amb, "close": close[:8], "foley": foley, "impacts": impacts}
+
+def impact_gain(t, impacts):
+    """Bed + texture gain around each impact: 1-2 beats of near-silence before it, a deep hole after it (ringing time), a slow recovery."""
+    g = np.ones_like(t, dtype=np.float32)
+    for p in impacts:
+        g = g * np.interp(t, [p - 1.3, p - 1.0, p - 0.02, p + 0.3, p + 4.0, p + 7.0], [1.0, 0.04, 0.04, 0.2, 0.25, 1.0]).astype(np.float32)
+    return g
+
+def foley(kind, seed="", sr=48000):
+    """Tactile, close sounds (stereo, peak 1): a wooden/metal creak, a fabric brush, a fingertip tap."""
+    rng = np.random.default_rng(_seed(f"{seed}|{kind}"))
+    if kind == "creak":
+        m = int(0.9 * sr); t = np.arange(m) / sr; f = 140 + 60 * np.sin(2 * np.pi * 0.9 * t) + rng.uniform(-10, 10)
+        x = np.sign(np.sin(2 * np.pi * np.cumsum(f) / sr)) * 0.3 + rng.standard_normal(m) * 0.15
+        x = x * (np.sin(np.pi * t / t[-1]) ** 2); x = _smooth(x.astype(np.float32), 3)
+    elif kind == "fabric":
+        m = int(0.6 * sr); t = np.arange(m) / sr; nz = rng.standard_normal(m).astype(np.float32)
+        x = (nz - _smooth(nz, 8)) * (np.sin(np.pi * t / t[-1]) ** 1.5)
+    else:
+        m = int(0.18 * sr); t = np.arange(m) / sr
+        x = (np.sin(2 * np.pi * 420 * t) * np.exp(-t * 60) + rng.standard_normal(m) * np.exp(-t * 220) * 0.4)
+    x = x.astype(np.float32); x /= (np.abs(x).max() + 1e-9); pan = float(rng.uniform(0.3, 0.7))
+    return np.stack([x * (1 - pan) * 2, x * pan * 2], 1).astype(np.float32) / 2
+
+def impact_layers(seed="", sr=48000, pal=1.0):
+    """The impact recipe's sounds, stereo, starting AT the impact: boom + sub drop, then high ringing + a muffled heartbeat + one breath (about 4.5 s).
+    The rumble + riser before it and the near-silence are made by the mixer (impact_run_up / impact_gain)."""
+    rng = np.random.default_rng(_seed(f"{seed}|impact")); m = int(5.0 * sr); t = np.arange(m) / sr
+    boom = np.sin(2 * np.pi * (60 * pal * np.exp(-t * 1.1) + 24) * t) * np.exp(-t * 1.3) * 0.75
+    ring = np.sin(2 * np.pi * float(rng.uniform(6800, 7600)) * t) * np.exp(-((t - 0.15).clip(0)) * 0.9) * (t > 0.15) * 0.035
+    hb = texture("heartbeat", 5.0, f"{seed}imp", sr)[:m, 0]; hb = _smooth(hb, 40) * 2.2 * np.interp(t, [0, 0.3, 3.5, 5.0], [0, 0.5, 0.35, 0])
+    br = rng.standard_normal(m).astype(np.float32); br = (br - _smooth(br, 30)) * np.interp(t, [2.4, 2.8, 3.4, 3.6], [0, 0.10, 0.06, 0], left=0, right=0)
+    L = (boom + ring + hb + br).astype(np.float32); R = (boom + ring * 0.8 + hb + np.roll(br, 120)).astype(np.float32)
+    return np.stack([L, R], 1)
+
+def impact_run_up(sec=3.0, seed="", sr=48000):
+    """Rising rumble + riser for the seconds BEFORE the near-silence (stereo, ends at full level; the mixer places its end 1 s before the impact)."""
+    rng = np.random.default_rng(_seed(f"{seed}|runup")); m = int(sec * sr); t = np.arange(m) / sr
+    rum = _smooth(rng.standard_normal(m).astype(np.float32), 300) * 10 * (t / sec) ** 1.5
+    ris = np.sin(2 * np.pi * (180 + 520 * (t / sec) ** 2) * t) * (t / sec) ** 2.5 * 0.25
+    x = (rum + ris).astype(np.float32); x /= (np.abs(x).max() + 1e-9)
+    return np.stack([x, x * 0.96], 1)
+
+def doppler(sec, seed="", sr=48000):
+    """A whoosh that flies PAST you: noise whose centre pitch falls as it passes, panned left -> right, loudest at the pass (stereo, peak 1)."""
+    rng = np.random.default_rng(_seed(f"{seed}|dop")); m = max(int(0.4 * sr), int(sec * sr)); t = np.arange(m) / m
+    nz = rng.standard_normal(m).astype(np.float32); hi = nz - _smooth(nz, 3); lo = _smooth(nz, 12)
+    mixk = np.clip(t * 1.4 - 0.2, 0, 1).astype(np.float32)                    # bright on approach, darker after the pass (the pitch drop)
+    x = (hi * (1 - mixk) + lo * 3 * mixk) * (np.exp(-((t - 0.6) / 0.22) ** 2)).astype(np.float32)
+    pan = np.clip(t * 1.2 - 0.1, 0, 1).astype(np.float32)
+    out = np.stack([x * (1 - pan), x * pan], 1); out /= (np.abs(out).max() + 1e-9)
+    return out.astype(np.float32)

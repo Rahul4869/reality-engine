@@ -121,6 +121,14 @@ def yt_comment(vid, text):
         return True
     except Exception as e: log(f"comment failed: {e}", "WARN"); return False
 
+def yt_reply(parent_id, text):
+    """v9: a reply under a comment (comments.insert). Same OAuth scope as yt_comment. True when posted."""
+    if FAKE or not text: return True
+    try:
+        r = requests.post(YT + "comments?part=snippet", headers=gheaders(), json={"snippet": {"parentId": parent_id, "textOriginal": text}}, timeout=30)
+        return r.status_code < 300
+    except Exception as e: log(f"reply failed: {e}", "WARN"); return False
+
 def yt_set_privacy(vid, privacy):
     if FAKE: return True
     r = requests.get(YT + f"videos?part=status&id={vid}", headers=gheaders(), timeout=30).json()
@@ -144,6 +152,12 @@ def yt_status(vid):
     if FAKE: return "public"
     r = requests.get(YT + f"videos?part=status&id={vid}", headers=gheaders(), timeout=30).json()
     return (r.get("items") or [{}])[0].get("status", {}).get("privacyStatus")
+
+def yt_status_full(vid):
+    """v9: the whole status block (privacyStatus, madeForKids = YouTube's own value, selfDeclaredMadeForKids = ours). {} when unknown."""
+    if FAKE: return {"privacyStatus": "private", "madeForKids": False, "selfDeclaredMadeForKids": False}
+    r = requests.get(YT + f"videos?part=status&id={vid}", headers=gheaders(), timeout=30).json()
+    return (r.get("items") or [{}])[0].get("status", {}) or {}
 
 def yt_views(vid):
     """v8.5: public view count of one video (1 quota unit). None if it cannot be read."""

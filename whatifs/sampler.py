@@ -54,6 +54,10 @@ def draw(episode_id, ptype):
         except Exception: g = None
         if g: last[g] = k
     out["guest"] = sorted(GUESTS, key=lambda g: (last.get(g, -1), rng.random()))[0]
+    try:                                                # v8.10: expert + guest from the Cast tab (guests never repeat within GUEST_NO_REPEAT videos)
+        from whatifs import cast as CAST
+        if CAST.enabled(): out["cast"] = CAST.pick(rng)
+    except Exception: pass
     out["tier"] = "public"                              # v8.9: reserved for premium (members-only) episodes later; see CLAUDE.md "Premium tier"
     return out
 

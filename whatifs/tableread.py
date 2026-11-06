@@ -66,7 +66,7 @@ def objections_round(memos, spine, episode, ask_many_fn=None):
         for r in ROLES:
             mine = json.dumps(memos.get(r, {}), ensure_ascii=False)[:900]
             others = json.dumps({k: json.dumps(v, ensure_ascii=False)[:700] for k, v in memos.items() if k != r}, ensure_ascii=False)[:5000]
-            jobs.append(dict(role="sonnet", system=P.fill(P.MEMO2, role=r, mine=mine, others=others, spine=sp, craft=CRAFT_BY_ROLE.get(r, "")),
+            jobs.append(dict(role="objections", system=P.fill(P.MEMO2, role=r, mine=mine, others=others, spine=sp, craft=CRAFT_BY_ROLE.get(r, "")),
                              prompt="Raise your objections now.", episode=episode, fake_key="memo2", max_tokens=900))
         results = ask_many_fn(jobs)
         out = []
@@ -85,7 +85,7 @@ def director_notes(script_text, look, episode, ask_fn=None):
         from whatifs import prompts as P
         if ask_fn is None:
             from whatifs.models import ask as ask_fn
-        raw = ask_fn("sonnet", P.fill(P.DIRECTOR_READ, look=look, script=str(script_text)[:24000]), "Read it and give your notes.",
+        raw = ask_fn("director_read", P.fill(P.DIRECTOR_READ, look=look, script=str(script_text)[:24000]), "Read it and give your notes.",
                      episode=episode, fake_key="director_read", max_tokens=1200, temperature=0.4)
         return clean_notes(raw)
     except Exception as e:

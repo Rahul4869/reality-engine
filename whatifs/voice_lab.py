@@ -1,4 +1,4 @@
-"""whatifs/voice_lab.py v8.7 - 4 original voices + 1 flat comparison. Samples are emailed + uploaded to Drive + kept as a GitHub artifact.
+"""whatifs/voice_lab.py v8.10 (Gemini cast samples + voice check; v8.7) - 4 original voices + 1 flat comparison. Samples are emailed + uploaded to Drive + kept as a GitHub artifact.
 v8.7 review fix: in rehearsal mode (WI_FAKE=1) the tone placeholders go to the work folder, so a local rehearsal never overwrites the repo's voice_samples folder."""
 import os, subprocess
 from whatifs.voice import Blend, narrate
@@ -20,11 +20,13 @@ def main(backend=None):
     for k, parts in BLENDS.items():
         r = narrate(DEMO, Blend(k, parts), f"{out}/voice_{k}", style="slow_burn", seed="lab", backend=backend); links.append((k, mp3(r.wav_path), r.voiceprint))
     r = narrate(DEMO, Blend("C", BLENDS["C"]), f"{out}/voice_E_no_pacing", humanize=False, seed="lab", backend=backend); links.append(("E", mp3(r.wav_path), "flat"))
+    links += cast_samples(out) if backend is None else []        # v8.10: the Gemini cast (one short exchange per guest with an expert)
     set_setting("VOICE_SAMPLES_AT", iso())
     if not FAKE:
         from whatifs import publish as PUB
         html = ["<p>Listen on your phone with earphones. Then open the Sheet, Settings tab, and type A, B, C or D in the VOICE cell (or A+C to mix two).</p><ul>"]
         for k, path, vp in links:
+            if not path: html.append(f"<li>{k}: {vp}</li>"); continue
             try: _, url = PUB.drive_upload(path, os.path.basename(path), public=True); html.append(f"<li><a href='{url}'>Voice {k}</a> ({vp})</li>")
             except Exception as e: html.append(f"<li>Voice {k}: see GitHub artifact ({e})</li>")
         html.append("</ul><p>E is voice C with the human pacing switched off, for comparison. If you don't choose within 72 hours, A is used.</p>")
@@ -34,3 +36,31 @@ def main(backend=None):
 if __name__ == "__main__":
     main()
 
+
+
+def cast_samples(out):
+    """v8.10: with TTS_ENGINE = gemini and the Cast tab in use: check every cast voice (Voice_Check tab), then voice each guest's intro with an expert so the
+    owner can listen. About 3 s of speech per sample (well under Rs 1 for all). Never raises: a failure is reported in the list instead."""
+    from whatifs.core import S, log, scrub
+    if str(S("TTS_ENGINE") or "").strip().lower() != "gemini": return []
+    from whatifs import cast as CAST
+    from whatifs.tts_gemini import voice_check
+    if not CAST.enabled(): return []
+    res = []
+    try:
+        okn, tot, probs = voice_check(); res.append(("voice check", "", f"{okn}/{tot} cast voices work" + (": " + "; ".join(probs[:4]) if probs else "")))
+    except Exception as e: res.append(("voice check", "", scrub(e)[:160])); return res
+    rows = CAST.rows(); experts = [r for r in rows if r["role"] == "expert"]
+    for k, g in enumerate([r for r in rows if r["role"] == "guest"]):
+        e = experts[k % len(experts)]
+        sb = {"DIRECTOR": Blend("e", {"am_michael": 1.0}, gvoice=e["voice"], gstyle=e.get("style_direction", "")),
+              "SKEPTIC": Blend("g", {"af_heart": 1.0}, gvoice=g["voice"], gstyle=g.get("style_direction", ""))}
+        script = f"[DIRECTOR] [calm] {e.get('intro_line') or 'Welcome back.'} Today with us: {g.get('display_name')}.\n[SKEPTIC] [wow] {g.get('intro_line') or 'Hi!'}"
+        try:
+            r = narrate(script, sb["DIRECTOR"], f"{out}/cast_{e['id']}_{g['id']}", seed="castlab", speaker_blends=sb)
+            res.append((f"{e['id']}+{g['id']}", r.wav_path if FAKE else _mp3(r.wav_path), f"{e.get('display_name')} + {g.get('display_name')}"))
+        except Exception as x: log(f"cast sample {g['id']} failed: {scrub(x)[:120]}", "WARN"); res.append((g["id"], "", "failed"))
+    return res
+
+def _mp3(wav):
+    m = wav[:-4] + ".mp3"; subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", wav, "-b:a", "192k", m], check=True); os.remove(wav); return m

@@ -1,4 +1,4 @@
-"""whatifs/render.py v8.9 (cinematic camera library, living-still push; v8.3) - segments (depth parallax stills, detail crops, clips, stock, graphics) piped straight into FFmpeg,
+"""whatifs/render.py v8.10 (POV camera effects on every shot type, immersive mix layers; v8.9 cinematic camera library, living-still push; v8.3) - segments (depth parallax stills, detail crops, clips, stock, graphics) piped straight into FFmpeg,
 exact frame-accurate concat against the narration clock, procedural original score + SFX, ducking, loudness. Nothing written as PNG frames."""
 from __future__ import annotations
 import os, subprocess, random, hashlib, math
@@ -191,12 +191,87 @@ def parallax_segment(img_path, path, nframes, seed, detail=False, depth=None, fo
             yield fr
     return _pipe(path, frames(), nframes, ww, wh)
 
+# ---------------- v8.10 first-person camera EFFECTS (free; owner rule: every shot type - stills, living stills, Kling, stock, graphics) ----------------
+POV_FX = ("pov_rush", "impact_shake", "debris")
+
+import functools
+@functools.lru_cache(maxsize=8)
+def _vignette(ww, wh, strength):
+    y, x = np.ogrid[:wh, :ww]; r = np.sqrt(((x - ww / 2) / (ww / 2)) ** 2 + ((y - wh / 2) / (wh / 2)) ** 2)
+    return np.clip(1 - strength * np.clip(r - 0.35, 0, None) ** 1.5, 0, 1).astype(np.float32)[..., None]
+
+def pov_fx(kind, nframes, seed, ww=None, wh=None):
+    """A frame filter f(frame, k) for one segment (k = frame index inside it). Deterministic per seed (a re-render looks the same).
+    pov_rush: accelerating push-in, radial speed streaks, a slow roll, edges darkening.  impact_shake: a freeze of a few frames, a white flash, a decaying
+    shake and a tunnel-vision vignette that slowly opens (the sound's impact recipe starts on frame 0 of the same segment). debris: two parallax layers of
+    streaks flying past the lens (near = big, fast, soft; far = small, slow)."""
+    if kind not in POV_FX: return None
+    ww, wh = ww or work_size()[0], wh or work_size()[1]; rng = random.Random(f"{seed}|{kind}"); fpsv = fps(); sgn = rng.choice([-1, 1])
+    def zoom(fr, z, th=0.0, dx=0.0, dy=0.0):
+        M = cv2.getRotationMatrix2D((ww / 2, wh / 2), math.degrees(th), z); M[0, 2] += dx; M[1, 2] += dy
+        return cv2.warpAffine(fr, M, (ww, wh), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
+    if kind == "pov_rush":
+        vig = _vignette(ww, wh, 0.9)
+        def f(fr, k):
+            t = k / max(1, nframes - 1); z = 1.0 + 0.24 * t * t; th = sgn * 0.03 * math.sin(math.pi * t)
+            base = zoom(fr, z, th)
+            if t > 0.15:
+                a = zoom(base, 1.0 + 0.035 * t); b = zoom(base, 1.0 + 0.07 * t); w_ = 0.30 * t
+                base = cv2.addWeighted(cv2.addWeighted(base, 1 - w_, a, w_, 0), 1 - w_ * 0.7, b, w_ * 0.7, 0)
+            return (base.astype(np.float32) * (1 - (1 - vig) * (0.4 + 0.6 * t))).astype(np.uint8)
+        return f
+    if kind == "impact_shake":
+        hold = max(2, int(0.12 * fpsv)); first = {}; ph = [rng.uniform(0, 6.28) for _ in range(4)]
+        def f(fr, k):
+            if k == 0: first["fr"] = fr.copy()
+            if k < hold and "fr" in first: fr = first["fr"]                              # freeze: the instant of impact holds
+            sec = k / fpsv; amp = 0.028 * ww * math.exp(-sec / 0.45)
+            dx = amp * math.sin(2 * math.pi * 13 * sec + ph[0]) * 0.8; dy = amp * math.sin(2 * math.pi * 17 * sec + ph[1]) * 0.6
+            out = zoom(fr, 1.06 + 0.04 * math.exp(-sec / 0.6), 0.012 * math.exp(-sec / 0.5) * math.sin(2 * math.pi * 9 * sec + ph[2]), dx, dy)
+            tun = 0.85 * math.exp(-sec / 1.6)
+            if tun > 0.02: out = (out.astype(np.float32) * (1 - (1 - _vignette(ww, wh, 1.6)) * tun)).astype(np.uint8)
+            fl = 0.75 if k < 2 else (0.35 if k < 4 else 0.0)
+            if fl: out = cv2.addWeighted(out, 1 - fl, np.full_like(out, 255), fl, 0)
+            return out
+        return f
+    if kind == "debris":
+        parts = [(rng.uniform(-1, 1), rng.uniform(-1, 1), rng.choice([0.35, 1.0]), rng.uniform(0.6, 1.4)) for _ in range(46)]
+        def f(fr, k):
+            sec = k / fpsv; lay = np.zeros_like(fr); near = np.zeros_like(fr)
+            for x0, y0, depth, sp in parts:
+                d = (sec * sp * depth * 0.9 + abs(x0) * 0.3) % 1.2
+                x = ww / 2 + x0 * ww * (0.15 + d); y = wh / 2 + y0 * wh * (0.15 + d)
+                ln = (6 + 40 * depth) * (0.4 + d); vx, vy = x0 * ln, y0 * ln
+                tgt = near if depth > 0.5 else lay; c = int(70 + 120 * depth)
+                cv2.line(tgt, (int(x), int(y)), (int(x - vx), int(y - vy)), (c, c, c), max(1, int(1 + 3 * depth * d)), cv2.LINE_AA)
+            near = cv2.GaussianBlur(near, (0, 0), 2.2)
+            return cv2.add(cv2.add(zoom(fr, 1.03 + 0.02 * math.sin(sec)), (lay * 0.55).astype(np.uint8)), (near * 0.8).astype(np.uint8))
+        return f
+
+class FxOverlay:
+    """Runs a POV effect on a segment's frames, then the normal overlay (speaker tag, reactions) on top, so the tag itself never shakes."""
+    def __init__(self, base, fx, f0): self.base, self.fx, self.f0 = base, fx, f0
+    def apply(self, fr, g):
+        fr = self.fx(fr, g - self.f0)
+        return self.base.apply(fr, g) if self.base is not None else fr
+    def active(self): return True
+
+def with_fx(ovl, kind, nframes, seed, f0):
+    """The overlay to set for one segment: the POV effect (if any, and POV_CAMERA_ON) wrapped around the normal overlay."""
+    if not kind or not S("POV_CAMERA_ON", bool): return ovl
+    fx = pov_fx(kind, nframes, seed)
+    return FxOverlay(ovl, fx, f0) if fx else ovl
+
 def clip_segment(clip_path, path, nframes, loop=False, push=0.0):
     """push > 0 (v8.9, living stills only): a slow sub-pixel push-in over the clip (1 -> 1 + push), so atmospheric clips also carry camera motion."""
     W, H = out_size(); ww, wh = work_size()
     dur_in = probe_dur(clip_path); want = nframes / fps()
     slow = 1.0 if loop else min(1.25, max(1.0, want / max(0.1, dur_in)))      # v8.3: was up to 2x (frame doubling = judder); the renderer now hands the rest of a long unit to a camera move on the same picture
     pre = f"scale={ww}:{wh}:force_original_aspect_ratio=increase,crop={ww}:{wh},setpts={slow:.4f}*PTS,fps={fps()},tpad=stop_mode=clone:stop_duration={want + 1:.2f}"
+    if not loop and push == 0 and S("MOTION_BOOST_ON", bool) and want > dur_in * slow + 0.3:       # v9: stretch a Kling clip without freezing: play it
+        sl = min(1.25, max(1.0, want / max(0.1, 2 * dur_in)))                                        # forward then in reverse (an echo cut), a gentle speed
+        pre = (f"split[a][b];[b]reverse[r];[a][r]concat=n=2:v=1:a=0,scale={int(ww * 1.06)}:{int(wh * 1.06)}:force_original_aspect_ratio=increase,"     # ramp, a 6 % crop-in
+               f"crop={ww}:{wh},setpts={sl:.4f}*PTS,fps={fps()},tpad=stop_mode=clone:stop_duration={want + 1:.2f}")                                    # and last-frame hold
     if _OVL["obj"] is not None or push > 0:      # decode to raw frames so the speaker tag can be blended in, then encode exactly like every other segment
         cmd = ["ffmpeg", "-y", "-loglevel", "error"] + (["-stream_loop", "-1"] if loop else []) + ["-i", clip_path, "-vf", pre + ",format=bgr24", "-f", "rawvideo", "-pix_fmt", "bgr24", "-"]
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
@@ -266,7 +341,22 @@ def score(duration, seed, events, voice_wav=None, bed_db=-24, duck_db=9, design=
             i0 = int(a * SR); i1 = min(n, int(b * SR))
             if i1 - i0 < int(0.4 * SR): continue
             tex = SD.texture(kind, (i1 - i0) / SR, f"{seed}{i0}", SR); bed[i0:i0 + len(tex)] += tex[: n - i0] * SD.LEVEL
-    sfx = np.zeros(n, np.float32)
+        # v8.10 immersive layers (ducked under the voice like the bed): ambient beds per scene, close-mic textures, and the impact's near-silence + hole
+        for key, lvl in (("ambience", SD.AMB_LEVEL), ("close", SD.CLOSE_LEVEL)):
+            for kind, a, b in design.get(key, []):
+                i0 = int(a * SR); i1 = min(n, int(b * SR))
+                if i1 - i0 < int(0.4 * SR): continue
+                tex = SD.texture(kind, (i1 - i0) / SR, f"{seed}{key}{i0}", SR); bed[i0:i0 + len(tex)] += tex[: n - i0] * lvl
+        if design.get("impacts"): bed *= SD.impact_gain(t, design["impacts"])[:, None]
+    sfx = np.zeros(n, np.float32); sfx2 = np.zeros((n, 2), np.float32)       # v8.10: stereo effects (Doppler pass, impact, foley)
+    def put2(at, a2, lvl):
+        i0 = int(at * SR)
+        if i0 >= n or i0 + len(a2) <= 0: return
+        s0 = max(0, -i0); i0 = max(0, i0); e = min(n, i0 + len(a2) - s0); sfx2[i0:e] += a2[s0:s0 + e - i0] * lvl
+    if design:
+        from whatifs import sound as SD
+        for kind, at in design.get("foley", []): put2(at, SD.foley(kind, f"{seed}{at}", SR), SD.FOLEY_LEVEL)
+    rush_end = sorted(at for kind, at in events if kind == "rush_end")
     for kind, at in events:
         i0 = int(at * SR)
         if i0 >= n: continue
@@ -287,6 +377,14 @@ def score(duration, seed, events, voice_wav=None, bed_db=-24, duck_db=9, design=
         elif kind == "gasp":        # a short inhale: filtered noise rising then falling
             m = int(0.42 * SR); x = rng.standard_normal(m).astype(np.float32); x = cv2.GaussianBlur(x.reshape(1, -1), (0, 0), sigmaX=5).ravel() * 5
             s = x * (np.sin(np.linspace(0, np.pi, m)) ** 1.6).astype(np.float32) * 0.16
+        elif kind in ("impact", "doppler", "debris"):        # v8.10, locked to the POV camera events
+            from whatifs import sound as SD
+            if kind == "impact":       # rumble + riser that stops 1 s before (the near-silence), then boom + sub drop, ringing, muffled heartbeat, a breath
+                put2(at - 4.0, SD.impact_run_up(3.0, f"{seed}{at}", SR), 0.22); put2(at, SD.impact_layers(f"{seed}{at}", SR, pal), 0.55)
+            elif kind == "doppler":
+                end = next((x for x in rush_end if x > at), at + 2.0); put2(at, SD.doppler(max(0.6, end - at), f"{seed}{at}", SR), 0.16)
+            else: put2(at, SD.texture("crackle", 1.6, f"{seed}deb{at}", SR), 0.05)
+            continue
         elif kind == "huh":         # two falling blips
             m = int(0.34 * SR); tt = np.arange(m) / SR
             s = (np.sin(2 * np.pi * (520 - 160 * (tt > 0.15)) * tt) * np.exp(-((tt % 0.17) * 18)) * 0.2).astype(np.float32)
@@ -306,7 +404,7 @@ def score(duration, seed, events, voice_wav=None, bed_db=-24, duck_db=9, design=
         g = 1 - (1 - 10 ** (-duck_db / 20)) * np.clip(env / (env.max() * 0.15 + 1e-6), 0, 1)
         mix *= g[:, None]
         mix += v[:, None]
-    mix += sfx[:, None]
+    mix += sfx[:, None] + sfx2
     return mix
 
 def write_mix(mix, path, lufs=-14):

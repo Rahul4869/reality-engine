@@ -175,6 +175,10 @@ def tick():
     if paused():
         n = hold_scheduled("paused"); log(f"paused - nothing to do ({n} scheduled video(s) held)"); return {"action": "paused"}
     resume_held()
+    try:                                                        # v9: packaging rotation windows (title + thumbnail through the API)
+        from whatifs import packaging as PK
+        PK.rotate_tick()
+    except Exception as x: log(f"packaging rotation skipped: {scrub(x)}", "WARN")
     if not S("VOICE"):
         t = parse_iso(S("VOICE_SAMPLES_AT"))
         if not t: return {"action": "waiting_for_voice_samples"}
@@ -238,7 +242,7 @@ def _produce_slot(eps):
                       "or raise BUDGET_FLOOR_INR / BUDGET_CEILING_INR in Settings if you want to spend more. Nothing else is needed.</p>")
             set_setting("BUDGET_MAIL_MONTH", mk)
         return None
-    taken = {e.get("slot_et") for e in eps if e.get("status") in ("SCHEDULED", "LIVE1", "LIVE", "HELD", "HOLD_QC")}
+    taken = {e.get("slot_et") for e in eps if e.get("status") in ("SCHEDULED", "LIVE1", "LIVE", "HELD", "HOLD_QC", "SKIPPED")}      # v8.10: a skipped slot stays skipped
     for slot in next_slots(4):
         s = slot.strftime("%Y-%m-%dT%H:%M:%SZ")
         if s in taken: continue
@@ -425,6 +429,10 @@ def trend_scout():
         if x.get("severity") == "critical" and _official(x.get("source", "")) and re.search(r"\b(ai|synthetic|inauthentic|mass[- ]produced|repetitive)\b", x.get("change", "").lower()) and "monet" in x.get("change", "").lower():
             crit.append(x)
     store().append("Trend_Brief", rows)
+    try:                                                       # v8.10: technique observations from top niche videos (titles, descriptions, top comments)
+        from whatifs import craft as CR
+        CR.research_techniques()
+    except Exception as x: log(f"technique research skipped: {scrub(x)}", "WARN")
     PB.ensure_seed(); PB.research()                          # v8.7: the proactive, evidence-graded playbook research (never raises, inside the cap)
     if crit:
         seen = [x for x in S("GUARDIAN_SEEN").split("|") if x]
@@ -480,6 +488,41 @@ def learn():
     try: st.ensure_tabs()                                       # v8.6: new tabs/columns appear by themselves (no manual Setup run needed)
     except Exception as x: log(f"could not refresh Sheet tabs: {scrub(x)}", "WARN")
     _top_up(st)                                                 # v8.7: new strategies (rhythm, sound) and the playbook seed reach older Sheets by themselves
+    try: v810_upgrade(st)
+    except Exception as x: log(f"v8.10 top-up skipped: {scrub(x)}", "WARN")
+    try:                                                        # v9: the jury outside the video (comment, tally, teacup finders, queue, Season, Experiments)
+        from whatifs import community as CM
+        for e9 in st.rows("Episodes"):
+            t9 = parse_iso(e9.get("slot_et"))
+            if not e9.get("yt_id") or not t9 or now_utc() < t9 or now_utc() - t9 > dt.timedelta(days=28): continue
+            try: plan9 = json.loads(e9.get("draw_json") or "{}").get("show_plan") or {}
+            except Exception: plan9 = {}
+            if not plan9: continue
+            CM.post_jury_comment(e9, plan9)
+            tl9 = CM.process_comments(e9, plan9)
+            if tl9 is not None:
+                try: cups9 = json.loads(e9.get("teacup_json") or "[]")
+                except Exception: cups9 = []
+                fn9 = CM.teacup_finders(CM.fetch_comments(e9["yt_id"]), cups9) if cups9 else []
+                st.update_where("Season", {"episode_id": e9["episode_id"]}, {"jury_tally": json.dumps(tl9), "teacup_finders": ", ".join(fn9)})
+            an9 = next((a for a in st.rows("Analytics") if a.get("episode_id") == e9["episode_id"]), None)
+            if an9: CM.experiment_results(e9["episode_id"], e9["yt_id"], t9, an9)
+        from whatifs import insights as INS                     # v9.1: viewers' 'what if' suggestions -> bench candidates; AI drafts (flagged, capped)
+        INS.mine_comments(); INS.ai_drafts()
+        CM.weekly_digest()
+    except Exception as x: log(f"community step skipped: {scrub(x)}", "WARN")
+    try:                                                        # v9: made-for-kids re-check during a video's first 7 days
+        from whatifs import costguard as CG
+        for e9 in st.rows("Episodes"):
+            t9 = parse_iso(e9.get("slot_et"))
+            if e9.get("yt_id") and t9 and now_utc() - t9 < dt.timedelta(days=7) and " True" not in str(e9.get("kids_check")):
+                k9 = CG.kids_check(e9["yt_id"], e9["episode_id"])
+                if k9 is not None: st.update("Episodes", "episode_id", e9["episode_id"], {"kids_check": f"{iso()} {k9}"})
+    except Exception as x: log(f"made-for-kids re-check skipped: {scrub(x)}", "WARN")
+    try:                                                        # v9: the character bible reaches older Sheets by itself (idempotent)
+        from whatifs import show as SHOW
+        SHOW.seed_characters(st)
+    except Exception as x: log(f"character bible top-up skipped: {scrub(x)}", "WARN")
     try: pkg_rescue()
     except Exception as x: log(f"packaging check skipped: {scrub(x)}", "WARN")
     eps = [e for e in st.rows("Episodes") if e.get("status") in ("LIVE1", "LIVE") and e.get("yt_id")]
@@ -514,6 +557,12 @@ def learn():
         if les: st.append("Lessons", [{"ts": iso(), "lesson": les, "evidence": f"{e['episode_id']} vs channel medians", "applies_to": GR.DIAG_ROUTE[diag]}])
         dl = GR.dip_lesson(m.get("curve"), d.get("beat_map"), d.get("duration_sec") or d.get("runtime_sec"), e.get("title") or e["episode_id"])      # v8.7: WHERE viewers left
         if dl: st.append("Lessons", [{"ts": iso(), "lesson": dl, "evidence": f"{e['episode_id']} retention curve", "applies_to": "holding"}])
+        try:                                                     # v9.1: the whole curve mapped to beats and shot types (report only)
+            from whatifs import insights as INS
+            try: sh91 = json.loads(e.get("shots_json") or "[]")
+            except Exception: sh91 = []
+            INS.file_retention(e["episode_id"], m.get("curve"), d.get("beat_map"), sh91, d.get("duration_sec") or d.get("runtime_sec"), m.get("views"), e.get("title") or "")
+        except Exception as x: log(f"retention map skipped: {scrub(x)}", "WARN")
         try: PB.credit(d.get("playbook") or {}, sc, st)       # v8.7: trial rules are credited on their own metric (missing data is never credited)
         except Exception as x: log(f"playbook credit skipped: {scrub(x)}", "WARN")
         if m.get("from_shorts") is not None:
@@ -527,7 +576,27 @@ def learn():
     _evolve()
     try: PB.judge(st)
     except Exception as x: log(f"playbook judging skipped: {scrub(x)}", "WARN")
+    try:                                                        # v8.10: premise scores meet real CTR / retention; the premise bank is renewed monthly
+        from whatifs import premise as PR
+        n = PR.attach_results()
+        if n: log(f"premise scores: {n} chosen premise(s) now carry their CTR / retention")
+        PR.regenerate_bank()
+    except Exception as x: log(f"premise learning skipped: {scrub(x)}", "WARN")
+    try:                                                        # v8.11: keep the Premise_Bench stocked (only when it is low and the month can pay for it)
+        from whatifs import premise as PR
+        PR.refill_bench()
+    except Exception as x: log(f"premise bench refill skipped: {scrub(x)}", "WARN")
     flush_log()
+
+def v810_upgrade(st):
+    """v8.10 (setup + daily learning): seed the Cast tab once, and refresh Settings notes that still describe the old ₹3,500 cap (values are never touched)."""
+    from whatifs import cast as CAST
+    CAST.ensure_seed(st)
+    for r in st.rows("Settings"):
+        k = r.get("key")
+        if k in DEFAULTS and "3,500" in str(r.get("note") or "") and str(r.get("note")) != DEFAULTS[k][1]:
+            try: st.update("Settings", "key", k, {"note": DEFAULTS[k][1]})
+            except Exception: pass
 
 def strategy_credits(d, sc, swapped=False):
     """{(dimension, name): score} for one analysed video. v8.9.1: built first and de-duplicated, so a strategy is credited at most once per video
@@ -742,7 +811,7 @@ def _evolve():
             st.update_where("Strategies", {"dimension": dim, "name": worst}, {"status": "RETIRED"})
             best = sorted(means, key=means.get, reverse=True)[:2]
             try:
-                new = ask("sonnet", P.fill(P.STRATEGY_NEW, dim=dim, best=json.dumps({b: next(r["definition"] for r in act if r["name"] == b) for b in best}),
+                new = ask("strategy", P.fill(P.STRATEGY_NEW, dim=dim, best=json.dumps({b: next(r["definition"] for r in act if r["name"] == b) for b in best}),
                           rules=json.dumps(rules), names=[r["name"] for r in rows if r["dimension"] == dim]), "Invent now.", fake_key="strategy")
                 nm = re.sub(r"[^A-Za-z0-9_]+", "_", str(new.get("name") or "")).strip("_")[:40]
                 if nm and nm in {r["name"] for r in rows}: nm = (nm[:30] + "_" + dim)[:40]      # v8.9.1: names stay unique across ALL dimensions
@@ -776,7 +845,31 @@ def settings_keys():
 def money_check():
     JOB["name"] = "money"; msgs = []
     failure_watch()
-    if S("AUTO_RELOAD_ON", bool): return
+    try:                                                         # v9: 70 % / 90 % spend warnings and the weekly estimate-vs-measured email
+        from whatifs import costguard as CG
+        CG.spend_monitor(); CG.weekly_deviation_mail()
+    except Exception as x: log(f"cost monitor skipped: {scrub(x)}", "WARN")
+    try:                                                         # v8.10: prepaid Gemini credit (TTS + writing + checks) and the monthly headroom view
+        left = G.gemini_left_usd()
+        if left is not None and left < S("GEMINI_LOW_USD", float):
+            msgs.append(f"<li><b>Gemini</b>: about ${left:.2f} of prepaid credit left. <a href='https://aistudio.google.com/usage'>Top up here</a>, then add the amount to the "
+                        "GEMINI_FUNDED_USD cell. If it runs out, narration falls back to the Kokoro voices and checks to Claude.</li>")
+        prop = G.kling4_proposal(); mk = now_utc().strftime("%Y-%m")
+        if prop and S("KLING4_MAIL_MONTH") != mk:
+            h = G.headroom(); set_setting("KLING4_MAIL_MONTH", mk)
+            PUB.email("Budget headroom: room for a 4th Kling clip", f"<p>Spent Rs {h['spent_inr']:.0f} of Rs {h['cap_inr']:.0f}; a full video costs about Rs {h['per_video_inr']:.0f} "
+                      f"(TTS and thinking included).</p><p>{prop}</p>")
+    except Exception as x: log(f"headroom / Gemini credit check skipped: {scrub(x)}", "WARN")
+    if S("GREENLIGHT_TIERS_ON", bool):                           # v9: report only - measured savings vs the estimate over the last videos
+        try:
+            from whatifs.models import ai_estimate_inr
+            sm = [r for r in store().rows("Cost_Log") if r.get("item") == "ai_per_video_summary"][-6:]
+            sav = sum(max(0.0, float(r.get("est_inr") or 0) - float(r.get("measured_inr") or 0)) for r in sm)
+            if sav > 0: msgs.append(f"<li><b>Greenlight</b>: the last {len(sm)} videos came in Rs {sav:.0f} under their AI estimate; that measured saving could fund an upgraded tier (nothing changes by itself).</li>")
+        except Exception as x: log(f"greenlight report skipped: {scrub(x)}", "WARN")
+    if S("AUTO_RELOAD_ON", bool):
+        if msgs: PUB.email("Top-up reminder", "<ul>" + "".join(msgs) + "</ul>")
+        return
     for prov, url, name in (("fal", "https://fal.ai/dashboard/billing", "fal.ai"), ("anthropic", "https://platform.claude.com/settings/billing", "Anthropic")):
         days = G.runway_days(prov)
         if days <= S("REFILL_WARN_DAYS", int):
@@ -788,7 +881,15 @@ def monthly_brief():
     rev = [dict(r, month=G.month_key(r.get("month")) or r.get("month"), inr_received=G.money_num(r.get("inr_received"))) for r in st.rows("Revenue_Log")[-3:]]
     data = {"analytics": st.rows("Analytics")[-15:], "spend_month": month_spend(), "cap": G.cap_inr(), "revenue": rev,
             "lessons": st.rows("Lessons")[-10:], "trends": [r["item"] for r in st.rows("Trend_Brief")[-15:]]}
-    txt = ask("sonnet", P.fill(P.BRIEF, data=json.dumps(data, default=str)[:20000]), "Write it.", want_json=False, fake_key="brief")
+    try:                                                        # v9: the experiments and the season feed the brief (recommendations only)
+        data["experiments"] = st.rows("Experiments")[-8:]; data["season"] = st.rows("Season")[-8:]
+        from whatifs import insights as INS                     # v9.1: role ROI and the retention map (report only)
+        data["role_roi"] = INS.roi_summary(); data["retention_map"] = [r for r in st.rows("Retention_Map") if r.get("confidence") in ("high", "medium")][-30:]
+    except Exception: pass
+    from whatifs.models import ask_batch
+    txt = ask_batch("brief", P.fill(P.BRIEF, data=json.dumps(data, default=str)[:20000]) + ("\nEnd with ONE priority fix for next month (the single change most "
+              "likely to raise click-through or retention, with the evidence), then a short list of other ideas. Recommend only: budget and visuals are never changed automatically."),
+              "Write it.", want_json=False, fake_key="brief")
     PUB.email("Monthly brief", "<pre style='font-family:sans-serif;white-space:pre-wrap'>" + txt + "</pre>")
 
 # ---------------- setup ----------------
@@ -808,6 +909,9 @@ def setup():
     new_s = [r for r in strategy_rows() if r["name"] not in have_s]
     if new_s: st.append("Strategies", new_s)
     PB.ensure_seed(st)                                         # v8.7: the research-graded playbook starts with its seed rules
+    from whatifs import show as SHOW
+    SHOW.seed_characters(st)                                   # v9: the character bible (idempotent)
+    v810_upgrade(st)                                           # v8.10: Cast placeholders (owner overwrites), settings notes with the ₹4,000 cap
     status("sheet_ready", True, f"{len(TABS)} tabs")
     status("youtube_api_audit", audit_state() == "approved", AUDIT_WORDS[audit_state()])      # v8.4: the audit form has its own Setup_Status row, so it cannot be forgotten
     if not FAKE:
@@ -829,6 +933,11 @@ def setup():
         except Exception as e: status("fal_works", False, str(e)[:300])
         if S("META_ON", bool): _meta_ids()
         status("pexels_key", bool(env("PEXELS_KEY")), "optional")
+        if str(S("TTS_ENGINE")).strip().lower() == "gemini":   # v8.10: which cast voices this key can really use (about Rs 0.1)
+            try:
+                from whatifs.tts_gemini import voice_check, tts_model
+                okn, tot, probs = voice_check(); status("gemini_tts_voices", okn == tot and tot > 0, f"model {tts_model()}: {okn}/{tot} cast voices work" + (f"; {'; '.join(probs[:3])}" if probs else ""))
+            except Exception as e: status("gemini_tts_voices", False, str(e)[:300])
     flush_log()
 
 def _meta_ids():

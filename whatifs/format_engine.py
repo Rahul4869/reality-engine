@@ -73,10 +73,11 @@ def check_script(script: str) -> dict:
     """Code-side check of the two-role format. ok=False means the writer must be asked once to fix it."""
     if mode() == "classic": return {"ok": True, "issues": [], "units": 0, "labeled": 0, "director": 0, "skeptic": 0}
     us = _units(script); n = max(1, len(us))
-    d = sum(1 for u in us if u.speaker == "DIRECTOR"); k = sum(1 for u in us if u.speaker == "SKEPTIC"); lab = d + k
+    d = sum(1 for u in us if u.speaker == "DIRECTOR"); k = sum(1 for u in us if u.speaker == "SKEPTIC")
+    lab = d + k + sum(1 for u in us if u.speaker in ("JUDGE", "WITNESS"))       # v9: the judge and the witness are labelled lines too
     issues = []
     if lab / n < 0.45: issues.append(f"only {lab} of {len(us)} spoken lines carry a [DIRECTOR] or [SKEPTIC] label (need at least 45 percent)")
-    if min(d, k) < max(3, int(0.12 * lab)): issues.append(f"one role barely speaks (DIRECTOR {d}, SKEPTIC {k}); both must contribute reasoning")
+    if min(d, k) < max(3, int(0.12 * (d + k))): issues.append(f"one role barely speaks (DIRECTOR {d}, SKEPTIC {k}); both must contribute reasoning")
     return {"ok": not issues, "issues": issues, "units": len(us), "labeled": lab, "director": d, "skeptic": k}
 
 def instructions(role: str = "general") -> str:

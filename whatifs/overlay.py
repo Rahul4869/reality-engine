@@ -10,8 +10,12 @@ import numpy as np
 from PIL import Image, ImageDraw
 from whatifs.media import font
 
-COLOURS = {"DIRECTOR": (80, 210, 190), "SKEPTIC": (255, 176, 40), "HOST_A": (120, 170, 255), "HOST_B": (255, 120, 160)}
-NAMES = {"DIRECTOR": "THE DIRECTOR", "SKEPTIC": "THE CURIOUS ONE", "HOST_A": "HOST A", "HOST_B": "HOST B"}
+COLOURS = {"DIRECTOR": (80, 210, 190), "SKEPTIC": (255, 176, 40), "HOST_A": (120, 170, 255), "HOST_B": (255, 120, 160), "JUDGE": (235, 220, 190), "WITNESS": (150, 150, 165)}
+NAMES = {"DIRECTOR": "THE DIRECTOR", "SKEPTIC": "THE CURIOUS ONE", "HOST_A": "HOST A", "HOST_B": "HOST B", "JUDGE": "NANA ROSA", "WITNESS": "THE ARCHIVIST"}
+SHOW_NAMES = {"DIRECTOR": "INSPECTOR VALE", "SKEPTIC": "DR. GRIMM"}      # v9: the trial cast's chips (SHOW_MODE = auto)
+def name_of(speaker):
+    from whatifs import show as SHOW
+    return (SHOW_NAMES.get(speaker) if SHOW.on() else None) or NAMES.get(speaker, speaker)
 
 class SpeakerTag:
     FADE = 0.25
@@ -30,7 +34,7 @@ class SpeakerTag:
     def _chip(self, spk, levels):
         key = (spk, levels)
         if key in self._cache: return self._cache[key]
-        s = self.s; c = COLOURS[spk]; name = NAMES[spk]; d0 = ImageDraw.Draw(Image.new("RGBA", (4, 4)))
+        s = self.s; c = COLOURS[spk]; name = name_of(spk); d0 = ImageDraw.Draw(Image.new("RGBA", (4, 4)))
         w = int(d0.textlength(name, font=self.f) + 150 * s); h = int(70 * s)
         im = Image.new("RGBA", (w, h), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
         d.rounded_rectangle([0, 0, w - 1, h - 1], radius=int(12 * s), fill=(6, 8, 12, 170))

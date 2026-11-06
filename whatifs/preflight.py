@@ -28,6 +28,11 @@ def run(need_voice=True):
     if need_voice:
         try: import kokoro, soundfile; add("voice engine", True, "Kokoro importable")
         except Exception as e: add("voice engine", False, scrub(e)[:120])
+        try:                                           # v8.10: the Gemini TTS model (a warning only: Kokoro is the automatic fallback)
+            from whatifs.core import S
+            if str(S("TTS_ENGINE") or "").strip().lower() == "gemini":
+                from whatifs.tts_gemini import tts_model; m = tts_model(); add("gemini tts", bool(m), m or "no TTS model found - Kokoro will voice the episodes", critical=False)
+        except Exception as e: add("gemini tts", False, scrub(e)[:120], critical=False)
     try:                                               # v8.9.2: Drive has its own Google key (G_REFRESH_DRIVE); a warning, never a block
         from whatifs.core import google_access, _gtok; google_access("drive"); dok = "drive.file" in _gtok["drive"]["scope"]
     except Exception: dok = False

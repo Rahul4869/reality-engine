@@ -5,7 +5,7 @@
 Long video is uploaded PRIVATE with publishAt = slot. Reels go out 15 min and 6 h after it is live, reels 3-4 the next two days (separate 'release' job).
 Nothing that fails final QC is ever uploaded. A retry of the same slot resumes from the newest checkpoint instead of paying for the plan and assets again."""
 from __future__ import annotations
-import os, json, re, time, datetime as dt, concurrent.futures as cf
+import os, hashlib, json, re, time, datetime as dt, concurrent.futures as cf
 from PIL import Image
 from whatifs.core import S, log, store, iso, JOB, WORK, FAKE, SMALL, flush_log, now_utc, set_setting, scrub, env, month_spend, refresh_spend, take_degraded, note_degraded
 from whatifs import room as ROOM, media as M, render as RN, art as ART, reels as REELS, qc as QC, publish as PUB, hooks as HOOKS, cutmap as CUTMAP, tableread as TR
@@ -24,10 +24,11 @@ BLENDS = {        # v8.9 clarity: two voices at most, one dominant, only Kokoro'
     "C": {"af_heart": 0.80, "af_bella": 0.20},
     "D": {"af_bella": 0.75, "af_heart": 0.25},
 }
-def speaker_blends(guest=None):
+def speaker_blends(guest=None, cast=None):
     """The two recurring roles get their own voice recipes (Settings DIRECTOR_VOICE / SKEPTIC_VOICE). Always two DIFFERENT recipes. None in classic mode.
     v8.9: with GUEST_ROTATION_ON the Curious One is this episode's guest (data.GUESTS, chosen in the draw and saved with the plan, so a retry and the reels
-    use the same voice)."""
+    use the same voice). v8.10: with the Cast tab in use (CAST_ON) each role also carries its Gemini voice and style direction; the Kokoro recipes stay as
+    the automatic fallback (guest fallback by the cast member's gender, always different from the Director's)."""
     if FE.mode() == "classic": return None
     from whatifs.data import GUESTS
     d = (S("DIRECTOR_VOICE") or "B").strip().upper()[:1]; k = (S("SKEPTIC_VOICE") or "C").strip().upper()[:1]
@@ -35,7 +36,19 @@ def speaker_blends(guest=None):
     if k not in BLENDS or k == d: k = next(x for x in "CDBA" if x != d)
     sk = Blend("skeptic", BLENDS[k])
     if guest in GUESTS and S("GUEST_ROTATION_ON", bool): sk = Blend("guest_" + guest, GUESTS[guest][1])
-    return {"DIRECTOR": Blend("director", BLENDS[d]), "SKEPTIC": sk}
+    out = {"DIRECTOR": Blend("director", BLENDS[d]), "SKEPTIC": sk}
+    if cast and S("CAST_ON", bool):
+        from whatifs import cast as CAST
+        cv = CAST.voices(cast)
+        if cv:
+            fb = {"female": {"af_heart": 0.8, "af_bella": 0.2}, "male": {"am_puck": 0.85, "am_michael": 0.15}}.get(cv["SKEPTIC"][2]) or sk.parts
+            if fb == out["DIRECTOR"].parts: fb = BLENDS[k]
+            out = {"DIRECTOR": Blend("director_" + str(cast.get("expert")), BLENDS[d], gvoice=cv["DIRECTOR"][0], gstyle=cv["DIRECTOR"][1]),
+                   "SKEPTIC": Blend("guest_" + str(cast.get("guest")), fb, gvoice=cv["SKEPTIC"][0], gstyle=cv["SKEPTIC"][1])}
+    from whatifs import show as SHOW
+    if SHOW.on():                                                   # v9: Nana Rosa and the Archivist get their own voices
+        out.update(SHOW.extra_blends({b.gvoice for b in out.values() if b.gvoice}))
+    return out
 
 def blend():
     v = (S("VOICE") or "A").strip().upper()
@@ -49,7 +62,7 @@ def blend():
 def est_cost_inr(d):
     u = S("USD_INR", float)
     return u * (d["stills"] * S("PRICE_STILL_USD", float) + G.premium_images() * S("PRICE_THUMB_USD", float) + d["living"] * S("PRICE_LIVING_USD", float)
-                + d["kling"] * S("PRICE_KLING_USD", float)) + S("LLM_EST_INR", float) \
+                + d["kling"] * S("PRICE_KLING_USD", float)) + S("LLM_EST_INR", float) + G.voice_think_inr() \
         + (S("TABLE_READ_EXTRA_INR", float) if TR.active_arm(d.get("episode_id", ""))[0] == "on" else 0.0)
 
 def chapters(timeline, beats_at):
@@ -93,8 +106,15 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     if plan.get("hold"): raise RuntimeError(plan["reason"] + " - nothing was spent; the slot is skipped (budget gate)")
     d["kling"], d["living"] = plan["kling"], plan["living"]; _apply_tier(d, plan)
     d["reel_style"] = ROOM.reel_style()                     # v8.5: recorded so the learning job can compare reel styles by Shorts -> long-video views
+    from whatifs import preview as PV
+    took = PV.take_approved(ep) if not fix_mode() else None          # v8.10: an approved Script Preview is used as written (not paid for twice)
+    if took:
+        sd, room = took
+        for k in ("strategies", "rhythm_plan", "playbook", "cast", "guest", "promise", "next_tease", "owners_cut", "family", "ptype", "research_brief", "retention_check", "table_read", "hook_sec"):
+            if k in sd: d[k] = sd[k]
+        d["from_preview"] = True
     log(f"draw: {json.dumps(d)} | spend plan: {plan['reason']}")
-    room = ROOM.run_room(d, ep)
+    if not took: room = ROOM.run_room(d, ep)
     d["ptype"] = room["spine"].get("ptype", d["ptype"])
     if room["spine"].get("family"): d["strategies"]["family"] = room["spine"]["family"]; d["family"] = room["spine"]["family"]
     st.update("Episodes", "episode_id", ep, {"premise": room["spine"]["premise"], "ptype": d["ptype"], "presentation_format": room["spine"].get("presentation_format", "classic"),
@@ -106,7 +126,7 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     beat_names = [b.get("purpose", f"Part {b.get('n')}") for b in room["bible"].get("beats", [])]
     clean, beat_marks = _strip_beats(script)
     hook = RX.ensure_units if FE.mode() != "classic" else None
-    vkw = dict(style=d["strategies"]["voice"] or "slow_burn", seed=ep, speaker_blends=speaker_blends(d.get("guest")), unit_hook=hook)
+    vkw = dict(style=d["strategies"]["voice"] or "slow_burn", seed=ep, speaker_blends=speaker_blends(d.get("guest"), d.get("cast")), unit_hook=hook)
     vo = narrate(clean, blend(), os.path.join(out, "voice"), **vkw)
     floor = 20 if SMALL else S("RUNTIME_MIN_SEC", int) + 3
     for attempt in range(2):
@@ -141,6 +161,8 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     rplans = ROOM.reels(room, shots, d, ep)
     return {"ep": ep, "slot": slot_iso, "d": d, "plan": plan, "room": room, "hook_rec": hook_rec, "shots": shots, "pkg": pkg, "rplans": rplans, "chs": chs,
             "vo": {"wav": os.path.basename(vo.wav_path), "timeline": os.path.basename(vo.timeline_path), "duration": vo.duration, "voiceprint": vo.voiceprint, "style": vo.style}}
+
+def fix_mode(): return False      # the plan stage never runs in a one-click fix (the fix always restores a checkpoint)
 
 def consume_tease(S_):
     """v8.9.1: clear NEXT_PREMISE once the episode that used it has a saved plan. Only if the cell still holds THAT premise (a newer tease is never wiped).
@@ -240,7 +262,9 @@ class Job:
     def qc_ctx(self):
         return {"master": self.master, "duration": self.vo.duration, "fps": self.fps, "wav": self.vo.wav_path, "srt": self.srt, "timeline": self.tl, "units": self.units,
                 "shots": self.shots, "own": self.own(), "delivered": self.files.get("delivered", {}), "kling_min": S("KLING_MIN_CLIPS", int),
-                "missing_images": [i for i in self.files.get("anchors", []) if i not in self.files["img"]], "episode": self.ep}
+                "missing_images": [i for i in self.files.get("anchors", []) if i not in self.files["img"]], "episode": self.ep,
+                "show_plan": (getattr(self, "d", None) or {}).get("show_plan") if getattr(self, "show_overlay", None) is not None else None,
+                "teacups": getattr(getattr(self, "show_overlay", None), "cups", None), "atmosphere": getattr(self, "atmosphere", None)}
     # ---- fixes
     def remix(self, lufs):
         mix = RN.score(self.vo.duration, self.ep, self.events, self.vo.wav_path, design=getattr(self, "design", None)); aud = RN.write_mix(mix, os.path.join(self.out, "mix.wav"), lufs=lufs)
@@ -319,6 +343,31 @@ def _render(job):
     if job.rx and S("REACTION_FX_ON", bool):
         try: ww, wh = RN.work_size(); parts.insert(0, RX.ReactionFX(job.rx, ww, wh, fps))        # reaction effects first, so the speaker tag is never zoomed
         except Exception as e: log(f"reaction effects skipped: {e}", "WARN")
+    plan = (getattr(job, "d", None) or {}).get("show_plan") or {}
+    from whatifs import show as SHOW
+    if SHOW.on() and plan:                                          # v9: found footage, HUD, meter, exhibit pins, teacup, letterbox (code only)
+        try:
+            from whatifs import showfx as SFX
+            ww, wh = RN.work_size()
+            imp = [float(units[i]["start"]) for i, s in enumerate(shots) if s.get("impact") and i < len(units)]
+            hero = [(float(units[i]["start"]), float(units[i]["end"])) for i, s in enumerate(shots) if s.get("impact") and i < len(units)]
+            pics = {}
+            if S("CHARACTER_THEATER_ON", bool):                      # v9: only LOCKED (owner-approved) neutral portraits; none = the speaker chip alone
+                try:
+                    from whatifs import sheets as SH, show as SHOW_
+                    import cv2 as _cv2, tempfile as _tf
+                    spk = {c["id"]: c.get("speaker") for c in SHOW_.characters()}
+                    for (cid, ex), f in SH.locked_portraits().items():
+                        if cid == "SET" and str(S("THEATER_STYLE") or "portrait").strip().lower() == "courtroom" and f.startswith("drive:"):      # v9.1
+                            p_ = os.path.join(_tf.mkdtemp(), "set.jpg"); PUB.drive_download(f[6:], p_); pics["SET"] = _cv2.imread(p_)
+                        if ex == "neutral" and cid in spk and f.startswith("drive:"):
+                            p_ = os.path.join(_tf.mkdtemp(), "p.jpg"); PUB.drive_download(f[6:], p_); pics[spk[cid]] = _cv2.imread(p_)
+                except Exception as e: log(f"character theatre skipped: {e}", "WARN", ep)
+            so = SFX.ShowOverlay(units, plan, ww, wh, fps, seed=ep, hero_spans=hero, impacts=imp, portraits=pics)
+            if so.active(): parts.insert(0, so); job.show_overlay = so
+        except Exception as e: log(f"show devices skipped: {e}", "WARN", ep)
+    atm = atmosphere_layer(ep, units, shots, plan if plan else {}, fps, getattr(job, "show_overlay", None))      # v9.1 (None when off / safe mode / failed)
+    if atm is not None: parts.insert(0, atm); job.atmosphere = atm
     job.overlay = RX.Stack(parts) if any(parts) else None
     strong = set(ROOM.opening_units(units)) | set(RX.peak_units(units)); dyn = str(S("CAMERA_MOTION") or "dynamic").strip().lower() != "gentle"      # v8.9
     RN._LAST["move"] = None
@@ -341,8 +390,9 @@ def _render(job):
         for k in range(pieces):
             nf = cut[k + 1] - cut[k]; p = os.path.join(out, f"seg{i:03d}_{k}.mp4"); f0 = int(round(a * fps)) + cut[k]
             RN.set_overlay(job.overlay); RN.set_cursor(f0)
+            fxk = s.get("pov_fx") if k == 0 else None                  # v8.10: the POV camera effect (every shot type), locked to the sound event at this unit's start
             def draw(path, ovl):
-                RN.set_overlay(ovl); RN.set_cursor(f0)
+                RN.set_overlay(RN.with_fx(ovl, fxk, nf, f"{ep}{i}{k}", f0)); RN.set_cursor(f0)
                 if k == 0 and i in files["clips"]: RN.clip_segment(files["clips"][i], path, nf, loop=s["type"] == "stock", push=(0.07 if i in strong else 0.035) if (s["type"] == "living" and dyn) else 0.0)
                 elif s["type"] == "graphic" and k == 0: RN.graphic_segment(s.get("graphic") or {}, img, path, nf)
                 elif img:
@@ -368,8 +418,12 @@ def _render(job):
         if s["type"] == "kling": events.append(("boom", units[i]["start"])); events.append(("riser", units[i]["start"]))
         elif units[i]["tag"] == "reveal": events.append(("whoosh", max(0, units[i]["start"] - 0.3)))
     if job.rx and S("REACTION_FX_ON", bool): events += RX.sfx_events(job.rx)
+    if S("SOUND_IMMERSIVE_ON", bool):                                  # v8.10: sound events locked to the POV camera events (same clock, same frame)
+        from whatifs import immersion as IM
+        events += IM.camera_sound_events(shots, units)
     job.events = events; files["events"] = events
     job.design = SD.design(shots, units, total, getattr(job, "rhythm", None), seed=ep) if S("SOUND_DESIGN_ON", bool) else None
+    if job.design is not None and S("SOUND_IMMERSIVE_ON", bool): job.design.update(SD.immersive(shots, units, total, seed=ep))
     mix = RN.score(total, ep, events, vo.wav_path, design=job.design)
     aud = RN.write_mix(mix, os.path.join(out, "mix.wav"))
     return RN.mux(job.video, aud, os.path.join(out, "master.mp4"))
@@ -415,7 +469,7 @@ def plan_check(S_, units):
     S_["shots"] = shots; S_["plan_check"] = {"repairs": len(fixes)}
     return S_
 
-_TAKEN = ("PLANNING", "VOICING", "VISUALS", "UPLOADED", "SCHEDULED", "LIVE1", "LIVE", "HELD", "HOLD_QC", "STUCK_PRIVATE")
+_TAKEN = ("PLANNING", "VOICING", "VISUALS", "UPLOADED", "SCHEDULED", "LIVE1", "LIVE", "HELD", "HOLD_QC", "STUCK_PRIVATE", "SKIPPED")      # v8.10: a skipped slot is not retried
 def _slot_taken(st, slot_iso):
     """v8.3: one episode per slot. Two ticks close together (or a manual 'Run workflow') used to make two videos for the same slot and pay twice."""
     return next((e for e in st.rows("Episodes") if e.get("slot_et") == slot_iso and e.get("status") in _TAKEN), None)
@@ -481,16 +535,38 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
         _cleanup_work(out)
         return res
     except Exception as e:
+        from whatifs import premise as PR, craft as CR
+        if isinstance(e, (PR.SkipSlot, CR.BelowBar)):           # v8.10: below the quality bar = a skipped slot + an email, never a crash (no Repair Bot, no retry)
+            return PR.skip_slot(str(e), ep, slot_iso)
         log(f"episode failed: {e}", "ERROR"); st.update("Episodes", "episode_id", ep, {"status": "FAILED", "notes": CK.set_attempts(str(e)[:360], CK.attempts(next((r for r in st.rows("Episodes") if r["episode_id"] == ep), {}))), "updated": iso()})
         raise
     finally: flush_log()
 
+def atmosphere_layer(ep, units, shots, plan, fps, show_overlay=None):
+    """v9.1 Atmosphere Pack as the FIRST overlay of the stack (HUD / pins / meter / chips are drawn on top). None when ATMOSPHERE_ON is off, in safe mode,
+    or when building it fails (then it is off for this episode only and the render goes on exactly as v9)."""
+    from whatifs import v91 as V91
+    if not V91.on("ATMOSPHERE_ON", ep): return None
+    atm = None
+    with V91.guard("ATMOSPHERE_ON", ep):
+        from whatifs import atmosphere as AT, showfx as SFX2
+        ww, wh = RN.work_size()
+        beats = [float(units[i]["start"]) for i, s in enumerate(shots) if i < len(units) and (s.get("impact") or str(units[i].get("tag")) in ("reveal",))]
+        hud = [(float(h["t"]), float(h["t"]) + 6.0) for h in ((plan or {}).get("hud_spec") or []) if isinstance(h, dict)]
+        hud += [(t_, t_ + 4.0) for t_, k_, _ in SFX2.events(units) if k_ == "exhibit"]
+        atm = AT.Atmosphere(units, shots, plan or {}, ww, wh, fps, seed=ep, recon=getattr(show_overlay, "recon", []), beats=beats, hud_spans=hud)
+    return atm
+
 def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     d, room, shots, pkg, rplans, chs, hook_rec = S_["d"], S_["room"], S_["shots"], tidy_pkg(S_["pkg"]), S_["rplans"], S_["chs"], S_["hook_rec"]
     rx = RX.find_events(units) if (FE.mode() != "classic" and S("REACTION_FX_ON", bool)) else []
-    job = Job(ep=ep, out=out, files=files, shots=shots, units=units, vo=vo, tl=tl, rx=rx, fps=RN.fps(), srt=os.path.join(out, "captions.srt"), overlay=None, rhythm=d.get("rhythm_plan") or {},
+    job = Job(ep=ep, out=out, files=files, shots=shots, units=units, vo=vo, tl=tl, rx=rx, fps=RN.fps(), srt=os.path.join(out, "captions.srt"), overlay=None, rhythm=d.get("rhythm_plan") or {}, d=d,
               reel_shots={int(i) for rp in rplans[:4] for i in rp.get("shots", [])})
-    master = job.render_all(); RN.srt(tl, job.srt)
+    t_r0 = time.time(); master = job.render_all(); RN.srt(tl, job.srt)
+    atm_ = getattr(job, "atmosphere", None)                      # v9.1: render minutes per episode + the atmosphere's share and any automatic degrade
+    try: st.update("Episodes", "episode_id", ep, {"render_min": round((time.time() - t_r0) / 60, 2), "atmos_json": json.dumps({"overhead_pct": round(atm_.overhead_pct(), 1),
+                   "dropped": atm_.dropped, "pulses": len({p for p, _ in atm_.pulse_log})}) if atm_ else ""})
+    except Exception as e: log(f"render minutes not logged: {e}", "WARN", ep)
     # ---- packaging art: reuse on a one-click fix; a weak thumbnail is first redrawn from the same key art (free) and only then re-made (paid)
     have_art = fix and os.path.exists(os.path.join(out, "thumb.jpg"))
     if have_art: thumb = os.path.join(out, "thumb.jpg"); thumb_master = thumb; phone = ART.phone_check(Image.open(thumb))
@@ -518,7 +594,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         try:
             cov = covers[k] if k < len(covers) else thumb_master; rf = os.path.join(out, f"reel{k}.mp4")
             if fix and os.path.exists(rf): rd_ = RN.probe_dur(rf)
-            else: rf, rd_ = REELS.build_reel(k, rp, files["segments"], cov, blend(), "urgent", out, speaker_blends=speaker_blends(d.get("guest")))
+            else: rf, rd_ = REELS.build_reel(k, rp, files["segments"], cov, blend(), "urgent", out, speaker_blends=speaker_blends(d.get("guest"), d.get("cast")))
             ok, info = QC.check_video(rf, rd_, vertical=True, tol=1.0)
             if ok: reel_files.append((rf, rp, cov))
             else: log(f"reel {k} failed QC {info}", "WARN")
@@ -554,16 +630,68 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         for k, (rf, rp, cov) in enumerate(reel_files):
             rel["reels"].append({"file": rf, "cover": cov, "caption": rp.get("caption", ""), "hook": rp.get("hook_text", ""), "format": rp.get("format")})
         json.dump(rel, open(os.path.join(out, "release.json"), "w"))
+        from whatifs import show as SHOW
+        if SHOW.on() and S("AUDIO_DROPS_ON", bool):               # v9: the clip-bait audio drop (Instagram original audio; filed, never posted by itself)
+            try:
+                from whatifs import showfx as SFX
+                dp = SFX.audio_drop(master, units, out, ep)
+                if dp:
+                    PUB.drive_upload(dp, os.path.basename(dp)); log(f"audio drop filed: {os.path.basename(dp)}", episode=ep)
+                    from whatifs import insights as INS                           # v9.1: optional Instagram Reel of the drop (flag + Meta keys)
+                    st0 = next((p_ for p_ in (files.get("img") or {}).values() if isinstance(p_, str)), None)
+                    if st0: INS.post_drop(ep, dp, st0, str(title)[:200])
+            except Exception as e: log(f"audio drop skipped: {e}", "WARN", ep)
+        if SHOW.on() and S("PROVENANCE_ON", bool):                # v9: provenance record for policy appeals (no personal data)
+            try:
+                from whatifs import craft as _CR
+                prov = {"episode_id": ep, "made": iso(), "show_plan": d.get("show_plan"), "premise_source": (room.get("spine") or {}).get("premise_source") if isinstance(room, dict) else "",
+                        "bible_hash": hashlib.sha256(json.dumps(room.get("bible") if isinstance(room, dict) else {}, sort_keys=True, default=str).encode()).hexdigest()[:16],
+                        "owner_decisions": [r for r in store().rows("Packaging_Tests") if r.get("episode_id") == ep and r.get("picked_by") == "owner"],
+                        "sheet_approvals": [r.get("approved_at") for r in store().rows("Character_Sheets") if r.get("status") == "LOCKED"][:30],
+                        "craft_notebook": (_CR.notebook() or "")[:3000], "ai_label": True}
+                pp = os.path.join(out, f"{ep}_provenance.json"); json.dump(prov, open(pp, "w"), default=str, indent=1); PUB.drive_upload(pp, os.path.basename(pp))
+            except Exception as e: log(f"provenance record skipped: {e}", "WARN", ep)
+        try:                                                     # v9.1: one hero-still reel per episode (flag off by default; reuses stills + the voiced line)
+            from whatifs import herostill as HS
+            HS.make_for_episode(ep, out, [p_ for p_ in (files.get("img") or {}).values() if isinstance(p_, str)], master, units, str(pkg.get("thumb_text") or title)[:40])
+        except Exception as e: log(f"hero-still reel skipped: {e}", "WARN", ep)
+        if SHOW.on():                                            # v9: 3 packaging pairs (owner pick + rotation), Season + Experiments rows
+            try:
+                from whatifs import packaging as PK, community as CM
+                vs = PK.variants(dict(pkg, title=title, title_b=rel["title_b"]), room.get("spine") if isinstance(room, dict) else {})
+                thumbs = {"A": thumb}
+                if thumb_b: thumbs["B"] = thumb_b
+                for k_, p_ in list(thumbs.items()):
+                    try: thumbs[k_] = "drive:" + PUB.drive_upload(p_, f"{ep}_thumb_{k_}.jpg")[0]
+                    except Exception: thumbs[k_] = ""
+                PK.record(ep, vid, vs, thumbs)
+                if len(vs) > 1 and S("PKG_ROTATE_ON", bool): st.update("Episodes", "episode_id", ep, {"pkg_check": "v9 rotation test"})      # the v8.5 rescue stands aside
+                sp_ = room.get("spine", {}) if isinstance(room, dict) else {}
+                CM.season_row(ep, d.get("show_plan") or {}); CM.experiment_row(ep, dict(d, hook_shape=pkg.get("hook_shape", "")), sp_, "A", slot_iso)
+            except Exception as e: log(f"packaging / season rows skipped: {e}", "WARN", ep)
         assets = _persist(out, ep); assets.update(_archive(out, ep, master, srt)); assets.update(_review_files(out, ep))
         cur = next((r for r in st.rows("Episodes") if r["episode_id"] == ep), {}); old = CK._assets_of(cur)
         deg = take_degraded() if S("DEGRADED_NOTE_ON", bool) else []
         st.update("Episodes", "episode_id", ep, {"title": title, "yt_id": vid, "status": "SCHEDULED", "release_tag": ep, "assets": dict({k: v for k, v in old.items() if k.startswith("_ckpt")}, **assets), "updated": iso(),
+                                               "teacup_json": json.dumps(getattr(getattr(job, "show_overlay", None), "cups", None) or []),
+                                               "shots_json": json.dumps([{"t": round(float(units[i]["start"]), 1), "type": s_.get("type")} for i, s_ in enumerate(shots) if i < len(units)])[:20000] if isinstance(shots, list) else "",
                                                "cost_inr": round(_ep_cost(ep), 1), "notes": CK.set_attempts(("degraded: " + "; ".join(deg))[:300] if deg else "", CK.attempts(cur))})
     except Exception as e:
         try: PUB.yt_set_privacy(vid, "private")          # uploaded but not finished: keep it private so a half-packaged video never publishes on its own
         except Exception as x: log(f"could not make {vid} private: {x}", "WARN")
         raise
     CK.clear(ep)
+    from whatifs.models import write_ai_summary
+    write_ai_summary(ep)                                          # v8.11: measured vs estimated AI spend for this video (Cost_Log + Cache_Stats)
+    from whatifs import costguard as CG
+    CG.ladder_mail(ep)                                            # v9: one email if the AI-side overrun ladder was used
+    try:
+        k = CG.kids_check(vid, ep)                                # v9: YouTube's own made-for-kids value (email at once if TRUE)
+        if k is not None: st.update("Episodes", "episode_id", ep, {"kids_check": f"{iso()} {k}"})
+    except Exception as e: log(f"made-for-kids check skipped: {e}", "WARN", ep)
+    if d.get("cast"):                                             # v8.10: the Cast tab's last_used column (the draw itself reads the episode history)
+        from whatifs import cast as CAST
+        CAST.mark_used(d["cast"])
     nt = d.get("next_tease") or {}
     if nt.get("premise") and S("NEXT_TEASE_ON", bool):          # v8.9: only a video that is really going out sets the promise the next episode keeps
         set_setting("NEXT_PREMISE", json.dumps(dict({k: nt.get(k, "") for k in ("premise", "headline", "family", "ptype")}, set_at=iso()), ensure_ascii=False)[:600])

@@ -1,5 +1,5 @@
 """
-whatifs/voice.py  v8.9 (clarity master chain without echo; v8.3)
+whatifs/voice.py  v8.10 (Gemini TTS engine with Kokoro fallback, emotion curve; v8.9 clarity master chain without echo; v8.3)
 Original blended narrator voice + human-style pacing.
 
 - Voice: weighted mix of 2-3 Kokoro-82M (Apache-2.0) voice embeddings -> a new voice owned by nobody.
@@ -49,10 +49,12 @@ TAGS = {  # speed multiplier, extra gap before (s), extra gap after (s)
 @dataclass
 class Blend:
     name: str
-    parts: dict            # {"af_heart":0.5, ...}
+    parts: dict            # {"af_heart":0.5, ...}  (v8.10: also the Kokoro FALLBACK recipe when gvoice is set)
     lang: str = "a"        # American English pronunciation
+    gvoice: str = ""       # v8.10: the Gemini voice (Cast tab); empty = Kokoro only
+    gstyle: str = ""       # v8.10: the cast member's style direction (Gemini turn style)
     def voiceprint(self) -> str:
-        key = json.dumps({"p": dict(sorted(self.parts.items())), "l": self.lang}, sort_keys=True)
+        key = json.dumps({"p": dict(sorted(self.parts.items())), "l": self.lang, **({"g": self.gvoice} if self.gvoice else {})}, sort_keys=True)
         return "WI-VOICE-" + hashlib.sha256(key.encode()).hexdigest()[:10].upper()
 
 @dataclass
@@ -63,18 +65,24 @@ class Unit:
     gap_before: float = 0.0
     hesitate_after: float = 0.0     # from "..." or [beat]
     new_para: bool = False
+    curve: list = None              # v8.10: delivery curve words from {braces} (slow, low, whisper...); never spoken
+    events: list = None             # v8.10: vocal events from {braces} (breath, gasp, laugh...) on the FIRST piece of the line only
+    show: list = None               # v9: show tags on this line ([EXHIBIT A], [METER +1 vale], [JURY], [CLIPBAIT], [/CLIPBAIT]); never spoken
 
 # ---------- script parsing ----------
-SPEAKERS = ("DIRECTOR", "SKEPTIC", "HOST_A", "HOST_B")
+SPEAKERS = ("DIRECTOR", "SKEPTIC", "HOST_A", "HOST_B", "JUDGE", "WITNESS")      # v9: the judge and the surprise witness
 # v8.3: every way a model writes a speaker name ('**Director:**', '[THE CURIOUS ONE]', 'CURIOUS ONE (laughing):', a label alone on its line) is one of the two roles
 ALIASES = {"DIRECTOR": "DIRECTOR", "THE DIRECTOR": "DIRECTOR", "SIMULATION DIRECTOR": "DIRECTOR", "THE SIMULATION DIRECTOR": "DIRECTOR",
            "SKEPTIC": "SKEPTIC", "THE SKEPTIC": "SKEPTIC", "CURIOUS": "SKEPTIC", "CURIOUS ONE": "SKEPTIC", "THE CURIOUS ONE": "SKEPTIC",
-           "HOST_A": "HOST_A", "HOST A": "HOST_A", "HOST_B": "HOST_B", "HOST B": "HOST_B"}
-_NAME_ALT = r"THE\s+SIMULATION\s+DIRECTOR|SIMULATION\s+DIRECTOR|THE\s+DIRECTOR|DIRECTOR|THE\s+SKEPTIC|SKEPTIC|THE\s+CURIOUS\s+ONE|CURIOUS\s+ONE|CURIOUS|HOST[_ ]A|HOST[_ ]B"
+           "HOST_A": "HOST_A", "HOST A": "HOST_A", "HOST_B": "HOST_B", "HOST B": "HOST_B",
+           "VALE": "DIRECTOR", "INSPECTOR VALE": "DIRECTOR", "GRIMM": "SKEPTIC", "DR GRIMM": "SKEPTIC", "DR. GRIMM": "SKEPTIC", "DOCTOR GRIMM": "SKEPTIC",
+           "JUDGE": "JUDGE", "NANA ROSA": "JUDGE", "NANA": "JUDGE", "ROSA": "JUDGE", "WITNESS": "WITNESS", "ARCHIVIST": "WITNESS", "THE ARCHIVIST": "WITNESS"}
+_NAME_ALT = r"INSPECTOR\s+VALE|VALE|DR\.?\s+GRIMM|DOCTOR\s+GRIMM|GRIMM|NANA\s+ROSA|NANA|ROSA|JUDGE|THE\s+ARCHIVIST|ARCHIVIST|WITNESS|THE\s+SIMULATION\s+DIRECTOR|SIMULATION\s+DIRECTOR|THE\s+DIRECTOR|DIRECTOR|THE\s+SKEPTIC|SKEPTIC|THE\s+CURIOUS\s+ONE|CURIOUS\s+ONE|CURIOUS|HOST[_ ]A|HOST[_ ]B"
 _BRACKET_RE = re.compile(r"^\[([^\[\]]{1,26})\]\s*")
 _COLON_RE = re.compile(r"^(" + _NAME_ALT + r")\s*(?:\([^)]{0,24}\))?\s*(?::\s*|[\u2014\u2013-]\s+)", re.IGNORECASE)
 _SPLIT_SPK_RE = re.compile(r"(?=\[(?:" + _NAME_ALT + r")\])", re.IGNORECASE)
 _STRAY_RE = re.compile(r"\[[A-Za-z_ ]{1,26}(?::[A-Za-z_]{1,12})?\]")      # a bracket word must never be read aloud
+_SHOW_RE = re.compile(r"\[\s*(?:/?CLIPBAIT|METER\s*[+-]?\d+\s+(?:GRIMM|VALE)|EXHIBIT\s+[A-H]|JURY|TEACUP)\s*\]", re.IGNORECASE)      # v9
 _STAGE_RE = re.compile(r"^\(([A-Za-z ,'\u2019-]{1,32})\)\s*")                 # '(laughing) Okay that is wild.' -> a delivery hint, never spoken
 
 def _speaker_of(name):
@@ -106,16 +114,36 @@ def _peel(line):
         line = line[m.end():].strip()
     return speaker, tag, pause, line
 
+_CURVE_RE = re.compile(r"\{([^{}]{0,80})\}")
+def _curve(chunk):
+    """v8.10: the writer's delivery curve in braces, e.g. '[SKEPTIC] [tension] {slow, low, whisper, breath} text'. Returns (text without braces, curve words,
+    vocal events). Unknown words are dropped; braces are NEVER spoken (also when EMOTION_CURVE_ON is FALSE)."""
+    from whatifs.data import CURVE_WORDS, CURVE_EVENTS
+    words = [w.strip().lower() for m in _CURVE_RE.findall(chunk) for w in re.split(r"[,;/ ]+", m) if w.strip()]
+    return _CURVE_RE.sub(" ", chunk), [w for w in dict.fromkeys(words) if w in CURVE_WORDS], [w for w in dict.fromkeys(words) if w in CURVE_EVENTS]
+
+_CURVE_SPEED = {"slow": 0.94, "fast": 1.06, "whisper": 0.95, "hushed": 0.96, "breathless": 1.04}
+def curve_speed(u):
+    """Kokoro's share of the emotion curve: only the pace words (it cannot whisper or gasp)."""
+    k = 1.0
+    for w in (u.curve or []): k *= _CURVE_SPEED.get(w, 1.0)
+    return k
+
 def parse_script(script: str) -> list[Unit]:
     """Lines may start with [calm] [tension] [reveal] [aside] [callback] [pause:long] [pause:short] and, in Reality Engine mode, a speaker label
     ([DIRECTOR] or [SKEPTIC], also 'Director:' or '**Skeptic:**' or '[THE CURIOUS ONE]') in either order. A label alone on its line applies to the next line of speech.
     Inline: '...' = hesitation, [beat] = comic micro-pause. Labels are never spoken."""
     units: list[Unit] = []
-    pending_gap = 0.0; para = False; prev_spk = None; carry = "none"; sticky = None
+    pending_gap = 0.0; para = False; prev_spk = None; carry = "none"; sticky = None; pend_show = []
     for raw in script.splitlines():
         if not raw.strip():
             para = True; continue
         for chunk in [c for c in _SPLIT_SPK_RE.split(raw) if c.strip()]:     # two speakers packed on one line become two units
+            chunk, curve, events = _curve(chunk)                                # v8.10: {slow, whisper, breath} never spoken
+            show = [re.sub(r"\s+", " ", m.group(0).upper()) for m in _SHOW_RE.finditer(chunk)]       # v9: show tags kept as data, never spoken
+            chunk = _SHOW_RE.sub(" ", chunk)
+            if show and not chunk.strip(): pend_show += show; continue
+            show = pend_show + show; pend_show = []; close_later = False
             spk, tag, pause, line = _peel(chunk)
             pending_gap += pause
             if tag == "none": tag = carry                                      # '[tension] [SKEPTIC] text': the tag belongs to the text that follows
@@ -133,9 +161,15 @@ def parse_script(script: str) -> list[Unit]:
                 for j, p in enumerate(pieces):
                     p = re.sub(r"\s+", " ", _STRAY_RE.sub(" ", p)).strip()
                     if not p: continue
-                    u = Unit(text=p, tag=tag, speaker=speaker, gap_before=pending_gap, new_para=para and i == 0 and j == 0)
+                    u = Unit(text=p, tag=tag, speaker=speaker, gap_before=pending_gap, new_para=para and i == 0 and j == 0,
+                             curve=list(curve), events=list(events) if (i == 0 and j == 0) else [], show=list(show) if (i == 0 and j == 0) else [])
+                    if "[/CLIPBAIT]" in show and (i, j) == (len(sentences) - 1, len(pieces) - 1): pass
+                    elif "[/CLIPBAIT]" in show and (i == 0 and j == 0) and (len(sentences) > 1 or len(pieces) > 1):      # the closing tag belongs to the line's end
+                        u.show = [x for x in show if x != "[/CLIPBAIT]"]; close_later = True
                     if j < len(pieces) - 1: u.hesitate_after = 1.0
                     units.append(u); pending_gap = 0.0; para = False
+            if close_later and units: units[-1].show = (units[-1].show or []) + ["[/CLIPBAIT]"]
+            close_later = False
     return units
 
 # ---------- audio helpers ----------
@@ -258,8 +292,30 @@ def narrate(script: str, blend: Blend, out_base: str, style: str = "slow_burn",
         trim, bdb, brate = S("SPEED_TRIM", float), S("BREATH_DB", float), S("BREATH_RATE", float)
     except Exception:
         trim, bdb, brate = 1.04, -34.0, 0.6
-    st = dict(STYLES.get(style, STYLES["slow_burn"])); st["base"] *= trim; be = backend or KokoroBackend(blend)
+    st = dict(STYLES.get(style, STYLES["slow_burn"])); st["base"] *= trim
     speaker_blends = speaker_blends or {}; voice_fallback = []
+    units = parse_script(script)
+    if unit_hook:
+        try: units = unit_hook(units) or units
+        except Exception: pass                          # a helper must never stop the narration
+    engine, be, engine_note = "kokoro", backend, ""
+    if be is None and _gemini_wanted(blend, speaker_blends):     # v8.10: Gemini TTS; the whole narration falls back to Kokoro on failure (never a mix)
+        try:
+            from whatifs.tts_gemini import GeminiBackend
+            spk = {k: (b.gvoice, b.gstyle) for k, b in speaker_blends.items() if b.gvoice}
+            if blend.gvoice: spk.setdefault("NARRATOR", (blend.gvoice, blend.gstyle))
+            g = GeminiBackend(spk, episode=seed); g.prime(_director_units(units, speaker_blends)); be, engine = g, "gemini"
+        except Exception as e:
+            try: from whatifs.core import log, scrub, note_degraded
+            except Exception: log = scrub = note_degraded = None
+            fb = True
+            try: fb = S("TTS_FALLBACK_ON", bool)
+            except Exception: pass
+            if not fb: raise
+            engine_note = f"Gemini TTS failed, whole narration re-voiced with Kokoro: {str(e)[:160]}"
+            if log: log(engine_note, "WARN"); note_degraded("narration voiced by Kokoro (Gemini TTS failed)")
+            be = None
+    be = be or KokoroBackend(blend)
     if hasattr(be, "register_speaker"):
         for speaker, speaker_blend in speaker_blends.items():
             try:
@@ -271,10 +327,6 @@ def narrate(script: str, blend: Blend, out_base: str, style: str = "slow_burn",
                     from whatifs.core import log, scrub
                     log(f"character voice {speaker} could not load ({scrub(e)[:120]}) - that role uses the default narrator voice", "WARN")
                 except Exception: pass
-    units = parse_script(script)
-    if unit_hook:
-        try: units = unit_hook(units) or units
-        except Exception: pass                          # a helper must never stop the narration
     if speaker_blends and "DIRECTOR" in speaker_blends and "DIRECTOR" not in voice_fallback:
         for u in units:
             if u.speaker == "NARRATOR": u.speaker = "DIRECTOR"     # v8.3: in the two-role format an unlabelled line is the Director's: there is never a third voice
@@ -305,7 +357,7 @@ def narrate(script: str, blend: Blend, out_base: str, style: str = "slow_burn",
                 if u.new_para: gap += rng.uniform(0.30, 0.55)
                 gap = max(0.0, gap) + gb + u.gap_before
                 brk = bool(i and breaths and gap >= 0.40 and len(u.text.split()) >= 7 and rng.random() < brate)
-            if i and breaths and brk:
+            if i and breaths and brk and engine != "gemini":         # v8.10: Gemini breathes by itself (<breath> tags); no synthetic breath on top
                 b = _breath(rng, bdb); pre = max(0.05, gap - b.size / SR - 0.08)
                 add(_sil(pre)); add(b); add(_sil(0.08)); breath_here = True
             else:
@@ -313,14 +365,16 @@ def narrate(script: str, blend: Blend, out_base: str, style: str = "slow_burn",
         else:
             speed = 1.0; add(_sil((0.25 if i else 0) + u.gap_before))
         pause_before = t - t_gap0
-        if hasattr(be, "register_speaker") and hasattr(be, "packs"):
-            audio, words = be.synth(u.text, speed, speaker=u.speaker)
+        if engine == "gemini":
+            audio, words = be.take(i, u)
+        elif hasattr(be, "register_speaker") and hasattr(be, "packs"):
+            audio, words = be.synth(u.text, min(1.15, max(0.85, speed * curve_speed(u))), speaker=u.speaker)
         else:
             audio, words = be.synth(u.text, speed)
         audio, lead = _trim(audio, info=True)
         if lead: words = [{"w": x["w"], "s": max(0.0, x["s"] - lead), "e": max(0.0, x["e"] - lead)} for x in words]      # v8.3: word times follow the audio that was trimmed
         start = t; add(audio)
-        entry = {"i": i, "text": u.text, "tag": u.tag, "speaker": u.speaker, "speed": round(speed, 3),
+        entry = {"i": i, "text": u.text, "tag": u.tag, "speaker": u.speaker, "speed": round(speed, 3), "curve": (u.curve or []) + (u.events or []), "show": list(u.show or []),
                  "start": round(start, 3), "end": round(t, 3),
                  "words": [{"w": x["w"], "s": round(start + x["s"], 3), "e": round(start + x["e"], 3)} for x in words],
                  "pause_before": round(pause_before, 3), "pause_before_reasons": why_before + (["breath"] if breath_here else []),
@@ -340,10 +394,26 @@ def narrate(script: str, blend: Blend, out_base: str, style: str = "slow_burn",
     os.remove(raw_path)
     dur = _probe(wav_path)
     tl = {"voiceprint": blend.voiceprint(), "blend": blend.parts, "speaker_blends": {k: v.parts for k, v in speaker_blends.items()}, "voice_fallback": voice_fallback, "style": style,
-          "humanized": humanize, "duration": dur, "units": timeline}
+          "humanized": humanize, "duration": dur, "units": timeline, "engine": engine, "engine_note": engine_note,
+          "gemini_voices": {k: v.gvoice for k, v in speaker_blends.items() if v.gvoice} if engine == "gemini" else {},
+          "align": getattr(be, "align", {}), "tts_stats": getattr(be, "stats", {})}
     tl_path = out_base + "_timeline.json"
     json.dump(tl, open(tl_path, "w"), indent=1)
     return NarrationResult(wav_path, tl_path, dur, blend.voiceprint(), style)
+
+def _gemini_wanted(blend, speaker_blends):
+    try: eng = str(S("TTS_ENGINE") or "gemini").strip().lower()
+    except Exception: return False
+    if eng != "gemini": return False
+    roles = [b for b in (speaker_blends or {}).values()] or [blend]
+    return all(b.gvoice for b in roles)
+
+def _director_units(units, speaker_blends):
+    """The Gemini request must already know that an unlabelled line is the Director's (the same rule narrate applies below)."""
+    if speaker_blends and "DIRECTOR" in speaker_blends:
+        for u in units:
+            if u.speaker == "NARRATOR": u.speaker = "DIRECTOR"
+    return units
 
 def _write_wav(path, a, sr):
     import soundfile as sf

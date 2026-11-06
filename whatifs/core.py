@@ -1,4 +1,4 @@
-"""whatifs/core.py v8.9 - settings, storage (Google Sheet or local rehearsal store), logging, cost log, Google sign-in."""
+"""whatifs/core.py v8.10 (Gemini voice, cast, premise scores, craft tabs; v8.9) - settings, storage (Google Sheet or local rehearsal store), logging, cost log, Google sign-in."""
 from __future__ import annotations
 import json, os, re, time, datetime as dt, threading
 import requests
@@ -52,8 +52,10 @@ TABS = {
  "Strategies":   ["dimension", "name", "definition", "status", "plays", "score_sum", "score_n", "created", "source"],
  "Episodes":     ["episode_id", "slot_et", "premise", "ptype", "presentation_format", "title", "status", "yt_id", "reel1_yt", "reel2_yt",
                   "ig1", "ig2", "fb1", "fb2", "kill", "draw_json", "cost_inr", "release_tag", "assets", "notes", "updated",
-                  "reel3_yt", "reel4_yt", "ig3", "ig4", "fb3", "fb4", "pkg_check"],     # v8.5 (new columns go at the END so older Sheets keep their order)
- "Cost_Log":     ["ts", "episode_id", "item", "provider", "units", "inr"],
+                  "reel3_yt", "reel4_yt", "ig3", "ig4", "fb3", "fb4", "pkg_check", "teacup_json", "kids_check", "render_min", "atmos_json", "shots_json", "drop_posted"],     # v9: teacup placements (t, x, y, scale)     # v8.5 (new columns go at the END so older Sheets keep their order)
+ "Cost_Log":     ["ts", "episode_id", "item", "provider", "units", "inr",
+                  "model", "in_tok", "cache_read_tok", "cache_write_tok", "out_tok", "basis", "measured_inr", "est_inr", "role"],      # v8.11 (appended): measured token detail per AI call
+                                                                                                       # (basis = measured); one 'summary' row per video: measured vs estimated AI ₹ (inr = 0)
  "Run_Log":      ["ts", "job", "episode_id", "level", "message"],
  "Revenue_Log":  ["month", "source", "inr_received", "note"],
  "Trend_Brief":  ["week", "kind", "item", "detail", "source"],
@@ -69,6 +71,37 @@ TABS = {
  "Cut_Map":         ["episode_id", "cut_id", "start", "end", "duration", "kind", "action", "confidence", "reason", "method", "review_status"],
  "Reaction_Map":    ["episode_id", "t", "kind", "word", "line", "style", "total_sec"],
  "Table_Read":      ["episode_id", "arm", "mode", "kind", "from_role", "to_role", "text", "request"],
+ # v8.10 (created by Setup and by the daily learning job on older Sheets)
+ "Cast":            ["id", "role", "display_name", "voice", "gender", "pitch", "personality", "speech_habits", "signature_quirk", "style_direction",
+                     "intro_line", "active", "weight", "last_used"],                                       # 5 experts + 15 rotating guests (owner-editable)
+ "Voice_Check":     ["ts", "voice", "source", "listed", "synth_ok", "multi_speaker_ok", "detail"],         # which Gemini voice names this key can really use
+ "Premise_Scores":  ["ts", "episode_id", "round", "premise", "headline", "source", "claude_score", "gemini_score", "combined", "criteria_json", "passed",
+                     "chosen", "note", "ctr", "rel30", "avg_view_pct"],                                     # every pitch + both blind scores; filled with results later
+ "Craft_Notebook":  ["added", "note", "applies_to", "priority", "active"],                                 # owner notes: top-priority creative input
+ "Technique_Library": ["ts", "video_id", "title", "channel", "views", "hook_device", "first_3s_visual", "cut_rhythm", "sound_moment", "payoff_structure",
+                       "evidence", "source_url"],                                                           # technique observations from top niche videos
+ "Owners_Cut":      ["ts", "episode_id", "round", "inside_scene", "weirdness_hook", "emotional_peaks", "payoff", "originality", "mean", "passed", "notes"],
+ "Script_Previews": ["draft_id", "created", "status", "premise", "title", "hook", "est_cost_inr", "approved_at", "episode_id", "room_json", "note"],
+ # v8.11 (created by Setup and by the daily learning job on older Sheets)
+ "Premise_Bench":   ["bench_id", "added", "status", "premise", "headline", "family", "ptype", "claude_score", "gemini_score", "combined", "criteria_json",
+                     "source", "episode_id", "used_at", "note", "src", "demand_json"],      # v9: src = outlier | original | comment                                              # pre-scored approved premises; the scout draws from here first
+ # v9 (stage 1): "Reality on Trial"
+ "Demand_Signals":  ["ts", "video_id", "title", "channel", "views", "channel_median", "multiple", "published", "used"],     # v9: outlier videos (demand evidence)
+ "Packaging_Tests": ["episode_id", "yt_id", "variant", "title", "thumb_text", "thumb_file", "status", "window_start", "window_end", "views_start", "views_end",
+                     "views_per_hour", "ctr", "picked_by", "created"],                                          # v9: 3 pairs, owner pick, rotation result
+ "Comment_Queue":   ["ts", "episode_id", "comment_id", "author", "kind", "text", "draft", "status", "replied_at", "mined"],     # v9: triaged comments (untrusted text)
+ "Season":          ["ts", "episode_id", "case", "verdict", "meter_final", "jury_tally", "teacup_finders", "clue"],
+ "Experiments":     ["episode_id", "created", "premise_source", "packaging_variant", "intensity", "hook_shape", "publish_slot", "hypothesis",
+                     "ctr_48h", "ret30_48h", "avg_view_sec_48h", "comments_per_1k_48h", "shares_48h", "country_48h", "ctr_7d", "ret30_7d", "avg_view_sec_7d",
+                     "comments_per_1k_7d", "shares_7d", "country_7d", "ctr_28d", "ret30_28d", "avg_view_sec_28d", "comments_per_1k_28d", "shares_28d", "country_28d"],
+ "Character_Sheets": ["ts", "character", "expression", "hash", "prompt", "file", "status", "approved_at"],          # v9: one-time, lifetime-capped, locked after approval
+ "Show_Log":        ["ts", "episode_id", "format", "intensity", "witness_twist", "verdict_winner", "meter_final", "fallback", "issues", "plan_json", "opening_line"],
+ "Retention_Map":   ["ts", "episode_id", "beat", "start", "end", "shot_types", "drop_per_30s", "vs_median", "confidence", "views"],          # v9.1 (report only)
+ "Role_ROI":        ["ts", "episode_id", "role", "calls", "notes", "accepted", "changed_script", "inr", "inr_per_accepted"],               # v9.1 (report only)
+ "Characters":      ["id", "name", "speaker", "role", "philosophy", "rhythm", "tics", "vocabulary", "recurring_bit", "when_wrong", "relationships", "visual",
+                     "voice_style", "sound", "audio_chain", "status", "updated", "gvoice", "gstyle", "cast_id", "grammar_json"],     # gvoice: Gemini voice (Voice_Check); cast_id: a Cast row to borrow                                     # the character bible (core cast; owner-editable)
+ "Cache_Stats":     ["updated", "episode_id", "job", "run_id", "calls", "cached_calls", "cache_read_tok", "cache_write_5m_tok", "cache_write_1h_tok",
+                     "uncached_in_tok", "out_tok", "hit_ratio", "tokens_saved", "usd_saved", "ai_measured_inr", "ai_estimated_inr", "warnings"],   # one row per episode and job
 }
 
 class LocalStore:
@@ -222,7 +255,7 @@ DEFAULTS = {
  # schedule
  "PAUSED": ("FALSE", "TRUE stops everything"),
  "PAUSED_UNTIL": ("", "auto-set by Guardian"),
- "PUBLISH_DAYS": ("Tue,Sat", "US Eastern days; 2 long videos/week to fit the ₹3,500 cap while preserving 3 Kling clips and writer-room reviews"),
+ "PUBLISH_DAYS": ("Tue,Sat", "US Eastern days; 2 long videos/week to fit the ₹4,000 cap while preserving 3 Kling clips and writer-room reviews"),
  "PUBLISH_HOUR_ET": ("10:00", "centre of slot, US Eastern"),
  "PUBLISH_JITTER_MIN": ("90", "+/- minutes"),
  "PRODUCE_AHEAD_HOURS": ("30", "start producing this long before a slot"),
@@ -238,12 +271,12 @@ DEFAULTS = {
  "FPS": ("30", ""),
  # visuals and money
  "STILLS_MIN": ("44", ""), "STILLS_MAX": ("56", ""), "LIVING_STILLS": ("8", ""), "KLING_CLIPS": ("3", "default Kling clips per long video"), "KLING_MIN_CLIPS": ("3", "minimum Kling clips; budget controller must preserve this target"),
- "BUDGET_FLOOR_INR": ("3500", "monthly budget floor; paired with ceiling for a hard ₹3,500 cap"), "BUDGET_CEILING_INR": ("3500", "hard monthly spending cap"), "REVENUE_SHARE": ("0.10", ""),
+ "BUDGET_FLOOR_INR": ("4000", "monthly budget floor; paired with ceiling for a hard ₹4,000 cap (v8.10: was ₹3,500)"), "BUDGET_CEILING_INR": ("4000", "hard monthly spending cap, everything included: pictures, clips, Claude writing incl. thinking, Gemini incl. TTS"), "REVENUE_SHARE": ("0.10", ""),
  "USD_INR": ("99", "rupees per dollar incl. forex"),
  "PRICE_STILL_USD": ("0.0046", "cheap still, 1.5MP"), "PRICE_THUMB_USD": ("0.08", "premium image, about 2MP"),
  "PRICE_LIVING_USD": ("0.02", "living still clip"), "PRICE_KLING_USD": ("0.25", "5s hero clip"),
  "REEL1_SHORTS_ON": ("TRUE", "TRUE = reels also go to YouTube Shorts (Instagram/Facebook are controlled by META_ON)"),
- "LLM_EST_INR": ("148", "conservative AI-writing allowance per video including multi-role reviews and the v8.7 retention fix (about Rs 4-8, only when the gate finds a problem); reconcile against Cost_Log"),
+ "LLM_EST_INR": ("176", "conservative AI-writing allowance per video (v9: 176 = v8.11's 200 - Rs 30 with AI_SAVER_ON + Rs 6 for the Show Plan and tag check; set 206 if you switch AI_SAVER_ON off). Reconcile with the 'ai_per_video_summary' rows in Cost_Log / Cache_Stats after 2-3 videos"),
  "PRICE_OPUS_IN": ("4", "USD per million input (Opus 5.5 list price, Oct 2026; verify on platform.claude.com)"), "PRICE_OPUS_OUT": ("20", "USD per million output"),
  "PRICE_SONNET_IN": ("2", "USD per million input (Sonnet 5.5 list price, Oct 2026; verify)"), "PRICE_SONNET_OUT": ("10", "USD per million output"),
  "FAL_FUNDED_USD": ("10", "add here when you top up (not needed if auto-reload is on)"),
@@ -381,6 +414,180 @@ DEFAULTS = {
  "NEXT_TEASE_ON": ("TRUE", "TRUE = each video ends by teasing the NEXT episode's premise, and the next episode is made from that teased premise"),
  "NEXT_PREMISE": ("", "auto - the premise teased at the end of the last video (the next episode picks it up)"),
  "PR_MAIL_ON": ("TRUE", "TRUE = when a code change (from Claude Code or the Repair Bot) passes every check, you get an email with a one-click merge link"),
+ # v8.10: Gemini voice + cast, premise quality, immersion / POV, voice acting, sound design, creative constitution, Script Preview, budget view.
+ # Every new behaviour has a switch: setting it to the value in brackets restores v8.9 behaviour.
+ "TTS_ENGINE": ("gemini", "gemini = Gemini TTS (two speakers per request, expression tags, word timings derived by code) with automatic fallback to Kokoro on failure; kokoro = v8.9 voices [kokoro]"),
+ "TTS_FALLBACK_ON": ("TRUE", "TRUE = if Gemini TTS fails for an episode, the WHOLE narration is re-voiced with Kokoro (never a mix of engines in one video) and the notes say so"),
+ "TTS_CHUNK_WORDS": ("220", "most words per Gemini TTS request (about 90 s of speech; the model takes 8,192 input tokens and returns at most ~10 min of audio)"),
+ "TTS_RPM": ("8", "Gemini TTS requests per minute this job allows itself (Tier 1 limits vary; a 429 waits and retries)"),
+ "TTS_MAX_RETRIES": ("4", "tries per TTS request (429 / 5xx wait longer each time) before the chunk is voiced line by line, then before falling back to Kokoro"),
+ "TTS_ALIGN": ("auto", "how word timings are derived from Gemini audio: auto = CTC forced alignment when the aligner loads, else energy + syllable timing; energy = always the free method"),
+ "PRICE_GEM_TTS_IN": ("0.5", "USD per million text input tokens, Gemini Flash TTS (Google list price Oct 2026; verify on ai.google.dev pricing)"),
+ "PRICE_GEM_TTS_OUT": ("9", "USD per million AUDIO output tokens (25 tokens = 1 s of speech), Gemini Flash TTS; promotional 2026 rate"),
+ "PRICE_GEM_TTS_OUT_2027": ("18", "the same rate from 1 Jan 2027 (reported doubling; verify); the code switches by itself on that date"),
+ "GEMINI_FUNDED_USD": ("0", "prepaid Gemini credit you have added (Tier 1, prepaid). Add here when you top up; 0 = not tracked"),
+ "GEMINI_LOW_USD": ("3", "email a top-up reminder when the estimated Gemini credit left falls below this many dollars"),
+ "CAST_ON": ("TRUE", "TRUE = the two roles come from the Cast tab (5 experts + 15 rotating guests, personality briefed to the writer) [FALSE = v8.9 GUESTS]"),
+ "GUEST_NO_REPEAT": ("6", "a guest never appears again within this many videos (15 guests: up to 14)"),
+ "EXPERT_PICK": ("rotate", "rotate = the least recently used active expert (weight breaks ties); fixed:<id> = always that expert (e.g. fixed:E1)"),
+ "PREMISE_BANK_ON": ("TRUE", "TRUE = the seed bank is LLM-generated (illogical-sounding but physically showable), regenerated monthly, deduped vs Banned + past episodes [FALSE = v8.9 template grid]"),
+ "PREMISE_BANK_SIZE": ("60", "premises generated per monthly bank (one Claude call, about Rs 4-8)"),
+ "PREMISE_BANK_MONTH": ("", "auto - month of the current LLM premise bank"),
+ "PREMISE_DUAL_SCORE_ON": ("TRUE", "TRUE = every pitch is scored by two independent blind judges (Claude + Gemini) and the scores are combined [FALSE = the scout's own scores]"),
+ "PREMISE_MIN_SCORE": ("7.0", "combined score (0-10) a pitch needs to pass. Nothing passes = new seeds (PREMISE_RETRY_ROUNDS), then the best-scoring pitch is used and you get an email (SKIP_IF_BELOW_BAR)"),
+ "PREMISE_RETRY_ROUNDS": ("3", "extra scout rounds with fresh seeds after the first (v8.11: 3, was 2). Still nothing above the bar = the best-scoring pitch is used and you get an email (SKIP_IF_BELOW_BAR = TRUE skips the slot instead)"),
+ "PREMISE_FAIL_FORWARD": ("FALSE", "TRUE = v8.9 behaviour (the last try accepts any pitch with floor 0)"),
+ "IMMERSION_ON": ("TRUE", "TRUE = an Immersion Director gives every shot a first-person vantage, a body sensation and a sensory stack; POV rules on every image / living / Kling prompt [FALSE = v8.9 shots]"),
+ "POV_CAMERA_ON": ("TRUE", "TRUE = free POV camera moves and effects in render (pov_rush, impact_shake, debris parallax) on stills, living stills, Kling clips, stock and graphics, locked to sound events [FALSE = v8.9 camera]"),
+ "EMOTION_CURVE_ON": ("TRUE", "TRUE = the writer marks each line's delivery curve {slow, low, whisper, breath, gasp...}; Gemini acts it, Kokoro uses its pace part [FALSE = tags only]"),
+ "SOUND_IMMERSIVE_ON": ("TRUE", "TRUE = ambient beds per scene, close-mic textures under key lines, tactile foley, the impact recipe and stereo movement in POV scenes (all code-generated, free) [FALSE = v8.9 sound]"),
+ "CONSTITUTION": ("", "the Creative Constitution (blank = the built-in one, see docs/CHANGES.md v8.10). Type your own text here to replace it; every department reads it"),
+ "CRAFT_NOTEBOOK_ON": ("TRUE", "TRUE = active rows of the Craft_Notebook tab are top-priority creative input for the scout and every writer"),
+ "TECHNIQUE_RESEARCH_ON": ("TRUE", "TRUE = the weekly scout reads titles, descriptions and top comments of top niche videos (YouTube API quota, about 120 units) and files technique observations"),
+ "TECHNIQUE_MAX_VIDEOS": ("6", "top videos studied per week for the Technique Library"),
+ "OWNERS_CUT_ON": ("TRUE", "TRUE = the Owner's Cut critic scores the script 1-10 (inside the scene, weirdness hook, emotional peaks, payoff, originality) before any picture money; below the bar = rewrite"),
+ "OWNERS_CUT_MIN": ("7.5", "lowest mean (and no single score below 6) the Owner's Cut accepts"),
+ "OWNERS_CUT_MAX_ROUNDS": ("3", "rewrites the Owner's Cut may ask for (v8.11: 3, was 2); still below the bar = the best-scoring version is made and you get an email (SKIP_IF_BELOW_BAR = TRUE skips the slot instead)"),
+ "PREVIEW_USE_APPROVED": ("TRUE", "TRUE = an approved Script Preview is used by the next production slot (its writing is not paid for twice)"),
+ "THINK_EST_INR": ("40", "allowance per video for Claude/Gemini thinking tokens (billed as output) on top of LLM_EST_INR; reconcile against Cost_Log"),
+ "TTS_EST_INR": ("30", "allowance per video for Gemini TTS incl. one re-take and reels (10 min of speech is about 15,000 audio tokens)"),
+ "ROOM_EXTRA_EST_INR": ("20", "v8.10 allowance per video for the two premise judges, the Immersion Director and the Owner's Cut (incl. one rewrite); reconcile against Cost_Log"),
+ "KLING4_MAIL_MONTH": ("", "auto - month the 4th-Kling headroom email was sent"),
+ "KLING_4TH_PROPOSE_ON": ("TRUE", "TRUE = the money email proposes a 4th Kling clip (setting KLING_CLIPS=4) only when the month's headroom covers it for every remaining video"),
+ # v8.11: opening Kling, no skipped slots, prompt caching, model routing by capability, measured AI cost. Every behaviour has a switch; the value in
+ # brackets in a note restores v8.10.
+ # v9 "Reality on Trial" (stage 1: the Show Plan is requested, validated, repaired and logged; the script / render read it from stage 2)
+ "SHOW_MODE": ("auto", "auto = the Showrunner also returns a Show Plan (no extra AI call), validated and logged in Show_Log; off = exactly the v8.11 Showrunner prompt"),
+ "SHOW_FORMAT": ("trial", "trial = Reality on Trial (charge, exhibits, witness, jury, verdict); wager = reserved for the bet-based variant"),
+ "CHARACTER_INTENSITY_MIN": ("0", "lowest character intensity (0-3) the Show Plan may choose"),
+ "CHARACTER_INTENSITY_MAX": ("3", "highest character intensity (0-3) the Show Plan may choose"),
+ # v9 cost controls (stage 3a): AI side only, never visuals
+ "OUTLIER_RANK_ON": ("TRUE", "v9: top niche videos are ranked by views / their channel's own recent median; outliers (Demand_Signals tab) feed the technique library and the bench (about 3 quota units per channel)"),
+ "OUTLIER_MIN_MULTIPLE": ("2", "a video counts as an outlier when its views are at least this multiple of its channel's recent median"),
+ "PREMISE_SOURCE_MIX": ("0.6", "share of bench premises drawn from outlier demand (same promise, NEW execution; never their titles or thumbnails); the rest original"),
+ "PREMISE_MIX_EPISODES": ("8", "the source mix applies to the first N episodes; after that the bench is drawn by score only"),
+ # v9 stage 3b: packaging, community, season, experiments
+ "AUDIO_DROPS_ON": ("TRUE", "v9: the clip-bait moment is filed as a 5-8 s audio drop (Drive) for Instagram original audio. Zero cost; posting needs the Meta keys"),
+ # v9 stage 3c
+ "CHARACTER_SHEET_IMAGE_CAP": ("40", "LIFETIME cap on character-sheet images (all runs together, regenerations included). About Rs 8 each = about Rs 320 at most, once"),
+ "SHEET_EXPRESSIONS": ("10", "expressions per character on the sheets (max 12)"),
+ "BATCH_ON": ("TRUE", "TRUE = non-urgent Claude jobs (bench refill, monthly brief) go through Message Batches at half price; a batch that has not finished in BATCH_MAX_WAIT_MIN is cancelled and the same request runs normally once"),
+ "BATCH_MAX_WAIT_MIN": ("40", "longest wait for a batch before the normal call is used"),
+ "PRICE_BATCH_DISCOUNT": ("0.5", "batch price as a share of the normal price (Nov 2026 docs; verify)"),
+ "TTS_CACHE_ON": ("TRUE", "TRUE = every voiced request is cached by text + voice + style inside the job, so a retry or a reel never pays for the same audio twice"),
+ "EFFORT_AB_ON": ("FALSE", "TRUE = the script's effort alternates medium / high by episode (recorded as effort_arm) to measure the quality and cost difference"),
+ "PROVENANCE_ON": ("TRUE", "TRUE = a provenance record per episode (Show Plan, bible hash, owner decisions, sheet approvals, notebook) goes to Drive for policy appeals; no personal data"),
+ "GREENLIGHT_TIERS_ON": ("FALSE", "TRUE = the money email reports how much MEASURED saving could fund an upgraded tier; it never reduces the standard and never spends by itself"),
+ "PKG_VARIANTS": ("3", "title + thumbnail-text pairs per video (1-3). A third pair re-uses the main thumbnail picture unless PKG_VARIANT_C_IMAGE is TRUE"),
+ "PKG_VARIANT_C_IMAGE": ("FALSE", "TRUE = one more premium image for the third pair (about Rs 8 per video)"),
+ "THUMB_APPROVAL_ON": ("TRUE", "TRUE = for the first THUMB_APPROVAL_FIRST_N videos you get ONE email with one-click picks; the video is already scheduled with A, so a slot never waits"),
+ "THUMB_APPROVAL_FIRST_N": ("8", "videos for which the pick email is sent"),
+ "THUMB_APPROVAL_HOURS": ("6", "a pick that arrives later than this is ignored (A stays, the test decides)"),
+ "PKG_ROTATE_ON": ("TRUE", "TRUE = the pairs take turns in equal windows inside PKG_ROTATE_HOURS after release (title + thumbnail through the API); the best views/hour stays. YouTube's Test & Compare has no public API we could verify"),
+ "PKG_ROTATE_HOURS": ("48", "length of the packaging test after release"),
+ "JURY_COMMENT_ON": ("TRUE", "TRUE = after release, Nana Rosa posts the jury comment (the API cannot pin: you get the text to pin)"),
+ "COMMENT_REPLY_MODE": ("draft", "off | draft | auto. draft = comments are triaged into Comment_Queue with template drafts; auto = only template thank-yous to predictions are posted (capped daily); never anything else"),
+ "COMMENT_REPLY_DAILY_CAP": ("10", "auto replies per day at most"),
+ "COMMENT_DIGEST_WEEK": ("", "auto - ISO week of the last comments digest"),
+ "TEACUP_FINDERS_MAX": ("3", "viewers named as teacup finders in the next episode (handles only, filtered)"),
+ "EXPERIMENT_EPISODES": ("8", "videos that get an Experiments row (hypothesis + 48 h / 7 d / 28 d results); recommendations only, nothing changes by itself"),
+ "TARGET_REGIONS": ("US,UK,CA,AU", "regions the channel aims at (publish time, premise relevance, the country-share note)"),
+ "REGION_DOMINANCE_SHARE": ("0.7", "an info email when one country brings this share of a video's views"),
+ "VARIETY_LOOKBACK": ("6", "episodes the variety guard compares the Show Plan with"),
+ # v9.1 (K103): every v9.1 feature has its own flag; V91_SAFE_MODE switches them ALL off at once (= exactly v9)
+ "V91_SAFE_MODE": ("FALSE", "TRUE = every v9.1 feature is off at once and the pipeline behaves exactly like v9 (one-cell rollback)"),
+ "ATMOSPHERE_ON": ("TRUE", "v9.1 Atmosphere Pack (code only, zero cost): moving light, particles, fog, heat shimmer, lens detail, breath fog, beat pulse, aura. FALSE = exactly the v9 picture"),
+ "ATMOSPHERE_LEVEL": ("auto", "auto = follows the Show Plan intensity (+1 for fire / space / impact shots), or a fixed 0-3"),
+ "ATMOSPHERE_MAX_OVERHEAD_PCT": ("30", "the atmosphere may add at most this share to the render time; above it particles, then fog, then god-rays switch off by themselves (logged)"),
+ "ATMOS_GODRAYS_ON": ("TRUE", "v9.1 layer: god-rays from the brightest region + a slow light sweep"),
+ "ATMOS_PARTICLES_ON": ("TRUE", "v9.1 layer: dust / embers / ash / snow / rain / sparks in 3 depth layers, by mood"),
+ "ATMOS_FOG_ON": ("TRUE", "v9.1 layer: fog / smoke from scrolling noise, denser far, tinted by the shot"),
+ "ATMOS_SHIMMER_ON": ("TRUE", "v9.1 layer: heat shimmer on fire / desert / engine shots"),
+ "ATMOS_LENS_ON": ("TRUE", "v9.1 layer: edge chromatic aberration, anamorphic streaks, halation, breathing focus"),
+ "ATMOS_BREATH_ON": ("TRUE", "v9.1 layer: breath fog on cold / hot found-footage shots"),
+ "ATMOS_PULSE_ON": ("TRUE", "v9.1 layer switch for the beat pulse (see PULSE_ON)"),
+ "ATMOS_AURA_ON": ("TRUE", "v9.1 layer: glow around the focal point; an energy swirl at intensity 3"),
+ "PULSE_ON": ("TRUE", "v9.1 beat pulse ONLY on impact / reveal beats and hero-still reels: <= 2 per second, <= 8 % luminance, never red, never in the first 2 s or during HUD / exhibit readouts (QC holds the video otherwise)"),
+ "LIGHTING_DIRECTIVE_ON": ("TRUE", "v9.1: every image prompt gets a lighting + composition directive (motivated key light, rim light, haze, one focal point, hero framing, dominant + accent hue); the style lock is kept"),
+ "IMAGE_PROMPT_MAX_CHARS": ("1800", "longest image prompt sent (prompt + directive + style lock); the directive is shortened first. ASSUMED safe for the image models in use"),
+ "HERO_STILL_REELS_ON": ("FALSE", "v9.1: one 15-25 s seamless-loop vertical reel per episode from its best premium still (CV poster score, no AI), atmosphere + pulse + aura + hook, the episode's own voiced line (no new TTS). To Drive"),
+ "HERO_STILL_SHORTS_ON": ("FALSE", "v9.1: also upload the hero-still reel as a YouTube Short (Instagram only with Meta keys)"),
+ "HERO_STILL_CANDIDATES": ("8", "stills scored to pick the hero still"),
+ "HERO_REEL_LAST_TEMPLATE": ("", "auto - the last hero-reel template (never repeated twice in a row)"),
+ "CHAR_GRAMMAR_ON": ("TRUE", "v9.1: each character's cinematic grammar (Grimm handheld + dutch tilt + underlight; Vale symmetrical slow push, teal-steel; Rosa eye level, warm amber drift) on theater portraits; Characters.grammar_json overrides"),
+ "THEATER_STYLE": ("portrait", "portrait | courtroom (the locked set: Rosa at the bench, Grimm at the lectern, Vale at the defence table). Needs approved sheets and CHARACTER_THEATER_ON"),
+ "COURTROOM_ON": ("TRUE", "v9.1 switch for the courtroom composition (used only when THEATER_STYLE = courtroom)"),
+ "RETENTION_MAP_ON": ("TRUE", "v9.1: the retention curve mapped to beats and shot types (Retention_Map tab); clear dips become Director lessons. Report only, zero cost"),
+ "RETENTION_MIN_VIEWS": ("300", "no retention lesson below this many views (high confidence from 3x)"),
+ "ROLE_ROI_ON": ("TRUE", "v9.1: per room role: notes accepted, script changed, cost per accepted note (Role_ROI tab, Monthly Brief). Report only, nothing is removed"),
+ "COMMENT_MINING_ON": ("TRUE", "v9.1: viewers' 'what if' comments (filtered, deduplicated) become Premise_Bench CANDIDATES (src=comment), judged by both judges at the next refill. One batch call a day, about Rs 0.2"),
+ "COMMENT_MINING_DAILY_CAP": ("10", "viewer suggestions classified per day at most"),
+ "COMMENT_MINING_DAY": ("", "auto - the last day comments were mined"),
+ "COMMENT_CREDIT_NAMES": ("FALSE", "TRUE = a kept suggestion records the viewer's handle (default: no names)"),
+ "COMMENT_AI_DRAFTS_ON": ("FALSE", "v9.1: AI-drafted in-character replies to viewers' questions, ONE batch call a day (capped); drafts go to Comment_Queue and the weekly digest only, never posted"),
+ "COMMENT_AI_DRAFTS_DAILY_CAP": ("10", "questions drafted per day at most"),
+ "COMMENT_DRAFTS_DAY": ("", "auto - the last day drafts were made"),
+ "VARIETY_REWRITE_ON": ("TRUE", "v9.1: if the opening still resembles recent ones after the avoid-list, ONE surgical rewrite of the first beat (Sonnet, about Rs 6, only when needed; never while the overrun ladder is active)"),
+ "VARIETY_MAX_SCORE": ("0.5", "opening-line similarity (0-1) above which the one variety rewrite runs"),
+ "AUDIO_DROP_POST_ON": ("FALSE", "v9.1: post the clip-bait audio drop as an Instagram Reel (over the hero still) when META_ON and the Meta keys exist; never twice; email on the first success"),
+ "AUDIO_DROP_FIRST_MAIL": ("", "auto - when the first audio drop was posted"),
+ "VOICE_SUBSTITUTE_ON": ("TRUE", "v9.1: when a character's Gemini voice is not in Voice_Check (synth_ok), the closest available voice by gender + style is used before the Kokoro fallback; logged"),
+ "SPEND_WARN_PCTS": ("70,90", "one email when this month's spend passes each of these percentages of the cap"),
+ "SPEND_WARN_SENT": ("", "auto - which spend warnings were sent this month"),
+ "OVERRUN_LADDER_ON": ("TRUE", "TRUE = when a video's AI cost passes OVERRUN_FACTOR x its AI estimate, optional reviews are dropped, then rewrite rounds reduced (AI side only, pictures never); one email afterwards"),
+ "OVERRUN_FACTOR": ("1.5", "AI spend / AI estimate above which the degradation ladder starts"),
+ "DEVIATION_PCT": ("15", "the weekly cost email lists stages whose measured cost per video differs from the estimate by more than this percentage"),
+ "DEVIATION_MAIL_WEEK": ("", "auto - ISO week of the last weekly cost email"),
+ "KIDS_GUARD_ON": ("TRUE", "TRUE = after upload, YouTube's own made-for-kids value is read (and daily for 7 days); TRUE on YouTube = an email at once"),
+ "COMMENT_AGENT_EST_INR": ("0", "monthly allowance for the comment agent (set by stage 3b; 0 while it is off)"),
+ "VIDEOS_PER_MONTH_EST": ("9", "videos per month used to spread monthly allowances per video in the estimator"),
+ "FOUND_FOOTAGE_ON": ("TRUE", "v9: the cold open and RECON exhibits look like found footage (helmet-cam vignette, grain, REC dot, timestamp, gentle exposure drift; glitch bursts at intensity 2+, lens crack at 3). Code only, zero cost"),
+ "HUD_ON": ("TRUE", "v9: the Survival HUD from the Show Plan (values come from the script's evidence; checked by code)"),
+ "JURY_METER_ON": ("TRUE", "v9: the live Jury Meter bar from the script's [METER] tags; QC checks it ends on the verdict"),
+ "EXHIBIT_PINS_ON": ("TRUE", "v9: 'EXHIBIT A · credit' / 'RECONSTRUCTION' pins when an exhibit is shown"),
+ "TEACUP_ON": ("TRUE", "v9: Nana's teacup hidden in 2-4 reconstruction moments (never before 30 s, never over evidence, not in thumbnails); placements logged in Episodes"),
+ "LETTERBOX_ON": ("TRUE", "v9: cinema bars on hero moments (the impact)"),
+ "PHOTOSENSITIVITY_QC_ON": ("TRUE", "v9: final QC measures the master: at most 3 luminance flashes per second and no large-area red flashing (a failure stops posting like any QC problem)"),
+ "CHARACTER_THEATER_ON": ("FALSE", "v9: courtroom / character theatre shots from approved character sheets. FALSE until you approve the sheets: the speaker chip + exhibits are used instead"),
+ "MOTION_BOOST_ON": ("FALSE", "v9: stretch each Kling clip (speed ramps, crops, echo cuts, reverse, last-frame continuity). Code only"),
+ "KLING_OPENING_CLIPS": ("1", "Kling clips placed in the opening window as a first-person POV rush hook; the rest of KLING_CLIPS go to the peak / impact sequence. Moved, never added: same cost [0 = v8.10, all at the impact]"),
+ "PREMISE_BENCH_ON": ("TRUE", "TRUE = the scout first draws from the Premise_Bench tab (pre-scored premises that already passed both blind judges) [FALSE = v8.10]"),
+ "PREMISE_BENCH_TARGET": ("12", "approved premises the bench is filled up to"),
+ "PREMISE_BENCH_MIN": ("6", "when fewer READY premises are left, the daily learning job refills the bench (extra-effort generation + both blind judges, about Rs 25-45 per refill)"),
+ "PREMISE_BENCH_EFFORT": ("xhigh", "Claude effort for the bench refill (extra-effort generation; it runs about once in 3-4 weeks)"),
+ "PREMISE_BENCH_EST_INR": ("45", "allowance for one bench refill (generation + both judges); a refill starts only when the month's production room still covers the next video plus this (a bench premise replaces that video's scout and judge calls, so it roughly pays for itself)"),
+ "PREMISE_BENCH_MAX_AGE_DAYS": ("45", "a bench premise older than this is marked STALE and no longer used"),
+ "PREMISE_BENCH_MAIL_MONTH": ("", "auto - month the 'bench could not be refilled' email was sent"),
+ "SKIP_IF_BELOW_BAR": ("FALSE", "FALSE = no slot is ever skipped for quality: after every premise round and every Owner's Cut rewrite, the BEST-scoring version is made, all scores are kept and you get one email [TRUE = v8.10: skip the slot]"),
+ "PROMPT_CACHE_ON": ("TRUE", "TRUE = Claude prompts are cached with explicit breakpoints (shared rules 1 h, episode material 5 min or 1 h, the role's instruction uncached). Only the bill changes, never the answer [FALSE = v8.10]"),
+ "CACHE_TTL_AUTO": ("TRUE", "TRUE = the episode block is cached for 1 h instead of 5 min when its next use is likely to come later than 5 min (long replies, slow steps) [FALSE = always 5 min]"),
+ "CACHE_WARM_ON": ("TRUE", "TRUE = before calls that run side by side and share a prefix, ONE serial warm-up writes the cache first (a zero-output request), so the parallel calls read it"),
+ "CACHE_MIN_TOKENS": ("512", "the smallest prefix Claude caches (512 tokens for the 5.x models per the prompt-caching docs, Nov 2026). Shorter prefixes are sent without a breakpoint and noted"),
+ "CACHE_WARN_RATIO": ("0.6", "Cache_Stats warns (Run_Log) when an episode's cache hit ratio (reads / (reads + writes)) is below this"),
+ "CACHE_EFFORT_PER_MESSAGE": ("FALSE", "TRUE = effort is sent per message (beta header) so calls with different effort can share one cached prefix; a 400 switches it off for the job by itself"),
+ "SCRIPT_MODEL": ("opus", "opus = Claude Opus writes the first draft and the critic / Owner's Cut rewrites; fable = Claude Fable (stronger, 2.5x the price; its extra safety filters may refuse some biology topics, then Opus takes over by itself) [v8.10 = sonnet]"),
+ "OWNERS_CUT_JUDGE": ("gemini", "gemini = Gemini Pro judges the Owner's Cut, independent of the Opus writer (v8.10 behaviour, default); opus = Claude Opus at EFFORT_JUDGE (same family as the writer, so it may favour its own style)"),
+ "HAIKU_CHORES_ON": ("TRUE", "TRUE = a reply that is not valid JSON is repaired by Claude Haiku (about Rs 0.05) and accepted ONLY if every word of the original survives unchanged; otherwise the old retry runs [FALSE = v8.10]"),
+ "MODEL_ROUTES": ("", "optional JSON to move a room role to another model family, e.g. {\"immersion\": \"opus\"}. Blank = the built-in routing (see docs/CHANGES.md v8.11)"),
+ "EFFORT_CREATIVE": ("high", "Claude effort for creative generation (scout, showrunner, bible, premise bank / bench, first draft, rewrites): low | medium | high | xhigh | max"),
+ "EFFORT_JUDGE": ("high", "Claude effort for judgment (premise judge, Owner's Cut)"),
+ "EFFORT_EDIT": ("high", "Claude effort for edits (format, fact fix, humanize, length, packager, reels, memos, Director). high = the Sonnet default, i.e. v8.10 behaviour"),
+ "EFFORT_CHORE": ("low", "Claude effort for mechanical chores (JSON repair)"),
+ "EFFORT_OVERRIDES": ("", "optional JSON per room role, e.g. {\"writer\": \"xhigh\"}; blank = the four EFFORT_* cells"),
+ "PRICE_HAIKU_IN": ("0.10", "USD per million input, Claude Haiku 5.5 (prompts up to 100k tokens; Nov 2026 list price, verify on platform.claude.com)"), "PRICE_HAIKU_OUT": ("0.50", "USD per million output"),
+ "PRICE_FABLE_IN": ("10", "USD per million input, Claude Fable 5.1 (Nov 2026 list price, verify)"), "PRICE_FABLE_OUT": ("50", "USD per million output"),
+ "PRICE_OPUS_CACHE_READ": ("0.05", "cache read price as a share of the Opus input price (0.05x for Opus 5.5 per the prompt-caching price table, Nov 2026; older Opus 0.1)"),
+ "PRICE_OPUS_CACHE_W5": ("1.25", "5-minute cache write as a multiple of the Opus input price"), "PRICE_OPUS_CACHE_W1H": ("2", "1-hour cache write as a multiple of the Opus input price"),
+ "PRICE_SONNET_CACHE_READ": ("0.05", "cache read share of the Sonnet input price (0.05x for Sonnet 5.5; older Sonnet 0.1)"),
+ "PRICE_SONNET_CACHE_W5": ("1.25", "5-minute cache write multiple, Sonnet"), "PRICE_SONNET_CACHE_W1H": ("2", "1-hour cache write multiple, Sonnet"),
+ "PRICE_HAIKU_CACHE_READ": ("0.1", "cache read share of the Haiku input price (0.1x for Haiku 5.5)"),
+ "PRICE_HAIKU_CACHE_W5": ("1.25", "5-minute cache write multiple, Haiku"), "PRICE_HAIKU_CACHE_W1H": ("2", "1-hour cache write multiple, Haiku"),
+ "PRICE_FABLE_CACHE_READ": ("0.025", "cache read share of the Fable input price (0.025x for Fable 5.1)"),
+ "PRICE_FABLE_CACHE_W5": ("1.25", "5-minute cache write multiple, Fable"), "PRICE_FABLE_CACHE_W1H": ("2", "1-hour cache write multiple, Fable"),
+ "VISUALS_PROTECTED": ("TRUE", "TRUE = a higher AI-writing estimate (v8.11 Opus routing) never makes the planner trim stills, living stills or Kling clips: tiers are chosen as if the AI allowance were still AI_TIER_BASE_INR. Real spend still counts in full and the cap is never passed [FALSE = the whole estimate decides the tier]"),
+ "AI_TIER_BASE_INR": ("198", "the AI allowance the visual tiers were sized with (v8.10: LLM_EST_INR 148 + THINK_EST_INR 30 + ROOM_EXTRA_EST_INR 20)"),
+ "AI_SAVER_ON": ("TRUE", "TRUE = AI-side savings (about Rs 30 per video, no visual cut): planning roles (scout, showrunner, bible, premise judge, memos, objections, Director, hooks, packager, reels) run at medium effort; the script, rewrites and every edit of the script keep their EFFORT_* level"),
+ "BELOW_BAR_MAIL_ON": ("TRUE", "TRUE = one email per video that was made from a below-the-bar premise or script (scores attached); never an email for normal videos"),
  "TREND_CHANNELS": ("@WhatIfScienceShow,@kurzgesagt,@veritasium,@Vsauce,@RealLifeLore,@TheInfographicsShow,@zackdfilms,@MrBeast", "channels watched weekly"),
 }
 _settings_cache = None
@@ -424,6 +631,7 @@ def log(msg, level="INFO", episode=None, public=None):
     print(line, flush=True)
     with _lock: _logbuf.append({"ts": iso(), "job": JOB["name"], "episode_id": episode or JOB["episode"], "level": level, "message": str(msg)[:1500]})
     if len(_logbuf) >= 40: flush_log()
+FLUSH_HOOKS = []          # v8.11: other modules' buffered rows (models.CACHE -> Cache_Stats) are written with every log flush
 def flush_log():
     with _lock:
         rows = list(_logbuf); _logbuf.clear()
@@ -431,6 +639,9 @@ def flush_log():
         try: store().append("Run_Log", rows)
         except Exception as e: print("log flush failed:", scrub(e))
     flush_costs()
+    for h in list(FLUSH_HOOKS):
+        try: h()
+        except Exception as e: print("flush hook failed:", scrub(e))
 
 # ---------------- money (buffered: one Sheet read per job, one write per flush) ----------------
 _clock = threading.Lock()
@@ -447,11 +658,12 @@ def _spend_base():
         _base["v"] = {"life": life, "month": month}
     return _base["v"]
 _last_cost_flush = [time.time()]
-def cost(item, provider, units, usd, episode=None):
+def cost(item, provider, units, usd, episode=None, **detail):
+    """detail (v8.11, optional): model, in_tok, cache_read_tok, cache_write_tok, out_tok, basis - measured token detail for the Cost_Log row."""
     inr = round(usd * S("USD_INR", float), 2)
     _spend_base()
     with _clock:
-        _cost_buf.append({"ts": iso(), "episode_id": episode or JOB["episode"], "item": item, "provider": provider, "units": units, "inr": inr})
+        _cost_buf.append(dict({k: v for k, v in detail.items() if k in TABS["Cost_Log"]}, ts=iso(), episode_id=episode or JOB["episode"], item=item, provider=provider, units=units, inr=inr))
         _session[provider] = _session.get(provider, 0) + inr
         due = len(_cost_buf) >= 6 or time.time() - _last_cost_flush[0] > 45
     if due: flush_costs()        # v8.3: spend reaches the Sheet within seconds, so a killed or timed-out job cannot lose it

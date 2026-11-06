@@ -63,6 +63,12 @@ def fake_clip(path, w, h, seed, sec=5):
 # ---------------- images ----------------
 def still(prompt, path, episode, seed=None, w=None, h=None, premium=False):
     w = w or S("STILL_W", int); h = h or S("STILL_H", int)
+    from whatifs import v91 as V91
+    if V91.on("LIGHTING_DIRECTIVE_ON"):                      # v9.1: lighting + composition directive (the style lock is added after it, never cut)
+        with V91.guard("LIGHTING_DIRECTIVE_ON"):
+            from whatifs.atmosphere import with_directive
+            lock_ = str(S("STYLE_LOCK") or "").strip()
+            prompt = with_directive(prompt, S("IMAGE_PROMPT_MAX_CHARS", int) - (len(lock_) + 2 if lock_ and not premium else 0), vertical=h > w)
     if FAKE: return fake_image(path, w, h, seed or prompt, prompt), None
     if not fal_allowed(): raise RuntimeError("fal credit exhausted")
     model = S("FAL_PREMIUM_MODEL") if premium else S("FAL_STILL_MODEL")

@@ -265,3 +265,84 @@ GUESTS = {
  "G4": ("the first-year med student who asks the obvious question", {"af_bella": 0.9, "af_heart": 0.1}),
  "G5": ("the soft-spoken librarian who notices tiny details", {"af_nicole": 0.85, "af_heart": 0.15}),
 }
+
+# =====================================================================================================================================
+# v8.10: cast, creative constitution, taste calibration, first-person POV rules, emotion curve vocabulary, impact recipe
+# =====================================================================================================================================
+# CAST (Settings CAST_ON): 5 experts (the Director role) + 15 rotating guests (the Curious One, still labelled [SKEPTIC] in scripts).
+# PLACEHOLDER rows built on Google's 30 prebuilt voices: Setup seeds them once into an empty Cast tab; the owner overwrites them with the 20 chosen voices.
+# "voice" = a prebuilt name (two speakers per request), a library voice id, or a designed "voice_..." id (voiced one line at a time).
+CAST_COLUMNS = ("id", "role", "display_name", "voice", "gender", "pitch", "personality", "speech_habits", "signature_quirk", "style_direction",
+                "intro_line", "active", "weight", "last_used")
+CAST_SEED = [
+ ("E1", "expert", "Dr. Vale", "Charon", "male", "low", "calm, precise, quietly amused by catastrophe", "short sentences, numbers said slowly", "says 'okay, freeze that' before every reveal", "measured, warm, low and close to the mic", "Welcome back to the simulation."),
+ ("E2", "expert", "Professor Ines", "Kore", "female", "medium", "firm, curious, loves the weird detail", "asks a question then answers it", "counts down 'three, two...' and never says one", "firm and clear, a smile in the voice", "Okay. Simulation is loading."),
+ ("E3", "expert", "Marcus", "Sadaltager", "male", "medium", "knowledgeable storyteller, slightly theatrical", "builds to the point with 'and then'", "names every object like it's a person", "knowledgeable, unhurried, rich", "Lights down. We're going in."),
+ ("E4", "expert", "Dr. Okafor", "Gacrux", "female", "low", "mature, dry wit, has seen every disaster model", "understatement", "rates every catastrophe out of ten", "mature, dry, intimate", "Pull up a chair. This one's strange."),
+ ("E5", "expert", "Theo", "Rasalgethi", "male", "medium", "informative, energetic teacher", "uses 'picture this' and real units", "taps the desk (says 'tap tap') when a number matters", "bright and informative, quick but clear", "Right. Strap in."),
+ ("G1", "guest", "Jess", "Puck", "male", "medium", "upbeat barista, takes everything personally", "interrupts with 'wait wait wait'", "relates everything to coffee orders", "upbeat, quick, expressive", "Hi! Is this going to hurt?"),
+ ("G2", "guest", "Rio", "Fenrir", "male", "medium", "excitable gamer", "gaming slang, kept clean", "asks for the 'respawn point'", "excitable, fast, big reactions", "Okay I am SO ready."),
+ ("G3", "guest", "Maya", "Leda", "female", "high", "youthful art student, notices colours", "describes things by colour and texture", "names the colour of every disaster", "youthful, bright, wide-eyed", "Hi, I brought snacks."),
+ ("G4", "guest", "Nora", "Aoede", "female", "medium", "breezy night-shift nurse, unshockable", "deadpan 'seen worse'", "triages the apocalypse out loud", "breezy, deadpan, relaxed", "Hey. Let's see what breaks."),
+ ("G5", "guest", "Sam", "Zephyr", "female", "medium", "bright engineer, trusts numbers", "asks 'how many, exactly?'", "rounds every number to something edible", "bright, crisp, curious", "I have questions already."),
+ ("G6", "guest", "Lena", "Laomedeia", "female", "high", "upbeat runner, competitive", "turns things into a race", "asks how fast she could outrun it", "upbeat, breathless energy", "Do I need running shoes?"),
+ ("G7", "guest", "Dev", "Sadachbia", "male", "medium", "lively food truck cook", "food metaphors", "estimates everything in tacos", "lively, warm, playful", "Smells like trouble. Good."),
+ ("G8", "guest", "Ari", "Achird", "male", "medium", "friendly new dad, sleep-deprived", "yawns mid-sentence", "worries about the baby monitor", "friendly, tired, soft laugh", "If I fall asleep, wake me."),
+ ("G9", "guest", "Kai", "Zubenelgenubi", "male", "medium", "casual skater, fearless", "says 'no way' a lot", "wants to ride whatever is falling", "casual, laid back, grinning", "Sup. What are we breaking?"),
+ ("G10", "guest", "Bea", "Callirrhoe", "female", "medium", "easy-going librarian, notices tiny details", "whispers when excited", "quietly corrects one tiny fact", "easy-going, soft, precise", "Hello. I read ahead."),
+ ("G11", "guest", "Omar", "Umbriel", "male", "low", "easy-going truck driver, practical", "asks about traffic", "measures distance in hours of driving", "easy-going, low, practical", "Long haul today?"),
+ ("G12", "guest", "Grant", "Algenib", "male", "low", "gravelly retired miner, unimpressed", "grumbles, then is amazed", "compares everything to a mine shaft", "gravelly, slow, warm underneath", "Seen a lot. Show me."),
+ ("G13", "guest", "Hana", "Vindemiatrix", "female", "medium", "gentle yoga teacher", "breathes out before reacting", "tries to stay calm and fails", "gentle, breathy, soft", "Deep breath. Okay."),
+ ("G14", "guest", "Zoe", "Despina", "female", "medium", "smooth podcaster, skeptical", "'hold on, source?'", "fact-checks the Director once per episode", "smooth, sceptical, sharp", "I'm not buying it. Yet."),
+ ("G15", "guest", "Eli", "Enceladus", "male", "medium", "breathy nervous accountant", "nervous laugh", "calculates the insurance claim", "breathy, nervous, endearing", "Is this... covered?"),
+]
+def cast_seed_rows():
+    return [dict(zip(CAST_COLUMNS, list(r) + ["TRUE", "1", ""])) for r in CAST_SEED]
+PREBUILT_VOICES = ("Zephyr", "Puck", "Charon", "Kore", "Fenrir", "Leda", "Orus", "Aoede", "Callirrhoe", "Autonoe", "Enceladus", "Iapetus", "Umbriel", "Algieba",
+                   "Despina", "Erinome", "Algenib", "Rasalgethi", "Laomedeia", "Achernar", "Alnilam", "Schedar", "Gacrux", "Pulcherrima", "Achird",
+                   "Zubenelgenubi", "Vindemiatrix", "Sadachbia", "Sadaltager", "Sulafat")      # Google's 30 prebuilt studio voices (docs, Oct 2026)
+
+# The Creative Constitution: the built-in default (Settings CONSTITUTION replaces it). Every department reads it, above its own brief.
+CONSTITUTION = """CREATIVE CONSTITUTION (the owner's standing rules for every episode; they outrank habits, never the safety rules):
+1. The viewer is INSIDE the scene. First person: the camera is the falling object or the viewer's own eyes; present tense, second person ('you feel...').
+2. Weird but showable: a topic that makes a tired scroller think 'what kind of topic is this?', explained by real physics, and SHOWN, not lectured.
+3. A podcast, not a lecture: an expert and a guest who react with their bodies (breath, a gasp, a nervous laugh), never a lecture with a sidekick.
+4. Low background noise. The voice is always the clearest thing. Silence is a tool, not an accident.
+5. ASMR textures: close, tactile sounds (a creak, a drip, glass ticking, fabric) under the key moments.
+6. Restraint and implication, like low-budget psychological suspense: withhold, suggest, hold the silence, cut to black before the obvious.
+7. Every video is treated as the most important project we have ever made."""
+
+# Taste calibration (owner's examples). Liked = scroll-stopping, impossible-sounding, yet physically showable and personal.
+TASTE_LIKED = ["What if Saturn's rings were for sale?", "What if only you could sense Wi-Fi signals?",
+               "What if the inside of a volcano were moved next to your city?", "What if your hair aged 50 years in one day?"]
+TASTE_BORING = ["What if all tears on Earth doubled in size?", "What if your lunch break skipped ahead without warning?",
+                "What if chewing gum became addictive overnight?", "What if mushrooms turned to glass?",
+                "What if yesterday moved ten times slower for you only?"]
+TASTE_NOTE = ("LIKED ones break a rule of reality in a way you can SEE in first person and that touches YOU (your city, your hair, your senses, owning a planet's rings). "
+              "BORING ones are small, abstract or unshowable (a duration, a habit, a property nobody can picture changing), or weird without a picture.")
+PREMISE_CRITERIA = ("weirdness", "counterintuitive_explainable", "showable_pov", "self_relevance", "emotional_peak", "novelty", "headline_fit")
+
+# First-person POV rules (v8.10, owner rule: applied to EVERY shot type: stills, living stills, Kling clips; stock and graphics get the camera effects).
+POV_STILL = ("first-person POV, the camera IS the viewer's eyes, foreground anchor in frame ({anchor}), extreme wide lens 14mm, "
+             "strong perspective, slight motion blur at the edges, viewer inside the scene")
+POV_LIVING = ("first-person POV, camera at eye level inside the scene, slow breathing sway, foreground {anchor} drifting, particles passing close to the lens, "
+              "parallax between near and far")
+POV_KLING = ("first-person POV, camera mounted on the moving object, accelerating, shaking, debris streaking past the lens, heat shimmer, "
+             "extreme wide lens, motion blur, foreground {anchor}")
+POV_ANCHORS = ((r"helmet|astronaut|space|orbit|planet|moon|saturn|ring", "the rim of a helmet visor"), (r"fall|drop|sky|plane|parachut", "your own hands reaching out"),
+               (r"fire|lava|volcan|heat|burn", "heat shimmer and your hands shielding your face"), (r"water|ocean|flood|wave|rain", "water droplets on the lens"),
+               (r"car|road|drive|street|city", "a windshield edge and dashboard"), (r"hair|skin|body|hand|bone", "your own hands in the lower frame"))
+POV_ANCHOR_DEFAULT = "your own hands in the lower frame"
+VANTAGES = ("eyes", "object", "hands", "helmet", "vehicle", "ground")
+# Delivery curve vocabulary the writer may put in {braces} after the tags. Never spoken. Gemini acts all of it; Kokoro uses the pace words only.
+CURVE_WORDS = {"slow": "speaking slowly", "fast": "speaking quickly", "low": "low pitch", "high": "higher pitch", "soft": "soft, quiet", "loud": "louder, projecting",
+               "whisper": "whispering", "hushed": "hushed, close to the mic", "rising": "energy rising through the line", "falling": "energy falling away",
+               "shaky": "voice shaking", "breathless": "out of breath", "tense": "tense", "warm": "warm", "awed": "awed, almost reverent", "dry": "dry, deadpan"}
+CURVE_EVENTS = {"breath": "<breath>", "gasp": "<gasp>", "laugh": "<laugh>", "chuckle": "<chuckle>", "sigh": "<sigh>", "exhale": "<exhales>", "pant": "<pant>"}
+# Our delivery tags -> Gemini turn style + an optional inline event at the start of the line.
+TAG_STYLE = {"calm": ("calm, unhurried", ""), "tension": ("tense, low and urgent", ""), "reveal": ("slow, weighty reveal", "<breath>"),
+             "aside": ("wry, lighter aside", ""), "callback": ("knowing, warm callback", ""), "close": ("hushed, intimate, close to the mic", ""),
+             "wow": ("bright, amazed", ""), "gasp": ("shocked", "<gasp>"), "awe": ("awed, breathy and slow", "<breath>"), "laugh": ("laughing", "<laugh>"),
+             "doubt": ("doubtful, sceptical", ""), "patient": ("patient, reassuring", ""), "none": ("", "")}
+# The impact recipe (sound + camera locked together): rumble+riser -> 1-2 beats of near-silence -> boom + sub drop -> ringing + muffled heartbeat/breath -> recovery.
+IMPACT_RECIPE = (("rumble_riser", -3.0, 3.0), ("near_silence", 0.0, 0.0), ("boom_sub", 0.0, 2.2), ("ring_heartbeat", 0.15, 4.0), ("recovery", 4.0, 3.0))

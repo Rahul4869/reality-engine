@@ -1,4 +1,4 @@
-"""whatifs/governor.py v8.7 - hard monthly cap (v8.7: the maintenance reserve is INSIDE the cap; v8.5: the B thumbnail is counted) WITH a pre-flight gate. Preserve minimum Kling shots; trim living-still animation first.
+"""whatifs/governor.py v8.10 (TTS + thinking in every estimate, headroom, 4th-Kling proposal, Gemini credit; v8.7) - hard monthly cap (v8.7: the maintenance reserve is INSIDE the cap; v8.5: the B thumbnail is counted) WITH a pre-flight gate. Preserve minimum Kling shots; trim living-still animation first.
 The controller estimates spend but cannot guarantee provider billing; Cost_Log is authoritative."""
 import datetime as dt, re
 from whatifs.core import S, store, month_spend, lifetime_spend_usd, now_utc
@@ -73,6 +73,8 @@ def plan_for_episode(est_full_inr, eps_left):
     the estimate includes the AI-writing and table-read allowances but real usage can differ (see Cost_Log). Nothing below the floor tier is ever
     produced: if even the floor does not fit the rest of the month, hold=True and the caller must not start any paid work.
     """
+    if S("VISUALS_PROTECTED", bool):     # v8.11: a higher AI estimate never trims pictures or clips (real spend in `rem` still counts in full)
+        est_full_inr -= max(0.0, S("LLM_EST_INR", float) + S("THINK_EST_INR", float) + S("ROOM_EXTRA_EST_INR", float) - S("AI_TIER_BASE_INR", float))
     rem = production_room_inr()          # v8.7: inside the cap, minus the maintenance reserve
     per = rem / max(1, eps_left)
     minimum_kling = max(0, S("KLING_MIN_CLIPS", int))
@@ -112,7 +114,47 @@ def min_episode_cost_inr():
     u = S("USD_INR", float)
     usd = S("KLING_MIN_CLIPS", int) * S("PRICE_KLING_USD", float) + premium_images() * S("PRICE_THUMB_USD", float) + S("STILLS_MIN", int) * S("PRICE_STILL_USD", float)
     extra = S("TABLE_READ_EXTRA_INR", float) if S("TABLE_READ_MODE").strip().lower() in ("on", "true", "yes", "1") else 0.0
-    return u * usd + S("LLM_EST_INR", float) + extra
+    return u * usd + S("LLM_EST_INR", float) + extra + voice_think_inr() + v91_extra_inr()
+
+def v91_extra_inr():
+    """v9.1: the small paid v9.1 lines per video (comment mining, AI drafts, the variety rewrite; their flags decide) so the budget sees them. 0 in safe mode."""
+    try:
+        from whatifs import costguard as CG
+        return float(sum(CG.v91_lines().values()))
+    except Exception: return 0.0
+
+def voice_think_inr():
+    """v8.10: the allowances the v8.9 estimate did not have: Gemini TTS (when it is the engine), model thinking tokens (billed as output) and the new
+    room calls (two premise judges, Immersion Director, Owner's Cut)."""
+    tts = S("TTS_EST_INR", float) if str(S("TTS_ENGINE") or "").strip().lower() == "gemini" else 0.0
+    return tts + S("THINK_EST_INR", float) + S("ROOM_EXTRA_EST_INR", float)
+
+def full_episode_inr(kling=None):
+    """Honest cost of one FULL-tier episode at the current settings (pictures, clips, premium art, writing, table read, TTS, thinking)."""
+    u = S("USD_INR", float); k = S("KLING_CLIPS", int) if kling is None else kling; full = TIERS[0]
+    usd = k * S("PRICE_KLING_USD", float) + premium_images() * S("PRICE_THUMB_USD", float) + full[2] * S("PRICE_STILL_USD", float) + min(full[3], S("LIVING_STILLS", int)) * S("PRICE_LIVING_USD", float)
+    extra = S("TABLE_READ_EXTRA_INR", float) if S("TABLE_READ_MODE").strip().lower() in ("on", "true", "yes", "1") else 0.0
+    return u * usd + S("LLM_EST_INR", float) + extra + voice_think_inr() + v91_extra_inr()
+
+def headroom():
+    """v8.10: what is left this month after every remaining video is made at the full tier (+ the safety margin). Positive = room for more."""
+    left = episodes_left_this_month(); need = full_episode_inr() * S("BUDGET_SAFETY_MARGIN", float) * left
+    room = production_room_inr()
+    return {"room_inr": round(room, 0), "videos_left": left, "need_inr": round(need, 0), "headroom_inr": round(room - need, 0),
+            "per_video_inr": round(full_episode_inr(), 0), "cap_inr": round(cap_inr(), 0), "spent_inr": round(month_spend(), 0)}
+
+def kling4_proposal():
+    """A 4th Kling clip is proposed ONLY when the headroom pays for it in every remaining video (with the safety margin). None otherwise."""
+    if not S("KLING_4TH_PROPOSE_ON", bool) or S("KLING_CLIPS", int) >= 4: return None
+    h = headroom(); extra = S("PRICE_KLING_USD", float) * S("USD_INR", float) * S("BUDGET_SAFETY_MARGIN", float) * h["videos_left"]
+    if h["headroom_inr"] < extra: return None
+    return (f"Headroom this month: about Rs {h['headroom_inr']:.0f} after the {h['videos_left']} remaining video(s) at full quality. A 4th Kling clip in each "
+            f"costs about Rs {extra:.0f} in total, so it fits: set KLING_CLIPS to 4 in Settings to use it (set it back to 3 any time).")
+
+def gemini_left_usd():
+    """Estimated prepaid Gemini credit left (GEMINI_FUNDED_USD minus everything logged for provider google, TTS included). None = not tracked."""
+    f = S("GEMINI_FUNDED_USD", float)
+    return None if f <= 0 else f - lifetime_spend_usd("google")
 
 def can_start_episode():
     """(ok, reason). False = do not start paid work for a new episode this month; already scheduled videos still publish."""
