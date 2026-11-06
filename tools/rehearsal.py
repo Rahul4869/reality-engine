@@ -1,6 +1,6 @@
 """tools/rehearsal.py v8.0 - full offline run: setup -> voices -> tick -> produce -> release x2 -> trends -> learn -> brief.
 Fake models, fake images, synthetic voice. Proves every stage connects. Costs nothing. Used by CI and the repair bot."""
-import os, json, shutil, datetime as dt
+import os, re, json, shutil, datetime as dt
 import numpy as np
 from whatifs import checkpoint as CK
 
@@ -111,7 +111,7 @@ def run():
         old = (now_utc() - dt.timedelta(days=4)).strftime("%Y-%m-%dT%H:%M:%SZ")
         st.update("Episodes", "episode_id", e["episode_id"], {"slot_et": old})
         MG.learn(); assert st.rows("Analytics"), "no analytics"; print("learn ok")
-        assert "too old" in str(next(x for x in st.rows("Episodes") if x["episode_id"] == e["episode_id"])["pkg_check"]), "packaging check did not run"
+        assert re.search(r"too old|v9 rotation test", str(next(x for x in st.rows("Episodes") if x["episode_id"] == e["episode_id"])["pkg_check"])), "packaging check did not run"      # v9: the rotation test replaces the v8.5 rescue
         # v8.6 checks: analytics carry a diagnosis and a data note, the published title passes the click checks, lessons are routed, the tabs exist
         from whatifs import growth as GR86
         a86 = [x for x in st.rows("Analytics") if x["episode_id"] == e["episode_id"]][-1]
@@ -145,6 +145,60 @@ def run():
         from whatifs.render import CAMERA_MOVES as _CM
         assert cams and all(c in _CM for c in cams) and "spin_wildly" not in cams, "Director camera suggestions must be validated (only library moves kept)"
         print("v8.9 checks ok")
+        # v8.10 checks: Gemini voice with the cast, premise scores by two judges, Owner's Cut, immersion, technique library, Script Preview round trip
+        assert tl81.get("engine") == "gemini" and {"DIRECTOR", "SKEPTIC"} <= set(tl81.get("gemini_voices", {})) <= {"DIRECTOR", "SKEPTIC", "JUDGE", "WITNESS"}, "the narration did not use the Gemini cast voices"
+        assert all(u["words"] for u in tl81["units"]), "a Gemini line has no word timings"
+        from whatifs.voice_lab import cast_samples
+        cs = cast_samples(os.path.join(work, "cast_samples")) if os.makedirs(os.path.join(work, "cast_samples"), exist_ok=True) is None else []
+        assert len([x for x in cs if x[1]]) == 15 and cs[0][2].startswith("20/20"), f"cast samples / voice check: {cs[:2]}"
+        st810 = store(); flush_costs()
+        assert len(st810.rows("Cast")) == 20 and st810.rows("Voice_Check"), "cast tab / voice check missing"
+        ps = st810.rows("Premise_Scores"); assert ps and any(str(r["chosen"]) == "True" for r in ps) and all(r["claude_score"] and r["gemini_score"] for r in ps), "premise scores"
+        assert st810.rows("Owners_Cut") and st810.rows("Technique_Library"), "Owner's Cut / technique library missing"
+        assert any(c["item"] == "gemini_tts" for c in st810.rows("Cost_Log")), "TTS cost not logged"
+        assert any(r["grid"].startswith("llm-") and r["status"] == "FRESH" for r in st810.rows("Premises")), "the LLM premise bank was not made"
+        epd = json.loads([e for e in st810.rows("Episodes") if e.get("yt_id")][0]["draw_json"]); assert epd.get("cast") and epd.get("owners_cut"), "cast / Owner's Cut not recorded"
+        from whatifs import preview as PV
+        pv = PV.run(); assert pv["ok"]; dr = st810.rows("Script_Previews")[-1]; assert dr["status"] == "DRAFT"
+        PV.decide("APPROVE " + dr["draft_id"]); assert store().rows("Script_Previews")[-1]["status"] == "APPROVED"
+        print("v8.10 checks ok")
+        # v8.11 checks: prompt caching recorded per episode, the opening Kling hook + the impact clips, measured-vs-estimated AI cost row,
+        # the Premise_Bench refilled by the learning job and used first by the next room, below-the-bar never skips
+        flush_costs(); from whatifs.core import flush_log as _fl; _fl()
+        cs811 = [r for r in store().rows("Cache_Stats") if r["episode_id"] == e["episode_id"]]
+        assert cs811 and float(cs811[0]["hit_ratio"] or 0) > 0 and int(cs811[0]["cache_read_tok"]) > 0, f"prompt cache not used: {cs811[:1]}"
+        kl811 = [i for i, s_ in enumerate(sh87) if s_.get("type") == "kling"]
+        assert len(kl811) == S("KLING_CLIPS", int) and sum(1 for i in kl811 if sh87[i].get("opening_hook")) == 1 and any(sh87[i].get("impact") for i in kl811), \
+            f"Kling placement: {[(i, sh87[i].get('opening_hook'), sh87[i].get('impact')) for i in kl811]}"
+        sm811 = [r for r in store().rows("Cost_Log") if r["item"] == "ai_per_video_summary" and r["episode_id"] == e["episode_id"]]
+        assert sm811 and sm811[0]["inr"] == "0" and float(sm811[0]["est_inr"]) > 0, "measured-vs-estimated AI cost row missing"
+        from whatifs import premise as PR811, room as ROOM811
+        np811 = S("NEXT_PREMISE"); set_setting("NEXT_PREMISE", "")          # a teased premise would (rightly) win over the bench; tested without one
+        if not PR811.bench_rows(): PR811.refill_bench(force=True)
+        assert PR811.bench_rows(), "the Premise_Bench was not filled"
+        sp811 = ROOM811.scout_and_pick({"strategies": {"family": "F09_space"}, "playbook": {}}, ROOM811.context(), "EPBENCH")
+        assert sp811.get("from_bench") and any(r["status"] == "USED" for r in store().rows("Premise_Bench")), "the scout did not draw from the bench"
+        set_setting("NEXT_PREMISE", np811)
+        assert not S("SKIP_IF_BELOW_BAR", bool) and S("OWNERS_CUT_JUDGE") == "gemini"
+        print("v8.11 checks ok")
+        # v9 checks (stages 1-2): the Show Plan was logged, the character bible seeded, the trial tags reached the voiced timeline as data (never spoken),
+        # the render devices ran (teacup placements logged, not before 30 s), no tag text reached the captions
+        st9 = store(); assert st9.rows("Show_Log") and len(st9.rows("Characters")) == 4, "Show_Log / Characters missing"
+        u9 = tl81["units"]
+        assert any(u.get("show") for u in u9) and not any("[" in u.get("text", "") for u in u9), "show tags not carried as data / spoken"
+        ep9 = next(x for x in st9.rows("Episodes") if x["episode_id"] == e["episode_id"]); cups9 = json.loads(ep9.get("teacup_json") or "[]")
+        assert all(c["t"] >= 30 for c in cups9), f"teacup placements: {cups9}"
+        srt9 = [os.path.join(dp, f) for dp, _, fs in os.walk(d74) for f in fs if f.endswith(".srt")]
+        assert srt9 and not any(re.search(r"\[(METER|EXHIBIT|JURY|/?CLIPBAIT)", open(x).read()) for x in srt9), "a show tag reached the captions"
+        pk9 = [r for r in st9.rows("Packaging_Tests") if r["episode_id"] == e["episode_id"]]
+        assert 1 <= len(pk9) <= 3 and any(r["status"] in ("LIVE", "WINNER") for r in pk9) and st9.rows("Season") and st9.rows("Experiments"), "packaging pairs / Season / Experiments missing"
+        print("v9 checks ok")
+        # v9.1 checks: the Atmosphere Pack ran inside its time budget with the pulse caps intact, render minutes were logged
+        ep91 = next(x for x in store().rows("Episodes") if x["episode_id"] == e["episode_id"])
+        if S("ATMOSPHERE_ON", bool) and not S("V91_SAFE_MODE", bool):
+            a91 = json.loads(ep91.get("atmos_json") or "{}")
+            assert a91 and float(ep91.get("render_min") or 0) > 0, f"atmosphere / render minutes not logged: {ep91.get('atmos_json')}"
+        print("v9.1 checks ok")
         MG.money_check(); MG.monthly_brief(); print("brief ok")
         # v7.3 checks: Revenue_Log months/amounts, pause hold + resume, KILL, stuck release never blocks, release is idempotent
         from whatifs.governor import month_key, money_num

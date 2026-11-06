@@ -11,7 +11,9 @@ SECRET_ENVS = ("G_CLIENT_ID", "G_CLIENT_KEY", "G_REFRESH", "G_REFRESH_DRIVE", "A
                "SHEET_ID", "GH_TOKEN", "GITHUB_TOKEN", "OWNER_EMAIL")
 # v8.3: files that guard money, quality and publishing are NEVER merged automatically, whatever the setting says: the owner (or Claude, with the owner) reads the change first.
 PROTECTED = ("whatifs/qc.py", "whatifs/governor.py", "whatifs/fixes.py", "whatifs/publish.py", "whatifs/episode.py", "whatifs/core.py", "whatifs/models.py",
-             "whatifs/checkpoint.py", "whatifs/preflight.py", "whatifs/manage.py", "tools/plan_guard.py", "tools/repair.py", "whatifs/playbook.py")
+             "whatifs/checkpoint.py", "whatifs/preflight.py", "whatifs/manage.py", "tools/plan_guard.py", "tools/repair.py", "whatifs/playbook.py",
+             "whatifs/tts_gemini.py", "whatifs/premise.py", "whatifs/craft.py", "whatifs/preview.py",
+             "whatifs/immersion.py", "whatifs/room.py")      # v8.11: Kling placement and the model routing / ship-the-best gates      # v8.10: the new paid call (TTS) and the new quality gates
 RISKY = [r"\brequests\.", r"\burllib", r"\bsocket\b", r"\bhttp\.client", r"os\.environ", r"\benv\(", r"\bsubprocess\b", r"os\.system",
          r"\beval\(", r"\bexec\(", r"__import__", r"shutil\.rmtree", r"os\.remove", r"https?://", r"base64", r"pickle"]
 
@@ -67,7 +69,7 @@ def main():
     src = open(rel).read()
     from whatifs.models import ask
     try:
-        fixed = ask("sonnet", P.fill(P.REPAIR, path=rel, error=err[-6000:], file=src), "Return the full corrected file only.", want_json=False, max_tokens=32000, temperature=0)
+        fixed = ask("repair", P.fill(P.REPAIR, path=rel, error=err[-6000:], file=src), "Return the full corrected file only.", want_json=False, max_tokens=32000, temperature=0)
     finally:
         try:
             from whatifs.core import flush_costs, flush_log; flush_costs(); flush_log()        # v8.3: the repair's own spend is written to Cost_Log
