@@ -60,8 +60,8 @@ def test_the_research_prompt_tells_the_model_that_signal_titles_are_untrusted():
 
 # ---------------- workflows ----------------
 WF = sorted(glob.glob(os.path.join(ROOT, ".github", "workflows", "*.yml")))
-def test_there_are_fourteen_workflows_and_all_parse():
-    assert len(WF) == 14          # v8.9: + merge.yml (one-click merge)
+def test_there_are_fifteen_workflows_and_all_parse():
+    assert len(WF) == 16          # v8.9: + merge.yml (one-click merge); v8.10: + preview.yml (Script Preview + approve / reject); v9: + sheets.yml (manual, one-time)
     for f in WF: assert yaml.safe_load(open(f))["jobs"]
 
 def test_no_workflow_puts_an_expression_inside_a_shell_command():

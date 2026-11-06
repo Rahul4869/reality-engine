@@ -11,13 +11,13 @@ def U(i, spk, tag, text, start=None): return {"i": i, "speaker": spk, "tag": tag
 # ---------------- budget tiers ----------------
 def test_tiers_never_cut_the_floor_and_hold_instead_of_overshooting():
     seen = set()
-    for spent in (0, 2000, 2600, 3000, 3150):
+    for spent in (0, 2500, 3100, 3500, 3650):          # v8.10: the cap is 4,000 (was 3,500); same distances from the cap
         core._cost_buf.clear(); core._session.clear(); core._base["v"] = None; _spend(spent)
         for left in (8, 3, 1):
             p = G.plan_for_episode(330.0, left)
             if not p["hold"]: assert p["kling"] >= 3 and 505 <= p["runtime_cap"] <= 600 and p["stills"] >= 40; seen.add(p["tier"])
     assert "full" in seen and "floor" in seen
-    core._cost_buf.clear(); core._session.clear(); core._base["v"] = None; _spend(3300)
+    core._cost_buf.clear(); core._session.clear(); core._base["v"] = None; _spend(3800)
     assert G.plan_for_episode(330.0, 1)["hold"]
 
 def test_default_runtime_range_is_eight_to_ten_minutes():
@@ -185,7 +185,10 @@ def _produce(monkeypatch, tmp_path, setting=None):
 
 def test_a_retry_resumes_from_the_checkpoint_and_does_not_pay_for_the_writing_again(monkeypatch, tmp_path):
     from whatifs import episode as EP, room as ROOM
-    slot = _produce(monkeypatch, tmp_path); real = EP._assets; boom = {"n": 0}
+    import datetime as dt
+    fz = dt.datetime(2026, 11, 4, 3, 15, 7, tzinfo=dt.timezone.utc); monkeypatch.setattr(EP, "now_utc", lambda: fz)   # v9.1: the episode id (and so the
+    slot = _produce(monkeypatch, tmp_path); real = EP._assets; boom = {"n": 0}                                         # whole drawn episode) no longer depends on the clock
+    slot = (fz + dt.timedelta(hours=10)).strftime("%Y-%m-%dT%H:%M:%SZ")
     def flaky(*a, **k):
         boom["n"] += 1
         if boom["n"] == 1: raise RuntimeError("fal had a bad minute")
@@ -196,7 +199,8 @@ def test_a_retry_resumes_from_the_checkpoint_and_does_not_pay_for_the_writing_ag
     rows = core.store().rows("Episodes"); assert rows[-1]["status"] == "FAILED" and CK.has(rows[-1])
     monkeypatch.setattr(ROOM, "run_room", lambda *a, **k: (_ for _ in ()).throw(AssertionError("the AI writing was paid for again")))
     r = EP.produce(slot)
-    rows = core.store().rows("Episodes"); assert r["ok"] and len(rows) == 1 and rows[0]["status"] == "SCHEDULED" and CK.attempts(rows[0]) >= 1 and not CK.has(rows[0])
+    rows = core.store().rows("Episodes")
+    assert r["ok"] and len(rows) == 1 and rows[0]["status"] == "SCHEDULED" and CK.attempts(rows[0]) >= 1 and not CK.has(rows[0])
 
 def test_a_video_that_fails_final_qc_is_held_not_uploaded_and_the_fix_schedules_it(monkeypatch, tmp_path):
     from whatifs import episode as EP, publish as PUB
@@ -244,4 +248,4 @@ def test_fixheld_command_only_accepts_an_exact_episode_title():
 
 def test_gate_before_production_is_not_in_the_in_flight_overshoot_path():
     from whatifs import manage as MG
-    _spend(3400); assert MG._produce_slot([]) is None
+    _spend(3900); assert MG._produce_slot([]) is None      # v8.10 cap 4,000

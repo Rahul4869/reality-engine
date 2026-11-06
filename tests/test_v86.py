@@ -58,6 +58,8 @@ def test_the_opening_kling_clip_shows_the_thumbnail_scene(setting):
     units = [{"i": i, "start": i * 4.0, "text": f"line {i}"} for i in range(30)]
     shots = [{"type": "still", "prompt": "p"} for _ in range(30)]; shots[5]["type"] = "kling"; shots[20]["type"] = "kling"
     out = ROOM.promise_shot(shots, units, {"thumb_prompt": "a frozen ocean at noon"})
+    assert out[5]["prompt"].startswith("first-person POV") and "a frozen ocean at noon" in out[5]["prompt"]      # v8.11: the re-aimed clip keeps the POV rules
+    setting("IMMERSION_ON", "FALSE"); out = ROOM.promise_shot(shots, units, {"thumb_prompt": "a frozen ocean at noon"}); setting("IMMERSION_ON", "TRUE")
     assert out[5]["prompt"].startswith("a frozen ocean at noon") and out[5]["promise"] and out[20]["prompt"] == "p" and shots[5]["prompt"] == "p"
     shots[5]["type"] = "still"; assert ROOM.promise_shot(shots, units, {"thumb_prompt": "x"}) == shots
     setting("PROMISE_SHOT_ON", "FALSE"); shots[5]["type"] = "kling"; assert ROOM.promise_shot(shots, units, {"thumb_prompt": "x"}) == shots

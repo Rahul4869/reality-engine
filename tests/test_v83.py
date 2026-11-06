@@ -205,7 +205,7 @@ def test_fal_cost_is_logged_before_the_download_can_fail(monkeypatch, tmp_path):
 def test_a_cut_reply_is_retried_once_with_more_room_instead_of_paying_the_same_again(monkeypatch):
     from whatifs import models
     monkeypatch.setattr(models, "FAKE", False); sizes = []
-    def fake(role, system, prompt, mt, temp, search, ep=None):
+    def fake(role, system, prompt, mt, temp, search, ep=None, *a, **k):      # v8.11: _claude also takes effort / fan-out / task
         sizes.append(mt)
         if len(sizes) == 1: raise models.Truncated("cut")
         return '{"ok": true}'

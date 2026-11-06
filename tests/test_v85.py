@@ -225,7 +225,7 @@ def test_the_b_thumbnail_is_counted_in_every_estimate(setting):
 def test_new_columns_only_append_so_older_sheets_keep_their_order():
     old = ["episode_id", "slot_et", "premise", "ptype", "presentation_format", "title", "status", "yt_id", "reel1_yt", "reel2_yt",
            "ig1", "ig2", "fb1", "fb2", "kill", "draw_json", "cost_inr", "release_tag", "assets", "notes", "updated"]
-    assert core.TABS["Episodes"][:len(old)] == old and core.TABS["Episodes"][len(old):] == ["reel3_yt", "reel4_yt", "ig3", "ig4", "fb3", "fb4", "pkg_check"]
+    assert core.TABS["Episodes"][:len(old)] == old and core.TABS["Episodes"][len(old):len(old) + 7] == ["reel3_yt", "reel4_yt", "ig3", "ig4", "fb3", "fb4", "pkg_check"]      # v9 appends after these
     an = core.TABS["Analytics"]; assert an[an.index("score") + 1] == "from_shorts"      # v8.6 appends more columns after it
 
 def test_every_new_setting_has_a_default_and_a_note():

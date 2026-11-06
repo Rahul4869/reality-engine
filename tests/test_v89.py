@@ -99,7 +99,8 @@ def test_speaker_blends_use_the_guest_and_fall_back_when_rotation_is_off(setting
     setting("GUEST_ROTATION_ON", "FALSE"); assert EP.speaker_blends("G3")["SKEPTIC"].parts == EP.BLENDS["C"]
     assert EP.speaker_blends("nope")["SKEPTIC"].parts == EP.BLENDS["C"]
 
-def test_guest_brief_names_the_persona():
+def test_guest_brief_names_the_persona(setting):
+    setting("SHOW_MODE", "off")                     # v9: the trial uses the core cast (no rotating guest); v8.9 behaviour under SHOW_MODE = off
     assert "night-shift nurse" in ROOM.guest_brief({"guest": "G1"}) and ROOM.guest_brief({"guest": "zz"}) == ""
 
 # ---------------- K75 next-episode tease
@@ -176,7 +177,7 @@ def test_merge_workflow_is_owner_only_and_merges_only_green_changes():
 
 def test_claude_md_and_deployed_kernel_exist_and_match_the_package():
     t = open(os.path.join(ROOT, "CLAUDE.md")).read()
-    for must in ("3,500", "integration checklist", "plan_guard", "rehearsal", "Merge", "Premium tier", "docs/CHANGES.md"): assert must in t
+    for must in ("4,000", "integration checklist", "plan_guard", "rehearsal", "Merge", "Premium tier", "docs/CHANGES.md"): assert must in t
     k = open(os.path.join(ROOT, "docs", "KERNEL.md")).read(); assert "K77" in k
     pk = os.path.join(os.path.dirname(ROOT), "FOR_CLAUDE", "KERNEL.md")
     if os.path.exists(pk): assert open(pk).read() == k          # in the package the two copies are identical; on GitHub only the repo copy exists
@@ -184,7 +185,7 @@ def test_claude_md_and_deployed_kernel_exist_and_match_the_package():
 # ---------------- cost: unchanged by v8.9
 def test_v89_adds_no_cost():
     d = SA.draw("EPC", "collective"); d.update(stills=52, living=8, kling=3)
-    assert abs(EP.est_cost_inr(d) - 348.45) < 1.0
+    assert abs(EP.est_cost_inr(d) - G.voice_think_inr() - 376.45) < 1.0      # v8.10: only the TTS / thinking / new-room allowances were added
     assert d["tier"] == "public" and d["guest"] in GUESTS
 
 # ---------------- K72 (owner request): stronger, varied moves everywhere + validated Director suggestions, no new cost
@@ -235,5 +236,5 @@ def test_suggested_move_reaches_the_renderer_and_frame_count_is_exact(tmp_path, 
 
 def test_camera_moves_add_no_cost_and_change_no_counts():
     d = {"episode_id": "EPX", "stills": 52, "living": 8, "kling": 3}
-    assert EP.est_cost_inr(d) == pytest.approx(348.45, abs=0.5)        # same as v8.7: camera motion is code on pictures already paid for
+    assert EP.est_cost_inr(d) - G.voice_think_inr() == pytest.approx(376.45, abs=0.5)        # same as v8.7 (v8.10 allowances aside): camera motion is code on pictures already paid for
     assert core.DEFAULTS["KLING_CLIPS"][0] == "3" and core.DEFAULTS["LIVING_STILLS"][0] == "8" and core.DEFAULTS["KLING_MIN_CLIPS"][0] == "3"

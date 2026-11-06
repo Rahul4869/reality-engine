@@ -12,7 +12,7 @@ GOOD = [("Eight billion people do it at exactly noon.", "surprising_claim"), ("T
 
 def fake_ask(cands=GOOD, scores=None, judge_fails=False):
     def ask(role, system, prompt, **kw):
-        if role == "sonnet": return {"candidates": [{"line": a, "type": b, "basis": "x"} for a, b in cands]}
+        if role in ("sonnet", "hooks"): return {"candidates": [{"line": a, "type": b, "basis": "x"} for a, b in cands]}
         if judge_fails: raise RuntimeError("judge down")
         ids = re.findall(r'"id": "(h\d+)"', prompt)
         return {"scores": [dict({"id": i, "clarity": 9, "relevance": 9, "curiosity": 8, "promise_accuracy": 9, "unsupported_claim": False}, **((scores or {}).get(i, {}))) for i in ids]}
@@ -69,7 +69,7 @@ def test_judge_failure_uses_labelled_heuristics_and_applies_nothing():
 
 def test_unscored_candidate_is_not_guessed():
     def ask(role, system, prompt, **kw):
-        if role == "sonnet": return {"candidates": [{"line": a, "type": b} for a, b in GOOD]}
+        if role in ("sonnet", "hooks"): return {"candidates": [{"line": a, "type": b} for a, b in GOOD]}
         return {"scores": [{"id": "h0", "clarity": 9, "relevance": 9, "curiosity": 9, "promise_accuracy": 9}]}
     rec = H.build_record(SCRIPT, {}, "EPX", ask)
     others = [c for c in rec["candidates"] if c["id"] != "h0"]

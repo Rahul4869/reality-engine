@@ -85,27 +85,27 @@ def _spend(inr):
 
 def test_plan_holds_instead_of_overshooting_when_the_episode_does_not_fit():
     p = G.plan_for_episode(330.0, 8); assert not p["hold"] and p["kling"] >= 3
-    _spend(3400)          # Rs 100 left of the 3,500 cap
+    _spend(3900)          # Rs 100 left of the 4,000 cap (v8.10: was 3,500)
     p = G.plan_for_episode(330.0, 1); assert p["hold"] and p["kling"] >= 3 and "hold" in p["reason"]
 
 def test_a_new_episode_is_not_started_when_the_month_is_spent():
     ok, why = G.can_start_episode(); assert ok
-    _spend(3300); ok, why = G.can_start_episode(); assert not ok and "Rs" in why
+    _spend(3800); ok, why = G.can_start_episode(); assert not ok and "Rs" in why
 
 def test_maintenance_jobs_may_use_the_small_reserve_but_production_may_not():
-    _spend(3420)          # v8.7: the reserve is INSIDE the cap: Rs 80 left, production (stops Rs 100 below the cap) is closed, maintenance is not
+    _spend(3920)          # v8.10 cap 4,000; v8.7: the reserve is INSIDE the cap: Rs 80 left, production (stops Rs 100 below the cap) is closed, maintenance is not
     assert G.monthly_cap_reached() and not G.monthly_cap_reached(maintenance=True)
     _spend(80); assert G.monthly_cap_reached(maintenance=True)       # the cap itself is never exceeded, not even by maintenance
 
 def test_produce_slot_does_not_create_rows_or_start_when_the_budget_gate_closes(monkeypatch):
     from whatifs import manage as MG, publish as PUB
     sent = []; monkeypatch.setattr(PUB, "email", lambda *a, **k: sent.append(a[0]))
-    _spend(3400); before = len(core.store().rows("Episodes"))
+    _spend(3900); before = len(core.store().rows("Episodes"))
     assert MG._produce_slot(core.store().rows("Episodes")) is None and len(core.store().rows("Episodes")) == before
     assert MG._produce_slot(core.store().rows("Episodes")) is None and len(sent) == 1       # one email per month, not one per tick
 
 def test_the_shipped_defaults_are_the_documented_budget_profile():
-    assert core.S("BUDGET_FLOOR_INR", float) == 3500 == core.S("BUDGET_CEILING_INR", float) and core.S("KLING_MIN_CLIPS", int) == 3 and core.S("PUBLISH_DAYS") == "Tue,Sat"
+    assert core.S("BUDGET_FLOOR_INR", float) == 4000 == core.S("BUDGET_CEILING_INR", float) and core.S("KLING_MIN_CLIPS", int) == 3 and core.S("PUBLISH_DAYS") == "Tue,Sat"      # v8.10: the owner raised the cap to 4,000
 
 def test_gemini_calls_are_written_to_the_cost_log(monkeypatch):
     from whatifs import models
