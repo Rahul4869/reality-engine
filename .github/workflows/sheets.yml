@@ -1,0 +1,27 @@
+name: sheets
+# v9: the ONE-TIME character sheets (manual only; a hard lifetime image cap is enforced in code). Never scheduled.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sheets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      SHEET_ID: ${{ secrets.SHEET_ID }}
+      G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
+      G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
+      G_REFRESH: ${{ secrets.G_REFRESH }}
+      G_REFRESH_DRIVE: ${{ secrets.G_REFRESH_DRIVE }}
+      OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+      FAL_KEY: ${{ secrets.FAL_KEY }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: pip install -q requests "numpy>=1.26,<2.1" pillow opencv-python-headless
+      - name: Make the missing sheet images (inside the lifetime cap)
+        run: python -m whatifs.cli sheets

@@ -3,10 +3,14 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      repeat_suite:
+        description: "v9.1: run the full unit-test suite this many times (repeatability evidence); 1 = normal"
+        default: "1"
 jobs:
   guard_and_rehearsal:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -31,6 +35,13 @@ jobs:
         run: python tools/plan_guard.py
       - name: Unit tests (hooks, research evidence, cut map, failure paths; no keys, no network)
         run: python -m pytest tests -q
+      - name: Repeat the unit tests (manual run with repeat_suite > 1 only)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          REPEAT: ${{ github.event.inputs.repeat_suite }}
+        run: |
+          n="${REPEAT:-1}"; i=1
+          while [ "$i" -lt "$n" ]; do i=$((i+1)); echo "suite run $i of $n"; python -m pytest tests -q -p no:cacheprovider; done
       - name: Free rehearsal (fake AI, fake images, full pipeline)
         env:
           WI_FAKE: "1"

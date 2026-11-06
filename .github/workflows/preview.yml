@@ -1,0 +1,75 @@
+name: Script Preview
+# v8.10. Run it from Actions > Script Preview > Run workflow: the scout and the writers' room write ONE episode (no pictures, no voice, nothing published)
+# and you get an email with the title, the hook, the full script, the shot list with POV notes and the estimated cost. The draft waits in the
+# Script_Previews tab; the premise is NOT used up until you approve. The email has two links that open a pre-filled issue
+# "APPROVE DRAFT..." or "REJECT DRAFT...": pressing Submit records your decision (owner only). An approved draft is made by the next slot.
+on:
+  workflow_dispatch:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+  issues: write
+jobs:
+  preview:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    concurrency:
+      group: preview
+      cancel-in-progress: false
+    env:
+      SHEET_ID: ${{ secrets.SHEET_ID }}
+      G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
+      G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
+      G_REFRESH: ${{ secrets.G_REFRESH }}
+      G_REFRESH_DRIVE: ${{ secrets.G_REFRESH_DRIVE }}
+      ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_KEY }}
+      GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
+      FAL_KEY: ${{ secrets.FAL_KEY }}
+      OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Python packages
+        run: |
+          pip install -q "torch>=2.2,<3" --index-url https://download.pytorch.org/whl/cpu
+          pip install -q -r requirements.txt
+      - name: Write the preview (no pictures, no voice, nothing published)
+        run: python -m whatifs.cli preview
+      - if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: error-${{ github.run_id }}
+          path: last_error.txt
+          retention-days: 3
+  decide:
+    if: github.event_name == 'issues' && github.event.issue.user.login == github.repository_owner && (startsWith(github.event.issue.title, 'APPROVE DRAFT') || startsWith(github.event.issue.title, 'REJECT DRAFT') || startsWith(github.event.issue.title, 'PICK EP') || startsWith(github.event.issue.title, 'APPROVE SHEET') || startsWith(github.event.issue.title, 'REDO SHEET'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SHEET_ID: ${{ secrets.SHEET_ID }}
+      G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
+      G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
+      G_REFRESH: ${{ secrets.G_REFRESH }}
+      G_REFRESH_DRIVE: ${{ secrets.G_REFRESH_DRIVE }}
+      OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+      GH_REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ github.token }}
+      ISSUE_TITLE: ${{ github.event.issue.title }}
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: pip install -q requests "numpy>=1.26,<2.1" pillow opencv-python-headless
+      - name: Record the decision
+        run: python -m whatifs.cli previewdecide "$ISSUE_TITLE"
+      - name: Close the request
+        if: always()
+        run: gh issue close "$ISSUE_NUMBER" --repo "$GH_REPO" --comment "Recorded. The Script_Previews tab shows the decision." || true
