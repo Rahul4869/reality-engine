@@ -1,0 +1,31 @@
+{
+ "calls": {
+  "batch": 1,
+  "clip": 3,
+  "clip_kling": 3,
+  "image": 20,
+  "text:bible": 1,
+  "text:critic": 4,
+  "text:director": 1,
+  "text:director_read": 1,
+  "text:flash": 2,
+  "text:format": 1,
+  "text:hooks": 1,
+  "text:humanize": 1,
+  "text:immersion": 1,
+  "text:length": 1,
+  "text:memo": 6,
+  "text:objections": 6,
+  "text:packager": 1,
+  "text:premise_bank": 1,
+  "text:premise_judge": 1,
+  "text:reels": 1,
+  "text:research": 1,
+  "text:retention": 1,
+  "text:scout": 1,
+  "text:showrunner": 1,
+  "text:writer": 1,
+  "vision": 1
+ },
+ "made_with": "v9 code, default flags"
+}
