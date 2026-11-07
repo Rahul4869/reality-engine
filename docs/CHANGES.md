@@ -1,5 +1,18 @@
 # Changes (newest first). Claude Code adds one dated entry per merged change: what, why, cost, how to switch it off.
 
+## 2026-11-06 v9.2 - fixes from the first real Script Preview (built on v9.1)
+- Writer: no bigger retries (lower effort instead), per-role thinking caps, one effort per cached prefix, background jobs out of the preview, Setup fills the bench, cost-per-role and time-per-stage in the preview email.
+- Shot plan: Kling on the stakes (never adjacent / plain), scene-aware POV anchors with variety, tiny lines -> free reaction cutaways (characters visible without sheets).
+- Titles: natural English enforced; scroll-stopping shapes (bold claim + question, impossible claim, shock detail) ranked first.
+- Voices: the owner's Gemini Voice Design voices (by ID or AI Studio name) with closest-prebuilt fallback; per-line loudness levelling + limiter; faster Setup (voice checks reused / parallel, samples kept).
+- Switch off: the v9.2 flags in Settings (see the v9.2 report), or V91_SAFE_MODE = TRUE for v9.
+
+## 2026-11-06 v9.2 - fixes from the first real Script Preview (built on v9.1; V91_SAFE_MODE still restores v9)
+- Writer: thinking caps per role, a cut reply retried at LOWER effort (never more room), aligned effort for cached prefixes; bank / research only in background jobs; Setup fills an empty bench; cost per role + time per stage in the preview email.
+- Shot plan: Kling on the stakes (never adjacent / plain), scene-aware varied POV anchors, tiny lines -> free reaction cutaways (characters visible without sheets).
+- Voices: the owner's designed voices (Dr Grimm 3, Inspector Vale 1, Nana Rosa 1, The Archivist 2) by name -> ID, closest-prebuilt fallback; loudness levelling + limiter.
+- Titles: natural-English rule + shock-first ranking (bold claim + question, impossible claim, shock detail). Setup: parallel voice checks, 7-day reuse, unchanged samples kept.
+
 ## 2026-11-05 v9.1 - Atmosphere Pack, hero-still reels, the v9 "not built" items, risk fixes (built on v9)
 - Atmosphere Pack (ATMOSPHERE_ON + one flag per layer): moving light, particles, fog, heat shimmer, lens detail, breath fog, beat PULSE (hard caps), aura. Code only, zero cost, ~0.02 s per 1080p frame; automatic degrade above ATMOSPHERE_MAX_OVERHEAD_PCT. Lighting + composition directive on image prompts (LIGHTING_DIRECTIVE_ON).
 - Hero-still reels (HERO_STILL_REELS_ON, off), character grammar (CHAR_GRAMMAR_ON), courtroom theater (THEATER_STYLE), retention-to-beat map, role ROI, comment mining, AI-drafted replies (off), one variety rewrite, Instagram audio-drop posting (off).
