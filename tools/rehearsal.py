@@ -30,6 +30,8 @@ def run():
         from whatifs import manage as MG, episode as EP
         from whatifs.voice_lab import main as voices
         MG.setup(); print("setup ok")
+        from whatifs import research as RS92                                  # v9.2: the research brief is a BACKGROUND job (learning / research workflow),
+        RS92.save_brief(RS92.run_research()); print("research brief (background) ok")      # never made inside a preview or production
         voices(backend=ToneVoice()); print("voices ok")
         a = MG.tick()["action"]; assert a == "waiting_for_voice_pick", a          # v7.2: nothing is made before the voice pick
         set_setting("VOICE", "C")
@@ -150,7 +152,7 @@ def run():
         assert all(u["words"] for u in tl81["units"]), "a Gemini line has no word timings"
         from whatifs.voice_lab import cast_samples
         cs = cast_samples(os.path.join(work, "cast_samples")) if os.makedirs(os.path.join(work, "cast_samples"), exist_ok=True) is None else []
-        assert len([x for x in cs if x[1]]) == 15 and cs[0][2].startswith("20/20"), f"cast samples / voice check: {cs[:2]}"
+        assert len([x for x in cs if x[1]]) == 15 and re.match(r"(\d+)/\1 ", cs[0][2]) and int(cs[0][2].split("/")[0]) in (20, 24)      # v9.2: + the 4 trial characters, f"cast samples / voice check: {cs[:2]}"
         st810 = store(); flush_costs()
         assert len(st810.rows("Cast")) == 20 and st810.rows("Voice_Check"), "cast tab / voice check missing"
         ps = st810.rows("Premise_Scores"); assert ps and any(str(r["chosen"]) == "True" for r in ps) and all(r["claude_score"] and r["gemini_score"] for r in ps), "premise scores"
