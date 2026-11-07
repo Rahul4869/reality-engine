@@ -174,6 +174,7 @@ def _bench_row(i, prem, comb="8.4", fam="F09_space", added=None):
             "claude_score": comb, "gemini_score": comb, "combined": comb, "criteria_json": "{}", "source": "test", "episode_id": "", "used_at": "", "note": ""}
 
 def test_bench_refill_keeps_only_premises_both_judges_passed(setting):
+    setting("SETUP_FILLS_BENCH", "FALSE")          # v9.2: Setup would fill the bench itself; this test fills it
     MG.setup(); n = PR.refill_bench(force=True)
     rows = core.store().rows("Premise_Bench"); assert n == len(rows) and 1 <= n <= 12
     assert all(r["status"] == "READY" and float(r["combined"]) >= 7.0 and r["claude_score"] and r["gemini_score"] for r in rows)
@@ -181,11 +182,13 @@ def test_bench_refill_keeps_only_premises_both_judges_passed(setting):
     assert PR.refill_bench() == 0 or len(PR.bench_rows()) < 6                                  # full enough: no refill without need
     assert any(r["source"] == "bench" for r in core.store().rows("Premise_Scores"))           # every candidate's scores kept
 
-def test_bench_refill_waits_when_the_month_needs_the_money(monkeypatch):
+def test_bench_refill_waits_when_the_month_needs_the_money(monkeypatch, setting):
+    setting("SETUP_FILLS_BENCH", "FALSE")          # v9.2: start from an empty bench
     MG.setup(); monkeypatch.setattr(G, "production_room_inr", lambda: 100.0)
     assert PR.refill_bench() == 0 and not core.store().rows("Premise_Bench")
 
-def test_scout_draws_from_the_bench_first_and_marks_it_used(monkeypatch):
+def test_scout_draws_from_the_bench_first_and_marks_it_used(monkeypatch, setting):
+    setting("SETUP_FILLS_BENCH", "FALSE")          # v9.2: only the three test rows on the bench
     MG.setup(); st = core.store()
     st.append("Premise_Bench", [_bench_row(1, "What if your shadow lagged ten seconds behind you?"), _bench_row(2, "What if the ocean stood still at noon?", "7.9", "F06_nature"),
                                 _bench_row(3, "What if your city floated a metre up?", "9.0", "F08_rules", added="2020-01-01T00:00:00Z")])
@@ -221,7 +224,8 @@ UNITS = [{"i": i, "text": t, "start": i * 12.0, "end": i * 12 + 11, "tag": "reve
      "Then the water starts to change colour", "By the end of the hour, the coastline has moved.", "The wave hits.", "Silence.", "You breathe again."])]
 IMAP = {"scenes": [{"quote": "the coastline has moved", "vantage": "object", "body": "", "senses": [], "camera": "impact_shake", "sound": "boom", "impact": True}]}
 
-def test_one_opening_rush_hook_and_the_rest_on_the_impact():
+def test_one_opening_rush_hook_and_the_rest_on_the_impact(setting):
+    setting("KLING_STAKES_ON", "FALSE")          # v9.2: the v8.11 placement rule (v9.2 stakes rule: test_v92_shots)
     shots = [{"type": "kling" if i in (5, 8, 10) else "still", "prompt": "p"} for i in range(len(UNITS))]
     out = IM.apply(shots, UNITS, IMAP, {"kling": 3})
     k = sorted(i for i, s in enumerate(out) if s["type"] == "kling")
@@ -229,6 +233,7 @@ def test_one_opening_rush_hook_and_the_rest_on_the_impact():
     assert out[2]["opening_hook"] and out[2]["pov_fx"] == "pov_rush" and "camera mounted" in out[2]["motion"] and out[2]["prompt"].startswith("first-person POV")
 
 def test_opening_clip_count_is_a_setting_and_never_takes_the_impact_clip(setting):
+    setting("KLING_STAKES_ON", "FALSE")          # v9.2: the v8.11 placement rule (stakes rule: test_v92_shots)
     shots = [{"type": "kling" if i in (5, 8, 10) else "still", "prompt": "p"} for i in range(len(UNITS))]
     setting("KLING_OPENING_CLIPS", "0"); k0 = sorted(i for i, s in enumerate(IM.apply(shots, UNITS, IMAP, {"kling": 3})) if s["type"] == "kling")
     assert all(i >= 6 for i in k0)                                                            # v8.10 placement

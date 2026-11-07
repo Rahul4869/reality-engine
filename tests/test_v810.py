@@ -96,7 +96,8 @@ def test_tts_model_is_picked_from_the_live_list():
     assert T.pick_tts([g + "x-flash", g + "3.8-flash-lite-tts", g + "3.8-flash-tts", g + "3.1-flash-tts-preview"]) == g + "3.8-flash-tts"
     assert T.pick_tts(["gemini-pro"]) is None
 
-def test_voice_check_writes_the_tab():
+def test_voice_check_writes_the_tab(setting):
+    setting("DESIGNED_VOICES_ON", "FALSE")          # v9.2: the 4 trial characters would join the 20 cast voices
     CAST.ensure_seed(); okn, tot, probs = T.voice_check()
     assert tot == 20 and okn == 20 and not probs
     rows = core.store().rows("Voice_Check"); assert len(rows) == 20 and all(r["synth_ok"] in (True, "True") for r in rows)
@@ -145,6 +146,7 @@ def test_scores_logged_and_results_attached_later():
     row = next(r for r in core.store().rows("Premise_Scores") if str(r["chosen"]) == "True"); assert row["ctr"] == "0.071"
 
 def test_nothing_passes_means_skip_not_fail_forward(monkeypatch, setting):
+    setting("SETUP_FILLS_BENCH", "FALSE")          # v9.2: no bench, so the scout rounds run
     MG.setup(); monkeypatch.setattr(PR, "_judge", lambda role, pitches, *a, **k: {f"p{i + 1}": {c: 3 for c in D.PREMISE_CRITERIA} for i in range(len(pitches))})
     d = {"strategies": {"family": "F08_rules"}, "playbook": {}}
     setting("SKIP_IF_BELOW_BAR", "TRUE")                   # v8.11: skipping is now opt-in (the default ships the best version, see test_v811)
@@ -167,6 +169,7 @@ UNITS = [{"i": i, "text": t, "start": i * 4.0, "end": i * 4 + 3.5, "tag": "none"
      "The wave hits.", "Silence.", "You breathe again."])]
 
 def test_pov_on_every_picture_prompt_kling_on_the_impact_and_effects_on_every_type(setting):
+    setting("KLING_STAKES_ON", "FALSE"); setting("POV_VARIETY_ON", "FALSE")          # v9.2 rules have their own tests
     setting("KLING_OPENING_CLIPS", "0")                    # v8.11: 0 restores the v8.10 placement asserted here (the opening hook is tested in test_v811)
     shots = [{"type": t, "prompt": "a beach" if t not in ("stock", "graphic") else "", "search": "waves"} for t in ("kling", "still", "living", "still", "stock", "graphic", "kling")]
     out = IM.apply(shots, UNITS, {"scenes": [{"quote": "the coastline has moved", "vantage": "object", "body": "stomach drop", "senses": [], "camera": "impact_shake", "sound": "boom", "impact": True},

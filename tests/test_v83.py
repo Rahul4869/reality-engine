@@ -202,7 +202,8 @@ def test_fal_cost_is_logged_before_the_download_can_fail(monkeypatch, tmp_path):
     except Exception: pass
     assert any(r["item"].startswith("image") for r in core.store().rows("Cost_Log")) or any(r["item"].startswith("image") for r in core._cost_buf)
 
-def test_a_cut_reply_is_retried_once_with_more_room_instead_of_paying_the_same_again(monkeypatch):
+def test_a_cut_reply_is_retried_once_with_more_room_instead_of_paying_the_same_again(monkeypatch, setting):
+    setting("TRUNC_RETRY_LOWER_EFFORT", "FALSE")          # v9.2 retries at LOWER effort instead (test_v92_writer); this pins the v8.3 rule
     from whatifs import models
     monkeypatch.setattr(models, "FAKE", False); sizes = []
     def fake(role, system, prompt, mt, temp, search, ep=None, *a, **k):      # v8.11: _claude also takes effort / fan-out / task

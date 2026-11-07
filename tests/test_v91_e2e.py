@@ -19,7 +19,8 @@ def test_all_flags_on_no_new_paid_call(monkeypatch, tmp_path):
     monkeypatch.setattr(MG, "setup", setup_all_on)
     now, r = count(monkeypatch, tmp_path)
     print("PAID_CALLS_ALL_ON=" + json.dumps(now, sort_keys=True))
-    assert r.get("ok") and now == base, {k: (base.get(k), now.get(k)) for k in set(base) | set(now) if base.get(k) != now.get(k)}
+    # v9.2: Setup now fills an empty bench, so the episode draws from it and may make FEWER calls (no scout round); never a new or a larger category
+    assert r.get("ok") and set(now) <= set(base) and all(now[k] <= base[k] for k in now), {k: (base.get(k), now.get(k)) for k in set(base) | set(now) if base.get(k) != now.get(k)}
     ep = core.store().rows("Episodes")[-1]
     assert ep["status"] == "SCHEDULED" and json.loads(ep.get("atmos_json") or "{}") and json.loads(ep.get("shots_json") or "[]")
 

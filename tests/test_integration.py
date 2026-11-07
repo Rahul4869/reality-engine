@@ -43,7 +43,8 @@ def test_episode_wires_the_new_stages():
     from whatifs import episode as EP
     assert hasattr(EP, "HOOKS") and hasattr(EP, "CUTMAP") and hasattr(EP, "_review_files")
 
-def test_rehearsal_pipeline_writes_all_three_reports():
+def test_rehearsal_pipeline_writes_all_three_reports(setting):
+    setting("BACKGROUND_IN_ROOM", "TRUE")          # v9.2: this test checks the in-room research path; production uses the background job
     """Runs the real produce() flow offline and checks every new artefact exists with the right content."""
     import datetime as dt, json, shutil
     from tools.rehearsal import ToneVoice

@@ -48,7 +48,8 @@ def test_kids_guard_mails_only_when_youtube_says_true(monkeypatch, setting):
     assert CG.kids_check("vid1", "E") is None
     setting("KIDS_GUARD_ON", "FALSE"); assert CG.kids_check("vid1", "E") is None
 
-def test_outlier_ranking_files_demand_and_bench_keeps_new_execution(monkeypatch):
+def test_outlier_ranking_files_demand_and_bench_keeps_new_execution(monkeypatch, setting):
+    setting("SETUP_FILLS_BENCH", "FALSE")          # v9.2: Setup would fill the bench before this refill
     MG.setup()
     vids = CR.outlier_rank([{"video_id": "a", "title": "t1", "channel": "c", "views": "1200000", "channel_id": "UCfake"},
                             {"video_id": "b", "title": "t2", "channel": "d", "views": "100000", "channel_id": "UCother"}])

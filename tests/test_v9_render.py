@@ -21,6 +21,7 @@ def test_a_gemini_request_never_carries_more_than_two_speakers():
     assert all(len({us[i].speaker for i in g}) <= 2 for g in groups) and sorted(i for g in groups for i in g) == list(range(len(us)))
 
 def test_trial_voices_judge_and_witness_and_safe_fallback(setting):
+    setting("DESIGNED_VOICES_ON", "FALSE")          # v9.2 falls back to a prebuilt voice instead of Kokoro (test_v92_voice)
     MG.setup(); b = SHOW.extra_blends(set())
     assert set(b) == {"JUDGE", "WITNESS"} and b["JUDGE"].parts != b["WITNESS"].parts and b["JUDGE"].lang == "b"
     b2 = SHOW.extra_blends({"Gacrux"}); assert b2["JUDGE"].gvoice == ""                  # a lead already uses it -> Kokoro fallback, never a clash

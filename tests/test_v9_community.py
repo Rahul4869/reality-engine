@@ -20,7 +20,8 @@ def test_hook_shapes_rotate_and_statistic_needs_source():
 def _ep(st, slot):
     st.append("Episodes", [{"episode_id": "EP20261101", "yt_id": "vid1", "slot_et": slot, "status": "LIVE"}])
 
-def test_pick_inside_window_applies_and_late_pick_is_ignored(monkeypatch):
+def test_pick_inside_window_applies_and_late_pick_is_ignored(monkeypatch, setting):
+    setting("TITLE_SHOCK_ON", "FALSE")          # v9.2 reorders variants by shock score (test_v92_titles_setup); keep the v9 order here
     MG.setup(); calls = []
     monkeypatch.setattr(PUB, "yt_set_title", lambda vid, t: calls.append(t)); monkeypatch.setattr(PUB, "email", lambda *a, **k: calls.append("mail"))
     PK.record("EP20261101", "vid1", PK.variants(PKG, {}), {})
@@ -30,7 +31,8 @@ def test_pick_inside_window_applies_and_late_pick_is_ignored(monkeypatch):
     assert "too late" in PK.apply_pick("PICK EP20261101 C")
     with pytest.raises(SystemExit): PK.apply_pick("PICK nonsense")
 
-def test_rotation_windows_then_a_winner_and_bounded(monkeypatch):
+def test_rotation_windows_then_a_winner_and_bounded(monkeypatch, setting):
+    setting("TITLE_SHOCK_ON", "FALSE")          # v9.2 reorders variants by shock score; keep the v9 order here
     MG.setup(); st = core.store(); calls = []; views = {"n": 0}
     monkeypatch.setattr(PUB, "yt_set_title", lambda vid, t: calls.append(t)); monkeypatch.setattr(PUB, "yt_views", lambda vid: views["n"])
     monkeypatch.setattr(PUB, "email", lambda *a, **k: None)
