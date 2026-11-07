@@ -13,6 +13,15 @@ from whatifs.core import S, log, store, iso, now_utc, parse_iso, env, FAKE
 HOOK_SHAPES = {"statistic": "The Statistic (a number with its stated source)", "contrarian": "Contrarian Flip", "reveal": "The Reveal", "clock": "The Clock",
                "question": "The Question", "impossible": "The Impossible Claim", "comparison": "The Comparison", "list": "The List", "superlative": "The Superlative"}
 
+TITLE_BRIEF = ("TITLES (v9.2): every title must STOP THE SCROLL in under a second. Use these shapes across the three titles: "
+               "(1) BOLD CLAIM + QUESTION - a shocking statement, then a dare ('Your Reflection Is 1.4 Seconds Late. Is It Still You?'); "
+               "(2) IMPOSSIBLE CLAIM - one flat sentence that sounds wrong ('Light Just Lost a Race to Your Cat'); "
+               "(3) CONTRARIAN / SHOCK DETAIL - a concrete number or image that pierces ('In This Apartment, Your Toothbrush Arrives Before You Do'). "
+               "Natural, grammatical English (no 'What Happens If Light Walked'), 5-10 words, 'you/your' where it fits, a concrete number or image, "
+               "no clickbait words (shocking, insane, you won't believe). Lead with the WEIRDEST, most jarring angle you can defend: a plain promise statement "
+               "('What Would Happen If...', 'Here's Why...') is the LAST resort, never the first title. Every claim must be one the video puts on trial and answers "
+               "(true OR false) - never a promise the video does not keep (YouTube treats misleading titles as spam, and viewers who feel tricked leave in seconds).")
+
 def hook_shape_brief(recent=()):
     """Text for the packager / writer: pick ONE shape, never the last two used; a statistic needs its source."""
     allowed = [k for k in HOOK_SHAPES if k not in list(recent)[-2:]]
@@ -36,10 +45,15 @@ def variants(pkg, spine=None):
     cands += [(pkg.get("title_b"), pkg.get("thumb_text_b") or pkg.get("thumb_text"))]
     for t in (pkg.get("titles") or []) + (spine.get("title_candidates") or []):
         cands.append((t, pkg.get("thumb_text_c") or pkg.get("thumb_text")))
+    from whatifs import v91 as V91
+    if V91.on("TITLE_SHOCK_ON"):                                      # v9.2: natural English first, then the strongest scroll-stopper leads (A)
+        order = {t: i for i, t in enumerate(rank_titles([c[0] for c in cands]))}
+        cands = sorted(cands, key=lambda c: order.get(c[0], 99))
     out, seen = [], set()
     for t, th in cands:
         t = str(t or "").strip(); th = str(th or "").strip()
         if not t or t.lower() in seen or GR.title_issues(t, th): continue
+        if V91.on("TITLE_SHOCK_ON") and natural_issues(t): continue         # v9.2: never a clunky title
         if src and len(_words(t) & _words(src)) / max(1, len(_words(t))) > 0.5: continue
         if not coherent(t, th): th = " ".join(GR.thumb_words(th or t, 3).split()[:3]) if hasattr(GR, "thumb_words") else th
         if not coherent(t, th): continue
@@ -136,3 +150,40 @@ def rotate_tick():
             st.update_where("Packaging_Tests", {"episode_id": ep, "variant": want["variant"]}, {"status": "LIVE", "window_start": iso(), "views_start": v_now if v_now is not None else ""})
             n += 1
     return n
+
+
+# ---------------------------------------------------------------- v9.2: natural English + the "stop-scrolling" score (K109)
+_PAST = r"(?:walked|moved|stopped|happened|became|turned|went|froze|melted|vanished|disappeared|doubled|slowed|flipped)"
+STALE = [r"^everyone is wrong about", r"\byou won'?t believe\b", r"\bshocking\b", r"\bgone wrong\b", r"\bmust see\b", r"\binsane\b"]
+
+def natural_issues(title):
+    """Odd English a viewer trips over (code only): present 'What Happens If' + past verb, 'If X Walked' after a present clause, a doubled 'what if',
+    a dangling 'if' / 'about', clickbait clichés. Empty list = reads naturally."""
+    t = " " + str(title or "").strip().lower() + " "; out = []
+    if re.search(r"\bwhat happens if\b[^?]*\b" + _PAST + r"\b", t): out.append("tense clash: 'What Happens If ... <past verb>' (use 'What Would Happen If' or the present tense)")
+    if re.search(r"\b(is|are|happens)\b[^?]*\bif\b[^?]*\b" + _PAST + r"\b", t) and "would" not in t: out.append("tense clash: a present clause with a past 'if' clause")
+    if t.count("what if") > 1: out.append("'what if' twice")
+    if re.search(r"\b(if|about|of|the|a|and|to)\s*[?!.]?\s*$", t): out.append("ends on a dangling word")
+    for rx in STALE:
+        if re.search(rx, t): out.append("cliche opener / clickbait word"); break
+    return out
+
+def shock_score(title):
+    """0-10: how hard a title stops a scroll, by its SHAPE (code only): a bold claim, a question that dares the viewer, a concrete number or unit,
+    'you / your', a contradiction or an impossible pairing, short and punchy. Accuracy is the writers' job (the video answers every claim)."""
+    t = str(title or ""); tl = t.lower(); w = re.findall(r"[A-Za-z0-9.']+", t); sc = 0.0
+    if re.search(r"\b(is|are|was|will|can|just|already|never|always|every|nobody|no one)\b", tl) and "?" not in t[:-1]: sc += 1.5      # a bold statement
+    if t.rstrip().endswith("?"): sc += 1.5
+    if re.search(r"\?\s*\S", t) or re.search(r"[.,:\-–—]\s+(and|but|so)?\s*\w+.*\?$", t): sc += 1.0                    # claim + question (two beats)
+    if re.search(r"\d", t): sc += 1.5
+    if re.search(r"\b(you|your|you're)\b", tl): sc += 1.0
+    if re.search(r"\b(dead|alive|late|backward|backwards|frozen|wrong|impossible|faster than|slower than|disappear|vanish|eat|swallow|breathe|scream)\b", tl): sc += 1.5
+    if re.search(r"\b(but|actually|already|still|never)\b", tl): sc += 0.5
+    if 5 <= len(w) <= 10: sc += 1.0
+    if re.match(r"\s*(what would happen if|what happens if|here'?s why|why does|how does|the science of)\b", tl): sc -= 1.5      # v9.2: a plain promise opener ranks last
+    if natural_issues(t): sc -= 3.0
+    return round(max(0.0, min(10.0, sc)), 2)
+
+def rank_titles(titles):
+    """Natural first, then the highest stop-scrolling score; ties keep the packager's order."""
+    return sorted([t for t in titles if str(t or "").strip()], key=lambda t: (bool(natural_issues(t)), -shock_score(t)))

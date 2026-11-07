@@ -46,6 +46,15 @@ def speaker_blends(guest=None, cast=None):
             out = {"DIRECTOR": Blend("director_" + str(cast.get("expert")), BLENDS[d], gvoice=cv["DIRECTOR"][0], gstyle=cv["DIRECTOR"][1]),
                    "SKEPTIC": Blend("guest_" + str(cast.get("guest")), fb, gvoice=cv["SKEPTIC"][0], gstyle=cv["SKEPTIC"][1])}
     from whatifs import show as SHOW
+    from whatifs import v91 as V91
+    if SHOW.on() and V91.on("DESIGNED_VOICES_ON"):                  # v9.2: Vale and Grimm in their DESIGNED voices (closest prebuilt if unusable)
+      with V91.guard("DESIGNED_VOICES_ON"):                         # fail-safe: a failure keeps the v9.1 voices, never blocks the video
+        from whatifs.voiceq import voice_for
+        for c_ in SHOW.characters():
+            sp_ = c_.get("speaker")
+            if sp_ in ("DIRECTOR", "SKEPTIC") and sp_ in out and str(c_.get("gvoice") or "").strip():
+                v_, how_ = voice_for(sp_, c_["gvoice"], {b.gvoice for k, b in out.items() if k != sp_ and b.gvoice})
+                if v_: out[sp_].gvoice = v_; out[sp_].gstyle = str(c_.get("gstyle") or ""); log(f"{c_.get('name')}: voice {v_} ({how_})")
     if SHOW.on():                                                   # v9: Nana Rosa and the Archivist get their own voices
         out.update(SHOW.extra_blends({b.gvoice for b in out.values() if b.gvoice}))
     return out
@@ -378,7 +387,7 @@ def _render(job):
         own = files["img"].get(i); img = own or prev_img
         reuse = 0 if own else reuse + 1
         if own: prev_img = own
-        pieces = 1 if dur < 7.5 or s["type"] in ("graphic",) else (2 if dur < 13 else 3)
+        pieces = 1 if dur < 7.5 or s["type"] in ("graphic", "reaction") else (2 if dur < 13 else 3)
         cut = [int(n_total * k / pieces) for k in range(pieces + 1)]
         cd = 0.0
         if i in files["clips"] and s["type"] in ("kling", "living"):
@@ -395,6 +404,9 @@ def _render(job):
                 RN.set_overlay(RN.with_fx(ovl, fxk, nf, f"{ep}{i}{k}", f0)); RN.set_cursor(f0)
                 if k == 0 and i in files["clips"]: RN.clip_segment(files["clips"][i], path, nf, loop=s["type"] == "stock", push=(0.07 if i in strong else 0.035) if (s["type"] == "living" and dyn) else 0.0)
                 elif s["type"] == "graphic" and k == 0: RN.graphic_segment(s.get("graphic") or {}, img, path, nf)
+                elif s["type"] == "reaction" and k == 0:                    # v9.2: the code-made reaction cutaway (no image bought)
+                    from whatifs import shotplan as SP
+                    SP.reaction_segment(s.get("speaker") or units[i].get("speaker"), img, path, nf)
                 elif img:
                     RN.parallax_segment(img, path, nf, seed=f"{ep}{i}{k}", detail=((k + reuse) % 2 == 1), focus=s.get("focus"), look=None if own else RN.LOOKS[reuse % len(RN.LOOKS)], energy="high" if (i in strong and k == 0) else "calm",
                                        move=s.get("camera") if k == 0 else None)      # v8.9: the Director's suggested move (validated in render.pick_move)

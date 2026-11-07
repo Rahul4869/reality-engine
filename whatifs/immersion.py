@@ -83,10 +83,13 @@ def pov_prompt(shot, line=""):
     pv = shot.get("pov") or {}
     anchor = pv.get("anchor") or anchor_for(p + " " + line)
     rule = {"still": POV_STILL, "living": POV_LIVING, "kling": POV_KLING}[typ].format(anchor=anchor)
+    if typ == "still" and "phrase" in pv:                            # v9.2: one of several first-person phrasings with its own lens / angle
+        from whatifs import shotplan as SP
+        rule = SP.pov_sentence(typ, pv)
     if pv.get("body"): rule += f", the feeling of {pv['body']}"
     return f"{rule}. {p}"
 
-def apply(shots, units, imap, plan):
+def apply(shots, units, imap, plan, episode=None):
     """Attach the map to the shots, put the POV rules on every picture/clip prompt, put the Kling clips on the peak + impact sequence, and give the run-up
     and the impact their camera events. Returns a NEW list. Counts never change (same cost)."""
     if not on(): return shots
@@ -103,9 +106,19 @@ def apply(shots, units, imap, plan):
         ks = [i for i, s in enumerate(out) if s.get("type") == "kling"]; imp = ks[-1] if ks else None
     n = int((plan or {}).get("kling") or sum(1 for s in out if s.get("type") == "kling"))
     hook = opening_hook(out, units, n, imp)                      # v8.11: KLING_OPENING_CLIPS clips stay in the opening as a POV rush hook
+    from whatifs import v91 as V91
+    stake = None
+    if V91.on("KLING_STAKES_ON", episode):                       # v9.2: the other clips on the highest-stakes beats, never adjacent, never a plain line
+        with V91.guard("KLING_STAKES_ON", episode):
+            from whatifs import shotplan as SP
+            from whatifs.room import opening_units as _ou
+            stake = SP.stake_slots(out, units, max(0, n - len(hook)), None, hook, exclude=set(_ou(units)) - set(SP.stakes_top(units)) if hook else ())
+            if stake:
+                if imp is not None and imp not in stake: out[imp].pop("impact", None)
+                imp = stake[0]                                                  # the impact = the highest-stakes clip
     if imp is not None:
         out[imp]["impact"] = True
-        want = hook + [x for x in (imp, imp - 1, imp + 1, imp - 2, imp + 2) if 0 <= x < len(out) and out[x].get("type") != "graphic" and x not in hook][:max(0, n - len(hook))]
+        want = hook + (stake if stake else [x for x in (imp, imp - 1, imp + 1, imp - 2, imp + 2) if 0 <= x < len(out) and out[x].get("type") not in ("graphic", "reaction") and x not in hook][:max(0, n - len(hook))])
         have = [i for i, s in enumerate(out) if s.get("type") == "kling"]
         for d, r in zip([i for i in have if i not in want], [i for i in want if out[i].get("type") != "kling"]):
             out[d]["type"] = "still"; out[r]["type"] = "kling"; out[r]["hero"] = True
@@ -114,6 +127,10 @@ def apply(shots, units, imap, plan):
             out[imp]["pov_fx"] = "impact_shake"
             if imp - 1 >= 0 and not out[imp - 1].get("pov_fx"): out[imp - 1]["pov_fx"] = "pov_rush"
             if imp + 1 < len(out) and not out[imp + 1].get("pov_fx"): out[imp + 1]["pov_fx"] = "debris"
+    if V91.on("POV_VARIETY_ON", episode):                          # v9.2: scene-aware anchors; lens / angle / phrasing vary between pictures
+        with V91.guard("POV_VARIETY_ON", episode):
+            from whatifs import shotplan as SP
+            SP.assign_anchors(out, units, episode or "ep")
     for i in hook:
         if out[i].get("type") == "kling":
             out[i]["hero"] = True; out[i]["opening_hook"] = True
@@ -141,6 +158,11 @@ def opening_hook(out, units, n, imp=None):
     from whatifs.room import opening_units
     op = [i for i in opening_units(units) if i < len(out) and i != imp and out[i].get("type") != "graphic"]
     if not op: return []
+    from whatifs import v91 as V91
+    if k == 1 and V91.on("KLING_STAKES_ON"):                       # v9.2: the strongest opening line, not whichever line already had a clip
+        from whatifs import shotplan as SP
+        best = SP.opening_slot(out, units, op)
+        if best is not None: return [best]
     keep = [i for i in op if out[i].get("type") == "kling"][:k]
     rest = sorted([i for i in op if i not in keep and i > 0], key=lambda i: (str(units[i].get("tag")) not in ("reveal", "tension", "awe"), i))
     return sorted(keep + rest[: k - len(keep)])

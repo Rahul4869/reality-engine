@@ -251,10 +251,14 @@ def word_times(a, text):
     return energy_words(a, words), "energy"
 
 # ---------------------------------------------------------------- the request
+import threading as _th
+_PACE_LOCK = _th.Lock()
 def _pace():
-    gap = 60.0 / max(1, S("TTS_RPM", int)); wait = _last_req[0] + gap - time.time()
+    with _PACE_LOCK:                                                        # v9.2: thread-safe (voice checks run side by side)
+        gap = 60.0 / max(1, S("TTS_RPM", int)); start = max(time.time(), _last_req[0] + gap)
+        _last_req[0] = start
+    wait = start - time.time()
     if wait > 0 and not FAKE: time.sleep(wait)
-    _last_req[0] = time.time()
 
 def _body(turns, voices):
     """turns = [(speaker, text, style)], voices = {speaker: voice}. One speaker = single-speaker config; two = multi-speaker config."""
@@ -438,23 +442,54 @@ def voice_check(probe=True):
     from whatifs import cast as CAST
     from whatifs.data import PREBUILT_VOICES
     want = [(r["id"], str(r["voice"]).strip()) for r in CAST.rows(active_only=False)]
+    try:                                                                       # v9.2: the trial characters' designed voices are checked too
+        from whatifs import show as SHOW, v91 as V91
+        if not V91.on("DESIGNED_VOICES_ON"): raise StopIteration("off")
+        from whatifs.voiceq import resolve_designed
+        lst = list_voices()
+        for c in SHOW.characters():
+            gv = str(c.get("gvoice") or "").strip()
+            if gv: want.append(("CHAR_" + str(c.get("id")), resolve_designed(gv, lst) or gv))
+    except StopIteration: pass
+    except Exception as e: log(f"character voices not added to the voice check: {scrub(e)[:120]}", "WARN")
     try: listed = list_voices(); err = ""
     except Exception as e: listed, err = [], scrub(e)[:160]
     by = {}
     for v in listed:
         for k in (v["id"], v["display_name"]): by[str(k).lower()] = v
     rows, problems, partner = [], [], next((v for _, v in want if v in PREBUILT_VOICES), "Kore")
-    for cid, v in want:
+    prev = {}                                                                  # v9.2: a voice that passed recently is not paid for / waited on again
+    try:
+        from whatifs.core import parse_iso, now_utc
+        for r in store().rows("Voice_Check"):
+            t0 = parse_iso(str(r.get("ts") or ""))
+            if t0 and (now_utc() - t0).days < S("VOICE_CHECK_REUSE_DAYS", int) and str(r.get("synth_ok")).upper() == "TRUE": prev[r.get("voice")] = r
+    except Exception: prev = {}
+    def check_one(cid, v):
         hit = by.get(v.lower()); src = (hit or {}).get("type") or ("prebuilt" if v in PREBUILT_VOICES else ("custom" if v.startswith("voice") else "unknown"))
         ok = multi = False; detail = err or ("listed" if hit else "not in this key's voice list")
+        if probe and v in prev:
+            p0 = prev[v]; return {"ts": p0.get("ts"), "voice": v, "source": src, "listed": True, "synth_ok": True,
+                                  "multi_speaker_ok": str(p0.get("multi_speaker_ok")).upper() == "TRUE", "detail": f"{cid}: reused check of {str(p0.get('ts'))[:10]}"}, None
         if probe:
             try: synth([("A", "Ready when you are.", "")], {"A": v}, "voicecheck"); ok = True
             except Exception as e: detail = scrub(e)[:160]
             if ok and src == "prebuilt":
                 try: synth([("A", "Ready?", ""), ("B", "Ready.", "")], {"A": v, "B": partner if partner != v else "Puck"}, "voicecheck"); multi = True
                 except Exception as e: detail = "single ok, two-speaker failed: " + scrub(e)[:120]
-        if not ok: problems.append(f"{cid} {v}: {detail}")
-        rows.append({"ts": iso(), "voice": v, "source": src, "listed": bool(hit), "synth_ok": ok, "multi_speaker_ok": multi, "detail": f"{cid}: {detail}"})
+        return {"ts": iso(), "voice": v, "source": src, "listed": bool(hit), "synth_ok": ok, "multi_speaker_ok": multi, "detail": f"{cid}: {detail}"}, (None if ok else f"{cid} {v}: {detail}")
+    import concurrent.futures as _cf
+    seen_v = {}
+    with _cf.ThreadPoolExecutor(max_workers=max(1, S("VOICE_CHECK_WORKERS", int))) as ex:      # v9.2: checks run side by side (paced by TTS_RPM)
+        futs = []
+        for cid, v in want:
+            if v in seen_v: futs.append((cid, v, None)); continue             # the same voice twice (a character on a cast voice): checked once
+            seen_v[v] = ex.submit(check_one, cid, v); futs.append((cid, v, seen_v[v]))
+        for cid, v, f in futs:
+            row, prob = (f or seen_v[v]).result()
+            row = dict(row, detail=f"{cid}: " + str(row["detail"]).split(": ", 1)[-1])
+            rows.append(row)
+            if prob: problems.append(prob)
     try: store().replace("Voice_Check", rows)
     except Exception: safe_append("Voice_Check", rows)
     return sum(1 for r in rows if r["synth_ok"]), len(rows), problems

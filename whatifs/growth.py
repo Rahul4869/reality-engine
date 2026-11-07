@@ -53,6 +53,12 @@ def title_issues(title, thumb_text=""):
     tw = {w for w in _words(thumb_text) if w not in _SMALL}
     if tw and len(tw & set(_words(t))) / len(tw) >= 0.6: out.append("repeats the thumbnail words (they should complement, not copy)")
     if t.count("!") > 1 or t.count("?") > 1: out.append("too much punctuation")
+    try:                                                                   # v9.2: natural English (odd tense / grammar is rejected)
+        from whatifs import v91 as V91
+        if V91.on("TITLE_SHOCK_ON"):
+            from whatifs.packaging import natural_issues
+            out += natural_issues(t)
+    except Exception: pass
     return out
 
 def choose_titles(titles, thumb_text=""):

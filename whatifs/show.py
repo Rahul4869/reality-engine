@@ -63,6 +63,21 @@ def character_rows():
     return [dict({k: c.get(k, "") for k in ("id", "name", "speaker", "role", "gvoice", "gstyle", "cast_id")}, **{k: c.get(k, "") for k in BIBLE_FIELDS}, status="core", updated=iso())
             for c in CHARACTERS]
 
+def seed_designed_voices(st=None):
+    """v9.2, once: the owner's Gemini Voice Design voices (AI Studio names) go into Characters.gvoice where the cell is empty or still holds the v9 default
+    prebuilt voice. A voice the owner typed himself is never overwritten."""
+    from whatifs.core import set_setting
+    st = st or store()
+    if S("DESIGNED_VOICES_SEEDED"): return 0
+    from whatifs.voiceq import DESIGNED
+    n = 0; old = {"ROSA": "Gacrux", "ARCHIVIST": "Enceladus", "VALE": "", "GRIMM": ""}
+    for r in st.rows("Characters"):
+        cid = r.get("id")
+        if cid in DESIGNED and str(r.get("gvoice") or "").strip() in ("", old.get(cid, "")):
+            st.update("Characters", "id", cid, {"gvoice": DESIGNED[cid]}); n += 1
+    set_setting("DESIGNED_VOICES_SEEDED", iso())
+    return n
+
 def seed_characters(st=None):
     """Idempotent: adds only missing core characters. Returns the number added."""
     st = st or store()
@@ -70,6 +85,8 @@ def seed_characters(st=None):
     except Exception: have = set()
     rows = [r for r in character_rows() if r["id"] not in have]
     if rows: st.append("Characters", rows)
+    try: seed_designed_voices(st)                                  # v9.2 (once)
+    except Exception as e: log(f"designed voices not seeded: {str(e)[:120]}", "WARN")
     return len(rows)
 
 def bible_issues(rows):
@@ -298,6 +315,15 @@ def extra_blends(taken):
         sp = c.get("speaker")
         if sp not in KOKORO_FALLBACK: continue
         gv = str(c.get("gvoice") or "").strip()
+        from whatifs import v91 as V91
+        v_ = ""
+        if V91.on("DESIGNED_VOICES_ON") and gv:                                # v9.2: designed voice by ID / AI Studio name, then the closest prebuilt
+            with V91.guard("DESIGNED_VOICES_ON"):                              # fail-safe: a failure falls back to the v9.1 rule below
+                from whatifs.voiceq import voice_for
+                v_, how_ = voice_for(sp, gv, taken)
+        if v_:
+                taken = set(taken) | {v_}; parts, lang = KOKORO_FALLBACK[sp]
+                out[sp] = Blend(sp.lower(), parts, lang=lang, gvoice=v_, gstyle=str(c.get("gstyle") or "")); continue
         from whatifs import v91 as V91
         if V91.on("VOICE_SUBSTITUTE_ON") and V91.available_voices():          # v9.1: Voice_Check decides; closest voice by descriptors before Kokoro
             gv0 = gv; gv = ""

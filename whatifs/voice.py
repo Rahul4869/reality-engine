@@ -372,6 +372,12 @@ def narrate(script: str, blend: Blend, out_base: str, style: str = "slow_burn",
         else:
             audio, words = be.synth(u.text, speed)
         audio, lead = _trim(audio, info=True)
+        try:                                                                       # v9.2: per-line levelling + peak limiter (consistent loudness)
+            from whatifs import v91 as V91
+            if V91.on("VOICE_LEVEL_ON"):
+                from whatifs.voiceq import level as _lvl
+                audio = _lvl(audio, SR)
+        except Exception as e_: log(f"voice levelling skipped: {e_}", "WARN")
         if lead: words = [{"w": x["w"], "s": max(0.0, x["s"] - lead), "e": max(0.0, x["e"] - lead)} for x in words]      # v8.3: word times follow the audio that was trimmed
         start = t; add(audio)
         entry = {"i": i, "text": u.text, "tag": u.tag, "speaker": u.speaker, "speed": round(speed, 3), "curve": (u.curve or []) + (u.events or []), "show": list(u.show or []),

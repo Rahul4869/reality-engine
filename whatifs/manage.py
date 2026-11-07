@@ -490,6 +490,10 @@ def learn():
     _top_up(st)                                                 # v8.7: new strategies (rhythm, sound) and the playbook seed reach older Sheets by themselves
     try: v810_upgrade(st)
     except Exception as x: log(f"v8.10 top-up skipped: {scrub(x)}", "WARN")
+    try:                                                        # v9.2: a stale research brief is renewed HERE (background), never inside a preview
+        from whatifs import research as RS
+        if S("RESEARCH_ON", bool) and not RS.latest_rows(S("RESEARCH_MAX_AGE_DAYS", int)): RS.save_brief(RS.run_research())
+    except Exception as x: log(f"research brief renewal skipped: {scrub(x)}", "WARN")
     try:                                                        # v9: the jury outside the video (comment, tally, teacup finders, queue, Season, Experiments)
         from whatifs import community as CM
         for e9 in st.rows("Episodes"):
@@ -911,6 +915,10 @@ def setup():
     PB.ensure_seed(st)                                         # v8.7: the research-graded playbook starts with its seed rules
     from whatifs import show as SHOW
     SHOW.seed_characters(st)                                   # v9: the character bible (idempotent)
+    try:                                                       # v9.2: an empty bench is filled here once (normal calls), so the first preview does not wait
+        from whatifs import premise as PR
+        if S("SETUP_FILLS_BENCH", bool) and S("PREMISE_BENCH_ON", bool) and not PR.bench_rows(): PR.refill_bench(force=True)
+    except Exception as x: log(f"first bench fill skipped: {scrub(x)}", "WARN")
     v810_upgrade(st)                                           # v8.10: Cast placeholders (owner overwrites), settings notes with the ₹4,000 cap
     status("sheet_ready", True, f"{len(TABS)} tabs")
     status("youtube_api_audit", audit_state() == "approved", AUDIT_WORDS[audit_state()])      # v8.4: the audit form has its own Setup_Status row, so it cannot be forgotten

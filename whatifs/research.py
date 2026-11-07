@@ -342,12 +342,16 @@ def text_for_room(rows, limit=4500):
          "\nAI-SUGGESTED CANDIDATES (interpretation, not evidence):\n" + "\n".join(cand))
     return t[:limit]
 
-def room_research(episode=None):
+def room_research(episode=None, allow_run=True):
     """Called by the writers' room before topic selection. Returns (prompt_text, brief_id). Reuses a fresh brief, else collects a new one. Never raises."""
     if not S("RESEARCH_ON", bool): return "RESEARCH NOT AVAILABLE: switched off (RESEARCH_ON = FALSE). Do not invent any.", ""
     try:
         rows = latest_rows(S("RESEARCH_MAX_AGE_DAYS", int))
         if rows: return text_for_room(rows), rows[0].get("brief_id", "")
+        if not allow_run:                                                     # v9.2: no new brief inside a preview / production; the newest one, any age
+            old = latest_rows(3650)
+            if old: log("research brief is older than RESEARCH_MAX_AGE_DAYS - the newest one is used; the learning job makes a new one", "WARN", episode)
+            return (text_for_room(old), old[0].get("brief_id", "")) if old else ("RESEARCH NOT AVAILABLE: no brief yet (the learning job makes one). Do not invent any.", "")
         b = run_research(); save_brief(b)
         log(f"research brief {b['brief_id']}: {b['completeness']}, {len(b['signals'])} signals, {len(b['candidates'])} candidates", episode=episode)
         return text_for_room(brief_rows(b)), b["brief_id"]

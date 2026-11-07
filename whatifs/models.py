@@ -88,6 +88,21 @@ def parse_json(text):
 # v8.11: the room grows with the effort level (the docs: "set a large max_tokens at the higher levels").
 THINK_ROOM = 16000
 THINK_ROOM_BY_EFFORT = {"low": 6000, "medium": 16000, "high": 24000, "xhigh": 32000, "max": 48000}
+TIGHT_NOTE = ("\n\nIMPORTANT (retry after a reply was cut off): keep your private reasoning short and write the final answer directly, in full, "
+              "within the length asked. Do not draft it twice.")
+_CALL = threading.local()
+
+def task_of_call(): return getattr(_CALL, "task", "")
+
+def think_cap(task, eff):
+    """v9.2: thinking room per role: THINK_CAPS (JSON {role: tokens}) first, else THINK_ROOM_BY_EFFORT capped by THINK_CAP_DEFAULT. Sized so one call
+    can never cost more than its share of the writing allowance; a cut reply is retried at LOWER effort, never with more room."""
+    try: caps = json.loads(S("THINK_CAPS") or "{}")
+    except Exception: caps = {}
+    if task in caps:
+        try: return int(caps[task])
+        except Exception: pass
+    return min(THINK_ROOM_BY_EFFORT.get(eff or "medium", THINK_ROOM), S("THINK_CAP_DEFAULT", int) or 10 ** 9)
 OUT_CEILING = 64000
 EFFORTS = ("low", "medium", "high", "xhigh", "max")
 _NO_SAMPLING = set()              # models that rejected temperature once: not sent to them again in this job (saves a refused request per call)
@@ -171,6 +186,7 @@ class CacheManager:
     def __init__(self):
         self.lock = threading.Lock()
         self.seen = {}           # prefix hash -> {"sig": params signature, "at": start time, "ttl": ttl, "dur": seconds}
+        self.effort_of = {}      # v9.2: prefix hash -> the effort the first call used
         self.stats = {}          # (episode, job) -> counters
         self.warned = set()
         self.run_id = os.environ.get("GITHUB_RUN_ID") or hashlib.md5(f"{time.time()}{os.getpid()}".encode()).hexdigest()[:10]
@@ -213,6 +229,18 @@ class CacheManager:
                 log(f"prompt cache: two calls share a prefix but differ in model parameters ({prev['sig']} vs {sig}); the second cannot read the first's cache", "WARN")
         return out, info
 
+    def aligned_effort(self, system, model_id, eff):
+        """v9.2: the effort the first call with this cached prefix used (so a second call can read the cache instead of a 'differ in model parameters'
+        miss). Remembered per prefix for the job."""
+        from whatifs.prompts import Packed
+        pk = Packed.of(system)
+        if not (pk.glob or pk.episode): return eff
+        h = hashlib.sha256((model_id + "|" + pk.glob + "|" + pk.episode).encode()).hexdigest()[:16]
+        with self.lock:
+            first = self.effort_of.setdefault(h, eff)
+        if first != eff and (h, "align") not in self.warned:
+            self.warned.add((h, "align")); log(f"prompt cache: effort aligned to '{first or 'default'}' (asked '{eff or 'default'}') so the shared prefix is read from the cache")
+        return first
     def episode_ttl(self, prefix, model_id, sig, answer_room, fanout):
         """5 min by default. CACHE_TTL_AUTO: 1 h when the next use is likely to come after 5 min: a sequential call with a long reply (the lifetime counts
         from the START of the request, so a long reply eats the window), or a prefix whose earlier 5-min entry already expired before it was used again."""
@@ -324,7 +352,7 @@ def _claude_body(role, system, prompt, max_tokens, temperature, search, effort, 
     mid = model(role)
     if not mid: raise RuntimeError(f"no {role} model")
     eff = "" if mid in _NO_EFFORT else effort
-    room = min(OUT_CEILING, int(max_tokens) + THINK_ROOM_BY_EFFORT.get(eff or "medium", THINK_ROOM))
+    room = min(OUT_CEILING, int(max_tokens) + think_cap(task_of_call(), eff))          # v9.2: a per-role thinking cap (Settings), never more on a retry
     sysf, info = (str(system), {"bps": 0, "ttl": [], "hash": "", "prefix_tokens": 0, "sent_1h": False}) if mid in _NO_CACHE else CACHE.blocks(system, mid, _sig(mid, eff, search), int(max_tokens), fanout)
     body = {"model": mid, "max_tokens": 0 if prewarm else room, "system": sysf, "messages": [{"role": "user", "content": prompt}]}
     if not prewarm and mid not in _NO_SAMPLING and temperature is not None: body["temperature"] = temperature
@@ -506,7 +534,7 @@ def haiku_repair(text, episode=None):
 def ask(role, system, prompt, want_json=True, max_tokens=6000, temperature=0.8, search=False, episode=None, fake_key=None, fanout=False):
     """Never blocks: walks the fallback chain. Claude roles move to Gemini when Claude credit runs out.
     v8.11: role may be a writers'-room task (ROUTES: model + effort chosen by capability) or a chain key as before; system may be a prompts.Packed."""
-    task = role; chain_key, ecls = route(role); _CUR.task = str(task)          # v9.1: Cost_Log 'role' (role ROI)
+    task = role; chain_key, ecls = route(role); _CUR.task = str(task); _CALL.task = str(task)          # v9.1: Cost_Log 'role'; v9.2: per-role caps
     if FAKE:
         from whatifs.fakes import fake_reply
         if chain_key in CHAINS and CHAINS[chain_key][0][0] == "c": simulate_claude(CHAINS[chain_key][0][1], system, prompt, max_tokens, search, effort_for(task, ecls), episode, fanout)
@@ -542,8 +570,13 @@ def ask(role, system, prompt, want_json=True, max_tokens=6000, temperature=0.8, 
             except Declined as e:
                 last = e; log(f"{task} via {r}: {e} - trying the next model", "WARN", episode); break
             except Truncated as e:
-                last = e; log(f"{task} via {r}: {e} - retrying once with more room", "WARN", episode)
-                mt = min(32000, int(mt * 1.7)); continue      # a cut reply is a sizing problem, not a model problem: same model, bigger limit, no sleep
+                last = e
+                if not S("TRUNC_RETRY_LOWER_EFFORT", bool):             # v8.x behaviour (only when the owner switches v9.2 off)
+                    log(f"{task} via {r}: {e} - retrying once with more room", "WARN", episode); mt = min(32000, int(mt * 1.7)); continue
+                if attempt == 1: break                                   # v9.2: ONE retry per model, then the next model; never a bigger limit
+                lower = {"max": "high", "xhigh": "high", "high": "medium", "medium": "low", "low": "low", "": "medium"}[eff if eff in EFFORTS else ""]
+                log(f"{task} via {r}: {e} - retrying ONCE at lower effort ({eff or 'default'} -> {lower}) with the same limit and a tighter instruction", "WARN", episode)
+                eff = lower; prompt = str(prompt) + TIGHT_NOTE; continue
             except ValueError as e:                            # not valid JSON: at most 3 such failures per call across the whole chain (each one is paid)
                 last = e; parse_fails += 1; log(f"{task} via {r} failed: {e}", "WARN", episode)
                 if parse_fails >= 3: raise RuntimeError(f"all models failed for {task}: {last}")

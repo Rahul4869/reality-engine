@@ -60,6 +60,10 @@ def _show_writer(spine):
     from whatifs import show as SHOW
     return SHOW.writer_brief(spine.get("show_plan")) if SHOW.on() and spine.get("show_plan") else ""
 
+def V91_on(flag):
+    from whatifs import v91 as V91
+    return V91.on(flag)
+
 def _pkg_extra():
     """v9: hook shapes + three title/thumbnail pairs for the packager ('' when SHOW_MODE = off)."""
     from whatifs import show as SHOW
@@ -67,7 +71,7 @@ def _pkg_extra():
     from whatifs import packaging as PK
     recent = []
     for r in store().rows("Experiments")[-2:]: recent.append(r.get("hook_shape"))
-    return (PK.hook_shape_brief(recent) + "\nALSO return \"titles\": [2 more titles, each a DIFFERENT angle], \"thumb_text_b\" and \"thumb_text_c\" (1-4 words each, "
+    return (PK.hook_shape_brief(recent) + "\n" + (PK.TITLE_BRIEF if V91_on("TITLE_SHOCK_ON") else "") + "\nALSO return \"titles\": [2 more titles, each a DIFFERENT angle], \"thumb_text_b\" and \"thumb_text_c\" (1-4 words each, "
             "adding to their title, never repeating it). Captions and catchphrases: plain words that auto-translate well (no puns that only work in English).")
 
 def _reel_extra(room):
@@ -94,7 +98,7 @@ def scout_and_pick(draw, ctx, episode):
     recent_fams = [json.loads(e.get("draw_json") or "{}").get("family", "") for e in store().rows("Episodes")[-6:] if e.get("draw_json")]
     fams = {k: v[0] for k, v in FAMILIES.items()}
     dual = S("PREMISE_DUAL_SCORE_ON", bool); ff = S("PREMISE_FAIL_FORWARD", bool); skip = S("SKIP_IF_BELOW_BAR", bool)
-    if S("PREMISE_BANK_ON", bool): PR.regenerate_bank(episode=episode)          # once a month (no-op otherwise)
+    if S("PREMISE_BANK_ON", bool) and S("BACKGROUND_IN_ROOM", bool): PR.regenerate_bank(episode=episode)      # v9.2: monthly bank = the learning job only
     rounds = 3 if ff or not dual else 1 + max(0, S("PREMISE_RETRY_ROUNDS", int)); used = []; best_seen = 0.0; pool = []
     taste = ("\nTASTE CALIBRATION (the owner's own examples): LIKED: " + json.dumps(TASTE_LIKED) + " BORING: " + json.dumps(TASTE_BORING) + " " + TASTE_NOTE +
              "\nAlso score: illogical-sounding but physically showable in FIRST PERSON with our pictures; headline 4-11 words.\n" + CR.brief("scout"))
@@ -187,10 +191,18 @@ def scout_and_pick(draw, ctx, episode):
         if spine: return spine
     raise RuntimeError("scout failed 3 times")
 
+def _mark(d, stage):
+    """v9.2: per-stage wall time (seconds since the previous mark), reported in Script Preview and the episode notes."""
+    import time as _t
+    now = _t.time(); st = d.setdefault("stage_times", {}); last = d.get("_t_last") or now
+    st[stage] = round(st.get(stage, 0) + now - last, 1); d["_t_last"] = now
+
 def run_room(draw, episode):
-    ctx = context(); d = draw; stg = d["strategies"]; defs = ctx["defs"]
-    ctx["research"], d["research_brief"] = RS.room_research(episode)       # v7.4: audience research BEFORE topic selection (never blocks)
-    spine = FE.enrich_spine(scout_and_pick(d, ctx, episode))
+    import time as _t
+    ctx = context(); d = draw; stg = d["strategies"]; defs = ctx["defs"]; d["_t_last"] = _t.time(); d["stage_times"] = {}
+    ctx["research"], d["research_brief"] = RS.room_research(episode, allow_run=S("BACKGROUND_IN_ROOM", bool))       # v9.2: the room only READS the brief
+    _mark(d, "research (read)")
+    spine = FE.enrich_spine(scout_and_pick(d, ctx, episode)); _mark(d, "premise (bench / scout / judges / showrunner)")
     spine["promise"] = GR.clean_promise(spine); d["promise"] = spine["promise"]       # v8.7: packaging first - the click promise is fixed BEFORE a word is written
     log(f"premise: {spine['premise']} | format: {spine.get('presentation_format', 'classic')}", episode=episode, public="premise chosen (text kept private until release)")
     roles = TR.ROLES
@@ -210,6 +222,7 @@ def run_room(draw, episode):
         from whatifs import insights as INS
         INS.roi_note(episode, "objections", notes=len(tr["objections"]), accepted=len(tr["objections"]))      # v9.1 role ROI: all objections reach the bible
         log(f"table read: {len(tr['objections'])} objection(s) raised", episode=episode)
+    _mark(d, "memos + table read")
     bible = ask("bible", FE.inject(GR.insert_before_json(P.fill(P.BIBLE, spine=_j(spine), memos=_j(memo_by_role, 8000), draw=_j(d), objections=objections), _craft_extra()), "bible"),
                 "Write the bible.", episode=episode, fake_key="bible")
     wmin, wmax = int(d["words"] * 0.93), int(d["words"] * 1.07)
@@ -229,7 +242,8 @@ def run_room(draw, episode):
         arm = "medium" if int(hashlib.md5(episode.encode()).hexdigest(), 16) % 2 else "high"
         _M.EFFORT_RUN[episode] = {"writer": arm, "rewrite": arm}; d["effort_arm"] = arm
     wbrief = P.Packed.as_episode(wbrief)                  # v8.11: house rules cached 1 h, the whole brief cached as the episode layer; each call's task is its user message
-    script = ask("writer", wbrief, "Write the narration.", episode=episode, fake_key="writer", max_tokens=16000)
+    _mark(d, "bible")
+    script = ask("writer", wbrief, "Write the narration.", episode=episode, fake_key="writer", max_tokens=16000); _mark(d, "writer (first draft)")
     script = _fix_length(script, wbrief, wmin, wmax, episode)
     script = humanize(script, episode)
     script = format_pass(script, wbrief, episode)
@@ -255,7 +269,9 @@ def run_room(draw, episode):
             if min(verdict.get("scores", {}).get(k, 10) for k in ("policy_safe",)) < 7:
                 raise RuntimeError("policy risk after rewrite - premise skipped")
             log("critic still unhappy after one rewrite - continuing (fail-forward)", "WARN", episode)
+    _mark(d, "critic + rewrites + edits")
     script = fact_check(spine, script, episode)           # v8.3: search-grounded check of the claims, before any picture money is spent
+    _mark(d, "fact check")
     if S("CTA_ON", bool):                                 # v8.3: like / subscribe / share asks: the writer's own, or a hand-written one added at a calm moment
         new, added, code = CTA.ensure(script.get("script", ""), episode, S("CTA_LAST"))
         if added:
@@ -276,7 +292,8 @@ def run_room(draw, episode):
         except Exception as e:
             log(f"Owner's Cut rewrite failed: {scrub(e)[:160]}", "WARN", episode); return None
     s_oc = script.get("script", "")
-    script, oc = CR.owners_cut(spine, script, wbrief, imap, episode, oc_rewrite)
+    _mark(d, "immersion + director read")
+    script, oc = CR.owners_cut(spine, script, wbrief, imap, episode, oc_rewrite); _mark(d, "owner's cut")
     from whatifs import insights as INS
     INS.roi_note(episode, "owners_cut", notes=sum(len(r.get("fixes") or []) for r in oc.get("rounds") or []),
                  accepted=sum(len(r.get("fixes") or []) for r in (oc.get("rounds") or [])[:-1]) if INS.changed(s_oc, script.get("script")) else 0,
@@ -557,7 +574,13 @@ def plan_shots(room, units, draw, plan, episode):
     for res in ask_many(jobs, workers=3): shots += res.get("shots", [])
     out = normalise_shots(shots, units, plan, look, peaks)
     from whatifs import immersion as IM
-    return IM.apply(out, units, room.get("immersion") or {}, plan)       # v8.10: POV on every shot type, Kling on the impact sequence, camera events
+    from whatifs import v91 as V91
+    if V91.on("REACTION_SHOTS_ON", episode):                             # v9.2: tiny lines -> free reaction cutaways of the speaking character
+        with V91.guard("REACTION_SHOTS_ON", episode):
+            from whatifs import shotplan as SP
+            out, n_ = SP.reaction_shots(out, units)
+            if n_: log(f"shot plan: {n_} tiny line(s) became reaction cutaways (no image bought)", episode=episode)
+    return IM.apply(out, units, room.get("immersion") or {}, plan, episode)       # v8.10: POV on every shot type, Kling on the impact sequence, camera events
 
 def _immersion_notes(room):
     from whatifs import immersion as IM, craft as CR

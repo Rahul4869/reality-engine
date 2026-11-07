@@ -56,9 +56,19 @@ def cast_samples(out):
         sb = {"DIRECTOR": Blend("e", {"am_michael": 1.0}, gvoice=e["voice"], gstyle=e.get("style_direction", "")),
               "SKEPTIC": Blend("g", {"af_heart": 1.0}, gvoice=g["voice"], gstyle=g.get("style_direction", ""))}
         script = f"[DIRECTOR] [calm] {e.get('intro_line') or 'Welcome back.'} Today with us: {g.get('display_name')}.\n[SKEPTIC] [wow] {g.get('intro_line') or 'Hi!'}"
+        import hashlib, json as _json                                          # v9.2: an unchanged sample (same voices, styles, words) is not made again
+        key = hashlib.sha256("|".join([str(e["voice"]), str(g["voice"]), str(e.get("style_direction", "")), str(g.get("style_direction", "")), script]).encode()).hexdigest()[:12]
+        try: done = _json.loads(S("VOICE_SAMPLES_DONE") or "{}")
+        except Exception: done = {}
+        if S("VOICE_SAMPLES_REUSE", bool) and key in done:
+            res.append((f"{e['id']}+{g['id']}", done[key], f"{e.get('display_name')} + {g.get('display_name')} (unchanged, kept)")); continue
         try:
             r = narrate(script, sb["DIRECTOR"], f"{out}/cast_{e['id']}_{g['id']}", seed="castlab", speaker_blends=sb)
             res.append((f"{e['id']}+{g['id']}", r.wav_path if FAKE else _mp3(r.wav_path), f"{e.get('display_name')} + {g.get('display_name')}"))
+            try:
+                from whatifs.core import set_setting
+                done[key] = res[-1][1]; set_setting("VOICE_SAMPLES_DONE", _json.dumps(dict(list(done.items())[-40:])))
+            except Exception: pass
         except Exception as x: log(f"cast sample {g['id']} failed: {scrub(x)[:120]}", "WARN"); res.append((g["id"], "", "failed"))
     return res
 

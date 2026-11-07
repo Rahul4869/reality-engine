@@ -52,8 +52,10 @@ def run():
         PUB.email("Script Preview: nothing reached the bar", f"<p>No draft was saved. {html.escape(str(e))}</p><p>Every pitch and score is in the Premise_Scores tab.</p>")
         log(f"preview: {e}", "WARN"); flush_log(); return {"ok": False, "why": str(e)[:300]}
     clean, _ = _strip_beats(room["script"]["script"]); units = approx_units(clean)
+    import time as _t9; t_sp = _t9.time()
     try: shots = ROOM.plan_shots(room, units, d, plan, draft)
     except Exception as e: log(f"preview shot list failed: {scrub(e)[:160]}", "WARN"); shots = []
+    room.setdefault("stage_times", d.get("stage_times") or {})["shot plan"] = round(_t9.time() - t_sp, 1)      # v9.2
     est = estimate(d, plan); spine = room["spine"]
     title = str((spine.get("promise") or {}).get("title") or spine.get("headline") or spine.get("premise"))
     hook = " ".join(u["text"] for u in units[:3])[:400]
@@ -74,6 +76,19 @@ def run():
         body += ("<h3>Projected cost per line</h3><ul>" + "".join(f"<li>{k}: about Rs {v:.0f}</li>" for k, v in cf["lines"].items()) + "</ul>"
                  + (f"<p><b>Flag:</b> the writing cost Rs {cf['ai_measured']:.0f}, more than 10% over its estimate (Rs {cf['ai_estimate']:.0f}).</p>" if cf["flag"] else ""))
     except Exception as e: log(f"preview cost lines skipped: {scrub(e)[:120]}", "WARN")
+    try:                                                          # v9.2: where the writing money and the time went (per role, per stage)
+        from whatifs.core import flush_costs
+        flush_costs(); per = {}
+        for r_ in store().rows("Cost_Log"):
+            if r_.get("episode_id") == draft and r_.get("basis") != "summary":
+                k_ = r_.get("role") or r_.get("item") or "?"
+                try: per[k_] = per.get(k_, 0.0) + float(r_.get("inr") or 0)
+                except Exception: pass
+        tt = (room.get("stage_times") if isinstance(room, dict) else None) or (d.get("stage_times") or {})
+        body += ("<h3>Writing cost by role (this preview only; background jobs are not included)</h3><ul>" +
+                 "".join(f"<li>{html.escape(k)}: Rs {v:.1f}</li>" for k, v in sorted(per.items(), key=lambda kv: -kv[1])) + f"</ul><p>Total Rs {sum(per.values()):.0f}</p>"
+                 "<h3>Time by stage</h3><ul>" + "".join(f"<li>{html.escape(k)}: {v / 60:.1f} min</li>" for k, v in tt.items()) + f"</ul><p>Total {sum(tt.values()) / 60:.1f} min</p>")
+    except Exception as e: log(f"preview breakdown skipped: {scrub(e)[:120]}", "WARN")
     PUB.email(f"Script Preview: {title[:60]}", body)
     log(f"preview {draft} saved as DRAFT (premise not used up)"); flush_log()
     return {"ok": True, "draft": draft, "est_cost_inr": est, "shots": len(shots)}
