@@ -4,6 +4,10 @@ import numpy as np
 from whatifs import core, format_engine as FE, governor as G
 from whatifs.voice import parse_script
 
+def _legacy_budget(setting):
+    setting("BUDGET_FLOOR_INR", "4000"); setting("BUDGET_CEILING_INR", "4000"); setting("BUDGET_EARMARK_INR", "0"); setting("V94A_FLIPS_ON", "FALSE"); setting("V10_FLIPS_ON", "FALSE"); setting("SPECIALS_ON", "FALSE")      # v9.4a: this test keeps the v8 budget profile (₹4,000, no earmark, no cap move)
+
+
 GOOD = "\n".join(["## BEAT 1"] + [f"[{'DIRECTOR' if i % 2 == 0 else 'SKEPTIC'}] [calm] Line number {i} says something new." for i in range(10)])
 
 # ---------------- parser ----------------
@@ -83,21 +87,25 @@ def test_format_pass_asks_once_and_keeps_the_fix_only_if_it_is_better(monkeypatc
 def _spend(inr):
     core.cost("test_spend", "fal", 1, inr / core.S("USD_INR", float)); pass
 
-def test_plan_holds_instead_of_overshooting_when_the_episode_does_not_fit():
+def test_plan_holds_instead_of_overshooting_when_the_episode_does_not_fit(setting):
+    _legacy_budget(setting)
     p = G.plan_for_episode(330.0, 8); assert not p["hold"] and p["kling"] >= 3
     _spend(3900)          # Rs 100 left of the 4,000 cap (v8.10: was 3,500)
     p = G.plan_for_episode(330.0, 1); assert p["hold"] and p["kling"] >= 3 and "hold" in p["reason"]
 
-def test_a_new_episode_is_not_started_when_the_month_is_spent():
+def test_a_new_episode_is_not_started_when_the_month_is_spent(setting):
+    _legacy_budget(setting)
     ok, why = G.can_start_episode(); assert ok
     _spend(3800); ok, why = G.can_start_episode(); assert not ok and "Rs" in why
 
-def test_maintenance_jobs_may_use_the_small_reserve_but_production_may_not():
+def test_maintenance_jobs_may_use_the_small_reserve_but_production_may_not(setting):
+    _legacy_budget(setting)
     _spend(3920)          # v8.10 cap 4,000; v8.7: the reserve is INSIDE the cap: Rs 80 left, production (stops Rs 100 below the cap) is closed, maintenance is not
     assert G.monthly_cap_reached() and not G.monthly_cap_reached(maintenance=True)
     _spend(80); assert G.monthly_cap_reached(maintenance=True)       # the cap itself is never exceeded, not even by maintenance
 
-def test_produce_slot_does_not_create_rows_or_start_when_the_budget_gate_closes(monkeypatch):
+def test_produce_slot_does_not_create_rows_or_start_when_the_budget_gate_closes(monkeypatch, setting):
+    _legacy_budget(setting)
     from whatifs import manage as MG, publish as PUB
     sent = []; monkeypatch.setattr(PUB, "email", lambda *a, **k: sent.append(a[0]))
     _spend(3900); before = len(core.store().rows("Episodes"))
@@ -105,7 +113,7 @@ def test_produce_slot_does_not_create_rows_or_start_when_the_budget_gate_closes(
     assert MG._produce_slot(core.store().rows("Episodes")) is None and len(sent) == 1       # one email per month, not one per tick
 
 def test_the_shipped_defaults_are_the_documented_budget_profile():
-    assert core.S("BUDGET_FLOOR_INR", float) == 4000 == core.S("BUDGET_CEILING_INR", float) and core.S("KLING_MIN_CLIPS", int) == 3 and core.S("PUBLISH_DAYS") == "Tue,Sat"      # v8.10: the owner raised the cap to 4,000
+    assert core.DEFAULTS["BUDGET_FLOOR_INR"][0] == "5000" == core.DEFAULTS["BUDGET_CEILING_INR"][0] and core.S("KLING_MIN_CLIPS", int) == 3 and core.S("PUBLISH_DAYS") == "Tue,Sat"      # v8.10: the owner raised the cap to 4,000
 
 def test_gemini_calls_are_written_to_the_cost_log(monkeypatch):
     from whatifs import models

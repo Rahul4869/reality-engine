@@ -52,6 +52,32 @@ def run(limit=None):
         except Exception: pass
     return {"made": made, "skipped_cap": skipped, "have": used()}
 
+def auto_lock(now=None):
+    """v9.3.1 (L6, SHEETS_DEFAULT_LOCK_H): sheet images still in DRAFT this many hours after they were made are locked by default (silence = yes),
+    so the characters do not stay off screen forever. 'REDO SHEET <ID> <expression>' still works afterwards (lifetime cap K102 unchanged).
+    When every character has locked images, CHARACTER_THEATER_ON is switched on once (owner decision 2, 2026-11-07) and the owner is told how to undo it."""
+    from whatifs.core import parse_iso, now_utc, set_setting
+    h = S("SHEETS_DEFAULT_LOCK_H", float)
+    if h <= 0: return 0
+    st = store(); now = now or now_utc(); n = 0
+    for r in st.rows("Character_Sheets"):
+        t0 = parse_iso(r.get("ts"))
+        if r.get("status") == "DRAFT" and r.get("file") and t0 and (now - t0).total_seconds() > h * 3600:
+            st.update_where("Character_Sheets", {"hash": r["hash"]}, {"status": "LOCKED", "approved_at": iso() + " (default)"}); n += 1
+    rows = st.rows("Character_Sheets")
+    chars = {r.get("character") for r in rows if r.get("character")}
+    all_locked = bool(chars) and all(any(x.get("character") == c and x.get("status") == "LOCKED" for x in rows) for c in chars)
+    if n and all_locked and not S("CHARACTER_THEATER_ON", bool) and not str(S("SHEETS_THEATER_AUTO_ON_AT") or "").strip():
+        set_setting("CHARACTER_THEATER_ON", "TRUE"); set_setting("SHEETS_THEATER_AUTO_ON_AT", iso())
+        try:
+            from whatifs import publish as PUB
+            PUB.email("Character sheets locked by default", f"<p>{n} sheet image(s) were locked after {int(h)} hours without a reply, and the characters now appear on screen "
+                      "(CHARACTER_THEATER_ON = TRUE). To switch them off: Settings -> CHARACTER_THEATER_ON = FALSE (or the toggle in Mission Control once it is live). "
+                      "To remake one image: REDO SHEET VALE smug.</p>")
+        except Exception: pass
+    if n: log(f"character sheets: {n} image(s) locked by default after {int(h)} h")
+    return n
+
 def decide(title):
     """'APPROVE SHEET <ID>' locks that character's images; 'REDO SHEET <ID> <expression>' clears ONE image so the next run remakes it (cap still counts)."""
     st = store(); t = str(title or "").strip()

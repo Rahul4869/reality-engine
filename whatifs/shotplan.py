@@ -9,8 +9,22 @@
    character (no image bought) instead of yet another near-identical still; the cutaway also appears at every speaker change of a Director / Skeptic
    exchange when that line is short, so the characters are visible before the sheets are approved. Cost never goes up (fewer images are bought)."""
 from __future__ import annotations
-import re, hashlib
+import re, hashlib, math
 from whatifs.core import S, log
+
+def pieces_for(dur, shot_type, opening=False, episode=None):
+    """v9.3 (MICRO_CUTS_ON, code only, zero cost): how many picture states a shot of `dur` seconds gets. v9.2 rule: 1 under 7.5 s, 2 under 13 s, else 3.
+    With micro-cuts a still / reused picture changes framing (alternating wide / detail crop, a new camera move) at least every PIECE_MAX_SEC
+    (PIECE_MAX_SEC_OPENING inside the opening window), never below PIECE_MIN_SEC per piece, at most 8. Graphics and reaction cutaways stay one piece.
+    Any failure = the v9.2 rule for this episode (v91.guard)."""
+    base = 1 if dur < 7.5 or shot_type in ("graphic", "reaction") else (2 if dur < 13 else 3)
+    from whatifs import v91 as V91
+    if shot_type in ("graphic", "reaction") or not V91.on("MICRO_CUTS_ON", episode): return base
+    res = base
+    with V91.guard("MICRO_CUTS_ON", episode):
+        mx = S("PIECE_MAX_SEC_OPENING" if opening else "PIECE_MAX_SEC", float); mn = max(0.5, S("PIECE_MIN_SEC", float))
+        if mx > 0: res = max(base, min(int(math.ceil(float(dur) / mx - 1e-9)), max(1, int(float(dur) // mn)), 8))
+    return res
 
 SCENES = [
     ("bathroom", r"\b(bathroom|mirror|sink|toothbrush|shower|bathtub|towel|tap)\b", ["a toothbrush in your hand", "fogged mirror edge", "your fingers on the cold sink rim", "a towel hook at the frame edge"]),

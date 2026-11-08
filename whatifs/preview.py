@@ -33,9 +33,12 @@ def estimate(d, plan):
     from whatifs.episode import est_cost_inr
     return round(est_cost_inr(d), 0)
 
-def run():
-    """python -m whatifs.cli preview  (workflow 'Script Preview'). Never publishes, never buys a picture."""
-    JOB["name"] = "preview"
+def run(mode="preview"):
+    """python -m whatifs.cli preview  (workflow 'Script Preview'). Never publishes, never buys a picture.
+    v9.4a (WP2): mode='preprod' = the same writing, run early at half price by preprod.run(); the draft is saved APPROVED (production takes it as written)
+    and nobody is emailed (the owner can still read it in Script_Previews / Mission Control)."""
+    pre = mode == "preprod"
+    JOB["name"] = "preprod" if pre else "preview"
     from whatifs.sampler import draw as DRAW
     from whatifs import governor as G, room as ROOM, premise as PR, craft as CR
     from whatifs.episode import _apply_tier, _strip_beats, est_cost_inr
@@ -49,7 +52,7 @@ def run():
         raise RuntimeError("not enough budget left this month for a preview (nothing spent)")
     try: room = ROOM.run_room(d, draft)
     except (PR.SkipSlot, CR.BelowBar) as e:
-        PUB.email("Script Preview: nothing reached the bar", f"<p>No draft was saved. {html.escape(str(e))}</p><p>Every pitch and score is in the Premise_Scores tab.</p>")
+        if not pre: PUB.email("Script Preview: nothing reached the bar", f"<p>No draft was saved. {html.escape(str(e))}</p><p>Every pitch and score is in the Premise_Scores tab.</p>")
         log(f"preview: {e}", "WARN"); flush_log(); return {"ok": False, "why": str(e)[:300]}
     clean, _ = _strip_beats(room["script"]["script"]); units = approx_units(clean)
     import time as _t9; t_sp = _t9.time()
@@ -59,9 +62,12 @@ def run():
     est = estimate(d, plan); spine = room["spine"]
     title = str((spine.get("promise") or {}).get("title") or spine.get("headline") or spine.get("premise"))
     hook = " ".join(u["text"] for u in units[:3])[:400]
-    store().append("Script_Previews", [{"draft_id": draft, "created": iso(), "status": "DRAFT", "premise": spine.get("premise", "")[:200], "title": title[:120],
-                                         "hook": hook, "est_cost_inr": est, "approved_at": "", "episode_id": "", "room_json": _pack({"d": d, "room": room}),
-                                         "note": f"premise score {spine.get('premise_score', '')}; Owner's Cut {d.get('owners_cut', {}).get('mean', '')}"}])
+    store().append("Script_Previews", [{"draft_id": draft, "created": iso(), "status": "APPROVED" if pre else "DRAFT", "premise": spine.get("premise", "")[:200], "title": title[:120],
+                                         "hook": hook, "est_cost_inr": est, "approved_at": iso() if pre else "", "episode_id": "", "room_json": _pack({"d": d, "room": room}),
+                                         "note": ("pre-production (auto, half-price batch); " if pre else "") + f"premise score {spine.get('premise_score', '')}; Owner's Cut {d.get('owners_cut', {}).get('mean', '')}"}])
+    if pre:
+        log(f"pre-production {draft} saved (APPROVED for the next production slot; written at batch price)"); flush_log()
+        return {"ok": True, "draft": draft, "est_cost_inr": est, "shots": len(shots), "mode": "preprod"}
     rows = "".join(f"<tr><td>{i}</td><td>{html.escape(s.get('type', ''))}</td><td>{html.escape(str((s.get('pov') or {}).get('vantage', '')))} "
                    f"{html.escape(str(s.get('pov_fx') or ''))}</td><td>{html.escape(str(units[i]['text'])[:90])}</td><td>{html.escape(str(s.get('prompt') or s.get('search') or '')[:180])}</td></tr>"
                    for i, s in enumerate(shots[:80]) if i < len(units))
@@ -101,6 +107,18 @@ def decide(title):
     if str(title or "").strip().startswith("PICK "):
         from whatifs import packaging as PK
         return PK.apply_pick(title)
+    ma = re.match(r"^ACT (A\d{17,24}) (.+)$", str(title or "").strip())
+    if ma:                                                         # v9.4a (WP4): an owner answer to an Owner_Actions row
+        from whatifs import notify as NT
+        return NT.answer(ma.group(1), ma.group(2).strip())
+    mm = re.match(r"^MODE (STANDARD|RUNWAY)$", str(title or "").strip().upper())
+    if mm:                                                         # v9.4a (decision 8): the owner's one tap switches the budget mode
+        set_setting("BUDGET_MODE", mm.group(1).lower())
+        try:
+            from whatifs import publish as PUB, governor as G
+            PUB.email(f"Budget mode: {mm.group(1).title()}", f"<p>Now {mm.group(1).title()}: cap about Rs {G.cap_inr():.0f} a month, at most {G.max_long_videos()} long videos, publishing {G.publish_days()}.</p>")
+        except Exception as e: log(f"mode reply not sent: {scrub(e)[:120]}", "WARN")
+        log(f"budget mode set to {mm.group(1).lower()} by the owner"); flush_log(); return mm.group(1).lower()
     m = re.match(r"^(APPROVE|REJECT) (DRAFT\d{8,14})$", str(title or "").strip())
     if not m: raise SystemExit("usage: python -m whatifs.cli previewdecide 'APPROVE DRAFT<id>'")
     act, draft = m.groups(); st = store()
@@ -111,10 +129,13 @@ def decide(title):
 
 def take_approved(ep):
     """The oldest APPROVED draft for this production (marked USED with the episode id), or None. Returns (saved draw, room)."""
-    if not S("PREVIEW_USE_APPROVED", bool): return None
+    use_owner, use_pre = S("PREVIEW_USE_APPROVED", bool), S("PREPROD_ON", bool)      # v9.4a: owner-approved previews and pre-production drafts are switched apart
+    if not (use_owner or use_pre): return None
     st = store()
     for r in st.rows("Script_Previews"):
         if r.get("status") != "APPROVED": continue
+        is_pre = str(r.get("note") or "").startswith("pre-production")
+        if (is_pre and not use_pre) or (not is_pre and not use_owner): continue
         try: data = _unpack(r.get("room_json"))
         except Exception as e:
             log(f"approved draft {r.get('draft_id')} unreadable ({scrub(e)[:80]}) - skipped", "WARN"); st.update("Script_Previews", "draft_id", r["draft_id"], {"status": "BROKEN"}); continue

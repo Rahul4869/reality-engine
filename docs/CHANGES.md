@@ -1,5 +1,89 @@
 # Changes (newest first). Claude Code adds one dated entry per merged change: what, why, cost, how to switch it off.
 
+## 2026-11-08 v10.1 (part 2) - Model Steward
+- Picture/video models now look after themselves like the text and voice models: instant failover when fal retires or breaks a model (same call retried on the next approved model; living stills fall back to a free camera move), a weekly retirement watch with a card 14 days ahead and a switch 7 days before the date, and a weekly scout that tests newer models automatically (capped) and adopts them only when clearly better, 3 days after telling the owner. Never raises the clip price beyond 1.3x or $0.50 without the owner. Switches: MODEL_STEWARD_ON, MODEL_LADDERS, MODEL_FAILS_TO_SWITCH, MODEL_SWITCH_LEAD_DAYS, MODEL_MAX_PRICE_RATIO, MODEL_MAX_USD_CLIP, MODEL_UPGRADE_SCOUT_ON, MODEL_AUTO_UPGRADE_ON, MODEL_UPGRADE_MARGIN, MODEL_UPGRADE_NOTICE_DAYS. Cost: ₹0 weekly; an automatic test costs at most BAKEOFF_CAP_INR (about Rs 130 for 2 scenes x 2 models).
+
+## 2026-11-08 v10.1 - verified-API fixes + growth upgrades
+- Video: Kling 2.5 Turbo Pro hero clips (Kling 2.1 retired on fal; $0.35 per 5 s), each model gets its own input schema, retired ids replaced at run time. Stills sharper at the same price (1872x1056 = 2 MP). Bake-off candidates: Kling 2.6 Pro (silent), Wan 2.6 Flash, Hailuo 2.3 Fast.
+- Uploads: no needless AI-label re-set when YouTube omits the field; 'made for kids' flagged at once; Meta AI disclosure on Reels and Facebook Reels.
+- Growth: verdict styles rotate; near-duplicate scripts flagged; Shorts capped at 10 a week and hero-still Shorts off; Instagram 'Case Files' carousels with each long video; search-demand scores for premises; viewer 'what if' questions feed the scout; a card when the 500-subscriber tier is in reach; optional newsletter link.
+- Switches: VERDICT_ROTATION_ON, SCRIPT_SIMILARITY_MAX, SHORTS_WEEKLY_CAP, HERO_STILL_SHORTS_ON, CAROUSEL_ON, CAROUSEL_PER_WEEK, WORKER_PUBLIC_URL, META_AI_LABEL_ON, DEMAND_SCORE_ON, VIEWER_QUESTIONS_ON, VIEWER_NAME_ON_SCREEN, YPP_WATCH_ON, NEWSLETTER_URL, V101_FLIPS_ON. Cost: about Rs +60/month video (Kling price) and Rs 0 for the rest.
+
+## 2026-11-08 v10 growth (part 6) - pilot Shorts, Outlier Lab, model bake-off
+- Two cheap pilot Shorts a week test upcoming premises; their engaged views raise or lower the premise's score (about Rs 1-2 each, ≤ Rs 40 a month). Switches: PILOTS_ON, PILOT_DAYS, PILOT_MONTHLY_INR.
+- The Outlier Lab watches the opening of up to 3 standout videos a day and files judged technique cards (about Rs 0.5 each). Switches: OUTLIER_LAB_ON, OUTLIER_LAB_DAILY.
+- One-time bake-off of video models with a choice card (≤ Rs 400; silence keeps the current model). Workflow: Model bake-off.
+
+## 2026-11-08 v10-future - Policy Rescue, expiry reminders, weekly backups, the Advisor
+- A policy change now comes with an impact note and Build-fix / Resume choices; keys and plans remind 14 and 3 days before they expire; the Sheet is backed up every Sunday (8 kept); one weekly Advisor card on money and growth; the dashboard's Health tab shows expiries and last runs. Switches: SHEET_BACKUP_ON, BACKUP_KEEP. Cost: about ₹2 only when a policy change happens.
+
+## 2026-11-08 v10 growth (part 5) - Slop Guard, Retention Microscope, face check
+- An AI-slop risk score for every video (shown on the dashboard; a card when high). Switches: SLOP_GUARD_ON, SLOP_WARN.
+- Proven retention rules from this channel's own data reach the writer and the dashboard Lab (≥6 videos, ≥2,000 views, ≥5% effect; expire after 20 videos). Switches: MICRO_RULES_ON, MICRO_MIN_VIDEOS, MICRO_MIN_VIEWS, MICRO_MIN_EFFECT, MICRO_RULE_LIFE.
+- Specials: a cast face that drifts in animation is replaced by the locked portrait (about ₹0.2 per check). Switch: FACE_CHECK_ON.
+
+## 2026-11-08 v10 growth (part 4) - occasion-aware specials
+- The two monthly cast specials now follow the calendar (Halloween, Christmas, New Year, Diwali, Holi, Eid, Lunar New Year, Valentine's, April Fools, Pi Day, Mother's Day, Thanksgiving and more), each with its own witty brief and a warm family subscribe ending; other months tie to the week's safe science trend; a heads-up card 3 days before each occasion special. Lunar dates refresh each December. Switches: SPECIALS_PER_MONTH, OCCASION_PRIORITY, OCCASION_DATES, SPECIALS_TOPICAL_ON. Cost: unchanged (2 specials a month).
+
+## 2026-11-08 v10 growth (part 3) - Shorts Lab and the Character Love Engine
+- Reel captions light up word by word inside the safe zone; a weekly card lists only the winning Shorts to link (plus an instant card for a breakout); never more than 14 Shorts a week. Switches: KINETIC_CAPTIONS_ON, REEL_CAPTION_MARGIN_PCT, SHORTS_LINK_MAX, SHORTS_BREAKOUT_X, SHORTS_WEEKLY_CAP.
+- Specials now rotate renewable character formats (Grimm's Lab Log, Nana's Tea Rulings, Vale's Deduction, rivalry, jury votes, rationed backstories), learn which format wins, and end with format-specific in-character subscribe asks. Optional festive launch reel. Switches: SPECIALS_LORE_MIN_DAYS, CAST_INTRO_FESTIVE. Cost: none added.
+
+## 2026-11-08 v10 growth (part 2) - special reels and the ₹5,000 cap
+- The launch "cast intro" reel (run by hand once) and a witty 15-second cast special on the 2nd and 16th of each month, posted to YouTube Shorts, Instagram and Facebook with the subscribe line; ₹150 each at most from the owner's +₹300 specials earmark. The cap moves once to ₹5,000. Switches: SPECIALS_ON, SPECIALS_DAYS, SPECIAL_REEL_CAP_INR, SPECIALS_EARMARK_INR, V10_FLIPS_ON.
+
+## 2026-11-08 v10 growth (part 1) - watch hours, affiliate block, audience prompts, emotion beats
+- Titles and descriptions in 6 languages for every long video (about ₹2 a video). Switches: LOCALIZATIONS_ON, LOCALIZE_LANGS.
+- Affiliate block with disclosure, off until links are added. Switches: AFFILIATE_ON, AFFILIATE_LINKS, AFFILIATE_DISCLOSURE.
+- Witty in-character audience prompts (never rewards) with ask caps and spacing enforced by code; one earned emotion beat per video, logged for learning. Switches: ENGAGE_RULES_ON, ENGAGE_MAX_CTA, ENGAGE_NO_ASK_FIRST_PCT, ENGAGE_MIN_GAP_LINES, EMOTION_BEAT_ON.
+
+## 2026-11-08 v9.4b (part 2) - WhatsApp control room
+- Owner messages on WhatsApp (buttons inside 24 h, the utility template outside; the email copy always goes); button taps act like dashboard taps; status / pause / resume; a late-night chat that answers from the channel's real numbers and offers [Build it] for agreed ideas (₹250/month shared cap, then a cheap model). The dashboard page is published by the pipeline. Switches: WA_ON, CHAT_MONTHLY_CAP_INR, WA_TEMPLATE_NAME. Cost: chat within its cap; WhatsApp utility templates about ₹0.12 each.
+
+## 2026-11-08 v9.4b (part 1) - Mission Control data feed and taps
+- The pipeline writes the dashboard snapshot to Cloudflare KV after each tick (once the Cloudflare secrets exist); taps from the page come back encrypted and are handled once with an acknowledgement; Worker + page + tests live in `mission_control/`. Switch: DASH_ON. Cost: ₹0 (Cloudflare free plan).
+
+## 2026-11-08 v9.4a (part 3) - owner messages, builds, orchestra, Visual Lab, platform watch
+- One owner-message layer with no-spam tiers (now ≤2/day + quiet hours, week = digest Tue/Sat/Sun, fyi = dashboard), silence = default, one-click answers. Switches: NOTIFY_NOW_MAX_PER_DAY, QUIET_HOURS_IST, DIGEST_DAYS, DIGEST_HOUR_IST.
+- Claude Code builds and repairs on the owner's Claude plan; Merge/Reject; tweaks auto-merge after 24 h green (decision 11). Switches: BUILDS_ON, AUTO_MERGE_TWEAKS_ON, REPAIR_ENGINE.
+- Orchestra: concurrency queues for Sheet-heavy jobs; heavy jobs never near a release. Switch: ORCHESTRA_RELEASE_GUARD_H.
+- Visual Lab: weekly zero-cost picture-upgrade ideas from retention data (owner's tap builds or switches them on). Switches: VISUAL_LAB_ON, VISUAL_LAB_MIN_VIDEOS, VISUAL_LAB_MAX_CARDS.
+- Platform change-log watcher (₹0). Switch: FACTS_WATCH_ON. Credits money view (Max until 10 Dec; Gemini). Laptop change path documented.
+- Cost: none added (rule-based; builds on the owner's plan).
+
+## 2026-11-08 v9.4a (part 2) - the ₹4,700 budget, modes, earmark and protected core
+- Cap ₹4,700 (one-time move of cap cells ≤ ₹4,500). Standard ≤ 8 long videos; Runway (₹2,400, Saturdays, ≤ 4) only by the owner's tap ('MODE RUNWAY' / 'MODE STANDARD' email link); Growth by itself when revenue exists. The ₹200 earmark is never production money; extras pause before production is squeezed. Switches: BUDGET_MODE, GROWTH_AUTO_ON, RUNWAY_CAP_INR, *_MAX_LONG_PER_MONTH, BUDGET_EARMARK_INR, GROWTH_ALLOWANCE_INR, V94A_FLIPS_ON.
+- Cost: none added.
+
+## 2026-11-08 v9.4a (part 1) - pre-production at half price (built on v9.3.2)
+- The writers' room for the next slot runs 34-72 h early in its own hourly-checked job, every Claude call through Message Batches (50% off); production uses the result as written. Failure or lateness = production writes the episode as before. Switches: PREPROD_ON, ROOM_BATCH_ON, PREPROD_LEAD_HOURS, PREPROD_MIN_LEAD_HOURS, ROOM_BATCH_MAX_WAIT_MIN, PREPROD_JOB_MAX_HOURS.
+- Cost: writing about half price (estimate; LLM_EST_INR is lowered only after 2 measured videos). The Tue 10 Nov video is already inside 72 h, so it is written the normal way.
+
+## 2026-11-08 v9.3.2 - techniques are judged before use and fit-filtered; opening-window picture check (built on v9.3.1)
+- A technique card is reasoned through (value, fit, metric, risk, how to raise its value) before filing; briefs get only cards that fit the episode's premise, at most 3, never forced. The owner's Neptune "POV plunge" card is seeded as TRIAL for plunge/descent premises. Switches: TECHNIQUE_INTAKE_ON, TECHNIQUE_MAX_PER_BRIEF.
+- The picture check also covers up to 6 shots in the opening window. Switch: QC_VISION_OPENING_MAX (0 = v9.3.1).
+- Cost: about ₹0.5 per video for the extra frames; about ₹2-3 per new technique card judged (rare).
+
+## 2026-11-07 v9.3.1 "Launch" - the upload check replaces the API audit (built on v9.3)
+- YouTube lifted the private lock for unverified API projects (2 Nov 2026). A ₹0 upload check (unlisted 20-s clip, read back, deleted) proves it on this project before any money is spent. Switch: none needed; `UPLOAD_LOCK` is set by the check.
+- Every upload is read back: private-lock detector + AI-label read-back (a silently dropped label is set again). Switch: UPLOAD_VERIFY_ON.
+- A video that never went public now also trips the lock (new spend pauses). The audit reminders run only when a lock is found.
+- Hero-still Short: 6-10 s, hook as title, no "#shorts". Switches: HERO_STILL_MIN_SEC, HERO_STILL_MAX_SEC.
+- Sign-in asks for youtube.readonly + yt-analytics-monetary.readonly now (no re-consent later).
+- Cost: ₹0 (one test upload, 1-2 quota units per upload read-back).
+- Packaging (owner decision 5): rotation off; rescue at 72 h on engaged views; picks until 2 h before release for every video, with a reply and a taste signal; optional YouTube Test & Compare link. Switches: PKG_ROTATE_ON, PKG_RESCUE_ENGAGED_ON, PICK_DEADLINE_BEFORE_SLOT_H, V931_FLIPS_ON.
+- Character sheets lock by default after 72 h; the characters then appear on screen (owner decision 2). Switch: SHEETS_DEFAULT_LOCK_H (0 = never).
+- One-tap merge can merge workflow changes when the GH_MERGE_TOKEN secret exists.
+
+## 2026-11-07 v9.3 - virality + monetization pass (built on v9.2; V91_SAFE_MODE still restores v9)
+- Cold open: YOU inside the scene first (second person, a physical stake), names and the courtroom after ~20 s; checked by the free retention gate; hooks gain a 'you_stakes' type. Switch: COLD_OPEN_YOU_ON.
+- Micro-cuts: stills change framing every <= 3.2 s (2.6 s in the opening) from the same pictures; the cut map reports the median hold. Switch: MICRO_CUTS_ON.
+- Advertiser safety: gore / injury / profanity words rejected in titles, thumbnail words, hooks, the opening and premises. Switch: AD_SAFE_ON.
+- Shorts: trial Shorts open on YOUR stake and never reveal the verdict; the hero-still Short is scheduled after the long video and links it (bug fix: it went public ~30 h early). Switches: TRIAL_SHORTS_SAFE_ON, HERO_SHORT_DELAY_MIN.
+- Packaging fixes: the uploaded title is shock-ranked; variant A is the live title (bug fix); rotation starts after 24 h and needs 1,500 views. Switches: TITLE_SHOCK_ON, PKG_ROTATE_START_H, PKG_ROTATE_MIN_VIEWS.
+- Asks in character (jury identity). Switch: CTA_JURY_ON. Hero-still reels + Shorts ON by default (one-time migration, owner values kept). Switch: V93_FLIPS_ON.
+- Cost: no new paid call; the one existing retention fix (about Rs 4-8) may run more often. Per video stays about Rs 467; 8 videos about Rs 3,736.
+
 ## 2026-11-06 v9.2 - fixes from the first real Script Preview (built on v9.1)
 - Writer: no bigger retries (lower effort instead), per-role thinking caps, one effort per cached prefix, background jobs out of the preview, Setup fills the bench, cost-per-role and time-per-stage in the preview email.
 - Shot plan: Kling on the stakes (never adjacent / plain), scene-aware POV anchors with variety, tiny lines -> free reaction cutaways (characters visible without sheets).

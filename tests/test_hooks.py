@@ -108,6 +108,7 @@ def test_switched_off(tmp_path, setting):
 
 def test_verify_in_narration_flags_changed_opening():
     rec = H.build_record(SCRIPT, {}, "EPV", fake_ask()); H.decide(rec, SCRIPT)
-    assert H.verify_in_narration(rec, [{"text": rec["candidates"][0]["line"]}]) is True
+    ch = next(c for c in rec["candidates"] if c["id"] == rec["chosen_id"])          # v9.3: the chosen line may be a close 'you' line, not rank 1
+    assert H.verify_in_narration(rec, [{"text": ch["line"]}]) is True
     assert H.verify_in_narration(rec, [{"text": "Something else entirely."}]) is False and rec["status"] == "needs_human_choice"
 

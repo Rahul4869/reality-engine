@@ -8,7 +8,8 @@ from whatifs import core, v91 as V91, manage as MG
 HERE = os.path.dirname(__file__)
 V91_FLAGS = ["ATMOSPHERE_ON", "ATMOS_GODRAYS_ON", "ATMOS_PARTICLES_ON", "ATMOS_FOG_ON", "ATMOS_SHIMMER_ON", "ATMOS_LENS_ON", "ATMOS_BREATH_ON", "ATMOS_PULSE_ON",
              "ATMOS_AURA_ON", "PULSE_ON", "LIGHTING_DIRECTIVE_ON", "HERO_STILL_REELS_ON", "HERO_STILL_SHORTS_ON", "CHAR_GRAMMAR_ON", "COURTROOM_ON",
-             "RETENTION_MAP_ON", "ROLE_ROI_ON", "COMMENT_MINING_ON", "COMMENT_AI_DRAFTS_ON", "VARIETY_REWRITE_ON", "AUDIO_DROP_POST_ON", "VOICE_SUBSTITUTE_ON"]
+             "RETENTION_MAP_ON", "ROLE_ROI_ON", "COMMENT_MINING_ON", "COMMENT_AI_DRAFTS_ON", "VARIETY_REWRITE_ON", "AUDIO_DROP_POST_ON", "VOICE_SUBSTITUTE_ON",
+             "MICRO_CUTS_ON"]      # v9.3
 RENDER_FLAGS = {"ATMOSPHERE_ON"}
 
 def _golden(): return json.load(open(os.path.join(HERE, "golden", "v9_render_frames.json")))
@@ -19,7 +20,7 @@ def _all(setting, v):
 def test_every_v91_flag_is_documented_with_a_default():
     for f in V91_FLAGS + ["V91_SAFE_MODE", "ATMOSPHERE_LEVEL", "ATMOSPHERE_MAX_OVERHEAD_PCT"]:
         assert f in core.DEFAULTS and core.DEFAULTS[f][1].strip(), f
-    assert core.DEFAULTS["V91_SAFE_MODE"][0] == "FALSE" and core.DEFAULTS["HERO_STILL_REELS_ON"][0] == "FALSE" and core.DEFAULTS["COMMENT_AI_DRAFTS_ON"][0] == "FALSE"
+    assert core.DEFAULTS["V91_SAFE_MODE"][0] == "FALSE" and core.DEFAULTS["HERO_STILL_REELS_ON"][0] == "TRUE" and core.DEFAULTS["COMMENT_AI_DRAFTS_ON"][0] == "FALSE"
 
 @pytest.mark.parametrize("mode", ["all_off", "all_on_safe_mode"])
 def test_v9_pixels_with_all_off_or_safe_mode(setting, tmp_path, mode):
@@ -98,6 +99,8 @@ def test_upgrade_from_v9_sheet_is_additive_and_idempotent(tmp_path):
     MG.setup(); snap2 = {t: st.rows(t) for t in st.d}
     assert {t: len(r) for t, r in snap1.items()} == {t: len(r) for t, r in snap2.items()}       # Setup twice: nothing duplicated
     vals = {r["key"]: r["value"] for r in st.rows("Settings")}
-    assert all(vals[k] == v for k, v in vals9.items())                                           # existing values untouched
+    flips = {k: (o, n) for k, o, n in tuple(MG.V93_FLIPS) + tuple(MG.V931_FLIPS) + tuple(MG.V101_FLIPS) + (("BUDGET_FLOOR_INR", "4000", "5000"), ("BUDGET_CEILING_INR", "4000", "5000"))}      # v9.3/v9.3.1/v9.4a/v10: documented one-time flips (4000 -> 4700 -> 5000)
+    assert all(vals[k] == v for k, v in vals9.items() if not (k in flips and v == flips[k][0]))      # every other existing value untouched
+    assert all(vals[k] == flips[k][1] for k, v in vals9.items() if k in flips and v == flips[k][0])  # a cell still at the old default got the new one
     assert vals["V91_SAFE_MODE"] == "FALSE" and vals["ATMOSPHERE_ON"] == "TRUE" and st.rows("Episodes")[0]["title"] == "old"
     assert {"Retention_Map", "Role_ROI"} <= set(st.d) and not (set(sch["tabs"]) - set(st.d))

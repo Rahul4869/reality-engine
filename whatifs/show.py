@@ -124,6 +124,25 @@ def history(n=12):
     try: return store().rows("Show_Log")[-n:]
     except Exception: return []
 
+VERDICT_STYLES = ["clear ruling", "split decision", "hung jury: Nana orders a retrial", "appeal granted on new evidence", "plea deal: the defendant admits half",
+                  "case dismissed on a technicality", "Nana recuses herself and the jury decides", "surprise witness changes the verdict"]
+
+def recent_styles(k=3, hist=None):
+    hist = hist if hist is not None else history(k)
+    out = []
+    for r in hist[-k:]:
+        try: out.append(str((json.loads(r.get("plan_json") or "{}").get("verdict") or {}).get("style") or ""))
+        except Exception: pass
+    return [x for x in out if x]
+
+def next_style(hist=None, seed=""):
+    """v10.1 (K144): the verdict STYLE rotates (never one of the last VERDICT_STYLE_GAP styles), so no two cases end the same way (YouTube's
+    'characters in the same situation with the same outcome' example of repetitive content)."""
+    import hashlib
+    used = set(recent_styles(S("VERDICT_STYLE_GAP", int), hist))
+    free = [s for s in VERDICT_STYLES if s not in used] or VERDICT_STYLES
+    return free[int(hashlib.md5(str(seed or len(used)).encode()).hexdigest()[:6], 16) % len(free)]
+
 def villain_due(hist=None):
     """The villain wins about 1 in 3: True when his share of the recent verdicts is below a third (he may win, only on a real detail)."""
     hist = hist if hist is not None else history(9)
@@ -158,7 +177,8 @@ def prompt_block(hist=None):
             "\"hud_spec\":[{\"t\":seconds,\"type\":\"survival|scale|clock|price\",\"label\":\"\",\"value\":number,\"unit\":\"\"}] or \"none\","
             "\"teacup_scenes\":[\"2-4 RECON exhibit ids\"],\"stinger\":\"<=25 words: the next case\",\"demand_evidence\":{}}\n"
             + ("Dr. Grimm MAY win this one, but only on a detail he is genuinely right about. " if villain_due(hist) else "Dr. Grimm should not win this one. ")
-            + "The meter swings must add up to the verdict.")
+            + "The meter swings must add up to the verdict."
+            + ((f" VERDICT STYLE for this case (different from recent cases; put it in verdict.style): {next_style(hist)}.") if S("VERDICT_ROTATION_ON", bool) else ""))
 
 def _irange():
     lo = max(0, min(3, S("CHARACTER_INTENSITY_MIN", int))); hi = max(lo, min(3, S("CHARACTER_INTENSITY_MAX", int)))
@@ -231,7 +251,12 @@ def validate(plan, spine=None, hist=None):
         if _winner_of(meter_total(sw)) != win:
             sw = [s for s in sw if s["after"] != "verdict"]; win = _winner_of(meter_total(sw))
         issues.append("meter swings did not add up to the verdict - repaired")
-    p["meter_swings"] = sw; p["verdict"] = {"winner": win, "detail": detail}
+    style = str(vd.get("style") or "")[:80]
+    if S("VERDICT_ROTATION_ON", bool):
+        if not style: style = next_style(hist, detail)                         # missing: filled quietly
+        elif style in recent_styles(S("VERDICT_STYLE_GAP", int), hist):
+            style = next_style(hist, detail); issues.append("verdict style repeated - rotated")
+    p["meter_swings"] = sw; p["verdict"] = {"winner": win, "detail": detail, "style": style}
     cb = str(p.get("clipbait_id") or "")
     if cb not in ids and cb != "witness": cb = ex[0]["id"]; issues.append("clip-bait moment not an exhibit or the witness - the first exhibit used")
     p["clipbait_id"] = cb
@@ -336,11 +361,19 @@ def extra_blends(taken):
         out[sp] = Blend(sp.lower(), parts, lang=lang, gvoice=gv, gstyle=str(c.get("gstyle") or c.get("voice_style") or ""))
     return out
 
+COLD_OPEN_YOU = ("COLD OPEN (v9.3; the first ~20 s, about 50 spoken words, BEFORE any lore): second person, present tense - YOU are inside the impossible "
+                 "situation right now. Line 1 is a physical stake with a clock, a number or a sensation (e.g. 'Your phone weighs four hundred kilos. You have nine "
+                 "seconds.'), then what YOU see, hear and feel, escalating line by line. Spoken by [DIRECTOR] as the calm voice in your ear: no greeting, no name, "
+                 "no 'welcome'. NO character names and NO courtroom words (court, trial, the charge, jury, exhibit, objection, verdict, defendant) before Nana Rosa "
+                 "reads the charge. The cold open ends on the open question the trial will answer; the charge then frames that question as the case. Danger is "
+                 "implied through stakes, sound and scale, never shown as injury or gore.\n")
+
 def writer_brief(plan):
     """The writer's trial brief: the plan, the cast (labels, voices on the page, tics), the structure and the tag rules. Wording rules only; no new role."""
     cast = "; ".join(f"[{c.get('speaker')}] = {c.get('name')} ({c.get('role')}): {c.get('philosophy')} Rhythm: {c.get('rhythm')}. Tics: {c.get('tics')}. "
                      f"Words: {c.get('vocabulary')}. Recurring bit: {c.get('recurring_bit')}. When wrong: {c.get('when_wrong')}." for c in characters())
     return ("REALITY ON TRIAL - write this episode as a trial (the impossible scenario is the defendant). CAST: " + cast + "\n"
+            + (COLD_OPEN_YOU if S("COLD_OPEN_YOU_ON", bool) else "") +
             "STRUCTURE: cold-open reconstruction (found footage, the viewer inside the scene) -> THE CHARGE (Nana Rosa reads it, <= 8 s) -> one beat per EXHIBIT "
             "in plan order, each with Dr. Grimm's objection (<= 10 s) -> the SURPRISE WITNESS ([WITNESS], the plan's twist) -> JURY prompts -> the VERDICT "
             "(Nana Rosa rules; the meter decides) -> a short stinger (the next case). The science question is fully answered; Vale stays accurate; Grimm is "

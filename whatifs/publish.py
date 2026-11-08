@@ -5,7 +5,7 @@ import os, re, json, time, base64
 from email.mime.text import MIMEText            # v8.9.3: imported by name; the module-level email() function below would hide the `email` package
 from email.mime.multipart import MIMEMultipart
 import requests
-from whatifs.core import gheaders, gdrive_headers, env, log, S, FAKE, retry, WORK
+from whatifs.core import gheaders, gdrive_headers, env, log, S, FAKE, retry, WORK, now_utc
 
 YT = "https://www.googleapis.com/youtube/v3/"
 UP = "https://www.googleapis.com/upload/youtube/v3/"
@@ -40,12 +40,14 @@ def _resume_point(loc, size):
         rng = r.headers.get("Range"); return ("at", int(rng.split("-")[1]) + 1 if rng else 0)
     return None
 
-def yt_upload(path, title, description, tags, publish_at=None, made_for_kids=False, ai_label=True, short=False):
+def yt_upload(path, title, description, tags, publish_at=None, made_for_kids=False, ai_label=True, short=False, privacy=None, verify=True):
+    """privacy: v9.3.1 explicit privacy (e.g. 'unlisted' for the upload check); default = private when scheduled, else public.
+    verify: v9.3.1 (L2) read the upload back (lock detector + AI-label read-back)."""
     if FAKE: return "FAKE_" + os.path.basename(path)
     title, description, tags = clean_meta(title, description, tags)
     body = {"snippet": {"title": title, "description": description, "tags": tags, "categoryId": S("YT_CATEGORY"),
                         "defaultLanguage": "en", "defaultAudioLanguage": "en"},
-            "status": {"privacyStatus": "private" if publish_at else "public", "selfDeclaredMadeForKids": made_for_kids,
+            "status": {"privacyStatus": privacy or ("private" if publish_at else "public"), "selfDeclaredMadeForKids": made_for_kids,
                        "embeddable": True, "license": "youtube", "containsSyntheticMedia": bool(ai_label)}}
     if publish_at: body["status"]["publishAt"] = publish_at
     session = {}                                   # v8.3: the upload session survives a retry, so a lost final answer can never create a second video
@@ -60,6 +62,7 @@ def yt_upload(path, title, description, tags, publish_at=None, made_for_kids=Fal
             h = gheaders(); h.update({"Content-Type": "application/json; charset=UTF-8", "X-Upload-Content-Type": "video/mp4", "X-Upload-Content-Length": str(size)})
             r = requests.post(UP + "videos?uploadType=resumable&part=snippet,status", headers=h, json=body, timeout=60)
             if r.status_code == 400 and "containsSyntheticMedia" in r.text:
+                log("upload: YouTube refused the AI label on insert; uploading without it and setting it right after (L2 read-back)", "WARN")
                 body["status"].pop("containsSyntheticMedia", None)
                 r = requests.post(UP + "videos?uploadType=resumable&part=snippet,status", headers=h, json=body, timeout=60)
             if r.status_code >= 400: raise RuntimeError(f"YouTube start {r.status_code}: {r.text[:400]}")
@@ -81,7 +84,65 @@ def yt_upload(path, title, description, tags, publish_at=None, made_for_kids=Fal
                 if rr.status_code != 308: raise RuntimeError(f"YouTube chunk {rr.status_code}: {rr.text[:300]}")
                 rng = rr.headers.get("Range"); sent = int(rng.split("-")[1]) + 1 if rng else 0; f.seek(sent)
         raise RuntimeError("upload ended without id")
-    return retry(go, tries=3, wait=30, what="youtube upload")
+    vid = retry(go, tries=3, wait=30, what="youtube upload")
+    if verify:
+        try: verify_upload(vid, body["status"]["privacyStatus"], publish_at, bool(ai_label))
+        except Exception as e: log(f"upload read-back skipped: {e}", "WARN")
+    return vid
+
+def verify_upload(vid, want_privacy, want_publish_at=None, want_label=True):
+    """v9.3.1 (L2, UPLOAD_VERIFY_ON): read the upload back (1 quota unit). Detects the private lock (a public upload that came back private)
+    and a silently dropped AI label (fixed once by videos.update). Returns the list of findings; never raises."""
+    if FAKE or not vid or not S("UPLOAD_VERIFY_ON", bool): return []
+    found = []
+    stt = yt_status_full(vid) or {}
+    got = str(stt.get("privacyStatus") or "")
+    if not want_publish_at and want_privacy in ("public", "unlisted") and got == "private": found.append(f"privacy came back private (asked {want_privacy})")
+    if want_publish_at and got == "private" and not stt.get("publishAt"): found.append("the publish time was dropped")
+    if want_label and stt and stt.get("containsSyntheticMedia") is False:             # v10.1: fix only an explicit False; videos.list often omits the field (verified 8 Nov 2026)
+        found.append("AI label fixed after upload" if yt_set_label(vid, True) else "AI label missing and could not be set")
+    if stt and (stt.get("selfDeclaredMadeForKids") is True or stt.get("madeForKids") is True):   # v10.1: 'made for kids' switches off comments, notifications and personalised ads
+        found.append("YouTube marked the video as made for kids")
+        try:
+            from whatifs import notify as NT
+            NT.send("kids_flag", f"YouTube marked video {vid} as made for kids (comments and notifications off). Check the audience setting in Studio; appeal if wrong.",
+                    tier="now", urgent=True, dedupe_key=f"kids|{vid}")
+        except Exception: pass
+    if any(f.startswith(("privacy came back", "the publish time")) for f in found):
+        from whatifs import launch as LA
+        LA.lock_detected(vid, found)
+    elif found: log(f"upload read-back {vid}: {'; '.join(found)}", "WARN")
+    return found
+
+def yt_set_label(vid, on=True):
+    """v9.3.1: set status.containsSyntheticMedia on an uploaded video (videos.update, about 50 quota units). True when set."""
+    if FAKE: return True
+    try:
+        r = requests.get(YT + f"videos?part=status&id={vid}", headers=gheaders(), timeout=30).json()
+        if not r.get("items"): return False
+        stt = r["items"][0]["status"]; stt["containsSyntheticMedia"] = bool(on)
+        rr = requests.put(YT + "videos?part=status", headers=gheaders(), json={"id": vid, "status": stt}, timeout=30)
+        if rr.status_code >= 400: log(f"AI label update failed {rr.status_code}: {rr.text[:200]}", "WARN"); return False
+        return True
+    except Exception as e: log(f"AI label update failed: {e}", "WARN"); return False
+
+def yt_delete(vid):
+    """v9.3.1: delete a video (used only for the upload-check clip)."""
+    if FAKE: return True
+    r = requests.delete(YT + f"videos?id={vid}", headers=gheaders(), timeout=30)
+    if r.status_code >= 400: raise RuntimeError(f"delete failed {r.status_code}: {r.text[:200]}")
+    return True
+
+def yt_engaged_views(vid, start_date):
+    """v9.3.1 (L5): engaged views of one video since start_date (YouTube Analytics `engagedViews`, added 2025-03; public views count from the first
+    frame since 2026-08-24, so they measure exposure, not interest). None when unavailable (the caller falls back to the public count)."""
+    if FAKE: return None
+    try:
+        p = {"ids": "channel==MINE", "startDate": start_date, "endDate": now_utc().strftime("%Y-%m-%d"), "metrics": "engagedViews", "filters": f"video=={vid}"}
+        r = requests.get("https://youtubeanalytics.googleapis.com/v2/reports", headers=gheaders(), params=p, timeout=30).json()
+        rows = r.get("rows") or []
+        return int(rows[0][0]) if rows and rows[0] and rows[0][0] is not None else None
+    except Exception as e: log(f"engaged views unavailable for {vid}: {e}", "WARN"); return None
 
 def yt_thumbnail(vid, path):
     if FAKE: return True
@@ -260,6 +321,7 @@ def ig_reel(video_url, caption, cover_url=None, video_path=None, url_fn=None):
     ig = S("IG_USER_ID")
     if not ig: raise RuntimeError("IG_USER_ID missing")
     base = {"media_type": "REELS", "caption": caption[:2100], "share_to_feed": "true"}
+    if S("META_AI_LABEL_ON", bool): base["is_ai_generated"] = "true"              # v10.1: Meta AI self-disclosure (verified 8 Nov 2026)
     if cover_url: base["cover_url"] = cover_url
     if video_path and os.path.exists(video_path):
         try:
@@ -295,7 +357,7 @@ def fb_reel(video_url, description, video_path=None, url_fn=None):
         if not video_url: raise RuntimeError("FB: no file and no link to upload")
         u = requests.post(up, headers={"Authorization": "OAuth " + k, "file_url": video_url}, timeout=300).json()
         if not u.get("success", True): raise RuntimeError(f"FB upload: {u}")
-    f = requests.post(gv() + f"{page}/video_reels", data={"upload_phase": "finish", "video_id": vid, "video_state": "PUBLISHED",
+    f = requests.post(gv() + f"{page}/video_reels", data={**({"is_ai_generated": "true"} if S("META_AI_LABEL_ON", bool) else {}), "upload_phase": "finish", "video_id": vid, "video_state": "PUBLISHED",
                       "description": description[:2000]}, headers=MH(), timeout=60).json()
     if not f.get("success"): raise RuntimeError(f"FB finish: {f}")
     _fb_wait(vid)

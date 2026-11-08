@@ -3,7 +3,7 @@ REEL_STYLE bridge (default): one payoff given, the bigger question left open, an
 standalone: a complete loopable mini-story (no fade). teaser: v8.4 (cut on the question, end card)."""
 from __future__ import annotations
 import os, re, subprocess
-from whatifs.core import SMALL
+from whatifs.core import SMALL, S
 from whatifs.voice import narrate
 from whatifs.render import score, write_mix, fps as _fps
 
@@ -18,7 +18,7 @@ PlayResY: {H}
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Cap,Anton,{fs},&H00FFFFFF,&H0000D7FF,&H00000000,&H64000000,1,0,0,0,100,100,1,0,1,{max(2,fs//9)},2,2,60,60,{int(H*0.30)},1
+Style: Cap,Anton,{fs},&H00FFFFFF,&H0000D7FF,&H00000000,&H64000000,1,0,0,0,100,100,1,0,1,{max(2,fs//9)},2,2,60,60,{int(H * (S("REEL_CAPTION_MARGIN_PCT", float) if S("KINETIC_CAPTIONS_ON", bool) else 0.30))},1
 Style: Hook,Anton,{hs},&H0000D7FF,&H00FFFFFF,&H00000000,&H64000000,1,0,0,0,100,100,1,0,1,{max(3,hs//8)},3,8,60,60,{int(H*0.12)},1
 
 [Events]
@@ -33,7 +33,18 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             ws = [{"w": p, "s": u["start"] + i * d, "e": u["start"] + (i + 1) * d} for i, p in enumerate(parts)]
         for i in range(0, len(ws), 3):
             g = ws[i:i + 3]
-            ev.append(f"Dialogue: 0,{ts(g[0]['s'])},{ts(g[-1]['e'])},Cap,,0,0,0,,{' '.join(x['w'] for x in g).upper()}")
+            if not S("KINETIC_CAPTIONS_ON", bool):
+                ev.append(f"Dialogue: 0,{ts(g[0]['s'])},{ts(g[-1]['e'])},Cap,,0,0,0,,{' '.join(x['w'] for x in g).upper()}"); continue
+            for j, cur in enumerate(g):                        # v10 (G2, K135): kinetic captions: the spoken word lights up; numbers and YOU pop
+                end = g[j + 1]["s"] if j + 1 < len(g) else cur["e"]
+                parts = []
+                for k, x in enumerate(g):
+                    w = str(x["w"]).upper()
+                    if k == j:
+                        pop = any(c.isdigit() for c in w) or w.strip(".,!?") in ("YOU", "YOUR", "YOURS")
+                        parts.append("{\\c&H0000D7FF&" + ("\\fscx112\\fscy112" if pop else "") + "}" + w + "{\\r}")
+                    else: parts.append(w)
+                ev.append(f"Dialogue: 0,{ts(cur['s'])},{ts(max(end, cur['s'] + 0.05))},Cap,,0,0,0,," + " ".join(parts))
     open(path, "w").write(head + "\n".join(ev) + "\n"); return path
 
 def _label_lines(lines, speaker_blends):

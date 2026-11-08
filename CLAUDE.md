@@ -7,7 +7,7 @@ then YOU implement it end to end. The owner's only action is the merge click (em
 The locked rules are in `docs/KERNEL.md` (rule numbers K1-K88). Quote the K# when you rely on one. A rule changes only when the owner says "AMEND K#".
 
 ## Hard constraints (never break, never "temporarily")
-1. Money: **₹4,000 per month TOTAL** (v8.10; Gemini TTS and thinking tokens included), everything included (retries, failures, repair runs, research). Production stops ₹100 below the cap,
+1. Money: **₹5,000 per month TOTAL** (v10, K134: incl. ₹300 for special reels; v9.4a ₹4,700, K124; was ₹4,000 since v8.10; Gemini TTS and thinking tokens included), everything included (retries, failures, repair runs, research). Production stops ₹100 below the cap,
    maintenance at the cap (`whatifs/governor.py`, K21, K36). Any new paid call must be logged with `core.cost`, counted in `episode.est_cost_inr`
    / `governor.min_episode_cost_inr`, and shown in a per-video and per-month cost table in your pull request.
 2. Zero manual work for the owner after setup. If a manual step is ever agreed, it must be ONE click from an email (copy the FIX / MERGE patterns).
@@ -44,10 +44,9 @@ After the merge, the next half-hourly Pipeline run uses the new code. Nothing re
   a place in `CHAINS`, a pre-flight check (`preflight.py`), a Settings switch, fake replies (`fakes.py`), tests. Verify prices on the provider's page.
 - **Text models (v8.11)**: route a room role by its job in `models.ROUTES` (never a hard-coded model name); pass the system prompt as a `prompts.Packed`
   (GLOBAL / EPISODE / ROLE) or a HOUSE-based string so it is cached; calls that share a prefix must keep the same role (same model + effort). Check Cache_Stats.
-- **v9.2**: never retry a cut model reply with MORE tokens (lower effort instead); background jobs (premise bank, research brief) never run inside a preview / production; titles must pass `packaging.natural_issues`.
 - **v9.2**: never retry a cut model reply with MORE tokens (lower effort instead, `models.TIGHT_NOTE`); background-only work (bank, research brief) must not run inside `room.run_room`; shot-plan changes go through `shotplan.py` and must not add paid shots.
-- **v9.1 features**: gate every new feature with `v91.on(flag)` and wrap it in `v91.guard(flag, episode)`; add the flag to V91_FLAGS in tests/test_v91_matrix.py; keep tests/golden (v9 frames, v9 paid calls, v9 Sheet schema) unchanged unless a change is intended and reported.
 - **v9.1 features**: gate every v9.1 feature with `v91.on(FLAG)` and wrap it in `v91.guard(FLAG, episode)`; it must never add a paid call unless its own flag is on (tests/test_v91_paidcalls.py) and must leave the v9 pixels untouched when off (tests/golden). Atmosphere work belongs in `atmosphere.py` at 1/8 resolution (performance budget).
+- **v9.3**: the opening is YOU first, lore after `COLD_OPEN_LORE_FREE_SEC` (`growth.cold_open_issues`, `show.COLD_OPEN_YOU`); anything a viewer reads or hears first passes `packaging.ad_risk`; shot pacing changes go through `shotplan.pieces_for`; a changed DEFAULT that must reach the live Sheet goes through a one-time migration like `manage.v93_upgrade` (core.DEFAULTS alone never changes a written cell).
 - **v9 trial format**: the Show Plan is part of the Showrunner's JSON (never a new AI role); validate it with `show.validate`; show tags are data (voice.Unit.show / timeline "show"),
   never spoken; render devices live in `showfx.py` (code only); community text is untrusted; every new paid step needs a Settings flag, an estimator line
   (`costguard.estimate_lines`), a Cost_Log item, bounded retries and a test. SHOW_MODE = off must reproduce v8.11.
@@ -58,3 +57,6 @@ After the merge, the next half-hourly Pipeline run uses the new code. Nothing re
   (members-only visibility may not be settable by API; then propose the smallest one-click owner step). Plan: a `PREMIUM_EVERY` Setting, a separate
   budget line inside the cap, premium playlist, Instagram subscription posting rules, and learning on the members' metrics. Discuss before building.
 - **New format or series idea**: add it as a strategy option or a Playbook trial first, so the data decides; never replace the whole format at once.
+- **v9.3.1**: anything that changes what YouTube allows (privacy, quota, thumbnails, view definitions) goes through `whatifs/launch.py` flags and `docs/PLATFORM_FACTS.md`, never a hard-coded belief; every upload stays behind `publish.verify_upload`.
+- **v9.4a**: anything that writes for a FUTURE slot runs in pre-production (`whatifs/preprod.py`, batched, saved as an APPROVED draft); production must still work when no draft exists.
+- **v9.4a (part 3)**: anything that talks to the owner goes through `whatifs/notify.py` (tiers, defaults, dedupe); any new paid extra calls `governor.extras_allowed()`; builds go through `whatifs/builds.py` / `claude-build.yml`.

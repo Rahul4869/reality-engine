@@ -172,7 +172,7 @@ def _conf(base, sync_ok, audio_ok):
     c = base * (1.0 if sync_ok else 0.6) * (1.0 if audio_ok else 0.85)
     return round(max(0.05, min(0.95, c)), 2)
 
-def build_cutmap(wav_path=None, timeline=None, video_path=None, fps=30, events=(), episode="", master_duration=None, now=None):
+def build_cutmap(wav_path=None, timeline=None, video_path=None, fps=30, events=(), episode="", master_duration=None, now=None, holds=None):
     """Return the cut-map dict. Missing/odd inputs become 'limitations', not exceptions."""
     min_gap = S("CUTMAP_MIN_GAP_SEC", float); long_p = S("CUTMAP_LONG_PAUSE_SEC", float); keep = S("CUTMAP_KEEP_PAUSE_SEC", float)
     tl = timeline if (timeline and timeline.get("units")) else None
@@ -287,6 +287,16 @@ def build_cutmap(wav_path=None, timeline=None, video_path=None, fps=30, events=(
         for v in scan_video(video_path, fps):
             add(v["kind"], v["start"], v["end"], f"{v['kind'].replace('_', ' ').capitalize()} for {v['end'] - v['start']:.1f}s in the rendered video. Review; fix in the picture, not by cutting audio.", 0.7, False, "review", "video_scan", snap=False)
     elif video_path and not S("CUTMAP_VIDEO_SCAN", bool): m["limitations"].append("Video scan switched off (CUTMAP_VIDEO_SCAN = FALSE): frozen/black picture not checked.")
+    # 5. v9.3: still picture states held too long (from the real render's segment list; review only, nothing is cut)
+    if holds:
+        mx = S("CUTMAP_MAX_HOLD_SEC", float); hs = [(float(a), float(b)) for a, b in holds if float(b) > float(a)]
+        over = [(a, b) for a, b in hs if mx > 0 and b - a > mx + 1e-6]
+        for a, b in over[:60]:
+            add("static_hold", a, b, f"One still picture state for {b - a:.1f}s (limit {mx:.1f}s) reads as a slideshow. Review the shot (MICRO_CUTS_ON splits stills by itself).",
+                0.5, False, "review", "segment_plan", snap=False)
+        if hs:
+            ds = sorted(b - a for a, b in hs)
+            m["pacing"] = {"picture_states": len(hs), "median_hold_sec": round(statistics.median(ds), 2), "max_hold_sec": round(ds[-1], 2), "over_limit": len(over), "limit_sec": mx}
     m["limitations"].append("Music and sound effects are not analysed. The score is a continuous bed made for the full length and must be trimmed/regenerated after any accepted cut; effects inside a cut are flagged.")
     cuts.sort(key=lambda c: c["start"])
     cuts = cuts[:200]
@@ -319,6 +329,8 @@ def to_markdown(m):
     s = m["summary"]
     L += [f"- {s.get('cuts', 0)} item(s): {s.get('trim_suggested', 0)} suggested trim(s) totalling {s.get('suggested_trim_total_sec', 0)} s, {s.get('review_only', 0)} review-only; {s.get('preserved_pauses', 0)} intentional pause(s) preserved.",
           f"- Sync check: {json.dumps(m['sync_check'].get('durations', {}))} - {'OK' if m['sync_check'].get('ok', True) else 'MISMATCH'}", ""]
+    if m.get("pacing"):
+        p_ = m["pacing"]; L.insert(len(L) - 1, f"- Pacing (v9.3): {p_['picture_states']} still picture states, median {p_['median_hold_sec']} s, longest {p_['max_hold_sec']} s, {p_['over_limit']} over {p_['limit_sec']} s.")
     if m["limitations"]: L += ["## Limitations"] + [f"- {x}" for x in m["limitations"]] + [""]
     L += ["## Items", "| id | start | end | dur (s) | kind | action | confidence | reason |", "|---|---|---|---|---|---|---|---|"]
     for c in m["cuts"]: L.append(f"| {c['cut_id']} | {c['start_tc']} | {c['end_tc']} | {c['duration']} | {c['kind']} | {c['action']} | {c['confidence']} | {c['reason']} |")
@@ -339,15 +351,16 @@ def save(m, out_dir):
     except Exception as e: log(f"could not write cut map files: {scrub(e)}", "WARN")
     safe_append("Cut_Map", sheet_rows(m)); return paths
 
-def run_cutmap(out_dir, wav_path, timeline, video_path=None, fps=30, events=(), episode="", master_duration=None):
+def run_cutmap(out_dir, wav_path, timeline, video_path=None, fps=30, events=(), episode="", master_duration=None, holds=None):
     """Stage entry for episode.py. `timeline` is the dict or a path to *_timeline.json. Returns (map|None, paths). NEVER raises."""
     if not S("CUTMAP_ON", bool): return None, []
     try:
         if isinstance(timeline, str) and os.path.exists(timeline): timeline = json.load(open(timeline, encoding="utf-8"))
         elif isinstance(timeline, str): timeline = None
-        m = build_cutmap(wav_path, timeline, video_path, fps, events, episode, master_duration)
+        m = build_cutmap(wav_path, timeline, video_path, fps, events, episode, master_duration, holds=holds)
         paths = save(m, out_dir); s = m["summary"]
-        log(f"cut map: {s.get('cuts', 0)} item(s), {s.get('trim_suggested', 0)} suggested trim(s) ({s.get('suggested_trim_total_sec', 0)} s), method {m['method']}", episode=episode)
+        log(f"cut map: {s.get('cuts', 0)} item(s), {s.get('trim_suggested', 0)} suggested trim(s) ({s.get('suggested_trim_total_sec', 0)} s), method {m['method']}"
+            + (f", median still hold {m['pacing']['median_hold_sec']} s" if m.get("pacing") else ""), episode=episode)
         return m, paths
     except Exception as e:
         log(f"cut map skipped: {scrub(e)}", "WARN", episode); return None, []

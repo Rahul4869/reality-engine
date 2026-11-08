@@ -183,7 +183,8 @@ def test_claude_md_and_deployed_kernel_exist_and_match_the_package():
     if os.path.exists(pk): assert open(pk).read() == k          # in the package the two copies are identical; on GitHub only the repo copy exists
 
 # ---------------- cost: unchanged by v8.9
-def test_v89_adds_no_cost():
+def test_v89_adds_no_cost(setting):
+    setting("PRICE_KLING_USD", "0.25")      # v10.1: this cost golden keeps the Kling 2.1 price; the new $0.35 is tested in test_v101
     d = SA.draw("EPC", "collective"); d.update(stills=52, living=8, kling=3)
     assert abs(EP.est_cost_inr(d) - G.voice_think_inr() - 376.45) < 1.0      # v8.10: only the TTS / thinking / new-room allowances were added
     assert d["tier"] == "public" and d["guest"] in GUESTS
@@ -234,7 +235,8 @@ def test_suggested_move_reaches_the_renderer_and_frame_count_is_exact(tmp_path, 
     RN.parallax_segment(img, str(tmp_path / "p.mp4"), 15, seed="s", energy="high", move="whip_settle")
     assert seen[-1] != "whip_settle"                   # the same suggestion twice in a row is overruled
 
-def test_camera_moves_add_no_cost_and_change_no_counts():
+def test_camera_moves_add_no_cost_and_change_no_counts(setting):
+    setting("PRICE_KLING_USD", "0.25")      # v10.1: this cost golden keeps the Kling 2.1 price; the new $0.35 is tested in test_v101
     d = {"episode_id": "EPX", "stills": 52, "living": 8, "kling": 3}
     assert EP.est_cost_inr(d) - G.voice_think_inr() == pytest.approx(376.45, abs=0.5)        # same as v8.7 (v8.10 allowances aside): camera motion is code on pictures already paid for
     assert core.DEFAULTS["KLING_CLIPS"][0] == "3" and core.DEFAULTS["LIVING_STILLS"][0] == "8" and core.DEFAULTS["KLING_MIN_CLIPS"][0] == "3"

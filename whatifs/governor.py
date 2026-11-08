@@ -31,24 +31,95 @@ def money_num(s):
     try: return float(t) if t not in ("", ".", "-") else 0.0
     except Exception: return 0.0
 
-def cap_inr():
+def last_month_revenue():
     last = (now_utc().replace(day=1) - dt.timedelta(days=1)).strftime("%Y-%m")
     rec = 0.0
     for r in store().rows("Revenue_Log"):
         if month_key(r.get("month", "")) == last:
             rec += money_num(r.get("inr_received"))
-    return min(S("BUDGET_CEILING_INR", float), max(S("BUDGET_FLOOR_INR", float), rec * S("REVENUE_SHARE", float)))
+    return rec
+
+def budget_mode():
+    """v9.4a (K124): 'runway' only when the owner chose it (one tap); 'growth' by itself when last month had revenue (GROWTH_AUTO_ON); else 'standard'."""
+    m = str(S("BUDGET_MODE") or "standard").strip().lower()
+    if m == "runway": return "runway"
+    if m == "growth" or (S("GROWTH_AUTO_ON", bool) and last_month_revenue() > 0): return "growth"
+    return "standard"
+
+def cap_inr():
+    rec = last_month_revenue()
+    base = min(S("BUDGET_CEILING_INR", float), max(S("BUDGET_FLOOR_INR", float), rec * S("REVENUE_SHARE", float)))
+    mode = budget_mode()
+    if mode == "runway": return min(base, S("RUNWAY_CAP_INR", float))
+    if mode == "growth": return base + max(0.0, rec) * S("GROWTH_REVENUE_SHARE", float)          # revenue funds extra on top of the cap
+    return base
+
+def month_spend_of(prefixes):
+    """v9.4a: this month's spend on Cost_Log rows whose role or item starts with one of the prefixes (earmarked lines, growth extras)."""
+    mk = now_utc().strftime("%Y-%m"); tot = 0.0
+    for r in store().rows("Cost_Log"):
+        if r.get("basis") == "summary" or not str(r.get("ts", "")).startswith(mk): continue
+        key = f"{r.get('role') or ''} {r.get('item') or ''}".lower()
+        if any(key.startswith(p) or f" {p}" in key for p in prefixes):
+            try: tot += float(r.get("inr") or 0)
+            except Exception: pass
+    return tot
+
+def _prefixes(key): return [x.strip().lower() for x in str(S(key) or "").split(",") if x.strip()]
+
+def earmark_left_inr():
+    """v9.4a: the owner's earmarked money (faces + dashboard) not yet spent this month; production can never use it (Standard and Growth)."""
+    if budget_mode() == "runway": return 0.0
+    return max(0.0, S("BUDGET_EARMARK_INR", float) - month_spend_of(_prefixes("BUDGET_EARMARK_ITEMS")))
+
+def specials_left_inr():
+    """v10 (K134): the owner's +₹300 for the twice-monthly special reels, kept out of production (0 in Runway or when specials are off)."""
+    if budget_mode() == "runway" or not S("SPECIALS_ON", bool): return 0.0
+    from whatifs.specials import spent_this_month
+    return max(0.0, S("SPECIALS_EARMARK_INR", float) - spent_this_month())
+
+def max_long_videos():
+    return {"runway": S("RUNWAY_MAX_LONG_PER_MONTH", int), "growth": S("GROWTH_MAX_LONG_PER_MONTH", int)}.get(budget_mode(), S("STANDARD_MAX_LONG_PER_MONTH", int))
+
+def long_videos_this_month():
+    mk = now_utc().strftime("%Y-%m")
+    return sum(1 for e in store().rows("Episodes") if str(e.get("slot_et", "")).startswith(mk) and str(e.get("status", "")).upper() not in ("KILLED", "FAILED", "SKIPPED"))
+
+def credit_cover_inr():
+    """v9.4a: this month's spend covered by provider credits (money view only; budget gates still count list prices, the safe side).
+    Claude credit counts only until CLAUDE_CREDIT_UNTIL (Max ends 10 Dec 2026); Gemini credit while GEMINI_CREDIT_USD_MONTH > 0."""
+    fx = S("USD_INR", float) or 99.0; out = 0.0; today = now_utc().strftime("%Y-%m-%d")
+    def spent(prefixes):
+        return month_spend_of(prefixes)
+    until = str(S("CLAUDE_CREDIT_UNTIL") or "")
+    if S("CLAUDE_CREDIT_USD_MONTH", float) > 0 and (not until or today <= until):
+        out += min(spent(["writer", "memo", "objection", "critic", "bible", "showrunner", "scout", "owner_chat", "hook", "punchup", "editor", "claude"]),
+                   S("CLAUDE_CREDIT_USD_MONTH", float) * fx)
+    if S("GEMINI_CREDIT_USD_MONTH", float) > 0:
+        out += min(spent(["gemini", "tts", "voice", "judge", "fact", "vision", "thumb_eye", "faces"]), S("GEMINI_CREDIT_USD_MONTH", float) * fx)
+    return out
+
+def extras_allowed(est_inr, kind="extra"):
+    """v9.4a (K124, protected core): (ok, reason) for any growth extra (Shorts Lab, research, chat...). Allowed only while (a) the month's extras stay inside
+    GROWTH_ALLOWANCE_INR and (b) after this spend the remaining slots' production still fits. Extras pause first; production is never squeezed."""
+    spent = month_spend_of(_prefixes("GROWTH_ITEMS"))
+    if spent + est_inr > S("GROWTH_ALLOWANCE_INR", float): return False, f"growth allowance used (Rs {spent:.0f} of Rs {S('GROWTH_ALLOWANCE_INR', float):.0f})"
+    left_slots = max(0, min(episodes_left_this_month(), max_long_videos() - long_videos_this_month()))
+    need = left_slots * full_episode_inr()
+    room = production_room_inr() - est_inr
+    if room < need: return False, f"paused to protect production (Rs {room:.0f} left after this, Rs {need:.0f} needed for {left_slots} video(s))"
+    return True, "ok"
 
 def remaining_inr(): return cap_inr() - month_spend()
 
 def production_room_inr():
     """v8.7: what production may still spend this month. The maintenance reserve is kept INSIDE the cap (it was above it until v8.6, so a month could total
     the cap + Rs 100): production stops BUDGET_MAINT_RESERVE_INR below the cap; the last part is for maintenance jobs and an in-flight overshoot only."""
-    return remaining_inr() - max(0.0, S("BUDGET_MAINT_RESERVE_INR", float))
+    return remaining_inr() - max(0.0, S("BUDGET_MAINT_RESERVE_INR", float)) - earmark_left_inr() - specials_left_inr()      # v9.4a/v10: earmarks are never production money
 
 def episodes_left_this_month():
     from zoneinfo import ZoneInfo
-    days = [d.strip()[:3] for d in S("PUBLISH_DAYS").split(",")]
+    days = [d.strip()[:3] for d in publish_days().split(",")]
     names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     today = now_utc().astimezone(ZoneInfo("America/New_York")).date(); n = 0; d = today
     while d.month == today.month:
@@ -156,8 +227,14 @@ def gemini_left_usd():
     f = S("GEMINI_FUNDED_USD", float)
     return None if f <= 0 else f - lifetime_spend_usd("google")
 
+def publish_days():
+    """v9.4a: the publishing days of the current mode (Runway: RUNWAY_PUBLISH_DAYS)."""
+    return S("RUNWAY_PUBLISH_DAYS") if budget_mode() == "runway" else S("PUBLISH_DAYS")
+
 def can_start_episode():
     """(ok, reason). False = do not start paid work for a new episode this month; already scheduled videos still publish."""
+    if long_videos_this_month() >= max_long_videos():
+        return False, f"{budget_mode()} mode makes at most {max_long_videos()} long videos a month (this month's are done)"
     need = min_episode_cost_inr() * S("BUDGET_SAFETY_MARGIN", float); rem = production_room_inr()
     return rem >= need, f"Rs {rem:.0f} left for production this month (Rs {S('BUDGET_MAINT_RESERVE_INR', float):.0f} of the cap is kept for maintenance), a minimum episode needs about Rs {need:.0f}"
 

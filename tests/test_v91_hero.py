@@ -31,7 +31,7 @@ def test_build_is_a_seamless_capped_loop(tmp_path):
     ps = _imgs(str(tmp_path)); out = HS.build(ps[1], "IT GLOWS", _master(str(tmp_path)), 10.0, 14.0, str(tmp_path / "r.mp4"), seed="E", size=(180, 320))
     assert out and os.path.exists(out)
     cap = cv2.VideoCapture(out); n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)); fps = cap.get(cv2.CAP_PROP_FPS) or 30
-    assert 15 <= n / fps <= 25.5
+    assert core.S("HERO_STILL_MIN_SEC", float) <= n / fps <= core.S("HERO_STILL_MAX_SEC", float) + 0.5      # v9.3.1: 6-10 s
     ok, first = cap.read(); cap.set(cv2.CAP_PROP_POS_FRAMES, n - 1); ok2, last = cap.read(); cap.release()
     assert ok and ok2 and np.abs(first.astype(int) - last.astype(int)).mean() < 12          # end frame close to the start frame (loop)
     a = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=codec_name", "-of", "csv=p=0", out], capture_output=True, text=True)
@@ -40,6 +40,7 @@ def test_build_is_a_seamless_capped_loop(tmp_path):
 def test_flag_off_makes_nothing_and_on_files_one(monkeypatch, setting, tmp_path):
     MG.setup(); ps = _imgs(str(tmp_path)); m = _master(str(tmp_path))
     units = [{"start": 10.0, "end": 12.0, "show": ["[CLIPBAIT]"]}, {"start": 12.0, "end": 15.0, "show": ["[/CLIPBAIT]"]}]
+    setting("HERO_STILL_REELS_ON", "FALSE")          # v9.3: the default is now TRUE; the flag-off path is still tested here
     assert HS.make_for_episode("EPH", str(tmp_path), ps, m, units, "HOOK") is None
     setting("HERO_STILL_REELS_ON", "TRUE"); monkeypatch.setattr(core, "SMALL", True, raising=False)
     r = HS.make_for_episode("EPH", str(tmp_path), ps, m, units, "HOOK"); assert r and os.path.exists(r)

@@ -96,14 +96,15 @@ def next_template():
 
 def build(still, hook, audio_src, t0, t1, out_path, seed="hero", template=None, size=None):
     """Render one seamless-loop vertical reel. audio_src = the finished episode mix; [t0, t1] = the voiced line to reuse. Returns out_path or None.
-    Duration = clamp(line + 2 s, 15, 25). Bounded: one ffmpeg encode, one audio cut; no paid call."""
+    Duration = clamp(line + 1 s, HERO_STILL_MIN_SEC, HERO_STILL_MAX_SEC) (v9.3.1: 6-10 s; was 15-25). Bounded: one ffmpeg encode, one audio cut; no paid call."""
     from whatifs import atmosphere as AT, render as RN
     from whatifs.media import font
     from PIL import Image, ImageDraw
     W, H = size or ((360, 640) if FAKE else (1080, 1920)); fps = 30
     img = cv2.imread(still)
     if img is None: return None
-    dur = float(min(25.0, max(15.0, (t1 - t0) + 2.0))); n = int(dur * fps)
+    lo, hi = S("HERO_STILL_MIN_SEC", float), S("HERO_STILL_MAX_SEC", float)
+    dur = float(min(hi, max(lo, (t1 - t0) + 1.0))); n = int(dur * fps)
     ih, iw = img.shape[:2]; cw = int(ih * 9 / 16)
     _, x0g = poster_score(img); x0 = int(min(max(0, x0g * iw / 256), max(0, iw - cw)))
     crop = cv2.resize(img[:, x0:x0 + cw] if cw <= iw else img, (W, H), interpolation=cv2.INTER_AREA)
@@ -139,7 +140,15 @@ def build(still, hook, audio_src, t0, t1, out_path, seed="hero", template=None, 
     set_setting("HERO_REEL_LAST_TEMPLATE", template)
     return out_path
 
-def make_for_episode(ep, out_dir, stills, master, units, hook):
+def hero_short_slot(slot_iso):
+    """v9.3: when the hero-still Short goes public: HERO_SHORT_DELAY_MIN after the long video's slot ('' when the slot is unknown: then no upload)."""
+    from whatifs.core import parse_iso
+    import datetime as _dt
+    t = parse_iso(slot_iso or "")
+    if not t: return ""
+    return (t + _dt.timedelta(minutes=max(0.0, S("HERO_SHORT_DELAY_MIN", float)))).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+def make_for_episode(ep, out_dir, stills, master, units, hook, slot_iso=None, long_id=None, title=None):
     """Episode step (after scheduling). Never raises; never blocks. Returns the reel path or None."""
     from whatifs import v91 as V91
     if not V91.on("HERO_STILL_REELS_ON", ep): return None
@@ -155,7 +164,16 @@ def make_for_episode(ep, out_dir, stills, master, units, hook):
         if res:
             from whatifs import publish as PUB
             PUB.drive_upload(res, os.path.basename(res)); log(f"hero-still reel filed ({os.path.basename(best[0])}, poster score {best[1]})", episode=ep)
-            if V91.on("HERO_STILL_SHORTS_ON", ep):
-                PUB.yt_upload(res, hook[:90] or "Reality on Trial", "#Shorts", ["shorts"], short=True)
+            if V91.on("HERO_STILL_SHORTS_ON", ep):                            # v9.3 (fix): it was uploaded PUBLIC at once, ~30 h before the long video existed
+                sched = hero_short_slot(slot_iso)
+                from whatifs import launch as LA
+                if not sched: log("hero-still Short not uploaded: no release slot (it never goes out before the long video)", "WARN", ep)
+                elif not LA.uploads_open(): log("hero-still Short not uploaded: uploads are not confirmed public yet (upload check pending or lock on)", "WARN", ep)
+                else:
+                    long_url = f"https://youtu.be/{long_id}" if long_id else ""
+                    PUB.yt_upload(res, str(hook or title or "Reality on Trial")[:80],                       # v9.3.1: the hook is the title; no "#shorts"
+                                  (str(hook or "") + (f"\nThe full case: {long_url}" if long_url else "")).strip(), ["what if"],
+                                  publish_at=sched, ai_label=S("AI_LABEL_DEFAULT", bool), short=True)
+                    log(f"hero-still Short scheduled for {sched}", episode=ep)
             if not (S("META_ON", bool) and os.environ.get("META_TOKEN")): log("hero-still reel: Instagram skipped (no Meta keys) - zero cost", episode=ep)
     return res

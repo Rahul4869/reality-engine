@@ -1,3 +1,4 @@
+import pytest
 """v8.6 click-through + retention layer: lessons routed to the department that uses them, code-checked titles and thumbnail text, the opening pays off the
 thumbnail, per-dimension strategy scores, missing analytics never invented, diagnosis, smarter packaging rescue (dip guard + judged swaps),
 strategy change log with automatic rollback, brand clear of the timestamp, the B thumbnail passes the same QC."""
@@ -6,6 +7,11 @@ import numpy as np
 from PIL import Image
 from whatifs import core, growth as GR, room as ROOM, episode as EP, manage as MG, art as ART, qc as QC, publish as PUB, data as DATA
 from whatifs.sampler import draw as DRAW
+
+@pytest.fixture(autouse=True)
+def _v931_rescue_timing(setting):
+    setting("PKG_RESCUE_HOURS", "36")          # v9.3.1 moved the default to 72 h; these tests keep the v8.5 timing
+
 
 def _lesson(text, tag): core.store().append("Lessons", [{"ts": core.iso(), "lesson": text, "evidence": "t", "applies_to": tag}])
 

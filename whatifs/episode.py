@@ -380,6 +380,8 @@ def _render(job):
     job.overlay = RX.Stack(parts) if any(parts) else None
     strong = set(ROOM.opening_units(units)) | set(RX.peak_units(units)); dyn = str(S("CAMERA_MOTION") or "dynamic").strip().lower() != "gentle"      # v8.9
     RN._LAST["move"] = None
+    from whatifs import v91 as _V91
+    micro_ = _V91.on("MICRO_CUTS_ON", ep)                                      # v9.3: computed once per render
     for i, u in enumerate(units):
         s = shots[i]; a, b = bounds[i], bounds[i + 1]; dur = b - a
         n_total = int(round(b * fps)) - int(round(a * fps))
@@ -387,7 +389,9 @@ def _render(job):
         own = files["img"].get(i); img = own or prev_img
         reuse = 0 if own else reuse + 1
         if own: prev_img = own
-        pieces = 1 if dur < 7.5 or s["type"] in ("graphic", "reaction") else (2 if dur < 13 else 3)
+        from whatifs.shotplan import pieces_for as _pieces_for
+        opening_ = a < S("OPENING_WINDOW_SEC", float)
+        pieces = _pieces_for(dur, s["type"], opening_, ep)                    # v9.3: micro-cuts (MICRO_CUTS_ON); OFF = the v9.2 rule (1 / 2 / 3 pieces)
         cut = [int(n_total * k / pieces) for k in range(pieces + 1)]
         cd = 0.0
         if i in files["clips"] and s["type"] in ("kling", "living"):
@@ -395,6 +399,7 @@ def _render(job):
             except Exception: cd = 0.0
         if cd > 0 and dur > cd * 1.25 and s["type"] != "graphic":       # v8.3: a clip plays at its own speed; the rest of a longer line is a camera move on the same picture (no frame-doubling judder)
             n0 = min(n_total - 1, max(1, int(round(cd * fps)))); rest = n_total - n0; extra = 1 if (rest / fps) < 7.5 else 2
+            extra = max(extra, _pieces_for(rest / fps, "still", opening_, ep)) if micro_ else extra      # v9.3: the still tail after a clip is micro-cut too
             cut = [0, n0] + [n0 + int(rest * j / extra) for j in range(1, extra + 1)]; pieces = len(cut) - 1
         for k in range(pieces):
             nf = cut[k + 1] - cut[k]; p = os.path.join(out, f"seg{i:03d}_{k}.mp4"); f0 = int(round(a * fps)) + cut[k]
@@ -418,10 +423,13 @@ def _render(job):
             segs.append(p); job.segmeta.append({"path": p, "i": i, "k": k, "f0": f0, "nf": nf, "img": img})
             if k == 0:
                 segmap[i] = p
-                if i in job.reel_shots and job.overlay is not None:     # v8.3: reels get a clean copy of EVERY reel shot (no speaker chip, no reaction burst, nothing half-cropped by the 9:16 cut)
-                    cp = os.path.join(out, f"clean{i:03d}.mp4")
+                full_ = micro_ and pieces > 1 and i not in files["clips"]                # v9.3: a micro-cut piece is short; the reel's copy keeps the whole line
+                if i in job.reel_shots and (job.overlay is not None or full_):     # v8.3: reels get a clean copy of EVERY reel shot (no speaker chip, no reaction burst, nothing half-cropped by the 9:16 cut)
+                    cp = os.path.join(out, f"clean{i:03d}.mp4"); nf_main = nf
+                    if full_: nf = n_total
                     try: draw(cp, None); clean_map[i] = cp
                     except Exception as e: log(f"clean copy of segment {i} skipped: {e}", "WARN")
+                    finally: nf = nf_main
     RN.set_overlay(None)
     files["segments"] = {i: clean_map.get(i, segmap.get(i, segs[0])) for i in range(len(shots))}
     job.video = RN.concat(segs, os.path.join(out, "video.mp4"))
@@ -502,6 +510,12 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
         if t:
             log(f"slot {slot_iso} already has {t['episode_id']} ({t.get('status')}) - not producing a second video for it (nothing spent)", "WARN")
             return {"ok": False, "skipped": "slot_taken", "episode": t["episode_id"]}
+    try:                                                                       # v9.3.1 (L1): ₹0 upload check before the first paid call
+        from whatifs import launch as LA
+        if LA.due_check(): LA.upload_check()
+        if LA.lock_state() == "on" and not fix:
+            log("upload lock is on: not starting (nothing spent)", "WARN"); return {"ok": False, "skipped": "upload_lock"}
+    except Exception as e: log(f"upload check skipped: {e}", "WARN")
     if not fix and S("PREFLIGHT_ON", bool):
         ok, why = PF.check()
         if not ok:
@@ -624,7 +638,9 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     if not chk["ok"] and S("HOLD_ON_QC_FAIL", bool): return _hold(st, ep, out, chk, notes, fix)
     if not chk["ok"]: log("QC failed but HOLD_ON_QC_FAIL is FALSE - uploading anyway (not recommended)", "ERROR")
     RX.record(ep, rx, (d.get("strategies") or {}).get("banter", ""), total_sec=vo.duration)
-    cut_map, _ = CUTMAP.run_cutmap(out, vo.wav_path, tl, master, RN.fps(), files.get("events", []), ep, master_duration=RN.probe_dur(master))
+    holds = [(m_["f0"] / job.fps, (m_["f0"] + m_["nf"]) / job.fps) for m_ in getattr(job, "segmeta", [])                 # v9.3: every still picture state as rendered
+             if m_.get("nf") and m_.get("i") is not None and m_["i"] < len(shots) and shots[m_["i"]].get("type") == "still" and m_["i"] not in (files.get("clips") or {})]
+    cut_map, _ = CUTMAP.run_cutmap(out, vo.wav_path, tl, master, RN.fps(), files.get("events", []), ep, master_duration=RN.probe_dur(master), holds=holds)
     srt = job.srt
     title = (pkg.get("titles") or [room["spine"].get("headline") or room["spine"].get("title_candidates", ["What If?"])[0]])[0]
     nxt = None
@@ -665,7 +681,8 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
             except Exception as e: log(f"provenance record skipped: {e}", "WARN", ep)
         try:                                                     # v9.1: one hero-still reel per episode (flag off by default; reuses stills + the voiced line)
             from whatifs import herostill as HS
-            HS.make_for_episode(ep, out, [p_ for p_ in (files.get("img") or {}).values() if isinstance(p_, str)], master, units, str(pkg.get("thumb_text") or title)[:40])
+            HS.make_for_episode(ep, out, [p_ for p_ in (files.get("img") or {}).values() if isinstance(p_, str)], master, units, str(pkg.get("thumb_text") or title)[:40],
+                                slot_iso=slot_iso, long_id=vid, title=title)      # v9.3: scheduled after the long video and linked to it
         except Exception as e: log(f"hero-still reel skipped: {e}", "WARN", ep)
         if SHOW.on():                                            # v9: 3 packaging pairs (owner pick + rotation), Season + Experiments rows
             try:
@@ -681,6 +698,10 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
                 sp_ = room.get("spine", {}) if isinstance(room, dict) else {}
                 CM.season_row(ep, d.get("show_plan") or {}); CM.experiment_row(ep, dict(d, hook_shape=pkg.get("hook_shape", "")), sp_, "A", slot_iso)
             except Exception as e: log(f"packaging / season rows skipped: {e}", "WARN", ep)
+            try:                                                   # v10.1 (K149): Instagram 'Case Files' slides, posted when the long video goes live
+                from whatifs import carousel as CAR
+                CAR.prepare(ep, d.get("show_plan") or {}, title)
+            except Exception as e: log(f"carousel prepare skipped: {e}", "WARN", ep)
         assets = _persist(out, ep); assets.update(_archive(out, ep, master, srt)); assets.update(_review_files(out, ep))
         cur = next((r for r in st.rows("Episodes") if r["episode_id"] == ep), {}); old = CK._assets_of(cur)
         deg = take_degraded() if S("DEGRADED_NOTE_ON", bool) else []
@@ -843,7 +864,14 @@ def _description(desc, chs, room, ep="", nxt=None):
             except Exception: link = ""
             foot = CTA.description_footer(ep or room.get("spine", {}).get("premise", ""), link)
         except Exception as e: log(f"description footer skipped: {scrub(e)}", "WARN")
-    return body + (("\n\n" + foot) if foot else "") + "\n\nThis video uses AI-assisted visuals and narration over an original script. Science is simplified for storytelling."
+    aff = ""
+    try:
+        from whatifs.hours import affiliate_block                  # v10 G7 (decision 7): one topic-matched link + disclosure, only when the owner added links
+        aff = affiliate_block(room.get("spine", {}).get("premise", "") + " " + str(ep))
+    except Exception as e: log(f"affiliate block skipped: {scrub(e)}", "WARN")
+    nl = str(S("NEWSLETTER_URL") or "").strip()
+    news = f"Case Files newsletter (the sources behind every verdict): {nl}" if nl.startswith("https://") else ""      # v10.1: owned audience
+    return body + (("\n\n" + aff) if aff else "") + (("\n\n" + news) if news else "") + (("\n\n" + foot) if foot else "") + "\n\nThis video uses AI-assisted visuals and narration over an original script. Science is simplified for storytelling."
 
 def _playlist(ptype):
     from whatifs.data import FAMILY_PLAYLIST

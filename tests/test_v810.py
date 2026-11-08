@@ -7,6 +7,10 @@ from whatifs import core, voice as V, tts_gemini as T, cast as CAST, premise as 
 from whatifs import governor as G, episode as EP, room as ROOM, manage as MG, preview as PV, data as D
 from whatifs.voice import Blend
 
+def _legacy_budget(setting):
+    setting("BUDGET_FLOOR_INR", "4000"); setting("BUDGET_CEILING_INR", "4000"); setting("BUDGET_EARMARK_INR", "0"); setting("V94A_FLIPS_ON", "FALSE"); setting("V10_FLIPS_ON", "FALSE"); setting("SPECIALS_ON", "FALSE")      # v9.4a: this test keeps the v8 budget profile (₹4,000, no earmark, no cap move)
+
+
 SB = {"DIRECTOR": Blend("d", {"am_michael": 1.0}, gvoice="Charon", gstyle="warm"), "SKEPTIC": Blend("s", {"af_heart": 1.0}, gvoice="Puck", gstyle="upbeat")}
 SCRIPT = ("[DIRECTOR] [calm] Right now, about eight billion people are doing something ordinary.\n"
           "[SKEPTIC] [wow] {fast, breath} Wait, all of them? At the same time?\n"
@@ -282,13 +286,15 @@ def test_rejected_or_switched_off_preview_is_not_used(setting):
 
 # ---------------------------------------------------------------- 9. budget
 def test_cap_is_4000_and_estimates_include_tts_and_thinking(setting):
-    assert core.DEFAULTS["BUDGET_CEILING_INR"][0] == "4000" and core.DEFAULTS["BUDGET_FLOOR_INR"][0] == "4000"
+    _legacy_budget(setting)
+    assert core.DEFAULTS["BUDGET_CEILING_INR"][0] == "5000" and core.DEFAULTS["BUDGET_FLOOR_INR"][0] == "5000"      # v10: the owner's ₹5,000 (incl. ₹300 specials)
     assert not any("3,500" in v[1] and "was" not in v[1] for v in core.DEFAULTS.values())
     base = G.min_episode_cost_inr(); assert G.voice_think_inr() == 90          # v8.11: THINK_EST_INR 30 -> 40
     setting("TTS_ENGINE", "kokoro"); assert G.min_episode_cost_inr() == pytest.approx(base - 30)
     assert EP.est_cost_inr({"stills": 50, "living": 8, "kling": 3, "episode_id": "E"}) > 300
 
 def test_headroom_and_fourth_kling_only_when_it_fits(monkeypatch, setting):
+    _legacy_budget(setting)
     h = G.headroom(); assert h["cap_inr"] == 4000 and h["per_video_inr"] > 0
     monkeypatch.setattr(G, "episodes_left_this_month", lambda: 1); assert G.kling4_proposal()           # one video left, a full month of money: it fits
     monkeypatch.setattr(G, "episodes_left_this_month", lambda: 12); assert G.kling4_proposal() is None   # tight: never proposed
@@ -304,7 +310,7 @@ def test_setup_seeds_cast_and_refreshes_old_cap_notes():
     st = core.store(); st.ensure_tabs(); st.append("Settings", [{"key": "BUDGET_CEILING_INR", "value": "4000", "note": "hard ₹3,500 cap"}])
     MG.setup()
     assert len(st.rows("Cast")) == 20 and sum(1 for r in st.rows("Cast") if r["role"] == "expert") == 5
-    row = next(r for r in st.rows("Settings") if r["key"] == "BUDGET_CEILING_INR"); assert row["value"] == "4000" and "3,500" not in row["note"]
+    row = next(r for r in st.rows("Settings") if r["key"] == "BUDGET_CEILING_INR"); assert row["value"] == "5000" and "3,500" not in row["note"]      # v9.4a then v10: one-time moves to ₹4,700, then ₹5,000
     for t in ("Cast", "Voice_Check", "Premise_Scores", "Craft_Notebook", "Technique_Library", "Owners_Cut", "Script_Previews"): assert t in core.TABS
 
 def test_every_new_setting_is_documented_with_its_off_value():

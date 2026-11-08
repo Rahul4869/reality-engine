@@ -32,7 +32,9 @@ def test_pick_inside_window_applies_and_late_pick_is_ignored(monkeypatch, settin
     with pytest.raises(SystemExit): PK.apply_pick("PICK nonsense")
 
 def test_rotation_windows_then_a_winner_and_bounded(monkeypatch, setting):
+    setting("PKG_ROTATE_ON", "TRUE"); setting("V931_FLIPS_ON", "FALSE")          # v9.3.1: rotation is OFF by default (decision 5); this tests the switch-on path (Setup must not flip it back)
     setting("TITLE_SHOCK_ON", "FALSE")          # v9.2 reorders variants by shock score; keep the v9 order here
+    setting("PKG_ROTATE_START_H", "0"); setting("PKG_ROTATE_MIN_VIEWS", "0")      # v9.3 start delay / view floor are tested in test_v93
     MG.setup(); st = core.store(); calls = []; views = {"n": 0}
     monkeypatch.setattr(PUB, "yt_set_title", lambda vid, t: calls.append(t)); monkeypatch.setattr(PUB, "yt_views", lambda vid: views["n"])
     monkeypatch.setattr(PUB, "email", lambda *a, **k: None)

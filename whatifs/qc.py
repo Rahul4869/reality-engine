@@ -50,6 +50,13 @@ def _probe_json(args):
     try: return json.loads(p.stdout or "{}")
     except Exception: return {}
 
+def _fps_num(val):
+    """'30/1' -> 30.0; '10163200/338821' -> 29.9958 (v10.1: compared numerically, not as text)."""
+    try:
+        a, b = str(val or "0/1").split("/")
+        return float(a) / max(1e-9, float(b))
+    except Exception: return 0.0
+
 def packet_check(path, expect_sec, fps, tol_frames=3):
     """Frame count straight from the container (no decoding) against the narration clock, and constant frame rate."""
     j = _probe_json(["-select_streams", "v:0", "-count_packets", "-show_entries", "stream=nb_read_packets,r_frame_rate,avg_frame_rate", path])
@@ -58,7 +65,8 @@ def packet_check(path, expect_sec, fps, tol_frames=3):
     except (TypeError, ValueError): return []
     want = round(expect_sec * fps); out = []
     if abs(n - want) > tol_frames: out.append(problem("frame_count", f"{n} frames in the file, the narration clock needs {want} (+-{tol_frames})", "free"))
-    if st.get("r_frame_rate") and st.get("avg_frame_rate") and st["r_frame_rate"] != st["avg_frame_rate"]:
+    rf, af = _fps_num(st.get("r_frame_rate")), _fps_num(st.get("avg_frame_rate"))
+    if rf > 0 and af > 0 and abs(rf - af) > 0.05:                 # v10.1: a 1-tick rounding at a concat seam (29.9958 vs 30) is constant frame rate
         out.append(problem("frame_count", f"variable frame rate ({st['r_frame_rate']} vs {st['avg_frame_rate']})", "free"))
     return out
 
@@ -116,6 +124,18 @@ def reuse_runs(shots, own):
         run += 1; best = max(best, run)
     return best
 
+def vision_indexes(units, shots, n):
+    """v9.3.2: which shots the picture check looks at: n spread evenly + every Kling clip (up to 3) + up to QC_VISION_OPENING_MAX shots inside the opening
+    window (the seconds that decide whether a viewer stays)."""
+    from whatifs.core import S
+    if not units: return []
+    kl = [i for i, s in enumerate(shots) if s.get("type") == "kling" and i < len(units)][:3]
+    n_even = max(6, n - len(kl))
+    even = {min(len(units) - 1, int(len(units) * (k + 0.5) / n_even)) for k in range(n_even)}
+    win = S("OPENING_WINDOW_SEC", float); cap = max(0, S("QC_VISION_OPENING_MAX", int))
+    opening = [i for i, u in enumerate(units) if float(u.get("start", 0)) < win and i not in even and i not in kl][:cap]
+    return sorted(even | set(kl) | set(opening))
+
 def vision_check(master, units, shots, episode="", n=None):
     """Independent Gemini Flash look at ~12 evenly spaced frames. v8.3: a judge that cannot be reached is a PROBLEM ('vision_unavailable') while QC_VISION_REQUIRED is TRUE, so the video is held rather than passed unchecked."""
     from whatifs.core import S
@@ -124,8 +144,7 @@ def vision_check(master, units, shots, episode="", n=None):
     n = n or S("QC_VISION_FRAMES", int); dur = probe_dur(master)
     if not units or dur <= 0: return [], {"vision": "no frames"}
     kl = [i for i, s in enumerate(shots) if s.get("type") == "kling" and i < len(units)][:3]       # v8.3: every Kling clip (the expensive, most glitch-prone shots) is always looked at
-    n_even = max(6, n - len(kl))
-    idx = sorted({min(len(units) - 1, int(len(units) * (k + 0.5) / n_even)) for k in range(n_even)} | set(kl)); imgs, lines = [], []
+    idx = vision_indexes(units, shots, n); imgs, lines = [], []
     tmp = master + ".qc"; os.makedirs(tmp, exist_ok=True)
     for k, i in enumerate(idx):
         t = (units[i]["start"] + units[i]["end"]) / 2
@@ -185,6 +204,11 @@ def full_check(c):
     run = reuse_runs(c["shots"], c.get("own", set())); info["max_reuse_run"] = run
     if run > S("FREE_SHOT_MAX_RUN", int) + 2: probs.append(problem("reuse_run", f"{run} shots in a row show the same picture", "paid"))
     vp, vi = vision_check(c["master"], c["units"], c["shots"], c.get("episode", "")); probs += vp; info.update(vi)
+    try:                                                                           # v10 (K137): the AI-slop risk score (recorded, never a hold by itself)
+        from whatifs import slop as SLP
+        sr = SLP.record(c["units"], c["shots"], c.get("episode", ""))
+        if sr: info["slop"] = sr.get("slop")
+    except Exception: pass
     if c.get("show_plan"):                                                    # v9: the trial devices, measured on the voiced timeline and the master
         from whatifs import showfx as SFX
         sq = SFX.show_qc(c["units"], c["show_plan"], c.get("teacups"))                    # targets: reported, never a held video (no skipped slots)

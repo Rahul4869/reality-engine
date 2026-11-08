@@ -11,7 +11,9 @@ import json, os, re
 from whatifs.core import S, log, iso, scrub, safe_append
 
 MAX_WORDS_EXCL = 10          # a line must have FEWER than this many words
-TYPES = ("curiosity_gap", "concrete_stakes", "surprising_claim", "outcome_promise")
+TYPES = ("curiosity_gap", "concrete_stakes", "surprising_claim", "outcome_promise", "you_stakes")      # v9.3: you_stakes = second-person survival stakes
+_YOU = re.compile(r"\b(you|your|you're|yourself)\b", re.I)
+YOU_MARGIN = 1.5             # v9.3: a 'you' line that passes every check leads unless another line scores more than this much higher
 WANT = 10
 
 _TOKEN = re.compile(r"\d[\d,\.]*\d|\d|[A-Za-z]+(?:['\u2019][A-Za-z]+)?")
@@ -56,6 +58,10 @@ def validate_line(line, script):
     if n >= MAX_WORDS_EXCL: issues.append(f"too_long:{n}_words")
     if _GREET.search(line): issues.append("greeting_or_throat_clearing")
     if _HYPE.search(line): issues.append("hype_or_unsupported_phrase")
+    try:                                                                       # v9.3: advertiser safety (AD_SAFE_ON): the first line a viewer hears
+        from whatifs.packaging import ad_risk
+        if ad_risk(line): issues.append("ad_unsafe_word")
+    except Exception: pass
     missing = [v for v in _numbers(line) if v not in _numbers(script)]
     if missing: issues.append("number_not_in_script")
     if overlap_ratio(line, script) < 0.4: issues.append("low_overlap_with_script")
@@ -115,7 +121,7 @@ def build_record(script, spine=None, episode="", ask_fn=None):
             key = re.sub(r"\W+", " ", c["line"].lower()).strip()
             if key in seen: continue
             seen.add(key); c["issues"] = validate_line(c["line"], _script_text(script)); c["words"] = count_words(c["line"])
-            hard = [i for i in c["issues"] if i.startswith(("too_long", "empty", "greeting", "hype"))]
+            hard = [i for i in c["issues"] if i.startswith(("too_long", "empty", "greeting", "hype", "ad_unsafe"))]
             (rejected if hard else kept).append(c)
     take(_generate(script, spine, WANT, [], ask_fn, episode))
     if len(kept) < WANT:        # one refill for the shortfall
@@ -148,6 +154,9 @@ def build_record(script, spine=None, episode="", ask_fn=None):
     min_score = S("HOOK_MIN_SCORE", float)
     eligible = [c for c in kept if c["valid"] and c["promise_accuracy"] >= 7 and c["total"] >= min_score] if scored_by == "judge" else []
     chosen = eligible[0] if eligible else None
+    if chosen and S("COLD_OPEN_YOU_ON", bool):                                 # v9.3: YOU before lore - a passing second-person line leads when it is close in score
+        you = next((c for c in eligible if _YOU.search(c["line"])), None)
+        if you and you["total"] >= chosen["total"] - YOU_MARGIN: chosen = you
     if not chosen: notes.append("No candidate passed every check; a person should pick one or keep the writer's opening.")
     return {"episode_id": episode, "created": iso(), "scored_by": scored_by, "mode": S("HOOK_APPLY_MODE").lower(), "min_score": min_score,
             "candidates": kept, "rejected": rejected, "type_mix": mix, "chosen_id": chosen["id"] if chosen else None,

@@ -1,9 +1,15 @@
+import pytest
 """v8.5 growth patch: motion + fresh pictures in the opening (moved, never added), bridge Shorts (default) and the other two reel styles, 4 Shorts per video
 with reels 3-4 released on the next days (once, never twice), free covers, the B thumbnail and the packaging rescue, Shorts -> long-video learning,
 cost accounting, and nothing from v8.4 lost (Episodes column order, CLI, workflows)."""
 import os, json, datetime as dt
 from PIL import Image
 from whatifs import core, room as ROOM, episode as EP, reels as RL, manage as MG, governor as G, prompts as P, art as ART, publish as PUB
+
+@pytest.fixture(autouse=True)
+def _v931_rescue_timing(setting):
+    setting("PKG_RESCUE_HOURS", "36")          # v9.3.1 moved the default to 72 h; these tests keep the v8.5 timing
+
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 

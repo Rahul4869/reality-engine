@@ -90,6 +90,61 @@ REEL_ASKS = {
     "share": [("SKEPTIC", "aside", "Send this to the friend who'd panic first."), ("DIRECTOR", "calm", "Share this with someone curious."), ("SKEPTIC", "aside", "Share it. Blame the Director.")],
 }
 
+# v9.3 (CTA_JURY_ON): the trial cast's own voices. [DIRECTOR] = Inspector Vale, [SKEPTIC] = Dr. Grimm, [JUDGE] = Nana Rosa. Subscribing = a seat on the jury
+# (a recurring identity, not a favour). Same rules as POOLS: each entry is recognised as its kind, at most 34 words, no gendered words.
+TRIAL_POOLS = {
+    "like": [
+        [("SKEPTIC", "aside", "Preposterous. And yet. If that rattled you, tap like. I will pretend I did not see it.")],
+        [("JUDGE", "aside", "Mm. If you would have survived that, hit like. If you would not, hit like anyway. Sit down.")],
+        [("DIRECTOR", "calm", "Observe. One tap on the like button keeps this court in session. The evidence suggests you enjoyed that.")],
+        [("SKEPTIC", "aside", "Thumbs up if you are on my side. Thumbs up if you are not. I am counting either way.")],
+        [("JUDGE", "calm", "The court notes your jaw dropped. A like makes it official. Mm.")],
+        [("DIRECTOR", "aside", "If that changed your mind, the like button is the cheapest piece of evidence in this room.")],
+    ],
+    "subscribe": [
+        [("JUDGE", "calm", "Subscribe, and you sit on the jury for every case. Jury duty, but with tea.")],
+        [("SKEPTIC", "aside", "Subscribe, so you are seated when I win the next one. And I will win the next one."), ("DIRECTOR", "calm", "Noted. Every week, the same promise.")],
+        [("DIRECTOR", "calm", "The next case is already filed. Subscribe, and your seat on the jury is saved.")],
+        [("JUDGE", "aside", "Every juror who subscribes votes next time. Everyone else gets my disappointed look.")],
+        [("SKEPTIC", "aside", "Subscribe. The court needs jurors who actually stay for the evidence. Rare. Precious. You.")],
+        [("DIRECTOR", "calm", "Twice a week, a new impossible case. Subscribe, and the summons finds you first.")],
+    ],
+    "share": [
+        [("JUDGE", "calm", "Send this to the friend who would vote guilty without reading the evidence. Mm. You know the one.")],
+        [("SKEPTIC", "aside", "Share this with whoever still thinks I am wrong. Let them face the court.")],
+        [("DIRECTOR", "calm", "Send this to one person who asks 'what if' at dinner. Every case deserves a witness.")],
+        [("SKEPTIC", "aside", "Forward this to the person who would panic first. The jury needs drama.")],
+        [("JUDGE", "aside", "Text this to your group chat. Then watch them argue. That is a trial too.")],
+        [("DIRECTOR", "calm", "Share this with someone who would have guessed wrong. The record should show it.")],
+    ],
+}
+TRIAL_DESC_SUB = [
+    "Subscribe and take your seat on the jury: a new impossible case twice a week.",
+    "Subscribe. Nana Rosa keeps a chair for every juror who stays for the evidence.",
+    "Subscribe, so the next summons finds you before Dr. Grimm does.",
+    "Subscribe to sit on the jury. Inspector Vale brings the evidence; you bring the verdict.",
+]
+TRIAL_DESC_SHARE = [
+    "Send this case to the friend who would vote guilty without reading the evidence.",
+    "Share it with the person who said it could never happen. Let the jury decide.",
+    "Pass it on to one curious juror. One is plenty.",
+]
+TRIAL_REEL_ASKS = {
+    "follow": [("JUDGE", "calm", "Follow, and take your seat on the jury."), ("DIRECTOR", "calm", "Follow for the next impossible case."), ("SKEPTIC", "aside", "Follow. Court is back in session soon.")],
+    "share": [("SKEPTIC", "aside", "Send this to the friend who would vote guilty."), ("JUDGE", "calm", "Share this with whoever thinks it cannot happen."), ("DIRECTOR", "calm", "Send it to the person who would panic first.")],
+}
+
+def _trial():
+    """v9.3: the trial cast's lines are used when CTA_JURY_ON and the show format is on (SHOW_MODE = auto)."""
+    try:
+        from whatifs.core import S
+        if not S("CTA_JURY_ON", bool): return False
+        from whatifs import show as _SHOW
+        return _SHOW.on()
+    except Exception: return False
+
+def _pools(): return TRIAL_POOLS if _trial() else POOLS
+
 def _rng(seed): return random.Random(int(hashlib.md5(str(seed).encode()).hexdigest()[:12], 16))
 
 def _fmt(spk, tag, text): return f"[{spk}] [{tag}] {text}"
@@ -141,14 +196,14 @@ def ensure(script, seed="", last=""):
         picks, plan = {}, []
         for k in KINDS:
             if have[k]: continue
-            pool = POOLS[k]; avoid = prev.get(CODE[k], "")
+            pool = _pools()[k]; avoid = prev.get(CODE[k], "")
             choices = [i for i in range(len(pool)) if str(i) != avoid] or list(range(len(pool)))
             idx = rng.choice(choices); picks[k] = idx
             n = len(spoken); target = (n - 2) if k == "share" else int(n * POS[k])
             plan.append((_safe_slot(lines, spoken, target), k, idx))
         added = []
         for p, k, idx in sorted(plan, key=lambda x: -x[0]):          # from the end, so earlier insert points stay valid
-            new = [_fmt(*t) for t in POOLS[k][idx]]
+            new = [_fmt(*t) for t in _pools()[k][idx]]
             lines[spoken[p] + 1:spoken[p] + 1] = new; added.append(k)
             spoken = _spoken_index(lines)
         code = ",".join(f"{CODE[k]}{picks[k]}" for k in picks)
@@ -158,10 +213,10 @@ def ensure(script, seed="", last=""):
         return script, [], last
 
 def description_footer(seed, link=""):
-    r = _rng(f"{seed}|desc"); sub = r.choice(DESC_SUB); sh = r.choice(DESC_SHARE)
+    r = _rng(f"{seed}|desc"); tr = _trial(); sub = r.choice(TRIAL_DESC_SUB if tr else DESC_SUB); sh = r.choice(TRIAL_DESC_SHARE if tr else DESC_SHARE)
     return sub + (f"\n{link}" if link else "") + "\n" + sh
 
 def reel_ask(seed, k):
     """(speaker, tag, text) spoken at the very end of reel k: reel 1 asks to follow, reel 2 asks to share."""
-    pool = REEL_ASKS["follow" if k % 2 == 0 else "share"]
+    pool = (TRIAL_REEL_ASKS if _trial() else REEL_ASKS)["follow" if k % 2 == 0 else "share"]
     return _rng(f"{seed}|reel{k}").choice(pool)

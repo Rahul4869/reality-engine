@@ -61,7 +61,7 @@ def test_the_research_prompt_tells_the_model_that_signal_titles_are_untrusted():
 # ---------------- workflows ----------------
 WF = sorted(glob.glob(os.path.join(ROOT, ".github", "workflows", "*.yml")))
 def test_there_are_fifteen_workflows_and_all_parse():
-    assert len(WF) == 16          # v8.9: + merge.yml (one-click merge); v8.10: + preview.yml (Script Preview + approve / reject); v9: + sheets.yml (manual, one-time)
+    assert len(WF) == 24          # v10: + special.yml + bakeoff.yml + wa_setup.yml. v9.4b: + dash.yml + whatsapp.yml. v9.4a: + preprod.yml + claude-build.yml. v9.3.1: + upload_check.yml (manual; the ₹0 upload check). v8.9: + merge.yml (one-click merge); v8.10: + preview.yml (Script Preview + approve / reject); v9: + sheets.yml (manual, one-time)
     for f in WF: assert yaml.safe_load(open(f))["jobs"]
 
 def test_no_workflow_puts_an_expression_inside_a_shell_command():
@@ -102,8 +102,9 @@ def test_restore_step_turns_plain_docx_back_into_code_and_leaves_other_documents
             doc = docx.Document()
             for line in body: doc.add_paragraph(line)
             doc.save(os.path.join(d, rel))
-        open(os.path.join(d, "s.sh"), "w").write(_restore_script())
-        r = subprocess.run(["bash", "s.sh"], cwd=d, capture_output=True, text=True); assert r.returncode == 0, r.stderr
+        sh = os.path.join(d, "s.sh")
+        with open(sh, "w", encoding="utf-8") as f: f.write(_restore_script())
+        r = subprocess.run(["bash", sh], cwd=d, capture_output=True, text=True); assert r.returncode == 0, r.stderr
         assert open(os.path.join(d, "whatifs/a.py"), newline="").read().startswith("import os\n\n    x = 1\n")
         assert os.path.exists(os.path.join(d, "tools/b.py")) and os.path.exists(os.path.join(d, "tests/__init__.py"))
         assert os.path.exists(os.path.join(d, "notes/readme.docx")) and not os.path.exists(os.path.join(d, "notes/readme.py"))

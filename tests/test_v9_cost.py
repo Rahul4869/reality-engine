@@ -3,6 +3,10 @@ import json
 import pytest
 from whatifs import core, costguard as CG, craft as CR, premise as PR, manage as MG, governor as G, publish as PUB, models as M
 
+def _legacy_budget(setting):
+    setting("BUDGET_FLOOR_INR", "4000"); setting("BUDGET_CEILING_INR", "4000"); setting("BUDGET_EARMARK_INR", "0"); setting("V94A_FLIPS_ON", "FALSE"); setting("V10_FLIPS_ON", "FALSE"); setting("SPECIALS_ON", "FALSE")      # v9.4a: this test keeps the v8 budget profile (₹4,000, no earmark, no cap move)
+
+
 def _mails(monkeypatch):
     out = []; monkeypatch.setattr(PUB, "email", lambda subj, body, *a, **k: out.append(subj)); return out
 
@@ -10,7 +14,8 @@ def test_estimator_lines_add_up_and_never_include_a_cut():
     L = CG.estimate_lines()
     assert L["visuals"] > 100 and L["show_devices"] == 0 and abs(sum(L.values()) - G.full_episode_inr() - L["community"]) < 1.0
 
-def test_spend_monitor_mails_each_threshold_once_a_month(monkeypatch):
+def test_spend_monitor_mails_each_threshold_once_a_month(monkeypatch, setting):
+    _legacy_budget(setting)
     MG.setup(); mails = _mails(monkeypatch)
     monkeypatch.setattr(CG, "month_spend", lambda: 2900.0); assert CG.spend_monitor() == [70] and CG.spend_monitor() == []
     monkeypatch.setattr(CG, "month_spend", lambda: 3700.0); assert CG.spend_monitor() == [90] and len(mails) == 2

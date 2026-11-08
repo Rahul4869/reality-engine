@@ -11,6 +11,22 @@ def _lines(n):
 
 def fake_reply(key, prompt):
     r = random.Random(len(prompt))
+    if key == "outlier_video":
+        return json.dumps({"hook_device": "a number on frame 0", "first_frame": "close-up of a hand", "cut_rhythm": "a cut every 1.5 s", "sound_moment": "a hit at 0:02",
+                           "caption_style": "word-by-word", "why_it_works": "instant stakes", "how_to_adapt": "open on YOU + a number in the cold open"})
+    if key == "pilot":
+        return json.dumps({"hook": "Your bed is floating. 9 seconds.", "lines": ["Gravity just quit.", "You grab the lamp.", "Should the jury hear this case?"]})
+    if key == "occasions_check":
+        return json.dumps({"diwali": "2027-10-29", "holi": "2027-03-22", "eid": "2027-03-10", "lunar_new_year": "2027-02-06"})
+    if key == "special":                                           # v10 specials
+        return json.dumps({"title": "Grimm objects to Monday", "beats": [{"who": "GRIMM", "sec": 3, "motion": "he slams a calendar", "card": "OBJECTION", "line": "Monday is guilty"},
+                           {"who": "VALE", "sec": 3, "motion": "he checks the evidence", "card": "OBSERVE", "line": "the record shows coffee"},
+                           {"who": "ROSA", "sec": 3, "motion": "she sips tea", "card": "OVERRULED", "line": "Tea first."},
+                           {"who": "SET", "sec": 3.5, "motion": "doors open", "card": "REALITY ON TRIAL", "line": "Court opens Tuesday"}]})
+    if key == "localize":                                          # v10 G4
+        try: d = json.loads(prompt)
+        except Exception: d = {"langs": {"es": "Spanish"}, "title": "t", "description": "d"}
+        return json.dumps({l: {"title": f"[{l}] {d.get('title', '')}"[:100], "description": f"[{l}] {d.get('description', '')}"[:4500]} for l in d.get("langs", {})})
     if key == "scout":
         P4 = [("What if every pillow on Earth floated up at noon?", "Every Pillow Just Left Earth"), ("What if your bones turned to glass for a day?", "Your Bones Are Glass Now"),
               ("What if trees screamed when they were hurt?", "The Forest Can Scream"), ("What if Saturn's rings hung over your backyard?", "Saturn's Rings, Overhead")]      # v8.9.1: distinct pitches, so the vetted-tease gate has real choices

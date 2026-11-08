@@ -59,7 +59,20 @@ def title_issues(title, thumb_text=""):
             from whatifs.packaging import natural_issues
             out += natural_issues(t)
     except Exception: pass
+    try:                                                                   # v9.3: advertiser safety in the title AND the thumbnail words (AD_SAFE_ON)
+        from whatifs.packaging import ad_risk
+        if ad_risk(t) or ad_risk(thumb_text): out.append("advertiser risk word (gore / injury / profanity): imply the danger, never show it")
+    except Exception: pass
     return out
+
+def _shock(t):
+    """v9.3: the v9.2 stop-scrolling score as a TIE-BREAK between equally clean titles (0 when TITLE_SHOCK_ON is off = v9.2 order)."""
+    try:
+        from whatifs import v91 as V91
+        if not V91.on("TITLE_SHOCK_ON"): return 0.0
+        from whatifs.packaging import shock_score
+        return float(shock_score(t))
+    except Exception: return 0.0
 
 def choose_titles(titles, thumb_text=""):
     """(best, runner_up). Keeps the Packager's order (it ranks best first) but moves clean titles ahead of flawed ones; never returns an empty title
@@ -70,10 +83,10 @@ def choose_titles(titles, thumb_text=""):
         if not t or t.lower() in seen: continue
         seen.add(t.lower())
         if len(t) > 100: t = t[:100].rsplit(" ", 1)[0]
-        cand.append((sum(2 if x.startswith("long") else 1 for x in title_issues(t, thumb_text)), i, t))      # a title cut off on phones is the worst flaw
-    if not cand: return "", ""
+        cand.append((sum(2 if x.startswith("long") else 1 for x in title_issues(t, thumb_text)), -_shock(t), i, t))      # a title cut off on phones is the worst flaw;
+    if not cand: return "", ""                                                                                         # v9.3: among equally clean titles the strongest scroll-stopper is uploaded
     cand.sort()
-    best = cand[0][2]; runner = cand[1][2] if len(cand) > 1 else ""
+    best = cand[0][3]; runner = cand[1][3] if len(cand) > 1 else ""
     if cand[0][0]: log(f"packaging: every title had an issue; using the least flawed ({'; '.join(title_issues(best, thumb_text))})", "WARN")
     return best, runner
 
@@ -237,6 +250,27 @@ def script_lines(text, wpm=150.0):
         out.append({"t": words / max(1.0, wpm) * 60.0, "text": body, "tags": tags, "words": n}); words += n
     return out, words / max(1.0, wpm) * 60.0
 
+LORE_RX = re.compile(r"\b(grimm|vale|nana|rosa|archivist|court|courtroom|trial|the charges?|charged with|jury|jurors?|exhibits?|objection|verdict|defendant|prosecut\w*|your honou?r|gavel)\b", re.I)
+YOU_RX = re.compile(r"\b(you|your|you're|yours|yourself)\b", re.I)
+
+def cold_open_issues(lines, opening_text=""):
+    """v9.3 (COLD_OPEN_YOU_ON): the first COLD_OPEN_LORE_FREE_SEC seconds put the viewer INSIDE the scene before any lore: no character names or courtroom
+    words, at least COLD_OPEN_YOU_MIN 'you/your', a first line of at most 14 words, and no advertiser-risk word in the first ~45 s. Free (code only)."""
+    if not S("COLD_OPEN_YOU_ON", bool) or not lines: return []
+    sec = max(5.0, S("COLD_OPEN_LORE_FREE_SEC", float)); out = []
+    etext = " ".join(l["text"] for l in lines if l["t"] < sec)
+    lore = sorted({m.group(0).lower() for m in LORE_RX.finditer(etext)})
+    if lore: out.append(f"cold open: lore before {sec:.0f} s ({', '.join(lore[:4])}); open on YOU inside the scene (second person, present tense, a physical stake) - names and the charge come after")
+    n_you = len(YOU_RX.findall(etext))
+    if n_you < S("COLD_OPEN_YOU_MIN", int): out.append(f"cold open: the first {sec:.0f} s say 'you/your' {n_you} time(s); put the viewer's own body in the scene (what you see, hear, feel)")
+    if lines[0]["words"] > 14: out.append(f"cold open: the first line has {lines[0]['words']} words; cut it to 14 or fewer and lead with the stake")
+    try:
+        from whatifs.packaging import ad_risk
+        bad = ad_risk(opening_text)
+        if bad: out.append(f"cold open: '{bad[0]}' in the first 45 s risks limited ads; imply the danger, never describe injury or gore")
+    except Exception: pass
+    return out
+
 def retention_issues(text, promise=None, wpm=150.0, loops=None):
     """Problems a viewer would feel, with WHERE they are. {'ok', 'issues', 'max_gap', 'total'}. Free (no model call)."""
     lines, total = script_lines(text, wpm); issues = []; promise = promise or {}
@@ -252,6 +286,7 @@ def retention_issues(text, promise=None, wpm=150.0, loops=None):
     if op:
         from whatifs.hooks import _GREET
         if _GREET.match(op[0]["text"]): issues.append("opening: the first line clears its throat (a greeting, 'today', 'did you know'); start on the impossible thing")
+    issues += cold_open_issues(lines, otext)                                   # v9.3: YOU before lore (COLD_OPEN_YOU_ON)
     marks = [l["t"] for l in lines if "?" in l["text"] or REHOOK_RX.search(l["text"]) or set(l["tags"]) & {"reveal", "tension", "wow", "gasp", "awe"} or re.search(r"\d", l["text"])]
     pts = [0.0] + marks + [total]; gaps = [(b - a, a, b) for a, b in zip(pts, pts[1:])]; worst = max(gaps) if gaps else (0.0, 0.0, 0.0)
     if worst[0] > S("REHOOK_MAX_GAP_SEC", float):

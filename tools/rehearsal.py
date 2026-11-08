@@ -110,7 +110,7 @@ def run():
         a = MG.tick(); assert a.get("action") != "release3", "reel 3 must never be posted twice"
         print("v8.5 checks ok")
         MG.trend_scout(); print("trends ok")
-        old = (now_utc() - dt.timedelta(days=4)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        old = (now_utc() - dt.timedelta(days=6)).strftime("%Y-%m-%dT%H:%M:%SZ")      # v9.3.1: the rescue now looks at 72-120 h; 6 days old = "too old" (fake mode has no view counts)
         st.update("Episodes", "episode_id", e["episode_id"], {"slot_et": old})
         MG.learn(); assert st.rows("Analytics"), "no analytics"; print("learn ok")
         assert re.search(r"too old|v9 rotation test", str(next(x for x in st.rows("Episodes") if x["episode_id"] == e["episode_id"])["pkg_check"])), "packaging check did not run"      # v9: the rotation test replaces the v8.5 rescue
@@ -133,7 +133,7 @@ def run():
         pb87 = st.rows("Playbook")
         assert sum(1 for r in pb87 if r.get("added") == "seed") >= 7 and any(r.get("status") == "trial" for r in pb87), "playbook not seeded or research not vetted"
         assert not any("sub4sub" in r.get("rule", "") or not r.get("source", "").startswith("http") for r in pb87), "an unsourced or platform-gaming rule got in"
-        assert abs(G87.production_room_inr() - (G87.remaining_inr() - 100)) < 1e-6, "maintenance reserve must sit inside the cap"
+        assert abs(G87.production_room_inr() - (G87.remaining_inr() - 100 - G87.earmark_left_inr() - G87.specials_left_inr())) < 1e-6, "maintenance reserve (and v9.4a/v10: the owner's earmarks) must sit inside the cap"
         assert GR87.related_episode([{"episode_id": "X", "status": "SCHEDULED", "yt_id": "abc"}]) is None, "a scheduled video must never be linked"
         print("v8.7 checks ok")
         # v8.9 checks: style lock on every paid shot prompt, a guest chosen, the next-episode tease set and spoken, the plan check ran

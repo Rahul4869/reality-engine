@@ -67,6 +67,13 @@ def main():
     rel = files[-1].split("/repo/")[-1] if "/repo/" in files[-1] else re.sub(r"^.*?/((?:whatifs|tools)/.*)$", r"\1", files[-1])
     if not os.path.exists(rel): print("file not found", rel); return 0
     src = open(rel).read()
+    if str(_setting("REPAIR_ENGINE", "claude_code")).strip().lower() == "claude_code":          # v9.4a (WP3): Claude Code repairs on the owner's plan
+        from whatifs.builds import request_build
+        spec = (f"REPAIR. The workflow failed with this traceback (last 4000 chars):\n{err[-4000:]}\nFile most likely at fault: {rel}. Fix the root cause, keep every "
+                f"K-rule, add a test that would have caught it. Put this tag in the pull request body so the same error is never attempted twice: {sig}")
+        if request_build(spec, "repair"):
+            print("repair handed to Claude Code (claude-build.yml)"); return 0
+        print("Claude Code repair could not be started; falling back to the API repair")
     from whatifs.models import ask
     try:
         fixed = ask("repair", P.fill(P.REPAIR, path=rel, error=err[-6000:], file=src), "Return the full corrected file only.", want_json=False, max_tokens=32000, temperature=0)

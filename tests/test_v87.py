@@ -6,16 +6,22 @@ import pytest
 from whatifs import core, growth as GR, governor as G, playbook as PB, sound as SD, render as RN, room as ROOM, manage as MG, episode as EP, prompts as P
 from whatifs.sampler import draw as DRAW
 
+def _legacy_budget(setting):
+    setting("BUDGET_FLOOR_INR", "4000"); setting("BUDGET_CEILING_INR", "4000"); setting("BUDGET_EARMARK_INR", "0"); setting("V94A_FLIPS_ON", "FALSE"); setting("V10_FLIPS_ON", "FALSE"); setting("SPECIALS_ON", "FALSE")      # v9.4a: this test keeps the v8 budget profile (₹4,000, no earmark, no cap move)
+
+
 def _spend(inr): core.cost("test_spend", "fal", 1, inr / core.S("USD_INR", float))
 
 # ------------------------------------------------------------------ money: the month never totals more than the cap
-def test_reserve_is_inside_the_cap():
+def test_reserve_is_inside_the_cap(setting):
+    _legacy_budget(setting)
     assert abs(G.production_room_inr() - (G.remaining_inr() - 100)) < 1e-6
     _spend(3905); assert G.monthly_cap_reached()      # v8.10 cap 4,000 and not G.monthly_cap_reached(maintenance=True)
     ok, why = G.can_start_episode(); assert not ok and "maintenance" in why
     _spend(95); assert G.monthly_cap_reached(maintenance=True)
 
-def test_a_full_nine_video_month_fits_under_the_production_line():
+def test_a_full_nine_video_month_fits_under_the_production_line(setting):
+    setting("PRICE_KLING_USD", "0.25")      # v10.1: this cost golden keeps the Kling 2.1 price; the new $0.35 is tested in test_v101
     d = {"stills": 52, "living": 8, "kling": 3, "episode_id": "EPC"}
     per = EP.est_cost_inr(d)
     assert 455 < per < 475 and core.S("LLM_EST_INR", float) == 176      # v9: AI_SAVER_ON by default (v8.11: 200; Opus script, thinking 40)
@@ -24,7 +30,8 @@ def test_a_full_nine_video_month_fits_under_the_production_line():
     assert plan["tier"] == "full" and plan["kling"] == 3
     assert G.min_episode_cost_inr() * core.S("BUDGET_SAFETY_MARGIN", float) < 530      # v8.11: + the higher AI allowance
 
-def test_plan_for_episode_uses_the_production_room():
+def test_plan_for_episode_uses_the_production_room(setting):
+    _legacy_budget(setting)
     _spend(3550)            # v8.10 cap 4,000: Rs 350 production room: the full tier no longer fits with the 1.10 margin, a cheaper tier or a hold, never an overspend
     p = G.plan_for_episode(348.0 + 62, 1)             # v8.11: a realistic estimate (AI allowance +62; the visuals protection subtracts exactly that again)
     assert p["hold"] or p["tier"] in ("lean", "slim", "floor")
@@ -129,7 +136,8 @@ def _script(n=150, gap=(), strong=(45, 90), first="[DIRECTOR] [calm] Every pillo
         else: out.append(FILL)
     return "\n".join(out)
 
-def test_retention_issues_find_the_problems_and_where_they_are():
+def test_retention_issues_find_the_problems_and_where_they_are(setting):
+    setting("COLD_OPEN_YOU_ON", "FALSE")          # v9.3 cold-open checks are tested in test_v93 (this fixture has no 'you' in its opening)
     pr = {"title": "Every Pillow Just Left Earth", "thumb_text": "LOOK UP", "thumb_scene": "pillows over a city"}
     assert GR.retention_issues(_script(), pr)["ok"]
     r = GR.retention_issues(_script(gap=(30, 70)), pr); assert not r["ok"] and r["max_gap"] > 90 and any(x.startswith("holding") for x in r["issues"])
@@ -138,7 +146,8 @@ def test_retention_issues_find_the_problems_and_where_they_are():
     r = GR.retention_issues(_script(strong=()), pr); assert sum("re-engagement" in x for x in r["issues"]) == 2
     r = GR.retention_issues(_script(), pr, loops=[{"open": "where do they land", "closed_in_beat": ""}]); assert any(x.startswith("payoff") for x in r["issues"])
 
-def test_retention_pass_spends_nothing_when_the_script_is_fine(monkeypatch):
+def test_retention_pass_spends_nothing_when_the_script_is_fine(monkeypatch, setting):
+    setting("COLD_OPEN_YOU_ON", "FALSE")          # v9.3: see test_v93 for the cold-open checks
     monkeypatch.setattr(ROOM, "ask", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no call expected")))
     pr = {"title": "Every Pillow Just Left Earth"}
     s, rec = ROOM.retention_pass({"script": _script()}, "brief\nReturn JSON", pr, "EPR")

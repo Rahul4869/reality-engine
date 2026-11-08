@@ -64,6 +64,36 @@ def main():
             from whatifs.models import discover_models; print(discover_models())
         elif cmd == "rehearsal":
             from tools.rehearsal import run; run()
+        elif cmd == "pilot":                                             # v10: a pilot Short (--if-due = only on PILOT_DAYS)
+            from whatifs import pilots as PIL
+            print("not due" if ("--if-due" in sys.argv and not PIL.due()) else PIL.run())
+        elif cmd == "bakeoff":                                           # v10: the one-time model bake-off
+            from whatifs import bakeoff as BKO; print(BKO.run(force="--force" in sys.argv))
+        elif cmd == "special":                                           # v10: a special reel (--kind cast_intro|special; --if-due = only on SPECIALS_DAYS)
+            from whatifs import specials as SP
+            kind = sys.argv[sys.argv.index("--kind") + 1] if "--kind" in sys.argv else "special"
+            if "--if-due" in sys.argv and not SP.due(): print("not due")
+            else: print(SP.run(kind=kind, force=kind == "cast_intro"))
+        elif cmd == "wa_inbound":                                        # v9.4b: WhatsApp messages / button taps / delivery statuses (encrypted)
+            import os as _os
+            from whatifs.wa import handle_inbound; print(handle_inbound(_os.environ.get("WA_PAYLOAD", "{}")))
+        elif cmd == "wa_templates":
+            from whatifs.wa import ensure_templates; print(ensure_templates())
+        elif cmd == "dash_action":                                       # v9.4b: one encrypted dashboard tap (from repository_dispatch)
+            import os as _os
+            from whatifs.dash import handle_action; print("ok" if handle_action(_os.environ.get("DASH_PAYLOAD", "{}")) else "not done")
+        elif cmd == "dash_snapshot":
+            import json as _json
+            from whatifs.dash import build_snapshot; print(_json.dumps(build_snapshot())[:2000])
+        elif cmd == "build_ready":                                       # v9.4a (WP3): claude-build.yml -> one owner message (Merge / Reject)
+            from whatifs.builds import build_ready; print(build_ready(sys.argv[2], sys.argv[3], sys.argv[4] if len(sys.argv) > 4 else ""))
+        elif cmd == "preprod":                                           # v9.4a (WP2): the writers' room early, at half price
+            from whatifs.preprod import run as _pp
+            r = _pp(force="--force" in sys.argv, check_only="--check" in sys.argv); print(r)
+        elif cmd == "nativetest":                                        # v9.3.1 (L5): the owner runs YouTube's own Test & Compare; the rescue stands aside
+            from whatifs.packaging import native_test; print(native_test(sys.argv[2]))
+        elif cmd == "upload_check":                                      # v9.3.1 (L1): the ₹0 upload check (replaces the API audit)
+            from whatifs.launch import upload_check; print(upload_check(force="--force" in sys.argv))
         else:
             raise SystemExit(f"unknown command {cmd}")
     except Exception as e:

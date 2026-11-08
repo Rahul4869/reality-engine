@@ -7,6 +7,7 @@ import os, sys, base64, urllib.parse, requests
 from email.mime.text import MIMEText
 SC = ["https://www.googleapis.com/auth/youtube", "https://www.googleapis.com/auth/youtube.upload", "https://www.googleapis.com/auth/youtube.force-ssl",
       "https://www.googleapis.com/auth/yt-analytics.readonly",
+      "https://www.googleapis.com/auth/youtube.readonly", "https://www.googleapis.com/auth/yt-analytics-monetary.readonly",      # v9.3.1: no re-consent later
       "https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/gmail.send"]
 SC_DRIVE = ["https://www.googleapis.com/auth/drive.file"]
 REDIRECT = "http://localhost"

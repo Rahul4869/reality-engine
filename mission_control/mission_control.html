@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#151A2E">
+<title>Reality Engine · Mission Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@1,500;1,600&display=swap" rel="stylesheet">
+<!--
+  Reality Engine Mission Control (prototype v1.1, 2026-11-07). Build + deploy spec: DASHBOARD_M1_BUILD_AND_DEPLOY_SPEC.md
+  Served by the relay Cloudflare Worker at /app/<APP_PATH>/ (relative API paths). Data: GET api/snapshot (JSON contract in the v10 brief, section 10).
+  Actions: POST /api/action {verb} -> same verb router as WhatsApp; the pipeline acknowledges in snapshot.acks.
+  Auth: 401 from api/snapshot -> PIN screen (POST api/login {pin}); 401 with {"setup":true} -> first-time PIN creation, typed twice, then POST api/login (the Worker enrols the first PIN).
+  Fixes 2026-11-07: relative setup path (was /api/pin/setup, a route that does not exist); demo data only when opened as a file, never when served
+  (a network error used to switch the live app into demo mode where taps went nowhere); snapshot.acks = [{verb, at, ok, note}].
+  Without an API (opened as a file or in a preview) it runs on built-in demo data and simulates actions.
+-->
+<style>
+:root {
+  --ink: #E8EBF2; --panel: #F7F8FB; --panel-2: #EEF1F7; --line: #CDD2E0;
+  --chalk: #161A2C; --muted: #555C78; --brass: #8A6A0F; --brass-soft: #F1E6C2; --on-brass: #FFFFFF; --on-vale: #FFFFFF;
+  --vale: #1F7A70; --vale-soft: #D5EEEA; --grimm: #A3263B; --grimm-soft: #F5DADF;
+  --shadow: 0 1px 0 rgba(22,26,44,.06), 0 8px 24px -16px rgba(22,26,44,.35);
+  color-scheme: light;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #151A2E; --panel: #1D2340; --panel-2: #232A4B; --line: #2E3560;
+    --chalk: #ECEEF6; --muted: #9AA1C2; --brass: #D4AE3B; --brass-soft: #3A3520; --on-brass: #1B1606; --on-vale: #04211E;
+    --vale: #3BA99C; --vale-soft: #17383A; --grimm: #E06A7D; --grimm-soft: #3D1F2B;
+    --shadow: 0 1px 0 rgba(0,0,0,.25), 0 10px 30px -18px rgba(0,0,0,.8);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ink: #151A2E; --panel: #1D2340; --panel-2: #232A4B; --line: #2E3560;
+  --chalk: #ECEEF6; --muted: #9AA1C2; --brass: #D4AE3B; --brass-soft: #3A3520; --on-brass: #1B1606; --on-vale: #04211E;
+  --vale: #3BA99C; --vale-soft: #17383A; --grimm: #E06A7D; --grimm-soft: #3D1F2B;
+  --shadow: 0 1px 0 rgba(0,0,0,.25), 0 10px 30px -18px rgba(0,0,0,.8);
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  margin: 0; min-height: 100%; background: var(--ink); color: var(--chalk);
+  font-family: "IBM Plex Sans Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+  font-size: 16px; line-height: 1.45; font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); background: var(--ink); z-index: 30; }
+.wrap { max-width: 460px; margin: 0 auto; padding: 0 16px calc(96px + env(safe-area-inset-bottom, 0px)); }
+.serif { font-family: "IBM Plex Serif", Georgia, "Times New Roman", serif; font-style: italic; font-weight: 600; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; border-radius: 10px; }
+
+/* ---------- header strip ---------- */
+header.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--ink);
+  padding: 14px 0 10px; display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.seal-mini { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--brass); display: grid; place-items: center; color: var(--brass); flex: none; }
+.brand h1 { margin: 0; font-size: 1.15rem; letter-spacing: .01em; font-weight: 700; }
+.brand p { margin: 0; font-size: .82rem; color: var(--muted); }
+.hdr-btns { display: flex; gap: 6px; }
+.icon-btn { width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); display: grid; place-items: center; cursor: pointer; }
+.icon-btn svg { width: 18px; height: 18px; }
+.session {
+  margin: 4px 0 14px; padding: 12px 14px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line);
+  display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; box-shadow: var(--shadow);
+}
+.pulse { width: 10px; height: 10px; border-radius: 50%; background: var(--vale); box-shadow: 0 0 0 0 var(--vale); animation: pulse 2.4s infinite; }
+.pulse.paused { background: var(--grimm); animation: none; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--vale) 55%, transparent); } 70% { box-shadow: 0 0 0 10px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+.session b { display: block; font-size: .98rem; }
+.session span { color: var(--muted); font-size: .85rem; }
+.countdown { text-align: right; font-weight: 700; font-size: 1.05rem; }
+.countdown small { display: block; font-weight: 500; color: var(--muted); font-size: .75rem; }
+.demo-badge { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: var(--brass-soft); color: var(--brass); font-size: .72rem; font-weight: 600; vertical-align: 2px; }
+
+/* ---------- section heads ---------- */
+.sec-head { display: flex; align-items: baseline; justify-content: space-between; margin: 18px 2px 10px; }
+.sec-head h2 { margin: 0; font-size: 1.35rem; }
+.sec-head p { margin: 0; color: var(--muted); font-size: .85rem; }
+.empty { padding: 26px 18px; border: 1px dashed var(--line); border-radius: 16px; color: var(--muted); text-align: center; }
+
+/* ---------- docket cases ---------- */
+.case {
+  position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 16px 16px 14px;
+  margin-bottom: 14px; box-shadow: var(--shadow); overflow: hidden;
+}
+.case.urgent { border-color: color-mix(in srgb, var(--grimm) 55%, var(--line)); }
+.case-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.kind { font-size: .76rem; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--panel-2); color: var(--muted); border: 1px solid var(--line); }
+.kind.pick { color: var(--brass); background: var(--brass-soft); border-color: transparent; }
+.kind.merge { color: var(--vale); background: var(--vale-soft); border-color: transparent; }
+.kind.held, .kind.expiry { color: var(--grimm); background: var(--grimm-soft); border-color: transparent; }
+.case-id { margin-left: auto; color: var(--muted); font-size: .78rem; }
+.case h3 { margin: 2px 0 4px; font-size: 1.22rem; line-height: 1.25; }
+.case .why { margin: 0 0 12px; color: var(--muted); font-size: .92rem; max-width: 62ch; }
+.fuse { margin: 10px 0 2px; }
+.fuse-line { height: 4px; border-radius: 4px; background: var(--panel-2); overflow: hidden; }
+.fuse-line i { display: block; height: 100%; background: var(--brass); border-radius: 4px; transition: width .6s ease; }
+.fuse p { margin: 6px 0 0; font-size: .84rem; color: var(--muted); }
+.fuse p b { color: var(--chalk); font-weight: 600; }
+
+.thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.thumb {
+  position: relative; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; border: 2px solid transparent; cursor: pointer; padding: 0;
+  background: #222; isolation: isolate;
+}
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb .art { position: absolute; inset: 0; }
+.thumb .txt {
+  position: absolute; left: 6px; bottom: 5px; right: 6px; text-align: left; color: #fff; font-weight: 700; font-size: .78rem; line-height: 1.05;
+  text-shadow: 0 1px 2px rgba(0,0,0,.9), 0 0 8px rgba(0,0,0,.6); letter-spacing: .01em;
+}
+.thumb .key { position: absolute; top: 5px; left: 6px; width: 20px; height: 20px; border-radius: 6px; background: rgba(0,0,0,.55); color: #fff; font-size: .74rem; font-weight: 700; display: grid; place-items: center; }
+.thumb[aria-pressed="true"] { border-color: var(--brass); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brass) 35%, transparent); }
+.option-title { margin: 10px 0 0; font-size: .95rem; min-height: 2.6em; }
+.option-title b { color: var(--brass); }
+
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.btn {
+  min-height: 44px; padding: 10px 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2);
+  font-weight: 600; cursor: pointer; transition: transform .08s ease, background .2s ease;
+}
+.btn:active { transform: scale(.98); }
+.btn.primary { background: var(--brass); color: var(--on-brass); border-color: transparent; }
+.btn.good { background: var(--vale); color: var(--on-vale); border-color: transparent; }
+a.btn { text-decoration: none; display: inline-grid; place-items: center; color: inherit; }
+a.btn.primary { color: var(--on-brass); }
+.btn.bad { background: transparent; color: var(--grimm); border-color: color-mix(in srgb, var(--grimm) 50%, var(--line)); }
+.btn.ghost { background: transparent; }
+.btn[disabled], .btn.primary[disabled] { background: var(--panel-2); color: var(--muted); border-color: var(--line); cursor: default; }
+.btn.wide { flex: 1 1 100%; }
+
+/* the ruling seal: the one memorable moment */
+.ruled { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.seal {
+  width: 132px; height: 132px; border-radius: 50%; border: 4px double var(--brass); color: var(--brass);
+  display: grid; place-items: center; text-align: center; transform: rotate(-11deg); background: color-mix(in srgb, var(--panel) 95%, transparent);
+  animation: stamp .34s cubic-bezier(.2,1.6,.4,1) both;
+}
+.seal b { display: block; font-size: 2.1rem; line-height: 1; }
+.seal span { font-family: "IBM Plex Serif", Georgia, serif; font-style: italic; font-size: 1rem; }
+@keyframes stamp { from { transform: rotate(-11deg) scale(1.7); opacity: 0; } to { transform: rotate(-11deg) scale(1); opacity: 1; } }
+.case.done { opacity: .82; }
+.case.done .actions, .case.done .fuse { display: none; }
+.done-note { margin-top: 10px; font-size: .88rem; color: var(--vale); font-weight: 600; }
+
+/* ---------- jury meters ---------- */
+.meter { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); }
+.meter h3 { margin: 0; font-size: 1.05rem; }
+.meter .big { font-size: 1.9rem; font-weight: 700; line-height: 1.1; margin: 4px 0 2px; }
+.meter .big small { font-size: 1rem; color: var(--muted); font-weight: 500; }
+.meter .note { margin: 0 0 12px; color: var(--muted); font-size: .86rem; }
+.track { position: relative; height: 14px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--line); }
+.track .fill { position: absolute; inset: 0 auto 0 0; border-radius: 8px; background: linear-gradient(90deg, var(--grimm), var(--brass) 55%, var(--vale)); }
+.track .needle { position: absolute; top: -7px; width: 3px; height: 26px; background: var(--chalk); border-radius: 2px; transform: translateX(-1px); transition: left .8s cubic-bezier(.2,.8,.2,1); }
+.track .goal { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--brass); }
+.goal-label { position: absolute; top: 18px; transform: translateX(-50%); font-size: .72rem; color: var(--brass); white-space: nowrap; }
+.track-wrap { padding-bottom: 22px; }
+
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+.kpi b { display: block; font-size: 1.35rem; }
+.kpi span { font-size: .84rem; color: var(--muted); display: block; }
+.kpi em { font-style: normal; font-size: .76rem; display: block; margin-top: 4px; }
+.kpi em.up { color: var(--vale); } .kpi em.down { color: var(--grimm); } .kpi em.flat { color: var(--muted); }
+
+.chart { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 14px 12px 8px; margin: 12px 0; }
+.chart h3 { margin: 0 4px 6px; font-size: 1rem; }
+.chart svg { width: 100%; height: auto; display: block; }
+.legend { display: flex; gap: 14px; margin: 4px 6px 4px; font-size: .78rem; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+.list { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 4px 14px; margin-bottom: 12px; }
+.list .row { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--line); align-items: center; }
+.list .row:last-child { border-bottom: 0; }
+.row p { margin: 0; font-size: .93rem; }
+.row small { color: var(--muted); font-size: .8rem; }
+.tag { font-size: .74rem; padding: 2px 8px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+.tag.high { background: var(--vale-soft); color: var(--vale); }
+.tag.med { background: var(--brass-soft); color: var(--brass); }
+.tag.low { background: var(--panel-2); color: var(--muted); }
+.tag.neg { background: var(--grimm-soft); color: var(--grimm); }
+
+/* ---------- lab ---------- */
+.exp { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px; margin-bottom: 12px; }
+.exp h3 { margin: 0; font-size: 1.02rem; }
+.exp .note { margin: 2px 0 10px; color: var(--muted); font-size: .84rem; }
+.arm { display: grid; grid-template-columns: 7.5rem 1fr 3.2rem; gap: 10px; align-items: center; margin: 8px 0; font-size: .88rem; }
+.arm .bar { height: 10px; border-radius: 6px; background: var(--panel-2); overflow: hidden; }
+.arm .bar i { display: block; height: 100%; background: var(--vale); border-radius: 6px; }
+.arm.lead .bar i { background: var(--brass); }
+.arm .pct { text-align: right; color: var(--muted); }
+.arm.lead .pct { color: var(--chalk); font-weight: 700; }
+
+/* ---------- money ---------- */
+.gauge { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); }
+.gauge .big { font-size: 1.9rem; font-weight: 700; }
+.gauge .big small { color: var(--muted); font-size: 1rem; font-weight: 500; }
+.stack { display: flex; height: 16px; border-radius: 8px; overflow: hidden; margin: 12px 0 8px; background: var(--panel-2); }
+.stack i { display: block; height: 100%; }
+.lines { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; font-size: .9rem; }
+.lines span:nth-child(even) { text-align: right; font-weight: 600; }
+.sw { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 7px; }
+
+.modes { display: grid; gap: 10px; }
+.mode {
+  text-align: left; padding: 14px; border-radius: 16px; border: 1px solid var(--line); background: var(--panel); cursor: pointer;
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 10px;
+}
+.mode b { font-size: 1.05rem; }
+.mode span { color: var(--muted); font-size: .86rem; grid-column: 1 / 2; }
+.mode em { font-style: normal; font-weight: 700; align-self: start; }
+.mode[aria-checked="true"] { border-color: var(--brass); box-shadow: inset 0 0 0 1px var(--brass); }
+
+/* ---------- controls ---------- */
+.switch-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.switch-row:last-child { border-bottom: 0; }
+.switch-row p { margin: 0; font-weight: 600; }
+.switch-row small { display: block; color: var(--muted); font-weight: 400; font-size: .82rem; }
+.toggle { width: 52px; height: 30px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); position: relative; cursor: pointer; padding: 0; }
+.toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--muted); transition: transform .2s ease, background .2s ease; }
+.toggle[aria-checked="true"] { background: var(--vale-soft); border-color: var(--vale); }
+.toggle[aria-checked="true"]::after { transform: translateX(22px); background: var(--vale); }
+.stepper { display: flex; align-items: center; gap: 8px; }
+.stepper button { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; font-weight: 700; }
+.stepper output { min-width: 1.6rem; text-align: center; font-weight: 700; }
+.pause-card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin-bottom: 12px; display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+.pause-card b { font-size: 1.1rem; }
+.pause-card p { margin: 2px 0 0; color: var(--muted); font-size: .86rem; }
+
+/* ---------- bottom tabs ---------- */
+nav.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; background: color-mix(in srgb, var(--ink) 92%, transparent);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid var(--line);
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+}
+nav.tabs .in { max-width: 460px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; }
+nav.tabs button {
+  background: none; border: 0; padding: 7px 2px 5px; border-radius: 12px; cursor: pointer; color: var(--muted);
+  display: grid; justify-items: center; gap: 2px; font-size: .74rem; font-weight: 600; position: relative;
+}
+nav.tabs svg { width: 22px; height: 22px; }
+nav.tabs button[aria-selected="true"] { color: var(--chalk); background: var(--panel); }
+nav.tabs .dot { position: absolute; top: 4px; right: calc(50% - 18px); min-width: 17px; height: 17px; border-radius: 9px; background: var(--brass); color: var(--on-brass); font-size: .68rem; display: grid; place-items: center; padding: 0 4px; }
+
+/* ---------- sheet + toast + lock ---------- */
+.scrim { position: fixed; inset: 0; background: rgba(8,10,20,.55); z-index: 40; display: none; }
+.scrim.on { display: block; }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; transform: translateY(105%); transition: transform .25s ease;
+  background: var(--panel); border-top: 1px solid var(--line); border-radius: 22px 22px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+  max-width: 520px; margin: 0 auto; visibility: hidden;
+}
+.sheet.on { transform: translateY(0); visibility: visible; }
+.sheet h3 { margin: 0 0 6px; font-size: 1.25rem; }
+.sheet p { margin: 0 0 14px; color: var(--muted); }
+.toast {
+  position: fixed; left: 50%; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%) translateY(20px); opacity: 0;
+  background: var(--chalk); color: var(--ink); padding: 10px 16px; border-radius: 12px; font-weight: 600; z-index: 50; transition: all .25s ease;
+  max-width: calc(100% - 32px); font-size: .92rem;
+}
+.toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+.lock { position: fixed; inset: 0; z-index: 60; background: var(--ink); display: none; place-items: center; padding: 24px; }
+.lock.on { display: grid; }
+.lock .box { width: 100%; max-width: 340px; text-align: center; }
+.lock .seal-mini { width: 64px; height: 64px; margin: 0 auto 14px; }
+.lock h2 { margin: 0 0 6px; }
+.lock p { color: var(--muted); margin: 0 0 16px; }
+.pin { width: 100%; font: inherit; font-size: 1.8rem; letter-spacing: .5em; text-align: center; padding: 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); color: var(--chalk); }
+.lock .err { color: var(--grimm); min-height: 1.4em; margin-top: 8px; font-size: .9rem; }
+.pin::placeholder { letter-spacing: normal; font-size: 1rem; color: var(--muted); }
+.lock .btn { width: 100%; }
+
+.foot { color: var(--muted); font-size: .78rem; text-align: center; margin: 18px 0 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="seal-mini" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6"/><path d="M11 7l6 6"/><path d="M12.5 5.5l-5 5"/><path d="M15.5 8.5l-5 5"/><path d="M8.5 15.5L3 21"/></svg>
+      </div>
+      <div>
+        <h1>Reality Engine <span id="demoBadge" class="demo-badge" hidden>Demo data</span></h1>
+        <p id="updated">Loading…</p>
+      </div>
+    </div>
+    <div class="hdr-btns">
+      <button class="icon-btn" id="refreshBtn" aria-label="Refresh">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+      </button>
+      <button class="icon-btn" id="themeBtn" aria-label="Switch light or dark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <section class="session" id="session" aria-live="polite"></section>
+  <main id="view"></main>
+  <p class="foot" id="foot"></p>
+</div>
+
+<nav class="tabs" aria-label="Sections">
+  <div class="in" role="tablist">
+    <button role="tab" data-tab="docket" aria-selected="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6M11 7l6 6M12.5 5.5l-5 5M15.5 8.5l-5 5M8.5 15.5L3 21"/></svg>
+      Docket<span class="dot" id="docketCount" hidden></span>
+    </button>
+    <button role="tab" data-tab="progress" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+      Progress
+    </button>
+    <button role="tab" data-tab="lab" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6L4.5 18.5A1.6 1.6 0 0 0 5.9 21h12.2a1.6 1.6 0 0 0 1.4-2.5L14 9V3"/><path d="M7 15h10"/></svg>
+      Lab
+    </button>
+    <button role="tab" data-tab="money" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12M6 9h12M6 4c5 0 7 2.5 7 5s-3 5-7 5l8 6"/></svg>
+      Money
+    </button>
+    <button role="tab" data-tab="controls" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+      Controls
+    </button>
+  </div>
+</nav>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <h3 id="sheetTitle"></h3>
+  <p id="sheetBody"></p>
+  <div class="actions">
+    <button class="btn primary" id="sheetOk"></button>
+    <button class="btn ghost" id="sheetCancel">Cancel</button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="lock" id="lock">
+  <div class="box">
+    <div class="seal-mini" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+    <h2 class="serif" id="lockTitle">Court is in recess</h2>
+    <p id="lockText">Enter your 6-digit PIN to open Mission Control.</p>
+    <input class="pin" id="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="6" aria-label="PIN">
+    <input class="pin" id="pin2" type="password" inputmode="numeric" autocomplete="off" maxlength="6" aria-label="Repeat PIN" placeholder="Repeat your PIN" style="margin-top:10px" hidden>
+    <div class="err" id="pinErr"></div>
+    <button class="btn primary wide" id="pinGo" style="margin-top:8px">Open</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ------------------------------------------------------------------ demo data (used only when no API answers) */
+const now = Date.now(), H = 3600e3, D = 24 * H;
+const DEMO = {
+  generated_at: new Date(now - 4 * 60e3).toISOString(),
+  engine: { status: "running", mode: "standard", owner_mode: "minimal", upload_lock: false,
+            next_release: { episode: "EP202611140930", title: "Your Phone Weighs 400 Kilos. Don’t Drop It.", case_no: 5, slot_iso: new Date(now + 28 * H + 12 * 60e3).toISOString() } },
+  docket: [
+    { id: "pick-ep5", kind: "pick", case_no: 5, title: "Pick the cover for Case #05",
+      why: "Three title and thumbnail pairs are ready. A is uploaded and scheduled; your pick switches it before release.",
+      default_label: "A goes out", default_at: new Date(now + 5 * H + 12 * 60e3).toISOString(), window_h: 22,
+      options: [
+        { key: "A", label: "Your Phone Weighs 400 Kilos. Don’t Drop It.", detail: "Shock leader, Grimm’s face", thumb_text: "9 SECONDS", hue: [24, 198] },
+        { key: "B", label: "Gravity Picked Your Phone. You Have 9 Seconds.", detail: "Clock angle, Vale’s face", thumb_text: "DON’T LET GO", hue: [350, 210] },
+        { key: "C", label: "What Your Pocket Would Do at 400 Kilos", detail: "Search-friendly", thumb_text: "400 KG", hue: [42, 260] } ],
+      verbs: { pick: "PICK|EP202611140930|{key}" } },
+    { id: "merge-41", kind: "merge", title: "Build ready: kinetic captions on every Short",
+      why: "All checks are green (tests, Plan Guard, rehearsal). Cost ₹0. Switch-off cell: KINETIC_CAPTIONS_ON.",
+      default_label: "Merges by itself (tweak you ordered)", default_at: new Date(now + 23 * H).toISOString(), window_h: 24,
+      verbs: { "Merge now": "MERGE|41", "Reject": "REJECT|41" } },
+    { id: "sheets-rosa", kind: "sheets", title: "Lock Nana Rosa’s portraits",
+      why: "Six expressions are in Drive. Locked portraits let her appear on thumbnails and in scenes, always the same face.",
+      default_label: "The judge’s best set locks", default_at: new Date(now + 46 * H).toISOString(), window_h: 72,
+      verbs: { "Lock these": "LOCKSHEETS|ROSA", "Redo": "REDOSHEETS|ROSA" } },
+    { id: "adv-17", kind: "advisor", title: "Idea: a 90-second clock on survival cases",
+      why: "3 outlier videos this week kept a visible countdown on screen. Cost ₹0, no policy risk. Expected effect: 30-second retention.",
+      default_label: "Runs as a Shorts test", default_at: new Date(now + 3 * D).toISOString(), window_h: 72,
+      verbs: { "Build it": "BUILD|adv-17", "Park": "PARK|adv-17", "Discuss on WhatsApp": "DISCUSS|adv-17" } },
+    { id: "links-ep4", kind: "linkpack", title: "Link 4 Shorts to Case #04",
+      why: "YouTube only allows this in Studio. Each link opens the exact page; about 30 seconds per Short.",
+      default_label: "Shorts keep the playlist and pinned link", default_at: new Date(now + 2 * D).toISOString(), window_h: 96,
+      links: ["https://studio.youtube.com/"], verbs: { "Mark as done": "LINKED|EP202611100930" } } ],
+  progress: {
+    subs: 214, watch_hours: 486, shorts_views_90d: 128400, old_bar_deadline: "2027-01-31",
+    series_14d: Array.from({ length: 14 }, (_, i) => { const v = Math.round(380 + i * 95 + (i % 3) * 140 + (i === 11 ? 900 : 0)); return { d: new Date(now - (13 - i) * D).toISOString().slice(0, 10), views: v, engaged: Math.round(v * (0.62 + (i % 4) * 0.03)) }; }),
+    kpis: { ctr: { v: 6.4, unit: "%", label: "Click-through", good: "4–8% is healthy", trend: "up" },
+            rel30: { v: 0.58, unit: "", label: "30-s hold vs similar videos", good: "above 0.50 beats most", trend: "up" },
+            apv: { v: 41, unit: "%", label: "Average % watched", good: "35–45% is solid", trend: "flat" },
+            stay: { v: 74, unit: "%", label: "Shorts kept past the swipe", good: "70%+ is strong", trend: "up" },
+            subs1k: { v: 3.1, unit: "", label: "Subs per 1,000 views", good: "rising is the goal", trend: "down" },
+            hours_week: { v: 118, unit: " h", label: "Watch hours this week", good: "1,000 subs + 8,000 h unlocks ads", trend: "up" } } },
+  learned: [
+    { text: "Shorts that open on “your” plus a number keep 9% more viewers past the swipe.", confidence: "high", loop: "fast" },
+    { text: "A brand-new picture right after a number lands holds viewers better than a reused crop.", confidence: "medium", loop: "medium" },
+    { text: "Jury prompts before 2:00 cost about 0.7% of viewers per prompt. Moved later from Case #06.", confidence: "medium", loop: "medium" } ],
+  lab: {
+    experiments: [
+      { name: "Shorts opening line", metric: "kept past the swipe", arms: [ { label: "You + stake", p_best: 0.62, n: 14 }, { label: "Number shock", p_best: 0.27, n: 11 }, { label: "Question", p_best: 0.11, n: 9 } ] },
+      { name: "Courtroom share, long videos", metric: "30-second hold", arms: [ { label: "15% court", p_best: 0.71, n: 3 }, { label: "30% court", p_best: 0.29, n: 3 } ] },
+      { name: "Title style", metric: "watch time per impression", arms: [ { label: "Shock", p_best: 0.55, n: 4 }, { label: "Search hybrid", p_best: 0.45, n: 4 } ] } ],
+    boosters: [ { text: "New picture after a number lands", effect: "+0.6% per min", videos: 6 }, { text: "Vale’s three-finger list", effect: "+0.4% per min", videos: 6 } ],
+    killers: [ { text: "Graphic shots longer than 6 s", effect: "−0.9% per min", videos: 6 }, { text: "Two Grimm objections in a row", effect: "−0.5% per min", videos: 5 } ] },
+  money: {
+    month_spend: 2140, cap: 4500,
+    lines: [ { label: "Writers’ room", inr: 620 }, { label: "Pictures", inr: 340 }, { label: "Kling clips", inr: 360 }, { label: "Faces of the Court", inr: 75 },
+             { label: "Voices", inr: 190 }, { label: "Shorts Lab", inr: 70 }, { label: "Research and Advisor", inr: 120 }, { label: "Your chats", inr: 95 },
+             { label: "Sleep Session", inr: 270 } ],
+    revenue: { affiliate: 1240, ads: null, clients: 0 },
+    modes: [ { id: "lean", name: "Runway", cost: 2400, text: "One long case a week, Shorts every day, Sleep Session every two months." },
+             { id: "standard", name: "Standard", cost: 4000, text: "Two long cases a week, two Shorts a day, a Sleep Session every month." },
+             { id: "growth", name: "Growth", cost: null, text: "Standard plus 30% of last month’s revenue, spent where the data says it pays." } ] },
+  health: {
+    expiring: [ { name: "GitHub merge key", date: "2027-11-02" }, { name: "Claude Code token", date: "2027-11-05" }, { name: "Cloudflare dashboard key", date: "2027-11-06" } ],
+    last_runs: [ { workflow: "Pipeline", ok: true, at: new Date(now - 6 * 60e3).toISOString() }, { workflow: "Learning", ok: true, at: new Date(now - 5 * H).toISOString() },
+                 { workflow: "Checks", ok: true, at: new Date(now - 26 * H).toISOString() } ] },
+  settings: { sleep_sessions: true, affiliate_block: true, native_test_reminder: true, shorts_per_day: 2, localizations: true },
+  acks: [],
+  whatsapp: "" };
+
+/* ------------------------------------------------------------------ API adapter */
+const API = {
+  demo: false,
+  offline: false,
+  async snapshot() {
+    if (location.protocol === "file:") { this.demo = true; return structuredClone(DEMO); }
+    try {
+      const r = await fetch("api/snapshot", { credentials: "same-origin", cache: "no-store" });
+      if (r.status === 401) { const j = await r.json().catch(() => ({})); showLock(!!j.setup); return null; }
+      if (r.status === 404) { this.offline = true; toast("No data yet: the engine publishes it on its next run (≤30 min).", 5000); return S; }
+      if (!r.ok) throw new Error("status " + r.status);
+      this.demo = false; this.offline = false; return await r.json();
+    } catch (e) { this.offline = true; toast("No connection. Showing the last data I had.", 4000); return S; }    // never demo when served
+  },
+  async act(verb) {
+    if (this.demo) { await wait(600); return { ok: true, demo: true }; }
+    if (this.offline || !S) return { ok: false, error: "Not connected. Your tap was not sent." };
+    try {
+      const r = await fetch("api/action", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ verb }) });
+      if (r.status === 401) { showLock(); return { ok: false, error: "Signed out" }; }
+      const j = await r.json().catch(() => ({}));
+      return r.ok ? { ok: true, ...j } : { ok: false, error: j.error || ("Server said " + r.status) };
+    } catch (e) { return { ok: false, error: "No connection. Your tap was not sent." }; }
+  },
+  async setupPin(pin) {                     // the Worker enrols the first PIN on the first login (both entries already matched)
+    const r = await this.login(pin);
+    return r.ok ? r : { ok: false, error: r.error || "The PIN could not be saved." };
+  },
+  async login(pin) {
+    try {
+      const r = await fetch("api/login", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pin }) });
+      if (r.ok) return { ok: true };
+      const j = await r.json().catch(() => ({}));
+      return { ok: false, error: j.error || "That PIN did not match." };
+    } catch (e) { return { ok: false, error: "No connection." }; }
+  } };
+
+/* ------------------------------------------------------------------ helpers */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const inr = n => "₹" + Math.round(n).toLocaleString("en-IN");
+const num = n => Number(n).toLocaleString("en-IN");
+const cap = s => String(s || "").charAt(0).toUpperCase() + String(s || "").slice(1);
+function left(iso) {
+  const ms = new Date(iso).getTime() - Date.now();
+  if (ms <= 0) return "now";
+  const d = Math.floor(ms / D), h = Math.floor(ms % D / H), m = Math.floor(ms % H / 60e3);
+  return d >= 7 ? `${d} d` : d ? `${d} d ${h} h` : h ? `${h} h ${m} m` : `${m} m`;
+}
+function ago(iso) {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (ms < 90e3) return "just now";
+  if (ms < H) return Math.round(ms / 60e3) + " min ago";
+  if (ms < D) return Math.round(ms / H) + " h ago";
+  return Math.round(ms / D) + " d ago";
+}
+function toast(msg, ms = 2600) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("on");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("on"), ms);
+}
+function confirmSheet(title, body, okLabel) {
+  return new Promise(res => {
+    $("#sheetTitle").textContent = title; $("#sheetBody").textContent = body; $("#sheetOk").textContent = okLabel;
+    $("#scrim").classList.add("on"); $("#sheet").classList.add("on"); $("#sheetOk").focus();
+    const done = v => { $("#scrim").classList.remove("on"); $("#sheet").classList.remove("on"); $("#sheetOk").onclick = $("#sheetCancel").onclick = $("#scrim").onclick = null; res(v); };
+    $("#sheetOk").onclick = () => done(true); $("#sheetCancel").onclick = () => done(false); $("#scrim").onclick = () => done(false);
+  });
+}
+
+/* ------------------------------------------------------------------ state */
+let S = null, tab = "docket";
+const pending = {};         // verb -> sent time (ms); cleared when the pipeline acknowledges it in snapshot.acks
+const picked = {};          // case id -> option key (before ruling)
+const ruled = {};           // case id -> { label, note }
+
+/* ------------------------------------------------------------------ header */
+function renderHeader() {
+  $("#demoBadge").hidden = !API.demo;
+  $("#updated").textContent = S ? "Updated " + ago(S.generated_at) : "Loading…";
+  const e = S.engine, nr = e.next_release || {};
+  const paused = e.status === "paused";
+  $("#session").innerHTML = `
+    <div class="pulse ${paused ? "paused" : ""}" aria-hidden="true"></div>
+    <div><b>${paused ? "Court is in recess" : "Court is in session"}</b>
+      <span>${paused ? "Nothing new is made or released until you resume." : "Next: " + (nr.case_no ? "Case #" + String(nr.case_no).padStart(2, "0") + " " : "") + esc(nr.title || "")}</span></div>
+    <div class="countdown">${paused ? "Paused" : esc(left(nr.slot_iso))}<small>${paused ? "" : "until it airs"}</small></div>`;
+  const open = (S.docket || []).filter(c => !ruled[c.id]).length;
+  const dot = $("#docketCount"); dot.hidden = !open; dot.textContent = open;
+  $("#foot").textContent = API.demo ? "Demo data. When served by your relay Worker this page shows live numbers." : "Taps reach the engine in about a minute.";
+}
+
+/* ------------------------------------------------------------------ docket */
+function thumbArt(o) {
+  if (o.thumb_url) return `<img src="${esc(o.thumb_url)}" alt="">`;
+  const [a, b] = o.hue || [20, 200];
+  return `<div class="art" style="background:
+    radial-gradient(60% 75% at 68% 42%, hsl(${a} 95% 62% / .95), transparent 62%),
+    radial-gradient(40% 50% at 30% 70%, hsl(${b} 80% 45% / .9), transparent 70%),
+    linear-gradient(160deg, hsl(${b} 60% 14%), hsl(${a} 60% 8%))"></div>`;
+}
+function caseCard(c) {
+  const r = ruled[c.id];
+  const total = (c.window_h || 24) * H, rem = Math.max(0, new Date(c.default_at).getTime() - Date.now());
+  const pct = Math.max(2, Math.min(100, rem / total * 100));
+  const urgent = c.kind === "held" || c.kind === "expiry";
+  const kindLabel = { pick: "Pick", merge: "Build", sheets: "Portraits", advisor: "Idea", linkpack: "Links", held: "Held", expiry: "Renewal" }[c.kind] || c.kind;
+  let body = "";
+  if (c.kind === "pick") {
+    const sel = picked[c.id] || null, cur = (c.options || []).find(o => o.key === sel);
+    body = `<div class="thumbs" role="radiogroup" aria-label="Title and thumbnail options">
+      ${(c.options || []).map(o => `<button class="thumb" data-pick="${esc(c.id)}" data-key="${esc(o.key)}" aria-pressed="${sel === o.key}" aria-label="Option ${esc(o.key)}: ${esc(o.label)}">
+        ${thumbArt(o)}<span class="key">${esc(o.key)}</span><span class="txt">${esc(o.thumb_text || "")}</span></button>`).join("")}
+      </div>
+      <p class="option-title">${cur ? `<b>${esc(cur.key)}.</b> ${esc(cur.label)} <small style="color:var(--muted)">(${esc(cur.detail || "")})</small>` : `<span style="color:var(--muted)">Tap a cover to read its title.</span>`}</p>
+      <div class="actions"><button class="btn primary wide" data-rule="${esc(c.id)}" ${sel ? "" : "disabled"}>${sel ? "Rule for " + esc(sel) : "Choose a cover"}</button></div>`;
+  } else {
+    const links = (c.links || []).map(u => `<a class="btn ghost" href="${esc(u)}" target="_blank" rel="noopener">Open Studio</a>`).join("");
+    body = `<div class="actions">${links}${Object.entries(c.verbs || {}).map(([label, verb], i) =>
+      `<button class="btn ${i === 0 ? (c.kind === "merge" ? "good" : "primary") : (/reject|skip/i.test(label) ? "bad" : "ghost")}" data-verb="${esc(verb)}" data-case="${esc(c.id)}" data-label="${esc(label)}">${esc(label)}</button>`).join("")}</div>`;
+  }
+  return `<article class="case ${urgent ? "urgent" : ""} ${r ? "done" : ""}" id="case-${esc(c.id)}">
+    <div class="case-top"><span class="kind ${esc(c.kind)}">${esc(kindLabel)}</span>${c.case_no ? `<span class="case-id">Case #${String(c.case_no).padStart(2, "0")}</span>` : ""}</div>
+    <h3 class="serif">${esc(c.title)}</h3>
+    <p class="why">${esc(c.why)}</p>
+    ${body}
+    <div class="fuse"><div class="fuse-line"><i style="width:${pct.toFixed(1)}%"></i></div>
+      <p>If you don’t rule: <b>${esc(c.default_label)}</b> in ${esc(left(c.default_at))}.</p></div>
+    ${r ? `<p class="done-note">${esc(r.note)}</p><div class="ruled"><div class="seal"><div><b>${esc(r.label)}</b><span>Ruled</span></div></div></div>` : ""}
+  </article>`;
+}
+function renderDocket() {
+  const items = S.docket || [];
+  const open = items.filter(c => !ruled[c.id]).length;
+  return `<div class="sec-head"><h2 class="serif">Today’s docket</h2><p>${open ? open + " waiting" : "All clear"}</p></div>
+    ${items.length ? items.map(caseCard).join("") : `<div class="empty">Nothing needs you. The engine follows its defaults.</div>`}`;
+}
+
+/* ------------------------------------------------------------------ progress */
+function meter(title, value, unit, goals, max, note) {
+  const pos = v => Math.max(0, Math.min(100, v / max * 100));
+  return `<section class="meter"><h3>${esc(title)}</h3>
+    <div class="big">${num(value)}<small>${esc(unit)}</small></div><p class="note">${note}</p>
+    <div class="track-wrap"><div class="track" role="img" aria-label="${esc(title)}: ${num(value)} of ${num(max)}">
+      <div class="fill" style="width:${pos(value)}%"></div>
+      ${goals.map(g => `<div class="goal" style="left:${pos(g.at)}%"></div><div class="goal-label" style="left:${Math.min(92, Math.max(8, pos(g.at)))}%">${esc(g.label)}</div>`).join("")}
+      <div class="needle" style="left:${pos(value)}%"></div></div></div></section>`;
+}
+function bars(series) {
+  const W = 340, Hh = 120, pad = 4, n = series.length, bw = (W - pad * 2) / n;
+  const mx = Math.max(...series.map(s => s.views)) || 1;
+  const rects = series.map((s, i) => {
+    const x = pad + i * bw + 2, w = bw - 4, hv = s.views / mx * (Hh - 18), he = s.engaged / mx * (Hh - 18);
+    return `<rect x="${x}" y="${Hh - hv}" width="${w}" height="${hv}" rx="3" fill="var(--panel-2)" stroke="var(--line)"/>
+            <rect x="${x}" y="${Hh - he}" width="${w}" height="${he}" rx="3" fill="var(--vale)"/>`;
+  }).join("");
+  return `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Views over the last 14 days">${rects}</svg>`;
+}
+function renderProgress() {
+  const p = S.progress, k = p.kpis;
+  const daysToOld = Math.ceil((new Date(p.old_bar_deadline + "T23:59:59Z").getTime() - Date.now()) / D);
+  const kp = Object.values(k).map(x => `<div class="kpi"><b>${esc(x.v)}${esc(x.unit)}</b><span>${esc(x.label)}</span>
+      <em class="${x.trend === "up" ? "up" : x.trend === "down" ? "down" : "flat"}">${x.trend === "up" ? "Rising. " : x.trend === "down" ? "Slipping. " : "Steady. "}${esc(cap(x.good))}</em></div>`).join("");
+  return `<div class="sec-head"><h2 class="serif">The road to monetisation</h2><p>Jury meters</p></div>
+    ${meter("Subscribers", p.subs, " of 1,000", [{ at: 500, label: "500 fan funding" }, { at: 1000, label: "1,000" }], 1000, "Needed for both the fan-funding tier and ad revenue.")}
+    ${meter("Watch hours, last 365 days", p.watch_hours, " h", [{ at: 4000, label: "4,000 by 31 Jan" }, { at: 8000, label: "8,000" }], 8000,
+      (daysToOld > 0 ? `The 4,000-hour bar closes in <b>${daysToOld} days</b> (31 Jan 2027). After that new channels need 8,000.` : "New channels now need 8,000 hours.") + " Fan funding needs 3,000.")}
+    ${meter("Shorts views, last 90 days", p.shorts_views_90d, " views", [{ at: 3000000, label: "3M fan funding" }], 3000000, "Shorts grow subscribers. They earn ad money only at 10M views per 90 days, so they are not counted on for income.")}
+    <section class="chart"><h3>Last 14 days</h3>${bars(p.series_14d)}
+      <div class="legend"><span><i style="background:var(--vale)"></i>Engaged views</span><span><i style="background:var(--panel-2);border:1px solid var(--line)"></i>All plays</span></div></section>
+    <div class="kpis">${kp}</div>
+    <div class="sec-head"><h2 class="serif">What the engine learned</h2><p>This week</p></div>
+    <div class="list">${(S.learned || []).map(l => `<div class="row"><p>${esc(l.text)}<br><small>${l.loop === "fast" ? "From Shorts" : l.loop === "medium" ? "From retention curves" : "From whole videos"}</small></p>
+      <span class="tag ${l.confidence === "high" ? "high" : l.confidence === "medium" ? "med" : "low"}">${esc(l.confidence)}</span></div>`).join("")}</div>`;
+}
+
+/* ------------------------------------------------------------------ lab */
+function renderLab() {
+  const L = S.lab;
+  const exps = L.experiments.map(e => {
+    const lead = Math.max(...e.arms.map(a => a.p_best));
+    const n = Math.min(...e.arms.map(a => a.n));
+    return `<section class="exp"><h3>${esc(e.name)}</h3>
+      <p class="note">Judged on ${esc(e.metric)}. ${n < 8 ? "Too early to call: the engine keeps exploring." : "Enough data to act."}</p>
+      ${e.arms.map(a => `<div class="arm ${a.p_best === lead ? "lead" : ""}"><span>${esc(a.label)}</span>
+        <div class="bar"><i style="width:${(a.p_best * 100).toFixed(0)}%"></i></div><span class="pct">${(a.p_best * 100).toFixed(0)}%</span></div>`).join("")}
+      <p class="note" style="margin:6px 0 0">Bars show the chance each option is the best. Samples: ${e.arms.map(a => esc(a.label) + " " + a.n).join(", ")}.</p></section>`;
+  }).join("");
+  const rows = (arr, cls) => arr.map(b => `<div class="row"><p>${esc(b.text)}<br><small>Seen across ${b.videos} videos</small></p><span class="tag ${cls}">${esc(b.effect)}</span></div>`).join("");
+  return `<div class="sec-head"><h2 class="serif">Running experiments</h2><p>${L.experiments.length} live</p></div>${exps}
+    <div class="sec-head"><h2 class="serif">Retention microscope</h2><p>Keeps vs loses</p></div>
+    <div class="list">${rows(L.boosters, "high")}${rows(L.killers, "neg")}</div>`;
+}
+
+/* ------------------------------------------------------------------ money */
+const PALETTE = ["var(--brass)", "var(--vale)", "var(--grimm)", "#7C83C9", "#C28B4A", "#4FA3C7", "#9A6FB0", "#6E9E5B", "#B5B9CF"];
+function renderMoney() {
+  const m = S.money, mode = S.engine.mode;
+  const stack = m.lines.map((l, i) => `<i style="width:${(l.inr / m.cap * 100).toFixed(2)}%;background:${PALETTE[i % PALETTE.length]}" title="${esc(l.label)}"></i>`).join("");
+  const lines = m.lines.map((l, i) => `<span><i class="sw" style="background:${PALETTE[i % PALETTE.length]}"></i>${esc(l.label)}</span><span>${inr(l.inr)}</span>`).join("");
+  const rev = m.revenue;
+  return `<div class="sec-head"><h2 class="serif">This month</h2><p>Hard cap ${inr(m.cap)}</p></div>
+    <section class="gauge"><div class="big">${inr(m.month_spend)} <small>of ${inr(m.cap)}</small></div>
+      <div class="stack" role="img" aria-label="Spend by line">${stack}</div>
+      <div class="lines">${lines}</div></section>
+    <div class="sec-head"><h2 class="serif">Coming in</h2><p>Before and after ads</p></div>
+    <div class="list">
+      <div class="row"><p>Affiliate sign-ups<br><small>Brilliant and other links in descriptions</small></p><b>${inr(rev.affiliate || 0)}</b></div>
+      <div class="row"><p>YouTube ads<br><small>${rev.ads == null ? "Starts after 1,000 subscribers and the watch-hour bar" : "Estimated, last 28 days"}</small></p><b>${rev.ads == null ? "Not yet" : inr(rev.ads)}</b></div>
+      <div class="row"><p>Client videos<br><small>Track B, if you switch it on</small></p><b>${inr(rev.clients || 0)}</b></div></div>
+    <div class="sec-head"><h2 class="serif">Spending mode</h2><p>One tap</p></div>
+    <div class="modes" role="radiogroup" aria-label="Spending mode">
+      ${m.modes.map(x => `<button class="mode" role="radio" aria-checked="${x.id === mode}" data-mode="${esc(x.id)}">
+        <b>${esc(x.name)}</b><em>${x.cost ? inr(x.cost) + "/mo" : "Self-funding"}</em><span>${esc(x.text)}</span></button>`).join("")}
+    </div>`;
+}
+
+/* ------------------------------------------------------------------ controls */
+function renderControls() {
+  const e = S.engine, st = S.settings, paused = e.status === "paused";
+  const tg = (key, title, sub) => `<div class="switch-row"><p>${esc(title)}<small>${esc(sub)}</small></p>
+      <button class="toggle" role="switch" aria-checked="${!!st[key]}" data-toggle="${esc(key)}" aria-label="${esc(title)}"></button></div>`;
+  const health = S.health;
+  return `<div class="sec-head"><h2 class="serif">Controls</h2><p>Safe defaults always on</p></div>
+    <section class="pause-card"><div><b>${paused ? "The engine is paused" : "The engine is running"}</b>
+      <p>${paused ? "Scheduled videos are held until you resume." : "Pausing holds new videos and anything not yet released."}</p></div>
+      <button class="btn ${paused ? "good" : "bad"}" data-pause="${paused ? "RESUME" : "PAUSE"}">${paused ? "Resume" : "Pause"}</button></section>
+    <div class="list">
+      ${tg("sleep_sessions", "Monthly Sleep Session", "A long, calm case compilation that builds watch hours.")}
+      ${tg("localizations", "Titles in 6 languages", "Spanish, Portuguese, Hindi, German, French, Indonesian.")}
+      ${tg("affiliate_block", "Affiliate links", "Disclosed links in descriptions and the pinned comment.")}
+      ${tg("native_test_reminder", "Test & Compare reminder", "A 1-minute Studio link to test covers properly.")}
+      <div class="switch-row"><p>Shorts per day<small>The Shorts Lab learns faster with more, and costs about ₹2 each.</small></p>
+        <div class="stepper"><button data-step="-1" aria-label="Fewer Shorts">−</button><output id="spd">${st.shorts_per_day}</output><button data-step="1" aria-label="More Shorts">+</button></div></div>
+    </div>
+    <div class="actions" style="margin-bottom:12px"><button class="btn ghost wide" data-undo="1">Undo the last change</button></div>
+    <div class="sec-head"><h2 class="serif">Health</h2><p>Keys and runs</p></div>
+    <div class="list">
+      ${health.last_runs.map(r => `<div class="row"><p>${esc(r.workflow)}<br><small>${ago(r.at)}</small></p><span class="tag ${r.ok ? "high" : "neg"}">${r.ok ? "OK" : "Failed"}</span></div>`).join("")}
+      ${health.expiring.map(x => `<div class="row"><p>${esc(x.name)}<br><small>Renews ${esc(x.date)}. You get a reminder 14 and 3 days before.</small></p><span class="tag low">${esc(left(x.date + "T00:00:00Z"))}</span></div>`).join("")}
+    </div>
+    <div class="actions"><a class="btn primary wide" href="${S.whatsapp ? "https://wa.me/" + esc(S.whatsapp) : "#"}" ${S.whatsapp ? 'target="_blank" rel="noopener"' : 'aria-disabled="true"'} data-wa="1">Talk it through on WhatsApp</a></div>`;
+}
+
+/* ------------------------------------------------------------------ render + routing */
+function render() {
+  if (!S) return;
+  renderHeader();
+  const v = $("#view");
+  v.innerHTML = { docket: renderDocket, progress: renderProgress, lab: renderLab, money: renderMoney, controls: renderControls }[tab]();
+  document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
+}
+function go(t) { tab = t; render(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+
+/* ------------------------------------------------------------------ actions */
+async function send(verb, okMsg) {
+  toast("Sending…", 1200);
+  const r = await API.act(verb);
+  if (r.ok) {
+    toast(okMsg + (API.demo ? " (demo)" : ". The engine confirms in about a minute."));
+    if (!API.demo) { pending[verb] = Date.now(); setTimeout(load, 75e3); setTimeout(load, 150e3); }
+  } else toast(r.error || "That did not go through.", 4000);
+  return r.ok;
+}
+function checkAcks() {
+  for (const a of (S && S.acks) || []) {
+    const t0 = pending[a.verb];
+    if (t0 && new Date(a.at).getTime() >= t0 - 5e3) {
+      delete pending[a.verb];
+      toast((a.ok ? "Done: " : "Not done: ") + (a.note || a.verb), 4000);
+    }
+  }
+}
+async function rule(caseId, label, verb, note) {
+  ruled[caseId] = { label, note: "Sending…" }; render();
+  const ok = await send(verb, "Ruled: " + label);
+  if (ok) ruled[caseId] = { label, note };
+  else delete ruled[caseId];
+  render();
+}
+document.addEventListener("click", async ev => {
+  const t = ev.target.closest("button, a"); if (!t) return;
+  if (t.dataset.tab) return go(t.dataset.tab);
+  if (t.dataset.pick) { picked[t.dataset.pick] = t.dataset.key; return render(); }
+  if (t.dataset.rule) {
+    const c = S.docket.find(x => x.id === t.dataset.rule), key = picked[c.id]; if (!key) return;
+    const verb = c.verbs.pick.replace("{key}", key);
+    return rule(c.id, key, verb, key === "A" ? "A stays live. Covers switch only if you pick another." : `Cover ${key} goes live before release. Logged as your taste for the Packager.`);
+  }
+  if (t.dataset.verb) {
+    const c = S.docket.find(x => x.id === t.dataset.case), label = t.dataset.label;
+    if (/^DISCUSS\|/.test(t.dataset.verb)) {
+      if (S.whatsapp) window.open("https://wa.me/" + encodeURIComponent(S.whatsapp) + "?text=" + encodeURIComponent("Discuss: " + c.title), "_blank", "noopener");
+      else toast("WhatsApp is not connected yet. Use your Opus chat for now.", 3500);
+      return;
+    }
+    if (/reject|redo/i.test(label)) { const okc = await confirmSheet(label + "?", c.title + ". You can change your mind later from Controls.", label); if (!okc) return; }
+    const short = { "Merge now": "Merged", "Reject": "Rejected", "Lock these": "Locked", "Redo": "Redo", "Build it": "Build", "Park": "Parked", "Discuss on WhatsApp": "Talk", "Mark as done": "Done" }[label] || label;
+    return rule(c.id, short, t.dataset.verb, {
+      "Merged": "Merged. The next pipeline run uses it. Undo is in Controls.", "Rejected": "Rejected. Nothing changed.", "Locked": "Locked. Portraits can appear from the next case.",
+      "Redo": "New portraits are being drawn within the lifetime cap.", "Build": "Build started on your Claude plan. You get the result to merge.",
+      "Parked": "Parked for Sunday’s review.", "Talk": "Opening the chat on WhatsApp.", "Done": "Marked as linked." }[short] || "Done.");
+  }
+  if (t.dataset.mode) {
+    const m = S.money.modes.find(x => x.id === t.dataset.mode); if (m.id === S.engine.mode) return;
+    const okc = await confirmSheet("Switch to " + m.name + "?", m.text + " It applies from the next video; nothing already made is affected.", "Switch to " + m.name);
+    if (!okc) return;
+    if (await send("MODE|" + m.id, m.name + " mode on")) { S.engine.mode = m.id; render(); }
+    return;
+  }
+  if (t.dataset.pause) {
+    const p = t.dataset.pause === "PAUSE";
+    const okc = await confirmSheet(p ? "Pause the engine?" : "Resume the engine?", p ? "New videos stop and anything not yet released is held. Nothing is deleted." : "Held videos are rescheduled and production restarts within 30 minutes.", p ? "Pause" : "Resume");
+    if (!okc) return;
+    if (await send(t.dataset.pause, p ? "Paused" : "Resumed")) { S.engine.status = p ? "paused" : "running"; render(); }
+    return;
+  }
+  if (t.dataset.toggle) {
+    const k = t.dataset.toggle, nv = !S.settings[k];
+    if (await send(`SET|${k}|${nv}`, nv ? "Switched on" : "Switched off")) { S.settings[k] = nv; render(); }
+    return;
+  }
+  if (t.dataset.step) {
+    const nv = Math.max(0, Math.min(4, S.settings.shorts_per_day + Number(t.dataset.step)));
+    if (nv === S.settings.shorts_per_day) return;
+    if (await send(`SET|shorts_per_day|${nv}`, nv + " Shorts a day")) { S.settings.shorts_per_day = nv; render(); }
+    return;
+  }
+  if (t.dataset.undo) {
+    const okc = await confirmSheet("Undo the last change?", "The last setting or merged build is reverted, with checks, then merged.", "Undo");
+    if (okc) await send("UNDO", "Undo queued");
+    return;
+  }
+  if (t.dataset.wa && !S.whatsapp) { ev.preventDefault(); toast("WhatsApp is not connected yet."); }
+});
+
+$("#refreshBtn").addEventListener("click", load);
+$("#themeBtn").addEventListener("click", () => {
+  const r = document.documentElement, cur = r.getAttribute("data-theme");
+  const sysDark = matchMedia("(prefers-color-scheme: dark)").matches;
+  const next = cur ? (cur === "dark" ? "light" : "dark") : (sysDark ? "light" : "dark");
+  r.setAttribute("data-theme", next);
+  document.querySelector('meta[name="theme-color"]').content = next === "dark" ? "#151A2E" : "#E8EBF2";
+});
+
+/* ------------------------------------------------------------------ lock screen */
+let setupMode = false;
+function showLock(setup) {
+  setupMode = !!setup;
+  $("#lockTitle").textContent = setupMode ? "Create your PIN" : "Court is in recess";
+  $("#lockText").textContent = setupMode ? "Choose 6 digits you will remember. You type it once on each phone." : "Enter your 6-digit PIN to open Mission Control.";
+  $("#pin2").hidden = !setupMode; $("#pinGo").textContent = setupMode ? "Save PIN" : "Open";
+  $("#lock").classList.add("on"); setTimeout(() => $("#pin").focus(), 50);
+}
+$("#pinGo").addEventListener("click", async () => {
+  const pin = $("#pin").value.replace(/\D/g, ""), pin2 = $("#pin2").value.replace(/\D/g, "");
+  if (pin.length !== 6) { $("#pinErr").textContent = "The PIN has 6 digits."; return; }
+  if (setupMode && pin !== pin2) { $("#pinErr").textContent = "The two PINs are different."; return; }
+  $("#pinErr").textContent = "";
+  const r = setupMode ? await API.setupPin(pin) : await API.login(pin);
+  if (r.ok) { $("#lock").classList.remove("on"); $("#pin").value = $("#pin2").value = ""; load(); }
+  else $("#pinErr").textContent = r.error;
+});
+$("#pin").addEventListener("keydown", e => { if (e.key === "Enter") $("#pinGo").click(); });
+
+/* ------------------------------------------------------------------ boot */
+async function load() {
+  const snap = await API.snapshot();
+  if (!snap) return;                       // signed out (PIN screen shown) or no data yet
+  S = snap; render(); checkAcks();
+}
+load();
+setInterval(() => { if (S) { renderHeader(); if (tab === "docket") render(); } }, 30e3);
+</script>
+</body>
+</html>

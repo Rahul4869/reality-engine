@@ -28,7 +28,8 @@ def next_slots(n=3, after=None):
     after = after or now_utc()
     try: hh, mm = [int(x) for x in (S("PUBLISH_HOUR_ET").strip() + ":0").split(":")[:2]]   # '10:00' or '10:00:00' (Sheets time)
     except Exception: hh, mm = 10, 0
-    days = [DAYS[d.strip()[:3]] for d in S("PUBLISH_DAYS").split(",") if d.strip()[:3] in DAYS]
+    from whatifs.governor import publish_days                       # v9.4a: Runway mode publishes on RUNWAY_PUBLISH_DAYS
+    days = [DAYS[d.strip()[:3]] for d in publish_days().split(",") if d.strip()[:3] in DAYS]
     out, d0 = [], after.astimezone(ET).date()
     for k in range(0, 21):
         day = d0 + dt.timedelta(days=k)
@@ -99,9 +100,12 @@ def _give_up_stuck(eps):
                 log(f"{e['episode_id']}: reels given up after {g}", "WARN")
             else:
                 st.update("Episodes", "episode_id", e["episode_id"], {"status": "STUCK_PRIVATE", "notes": _note(e, "video never became public"), "updated": iso()})
+                try:
+                    from whatifs import launch as LA; LA.lock_detected(e["yt_id"], ["a scheduled video never became public"])      # v9.3.1 (L3): hold new spend
+                except Exception as x: log(f"lock detector skipped: {scrub(x)}", "WARN")
                 PUB.email("A video is stuck on Private", f"<p>Episode {e['episode_id']} (<a href='https://studio.youtube.com/video/{e['yt_id']}/edit'>open in Studio</a>) "
-                          "did not become public at its slot. The usual cause is that the Google Cloud project has not passed the YouTube API audit yet "
-                          "(uploads from unaudited projects are locked to Private). See SETUP_CHECKLIST Step 4b. New videos keep being made.</p>")
+                          "did not become public at its slot. The lock detector has paused new videos so nothing is wasted; a separate urgent email explains the next step. "
+                          "You can publish this one yourself in the YouTube Studio app (set it to Public).</p>")
             e["status"] = "closed"
         elif e.get("status") == "LIVE1" and now_utc() > t + dt.timedelta(minutes=S("REEL2_DELAY_MIN", int)) + g:
             st.update("Episodes", "episode_id", e["episode_id"], {"status": "LIVE", "notes": _note(e, "reel 2 skipped: release kept failing"), "updated": iso()})
@@ -109,7 +113,7 @@ def _give_up_stuck(eps):
 
 AUDIT_WORDS = {"approved": "approved - uploads can go public",
                "sent": "SENT - waiting for Google (days to weeks). Videos stay private until it is approved. It flips to approved by itself when a video goes public",
-               "not_sent": "NOT SENT YET - do SETUP_CHECKLIST Step 4b: send the audit form the same day the first video is uploaded (it stays private); videos cannot go public until Google approves"}
+               "not_sent": "not needed unless the upload check finds a lock (YouTube lifted the private lock on 2 Nov 2026; see Setup_Status upload_check)"}
 def audit_state():
     a = str(S("API_AUDIT_STATUS")).strip().lower().replace(" ", "_")
     return a if a in AUDIT_WORDS else "not_sent"
@@ -125,7 +129,10 @@ def audit_gate(eps):
     """(ok, why). Videos uploaded by a project the YouTube API audit has not approved are locked to Private for good (YouTube allows no appeal; they would have to be
     uploaded again by hand). So before approval only AUDIT_PRE_APPROVAL_EPISODES videos (default 1: the one you film for the audit form) are produced; the rest wait,
     and no money is spent on videos that could never be seen."""
-    if audit_state() == "approved" or (FAKE and not _AUDIT_TEST[0]): return True, ""
+    if FAKE and not _AUDIT_TEST[0]: return True, ""
+    from whatifs import launch as LA                                   # v9.3.1 (L9): the upload check replaces the audit (YouTube lifted the lock on 2 Nov 2026)
+    if LA.lock_state() == "on": return False, "YouTube is keeping uploads private (UPLOAD_LOCK = on); new videos wait so nothing is spent on videos nobody can see"
+    if LA.uploads_open(): return True, ""
     try: lim = S("AUDIT_PRE_APPROVAL_EPISODES", int)
     except Exception: lim = 1
     n = sum(1 for e in eps if e.get("yt_id"))
@@ -134,6 +141,8 @@ def audit_nudge(eps):
     """The audit form is the one setup step that is easy to forget and that nothing else forces. Once a video has been uploaded (so there is something to film for the form)
     and the audit is not approved, one email a week says exactly what to do. Never blocks anything."""
     st_ = audit_state()
+    from whatifs import launch as LA
+    if LA.lock_state() != "on": return                               # v9.3.1: the audit form is only needed if the upload check found a lock
     if st_ == "approved" or not any(e.get("yt_id") for e in eps): return
     last = parse_iso(S("AUDIT_NUDGE_AT"))
     if last and now_utc() - last < dt.timedelta(days=6): return
@@ -179,6 +188,32 @@ def tick():
         from whatifs import packaging as PK
         PK.rotate_tick()
     except Exception as x: log(f"packaging rotation skipped: {scrub(x)}", "WARN")
+    try:                                                        # v9.4a (WP4): queued owner messages, silence = default, the digest
+        from whatifs import notify as NT
+        NT.tick()
+    except Exception as x: log(f"owner messages skipped: {scrub(x)}", "WARN")
+    try:                                                        # v10 (K140): key/plan expiry reminders (14 and 3 days before), once a day
+        from whatifs import caretaker as CT
+        if now_utc().hour == 8 and now_utc().minute < 30:
+            CT.ensure_expiry_seed(); CT.expiry_check()
+            from whatifs import steward as STWD; STWD.apply_planned()               # v10.1 (K150): announced model switches whose date has come
+    except Exception as x: log(f"expiry check skipped: {scrub(x)}", "WARN")
+    try:                                                        # v10 (K136): the heads-up card 3 days before an occasion special (once)
+        from whatifs import occasions as OC
+        if now_utc().hour == 9 and now_utc().minute < 30: OC.heads_up()
+    except Exception as x: log(f"occasion heads-up skipped: {scrub(x)}", "WARN")
+    try:                                                        # v10 (G2): a Short taking off = one 'act now' link card (one batched views call)
+        from whatifs import shortslab as SL
+        if now_utc().minute < 30: SL.breakouts()                   # hourly is enough
+    except Exception as x: log(f"breakout check skipped: {scrub(x)}", "WARN")
+    try:                                                        # v10 G4: one video's localizations per tick (never near a release)
+        from whatifs import hours as HR, orchestra as OR
+        if OR.heavy_allowed(what="localizations"): HR.tick()
+    except Exception as x: log(f"localizations skipped: {scrub(x)}", "WARN")
+    try:                                                        # v9.4b: the dashboard snapshot (no-op until Cloudflare is set up)
+        from whatifs import dash as DS
+        DS.publish()
+    except Exception as x: log(f"dashboard snapshot skipped: {scrub(x)}", "WARN")
     if not S("VOICE"):
         t = parse_iso(S("VOICE_SAMPLES_AT"))
         if not t: return {"action": "waiting_for_voice_samples"}
@@ -232,7 +267,7 @@ def _produce_slot(eps):
             set_setting("HOLD_MAIL_AT", iso())
         log(f"{len(held)} video(s) held by final QC - not starting a new episode", "WARN"); return None
     ok_a, why_a = audit_gate(eps)
-    if not ok_a: log(f"audit gate: {why_a}", "WARN"); return None
+    if not ok_a: log(f"upload gate: {why_a}", "WARN"); return None
     ok, why = G.can_start_episode()          # v8.1: the cap is checked BEFORE an episode row exists, so a full month never creates failed rows or half-paid videos
     if not ok:
         log(f"budget gate: not starting a new episode - {why}", "WARN")
@@ -277,6 +312,9 @@ def release(ep_id, which):
     rel = _fetch_release(ep_id, e.get("assets"))
     if k == 0:
         PUB.yt_comment(e["yt_id"], rel.get("pinned", ""))
+        try:                                                    # v10.1 (K149): the Instagram 'Case Files' carousel goes out with the episode
+            from whatifs import carousel as CAR; CAR.post(ep_id)
+        except Exception as x: log(f"carousel post skipped: {scrub(x)}", "WARN")
     long_url = f"https://youtu.be/{e['yt_id']}"
     upd = {"status": "LIVE1" if k == 0 else "LIVE", "updated": iso()}
     if k < len(rel.get("reels", [])):
@@ -481,6 +519,9 @@ def guardian(items):
               f"</ul><p>{held} already-scheduled video(s) were switched to private so they do not go out. "
               f"Publishing resumes automatically on {until[:10]} and held videos are re-scheduled. To resume now, set PAUSED_UNTIL to blank in Settings.</p>")
     log(f"guardian pause until {until}", "WARN")
+    try:                                                         # v10 (K140): Policy Rescue: one urgent card with the impact and the choices
+        from whatifs import caretaker as CT; CT.policy_rescue(items)
+    except Exception as x: log(f"policy rescue card skipped: {scrub(x)}", "WARN")
 
 # ---------------- learning loop (daily) ----------------
 def learn():
@@ -490,6 +531,22 @@ def learn():
     _top_up(st)                                                 # v8.7: new strategies (rhythm, sound) and the playbook seed reach older Sheets by themselves
     try: v810_upgrade(st)
     except Exception as x: log(f"v8.10 top-up skipped: {scrub(x)}", "WARN")
+    try: v93_upgrade(st)                                         # v9.3: one-time default flips (owner values never touched)
+    except Exception as x: log(f"v9.3 default flips skipped: {scrub(x)}", "WARN")
+    try: v931_upgrade(st)                                        # v9.3.1
+    except Exception as x: log(f"v9.3.1 default flips skipped: {scrub(x)}", "WARN")
+    try: v94a_upgrade(st)                                        # v9.4a: the ₹4,700 cap
+    except Exception as x: log(f"v9.4a cap move skipped: {scrub(x)}", "WARN")
+    try: v10_upgrade(st)                                         # v10: ₹5,000 (specials)
+    except Exception as x: log(f"v10 cap move skipped: {scrub(x)}", "WARN")
+    try: v101_upgrade(st)                                        # v10.1: verified models, still size, Shorts cap
+    except Exception as x: log(f"v10.1 flips skipped: {scrub(x)}", "WARN")
+    try:
+        from whatifs import craft as CRF; CRF.seed_techniques()       # v9.3.2: the owner's pre-judged technique cards, filed once
+    except Exception as x: log(f"technique seeding skipped: {scrub(x)}", "WARN")
+    try:
+        from whatifs import sheets as SH; SH.auto_lock()            # v9.3.1 (L6): unanswered sheets lock by default
+    except Exception as x: log(f"sheet default lock skipped: {scrub(x)}", "WARN")
     try:                                                        # v9.2: a stale research brief is renewed HERE (background), never inside a preview
         from whatifs import research as RS
         if S("RESEARCH_ON", bool) and not RS.latest_rows(S("RESEARCH_MAX_AGE_DAYS", int)): RS.save_brief(RS.run_research())
@@ -529,6 +586,22 @@ def learn():
     except Exception as x: log(f"character bible top-up skipped: {scrub(x)}", "WARN")
     try: pkg_rescue()
     except Exception as x: log(f"packaging check skipped: {scrub(x)}", "WARN")
+    try:                                                        # v10 (K141/K142): daily pilot measurements and the Outlier Lab (never near a release)
+        from whatifs import pilots as PLT, outlier_lab as OLB, demand as DMD
+        PLT.measure(); OLB.run(); DMD.run()                    # v10.1 (K146): search-demand scores for bench premises
+    except Exception as x: log(f"pilots / Outlier Lab skipped: {scrub(x)}", "WARN")
+    try:                                                        # v9.4a: weekly platform change-log watch + Visual Lab ideas (₹0), never near a release
+        from whatifs import orchestra as OR, facts_watch as FW, visual_lab as VL
+        if OR.heavy_allowed(what="weekly watch") and now_utc().strftime("%a") in ("Sun",):
+            FW.run(); VL.register(); VL.suggest()
+            from whatifs import specials as SPX; SPX.record_views()       # v10: specials' 7-day engaged views feed the format weights
+            from whatifs import shortslab as SL; SL.link_pack()            # v10 (G2): the weekly winners-only link card
+            from whatifs import occasions as OCC; OCC.refresh_lunar_dates()  # v10 (K136): early December, next year's festival dates
+            from whatifs import microscope as MSC; MSC.learn()                # v10 (K138): data rules from retention
+            from whatifs import caretaker as CTK; CTK.backup(); CTK.advisor()  # v10 (K140): weekly Sheet backup + the Advisor card
+            from whatifs import viewers as VWR, ypp as YPPW; VWR.collect(); YPPW.check()   # v10.1 (K147/K148): viewer questions + the 500-tier watch
+            from whatifs import steward as STWD; STWD.watch(); STWD.test_candidates()      # v10.1 (K150): retirements, newer models, automatic tests
+    except Exception as x: log(f"weekly watch skipped: {scrub(x)}", "WARN")
     eps = [e for e in st.rows("Episodes") if e.get("status") in ("LIVE1", "LIVE") and e.get("yt_id")]
     old = st.rows("Analytics"); done = {a["episode_id"] for a in old}
     hist = [a for a in old if str(a.get("data_note") or "ok") == "ok" and GR._num(a.get("views")) is not None]
@@ -601,6 +674,73 @@ def v810_upgrade(st):
         if k in DEFAULTS and "3,500" in str(r.get("note") or "") and str(r.get("note")) != DEFAULTS[k][1]:
             try: st.update("Settings", "key", k, {"note": DEFAULTS[k][1]})
             except Exception: pass
+
+V93_FLIPS = (("HERO_STILL_REELS_ON", "FALSE", "TRUE"), ("HERO_STILL_SHORTS_ON", "FALSE", "TRUE"))
+
+def v93_upgrade(st):
+    """v9.3 (Setup + daily learning): ONCE, switch the listed Settings cells from their OLD default to the new one, ONLY where the cell still holds the
+    old default (a value the owner set is never touched). Recorded in V93_FLIPS_DONE so it never runs twice; V93_FLIPS_ON = FALSE skips it. Returns the keys changed."""
+    if not S("V93_FLIPS_ON", bool) or str(S("V93_FLIPS_DONE") or "").strip(): return []
+    have = {r.get("key"): str(r.get("value", "")).strip().upper() for r in st.rows("Settings")}
+    done = []
+    for k, old, new in V93_FLIPS:
+        if k in have and have[k] == old.upper():
+            set_setting(k, new); done.append(k)
+    set_setting("V93_FLIPS_DONE", iso() + " " + (",".join(done) or "none"))
+    if done: log(f"v9.3 default flips applied once: {', '.join(done)}")
+    return done
+
+V931_FLIPS = (("THUMB_APPROVAL_FIRST_N", "8", "9999"), ("PKG_ROTATE_ON", "TRUE", "FALSE"), ("PKG_RESCUE_HOURS", "36", "72"))      # decision 5 (2026-11-07)
+
+def v94a_upgrade(st):
+    """v9.4a (K124): ONE time, the cap cells move to the owner's ₹4,700 when they hold ₹4,500 or less (an owner value above that is never touched)."""
+    if not S("V94A_FLIPS_ON", bool) or str(S("V94A_FLIPS_DONE") or "").strip(): return []
+    from whatifs.governor import money_num
+    have = {r.get("key"): str(r.get("value", "")).strip() for r in st.rows("Settings")}
+    done = []
+    for k in ("BUDGET_FLOOR_INR", "BUDGET_CEILING_INR"):
+        if k in have and 0 < money_num(have[k]) <= 4500: set_setting(k, "4700"); done.append(k)
+    set_setting("V94A_FLIPS_DONE", iso() + " " + (",".join(done) or "none"))
+    if done: log(f"v9.4a: budget cap moved to Rs 4,700 ({', '.join(done)})")
+    return done
+
+def v931_upgrade(st):
+    """v9.3.1: same owner-respecting one-time pattern as v93_upgrade (a cell changes only while it still holds the old default)."""
+    if not S("V931_FLIPS_ON", bool) or str(S("V931_FLIPS_DONE") or "").strip(): return []
+    have = {r.get("key"): str(r.get("value", "")).strip().upper() for r in st.rows("Settings")}
+    done = []
+    for k, old, new in V931_FLIPS:
+        if k in have and have[k] == old.upper(): set_setting(k, new); done.append(k)
+    set_setting("V931_FLIPS_DONE", iso() + " " + (",".join(done) or "none"))
+    if done: log(f"v9.3.1 default flips applied once: {', '.join(done)}")
+    return done
+
+V101_FLIPS = (("FAL_HERO_MODEL", "fal-ai/kling-video/v2.1/standard/image-to-video", "fal-ai/kling-video/v2.5-turbo/pro/image-to-video"),
+              ("PRICE_KLING_USD", "0.25", "0.35"), ("STILL_W", "1632", "1872"), ("STILL_H", "918", "1056"),
+              ("SHORTS_WEEKLY_CAP", "14", "10"), ("HERO_STILL_SHORTS_ON", "TRUE", "FALSE"))
+
+def v101_upgrade(st):
+    """v10.1: ONE time, cells still at the old default move to the verified 8 Nov 2026 values (owner-set values never touched)."""
+    if not S("V101_FLIPS_ON", bool) or str(S("V101_FLIPS_DONE") or "").strip(): return []
+    have = {r.get("key"): str(r.get("value", "")).strip() for r in st.rows("Settings")}
+    done = []
+    for k, old, new in V101_FLIPS:
+        if k in have and have[k].upper() == old.upper(): set_setting(k, new); done.append(k)
+    set_setting("V101_FLIPS_DONE", iso() + " " + (",".join(done) or "none"))
+    if done: log(f"v10.1: settings moved to verified values ({', '.join(done)})")
+    return done
+
+def v10_upgrade(st):
+    """v10 (K134): ONE time, the cap cells move to ₹5,000 (owner approved +₹300 for special reels) when they hold ₹4,700 or less."""
+    if not S("V10_FLIPS_ON", bool) or str(S("V10_FLIPS_DONE") or "").strip(): return []
+    from whatifs.governor import money_num
+    have = {r.get("key"): str(r.get("value", "")).strip() for r in st.rows("Settings")}
+    done = []
+    for k in ("BUDGET_FLOOR_INR", "BUDGET_CEILING_INR"):
+        if k in have and 0 < money_num(have[k]) <= 4700: set_setting(k, "5000"); done.append(k)
+    set_setting("V10_FLIPS_DONE", iso() + " " + (",".join(done) or "none"))
+    if done: log(f"v10: budget cap moved to Rs 5,000 ({', '.join(done)})")
+    return done
 
 def strategy_credits(d, sc, swapped=False):
     """{(dimension, name): score} for one analysed video. v8.9.1: built first and de-duplicated, so a strategy is credited at most once per video
@@ -678,7 +818,8 @@ def pkg_rescue(now=None):
     st = store(); eps = st.rows("Episodes"); now = now or now_utc(); done = []
     if eps and "pkg_check" not in eps[0]: log("packaging rescue waits: the Sheet does not have the v8.5 columns yet (the daily learning job adds them by itself)", "WARN"); return []
     hrs = S("PKG_RESCUE_HOURS", float)
-    hist = [float(c["pace"]) for c in (_pkg(e) for e in eps) if c.get("pace") is not None]
+    def _src(c): return c.get("src") or "views"
+    allhist = [(float(c["pace"]), _src(c)) for c in (_pkg(e) for e in eps) if c.get("pace") is not None]
     for e in eps:
         if e.get("status") not in ("LIVE1", "LIVE") or not e.get("yt_id") or str(e.get("pkg_check") or "").strip(): continue
         t = parse_iso(e.get("slot_et"))
@@ -687,9 +828,10 @@ def pkg_rescue(now=None):
         if age < hrs: continue
         if age > hrs + 48:                                         # too old to compare fairly (e.g. published before v8.5): recorded, never swapped
             st.update("Episodes", "episode_id", e["episode_id"], {"pkg_check": {"action": "not checked: too old for a fair comparison"}}); continue
-        v = PUB.yt_views(e["yt_id"])
+        v, src = _rescue_views(e["yt_id"], t)                       # v9.3.1 (L5): engaged views first (public views count autoplay since 2026-08-24)
         if v is None: continue                                     # try again tomorrow (still inside the window)
-        pace = v / max(1.0, age); rec = {"views": v, "age_h": round(age, 1), "pace": round(pace, 3), "at": iso()}
+        hist = [p for p, s in allhist if s == src]                 # compare like with like (engaged vs engaged, public vs public)
+        pace = v / max(1.0, age); rec = {"views": v, "src": src, "age_h": round(age, 1), "pace": round(pace, 3), "at": iso()}
         need = max(1, S("PKG_RESCUE_MIN_HISTORY", int))
         if len(hist) < need: rec["action"] = f"kept: only {len(hist)} earlier videos measured (needs {need})"
         else:
@@ -700,12 +842,21 @@ def pkg_rescue(now=None):
             elif S("PKG_DIP_GUARD_ON", bool) and len(recent) == 3 and all(p < S("PKG_RESCUE_RATIO", float) * med for p in recent):
                 rec["action"] = "kept: channel-wide dip (the last 3 videos were all behind too), not a packaging problem"
             else: rec["action"] = _swap(st, e, rec)
-        hist.append(pace)
+        allhist.append((pace, src))
         st.update("Episodes", "episode_id", e["episode_id"], {"pkg_check": rec, "updated": iso()}); done.append((e["episode_id"], rec["action"]))
         log(f"packaging check {e['episode_id']}: {rec['action']} (pace {rec.get('ratio', '-')}x the median)", public=f"packaging check {e['episode_id']}: {rec['action'].split(':')[0]}")
     try: done += _judge_swaps(st, now)
     except Exception as x: log(f"swap evaluation skipped: {scrub(x)}", "WARN")
     return done
+
+def _rescue_views(vid, since, want=None):
+    """v9.3.1 (L5): (count, source). Engaged views from Analytics when PKG_RESCUE_ENGAGED_ON and available, else the public count.
+    want = force one source (a swap is judged with the same source it was measured with)."""
+    if want != "views" and S("PKG_RESCUE_ENGAGED_ON", bool):
+        ev = PUB.yt_engaged_views(vid, (since or now_utc()).strftime("%Y-%m-%d"))
+        if ev is not None: return ev, "engaged"
+        if want == "engaged": return None, "engaged"
+    return PUB.yt_views(vid), "views"
 
 def _judge_swaps(st, now):
     """v8.6: a swap is judged once, at least a day later: views per hour SINCE the swap vs the pace before it. Views normally slow down with age, so a higher
@@ -716,7 +867,7 @@ def _judge_swaps(st, now):
         if not str(rec.get("action", "")).startswith("swapped") or "after" in rec or not e.get("yt_id"): continue
         t = parse_iso(rec.get("at"))
         if not t or now - t < dt.timedelta(hours=24): continue
-        v = PUB.yt_views(e["yt_id"])
+        v, _s = _rescue_views(e["yt_id"], parse_iso(e.get("slot_et")) or t, rec.get("src") or "views")
         if v is None: continue
         hrs = (now - t).total_seconds() / 3600; after = max(0.0, (v - float(rec.get("views") or 0)) / max(1.0, hrs))
         rec["after"] = {"views": v, "pace": round(after, 3), "hours": round(hrs, 1), "verdict": "helped" if after > float(rec.get("pace") or 0) else "unclear"}
@@ -920,8 +1071,19 @@ def setup():
         if S("SETUP_FILLS_BENCH", bool) and S("PREMISE_BENCH_ON", bool) and not PR.bench_rows(): PR.refill_bench(force=True)
     except Exception as x: log(f"first bench fill skipped: {scrub(x)}", "WARN")
     v810_upgrade(st)                                           # v8.10: Cast placeholders (owner overwrites), settings notes with the ₹4,000 cap
+    try: v93_upgrade(st)                                       # v9.3: one-time default flips (owner values never touched)
+    except Exception as x: log(f"v9.3 default flips skipped: {scrub(x)}", "WARN")
+    try: v931_upgrade(st)                                      # v9.3.1
+    except Exception as x: log(f"v9.3.1 default flips skipped: {scrub(x)}", "WARN")
+    try: v94a_upgrade(st)                                      # v9.4a: the ₹4,700 cap
+    except Exception as x: log(f"v9.4a cap move skipped: {scrub(x)}", "WARN")
+    try: v10_upgrade(st)                                       # v10: ₹5,000 (specials)
+    except Exception as x: log(f"v10 cap move skipped: {scrub(x)}", "WARN")
+    try: v101_upgrade(st)                                      # v10.1: verified models, still size, Shorts cap
+    except Exception as x: log(f"v10.1 flips skipped: {scrub(x)}", "WARN")
     status("sheet_ready", True, f"{len(TABS)} tabs")
-    status("youtube_api_audit", audit_state() == "approved", AUDIT_WORDS[audit_state()])      # v8.4: the audit form has its own Setup_Status row, so it cannot be forgotten
+    from whatifs import launch as LA                                      # v9.3.1: the audit is only needed when the upload check found a lock
+    status("youtube_api_audit", audit_state() == "approved" or LA.lock_state() != "on", AUDIT_WORDS[audit_state()] if LA.lock_state() == "on" else "not needed: YouTube lifted the private lock on 2 Nov 2026 (the upload check confirms it on this project)")      # v8.4: the audit form has its own Setup_Status row, so it cannot be forgotten
     if not FAKE:
         from whatifs.models import selftest
         selftest()

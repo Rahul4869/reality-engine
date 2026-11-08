@@ -4,12 +4,17 @@ import numpy as np
 from whatifs import core, governor as G, reactions as RX, qc as QC, checkpoint as CK, media, format_engine as FE
 from whatifs.voice import parse_script, TAGS
 
+def _legacy_budget(setting):
+    setting("BUDGET_FLOOR_INR", "4000"); setting("BUDGET_CEILING_INR", "4000"); setting("BUDGET_EARMARK_INR", "0"); setting("V94A_FLIPS_ON", "FALSE"); setting("V10_FLIPS_ON", "FALSE"); setting("SPECIALS_ON", "FALSE")      # v9.4a: this test keeps the v8 budget profile (₹4,000, no earmark, no cap move)
+
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def _spend(inr): core.cost("test_spend", "fal", 1, inr / core.S("USD_INR", float))
 def U(i, spk, tag, text, start=None): return {"i": i, "speaker": spk, "tag": tag, "text": text, "start": float(i * 5 if start is None else start), "end": float(i * 5 + 4)}
 
 # ---------------- budget tiers ----------------
-def test_tiers_never_cut_the_floor_and_hold_instead_of_overshooting():
+def test_tiers_never_cut_the_floor_and_hold_instead_of_overshooting(setting):
+    _legacy_budget(setting)
     seen = set()
     for spent in (0, 2500, 3100, 3500, 3650):          # v8.10: the cap is 4,000 (was 3,500); same distances from the cap
         core._cost_buf.clear(); core._session.clear(); core._base["v"] = None; _spend(spent)

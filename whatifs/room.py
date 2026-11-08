@@ -78,6 +78,13 @@ def _reel_extra(room):
     """v9: the Shorts trilogy + the clip-bait Short ('' when SHOW_MODE = off)."""
     from whatifs import show as SHOW
     if not SHOW.on(): return ""
+    if S("TRIAL_SHORTS_SAFE_ON", bool):                          # v9.3: a cold Shorts viewer has never met the cast, and a Short must never spend the episode's payoff
+        return ("SHORTS FOR THE TRIAL (a Shorts viewer has never met the cast: every reel must work without them): line 1 of EVERY reel puts YOU inside the "
+                "impossible situation (second person, present tense, a stake, a clock or a number) before any character name or courtroom word. reel 1 = the "
+                "cold open's stake as a cliffhanger (stop right before the answer); reel 2 = Dr. Grimm's strongest objection against Vale's best evidence, cut "
+                "BEFORE anyone wins; reel 3 = the surprise witness's twist, stopped before what it proves; reel 4 = the clip-bait moment (its lines are inserted "
+                "by code). NEVER reveal the verdict, who wins, the final Jury Meter side or the final answer in any reel: the full episode keeps the payoff, and "
+                "each reel's end line names the open question only the full case answers. Plain words that auto-translate well.")
     return ("SHORTS FOR THE TRIAL: reel 1 = THE CHARGE as a cliffhanger (stop before the verdict); reel 2 = the VERDICT reaction (Grimm or Vale reacting); "
             "reel 3 = a character rant (Dr. Grimm's best objection, theatrical, never cruel); reel 4 = the clip-bait moment (its lines are inserted by code). "
             "Plain words that auto-translate well.")
@@ -102,6 +109,9 @@ def scout_and_pick(draw, ctx, episode):
     rounds = 3 if ff or not dual else 1 + max(0, S("PREMISE_RETRY_ROUNDS", int)); used = []; best_seen = 0.0; pool = []
     taste = ("\nTASTE CALIBRATION (the owner's own examples): LIKED: " + json.dumps(TASTE_LIKED) + " BORING: " + json.dumps(TASTE_BORING) + " " + TASTE_NOTE +
              "\nAlso score: illogical-sounding but physically showable in FIRST PERSON with our pictures; headline 4-11 words.\n" + CR.brief("scout"))
+    try:
+        from whatifs import viewers as VW; taste += VW.scout_block()                     # v10.1 (K147): viewer questions as premise DATA
+    except Exception: pass
     past = [e.get("premise") or e.get("title") for e in store().rows("Episodes") if e.get("premise") or e.get("title")]
 
     def same(a, b): return _similar(a, [b]) or str(a).strip().lower() == str(b).strip().lower()
@@ -203,6 +213,8 @@ def run_room(draw, episode):
     ctx["research"], d["research_brief"] = RS.room_research(episode, allow_run=S("BACKGROUND_IN_ROOM", bool))       # v9.2: the room only READS the brief
     _mark(d, "research (read)")
     spine = FE.enrich_spine(scout_and_pick(d, ctx, episode)); _mark(d, "premise (bench / scout / judges / showrunner)")
+    from whatifs import craft as _CRAFT                                         # v9.3.2: technique cards are filtered against THIS premise
+    _CRAFT.CURRENT["topic"] = f"{spine.get('premise', '')} {spine.get('family', '')} {spine.get('title', '')}"
     spine["promise"] = GR.clean_promise(spine); d["promise"] = spine["promise"]       # v8.7: packaging first - the click promise is fixed BEFORE a word is written
     log(f"premise: {spine['premise']} | format: {spine.get('presentation_format', 'classic')}", episode=episode, public="premise chosen (text kept private until release)")
     roles = TR.ROLES
@@ -235,7 +247,7 @@ def run_room(draw, episode):
                "\nLESSONS FROM OUR OWN VIDEOS (opening, holding, hooks, reactions; follow them unless they contradict the bible): " + ctx["lessons_writer"])
     wbrief = GR.insert_before_json(wbrief, "\n".join(x for x in (                      # v8.7: the promise, this episode's rhythm and the research-graded rules
         "THE PROMISE (packaging first: the title and thumbnail were decided before you write; pay them off ON SCREEN and IN WORDS within the first 30 s): " + GR.promise_text(spine.get("promise")),
-        GR.rhythm_brief(d.get("rhythm_plan"), defs), PB.text_for("writer", d.get("playbook")), guest_brief(d), tease_brief(spine), _writer_extra(),
+        GR.rhythm_brief(d.get("rhythm_plan"), defs), PB.text_for("writer", d.get("playbook")), guest_brief(d), tease_brief(spine), _writer_extra(episode),
         _show_writer(spine)) if x))
     if S("EFFORT_AB_ON", bool):                           # v9: medium vs high effort for the script, alternating by episode (the A/B machinery records the arm)
         from whatifs import models as _M
@@ -272,12 +284,23 @@ def run_room(draw, episode):
     _mark(d, "critic + rewrites + edits")
     script = fact_check(spine, script, episode)           # v8.3: search-grounded check of the claims, before any picture money is spent
     _mark(d, "fact check")
+    try:                                                   # v10 (K133): early, crowded or doubled asks out first; cta.ensure then puts any missing kind back at a calm slot
+        from whatifs import engage as EG
+        new_t, n_rm = EG.enforce(script.get("script", ""), episode)
+        if n_rm: script = dict(script, script=new_t)
+        if S("EMOTION_BEAT_ON", bool):
+            d["emotion_beat"] = EG.pick_emotion(episode); set_setting("EMOTION_LAST", d["emotion_beat"])
+    except Exception as e: log(f"engagement check skipped: {scrub(e)}", "WARN", episode)
     if S("CTA_ON", bool):                                 # v8.3: like / subscribe / share asks: the writer's own, or a hand-written one added at a calm moment
         new, added, code = CTA.ensure(script.get("script", ""), episode, S("CTA_LAST"))
         if added:
             script = dict(script, script=new); log(f"audience asks added by code: {', '.join(added)}", episode=episode)
         if code != S("CTA_LAST"): set_setting("CTA_LAST", code)
     script = ensure_tease(script, spine.get("next_tease"), episode); d["next_tease"] = spine.get("next_tease") or {}      # v8.9: the video ends on the next episode
+    try:                                                   # v10.1 (K145): repetitive-content guard (never a hold; one card when too similar)
+        from whatifs import similarity as SIM
+        d["script_similarity"] = round(SIM.check(script.get("script", ""), episode)[0], 3)
+    except Exception as e: log(f"similarity check skipped: {scrub(e)}", "WARN", episode)
     from whatifs import immersion as IM, craft as CR                       # v8.10: Immersion Director, then the Owner's Cut (both before any picture money)
     imap = IM.immersion_map(script.get("script", ""), spine, episode)
     def oc_rewrite(sc, fixes):
@@ -340,10 +363,16 @@ def _craft_extra():
     from whatifs import craft as CR
     return "\n" + CR.brief("bible")
 
-def _writer_extra():
-    """v8.10: constitution + notebook + technique library + immersion / voice-acting / pacing rules for the writer."""
+def _writer_extra(episode=""):
+    """v8.10: constitution + notebook + technique library + immersion / voice-acting / pacing rules for the writer. v10: audience prompts + emotion beat."""
     from whatifs import craft as CR, immersion as IM
-    return "\n".join(x for x in (CR.brief("writer"), IM.writer_rules()) if x)
+    try:
+        from whatifs import engage as EG; eg = EG.brief(episode)
+    except Exception: eg = ""
+    try:
+        from whatifs import microscope as MS; dr = MS.brief()                 # v10 (K138, decision 3): this channel's own retention rules
+    except Exception: dr = ""
+    return "\n".join(x for x in (CR.brief("writer"), IM.writer_rules(), eg, dr) if x)
 
 # ---------------- v8.9: rotating guest + the next-episode tease ----------------
 def guest_brief(d):
@@ -678,13 +707,20 @@ def front_load(out, units, peaks=()):
             if typ == "kling": out[r]["hero"] = True; out[r]["motion"] = out[r].get("motion") or "slow dramatic push in, the impossible thing moving"
     return out
 
+def _owner_taste():
+    """v9.3.1 (L4): the owner's own title picks as a taste signal for the Packager. "" when none or on any error."""
+    try:
+        from whatifs.packaging import taste_brief
+        return taste_brief()
+    except Exception: return ""
+
 def package(room, chapters, draw, episode):
     ctx = context(); stg = draw["strategies"]
     excerpt = room["script"].get("script", "")[:3500]
     pkg = ask("packager", FE.inject(GR.insert_before_json(P.fill(P.PACKAGER, title=stg["title"], titledef=ctx["defs"].get(stg["title"], ""), thumb=stg["thumb"],
                thumbdef=ctx["defs"].get(stg["thumb"], ""), spine=_j(room["spine"]), excerpt=excerpt, trends=ctx["trends"][:3000],
                lessons=ctx["lessons_packager"], chapters=_j(chapters), craft=CRAFT["packager"], promise=GR.promise_text(room["spine"].get("promise"))),
-               "\n".join(x for x in (PB.text_for("packager", draw.get("playbook")), _pkg_extra()) if x)), "packager"), "Package now.", episode=episode, fake_key="packager")
+               "\n".join(x for x in (PB.text_for("packager", draw.get("playbook")), _pkg_extra(), _owner_taste()) if x)), "packager"), "Package now.", episode=episode, fake_key="packager")
     pt = str((room["spine"].get("promise") or {}).get("title") or "").strip()       # v8.7: the promise title is always a candidate (it wins only if the Packager's are flawed)
     if isinstance(pkg, dict) and pt and pt.lower() not in [str(t).lower() for t in pkg.get("titles") or []]: pkg["titles"] = list(pkg.get("titles") or []) + [pt]
     return pkg

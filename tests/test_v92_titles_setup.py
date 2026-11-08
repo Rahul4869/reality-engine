@@ -17,10 +17,12 @@ def test_shock_shapes_beat_plain_promises():
     assert PK.rank_titles([plain, BAD, bold])[0] == bold and PK.rank_titles([BAD, plain])[-1] == BAD
 
 def test_variants_lead_with_the_strongest_natural_title():
-    pkg = {"title": "What Would Happen If Light Moved at Walking Speed", "thumb_text": "TOO SLOW", "title_b": BAD, "thumb_text_b": "WAIT",
-           "titles": ["Your Reflection Is 1.4 Seconds Late. Is It Still You?", "Light Just Lost a Race to Your Cat Today"], "thumb_text_c": "TICK TOCK"}
+    # v9.3: the strongest natural title is chosen BEFORE upload (growth.choose_titles) and variant A is always the title that is live on YouTube
+    titles = ["What Would Happen If Light Moved at Walking Speed", BAD, "Your Reflection Is 1.4 Seconds Late. Is It Still You?", "Light Just Lost a Race to Your Cat Today"]
+    best, _ = GR.choose_titles(titles, "TOO SLOW"); assert best.startswith("Your Reflection")
+    pkg = {"title": best, "thumb_text": "TOO SLOW", "title_b": BAD, "thumb_text_b": "WAIT", "titles": titles, "thumb_text_c": "TICK TOCK"}
     vs = PK.variants(pkg, {})
-    assert vs[0]["title"].startswith("Your Reflection") and BAD not in [v["title"] for v in vs]
+    assert vs[0]["title"] == best and BAD not in [v["title"] for v in vs]
     assert "STOP THE SCROLL" in PK.TITLE_BRIEF and "never a promise the video does not keep" in PK.TITLE_BRIEF
 
 def test_title_rule_switch(setting):

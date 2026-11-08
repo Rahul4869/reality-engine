@@ -127,6 +127,11 @@ def score(pitches, recent, episode=None):
             sc = p.get("scores") or {}; vals = [float(x) for x in sc.values() if str(x).replace(".", "", 1).isdigit()]
             p["combined"] = round(sum(vals) / len(vals), 2) if vals else 0.0; p["criteria"] = {}; p["judges"] = "scout_only"
         p["claude"], p["gemini"] = per.get("claude", ""), per.get("gemini", "")
+        try:                                                                   # v9.3: an advertiser-unsafe premise can never pass the bar (AD_SAFE_ON)
+            from whatifs.packaging import ad_risk
+            if ad_risk(str(p.get("premise", "")) + " " + str(p.get("headline", ""))):
+                p["ad_risk"] = True; p["combined"] = min(float(p.get("combined") or 0), round(S("PREMISE_MIN_SCORE", float) - 1.0, 2))
+        except Exception: pass
     return pitches
 
 def log_scores(pitches, episode, rnd, source, chosen_premise=""):

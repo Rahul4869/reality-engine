@@ -127,7 +127,9 @@ ROUTES = {
     "length": ("sonnet", "edit"), "format": ("sonnet", "edit"), "retention": ("sonnet", "edit"), "humanize": ("sonnet", "edit"),
     "factfix": ("sonnet", "edit"), "packager": ("sonnet", "edit"), "reels": ("sonnet", "edit"), "immersion": ("sonnet", "edit"),
     "hooks": ("sonnet", "edit"), "strategy": ("sonnet", "edit"), "brief": ("sonnet", "edit"), "repair": ("sonnet", "edit"),
-    "json_repair": ("haiku", "chore"),
+    "json_repair": ("haiku", "chore"), "technique_intake": ("sonnet", "edit"),
+    "localize": ("sonnet", "edit"), "special": ("sonnet", "edit"), "occasions_check": ("haiku", "chore"), "policy_rescue": ("sonnet", "edit"), "pilot": ("haiku", "chore"),                    # v10: special reels' concept                                                   # v10 G4: titles/descriptions in other languages
+    "owner_chat": ("sonnet", "edit"), "owner_chat_deep": ("opus", "creative"), "owner_chat_cheap": ("haiku", "chore"),      # v9.4b: WhatsApp / dashboard chat
 }
 SAVER_MEDIUM = ("scout", "showrunner", "bible", "premise_judge", "memo", "objections", "director", "director_read", "hooks", "packager", "reels", "immersion")
 CHAIN_EFFORT = {"opus": "creative", "fable": "creative", "sonnet": "edit", "haiku": "chore"}
@@ -454,10 +456,13 @@ def simulate_claude(role, system, prompt, max_tokens, search, effort, episode=No
     except Exception as e:
         log(f"cache simulation skipped: {e}", "WARN", episode); return None
 
-def _gemini(role, system, prompt, max_tokens, temperature, search, want_json, images=None, episode=None):
+def _gemini(role, system, prompt, max_tokens, temperature, search, want_json, images=None, episode=None, video=None):
     mid = model(role) or model("gem_flash")
+    vparts = []
+    if video:                                                      # v10 (Outlier Lab): a public YouTube URL, clipped to its first seconds (fileData + videoMetadata)
+        vparts = [{"fileData": {"fileUri": video[0]}, "videoMetadata": {"startOffset": "0s", "endOffset": f"{int(video[1])}s"}}]
     body = {"systemInstruction": {"parts": [{"text": str(system)}]},
-            "contents": [{"role": "user", "parts": [{"text": prompt}] + [{"inlineData": {"mimeType": m, "data": b}} for m, b in (images or [])]}],
+            "contents": [{"role": "user", "parts": vparts + [{"text": prompt}] + [{"inlineData": {"mimeType": m, "data": b}} for m, b in (images or [])]}],
             "generationConfig": {"temperature": temperature, "maxOutputTokens": min(OUT_CEILING, int(max_tokens) + THINK_ROOM)}}      # v8.9.3: thinking shares this limit
     if search: body["tools"] = [{"google_search": {}}]
     elif want_json: body["generationConfig"]["responseMimeType"] = "application/json"
@@ -531,7 +536,15 @@ def haiku_repair(text, episode=None):
     log("chore-model JSON repair changed the content - rejected, the normal retry runs", "WARN", episode); return None
 
 # ---------------------------------------------------------------- the one entry point
-def ask(role, system, prompt, want_json=True, max_tokens=6000, temperature=0.8, search=False, episode=None, fake_key=None, fanout=False):
+PREPROD = {"on": False, "deadline": 0.0}   # v9.4a (WP2): set only by preprod.run() in its own job; module-level so fan-out threads see it too
+
+def _preprod_batch(chain_key, search):
+    """v9.4a (WP2): True when this call should go through Message Batches (half price) because pre-production is running and nobody is waiting."""
+    if not PREPROD["on"] or search or not S("ROOM_BATCH_ON", bool): return False
+    if chain_key not in CHAINS or CHAINS[chain_key][0][0] != "c": return False
+    return not (PREPROD["deadline"] and time.time() > PREPROD["deadline"])      # past the job guard: the remaining calls run directly
+
+def ask(role, system, prompt, want_json=True, max_tokens=6000, temperature=0.8, search=False, episode=None, fake_key=None, fanout=False, _direct=False):
     """Never blocks: walks the fallback chain. Claude roles move to Gemini when Claude credit runs out.
     v8.11: role may be a writers'-room task (ROUTES: model + effort chosen by capability) or a chain key as before; system may be a prompts.Packed."""
     task = role; chain_key, ecls = route(role); _CUR.task = str(task); _CALL.task = str(task)          # v9.1: Cost_Log 'role'; v9.2: per-role caps
@@ -545,6 +558,9 @@ def ask(role, system, prompt, want_json=True, max_tokens=6000, temperature=0.8, 
             fixed = haiku_repair(out, episode)
             if fixed is not None: return fixed
             raise
+    if not _direct and _preprod_batch(chain_key, search):                     # v9.4a (WP2): same request, half price, nobody waiting
+        return ask_batch(role, system, prompt, want_json=want_json, max_tokens=max_tokens, episode=episode, fake_key=fake_key, temperature=temperature,
+                         force=True, max_wait_min=S("ROOM_BATCH_MAX_WAIT_MIN", float))
     from whatifs.governor import claude_allowed, opus_allowed, monthly_cap_reached
     if monthly_cap_reached(maintenance=JOB.get("name") in MAINTENANCE_JOBS):
         raise RuntimeError("monthly budget cap reached; no new paid model calls will be started")
@@ -588,17 +604,17 @@ def ask(role, system, prompt, want_json=True, max_tokens=6000, temperature=0.8, 
     raise RuntimeError(f"all models failed for {task}: {last}")
 
 # ---------------------------------------------------------------- v9: Message Batches for non-urgent jobs (50 % price; bounded wait, then the normal path)
-def ask_batch(role, system, prompt, want_json=True, max_tokens=6000, episode=None, fake_key=None, temperature=0.8):
+def ask_batch(role, system, prompt, want_json=True, max_tokens=6000, episode=None, fake_key=None, temperature=0.8, force=False, max_wait_min=None):
     """One non-urgent Claude call through the Message Batches API when BATCH_ON (bench refill, monthly brief, strategy, research brief). The batch is
     polled for at most BATCH_MAX_WAIT_MIN minutes; on any error or timeout it is cancelled and the SAME request goes through ask() once (never two paid
     answers: a cancelled batch request that already finished is used instead). Cost is logged at PRICE_BATCH_DISCOUNT x the normal rate.
     Prompt caching inside batches is applied as usual; whether the discounts stack was not verified (see the report)."""
     chain_key, ecls = route(role)
-    if FAKE or not S("BATCH_ON", bool) or chain_key not in CHAINS or CHAINS[chain_key][0][0] != "c":
-        return ask(role, system, prompt, want_json=want_json, max_tokens=max_tokens, episode=episode, fake_key=fake_key, temperature=temperature)
-    from whatifs.governor import claude_allowed, monthly_cap_reached
-    if not claude_allowed() or monthly_cap_reached(maintenance=True):
-        return ask(role, system, prompt, want_json=want_json, max_tokens=max_tokens, episode=episode, fake_key=fake_key, temperature=temperature)
+    if FAKE or not (S("BATCH_ON", bool) or force) or chain_key not in CHAINS or CHAINS[chain_key][0][0] != "c":
+        return ask(role, system, prompt, want_json=want_json, max_tokens=max_tokens, episode=episode, fake_key=fake_key, temperature=temperature, _direct=True)
+    from whatifs.governor import claude_allowed, monthly_cap_reached, opus_allowed
+    if not claude_allowed() or monthly_cap_reached(maintenance=JOB.get("name") in MAINTENANCE_JOBS) or (chain_key in ("opus", "fable") and not opus_allowed()):
+        return ask(role, system, prompt, want_json=want_json, max_tokens=max_tokens, episode=episode, fake_key=fake_key, temperature=temperature, _direct=True)
     fam = CHAINS[chain_key][0][1]; bid = None
     try:
         body, headers, info, room, mid, eff = _claude_body(fam, system, prompt, max_tokens, temperature, False, effort_for(role, ecls))
@@ -606,7 +622,7 @@ def ask_batch(role, system, prompt, want_json=True, max_tokens=6000, episode=Non
         r = requests.post(ANTH + "messages/batches", headers=headers, json={"requests": [{"custom_id": "r1", "params": body}]}, timeout=60)
         if r.status_code >= 300: raise RuntimeError(f"batch create {r.status_code}: {r.text[:200]}")
         bid = r.json()["id"]; t0 = time.time()
-        while time.time() - t0 < S("BATCH_MAX_WAIT_MIN", float) * 60:
+        while time.time() - t0 < float(max_wait_min or S("BATCH_MAX_WAIT_MIN", float)) * 60:
             time.sleep(min(60, 10 + (time.time() - t0) / 10))
             st = requests.get(ANTH + f"messages/batches/{bid}", headers=headers, timeout=60).json()
             if st.get("processing_status") == "ended": break
@@ -627,7 +643,7 @@ def ask_batch(role, system, prompt, want_json=True, max_tokens=6000, episode=Non
         return parse_json(txt) if want_json else txt
     except Exception as e:
         log(f"batch path not used for {role} ({str(e)[:140]}) - normal call instead", "WARN", episode)
-        return ask(role, system, prompt, want_json=want_json, max_tokens=max_tokens, episode=episode, fake_key=fake_key, temperature=temperature)
+        return ask(role, system, prompt, want_json=want_json, max_tokens=max_tokens, episode=episode, fake_key=fake_key, temperature=temperature, _direct=True)
 
 def ask_vision(system, prompt, images, episode=None):
     """v8.2: independent frame check by Gemini Flash (then Pro). images = [(mime, base64 string)]. Returns parsed JSON, or None if no model could answer
@@ -641,6 +657,16 @@ def ask_vision(system, prompt, images, episode=None):
         try: return parse_json(_gemini(role, system, prompt, 4000, 0.1, False, True, images=images, episode=episode))
         except Exception as e: log(f"vision check via {role} failed: {e}", "WARN", episode); time.sleep(8)
     return None
+
+def ask_video(system, prompt, youtube_url, seconds=60, episode=None):
+    """v10 (Outlier Lab): Gemini Flash watches the first `seconds` of a public YouTube video. Parsed JSON, or None (never raises)."""
+    if FAKE:
+        from whatifs.fakes import fake_reply
+        return parse_json(fake_reply("outlier_video", prompt))
+    from whatifs.governor import monthly_cap_reached
+    if monthly_cap_reached(maintenance=False): return None
+    try: return parse_json(_gemini("gem_flash", system, prompt, 2000, 0.2, False, True, episode=episode, video=(youtube_url, seconds)))
+    except Exception as e: log(f"video look failed: {str(e)[:160]}", "WARN", episode); return None
 
 def _shares_prefix(jobs):
     """True when 2+ jobs go to the same Claude chain with the same effort and search setting and the same cached layers (GLOBAL + EPISODE)."""

@@ -3,7 +3,7 @@ from __future__ import annotations
 import os, time, json, hashlib, random, subprocess
 import numpy as np, requests
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
-from whatifs.core import env, log, cost, S, FAKE, note_degraded
+from whatifs.core import env, log, cost, S, FAKE, note_degraded, DEFAULTS
 from whatifs.governor import fal_allowed
 
 FAL = "https://queue.fal.run/"
@@ -61,7 +61,27 @@ def fake_clip(path, w, h, seed, sec=5):
     os.remove(img); return path
 
 # ---------------- images ----------------
-def still(prompt, path, episode, seed=None, w=None, h=None, premium=False):
+def still_usd(w, h):
+    """v10.1: FLUX schnell on fal bills per megapixel rounded UP (verified 8 Nov 2026)."""
+    import math
+    return S("PRICE_STILL_PER_MP", float) * max(1, math.ceil((w * h) / 1e6))
+
+def video_args(model, image_url, prompt, hero=False):
+    """v10.1: each fal video model names its inputs differently (verified 8 Nov 2026): Kling 2.6 Pro wants start_image_url and has audio ON by
+    default; Wan 2.6 wants a resolution; Kling 2.5 Turbo Pro takes cfg_scale. Unknown models get the plain prompt + image_url."""
+    m = str(model or "")
+    neg = "blur, distort, and low quality, text, watermark"
+    if "kling-video/v2.6" in m: return {"prompt": prompt, "start_image_url": image_url, "duration": "5", "negative_prompt": neg, "generate_audio": False}
+    if "kling-video/v2.5-turbo" in m: return {"prompt": prompt, "image_url": image_url, "duration": "5", "negative_prompt": neg, "cfg_scale": 0.5}
+    if m.startswith("wan/v2.6"): return {"prompt": prompt, "image_url": image_url, "resolution": "720p", "duration": "5"}
+    if "hailuo" in m: return {"prompt": prompt, "image_url": image_url, "duration": "6"}
+    args = {"prompt": prompt, "image_url": image_url}
+    if hero: args.update({"duration": "5", "negative_prompt": neg})
+    return args
+
+RETIRED_MODELS = ("fal-ai/veo3.1", "fal-ai/kling-video/v2.1/")          # v10.1: retired or being retired on fal (Nov 2026)
+
+def still(prompt, path, episode, seed=None, w=None, h=None, premium=False, model=None):
     w = w or S("STILL_W", int); h = h or S("STILL_H", int)
     from whatifs import v91 as V91
     if V91.on("LIGHTING_DIRECTIVE_ON"):                      # v9.1: lighting + composition directive (the style lock is added after it, never cut)
@@ -71,7 +91,7 @@ def still(prompt, path, episode, seed=None, w=None, h=None, premium=False):
             prompt = with_directive(prompt, S("IMAGE_PROMPT_MAX_CHARS", int) - (len(lock_) + 2 if lock_ and not premium else 0), vertical=h > w)
     if FAKE: return fake_image(path, w, h, seed or prompt, prompt), None
     if not fal_allowed(): raise RuntimeError("fal credit exhausted")
-    model = S("FAL_PREMIUM_MODEL") if premium else S("FAL_STILL_MODEL")
+    model = model or (S("FAL_PREMIUM_MODEL") if premium else S("FAL_STILL_MODEL"))      # v10: an explicit model only for the bake-off
     lock = str(S("STYLE_LOCK") or "").strip()
     if not premium and lock and lock not in prompt: prompt = prompt.rstrip(". ") + ". " + lock      # v8.9: repair stills keep the same look
     args = {"prompt": prompt, "image_size": {"width": w, "height": h}, "num_images": 1, "enable_safety_checker": True}
@@ -80,7 +100,7 @@ def still(prompt, path, episode, seed=None, w=None, h=None, premium=False):
     if seed is not None: args["seed"] = int(hashlib.md5(str(seed).encode()).hexdigest()[:7], 16)
     out = fal_run(model, args)
     mp = w * h / 1e6
-    cost("image_premium" if premium else "image", "fal", 1, (S("PRICE_THUMB_USD", float) if premium else S("PRICE_STILL_USD", float) * mp / 1.5), episode)   # v8.3: logged as soon as fal has finished (it is billed), before the download can fail
+    cost("image_premium" if premium else "image", "fal", 1, (S("PRICE_THUMB_USD", float) if premium else still_usd(w, h)), episode)   # v10.1: real megapixel rounding(it is billed), before the download can fail
     url = out["images"][0]["url"]; _dl(url, path)
     return path, url
 
@@ -92,17 +112,44 @@ def _data_uri(image_path):
     mime = "image/png" if str(image_path).lower().endswith(".png") else "image/jpeg"
     return f"data:{mime};base64," + base64.b64encode(b).decode("ascii")
 
-def animate(image_url, image_path, prompt, path, episode, hero=False):
+def animate(image_url, image_path, prompt, path, episode, hero=False, model=None, price_usd=None):
     if FAKE: return fake_clip(path, S("STILL_W", int), S("STILL_H", int), prompt, 5)
     if not image_url:              # v8.9.1 (fix): a missing URL in production used to return the offline TEST clip; now the real picture is sent, or it fails loudly
         if not image_path or not os.path.exists(image_path): raise RuntimeError("no picture to animate (no URL and no file)")
         image_url = _data_uri(image_path)
     if not fal_allowed(): raise RuntimeError("fal credit exhausted")
-    model = S("FAL_HERO_MODEL") if hero else S("FAL_LIVING_MODEL")
-    args = {"prompt": prompt, "image_url": image_url}
-    if hero: args.update({"duration": "5", "negative_prompt": "blur, distort, low quality, text, watermark"})
+    explicit = model is not None
+    role = "hero" if hero else "living"
+    model = model or (S("FAL_HERO_MODEL") if hero else S("FAL_LIVING_MODEL"))          # v10: an explicit model only for the bake-off
+    if hero and any(str(model).startswith(r) for r in RETIRED_MODELS):
+        log(f"video model {model} is retired on fal; using {DEFAULTS['FAL_HERO_MODEL'][0]}", "WARN", episode); model = DEFAULTS["FAL_HERO_MODEL"][0]
+    from whatifs import steward as STW
+    if not explicit and S("MODEL_STEWARD_ON", bool): model = STW.ensure(role, model)
+    if model == STW.CODE_MOTION: return _code_motion(image_path, path)
+    try:
+        out = _fal_video(model, image_url, image_path, prompt, path, episode, hero, price_usd)
+        STW.report_success(model); return out
+    except Exception as e:
+        if explicit or not S("MODEL_STEWARD_ON", bool): raise
+        nxt = STW.report_failure(role, model, e)
+        if not nxt or nxt == model: raise
+        log(f"retrying with {nxt} after: {str(e)[:120]}", "WARN", episode)
+        if nxt == STW.CODE_MOTION: return _code_motion(image_path, path)
+        return _fal_video(nxt, image_url, image_path, prompt, path, episode, hero, None)
+
+def _code_motion(image_path, path, sec=5.0):
+    """v10.1 (K150): the ₹0 last rung for living stills: a slow push-in on the picture we already own."""
+    if not image_path or not os.path.exists(image_path): raise RuntimeError("code motion needs the picture file")
+    from whatifs.specials import _portrait_motion
+    W, H = S("STILL_W", int), S("STILL_H", int)
+    return _portrait_motion(image_path, path, sec, W - W % 2, H - H % 2)
+
+def _fal_video(model, image_url, image_path, prompt, path, episode, hero, price_usd):
+    if not image_url:
+        image_url = _data_uri(image_path)
+    args = video_args(model, image_url, prompt, hero)
     out = fal_run(model, args, timeout=1500)
-    cost("hero_clip" if hero else "living_clip", "fal", 1, S("PRICE_KLING_USD", float) if hero else S("PRICE_LIVING_USD", float), episode)      # v8.3: logged before the download
+    cost("hero_clip" if hero else "living_clip", "fal", 1, price_usd if price_usd is not None else (S("PRICE_KLING_USD", float) if hero else S("PRICE_LIVING_USD", float)), episode)      # v8.3: logged before the download
     url = (out.get("video") or {}).get("url")
     if not url: raise RuntimeError(f"no video in fal reply: {str(out)[:200]}")
     _dl(url, path)

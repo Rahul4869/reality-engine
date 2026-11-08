@@ -5,9 +5,12 @@ def _eps(n): return [{"episode_id": f"E{i}", "yt_id": f"V{i}", "status": "SCHEDU
 
 def test_default_state_is_not_sent_and_setup_writes_a_row(setting):
     assert M.audit_state() == "not_sent"
-    M.setup()
+    M.setup()                                    # v9.3.1: not needed unless the upload check found a lock
     row = next(r for r in core.store().rows("Setup_Status") if r["step"] == "youtube_api_audit")
-    assert row["status"] == "❌" and "Step 4b" in row["detail"]
+    assert row["status"] == "✅" and "not needed" in row["detail"]
+    setting("UPLOAD_LOCK", "on"); M.setup()
+    row = next(r for r in core.store().rows("Setup_Status") if r["step"] == "youtube_api_audit")
+    assert row["status"] == "❌" and "upload check" in row["detail"]
 
 def test_row_turns_green_when_approved(setting):
     setting("API_AUDIT_STATUS", "approved"); M.setup()
@@ -39,6 +42,7 @@ def test_no_reminder_before_any_video_exists_or_once_approved(setting, monkeypat
     setting("API_AUDIT_STATUS", "approved"); M.audit_nudge(_eps(2)); assert sent == []
 
 def test_reminder_once_a_week_with_text_for_each_state(setting, monkeypatch):
+    setting("UPLOAD_LOCK", "on")          # v9.3.1: the audit reminders only run when the upload check found a lock
     sent = _spy(monkeypatch)
     M.audit_nudge(_eps(1)); M.audit_nudge(_eps(1))
     assert sent == ["Reminder: send the YouTube API audit form"]          # the second call, minutes later, stays silent
