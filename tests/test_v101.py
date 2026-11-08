@@ -99,3 +99,11 @@ def test_frame_rate_compared_as_numbers_not_text(monkeypatch):
     monkeypatch.setattr(Q, "_probe_json", lambda args: {"streams": [{"nb_read_packets": "1985", "r_frame_rate": "30/1", "avg_frame_rate": "25/1"}]})
     assert any("variable frame rate" in p["detail"] for p in Q.packet_check("x.mp4", 66.176, 30))
 
+def test_without_a_meta_key_instagram_steps_are_skipped_quietly(monkeypatch, setting):
+    monkeypatch.setattr(PUB, "FAKE", False); monkeypatch.delenv("META_PAGE_KEY", raising=False)
+    setting("IG_USER_ID", ""); setting("FB_PAGE_ID", "")
+    assert PUB.meta_ready() is False
+    assert CAR.prepare("EPX", {}, "t") is None and CAR.post("EPX") is None
+    monkeypatch.setenv("META_PAGE_KEY", "k"); setting("IG_USER_ID", "1789")
+    assert PUB.meta_ready() is True
+

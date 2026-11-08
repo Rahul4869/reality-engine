@@ -322,6 +322,9 @@ def _publish(path, title, episode):
         if p not in links:
             fid, url = PUB.drive_upload(p, os.path.basename(p), public=True); opened.append(fid); links[p] = url
         return links[p]
+    if not PUB.meta_ready():                                      # v10.1: Meta not connected yet: YouTube only, no Drive link opened
+        log("special: Instagram/Facebook not connected - posted to YouTube only", "INFO", episode)
+        res["status"] = "POSTED" if res.get("yt_id") else "MADE (not posted)"; return res
     try:
         try: res["ig"] = str(PUB.ig_reel(None, desc.replace("Reality Engine channel", "Reality Engine channel (link in bio)"), None, video_path=path, url_fn=lambda: link(path)) or "")
         except Exception as e: log(f"special: Instagram failed: {scrub(e)[:120]}", "WARN", episode)

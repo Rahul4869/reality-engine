@@ -293,6 +293,12 @@ def drive_private(fid):
 
 # ---------------- Instagram + Facebook ----------------
 def _meta_key(): return env("META_PAGE_KEY")
+
+def meta_ready():
+    """v10.1: Instagram/Facebook are used only when connected (META_ON, the META_PAGE_KEY secret and an IG or FB id from setup). Without them,
+    every Meta step is skipped quietly: YouTube is unaffected, no Drive link is opened for Meta, nothing is retried."""
+    if FAKE: return S("META_ON", bool)
+    return bool(S("META_ON", bool) and _meta_key() and (S("IG_USER_ID") or S("FB_PAGE_ID")))
 def MH(): return {"Authorization": "Bearer " + _meta_key()}
 def _rupload(url, path):
     """v8.9.1: send the file's bytes straight to Meta's upload host (no public Drive link needed). True on success."""

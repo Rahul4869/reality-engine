@@ -36,8 +36,9 @@ def _slide(img_path, title, sub, out):
 def prepare(ep, plan, title):
     """Production job: make the slides, keep them privately on Drive, record READY. Never raises."""
     if not S("CAROUSEL_ON", bool): return None
+    from whatifs import publish as PUB
+    if not PUB.meta_ready(): return None                               # v10.1: no slides are made while Instagram is not connected
     try:
-        from whatifs import publish as PUB
         stills = _pick_stills(ep); ex = [x for x in (plan or {}).get("exhibits", []) if isinstance(x, dict)][:4]
         texts = [(f"CASE FILE: {str(title)[:60]}", str((plan or {}).get("charge") or "Reality is on trial")[:120])]
         for i, x in enumerate(ex):
@@ -70,6 +71,8 @@ def _public_url(fid, ep):
 def post(ep):
     """Release job: publish the READY carousel of this episode (at most CAROUSEL_PER_WEEK). Never raises."""
     if not S("CAROUSEL_ON", bool): return None
+    from whatifs import publish as PUB0
+    if not PUB0.meta_ready(): return None
     st = store(); row = next((r for r in st.rows("Carousels") if r.get("episode_id") == ep and r.get("status") == "READY"), None)
     if not row: return None
     week = [r for r in st.rows("Carousels") if r.get("status") == "POSTED" and parse_iso(r.get("ts")) and (now_utc() - parse_iso(r.get("ts"))).days < 7]

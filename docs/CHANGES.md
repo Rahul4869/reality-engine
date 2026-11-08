@@ -1,5 +1,10 @@
 # Changes (newest first). Claude Code adds one dated entry per merged change: what, why, cost, how to switch it off.
 
+## 2026-11-08 v10.1 CI fix (setup-chat findings)
+- Checks and the Repair Bot install `cryptography>=42,<46` (same pin as dash.yml / whatsapp.yml). Without it the 5 dashboard/WhatsApp tests failed on GitHub, so Checks could never go green and the rehearsal step never ran.
+- special.yml now installs the same tools as the pipeline's render job (brand fonts, espeak-ng, torch CPU for the Kokoro fallback voice), so cast/special reels and pilots look like episodes and keep a fallback voice.
+- Instagram/Facebook steps skip quietly while Meta isn't connected (`publish.meta_ready()`): reels, specials and pilots go to YouTube only, no carousel slides are made, no Drive link is opened. Switch: META_ON. Cost: Rs 0.
+
 ## 2026-11-08 v10.1 (part 2) - Model Steward
 - Picture/video models now look after themselves like the text and voice models: instant failover when fal retires or breaks a model (same call retried on the next approved model; living stills fall back to a free camera move), a weekly retirement watch with a card 14 days ahead and a switch 7 days before the date, and a weekly scout that tests newer models automatically (capped) and adopts them only when clearly better, 3 days after telling the owner. Never raises the clip price beyond 1.3x or $0.50 without the owner. Switches: MODEL_STEWARD_ON, MODEL_LADDERS, MODEL_FAILS_TO_SWITCH, MODEL_SWITCH_LEAD_DAYS, MODEL_MAX_PRICE_RATIO, MODEL_MAX_USD_CLIP, MODEL_UPGRADE_SCOUT_ON, MODEL_AUTO_UPGRADE_ON, MODEL_UPGRADE_MARGIN, MODEL_UPGRADE_NOTICE_DAYS. Cost: ₹0 weekly; an automatic test costs at most BAKEOFF_CAP_INR (about Rs 130 for 2 scenes x 2 models).
 

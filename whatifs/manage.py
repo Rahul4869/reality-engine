@@ -338,7 +338,8 @@ def _post_reel(r, rel, long_url):
             PUB.yt_comment(sid, f"Full video: {long_url}")
         except Exception as x: log(f"short upload failed: {x}", "WARN")
     else: log("YouTube Shorts copy switched off (REEL1_SHORTS_ON = FALSE)")
-    if S("META_ON", bool):          # v8.9.1 (fix): Instagram and Facebook are tried separately (one failing no longer skips the other), the reel file is sent
+    if not PUB.meta_ready() and S("META_ON", bool): log("Instagram/Facebook not connected (no Meta key yet): this reel goes to YouTube only")
+    if PUB.meta_ready():            # v10.1: only when Meta is connected. v8.9.1 (fix): Instagram and Facebook are tried separately (one failing no longer skips the other), the reel file is sent
         opened, links = [], {}        # directly, a public Drive link is made only if a platform needs it, and every link made is closed again in 'finally'
         def link(p):
             if p not in links:
