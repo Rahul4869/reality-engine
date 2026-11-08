@@ -601,7 +601,8 @@ def learn():
             from whatifs import microscope as MSC; MSC.learn()                # v10 (K138): data rules from retention
             from whatifs import caretaker as CTK; CTK.backup(); CTK.advisor()  # v10 (K140): weekly Sheet backup + the Advisor card
             from whatifs import viewers as VWR, ypp as YPPW; VWR.collect(); YPPW.check()   # v10.1 (K147/K148): viewer questions + the 500-tier watch
-            from whatifs import steward as STWD; STWD.watch(); STWD.test_candidates()      # v10.1 (K150): retirements, newer models, automatic tests
+            from whatifs import steward as STWD; STWD.watch()                            # v10.1 (K150): retirements and newer models (free)
+            if not paused(): STWD.test_candidates()                                      # the automatic test costs money: never while PAUSED
     except Exception as x: log(f"weekly watch skipped: {scrub(x)}", "WARN")
     eps = [e for e in st.rows("Episodes") if e.get("status") in ("LIVE1", "LIVE") and e.get("yt_id")]
     old = st.rows("Analytics"); done = {a["episode_id"] for a in old}

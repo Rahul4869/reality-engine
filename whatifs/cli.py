@@ -16,6 +16,11 @@ def main():
     try:
         import signal; signal.signal(signal.SIGTERM, _on_stop); signal.signal(signal.SIGINT, _on_stop)
     except Exception: pass
+    try:                                                       # v10.1b: PAUSED also stops the paid side jobs that run on their own schedule
+        from whatifs.manage import paused as _paused           # (hand-started ones still run: cast intro, Script Preview, sheets, upload check)
+        if _paused() and (cmd in ("preprod", "pilot") or (cmd == "special" and "--if-due" in sys.argv)):
+            print("paused - nothing to do"); return
+    except Exception: pass
     try:
         if cmd == "setup":
             from whatifs.manage import setup; setup()

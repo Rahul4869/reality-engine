@@ -1,5 +1,10 @@
 # Changes (newest first). Claude Code adds one dated entry per merged change: what, why, cost, how to switch it off.
 
+## 2026-11-08 v10.1b Steward parser fix (setup-chat finding)
+- fal model pages embed fal's whole list of deprecation rules (for many endpoints) in scripts. The Steward read them all, so 7 models got another endpoint's date (25 Oct 2026). It now reads only the page's own visible notice; a date shared by 3+ models (MODEL_SHARED_DATE_MAX) is ignored; a date never blocks a model by itself (real outages are caught by runtime failover); a past date is never acted on.
+- One-time repair (`steward.sanitize`, idempotent): removes those dates, drops plans built on them, undoes a switch they caused, withdraws their unanswered cards.
+- PAUSED now also stops the paid scheduled side jobs (preprod, scheduled specials, pilots, the Steward's automatic test). Hand-started jobs still run.
+
 ## 2026-11-08 v10.1 CI fix (setup-chat findings)
 - Checks and the Repair Bot install `cryptography>=42,<46` (same pin as dash.yml / whatsapp.yml). Without it the 5 dashboard/WhatsApp tests failed on GitHub, so Checks could never go green and the rehearsal step never ran.
 - special.yml now installs the same tools as the pipeline's render job (brand fonts, espeak-ng, torch CPU for the Kokoro fallback voice), so cast/special reels and pilots look like episodes and keep a fallback voice.

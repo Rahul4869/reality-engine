@@ -98,3 +98,39 @@ def test_judge_pair_runs_in_fake_mode(monkeypatch):
     monkeypatch.setenv("WI_SMALL", "1")
     r = BK.judge_pair(HERO, 0.35, "wan/v2.6/image-to-video/flash", 0.25)
     assert r["ok"] and 0 <= r["cur_score"] <= 10 and 0 <= r["new_score"] <= 10
+
+FAL_RULES = ('<html><body><h1>fal-ai/flux/schnell</h1><p>Fast images.</p>'
+             '<script>self.__next_f.push([1,"{\\"rules\\":[{\\"exact_match\\":\\"fal-ai/some-old-model\\",\\"message\\":\\"This endpoint will be deprecated on October 25, 2026.\\"}]}"])</script>'
+             '<script type="application/json">{"message":"This endpoint will be deprecated on October 25, 2026."}</script></body></html>')
+
+def test_rules_embedded_for_other_endpoints_are_ignored():
+    p = ST.parse_page(FAL_RULES)
+    assert p["status"] == "ok" and p["retire_on"] is None
+    own = '<div><h5>This endpoint will be deprecated on November 17, 2026.</h5></div><script>{"x":"This endpoint will be deprecated on October 25, 2026."}</script>'
+    assert ST.parse_page(own)["retire_on"] == "2026-11-17"
+
+def test_one_date_on_many_models_is_a_page_wide_notice(monkeypatch):
+    _quiet(monkeypatch)
+    fetch = lambda url: "" if "explore" in url else "<h5>This endpoint will be deprecated on October 25, 2026.</h5>"
+    s = ST.watch(fetch=fetch, now=dt.datetime(2026, 11, 8, tzinfo=dt.timezone.utc))
+    assert s["planned"] == {} and all(not e.get("retire_on") for e in ST.health().values())
+    assert core.S("FAL_LIVING_MODEL") != "code-motion" and ST.usable(HERO)
+
+def test_live_bad_state_is_repaired(monkeypatch, setting):
+    _quiet(monkeypatch)
+    bad = {m: {"status": "deprecating", "retire_on": "2026-10-25"} for m in (HERO, "fal-ai/flux/schnell", "fal-ai/ltx-video/image-to-video", "wan/v2.6/image-to-video/flash")}
+    setting("MODEL_HEALTH", json.dumps(bad))
+    setting("MODEL_PLANNED", json.dumps({"living": {"to": "code-motion", "usd": 0, "on": "2026-11-08", "why": "fal-ai/ltx-video/image-to-video retires 2026-10-25"}}))
+    setting("FAL_LIVING_MODEL", "code-motion")
+    core.store().append("Model_Changes", [{"ts": "t", "role": "living", "from": "fal-ai/ltx-video/image-to-video", "to": "code-motion", "why": "fal-ai/ltx-video/image-to-video retires 2026-10-25"}])
+    NT.send("model_plan", "fal-ai/ltx-video/image-to-video (living) will be retired on fal on 2026-10-25. Plan: switch to code-motion", tier="week", dedupe_key="plan|living|code-motion")
+    r = ST.sanitize()
+    assert r["dates"] == ["2026-10-25"] and r["plans"] == ["living"] and r["reverted"] == ["living"] and r["cards"] == 1
+    assert core.S("FAL_LIVING_MODEL") == "fal-ai/ltx-video/image-to-video" and json.loads(core.S("MODEL_PLANNED")) == {}
+    assert all(ST.usable(m) for m in bad) and ST.sanitize() == {}
+    assert ST.apply_planned(dt.datetime(2026, 11, 9, tzinfo=dt.timezone.utc)) == []
+
+def test_a_date_alone_never_blocks_a_model(setting):
+    setting("MODEL_HEALTH", json.dumps({HERO: {"status": "deprecating", "retire_on": "2026-10-01"}}))
+    assert ST.usable(HERO) and ST.ensure("hero") == HERO
+

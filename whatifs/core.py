@@ -308,7 +308,7 @@ DEFAULTS = {
  # platform
  "YT_CATEGORY": ("28", "Science & Technology"), "AI_LABEL_DEFAULT": ("TRUE", "honest label"),
  "META_ON": ("TRUE", ""), "IG_USER_ID": ("", "auto-filled at setup"), "FB_PAGE_ID": ("", "auto-filled at setup"),
- "OPERATOR_EMAIL": ("", "your email"), "DRIVE_FOLDER_ID": ("", "auto"),
+ "OPERATOR_EMAIL": ("", "your email"), "DRIVE_FOLDER_ID": ("", "optional; blank = files go to the Drive root, private. Leave blank: a folder made by hand is not visible to the app's drive.file permission"),
  "EMAIL_LEVEL": ("minimal", "minimal = only essential emails (voice, launch, money, pause, alerts, monthly brief); all = also one note per scheduled video"),
  "META_GRAPH_VERSION": ("v24.0", "Facebook/Instagram Graph API version; raise it when Meta retires this one"),
  # automation
@@ -509,7 +509,7 @@ DEFAULTS = {
  "COMMENT_DIGEST_WEEK": ("", "auto - ISO week of the last comments digest"),
  "TEACUP_FINDERS_MAX": ("3", "viewers named as teacup finders in the next episode (handles only, filtered)"),
  "EXPERIMENT_EPISODES": ("8", "videos that get an Experiments row (hypothesis + 48 h / 7 d / 28 d results); recommendations only, nothing changes by itself"),
- "TARGET_REGIONS": ("US,UK,CA,AU", "regions the channel aims at (publish time, premise relevance, the country-share note)"),
+ "TARGET_REGIONS": ("US,UK,CA,AU", "regions the channel aims at; used ONLY by the 'one region dominates' note (publish time is PUBLISH_HOUR_ET)"),
  "REGION_DOMINANCE_SHARE": ("0.7", "an info email when one country brings this share of a video's views"),
  "VARIETY_LOOKBACK": ("6", "episodes the variety guard compares the Show Plan with"),
  # v9.1 (K103): every v9.1 feature has its own flag; V91_SAFE_MODE switches them ALL off at once (= exactly v9)
@@ -645,6 +645,7 @@ DEFAULTS = {
  "MODEL_HEALTH": ("", "auto - the Steward's record per model (status, retirement date, failures)"),
  "MODEL_PLANNED": ("", "auto - switches the Steward has announced (role -> model, date)"),
  "MODEL_CANDIDATES": ("", "auto - newer models queued for the automatic test"),
+ "MODEL_SHARED_DATE_MAX": ("3", "v10.1b: the same retirement date on this many models at once = a page-wide notice, ignored"),
  "MODEL_FAILS_TO_SWITCH": ("3", "v10.1: errors in a row before a model counts as failing (a 'deprecated/not found' answer switches at once)"),
  "MODEL_SWITCH_LEAD_DAYS": ("14", "v10.1: a retiring model gets its replacement announced this many days ahead (the switch is 7 days before retirement)"),
  "MODEL_MAX_PRICE_RATIO": ("1.3", "v10.1: an automatic switch never raises the clip price above this x the current price"),

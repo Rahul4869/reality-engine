@@ -42,9 +42,8 @@ def _log(role, frm, to, why):
 def usable(mid, today=None):
     if mid == CODE_MOTION: return True
     h = health().get(mid) or {}
-    if h.get("status") in ("dead", "failing"): return False
-    r = h.get("retire_on")
-    return not (r and (today or now_utc().date()).isoformat() >= r)
+    return h.get("status") not in ("dead", "failing")         # v10.1b: a retirement DATE never blocks a model by itself (it plans a switch;
+                                                               # a model that really stops is caught by runtime failover the same minute)
 
 def price_of(role, mid):
     for e in ladders().get(role, []):
@@ -118,13 +117,21 @@ def report_failure(role, mid, err):
 # ------------------------------------------------------------------ weekly watch
 MONTHS = {m: i for i, m in enumerate(["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"], 1)}
 
+def visible_text(html):
+    """v10.1b: the page WITHOUT <script>/<style>/<noscript> blocks. fal model pages embed fal's whole list of deprecation rules (exact-match and
+    prefix rules for MANY endpoints, e.g. 'fal-ai/veo3.1') in scripts; reading those gave every model another endpoint's date (live bug, 8 Nov 2026).
+    The model's own notice is a visible heading: 'This endpoint will be deprecated on November 17, 2026.'"""
+    h = re.sub(r"(?is)<(script|style|noscript)\b[^>]*>.*?</\1\s*>", " ", str(html or ""))
+    return re.sub(r"(?s)<[^>]+>", " ", h)
+
 def parse_page(text):
-    """{'status': 'dead'|'deprecating'|'ok', 'retire_on': 'YYYY-MM-DD'|None, 'usd': float|None} from a fal model page's text."""
-    t = re.sub(r"\s+", " ", str(text or "")).lower(); out = {"status": "ok", "retire_on": None, "usd": None}
-    m = re.search(r"will be deprecated on (\w+) (\d{1,2}),? (\d{4})", t)
+    """{'status': 'dead'|'deprecating'|'ok', 'retire_on': 'YYYY-MM-DD'|None, 'usd': float|None} from a fal model page (HTML or visible text).
+    Only the endpoint-specific wording counts ('This endpoint will be deprecated on <date>' / 'This endpoint is deprecated')."""
+    t = re.sub(r"\s+", " ", visible_text(text)).lower(); out = {"status": "ok", "retire_on": None, "usd": None}
+    m = re.search(r"this endpoint will be deprecated on (\w+) (\d{1,2}),? (\d{4})", t)
     if m and m.group(1) in MONTHS:
         out.update(status="deprecating", retire_on=dt.date(int(m.group(3)), MONTHS[m.group(1)], int(m.group(2))).isoformat())
-    elif "this endpoint is deprecated" in t or "no longer supported" in t: out["status"] = "dead"
+    elif "this endpoint is deprecated" in t: out["status"] = "dead"
     p = re.search(r"for 5s video your request will cost \$(\d+(?:\.\d+)?)", t) or re.search(r"\$(\d+(?:\.\d+)?)\s*(?:/|per)\s*(?:video )?second", t)
     if p:
         v = float(p.group(1)); out["usd"] = round(v if "5s video" in p.group(0) else v * 5, 4)
@@ -133,23 +140,37 @@ def parse_page(text):
 def _fetch(url):
     import requests
     r = requests.get(url, timeout=25, headers={"User-Agent": "RealityEngine-model-steward/1.0"}); r.raise_for_status()
-    return re.sub(r"(?s)<[^>]+>", " ", r.text)
+    return r.text                                             # v10.1b: parse_page removes scripts itself
 
 def watch(fetch=None, now=None):
     """Weekly: retirement dates of every ladder/current model, planned switches with notice, and newer-version discovery. Returns a summary."""
     if not S("MODEL_STEWARD_ON", bool) or (FAKE and fetch is None): return {}
+    sanitize()                                                # v10.1b: repairs state written by the old parser (idempotent)
     fetch = fetch or _fetch; now = now or now_utc(); h = health(); planned = {}; found = []
     ids = {e.get("id") for es in ladders().values() for e in es} | {current(r) for r in ROLE_SETTINGS}
+    seen = {}
     for mid in sorted(i for i in ids if i and i != CODE_MOTION):
-        try: info = parse_page(fetch(f"https://fal.ai/models/{mid}"))
-        except Exception as e: log(f"steward: {mid} page not read ({str(e)[:80]})", "WARN"); continue
-        e = h.setdefault(mid, {}); e.update({k: v for k, v in info.items() if k in ("status", "retire_on") and v}); e["checked"] = iso()
+        try: seen[mid] = parse_page(fetch(f"https://fal.ai/models/{mid}"))
+        except Exception as e: log(f"steward: {mid} page not read ({str(e)[:80]})", "WARN")
+    dates = {}
+    for mid, info in seen.items():
+        if info.get("retire_on"): dates.setdefault(info["retire_on"], []).append(mid)
+    for d, mids in dates.items():                             # v10.1b: one date on 3+ different models = a page-wide notice, never trusted
+        if len(mids) >= S("MODEL_SHARED_DATE_MAX", int):
+            log(f"steward: {len(mids)} models showed the same retirement date {d}: treated as a page-wide notice and ignored", "WARN")
+            for mid in mids: seen[mid].update(status="ok", retire_on=None)
+    for mid, info in seen.items():
+        e = h.setdefault(mid, {}); e["checked"] = iso()
+        e["status"] = info["status"] if info["status"] != "ok" or e.get("status") in (None, "", "ok", "deprecating") else e["status"]
+        if info["status"] == "ok" and e.get("status") == "ok": e.pop("retire_on", None)
+        if info.get("retire_on"): e["retire_on"] = info["retire_on"]
         if info.get("usd"): e["usd_seen"] = info["usd"]
     _save(h)
     from whatifs import notify as NT
     for role in ROLE_SETTINGS:
         mid = current(role); e = h.get(mid) or {}
         r = e.get("retire_on")
+        if r and r < now.date().isoformat(): continue          # v10.1b: a past date with a still-working model is not acted on
         if e.get("status") == "dead" or (r and (dt.date.fromisoformat(r) - now.date()).days <= S("MODEL_SWITCH_LEAD_DAYS", int)):
             nxt = next_candidate(role, mid)
             if not nxt: continue
@@ -202,6 +223,7 @@ def discover(fetch):
 
 def apply_planned(now=None):
     """Daily: planned switches whose date has come (unless the owner said KEEP)."""
+    sanitize()                                                # v10.1b: never apply a plan built on a misread date
     now = now or now_utc()
     try: plan = json.loads(S("MODEL_PLANNED") or "{}")
     except Exception: plan = {}
@@ -248,3 +270,37 @@ def test_candidates(now=None):
         NT.send("model_upgrade", f"Test result: {c['id']} scored {res['new_score']:.1f}/10 vs {res['cur_score']:.1f} for the current model, at ${c['usd']}/clip. Switching on {on}.",
                 [("Keep current", "KEEP hero"), ("Switch now", "SWITCHNOW hero"), ("Discuss", "DISCUSS model hero")], tier="week", default=f"switch on {on}", expires_h=24 * 4, dedupe_key=f"upg|{c['id']}")
     return res
+
+def sanitize():
+    """v10.1b: undo what the old parser wrote: retirement dates shared by MODEL_SHARED_DATE_MAX+ models, plans built on them, a switch they
+    caused, and their unanswered cards. Safe to run any number of times. Returns what it cleaned."""
+    h = health(); dates = {}
+    for mid, e in h.items():
+        if e.get("retire_on"): dates.setdefault(e["retire_on"], []).append(mid)
+    bad = {d for d, m in dates.items() if len(m) >= S("MODEL_SHARED_DATE_MAX", int)}
+    if not bad: return {}
+    for e in h.values():
+        if e.get("retire_on") in bad:
+            e.pop("retire_on", None)
+            if e.get("status") == "deprecating": e["status"] = "ok"
+    _save(h)
+    try: plan = json.loads(S("MODEL_PLANNED") or "{}")
+    except Exception: plan = {}
+    dropped = [r for r, p in plan.items() if any(d in str(p.get("why", "")) for d in bad)]
+    for r in dropped: plan.pop(r)
+    set_setting("MODEL_PLANNED", json.dumps(plan))
+    reverted = []
+    for r in store().rows("Model_Changes"):
+        if any(d in str(r.get("why", "")) for d in bad) and current(r.get("role", "")) == r.get("to"):
+            key, pk = ROLE_SETTINGS[r["role"]]; set_setting(key, r.get("from")); reverted.append(r["role"])
+            usd = price_of(r["role"], r.get("from"))
+            if pk and usd is not None: set_setting(pk, str(usd))
+            _log(r["role"], r.get("to"), r.get("from"), "undo: switch was based on a misread retirement date")
+    n = 0
+    for row in store().rows("Owner_Actions"):
+        if row.get("kind") in ("model_plan", "model_switch") and str(row.get("status", "")).upper() in ("", "QUEUED", "PENDING", "SENT", "OPEN") \
+                and any(d in str(row.get("text", "")) for d in bad):
+            store().update("Owner_Actions", "id", row["id"], {"status": "WITHDRAWN", "answer": "withdrawn: misread retirement date"}); n += 1
+    log(f"steward: cleaned a misread retirement date ({', '.join(sorted(bad))}): plans dropped {dropped}, switches undone {reverted}, cards withdrawn {n}", "WARN")
+    return {"dates": sorted(bad), "plans": dropped, "reverted": reverted, "cards": n}
+
