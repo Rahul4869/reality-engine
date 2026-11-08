@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: "3.11"
       - run: sudo apt-get update -y -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
-      - run: pip install -q "numpy>=1.26,<2.1" opencv-python-headless pillow soundfile requests pytest pyyaml python-docx
+      - run: pip install -q "numpy>=1.26,<2.1" opencv-python-headless pillow soundfile requests pytest pyyaml python-docx "cryptography>=42,<46"
       - name: Restore code from Word copies (this job only, nothing is committed)
         run: |
           python - <<'EOF'

@@ -30,7 +30,7 @@ jobs:
         with:
           python-version: "3.11"
       - run: sudo apt-get update -y -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
-      - run: pip install -q "numpy>=1.26,<2.1" opencv-python-headless pillow soundfile requests pytest pyyaml
+      - run: pip install -q "numpy>=1.26,<2.1" opencv-python-headless pillow soundfile requests pytest pyyaml "cryptography>=42,<46"
       - name: Get the error
         env:
           RUN_ID: ${{ github.event.workflow_run.id }}
