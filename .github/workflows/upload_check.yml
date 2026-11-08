@@ -1,0 +1,29 @@
+name: Upload check
+# v9.3.1 (L1): the ₹0 upload check. Renders a 20-second test clip (no paid call), uploads it UNLISTED, reads the privacy back and deletes it.
+# Passed -> UPLOAD_LOCK = off: uploads can go public and the YouTube API audit is not needed (YouTube lifted the private lock on 2 Nov 2026).
+# The Pipeline also runs this check by itself before the first paid call, so pressing this button is optional.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SHEET_ID: ${{ secrets.SHEET_ID }}
+      G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
+      G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
+      G_REFRESH: ${{ secrets.G_REFRESH }}
+      G_REFRESH_DRIVE: ${{ secrets.G_REFRESH_DRIVE }}
+      OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: |
+          sudo apt-get update -y -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
+          pip install -q requests "numpy>=1.26,<2.1"
+      - run: python -m whatifs.cli upload_check --force

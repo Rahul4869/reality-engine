@@ -31,6 +31,12 @@ jobs:
               os.remove(d); n += 1
           print("restored", n, "files")
           EOF
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Dashboard server and page (v9.4b)
+        run: |
+          node --test mission_control/test_worker.mjs
       - name: Plan Guard
         run: python tools/plan_guard.py
       - name: Unit tests (hooks, research evidence, cut map, failure paths; no keys, no network)

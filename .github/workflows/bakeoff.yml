@@ -1,0 +1,29 @@
+name: Model bake-off
+# v10 (K143): ONE time, by hand. The same two scenes by the current hero video model and the candidates (BAKEOFF_CLIP_MODELS); one card asks
+# which to use. At most BAKEOFF_CAP_INR. Verify the candidate model ids on fal.ai first (fal retires models).
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      SHEET_ID: ${{ secrets.SHEET_ID }}
+      G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
+      G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
+      G_REFRESH: ${{ secrets.G_REFRESH }}
+      G_REFRESH_DRIVE: ${{ secrets.G_REFRESH_DRIVE }}
+      FAL_KEY: ${{ secrets.FAL_KEY }}
+      OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: |
+          sudo apt-get update -y -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
+          pip install -q -r requirements.txt
+      - run: python -m whatifs.cli bakeoff

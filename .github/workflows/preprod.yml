@@ -1,0 +1,52 @@
+name: Pre-production
+# v9.4a (WP2): writes the next episode 34-72 h before its slot at half price (Message Batches), then saves it as an approved draft that the normal
+# production job uses as written. A cheap check runs every hour and exits at once when nothing is due (no AI call, nothing spent).
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preprod:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    concurrency:
+      group: preprod
+      cancel-in-progress: false
+    env:
+      SHEET_ID: ${{ secrets.SHEET_ID }}
+      G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
+      G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
+      G_REFRESH: ${{ secrets.G_REFRESH }}
+      G_REFRESH_DRIVE: ${{ secrets.G_REFRESH_DRIVE }}
+      ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_KEY }}
+      GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
+      FAL_KEY: ${{ secrets.FAL_KEY }}
+      OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Is anything due? (no AI call)
+        id: check
+        run: |
+          pip install -q requests "numpy>=1.26,<2.1"
+          echo "due=$(python -m whatifs.cli preprod --check | tail -n 1)" >> "$GITHUB_OUTPUT"
+      - name: Python packages
+        if: steps.check.outputs.due == 'yes'
+        run: |
+          pip install -q "torch>=2.2,<3" --index-url https://download.pytorch.org/whl/cpu
+          pip install -q -r requirements.txt
+      - name: Write the next episode early (half price)
+        if: steps.check.outputs.due == 'yes'
+        run: python -m whatifs.cli preprod
+      - if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: error-${{ github.run_id }}
+          path: last_error.txt
+          retention-days: 3

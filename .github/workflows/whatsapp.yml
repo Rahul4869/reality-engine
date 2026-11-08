@@ -1,0 +1,42 @@
+name: WhatsApp
+# v9.4b (K131): messages and button taps from the owner's WhatsApp, forwarded by the relay Worker (owner only, signature checked, AES-GCM encrypted).
+# Replies come back on WhatsApp in about 30-60 s. Nothing of the conversation is printed here (K32).
+on:
+  repository_dispatch:
+    types: [wa_inbound]
+permissions:
+  contents: read
+  actions: write
+jobs:
+  inbound:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: owner-actions
+      cancel-in-progress: false
+    env:
+      SHEET_ID: ${{ secrets.SHEET_ID }}
+      G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
+      G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
+      G_REFRESH: ${{ secrets.G_REFRESH }}
+      G_REFRESH_DRIVE: ${{ secrets.G_REFRESH_DRIVE }}
+      OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+      ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_KEY }}
+      WA_RELAY_KEY: ${{ secrets.WA_RELAY_KEY }}
+      WA_TOKEN: ${{ secrets.WA_TOKEN }}
+      WA_PHONE_ID: ${{ secrets.WA_PHONE_ID }}
+      WA_WABA_ID: ${{ secrets.WA_WABA_ID }}
+      OWNER_WA: ${{ secrets.OWNER_WA }}
+      GH_MERGE_TOKEN: ${{ secrets.GH_MERGE_TOKEN }}
+      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+      CF_KV_NAMESPACE_ID: ${{ secrets.CF_KV_NAMESPACE_ID }}
+      CF_KV_TOKEN: ${{ secrets.CF_KV_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      WA_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: pip install -q requests "numpy>=1.26,<2.1" "cryptography>=42,<46"
+      - run: python -m whatifs.cli wa_inbound

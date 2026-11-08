@@ -21,6 +21,9 @@ jobs:
       PEXELS_KEY: ${{ secrets.PEXELS_KEY }}
       META_PAGE_KEY: ${{ secrets.META_PAGE_KEY }}
       OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+      CF_KV_NAMESPACE_ID: ${{ secrets.CF_KV_NAMESPACE_ID }}
+      CF_KV_TOKEN: ${{ secrets.CF_KV_TOKEN }}
       GH_REPO: ${{ github.repository }}
     outputs:
       action: ${{ steps.t.outputs.action }}

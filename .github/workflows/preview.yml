@@ -48,7 +48,7 @@ jobs:
           path: last_error.txt
           retention-days: 3
   decide:
-    if: github.event_name == 'issues' && github.event.issue.user.login == github.repository_owner && (startsWith(github.event.issue.title, 'APPROVE DRAFT') || startsWith(github.event.issue.title, 'REJECT DRAFT') || startsWith(github.event.issue.title, 'PICK EP') || startsWith(github.event.issue.title, 'APPROVE SHEET') || startsWith(github.event.issue.title, 'REDO SHEET'))
+    if: github.event_name == 'issues' && github.event.issue.user.login == github.repository_owner && (startsWith(github.event.issue.title, 'APPROVE DRAFT') || startsWith(github.event.issue.title, 'REJECT DRAFT') || startsWith(github.event.issue.title, 'PICK EP') || startsWith(github.event.issue.title, 'APPROVE SHEET') || startsWith(github.event.issue.title, 'REDO SHEET') || startsWith(github.event.issue.title, 'MODE ') || startsWith(github.event.issue.title, 'ACT A'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:

@@ -1,0 +1,50 @@
+name: Special reel
+# v10 (K134): ~15-s cast reels that are not episode cut-downs. Runs daily and acts only on SPECIALS_DAYS (twice a month); the one-time
+# cast intro (the channel's launch reel) is started by hand: Run workflow -> kind = cast_intro. Cost per reel <= SPECIAL_REEL_CAP_INR.
+on:
+  schedule:
+    - cron: "40 14 * * *"
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: "cast_intro (one time) or special"
+        required: true
+        default: cast_intro
+        type: string
+permissions:
+  contents: read
+jobs:
+  special:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    concurrency:
+      group: special
+      cancel-in-progress: false
+    env:
+      SHEET_ID: ${{ secrets.SHEET_ID }}
+      G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
+      G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
+      G_REFRESH: ${{ secrets.G_REFRESH }}
+      G_REFRESH_DRIVE: ${{ secrets.G_REFRESH_DRIVE }}
+      ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_KEY }}
+      GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
+      FAL_KEY: ${{ secrets.FAL_KEY }}
+      META_PAGE_KEY: ${{ secrets.META_PAGE_KEY }}
+      OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+      GH_REPO: ${{ github.repository }}
+      SPECIAL_KIND: ${{ inputs.kind }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: |
+          sudo apt-get update -y -qq && sudo apt-get install -y -qq ffmpeg fonts-dejavu-core > /dev/null
+          pip install -q -r requirements.txt
+      - name: Make and post the reel (only on SPECIALS_DAYS unless started by hand)
+        run: |
+          if [ -n "$SPECIAL_KIND" ]; then python -m whatifs.cli special --kind "$SPECIAL_KIND"; else python -m whatifs.cli special --kind special --if-due; fi
+      - name: Pilot Short (v10, only on PILOT_DAYS)
+        if: inputs.kind == ''
+        run: python -m whatifs.cli pilot --if-due

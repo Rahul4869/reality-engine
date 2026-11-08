@@ -1,0 +1,37 @@
+name: Dashboard action
+# v9.4b (K130): one tap from Mission Control. The Worker encrypts it (AES-GCM, WA_RELAY_KEY) and sends repository_dispatch 'dash_action';
+# this job decrypts, routes and records the answer; the page shows "Done" from the next snapshot. The payload is never printed (K32).
+on:
+  repository_dispatch:
+    types: [dash_action]
+permissions:
+  contents: read
+  actions: write
+jobs:
+  act:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: owner-actions
+      cancel-in-progress: false
+    env:
+      SHEET_ID: ${{ secrets.SHEET_ID }}
+      G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
+      G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
+      G_REFRESH: ${{ secrets.G_REFRESH }}
+      G_REFRESH_DRIVE: ${{ secrets.G_REFRESH_DRIVE }}
+      OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+      WA_RELAY_KEY: ${{ secrets.WA_RELAY_KEY }}
+      GH_MERGE_TOKEN: ${{ secrets.GH_MERGE_TOKEN }}
+      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+      CF_KV_NAMESPACE_ID: ${{ secrets.CF_KV_NAMESPACE_ID }}
+      CF_KV_TOKEN: ${{ secrets.CF_KV_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      DASH_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: pip install -q requests "numpy>=1.26,<2.1" "cryptography>=42,<46"
+      - run: python -m whatifs.cli dash_action
