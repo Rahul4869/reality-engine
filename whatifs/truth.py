@@ -299,10 +299,8 @@ UNWIRED_FUNCTIONS = {
     "whatifs/publish.py:meta_bio": "never called (a stub)",
     "whatifs/data.py:ptype_for": "never called",
     "whatifs/shotplan.py:prompt_variety": "a measure that only a test uses",
-    "whatifs/org/registry.py:may_change": "the Execution Engine calls it on every lever change once it is built",
-    "whatifs/org/runner.py:set_executor": "the Execution Engine registers itself with it once it is built",
 }
-UNUSED_TABS_MAX, UNWIRED_FUNCTIONS_MAX = 2, 10          # ratchets: lower them with every entry that is wired or removed, never raise them
+UNUSED_TABS_MAX, UNWIRED_FUNCTIONS_MAX = 2, 8          # ratchets: lower them with every entry that is wired or removed, never raise them
 _IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 _LISTS = {"whatifs/core.py": ("DEFAULTS", "TABS"), "whatifs/truth.py": ("UNREAD_SETTINGS", "UNUSED_TABS", "UNWIRED_FUNCTIONS")}      # tables that LIST names: being listed is not being used
 

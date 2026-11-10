@@ -6,11 +6,11 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 ## 1. Facts (read from the code)
 - Channel: "Reality on Trial" (brand Reality Engine). Concept: `docs/CURRENT/CONCEPT.md`. Owner requirements: `docs/CURRENT/OWNER_REQUIREMENTS_LEDGER.md`.
 - Money: hard cap Rs 5,000 a month, everything included (`BUDGET_CEILING_INR`); extras pause at 90% of the cap; breakout fund carries over at most Rs 1,000. One month can be overridden in `MONTH_CAP_OVERRIDES`.
-- Quality: 41 HARD contract checks (22 at the script stage, 19 on the final video). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway). No upload below Breakout Score 80.
+- Quality: 43 HARD contract checks (24 at the script stage, 19 on the final video). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway). No upload below Breakout Score 80.
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `fal-ai/kling-video/o3/standard/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 1.5 standalone Shorts a day; spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 112 code modules, 691 settings, 78 Sheet tabs, 24 GitHub workflows.
+- Size: 114 code modules, 699 settings, 80 Sheet tabs, 24 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -29,7 +29,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Knowledge Palace core (`whatifs/org/palace.py`: guarded items, life cycle, versions, bounded playbooks, founding knowledge, check `palace_health`; section 10): **built**
 - Memos and the department contract (`whatifs/org/schemas.py`, `memos.py`, `registry.py`, `runner.py`; the long-video pipeline and the daily learning job run under it; checks `dept_contract`, `takeaways_written`; section 11): **built**
 - Playbooks inside the creative departments' model prompts and cited back (checks `palace_injected`, `palace_cited`), the Librarian's merges, outcome scores: **not built yet**
-- Execution Engine (every decision becomes a verified change in what runs): **not built yet**
+- Execution Engine (`whatifs/org/levers.py`, `execute.py`: a ticket becomes a typed change that is written down before and after, verified by later evidence or rolled back; checks `decisions_executed`, `lever_verified`; section 12): **built**
 - R&D and Review Board, creative departments and Council, QA repair loop, learning loop, Owner Office: **not built yet**
 
 ## 4. Truth rules (enforced by `whatifs/truth.py`)
@@ -59,7 +59,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
   - `PKG_VARIANT_C_IMAGE`: the third packaging pair never gets an image of its own.
   - `VIEWER_NAME_ON_SCREEN`: no code puts a viewer's name on screen, so FALSE is what happens; TRUE would change nothing.
   - `PREMISE_BENCH_MAIL_MONTH`: no code writes or reads this bookkeeping cell.
-- Every Sheet tab must be used by code and every function of `whatifs/` must be called by production code. 2 tabs and 10 functions are not (built but never wired); both lists may only shrink and a new one fails the same three guards:
+- Every Sheet tab must be used by code and every function of `whatifs/` must be called by production code. 2 tabs and 8 functions are not (built but never wired); both lists may only shrink and a new one fails the same three guards:
   - `Repairs`: no code writes or reads it: the repair robot counts its repairs from the pull requests on GitHub.
   - `Room_Value`: the room value test was never built (see UNREAD_SETTINGS).
   - `whatifs/models.py:aligned_effort`: never called (see UNREAD_SETTINGS, CACHE_ALIGN_EFFORT).
@@ -70,8 +70,6 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
   - `whatifs/publish.py:meta_bio`: never called (a stub).
   - `whatifs/data.py:ptype_for`: never called.
   - `whatifs/shotplan.py:prompt_variety`: a measure that only a test uses.
-  - `whatifs/org/registry.py:may_change`: the Execution Engine calls it on every lever change once it is built.
-  - `whatifs/org/runner.py:set_executor`: the Execution Engine registers itself with it once it is built.
 
 ## 5. Contract checks (`whatifs/contract.py` FEATURES)
 | check | stage | what it guarantees |
@@ -82,6 +80,8 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | docs_current | script | one current truth: no retired concept in current docs, docstrings or prompts |
 | palace_health | script | Knowledge Palace fit to feed departments: evidenced items tied to real code, nothing retired or expired served, playbooks inside their caps |
 | dept_contract | script | every department that worked on the script ran under the department contract: memos and playbook loaded, work done, memos sent, takeaway written, tickets executed, run reported |
+| decisions_executed | script | nothing the organisation decided stays text: every decision has tickets, every ticket is executed with proof, refused with a reason or escalated |
+| lever_verified | script | every change made by ticket is written down before and after, verified by later evidence or rolled back; none sits past its window |
 | idea_evidence | script | the premise is backed by an outlier at IDEA_MIN_MULTIPLE x |
 | joke_density | script | a [PUNCH] line at least every JOKE_EVERY_SEC_LONG seconds |
 | send_and_awe | script | a [SEND] moment and an [AWE] peak (not in the last 20%) |
@@ -320,6 +320,8 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Sessions | 21 | id, key, dept, trigger, episode_id, attempt ... | one row per department run with its six chained receipts (whatifs/org/runner.py) |
 | Takeaways | 16 | id, ts, session_id, dept, trigger, episode_id ... | what every department run learned; new findings are also proposed to the Palace |
 | Org_Audit | 20 | ts, kind, run_id, dept, trigger, episode_id ... | one row per department run, escalation and watchdog pass that did something |
+| Tickets | 23 | id, created, updated, from_dept, dept, lever_class ... |  |
+| Lever_Changes | 12 | ts, change_id, ticket_id, lever_class, dept, target ... |  |
 
 ## 9. Modules
 | module | purpose |
@@ -421,6 +423,8 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | whatifs/wa.py | The WhatsApp control room: interactive buttons inside the 24-hour window, the approved template outside it, and inbound owner messages. |
 | whatifs/ypp.py | The North-Star tracker: weekly YouTube Analytics progress toward the Partner Program thresholds. |
 | whatifs/org/__init__.py | The Organisation: the departments and work stages every org module shares (Knowledge Palace now; memos, runner and registry build on these). |
+| whatifs/org/execute.py | Execution Engine: turns a ticket into a typed change, writes it down before and after, verifies it with evidence another component wrote later, and rolls it back when that fails. |
+| whatifs/org/levers.py | Lever registry: every Settings cell a department may change by ticket - type, range, largest step, the direction that needs the owner, the checks that judge it - and the scope of an automatic merge. |
 | whatifs/org/memos.py | Memos: the organisation's nervous system - validated on write, read only by their audience, moved only with proof, escalated by the SLA watchdog when a clock runs out. |
 | whatifs/org/palace.py | Knowledge Palace: the one repository every department reads and writes - guarded items, life cycle, versions and bounded department playbooks. |
 | whatifs/org/registry.py | Department registry: what each department is for, the code it wraps, its rhythm, levers, thinking cap, owned checks and the call sites that really run under the runner. |
@@ -452,8 +456,8 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Every wired department run loads its playbook (section 11). Not yet wired (later batches): the playbook inside the creative departments' model
   prompts with items cited back, the Council, the Librarian's merges, outcome scores.
 
-**Founding knowledge** (111 items in `whatifs/org/seed/`; 0 invalid): breakout.json 15, build.json 36, feel.json 15, owner.json 30, platform.json 15.
-By kind: audience_insight 4, failure_lesson 1, owner_preference 26, plan 2, policy_rule 10, strategy 14, takeaway 5, technique 36, tool_fact 13.
+**Founding knowledge** (117 items in `whatifs/org/seed/`; 0 invalid): breakout.json 15, build.json 42, feel.json 15, owner.json 30, platform.json 15.
+By kind: audience_insight 4, failure_lesson 1, owner_preference 26, plan 2, policy_rule 10, strategy 15, takeaway 5, technique 40, tool_fact 14.
 
 **Life cycle** (`palace.MOVES`; a move that is not listed is illegal for everyone)
 
@@ -537,7 +541,8 @@ By kind: audience_insight 4, failure_lesson 1, owner_preference 26, plan 2, poli
 - Statuses: open, acknowledged, in_progress, escalated, resolved, rejected (closed: resolved, rejected). Two clocks per memo: acknowledge and resolve. Acknowledging stops only the first.
 - The SLA watchdog (`memos.watchdog`, every tick): a memo whose clock ran out climbs department -> Council -> owner, skipping a level that has no
   wired run. The owner hears about a stuck item once, then at most 2 reminders, 3 messages a pass at most.
-- EXECUTE: a ticket is applied by the Execution Engine; until it is built a ticket is escalated at once with the reason, never left as text.
+- EXECUTE: every open ticket of the running department goes to the Execution Engine (`execute.apply`, section 12). With the engine switched off
+  (`EXEC_ON`) a ticket is escalated at once with the reason - it is never left as text.
 
 **Departments** (`whatifs/org/registry.py`). Wired = real call sites run it under the runner (checked against the code); pending = the build batch that wires it.
 
@@ -555,7 +560,7 @@ By kind: audience_insight 4, failure_lesson 1, owner_preference 26, plan 2, poli
 | D9 | Publishing & Distribution | episode | publish (whatifs/episode.py) | brief | - | SHORTS_PER_DAY, REEL1_DELAY_MIN, REEL2_DELAY_MIN, NEXT_LINK_ON |
 | D10 | Growth & Learning | daily | daily (whatifs/cli.py) | brief | - | BRAIN_ON, BRAIN_HOLDOUT |
 | D11 | Finance | daily | pending (B9) | brief | - | BUDGET_GUARD_PCT, BREAKOUT_FUND_CAP_INR, AUTO_FIX_PAID_INR |
-| D12 | Operations | tick | pending (B4) | brief | - | PREFLIGHT_ON |
+| D12 | Operations | tick | operate (whatifs/org/execute.py) | brief | - | PREFLIGHT_ON |
 | C | The Council | weekly | pending (B6) | brief | 150 | ORG_SLA_HOURS |
 | L | The Librarian | weekly | pending (B8) | brief | 40 | PALACE_PLAYBOOK_TOKENS, PALACE_PLAYBOOK_TOKENS_BY_DEPT, PALACE_LIMITS_SHARE, PALACE_REVIEW_DAYS, PALACE_KIND_CAPS |
 
@@ -577,4 +582,79 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | build_request | D12 | D12 | ask | 24 / 72 | merged_verified, owner_answer | a code change that no lever can make: the spec, the files, the tests to add and the acceptance |
 | takeaway | any | L | record | 0 / 0 | - | one atomic learning from one department run (kept in the Takeaways tab, proposed to the Palace when it is new) |
 
-**Who owns each contract check** (a failed check becomes a problem memo to that department): D1: breakout_bar; D2: research; D4: audience_asks, cold_open, emotion_beat, end_tease, exhibits, grimm_prototype, hook_lab, idea_evidence, joke_density, no_retired, originality, owners_cut, retention, send_and_awe, time_ladder, verdict_line, verdict_style; D5: chapters, short_covers, thumbnails, titles; D6: aliveness, animation, impact_map, living_characters, no_frozen_frames, promise_paid, real_motion, slop_guard, visual_change; D7: designed_voices, music_bed; D8: dept_contract, self_review, takeaways_written; D9: shorts; D10: brain_playbook; D12: docs_current; L: palace_health.
+**Who owns each contract check** (a failed check becomes a problem memo to that department): D1: breakout_bar; D2: research; D4: audience_asks, cold_open, emotion_beat, end_tease, exhibits, grimm_prototype, hook_lab, idea_evidence, joke_density, no_retired, originality, owners_cut, retention, send_and_awe, time_ladder, verdict_line, verdict_style; D5: chapters, short_covers, thumbnails, titles; D6: aliveness, animation, impact_map, living_characters, no_frozen_frames, promise_paid, real_motion, slop_guard, visual_change; D7: designed_voices, music_bed; D8: dept_contract, self_review, takeaways_written; D9: shorts; D10: brain_playbook; D12: docs_current, lever_verified; C: decisions_executed; L: palace_health.
+
+## 12. The Execution Engine: from a decision to a change that runs (`whatifs/org/levers.py`, `execute.py`)
+- A ticket is ONE change: lever class, target, value. The engine compiles it into a typed operation with a registered way to verify and to undo it,
+  or refuses it with the reason. The ticket's free text (`acceptance_test`, `rollback`) is for people; code never executes it.
+- States (tab `Tickets`, one row per ticket): queued, awaiting_owner (nothing changed yet) -> intent, applied, dispatched, pr_open, merged (a change is under way or waits for its
+  proof) -> verified, rolled_back, refused, failed. Tab `Lever_Changes` is the ledger: one appended row per event - `intent` BEFORE the change, `applied` with the
+  read-back after it, then `verified` with the proof or `rolled_back` with what was restored. A row is never edited.
+- A change is verified only by rows another component wrote AFTER it: a later department run, the check rows of a video made after it, the features
+  of later videos, GitHub's own check runs. The engine's read-back is necessary, never enough.
+- The tick pass (`execute.tick`, next to the SLA watchdog) reads state, not events: it starts a waiting ticket when its moment is free, settles an apply
+  that a killed job left half done, verifies or rolls back, follows a build to its merge, and takes back a change whose ticket a person closed.
+- A setting or an experiment changes BETWEEN videos (no video with status PLANNING / VOICING / VISUALS), and a department has at most one unverified setting or
+  experiment at a time - so the checks of one video can be attributed to one change.
+- Rollback of a setting is compare-and-swap: the old value returns only if the cell still holds what the engine wrote. A value typed by the owner afterwards wins.
+- Windows: a change with no evidence after 14 days (`EXEC_VERIFY_DAYS`) is rolled back; knowledge that 3 complete runs of its department
+  were not served is retired again; an arm must be in the features of 2 later long videos. While a ticket waits for its proof its resolve clock
+  is the end of that window (`memos.await_proof`, at most 130 days); the engine itself rolls back when it ends.
+- A ticket closes as `lever_verified` or `rolled_back` only when the ledger holds that row for it (`memos.resolve`); only the engine may close it that way.
+- The owner: a move in the direction that weakens a gate, costs more or changes his plan waits for ONE pre-filled message (Approve / Reject); nothing
+  changes before his tap. A change that could neither be verified nor undone is escalated to him at once.
+
+| class | what it changes | how it is applied | verified by | undone by |
+|---|---|---|---|---|
+| A knowledge | a Palace item (`palace:<key>`) | accepted with the Council's authority; must fit the department's playbook at once | a later complete run of the department was served that version (and cited it, once the department runs in `prompt` mode) | retire it / restore the earlier text |
+| B setting | a registered Settings cell | `levers.check` (owner department, type, range, one step), then written between videos | a video made after the change passes the lever's checks (no checks: the next complete run of the department) | compare-and-swap back to the old value |
+| C experiment | a trial in the research rulebook (`playbook:<room role>`) | vetted by `playbook.vet`, needs a free trial slot (of 3) | the features of later long videos carry the arm, or the trial was judged on its data | the trial is retired |
+| D prompt rule | a Palace rule item (style_rule / policy_rule) | as A; at most 12 rules made by ticket per department | as A | as A |
+| E code | the repository (ticket to D12) | a `build_request`, the build workflow, at most 2 re-builds | merged AND every check on the merge commit green | pull request closed; after a merge a revert build the owner merges |
+
+- Automatic merge of a code build (`levers.merge_scope`, switch `EXEC_AUTO_MERGE_ON`): decided on the REAL diff - only new files `tests/test_*.py` (plus the
+  regenerated SYSTEM.md), nothing deleted, at least one new test, at most 400 added lines. Anything else gets the owner's Merge / Reject message with the reason.
+
+**The lever table** (`whatifs/org/levers.py`). Range and step are refused, never clamped. Owner = the direction that needs his tap.
+
+| lever (Settings cell) | department | type | range | largest step | needs the owner | judged by |
+|---|---|---|---|---|---|---|
+| WA_ON | D0 | bool | - | - | always: it is your own channel to the pipeline | the next complete run |
+| DASH_ON | D0 | bool | - | - | always: it is your own dashboard | the next complete run |
+| STANDARD_MAX_LONG_PER_MONTH | D1 | int | 1 to 8 | 1 | always: it changes the plan you set | the next complete run |
+| PUBLISH_DAYS | D1 | days | - | - | always: it changes the plan you set | the next complete run |
+| VIDEOS_PER_MONTH_EST | D1 | int | 1 to 8 | 1 | always: it changes the plan you set | the next complete run |
+| RESEARCH_ON | D2 | bool | - | - | off: it switches off something you rely on | research |
+| IDEA_MIN_MULTIPLE | D2 | float | 2 to 20 | 2 | down: it weakens a quality gate | idea_evidence |
+| ROOM_MODE | D4 | enum | v2, v1 | - | value v1: v1 is the older writers' room without the blind jury | owners_cut |
+| ROOM_V2_DRAFTS | D4 | int | 2 to 5 | 1 | up: it costs more money | owners_cut |
+| REHOOK_MAX_GAP_SEC | D4 | int | 30 to 120 | 15 | up: it weakens a quality gate | retention |
+| JOKE_EVERY_SEC_LONG | D4 | int | 8 to 60 | 10 | up: it weakens a quality gate | joke_density |
+| COLD_OPEN_LORE_FREE_SEC | D4 | int | 10 to 45 | 10 | down: it weakens a quality gate | cold_open |
+| PROMISE_BY_SEC | D5 | int | 5 to 60 | 10 | up: it weakens a quality gate | promise_paid |
+| ANIM_SHOTS | D6 | int | 2 to 8 | 1 | up: it costs more money | animation, real_motion |
+| VISUAL_CHANGE_MAX_S | D6 | float | 2 to 8 | 1 | up: it weakens a quality gate | visual_change |
+| PARTICLES_ON | D6 | bool | - | - | off: it weakens a quality gate | aliveness |
+| LIVING_CHARACTERS_ON | D6 | bool | - | - | off: it weakens a quality gate | living_characters |
+| CAMERA_MOTION | D6 | enum | dynamic, gentle | - | - | no_frozen_frames |
+| SOUND_DESIGN_ON | D7 | bool | - | - | off: it weakens a quality gate | music_bed |
+| TTS_ENGINE | D7 | enum | gemini, kokoro | - | - | designed_voices |
+| CONTRACT_OFF | D8 | csv | - | - | always: it switches a promised check off | the next complete run |
+| BREAKOUT_HARD_BAR | D8 | int | 50 to 95 | 5 | down: it weakens a quality gate | breakout_bar |
+| CRITIQUE_MIN | D8 | float | 4 to 9 | 1 | down: it weakens a quality gate | self_review |
+| SHORTS_PER_DAY | D9 | float | 0.5 to 3 | 0.5 | up: it costs more money | the next complete run |
+| REEL1_DELAY_MIN | D9 | int | 0 to 120 | 30 | - | the next complete run |
+| REEL2_DELAY_MIN | D9 | int | 60 to 1440 | 180 | - | the next complete run |
+| NEXT_LINK_ON | D9 | bool | - | - | - | the next complete run |
+| BRAIN_ON | D10 | bool | - | - | off: the channel stops learning from its own videos | the next complete run |
+| BRAIN_HOLDOUT | D10 | float | 0.05 to 0.5 | 0.1 | - | the next complete run |
+| BUDGET_GUARD_PCT | D11 | int | 50 to 100 | 10 | up: it costs more money | the next complete run |
+| BREAKOUT_FUND_CAP_INR | D11 | int | 0 to 3000 | 500 | up: it costs more money | the next complete run |
+| AUTO_FIX_PAID_INR | D11 | int | 0 to 100 | 20 | up: it costs more money | the next complete run |
+| PREFLIGHT_ON | D12 | bool | - | - | off: paid steps would start without the free health checks | the next complete run |
+| ORG_SLA_HOURS | C | json | 0.25 to 720 | - | always: it changes how fast the organisation must act | the next complete run |
+| PALACE_PLAYBOOK_TOKENS | L | int | 200 to 6000 | 600 | - | palace_health |
+| PALACE_PLAYBOOK_TOKENS_BY_DEPT | L | json | 200 to 6000 | - | - | palace_health |
+| PALACE_LIMITS_SHARE | L | float | 0.1 to 0.9 | 0.2 | - | palace_health |
+| PALACE_REVIEW_DAYS | L | json | 0 to 3650 | - | - | palace_health |
+| PALACE_KIND_CAPS | L | json | 1 to 5000 | - | - | palace_health |

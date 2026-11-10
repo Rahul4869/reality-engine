@@ -5,7 +5,8 @@ from whatifs.core import S, log, store, iso, now_utc, parse_iso, scrub, set_sett
 from whatifs.org import DEPARTMENTS, schemas as SC, registry as REG
 from whatifs.org.schemas import MemoError, TYPES, TERMINAL, LIVE, MOVES
 
-TAB, AUDIT = "Memos", "Org_Audit"
+TAB, AUDIT, LEDGER = "Memos", "Org_Audit", "Lever_Changes"
+LEDGER_PROOF = {"lever_verified": ("verified",), "rolled_back": ("rolled_back", "rollback_skipped"), "merged_verified": ("verified",)}      # resolution kind -> the ledger rows that prove it
 _JSON = ("to_depts", "body", "constraints", "links", "evidence", "acks", "resolution", "escalations")
 ESCALATE_H = {1: {"P0": 6, "P1": 72, "P2": 168}, 2: {"P0": 24, "P1": 72, "P2": 168}}      # how long a memo may sit with the Council (1) / before the owner is reminded (2)
 ESCALATE_ACK_H = 24                                                                        # the Council's acknowledge clock after an escalation
@@ -137,6 +138,7 @@ def _roles(m, by):
     if by == "owner": r.add("owner")
     if by in holders(m): r.add("holder")
     if TYPES[m["type"]].get("verifier") == "sender" and by == m["from_dept"]: r.add("verifier")
+    if TYPES[m["type"]].get("verifier") == "engine" and by == "engine": r.add("verifier")
     return r
 
 def _move(m, to, by, changes, st, now):
@@ -166,10 +168,19 @@ def start(mid, by, note="", st=None, now=None):
     st = st or store(); now = now or now_utc(); m = _need(mid, st)
     return _move(m, "in_progress", by, {"acks": dict(m["acks"], **{by: m["acks"].get(by) or iso(now)}), "links": dict(m["links"], progress=str(note)[:200]) if note else m["links"]}, st, now)
 
-def _proof_problem(m, kind, ref, by, rs):
+def _ledger(ref, ticket, actions, st):
+    """Does the Execution Engine's ledger hold a row of this change, for this ticket, with one of these actions and a written proof?"""
+    try: rows_ = st.rows(LEDGER)
+    except Exception: return False
+    return any(str(r.get("change_id")) == ref and str(r.get("ticket_id")) == ticket and str(r.get("action")) in actions and len(str(r.get("proof") or "").strip()) >= 10 for r in rows_)
+
+def _proof_problem(m, kind, ref, by, rs, st=None):
     """Is `ref` real proof for this kind of resolution? A memo is closed by evidence code can look up, never by a claim."""
     ref = str(ref or "").strip()
     if len(ref) < 3: return "a resolution needs a reference to its proof (a memo id, a ledger row, a session id)"
+    if kind in LEDGER_PROOF:
+        ticket = m["id"] if m["type"] == "ticket" else str((m["links"] or {}).get("ticket") or "")
+        if not _ledger(ref, ticket, LEDGER_PROOF[kind], st or store()): return f"the Execution Engine's ledger holds no '{LEDGER_PROOF[kind][0]}' row with a proof for change {ref} of ticket {ticket or '?'}"
     if kind in ("assessment_memo", "decision_memo", "repair_memo"):
         t = get(ref, rs=rs)
         if t is None or t["type"] != kind: return f"'{ref}' is not a {kind}"
@@ -186,9 +197,21 @@ def resolve(mid, by, kind, ref, note="", st=None, now=None):
     if m is None: raise MemoError(f"no such memo {mid}")
     allowed = TYPES[m["type"]]["resolved_by"]
     if kind not in allowed: raise MemoError(f"{mid}: a {m['type']} is closed by {' / '.join(allowed)}, not by '{kind}'")
-    bad = _proof_problem(m, kind, ref, by, rs)
+    bad = _proof_problem(m, kind, ref, by, rs, st)
     if bad: raise MemoError(f"{mid}: {bad}")
     return _move(m, "resolved", by, {"resolution": {"by": by, "ts": iso(now), "kind": kind, "ref": str(ref)[:200], "note": str(note)[:300]}}, st, now)
+
+def await_proof(mid, until, ref, st=None, now=None):
+    """The Execution Engine has made the change of a ticket and now waits for evidence that it took effect. Waiting for proof is not being late: the
+    resolve clock moves to the end of the verification window (when it ends the engine itself rolls the change back). Only for a type that allows
+    it, only with the ledger row of the applied change, never further out than the type's limit."""
+    st = st or store(); now = now or now_utc(); m = _need(mid, st); lim = TYPES[m["type"]].get("await_days")
+    if m["status"] in TERMINAL: raise MemoError(f"{mid} is {m['status']}: a closed memo accepts no further change")
+    if not lim: raise MemoError(f"{mid}: a {m['type']} cannot wait for proof")
+    if not _ledger(str(ref), mid, ("applied", "dispatched"), st): raise MemoError(f"{mid}: the Execution Engine's ledger holds no applied change {ref} for it")
+    if not until or until > now + dt.timedelta(days=lim): raise MemoError(f"{mid}: a {m['type']} may wait for proof for at most {lim} days")
+    st.update(TAB, "id", mid, {"status": "in_progress", "sla_due": iso(until), "links": dict(m["links"], awaiting=str(ref)[:40]), "acks": dict(m["acks"], engine=iso(now)), "updated": iso(now)})
+    return _need(mid, st)
 
 def reject(mid, by, reason, st=None, now=None):
     """Say no, with a reason. The owner's own instruction can be dropped only by the owner."""

@@ -17,22 +17,39 @@ def dispatch(workflow, inputs, ref="main"):
     if r.status_code >= 300: log(f"dispatch {workflow} failed {r.status_code}: {r.text[:160]}", "WARN"); return False
     return True
 
-def request_build(spec, kind="tweak"):
-    """An owner-ordered change (kind tweak|feature) or a repair. Returns True when the build workflow was started."""
+def request_build(spec, kind="tweak", request=""):
+    """An owner-ordered change (kind tweak|feature), a repair, or a build the organisation asked for by ticket (request = its build request id).
+    Returns True when the build workflow was started."""
     if not S("BUILDS_ON", bool): log("builds are switched off (BUILDS_ON)"); return False
-    return dispatch("claude-build.yml", {"spec": str(spec)[:6000], "kind": kind if kind in ("tweak", "feature", "repair") else "tweak"})
+    inputs = {"spec": str(spec)[:6000], "kind": kind if kind in ("tweak", "feature", "repair") else "tweak"}
+    if request: inputs["request"] = str(request)[:40]
+    return dispatch("claude-build.yml", inputs)
+
+def commit_state(sha):
+    """'green' | 'red' | 'pending' for the check runs of one commit (FAKE: green)."""
+    if FAKE: return "green"
+    import requests
+    runs = requests.get(f"{API}/repos/{env('GH_REPO')}/commits/{sha}/check-runs", headers=_h(), timeout=30).json().get("check_runs", []) if sha else []
+    if not runs or not all(r.get("status") == "completed" for r in runs): return "pending"
+    return "green" if all(r.get("conclusion") in ("success", "skipped", "neutral") for r in runs) else "red"
+
+def pr_files(n):
+    """The real diff of pull request n: [{'filename', 'status', 'additions', 'deletions', 'patch'}] (FAKE: nothing, so nothing merges by itself)."""
+    if FAKE: return []
+    import requests
+    r = requests.get(f"{API}/repos/{env('GH_REPO')}/pulls/{n}/files?per_page=100", headers=_h(), timeout=30)
+    if r.status_code >= 300: log(f"diff of #{n} not read: {r.status_code}", "WARN"); return []
+    fs = r.json() if isinstance(r.json(), list) else []
+    return [] if len(fs) >= 100 else [{k: f.get(k) for k in ("filename", "status", "additions", "deletions", "patch")} for f in fs]
 
 def pr_state(n):
     """{'mergeable', 'checks': 'green|red|pending', 'merged', 'head'} for pull request n (FAKE: green)."""
-    if FAKE: return {"mergeable": True, "checks": "green", "merged": False, "head": "fake"}
+    if FAKE: return {"mergeable": True, "checks": "green", "merged": False, "head": "fake", "state": "open", "merge_sha": ""}
     import requests
     repo = env("GH_REPO"); pr = requests.get(f"{API}/repos/{repo}/pulls/{n}", headers=_h(), timeout=30).json()
     sha = (pr.get("head") or {}).get("sha", "")
-    runs = requests.get(f"{API}/repos/{repo}/commits/{sha}/check-runs", headers=_h(), timeout=30).json().get("check_runs", []) if sha else []
-    if not runs: checks = "pending"
-    elif all(r.get("status") == "completed" for r in runs): checks = "green" if all(r.get("conclusion") in ("success", "skipped", "neutral") for r in runs) else "red"
-    else: checks = "pending"
-    return {"mergeable": pr.get("mergeable"), "checks": checks, "merged": bool(pr.get("merged")), "head": sha}
+    return {"mergeable": pr.get("mergeable"), "checks": commit_state(sha), "merged": bool(pr.get("merged")), "head": sha, "state": str(pr.get("state") or ""),
+            "merge_sha": str(pr.get("merge_commit_sha") or "") if pr.get("merged") else ""}
 
 def merge_pr(n, why="owner"):
     """Squash-merge pull request n when every check is green. Returns (ok, message)."""
@@ -67,12 +84,17 @@ def _on_default(row):
     if str(row.get("default_action") or "").startswith("auto-merge"):
         ok, msg = merge_pr(_pr_of(row), "auto-merge after 24 h green (decision 11)"); log(msg)
 
-def build_ready(pr, kind, branch=""):
-    """Called by claude-build.yml once the pull request exists: one owner message with Merge / Reject (notify, 'now' tier)."""
+def build_ready(pr, kind, branch="", request="", note=""):
+    """Called by claude-build.yml once the pull request exists: one owner message with Merge / Reject (notify, 'now' tier). A build the organisation
+    asked for by ticket (request) is handed to the Execution Engine instead: it follows the checks, merges inside its narrow scope by itself and asks
+    the owner only for what is outside it (then with `note` = why)."""
     from whatifs import notify as NT
+    if request:
+        from whatifs.org import execute as EXE
+        if EXE.build_opened(request, pr, branch): return f"pull request #{pr} belongs to build request {request}: the Execution Engine follows it"
     NT.register("build_ready", on_answer=_on_answer, on_default=_on_default)
-    tweak = kind == "tweak" and S("AUTO_MERGE_TWEAKS_ON", bool)
-    text = f"Change #{pr} ({kind}) is built and its checks are running. " + ("It merges by itself 24 h after every check is green unless you stop it." if tweak else "Tap Merge when you want it live.")
+    tweak = kind == "tweak" and S("AUTO_MERGE_TWEAKS_ON", bool) and not note
+    text = f"Change #{pr} ({kind}) is built and its checks are running. " + ("It merges by itself 24 h after every check is green unless you stop it." if tweak else "Tap Merge when you want it live.") + (f" {note}" if note else "")
     return NT.send("build_ready", text, [("Merge", f"MERGE #{pr}"), ("Reject", f"REJECT #{pr}")], tier="now", urgent=False,
                    default="auto-merge after 24 h green" if tweak else "waits; expires after 7 days", expires_h=24 if tweak else 24 * 7, dedupe_key=f"build|{pr}")
 

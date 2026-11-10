@@ -151,6 +151,11 @@ TABS = {
  "Takeaways":       ["id", "ts", "session_id", "dept", "trigger", "episode_id", "kind", "did", "worked", "failed", "next_time", "measures", "evidence", "novel", "signature", "palace_item"],
  "Org_Audit":       ["ts", "kind", "run_id", "dept", "trigger", "episode_id", "outcome", "steps", "chain", "latency_s", "cost_inr", "budget", "model_calls", "inbound", "emitted",
                      "takeaways", "sla_overdue", "playbook_id", "error", "note"],
+ # v12: the Execution Engine (whatifs/org/execute.py). Tickets = one row per ticket, the engine's state for it; Lever_Changes = one row per event of a
+ # change (intent before it, applied after it, then verified or rolled_back), only ever appended.
+ "Tickets":         ["id", "created", "updated", "from_dept", "dept", "lever_class", "target", "state", "change_id", "old", "new", "undo", "applied_at", "verify_by",
+                     "need", "proof", "attempts", "approved", "owner_action", "decision_ref", "request_id", "pr", "note"],
+ "Lever_Changes":   ["ts", "change_id", "ticket_id", "lever_class", "dept", "target", "action", "old", "new", "by", "proof", "note"],
 }
 
 class LocalStore:
@@ -980,6 +985,15 @@ DEFAULTS = {
  "ORG_CAPS_INR": ("", "optional JSON {department: rupees a month} for the organisation's own paid thinking (defaults in whatifs/org/registry.py: D2 300, D3 120, C 150, L 40, takeaways 60)"),
  "ORG_RUN_STALE_H": ("6", "a department run still marked running after this many hours is flagged as abandoned and becomes a problem memo (1-48)"),
  "ORG_WATCHDOG_AT": ("", "auto: when the SLA watchdog last finished a pass (the episode gate fails when this is more than a day old)"),
+ # v12: the Execution Engine (whatifs/org/execute.py, levers.py)
+ "EXEC_ON": ("TRUE", "TRUE = a ticket is executed by the Execution Engine: compiled into a typed change, written down before and after, verified by later evidence, rolled back when that fails; checks decisions_executed and lever_verified run on every episode [FALSE = nothing is changed by ticket: every ticket is escalated at once]"),
+ "EXEC_VERIFY_RUNS": ("3", "a knowledge or rule change is rolled back when this many complete runs of its department after the change were not served the item (1-10)"),
+ "EXEC_VERIFY_DAYS": ("14", "the verification window of a change, in days: no evidence by then = rolled back (an experiment arm gets this many days per output it must appear in; 2-60)"),
+ "EXEC_ARM_OUTPUTS": ("2", "an experiment arm is verified when this many long videos made after it was registered carry it in their features (1-6)"),
+ "EXEC_RULES_PER_DEPT": ("12", "the most prompt rules one department may hold that were made by ticket (lever class D); over it a new rule is refused until one is retired (1-40)"),
+ "EXEC_BUILD_RETRIES": ("2", "how many times a code build that failed its checks, or opened no pull request, is built again before the ticket is escalated (0-4)"),
+ "EXEC_BUILD_WAIT_H": ("6", "hours a code build may take to open its pull request before it counts as failed (1-48)"),
+ "EXEC_AUTO_MERGE_ON": ("TRUE", "TRUE = a code build asked for by ticket merges by itself when every check is green AND its real diff only adds new test files (nothing deleted, no other file); anything else waits for the owner's Merge tap [FALSE = the owner merges every build]"),
 }
 _settings_cache = None
 def settings(refresh=False) -> dict:

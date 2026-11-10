@@ -12,7 +12,7 @@ STATUSES = ("open", "acknowledged", "in_progress", "escalated", "resolved", "rej
 TERMINAL = ("resolved", "rejected")                              # a terminal memo accepts no further change; a recurrence is a new, linked memo
 LIVE = tuple(s for s in STATUSES if s not in TERMINAL)
 # to-status -> (from-statuses, roles). Roles: holder = whoever must act now (the addressed department, the Council or the owner, by level);
-# sender = the department that wrote the memo (only where the type names it as verifier); owner; clock = the SLA watchdog.
+# verifier = the sender, or the Execution Engine, where the type names it (the engine closes only with a row of its own ledger); owner; clock = the SLA watchdog.
 MOVES = {
     "acknowledged": (("open", "escalated"), ("holder",)),
     "in_progress":  (("open", "acknowledged", "escalated"), ("holder",)),
@@ -103,7 +103,7 @@ TYPES = {
     },
     "ticket": {
         "from": ("C",) + tuple(DEPARTMENTS), "to": ANY, "single": True, "mode": "ask", "urgency": "P1", "by_urgency": {"P0": (1, 6), "P1": (24, 48), "P2": (48, 168)},
-        "done_when": None, "resolved_by": ("lever_verified", "rolled_back", "owner_answer"),
+        "done_when": None, "resolved_by": ("lever_verified", "rolled_back", "owner_answer"), "verifier": "engine", "await_days": 130,
         "purpose": "ONE executable change: lever, target, value or diff, acceptance test, rollback",
         "sla": "P0 6 h, P1 48 h, P2 7 days",
         "body": _obj(("lever_class", "target", "value", "acceptance_test", "rollback"),
@@ -112,7 +112,7 @@ TYPES = {
     },
     "build_request": {
         "from": ("D12",), "to": ("D12",), "mode": "ask", "urgency": "P1", "ack_h": 24, "resolve_h": 72, "fixed": True, "done_when": None,
-        "resolved_by": ("merged_verified", "owner_answer"),
+        "resolved_by": ("merged_verified", "owner_answer"), "verifier": "engine",
         "purpose": "a code change that no lever can make: the spec, the files, the tests to add and the acceptance",
         "sla": "a pull request within 72 h or escalated",
         "body": _obj(("spec", "files", "tests_to_add", "acceptance"), {"spec": _s(40, 4000), "files": _arr(_s(3, 200), 1, 30), "tests_to_add": _arr(_s(10, 400), 1, 20),

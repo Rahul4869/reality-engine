@@ -188,7 +188,9 @@ def test_the_owners_instruction_is_honoured_only_by_an_executed_ticket_or_his_ow
     with pytest.raises(MemoError, match="only the owner's own answer"): MEM.resolve(o["id"], "D4", "owner_answer", "he said fine")
     with pytest.raises(MemoError, match="only by owner"): MEM.reject(o["id"], "D4", "the writers' room does not want to do this")
     assert MEM.get(o["id"])["status"] == "open"
-    MEM.resolve(t["id"], "D4", "lever_verified", "Lever_Changes:1"); assert MEM.resolve(o["id"], "D4", "ticket_executed", t["id"])["status"] == "resolved"
+    with pytest.raises(MemoError, match="ledger holds no 'verified' row"): MEM.resolve(t["id"], "D4", "lever_verified", "Lever_Changes:1")        # v12 B4: a claim is not proof
+    core.store().append("Lever_Changes", [{"ts": core.iso(), "change_id": "LC-TEST000001", "ticket_id": t["id"], "action": "verified", "proof": "EP1 passed joke_density at 40 seconds"}])
+    MEM.resolve(t["id"], "D4", "lever_verified", "LC-TEST000001"); assert MEM.resolve(o["id"], "D4", "ticket_executed", t["id"])["status"] == "resolved"
     o2 = MEM.write(owner_memo(subject="A second instruction from the owner, later")); assert MEM.reject(o2["id"], "owner", "changed my mind about this instruction")["status"] == "rejected"
 
 def test_a_rejection_needs_a_real_reason():
@@ -424,8 +426,9 @@ def test_the_thinking_cap_stops_p1_work_lets_p0_through_and_tells_the_owner_once
     assert RUN.run("D2", "research", act, measure=lambda o: {"sources": 5}).ok                       # production money is the governor's business, not this cap
 
 def test_a_ticket_is_executed_by_the_engine_or_escalated_never_left_as_text(monkeypatch):
+    core.set_setting("EXEC_ON", "FALSE")                                                              # v12 B4: the engine exists now; switched off, a ticket still never stays text
     t = MEM.write(ticket()); r = good_run(); e = MEM.get(t["id"]); ex = next(x for x in r.receipts if x["step"] == "EXECUTE")
-    assert ex == dict(ex, tickets=1, executed=[], escalated=[t["id"]]) and e["status"] == "escalated" and "no Execution Engine is registered for lever class B" in e["escalations"][-1]["why"]
+    assert ex == dict(ex, tickets=1, executed=[], escalated=[t["id"]]) and e["status"] == "escalated" and "the Execution Engine is switched off (EXEC_ON), so lever class B" in e["escalations"][-1]["why"]
     done = []; monkeypatch.setattr(RUN, "EXECUTOR", lambda tk, brief: done.append((tk["id"], brief.dept)))
     t2 = MEM.write(ticket(subject="Lower the gap between punchlines to 35 seconds", dedupe_key="second")); r2 = good_run()
     assert done == [(t2["id"], "D4")] and next(x for x in r2.receipts if x["step"] == "EXECUTE")["executed"] == [t2["id"]] and MEM.get(t2["id"])["status"] == "acknowledged"
@@ -452,9 +455,9 @@ def test_money_and_model_calls_of_a_run_are_counted_by_the_runner_not_reported_b
 def test_the_registry_is_honest_about_what_runs_under_the_runner(tmp_path):
     assert REG.entry_issues() == [] and REG.data_issues() == []
     assert set(REG.ENTRY) | set(REG.PENDING) == set(DEPARTMENTS) and not set(REG.ENTRY) & set(REG.PENDING)
-    assert set(REG.PENDING) <= {"D0", "D1", "D2", "D3", "D11", "D12", "C", "L"}, "the pending list may only shrink: wire the department, never add one back"
-    os.makedirs(tmp_path / "whatifs"); src = open(os.path.join(ROOT, "whatifs", "episode.py"), encoding="utf-8").read()
-    shutil.copy(os.path.join(ROOT, "whatifs", "cli.py"), tmp_path / "whatifs" / "cli.py")
+    assert set(REG.PENDING) <= {"D0", "D1", "D2", "D3", "D11", "C", "L"}, "the pending list may only shrink: wire the department, never add one back"      # v12 B4: D12 is wired
+    os.makedirs(tmp_path / "whatifs" / "org"); src = open(os.path.join(ROOT, "whatifs", "episode.py"), encoding="utf-8").read()
+    shutil.copy(os.path.join(ROOT, "whatifs", "cli.py"), tmp_path / "whatifs" / "cli.py"); shutil.copy(os.path.join(ROOT, "whatifs", "org", "execute.py"), tmp_path / "whatifs" / "org" / "execute.py")
     cut = src.replace('ORG.work("D5", "package", ep, lambda b: ROOM.package(room, chs, d, ep), measure=WR.m_pkg, topic=str(room["spine"].get("premise") or ""))', 'ROOM.package(room, chs, d, ep)')
     assert cut != src; open(tmp_path / "whatifs" / "episode.py", "w", encoding="utf-8").write(cut + '\ndef extra(): ORG.work("D7", "remix", "", None)\n')
     bad = REG.entry_issues(str(tmp_path))

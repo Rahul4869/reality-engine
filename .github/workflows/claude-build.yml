@@ -15,6 +15,11 @@ on:
         required: true
         default: tweak
         type: string
+      request:
+        description: "build request id when the organisation asked for this build by ticket (blank for the owner's own orders)"
+        required: false
+        default: ""
+        type: string
 permissions:
   contents: write
   pull-requests: write
@@ -28,25 +33,16 @@ jobs:
     concurrency:
       group: build
       cancel-in-progress: false
+    # v12: the step in which Claude Code reads the spec holds NO Sheet, WhatsApp, owner or merge credential (a spec can carry text from the web
+    # through a research memo; an agent that is talked into printing its environment must find nothing there). They are given only to the last
+    # step, which runs our own code after Claude Code has finished.
     env:
-      CC_OAUTH_TOKEN: ${{ secrets.CC_OAUTH_TOKEN }}
-      GH_MERGE_TOKEN: ${{ secrets.GH_MERGE_TOKEN }}
-      SHEET_ID: ${{ secrets.SHEET_ID }}
-      G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
-      G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
-      G_REFRESH: ${{ secrets.G_REFRESH }}
-      G_REFRESH_DRIVE: ${{ secrets.G_REFRESH_DRIVE }}
-      OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      WA_TOKEN: ${{ secrets.WA_TOKEN }}
-      WA_PHONE_ID: ${{ secrets.WA_PHONE_ID }}
-      WA_WABA_ID: ${{ secrets.WA_WABA_ID }}
-      OWNER_WA: ${{ secrets.OWNER_WA }}
-      AA_API_KEY: ${{ secrets.AA_API_KEY }}
       BUILD_KIND: ${{ inputs.kind }}
       BUILD_BRANCH: claude/${{ inputs.kind }}-${{ github.run_id }}
       BUILD_SPEC: ${{ inputs.spec }}
+      BUILD_REQUEST: ${{ inputs.request }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -58,6 +54,8 @@ jobs:
           git checkout -b "$BUILD_BRANCH"
       - name: Claude Code builds it on the branch
         uses: anthropics/claude-code-action@v1
+        env:
+          CC_OAUTH_TOKEN: ${{ secrets.CC_OAUTH_TOKEN }}
         with:
           claude_code_oauth_token: ${{ env.CC_OAUTH_TOKEN }}
           prompt: |
@@ -74,10 +72,23 @@ jobs:
             `gh pr create --title "[${{ inputs.kind }}] <one line>" --body "<what changed, cost, risk, how to undo>"` and stop. Do not merge.
           claude_args: "--max-turns 40"
       - name: Start Checks on the branch and tell the owner
+        env:
+          GH_MERGE_TOKEN: ${{ secrets.GH_MERGE_TOKEN }}
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+          G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
+          G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
+          G_REFRESH: ${{ secrets.G_REFRESH }}
+          G_REFRESH_DRIVE: ${{ secrets.G_REFRESH_DRIVE }}
+          OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+          WA_TOKEN: ${{ secrets.WA_TOKEN }}
+          WA_PHONE_ID: ${{ secrets.WA_PHONE_ID }}
+          WA_WABA_ID: ${{ secrets.WA_WABA_ID }}
+          OWNER_WA: ${{ secrets.OWNER_WA }}
+          AA_API_KEY: ${{ secrets.AA_API_KEY }}
         run: |
           if [ -n "$GH_MERGE_TOKEN" ]; then export GH_TOKEN="$GH_MERGE_TOKEN"; fi
           PR=$(gh pr list --repo "$GH_REPO" --head "$BUILD_BRANCH" --json number --jq '.[0].number')
           if [ -z "$PR" ]; then echo "no pull request was opened"; exit 1; fi
           gh workflow run checks.yml --repo "$GH_REPO" --ref "$BUILD_BRANCH" || true
           pip install -q "requests>=2.31,<3" "numpy>=1.26,<2.1"
-          python -m whatifs.cli build_ready "$PR" "$BUILD_KIND" "$BUILD_BRANCH"
+          python -m whatifs.cli build_ready "$PR" "$BUILD_KIND" "$BUILD_BRANCH" "$BUILD_REQUEST"

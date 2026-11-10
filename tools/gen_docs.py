@@ -24,7 +24,7 @@ ORG_STATUS = [
     ("Knowledge Palace core (`whatifs/org/palace.py`: guarded items, life cycle, versions, bounded playbooks, founding knowledge, check `palace_health`; section 10)", "built"),
     ("Memos and the department contract (`whatifs/org/schemas.py`, `memos.py`, `registry.py`, `runner.py`; the long-video pipeline and the daily learning job run under it; checks `dept_contract`, `takeaways_written`; section 11)", "built"),
     ("Playbooks inside the creative departments' model prompts and cited back (checks `palace_injected`, `palace_cited`), the Librarian's merges, outcome scores", "not built yet"),
-    ("Execution Engine (every decision becomes a verified change in what runs)", "not built yet"),
+    ("Execution Engine (`whatifs/org/levers.py`, `execute.py`: a ticket becomes a typed change that is written down before and after, verified by later evidence or rolled back; checks `decisions_executed`, `lever_verified`; section 12)", "built"),
     ("R&D and Review Board, creative departments and Council, QA repair loop, learning loop, Owner Office", "not built yet"),
 ]
 
@@ -128,7 +128,8 @@ def _org(A):
     A(f"- Statuses: {', '.join(SC.STATUSES)} (closed: {', '.join(SC.TERMINAL)}). Two clocks per memo: acknowledge and resolve. Acknowledging stops only the first.")
     A("- The SLA watchdog (`memos.watchdog`, every tick): a memo whose clock ran out climbs department -> Council -> owner, skipping a level that has no")
     A(f"  wired run. The owner hears about a stuck item once, then at most {MEM.core_default('ORG_OWNER_REMINDS_MAX')} reminders, {MEM.OWNER_MESSAGES_PER_PASS} messages a pass at most.")
-    A("- EXECUTE: a ticket is applied by the Execution Engine; until it is built a ticket is escalated at once with the reason, never left as text.")
+    A("- EXECUTE: every open ticket of the running department goes to the Execution Engine (`execute.apply`, section 12). With the engine switched off")
+    A("  (`EXEC_ON`) a ticket is escalated at once with the reason - it is never left as text.")
     A("")
     A("**Departments** (`whatifs/org/registry.py`). Wired = real call sites run it under the runner (checked against the code); pending = the build batch that wires it.")
     A("")
@@ -151,6 +152,54 @@ def _org(A):
     A("")
     A("**Who owns each contract check** (a failed check becomes a problem memo to that department): "
       + "; ".join(f"{d}: " + ", ".join(sorted(k for k, v in REG.CHECK_OWNER.items() if v == d)) for d in DEPARTMENTS if d in set(REG.CHECK_OWNER.values())) + ".")
+    A("")
+
+def _exec(A):
+    """Section 12: the Execution Engine - lever classes, states, the lever table - read from whatifs/org (never typed here)."""
+    from whatifs.org import execute as EXE, levers as LV, memos as MEM, schemas as SC
+    D = MEM.core_default
+    A("## 12. The Execution Engine: from a decision to a change that runs (`whatifs/org/levers.py`, `execute.py`)")
+    A("- A ticket is ONE change: lever class, target, value. The engine compiles it into a typed operation with a registered way to verify and to undo it,")
+    A("  or refuses it with the reason. The ticket's free text (`acceptance_test`, `rollback`) is for people; code never executes it.")
+    A(f"- States (tab `Tickets`, one row per ticket): {', '.join(EXE.WAITING)} (nothing changed yet) -> {', '.join(EXE.FLYING)} (a change is under way or waits for its")
+    A(f"  proof) -> {', '.join(EXE.DONE)}. Tab `Lever_Changes` is the ledger: one appended row per event - `intent` BEFORE the change, `applied` with the")
+    A("  read-back after it, then `verified` with the proof or `rolled_back` with what was restored. A row is never edited.")
+    A("- A change is verified only by rows another component wrote AFTER it: a later department run, the check rows of a video made after it, the features")
+    A("  of later videos, GitHub's own check runs. The engine's read-back is necessary, never enough.")
+    A("- The tick pass (`execute.tick`, next to the SLA watchdog) reads state, not events: it starts a waiting ticket when its moment is free, settles an apply")
+    A("  that a killed job left half done, verifies or rolls back, follows a build to its merge, and takes back a change whose ticket a person closed.")
+    A(f"- A setting or an experiment changes BETWEEN videos (no video with status {' / '.join(EXE.MAKING)}), and a department has at most one unverified setting or")
+    A("  experiment at a time - so the checks of one video can be attributed to one change.")
+    A("- Rollback of a setting is compare-and-swap: the old value returns only if the cell still holds what the engine wrote. A value typed by the owner afterwards wins.")
+    A(f"- Windows: a change with no evidence after {D('EXEC_VERIFY_DAYS')} days (`EXEC_VERIFY_DAYS`) is rolled back; knowledge that {D('EXEC_VERIFY_RUNS')} complete runs of its department")
+    A(f"  were not served is retired again; an arm must be in the features of {D('EXEC_ARM_OUTPUTS')} later long videos. While a ticket waits for its proof its resolve clock")
+    A(f"  is the end of that window (`memos.await_proof`, at most {SC.TYPES['ticket']['await_days']} days); the engine itself rolls back when it ends.")
+    A("- A ticket closes as `lever_verified` or `rolled_back` only when the ledger holds that row for it (`memos.resolve`); only the engine may close it that way.")
+    A("- The owner: a move in the direction that weakens a gate, costs more or changes his plan waits for ONE pre-filled message (Approve / Reject); nothing")
+    A("  changes before his tap. A change that could neither be verified nor undone is escalated to him at once.")
+    A("")
+    A("| class | what it changes | how it is applied | verified by | undone by |")
+    A("|---|---|---|---|---|")
+    A("| A knowledge | a Palace item (`palace:<key>`) | accepted with the Council's authority; must fit the department's playbook at once | a later complete run of the department was served that version (and cited it, once the department runs in `prompt` mode) | retire it / restore the earlier text |")
+    A("| B setting | a registered Settings cell | `levers.check` (owner department, type, range, one step), then written between videos | a video made after the change passes the lever's checks (no checks: the next complete run of the department) | compare-and-swap back to the old value |")
+    A(f"| C experiment | a trial in the research rulebook (`playbook:<room role>`) | vetted by `playbook.vet`, needs a free trial slot (of {__import__('whatifs.playbook', fromlist=['x']).MAX_TRIALS}) | the features of later long videos carry the arm, or the trial was judged on its data | the trial is retired |")
+    A(f"| D prompt rule | a Palace rule item ({' / '.join(EXE.RULE_KINDS)}) | as A; at most {D('EXEC_RULES_PER_DEPT')} rules made by ticket per department | as A | as A |")
+    A(f"| E code | the repository (ticket to D12) | a `build_request`, the build workflow, at most {D('EXEC_BUILD_RETRIES')} re-builds | merged AND every check on the merge commit green | pull request closed; after a merge a revert build the owner merges |")
+    A("")
+    A(f"- Automatic merge of a code build (`levers.merge_scope`, switch `EXEC_AUTO_MERGE_ON`): decided on the REAL diff - only new files `tests/test_*.py` (plus the")
+    A(f"  regenerated SYSTEM.md), nothing deleted, at least one new test, at most {LV.MERGE_MAX_LINES} added lines. Anything else gets the owner's Merge / Reject message with the reason.")
+    A("")
+    A("**The lever table** (`whatifs/org/levers.py`). Range and step are refused, never clamped. Owner = the direction that needs his tap.")
+    A("")
+    A("| lever (Settings cell) | department | type | range | largest step | needs the owner | judged by |")
+    A("|---|---|---|---|---|---|---|")
+    from whatifs.org import registry as REG
+    for k in [k for v in REG.DEPTS.values() for k in v["levers"]]:          # the registry's order (department by department), whatever order the table was typed in
+        sp = LV.LEVERS[k]
+        rng = f"{sp['lo']:g} to {sp['hi']:g}" if "lo" in sp else (", ".join(sp["values"]) if sp["kind"] == "enum" else "-")
+        own = sp["owner"] if isinstance(sp["owner"], str) else ("value " + " / ".join(sp["owner"]) if sp["owner"] else "")
+        A(f"| {k} | {LV.owner_of(k)} | {sp['kind']} | {rng} | {sp['step']:g} | {_cell(own + ': ' + sp['why']) if own else '-'} | {', '.join(sp['checks']) or 'the next complete run'} |" if "step" in sp
+          else f"| {k} | {LV.owner_of(k)} | {sp['kind']} | {rng} | - | {_cell(own + ': ' + sp['why']) if own else '-'} | {', '.join(sp['checks']) or 'the next complete run'} |")
     A("")
 
 def _jobs():
@@ -249,6 +298,7 @@ def render():
     A("")
     _palace(A)
     _org(A)
+    _exec(A)
     return "\n".join(L)
 
 def drift():

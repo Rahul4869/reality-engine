@@ -10,7 +10,7 @@ STEPS = ("LOAD", "ACT", "EMIT", "LEARN", "EXECUTE", "REPORT")
 STAB, TTAB, AUDIT = "Sessions", "Takeaways", "Org_Audit"
 NOISY = ("seconds",)               # runner-observed measures that are never treated as a finding by themselves (timing noise)
 HISTORY = 8                        # how many earlier runs of the same department step a measure is compared with
-EXECUTOR = None                    # the Execution Engine registers itself here (fn(ticket, brief)); until then a ticket is escalated, never left as text
+EXECUTOR = None                    # None = the Execution Engine (whatifs/org/execute.py); a callable fn(ticket, brief) replaces it
 
 class ContractBreach(RuntimeError):
     """A step of the department contract was skipped or failed; .step names it."""
@@ -48,9 +48,12 @@ def on():
     """Is the organisation switched on? (It reads the Palace, so it needs the Palace on too.)"""
     return S("ORG_ON", bool) and S("PALACE_ON", bool)
 
-def set_executor(fn):
-    global EXECUTOR
-    EXECUTOR = fn
+def _engine():
+    """Who executes a ticket: the Execution Engine, unless it is switched off (EXEC_ON) - then a ticket is escalated at once, never left as text."""
+    if EXECUTOR is not None: return EXECUTOR
+    if not S("EXEC_ON", bool): return None
+    from whatifs.org import execute as EXE
+    return EXE.apply
 
 # ------------------------------------------------------------------ receipts (built by the runner from what code observed, chained in order)
 def _link(prev, rec):
@@ -324,11 +327,12 @@ def run(dept, trigger, act, *, episode="", topic="", stage=None, context=None, m
     # ---- 5 EXECUTE
     executed, pushed = [], []
     try:
+        ex = _engine() if tickets else None
         for t in tickets:
-            if EXECUTOR is None:
-                MEM.escalate(t["id"], f"no Execution Engine is registered for lever class {t['body'].get('lever_class')}: a ticket is never left as text", dept, st, t0); pushed.append(t["id"])
+            if ex is None:
+                MEM.escalate(t["id"], f"the Execution Engine is switched off (EXEC_ON), so lever class {t['body'].get('lever_class')} cannot be executed: a ticket is never left as text", dept, st, t0); pushed.append(t["id"])
             else:
-                EXECUTOR(t, brief); executed.append(t["id"])
+                ex(t, brief); executed.append(t["id"])
     except Exception as e: breaches.append(("EXECUTE", f"{type(e).__name__}: {scrub(e)[:160]}"))
     R.receipt("EXECUTE", {"tickets": len(tickets), "executed": executed, "escalated": pushed})
     # ---- 6 REPORT

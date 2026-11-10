@@ -36,6 +36,16 @@ def run():
         set_setting("VOICE", "C")
         a = MG.tick()["action"]; assert a in ("idle", "produce"), a
         slot = (now_utc() + dt.timedelta(hours=10)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        from whatifs.org import memos as OMEM4, execute as EXE4          # v12 B4: one decision of the organisation is carried from ticket to ledger proof inside the rehearsal
+        tk4 = OMEM4.write({"type": "ticket", "from_dept": "C", "to_depts": ["D6"], "subject": "Rehearsal: serve Visual Production one new technique",
+                           "body": {"lever_class": "A", "target": "palace:rehearsal-b4-knowledge-lever", "acceptance_test": "a later run of Visual Production is served the item", "rollback": "retire the item",
+                                    "value": {"kind": "technique", "title": "Rehearsal item: keep the camera moving through the verdict", "departments": ["D6"], "stages": ["visual"], "topic_tags": ["camera"],
+                                              "summary": "Rehearsal item of the Execution Engine: the camera keeps a slow move through the verdict line instead of a locked frame.",
+                                              "evidence": [{"source": "tools/rehearsal.py", "date": now_utc().strftime("%Y-%m-%d"), "type": "build record", "finding": "written by the rehearsal to prove the engine end to end"}]}},
+                           "done_when": "a later run of Visual Production was served the item"})
+        OMEM4.write({"type": "decision_memo", "from_dept": "C", "to_depts": ["D6"], "subject": "Rehearsal decision: one knowledge lever for Visual Production",
+                     "body": {"decision": "Serve Visual Production the rehearsal technique.", "why": "The rehearsal must prove that a decision becomes a verified change.", "memos_cited": [tk4["id"]],
+                              "lever_class": "A", "tickets": [tk4["id"]], "owner_approval": False}})
         r = EP.produce(slot); print("produce ok", json.dumps(r, default=str)[:400])
         assert os.path.exists(r["master"]) and len(r["reels"]) >= 1, "missing outputs"
         # v7.2 independent checks on the real rendered files
@@ -77,6 +87,11 @@ def run():
         wd12 = OMEM.watchdog(st); oh12 = ORGR.health(st); assert oh12["ok"] and _S12("ORG_WATCHDOG_AT") and _S12("ORG_SINCE"), oh12["problems"]
         assert not [m for m in OMEM.rows(st) if m["status"] in ("open", "escalated") and m["type"] == "problem_memo" and m["episode_id"] == ep12], "a problem memo of the scheduled episode is still open"
         print("organisation:", len(ses12), "department runs,", len(tk12), "takeaways,", oh12["stats"]["live"], "live memos; watchdog checked", wd12["checked"])
+        assert led12.get("decisions_executed") == "PASS" and led12.get("lever_verified") == "PASS", ("the Execution Engine's checks did not pass", led12.get("decisions_executed"), led12.get("lever_verified"))
+        EXE4.tick(st); row4 = next((x for x in st.rows("Tickets") if x.get("id") == tk4["id"]), {}); log4 = [x["action"] for x in st.rows("Lever_Changes") if x.get("ticket_id") == tk4["id"]]
+        assert row4.get("state") == "verified" and log4 == ["intent", "applied", "verified"], ("the rehearsal's decision did not become a verified change", row4.get("state"), row4.get("note"), log4)
+        assert (OMEM4.get(tk4["id"], st)["resolution"] or {}).get("kind") == "lever_verified" and not EXE4.lever_issues(st)[0] and not EXE4.decision_issues(st)[0], "the ticket was not closed on the ledger"
+        print("execution engine: ticket", tk4["id"], "->", row4["state"], "|", " > ".join(log4), "|", str(row4.get("proof"))[:110])
         from whatifs.core import S as _S89; np89 = _S89("NEXT_PREMISE")      # v8.9: the scheduled video leaves its tease for the next episode (v8.9.1: only a saved plan uses it up)
         # v7.4 checks: research brief, ten opening hooks, reviewable cut map
         d74 = os.path.dirname(r["master"])

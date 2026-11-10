@@ -208,7 +208,9 @@ def test_builds_switch_and_repair_engine_default():
     assert core.DEFAULTS["REPAIR_ENGINE"][0] == "claude_code" and core.DEFAULTS["BUILDS_ON"][0] == "TRUE"
     import yaml
     wf = yaml.safe_load(open(".github/workflows/claude-build.yml"))
-    job = wf["jobs"]["build"]; assert job["concurrency"]["group"] == "build" and "CC_OAUTH_TOKEN" in job["env"]
+    job = wf["jobs"]["build"]; assert job["concurrency"]["group"] == "build"
+    claude = next(s for s in job["steps"] if "claude-code-action" in str(s.get("uses", "")))          # v12: the model credential goes to the Claude step only
+    assert "CC_OAUTH_TOKEN" in claude["with"]["claude_code_oauth_token"] and list(claude["env"]) == ["CC_OAUTH_TOKEN"] and "CC_OAUTH_TOKEN" not in job["env"]
     assert any("gh workflow run checks.yml" in str(s.get("run", "")) for s in job["steps"])
 
 def test_builds_off_means_nothing_is_dispatched(setting, monkeypatch):

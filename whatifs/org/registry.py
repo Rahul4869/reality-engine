@@ -9,8 +9,8 @@ CADENCES = ("tick", "episode", "daily", "weekly", "monthly")
 INJECT_MODES = ("brief", "prompt")      # brief = the playbook is handed over with the work order; prompt = it is put into the model's system prompt and proven there
 EVERYONE = ("owner_memo", "performance_memo", "problem_memo", "decision_memo", "ticket")       # memo types every department must load
 
-# mission; wraps = the existing modules it owns (wrapped, never duplicated); cadence; levers = the Settings cells it may change (ranges arrive with
-# the Execution Engine); cap_inr = monthly cap for its own paid THINKING (None = it has no paid thinking of its own; production money stays
+# mission; wraps = the existing modules it owns (wrapped, never duplicated); cadence; levers = the Settings cells it may change (type, range, step and
+# the direction that needs the owner: whatifs/org/levers.py); cap_inr = monthly cap for its own paid THINKING (None = it has no paid thinking of its own; production money stays
 # with the governor); takes = memo types beyond EVERYONE; inject = how the Palace playbook reaches its work.
 DEPTS = {
     "D0":  {"mission": "capture every owner input verbatim, route it, guarantee it is honoured", "cadence": "tick", "cap_inr": None, "inject": "brief",
@@ -60,9 +60,10 @@ ENTRY = {
     "D8":  (("whatifs/episode.py", "script_gate"), ("whatifs/episode.py", "final_gate")),
     "D9":  (("whatifs/episode.py", "publish"),),
     "D10": (("whatifs/cli.py", "daily"),),
+    "D12": (("whatifs/org/execute.py", "operate"),),
 }
 # Departments with no run of their own yet -> the build batch that wires them. A RATCHET: this list may only shrink (tests/test_v12_org.py).
-PENDING = {"D0": "B9", "D1": "B9", "D2": "B5", "D3": "B5", "D11": "B9", "D12": "B4", "C": "B6", "L": "B8"}
+PENDING = {"D0": "B9", "D1": "B9", "D2": "B5", "D3": "B5", "D11": "B9", "C": "B6", "L": "B8"}
 
 # The runs an episode must have finished before each gate (the gate itself is the run in flight).
 EPISODE_RUNS = {
@@ -79,6 +80,7 @@ CHECK_OWNER = {
     "designed_voices": "D7", "music_bed": "D7", "animation": "D6", "real_motion": "D6", "no_frozen_frames": "D6", "slop_guard": "D6", "impact_map": "D6",
     "visual_change": "D6", "living_characters": "D6", "aliveness": "D6", "promise_paid": "D6", "thumbnails": "D5", "titles": "D5", "chapters": "D5",
     "short_covers": "D5", "shorts": "D9", "self_review": "D8", "breakout_bar": "D1", "dept_contract": "D8", "takeaways_written": "D8",
+    "decisions_executed": "C", "lever_verified": "D12",
 }
 
 def runnable(dept):
@@ -174,4 +176,5 @@ def data_issues(root=None):
         p += [f"CHECK_OWNER names a check that does not exist ('{i}')" for i in sorted(set(CHECK_OWNER) - ids)]
     except Exception as e: p.append(f"the contract could not be read: {e}")
     p += [f"CHECK_OWNER sends '{i}' to an unknown department" for i, d in CHECK_OWNER.items() if d not in DEPARTMENTS]
-    return p
+    from whatifs.org import levers as LV
+    return p + LV.issues()

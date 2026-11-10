@@ -410,6 +410,18 @@ def _org_gate(ctx, gate):
     if r["problems"]: return FAIL, f"{len(r['problems'])} problem(s): " + " | ".join(r["problems"][:3])
     return PASS, f"{r['runs']} department run(s) complete: six receipts each, playbook handed over, valid takeaway"
 
+def _exec_gate(which):
+    """The Execution Engine judged at the script gate (before picture money). A broken invariant fails; waiting for the owner's answer does not."""
+    from whatifs.org import execute as EXE
+    if not EXE.on(): return NA, "Execution Engine switched off (EXEC_ON, or the organisation)"
+    p, s = EXE.decision_issues() if which == "decisions" else EXE.lever_issues()
+    if p: return FAIL, f"{len(p)} problem(s): " + " | ".join(p[:3])
+    if which == "decisions": return PASS, f"{s['decisions']} decision(s), {s['tickets']} ticket(s): none is text only; {s['live']} open inside their deadline or escalated ({s['with_owner']} with the owner)"
+    return PASS, (f"{s['tickets']} ticket(s) in the engine: {s['verified']} verified, {s['rolled_back']} rolled back, {s['refused']} refused, {s['in_verification']} inside the verification window, "
+                  f"{s['waiting']} waiting; every change has its ledger rows")
+
+def p_decisions_executed(ctx): return _exec_gate("decisions")
+def p_lever_verified(ctx): return _exec_gate("levers")
 def p_dept_contract(ctx): return _org_gate(ctx, "script")
 def p_takeaways_written(ctx): return _org_gate(ctx, "final")
 
@@ -420,6 +432,8 @@ FEATURES = [
     ("docs_current",  "script", p_docs_current, "one current truth: no retired concept in current docs, docstrings or prompts"),
     ("palace_health", "script", p_palace_health, "Knowledge Palace fit to feed departments: evidenced items tied to real code, nothing retired or expired served, playbooks inside their caps"),
     ("dept_contract", "script", p_dept_contract, "every department that worked on the script ran under the department contract: memos and playbook loaded, work done, memos sent, takeaway written, tickets executed, run reported"),
+    ("decisions_executed", "script", p_decisions_executed, "nothing the organisation decided stays text: every decision has tickets, every ticket is executed with proof, refused with a reason or escalated"),
+    ("lever_verified", "script", p_lever_verified, "every change made by ticket is written down before and after, verified by later evidence or rolled back; none sits past its window"),
     ("idea_evidence", "script", p_idea_evidence, "the premise is backed by an outlier at IDEA_MIN_MULTIPLE x"),
     ("joke_density",  "script", p_joke_density, "a [PUNCH] line at least every JOKE_EVERY_SEC_LONG seconds"),
     ("send_and_awe",  "script", p_send_awe,     "a [SEND] moment and an [AWE] peak (not in the last 20%)"),
