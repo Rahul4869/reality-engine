@@ -18,25 +18,25 @@ Updated: 11 Nov 2026 (B5 in progress). Branch: `v12-organisation` (never main). 
    version of a library, change `requirements.txt` AND the workflows in one commit and re-verify the reference frames (`tests/golden_frames.py`).
 
 ## NEXT
-**B5 - R&D + Review Board** (01 sections 2 (D2, D3), 5, 7 `research_cadence`, 9; 03 "B5"). Full seven-step MANDATORY BATCH LOOP. Effort: High.
-What B4 leaves ready for B5 (use it, do not rebuild it):
-- A research finding becomes a change through ONE doorway: research_memo (D2 -> D3) -> assessment_memo (D3 -> C) -> the Council's decision + tickets
-  (B6) -> `execute.apply`. B5 builds the first two; it must NOT write tickets itself except for D2's own levers (`RESEARCH_ON`, `IDEA_MIN_MULTIPLE`).
-- How a ticket must look so that the engine can compile it (also Palace item `b4.how_to_write_a_ticket`, served to the Council and D12):
-  A knowledge: target `palace:<key>`, value = the item (or empty to accept an item that is already `proposed`), sender C. B setting: target = the
-  Settings cell, addressed to the department that owns it (`levers.owner_of`). C experiment: target `playbook:<showrunner|writer|packager|director|reel>`,
-  value `rule`, `metric`, `source_url`. D prompt rule: as A with kind `style_rule` / `policy_rule`. E code: addressed to D12, value `spec`, `files`,
-  `tests_to_add`, `acceptance`. Anything else is refused with the reason and the ticket is rejected.
-- `execute.engine_tick` (every tick) takes up every new ticket of a WIRED department at once. A ticket to a pending department (D0, D1, D2, D3, D11, C, L)
-  still goes straight to the owner's level (B3 rule). The moment B5 wires D2 and D3 their tickets are executed like everybody's - nothing to add.
-- Wiring D2 / D3: a call site `runner.run("D2", "<trigger>", ...)` with `budget="org"` (the monthly thinking cap is then enforced: D2 Rs 300, D3 Rs 120),
-  an entry in `registry.ENTRY`, the department out of `registry.PENDING` (ratchet test), then `tools/gen_docs.py`.
-- Research memos already validate (`schemas.TYPES`): dated evidence is mandatory; `resolved_by` an `assessment_memo` whose id must exist.
-- Totals other tests and the rehearsal print: 43 hard checks (24 script + 19 final), 118 founding Palace items, 8 of 15 departments wired.
-- New org modules go on `tools/repair.py` PROTECTED first (levers.py, execute.py and builds.py are on it since B4).
-- Every function B5 adds must be called by production code, every new cell read, every new tab used (Plan Guard). A wiring whose function has a common
-  name is NOT protected by that scan: add a test that runs the real job (see `test_the_tick_job_itself_runs_the_engine_pass`).
-- Acceptance of B5 includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
+**B6 - Creative departments + Council** (01 sections 2 (D4-D7, C), 3, 5, 7 `council_held`, `canon_in_brief`, `palace_injected`, `palace_cited`; 03 "B6").
+Full seven-step MANDATORY BATCH LOOP. Effort: High.
+What B5 leaves ready for B6 (use it, do not rebuild it):
+- Assessment memos (D3 -> C) already carry everything a decision needs: the verdict (accept / test / reject, computed by code), six scores, the
+  family checklist, the research memo's evidence, its kind and `palace_ref` (a re-validation names the Palace item), and the pre-registered
+  predictions (in the research memo body: action index, metric, direction, horizon). They wait SILENTLY at the owner's level until C is wired: the
+  Council's first run must take up every assessment memo at level 2 (and research memos the watchdog escalated after void Board sessions - the
+  Board is no longer their holder). `board.assessment_issues(m)` tells whether an assessment can be trusted.
+- How the Council turns a verdict into a ticket: accept (a fact) -> lever A (a Palace item; a re-validation = accept the `proposed` item or
+  supersede the expiring one named in `palace_ref`), test -> lever C (experiment: `rule`, `metric` = the prediction's metric, `source_url` = the memo's
+  best evidence url), reject -> no ticket, the decision memo cites the assessment. Palace item `b4.how_to_write_a_ticket`.
+- The Board can judge creative memos too: `board.assess` takes research memos today; a creative memo has no sources, so B6 decides whether D3 also
+  judges creative memos (schemas: creative_memo is resolved by decision_memo OR assessment_memo) or the Council's own blind jury does.
+- `board.JUDGES`, `board._parse`, `scores_from` are reusable for the Council's blind cross-family jury (strong chains `board_g` / `board_c`).
+- Totals other tests and the rehearsal print: 44 hard checks (25 script + 19 final), 125 founding Palace items (126 with `b5.takeaway`), 10 of 15
+  departments wired (pending: D0, D1, D11, C, L), 41 levers.
+- New org modules go on `tools/repair.py` PROTECTED first. Every function B6 adds must be called by production code (Plan Guard); a hook with a
+  common name gets a test that runs the real job.
+- Acceptance of B6 includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
 ### B5 - R&D + Review Board (11 Nov 2026) - IN PROGRESS (steps recorded as they finish)
@@ -138,7 +138,7 @@ measurement, not built); a third (cheap) judge; letting the model choose the evi
 - D3 Board session (`board.assess`): up to BOARD_MAX_MEMOS research memos + 1 canary, labelled A, B, C... with no department, model or id; for each
   memo the jury also sees the target department's own playbook ("what we already do") for the novelty questions. Two judges of two families
   (`board_gemini` = Gemini Pro only, `board_claude` = Sonnet then Opus: chains with NO cheap model), each in BOARD_ORDERS orders (original and
-  reversed). 11 yes/no questions with a one-line reason each: evidence 2, novelty 2, impact 3, feasibility 2, risk 3 (policy, owner rules /
+  reversed). 12 yes/no questions with a one-line reason each: evidence 2, novelty 2, impact 3, feasibility 2, risk 3 (policy, owner rules /
   canon, slop); cost is computed by code from the memo's cost. Scores per dimension = 10 x the share of "yes" (family-balanced); evidence is capped
   by the ceiling. Verdict by code (`board.verdict`): reject when evidence < BOARD_MIN_EVIDENCE, risk >= 5 or impact < 4; accept only a FACT
   (policy, tool, revalidate) with evidence >= 7, feasibility >= 5, risk < 3; test when impact >= 6, feasibility >= 5, novelty >= 5 and at least
@@ -161,6 +161,56 @@ measurement, not built); a third (cheap) judge; letting the model choose the evi
 - Tests: provenance both ways (phantom, dead, undated, future-dated, type clamp, finding without source, empty memo), agenda from every gap source and
   dedupe, cap and P0, the jury's family / model / canary rules, verdict table both ways, forged verdict, the check's every FAIL condition, the REAL
   learn job running D2 and D3, a fake research cycle end to end (agenda -> memo -> assessment -> the Council's level).
+
+#### Step 4 BUILD (what changed)
+- NEW `whatifs/org/rnd.py` (D2): `gaps` (8 gap sources, Rs 0) + `refresh` (tab `Research_Agenda`: dedupe by signature, drop closed gaps, re-open after
+  RESEARCH_REPEAT_DAYS, never while the last memo is open, a dead or failed ask re-opens after 20 h); `daily` (the research brief, the Outlier Lab and
+  the search-demand scores moved here from `manage.learn`, then the agenda); `deep` + `deep_due` (weekly, level-triggered, P0 first and past the cap,
+  P1/P2 while the budget left covers max(RESEARCH_EST_INR, median measured)); `ask_one` (role `rnd_research`, web search, at most 4 searches);
+  `verify` / `alive` / `source_type` / `parse_date` / `ceiling` (provenance by code); `build_memo` (research memo with the stamp `rnd.verify`);
+  `ceiling_of` + `cadence_issues` (what the check judges).
+- NEW `whatifs/org/board.py` (D3): 12 yes/no questions (2 evidence, 2 novelty, 3 impact, 2 feasibility, 3 risk); 3 canaries (no source + bought views; an irrelevant quote + daily re-uploads; an official quote that says the
+  opposite + mass-produced Shorts); `assess` (blind blocks A, B, C... with the target department's own playbook, 2 families x BOARD_ORDERS orders,
+  the answering model checked through `models.last_call`, void rules, assessment memos, a D3 -> D3 problem memo when void, closed by the next valid
+  session); `scores_from` / `bar` / `verdict` / `cost_score` (pure: the check re-runs them); `assessment_issues`. Tab `Board_Log`.
+- `whatifs/models.py` (protected): `last_call()` + `_note_call` + `_claude_sources` (the API's citations and results, the answering chain role and
+  the measured USD, recorded by `_claude`, `_gemini` and the fake path); routes `rnd_research` (Sonnet chain), `board_gemini` / `board_claude` with
+  chains `board_g` = Gemini Pro only and `board_c` = Sonnet then Opus (no cheap model can answer for the Board).
+- `whatifs/org/schemas.py` (protected): research memo + kind, gap, evidence_ceiling, predictions, palace_ref, sources_dropped; assessment memo +
+  checklist, canary, kind, evidence_ceiling, author_family, predictions, cost_inr (all optional: additive). `RESEARCH_KINDS`.
+- `whatifs/org/memos.py` (protected): `id_for` (the id `write` will use, so a department can close a memo with the memo it sends in the same run).
+- `whatifs/org/registry.py` (protected): D2 wired (`cli.py` daily + weekly), D3 wired (`cli.py` assess), PENDING 7 -> 5 (D0, D1, D11, C, L);
+  `reach.py` moves to D10's wraps (master spec lists it under both; it measures our own videos); D2 + RESEARCH_PER_WEEK, D3 + BOARD_MIN_EVIDENCE;
+  CHECK_OWNER research_cadence -> D2. `whatifs/org/levers.py`: 2 rules (41 levers).
+- `whatifs/contract.py`: check `research_cadence` at the script gate: **44 hard checks (25 script + 19 final)**.
+- `whatifs/cli.py`: `research_round()` runs first in the learning job (D2 daily, D2 weekly when due, D3 when a memo waits; each failure logged,
+  never stops the job). `whatifs/manage.py` (protected): the research brief renewal, `OLB.run()` and `DMD.run()` left `learn` (now in D2 daily).
+- `whatifs/governor.py` (protected): `org_left_inr` - the unspent part of the wired departments' thinking caps (D2 Rs 300 + D3 Rs 120 while
+  research is on) is subtracted in `production_room_inr` like an earmark.
+- `whatifs/core.py` (protected): tabs `Research_Agenda` (17 columns), `Board_Log` (12); 7 settings: RESEARCH_PER_WEEK 4, RESEARCH_EST_INR 15,
+  RESEARCH_REPEAT_DAYS 28, RESEARCH_DEEP_EVERY_DAYS 7, BOARD_MIN_EVIDENCE 5, BOARD_ORDERS 2, BOARD_MAX_MEMOS 6.
+- `whatifs/fakes.py`: a fake web search (3 sources with quotes and page ages relative to today), a fake research answer (with one phantom and one
+  undated source, two predictions), a fake strict judge that rejects every canary. `tools/repair.py` PROTECTED + rnd.py, board.py.
+- 7 founding items `b5.*` (125 founding items, Palace GREEN, no playbook crowded further); `tools/rehearsal.py` runs the real `research_round`.
+- Changed against the design memo after seeing real behaviour or re-reading: (1) the ceiling is computed on the sources the memo CARRIES (a kept
+  source no finding used had raised it); (2) a question is never asked again while its last memo is still open (the new memo would have collided with
+  the open one and the runner would have refused every memo of that run); (3) the five faults of step 6a; (4) assessments stay silent at the owner's
+  level for now - the design said "owner_visible for an accepted P0 fact", but the only message the ladder has today says "Stuck past its deadline"
+  for a memo written a second earlier.
+- Existing tests changed BY DESIGN (say so in the final PR): `tests/test_v12_org.py` (a pending department for the escalation test is now D11, D2
+  is wired), `tests/test_v12_exec.py` (41 levers, 25 script checks), `tests/test_v94a.py`, `tests/test_v87.py`, `tests/test_v10_growth.py` (production
+  room minus `org_left_inr`).
+
+#### Step 5 ENFORCE (rule -> executing code -> fails when broken)
+| Rule | Executes | Fails when broken |
+|---|---|---|
+| Research is computed from the organisation's own gaps and runs by itself | `rnd.gaps`, `refresh`, `deep_due`, `cli.research_round` | `research_cadence` FAIL (daily run older than 50 h; weekly older than RESEARCH_DEEP_EVERY_DAYS + 1 with budget left); the real learn job test |
+| A source counts only if the search tool returned it, it resolves, it is dated and not in the future; type by domain | `rnd.verify`, `alive`, `source_type`, `models.last_call` | phantom / dead / undated / future dropped and counted; no surviving finding = no memo; `research_cadence` FAIL on a memo without the stamp or with a ceiling its evidence does not support |
+| Blind, strong, two families, two orders, fixed questions; scores and verdict by code | `board.assess`, `_parse`, `scores_from`, `verdict` | a judge answered by another family or a cheap model is not counted; < 2 families = void; `research_cadence` re-computes every stored verdict |
+| A planted canary must be rejected by every family | `board.canary`, `assess` | session void, no assessment, D3 problem memo (recurring -> escalates) |
+| Only facts accepted; ideas tested only with a pre-registered prediction | `board.bar`, `rnd.metrics`, `_actions` | decided by code; the forged-verdict test |
+| Caps: R&D Rs 300, Board Rs 120; P0 continues; the unspent part is not production money | `runner.run` (budget "org"), `rnd.deep` (in-run guard), `governor.org_left_inr` | CapReached before the run; `research_cadence` FAIL on overspend without an owner question |
+Matrix: 5 rows (meta-test green). Founding items: 7.
 
 ### B4 - Execution Engine (10 Nov 2026) - ACCEPTED (all 7 loop steps recorded below; final code commit ad99fd2 GREEN in GitHub run 59)
 Result in one line: whatever the organisation decides can now only exist as a change that runs - a ticket is compiled into a typed change, written to a
@@ -1109,7 +1159,7 @@ Rehearsal asserts `docs_current` ran and passed.
    after a merge, the new `request` input and the moved credentials in `claude-build.yml` are proven with stand-ins, by a YAML test and by reading.
    First-run verification must watch the first organisation build end to end. If the checks on a merge commit never report, the ticket is escalated
    after `EXEC_VERIFY_DAYS` (never reverted on a guess).
-30. (B4 -> B5 / B6 / B8 / B9) A ticket for a department that has no wired run (D0, D1, D2, D3, D11, C, L) goes straight to the owner's level (B3 rule),
+30. (B4 -> B6 / B8 / B9; D2 and D3 unlocked in B5) A ticket for a department that has no wired run (D0, D1, D11, C, L) goes straight to the owner's level (B3 rule),
    so the 16 levers of those departments are in the table but cannot be turned by ticket yet. Each batch that wires a department unlocks its levers.
 31. (B4 -> B7) A rollback reaches the sender only through the ticket's resolution note and an `Org_Audit` row (kind `lever`). No problem memo and no
    failure lesson is written for it yet: B7's repair loop must feed rollbacks into both.
@@ -1125,6 +1175,22 @@ Rehearsal asserts `docs_current` ran and passed.
 36. (B4 -> B7) `CACHE_ALIGN_EFFORT` (open issue 23) was NOT taken up in B4: it is not a lever of any department. Still open for B7.
 37. (B4, low -> B10) GitHub's run page shows one warning that is GitHub's own: Node.js 20 is deprecated and `actions/setup-node@v4` (in `checks.yml`) is
    forced onto Node.js 24. Green today; move the action to its next major version when a batch touches the workflows anyway.
+
+38. (B5 -> B6) Assessment memos wait silently at the owner's level until the Council is wired (C pending); research memos that the watchdog escalated
+   after a void Board session can no longer be assessed by D3 (it is not their holder). The Council's first run must take up both.
+39. (B5 -> B6) Re-validation: a research memo about an expiring Palace fact carries `palace_ref`; only the owner, the Council or D10 may re-validate,
+   so founding facts still expire until B6's Council issues the A ticket (open issue 8: the research side is closed, the Palace side is not).
+40. (B5 -> B10) Real APIs never touched (no keys here, by rule): the web-search citation blocks (`cited_text`, `page_age`), Gemini grounding chunks
+   (domain-level match, titles are domains), the liveness check from GitHub's runners and the real cost per question are proven with stand-ins and the
+   documentation. First-run verification must read tab `Research_Agenda` (notes: ceiling, kept, dropped, rupees) and `Board_Log` (families, models).
+41. (B5 -> B8) Message Batches are not used for research or the Board: searches cost the same in a batch, only tokens halve (about Rs 4 a question),
+   and the batch API throttles searches while the job waits. Decide on measured cost (RESEARCH_EST_INR follows the median measured cost).
+42. (B5 -> B8) Predictions are stored and validated but nobody scores them yet against later videos; D10's learning loop (B8) should score them
+   (research yield per gap source, which kinds of advice came true).
+43. (B5 -> B9) The owner sees research verdicts nowhere yet (no digest, assessments are silent until the Council exists); D0 (B9).
+44. (B5, low) Inside one weekly run the in-run budget guard counts the last successful model call of each question only; the monthly figure in
+   `Org_Audit` (and so the cap) is exact. The manual `research.yml` workflow (`cli research`) still runs the topic brief outside the runner.
+45. (B5) Liveness from GitHub's runners: a site that blocks robots (401-429) counts as alive, a timeout counts as alive, 404 / 410 / no host is dead.
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`

@@ -190,7 +190,7 @@ def run():
         pb87 = st.rows("Playbook")
         assert sum(1 for r in pb87 if r.get("added") == "seed") >= 7 and any(r.get("status") == "trial" for r in pb87), "playbook not seeded or research not vetted"
         assert not any("sub4sub" in r.get("rule", "") or not r.get("source", "").startswith("http") for r in pb87), "an unsourced or platform-gaming rule got in"
-        assert abs(G87.production_room_inr() - (G87.remaining_inr() - 100 - G87.earmark_left_inr() - G87.specials_left_inr())) < 1e-6, "maintenance reserve (and v9.4a/v10: the owner's earmarks) must sit inside the cap"
+        assert abs(G87.production_room_inr() - (G87.remaining_inr() - 100 - G87.earmark_left_inr() - G87.specials_left_inr() - G87.org_left_inr())) < 1e-6, "maintenance reserve (and v9.4a/v10: the owner's earmarks) must sit inside the cap"
         assert GR87.related_episode([{"episode_id": "X", "status": "SCHEDULED", "yt_id": "abc"}]) is None, "a scheduled video must never be linked"
         print("v8.7 checks ok")
         # v8.9 checks: style lock on every paid shot prompt, a guest chosen, the next-episode tease set and spoken, the plan check ran
