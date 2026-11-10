@@ -12,15 +12,15 @@ except Exception:
 
 def _lines(text): return [ANSI.sub("", l).rstrip() for l in str(text).splitlines() if l.strip()]
 
-def unit(text, rc):
+def unit(text, rc, cap=MAX_ERRORS):
     """pytest -q log -> [(level, title, message)]: every FAILED / ERROR line and every skip named by the no-skip rule, then the totals line."""
     ls = _lines(text); out = []
     total = next((l for l in reversed(ls) if re.search(r"\b\d+ (passed|failed|errors?|skipped)\b", l)), "")
     if rc != 0:
         causes = [l for l in ls if l.startswith(("FAILED ", "ERROR "))] + [l.strip() for l in ls if l.strip().startswith("SKIPPED ")]
         if any(l.startswith("NO-SKIP RULE") for l in ls): causes.insert(0, next(l for l in ls if l.startswith("NO-SKIP RULE")))
-        for l in causes[:MAX_ERRORS]: out.append(("error", "Unit tests", l))
-        if len(causes) > MAX_ERRORS: out.append(("error", "Unit tests", f"... and {len(causes) - MAX_ERRORS} more"))
+        for l in causes[:cap]: out.append(("error", "Unit tests", l))
+        if len(causes) > cap: out.append(("error", "Unit tests", f"... and {len(causes) - cap} more (the full list is in the job summary on the same page)"))
         if not causes: out.append(("error", "Unit tests", f"exit code {rc} with no FAILED line; the log ends: " + " | ".join(ls[-3:])))
     out.append(("notice" if rc == 0 else "error", "Unit tests", total.strip("= ") or f"no totals line (exit code {rc})"))
     return out
@@ -50,6 +50,16 @@ def command(level, title, message):
     t = str(title).replace("%", "%25").replace(",", "%2C").replace(":", "%3A")
     return f"::{level} title={t}::{m}"
 
+def summary(kind, text, rc, path=None):
+    """The same findings, uncapped, as a job summary (GitHub shows it under the annotations): written only where the runner names the file."""
+    path = path or os.environ.get("GITHUB_STEP_SUMMARY", "")
+    if not path: return False
+    rows = unit(text, rc, cap=200) if kind == "unit" else rehearsal(text, rc)
+    state = "GREEN" if all(level == "notice" for level, _, _ in rows) else "RED"
+    lines = [f"### {rows[0][1]}: {state}"] + ["- `" + _scrub(m)[:600].replace("`", "'") + "`" for _, _, m in rows]
+    with open(path, "a", encoding="utf-8") as f: f.write(chr(10).join(lines) + chr(10) * 2)
+    return True
+
 def main(argv=None):
     a = list(sys.argv[1:] if argv is None else argv)
     if len(a) != 3 or a[0] not in ("unit", "rehearsal"): print("usage: python tools/ci_report.py unit|rehearsal <log file> <exit code>"); return 2
@@ -58,6 +68,7 @@ def main(argv=None):
     try: rc = int(a[2])
     except ValueError: rc = 1
     for level, title, msg in (unit if a[0] == "unit" else rehearsal)(text, rc): print(command(level, title, msg))
+    summary(a[0], text, rc)
     return 0          # reporting never changes the result: the workflow step exits with the code of the tests
 
 if __name__ == "__main__":

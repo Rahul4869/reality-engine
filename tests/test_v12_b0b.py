@@ -100,7 +100,17 @@ def test_a_red_rehearsal_names_the_check_the_reason_and_the_episode_id_that_repr
     assert CI.rehearsal(REH_GREEN, 1)[-1][0] == "error" and CI.rehearsal(REH_GREEN.replace("REHEARSAL: GREEN", ""), 0)[-1][0] == "error"      # green needs BOTH the exit code and the final line
     assert "episode id unknown" in CI.rehearsal("Killed\n", 137)[-1][2]
 
-def test_annotations_are_escaped_cut_and_reporting_never_changes_the_result(tmp_path, capsys):
+def test_the_job_summary_holds_the_full_list_and_is_written_only_where_the_runner_asks(tmp_path, monkeypatch):
+    monkeypatch.delenv("GITHUB_STEP_SUMMARY", raising=False)                                                            # on GitHub this test must not write into the real run's summary
+    log = "\n".join(f"FAILED tests/t.py::t{i} - x" for i in range(30)) + "\n30 failed in 3.00s\n"
+    assert CI.summary("unit", log, 1) is False                                                                         # no file named: nothing written anywhere
+    p = tmp_path / "summary.md"; assert CI.summary("unit", log, 1, path=str(p)) is True and CI.summary("rehearsal", REH_GREEN, 0, path=str(p)) is True
+    t = p.read_text(encoding="utf-8"); assert "### Unit tests: RED" in t and t.count("FAILED tests/t.py::t") == 30 and "### Rehearsal: GREEN" in t and "EP202611101112" in t
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(tmp_path / "env.md")); u = tmp_path / "u.log"; u.write_text(UNIT_GREEN, encoding="utf-8")
+    assert CI.main(["unit", str(u), "0"]) == 0 and "### Unit tests: GREEN" in (tmp_path / "env.md").read_text(encoding="utf-8")
+
+def test_annotations_are_escaped_cut_and_reporting_never_changes_the_result(tmp_path, capsys, monkeypatch):
+    monkeypatch.delenv("GITHUB_STEP_SUMMARY", raising=False)
     c = CI.command("error", "Unit tests: a, b", "50% done\nsecond line"); assert c == "::error title=Unit tests%3A a%2C b::50%25 done%0Asecond line"
     assert len(CI.command("notice", "t", "x" * 5000)) < 700
     p = tmp_path / "unit.log"; p.write_text(UNIT_RED, encoding="utf-8")
