@@ -416,6 +416,7 @@ def _exec_gate(which):
     if not EXE.on(): return NA, "Execution Engine switched off (EXEC_ON, or the organisation)"
     p, s = EXE.decision_issues() if which == "decisions" else EXE.lever_issues()
     if p: return FAIL, f"{len(p)} problem(s): " + " | ".join(p[:3])
+    if which == "decisions" and not s["decisions"] and not s["tickets"]: return NA, "no decision and no ticket yet: there is nothing to execute (a PASS here would claim work that does not exist)"
     if which == "decisions": return PASS, f"{s['decisions']} decision(s), {s['tickets']} ticket(s): none is text only; {s['live']} open inside their deadline or escalated ({s['with_owner']} with the owner)"
     return PASS, (f"{s['tickets']} ticket(s) in the engine: {s['verified']} verified, {s['rolled_back']} rolled back, {s['refused']} refused, {s['in_verification']} inside the verification window, "
                   f"{s['waiting']} waiting; every change has its ledger rows")

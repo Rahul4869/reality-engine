@@ -466,6 +466,7 @@ def decision(tickets, cls="B", **k):
 def test_decisions_executed_passes_on_real_tickets_and_fails_on_text_only_decisions():
     assert {(f[0], f[1]) for f in CON.FEATURES} >= {("decisions_executed", "script"), ("lever_verified", "script")} and REG.check_owner("decisions_executed") == "C" and REG.check_owner("lever_verified") == "D12"
     assert sum(1 for f in CON.FEATURES if f[1] == "script") == 24 and sum(1 for f in CON.FEATURES if f[1] == "final") == 19
+    s, ev = CON.p_decisions_executed({}); assert s == CON.NA and "nothing to execute" in ev and CON.p_lever_verified({})[0] == CON.PASS          # nothing decided yet: not a PASS (the lever table is still judged)
     t, T = applied_setting(); d = decision([t["id"]]); s, ev = CON.p_decisions_executed({}); assert s == CON.PASS and ev.startswith("1 decision(s), 1 ticket(s): none is text only; 1 open")
     d2 = decision([], subject="Change the camera style for the cold open"); assert CON.p_decisions_executed({})[0] == CON.PASS                # inside the two hours in which its tickets may still arrive
     st().update("Memos", "id", d2["id"], {"created": core.iso(T - 3 * H)}); s, ev = CON.p_decisions_executed({})
