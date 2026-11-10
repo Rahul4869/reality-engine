@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 11 Nov 2026 (B5 in progress). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 11 Nov 2026 (B5 ACCEPTED). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -39,7 +39,7 @@ What B5 leaves ready for B6 (use it, do not rebuild it):
 - Acceptance of B6 includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
-### B5 - R&D + Review Board (11 Nov 2026) - IN PROGRESS (steps recorded as they finish)
+### B5 - R&D + Review Board (11 Nov 2026) - ACCEPTED (final code commit a1c5204 GREEN in GitHub run 67; sweep 58 of 58 green)
 
 #### Step 1 RESEARCH (12 dated sources; E = measured evidence, O = opinion / practice / vendor documentation)
 Honest note: for the arXiv papers the abstract page was read, not the full paper; 6 and 11 are quoted from a search summary (not opened).
@@ -213,7 +213,45 @@ measurement, not built); a third (cheap) judge; letting the model choose the evi
 Matrix: 5 rows (meta-test green). Founding items: 7.
 
 #### Step 6 PROVE
-(filled in below when the long runs finish)
+- `tests/test_v12_rnd.py`: **31 tests**, each rule both ways: a phantom source dropped and costing 2 points; dead, undated and future sources dropped
+  with the findings that stood only on them; the type set by the domain (a model may only lower it); the ceiling table; Gemini matched by domain and
+  capped at 6; liveness on a real network (404 / 410 / no host dead, 401-429 and timeouts alive); five date forms; predictions need a known metric, a
+  direction and a horizon; an unprovable answer writes no memo; a memo carries only verified evidence and passes the memo gate; the agenda from all
+  8 gap sources and never from a code fault; dedupe, drop, re-open after the window, never while the last memo is open, a dead or failed ask open
+  again after 20 h; the ceiling recomputed from the day the memo was written; the weekly run inside the cap with the owner's question beyond it, and
+  CapReached at the cap; due by level, not by calendar (a broken run is not re-paid); a Board session blind (no memo id, author or model in any
+  prompt), two families x two orders x memos + canary, each research memo closed by its own assessment, assessments silent at the Council's level;
+  a judge answered by the other family or by a cheap model not counted -> void -> D3 problem memo (recurs) -> closed by the next valid session; an
+  inflating jury voids the session; unanswered questions count against the memo; the verdict table and the family veto; forged verdicts, scores,
+  one family, no canary caught; `research_cadence` N/A off / young, and every FAIL condition (daily 60 h, weekly 9 days with budget left - not when
+  capped, no stamp, forged ceiling, past SLA and not escalated, forged verdict, D3 overspend); the REAL learning job; the collectors moved; the wiring;
+  the lever rules (up costs more -> owner; down weakens the gate -> owner; another department's lever refused); the money reserve; `last_call` reading
+  the API's citation blocks, Gemini grounding chunks and the fake path.
+- Live proof by mutation on the real repo, each reverted: the phantom check removed and the canary rule disabled (one run) -> **7 tests fail**, the
+  canary test among them;
+  `research_round()` removed from the learning job -> the wiring test fails while `python -m whatifs.org.runner` and the truth scan both stay GREEN
+  (the literal calls still exist inside the function: B4's warning about name scans holds again).
+- Fake rehearsal on the final code: **GREEN** - contract script 25 / 25, final 19 / 19 on GitHub; the research round inside it: 3 research memos ->
+  policy: accept, technique: test, technique: test; canary rejected by both families; `research_cadence` PASS.
+- Full suite: **1232 passed / 0 failed / 1 skipped** (66 files, one uninterrupted run by itself on a frozen copy of c325b3e; the skip is the dashboard
+  render, which needs node - GitHub runs it). The final commit a1c5204 adds only the takeaway seed item, a CLAUDE.md recipe and generated docs.
+- Plan Guard **GREEN**. Truth scan **GREEN**. SYSTEM.md regenerated, no drift. Palace **GREEN** (126 founding items; the limits note unchanged: D1 3,
+  D4 4, D12 1, C 6). Organisation **GREEN** (10 wired, 5 pending).
+- Sweep (standing rule 2): on a frozen copy of a1c5204 - A: 40 fixed ids, organisation ON: **40 ok, 0 held, 0 crashed** (each: status SCHEDULED,
+  38 PASS + 6 N/A, 9 department runs verified, 0 live memos, 0 owner messages, 0 degraded steps); B: 10 ids with ORG_ON = FALSE: **10 ok** (35 PASS +
+  9 N/A); C: 8 full rehearsals with a forced id: **8 ok** (status LIVE, 39 PASS + 5 N/A, the research round in each: 3 live memos = the assessments
+  waiting silently for the Council). **58 of 58 green.** Warning classes: the same 9 in every episode and 1 in 1 of 40 as in B4 - none is new.
+  Traced, not new: every rehearsal also sends the owner a 'similar script' message because the rehearsal renders the SAME episode again and
+  `similarity.check` compares it with its own earlier fingerprint (the episode is named as its own twin; code untouched by B5) - open issue 47.
+- GitHub Checks (standing rule 1), every commit of the batch read on the public run page: #61 (step 1) and #62 (steps 2-3) GREEN. **#63 (be89fa4) RED**
+  - 6 failed / 1196 passed: exactly the six tests whose expectation changed by design (41 levers, 25 script checks, D2 no longer pending, three
+  production-room formulas off by the organisation's Rs 420 reserve), updated in the next commit. **#64 (9060e41) and #65 (8f5a9d7) RED at the
+  rehearsal** (unit tests 1231 / 1233 passed): the rehearsal's own production-room formula (`maintenance reserve ... must sit inside the cap`) - the same
+  assertion my laptop rehearsal failed on, fixed in c325b3e. Traced from the annotations, not re-run. **#66 (c325b3e) GREEN. #67 (a1c5204, the final
+  code commit): GREEN - 1233 passed, 0 skipped, rehearsal GREEN (episode id EP202611102139, script 25 / 25, final 19 / 19).** New notice on the run page:
+  GitHub's `ubuntu-latest` label moves to Ubuntu 26 from 19 Oct 2026 (open issue 46).
+- Money: Rs 0 spent (fake mode). Expected in production: R&D about Rs 10-15 a question x 4 a week (cap Rs 300), the Board about Rs 10-20 a session
+  (cap Rs 120); NOT measured - the first real runs must be read (open issue 40).
 
 #### Step 7 TAKEAWAY (also Palace item `b5.takeaway`, 126 founding items)
 - WORKED: every judgement as a PURE function of stored data (the ceiling, the scores, the verdict). The check re-runs them on what is stored, so a
@@ -1211,6 +1249,16 @@ Rehearsal asserts `docs_current` ran and passed.
    `Org_Audit` (and so the cap) is exact. The manual `research.yml` workflow (`cli research`) still runs the topic brief outside the runner.
 45. (B5) Liveness from GitHub's runners: a site that blocks robots (401-429) counts as alive, a timeout counts as alive, 404 / 410 / no host is dead.
 
+46. (B5, low -> B10) GitHub's run page now notes that the `ubuntu-latest` label moves to Ubuntu 26 from 19 Oct 2026. The Checks pin Python 3.11 and
+   the library bounds of requirements.txt, so the move should be quiet; if a run turns red right after it, read the annotation for a system library
+   (ffmpeg, fonts) first. Pin `runs-on: ubuntu-24.04` only if that happens.
+
+47. (B5 sweep, medium -> B6 or the next batch that touches the Script Room) `whatifs/similarity.py:check` compares a script with the last 10
+   fingerprints INCLUDING the same episode's own earlier one. Any episode scripted twice (seen in the rehearsal's re-render; NOT checked whether
+   a production re-run does it) is reported 'N% similar to itself': a degraded step and a false `similar_script` owner message. Fix: skip rows whose `episode_id` equals the
+   episode (replace that episode's fingerprint instead of appending a second); test both ways (a twin of ITSELF is not similar, a different
+   episode at the same score still is). Not a weakened check - the comparison with other episodes stays.
+
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`
 - Suite: `bash ../shim/runall.sh . <outdir outside repo>` (~35 min; run it in the background). Some files: `bash ../shim/runseq.sh . <outdir> test_a test_b`.
@@ -1255,4 +1303,5 @@ Rehearsal asserts `docs_current` ran and passed.
 | B3 | done 10 Nov 2026 | 1088 / 0 / 6 skipped | GREEN (22 + 19) | Memos + department contract: 4 org modules + wrappers, 7 departments wired, SLA watchdog, checks `dept_contract` + `takeaways_written` (41 hard checks now); promise-flag fix. GitHub run 42: GREEN |
 | B0b | done 10 Nov 2026 | 1113 / 0 / 1 skipped | GREEN (22 + 19) | Baseline re-check: sweep 58 of 58 fixed ids green; reference frames always compared; no-skip rule; Checks pinned to production's library versions (they ran OpenCV 5.0.0); red runs name their cause in public; 8 cells / 2 tabs / 10 functions that were never wired are listed and may only shrink; owner: build the room value test in B8. GitHub run 52: GREEN (1114 passed, 0 skipped); runs 46-48 RED = OpenCV 5.0.0 before the pin |
 | B4 | done 10 Nov 2026 | 1201 / 0 / 1 skipped | GREEN (24 + 19) | Execution Engine: lever table (39 levers), 5 lever classes from ticket to ledger proof or rollback, owner approval by direction, between-videos rule, D12 wired, checks `decisions_executed` + `lever_verified` (43 hard checks now), build workflow hardened. GitHub run 59: GREEN (1202 passed, 0 skipped); run 57 RED = one test, a one-second ordering rule of the verifier, traced and fixed (runs 54-56 and 58 GREEN) |
-| B5 | next | | | R&D + Review Board |
+| B5 | done 11 Nov 2026 | 1232 / 0 / 1 skipped | GREEN (25 + 19) | R&D + Review Board: gap-driven research agenda (8 gap sources), sources verified by code (phantom / dead / undated dropped, evidence ceiling), blind two-family Board with yes/no checklist, verdict by code, family veto, planted canary per session; check `research_cadence` (44 hard checks), D2 + D3 wired, 41 levers. Sweep 58 of 58. GitHub run 67: GREEN (1233 passed, 0 skipped); #63 RED = 6 by-design tests, #64/#65 RED = rehearsal money formula, traced and fixed |
+| B6 | next | | | Creative departments + Council |
