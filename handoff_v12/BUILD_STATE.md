@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 10 Nov 2026 (end of B0b). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 10 Nov 2026 (end of B4). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -18,32 +18,33 @@ Updated: 10 Nov 2026 (end of B0b). Branch: `v12-organisation` (never main). Resu
    version of a library, change `requirements.txt` AND the workflows in one commit and re-verify the reference frames (`tests/golden_frames.py`).
 
 ## NEXT
-**B4 - Execution Engine** (01 section 6; 03 "B4"). Full seven-step MANDATORY BATCH LOOP. Effort: High.
-What B3 leaves ready for B4 (use it, do not rebuild it):
-- The EXECUTE step of every department run already reads the department's open tickets and calls `runner.EXECUTOR(ticket, brief)`; register the engine
-  with `runner.set_executor(fn)`. Until then a ticket is escalated at once with the reason. The engine closes a ticket with
-  `memos.resolve(id, dept, "lever_verified" | "rolled_back", ref)` (both kinds are already in `schemas.TYPES["ticket"]["resolved_by"]`).
-- A ticket is already a validated memo type: body `lever_class` A-E, `target`, `value`, `acceptance_test`, `rollback`, `decision_ref`; exactly one addressee;
-  clocks P0 6 h / P1 48 h / P2 7 days. An owner memo closes by `ticket_executed` ONLY when that ticket is resolved as `lever_verified` (enforced in `memos.resolve`).
-- `registry.DEPTS[dept]["levers"]` says which department owns which Settings cell and `registry.may_change(dept, key)` answers it; no lever has two owners
-  (tested). Build `org/levers.py` (ranges, steps, cost impact, needs-owner-above) on top; `may_change` is not yet called by any write path.
-- Proof for lever class A / D ("the next run had the item in its playbook and cited it"): tab `Sessions` holds `playbook_id` and the ACT receipt (`injected`,
-  `applied`); tab `Palace_Playbooks` holds the item ids of every playbook id.
-- Tabs still to append in B4: `Tickets`, `Lever_Changes`. Checks that belong to B4: `decisions_executed`, `lever_verified`.
-- D12 is pending with batch B4 in `registry.PENDING`: wiring its run (build requests, class E dry-run) means a call site + moving it to `registry.ENTRY`
-  (the ratchet test only lets the pending list shrink).
-- Paid organisation calls: start the run with `budget="org"`; the monthly thinking cap per department is then enforced by the runner (P0 continues).
-- First thing in B4: add the new org modules to `tools/repair.py` PROTECTED (B3's modules are on it).
-What B0b adds for B4:
-- `truth.unread_settings()` lists the cells no code reads. `org/levers.py` must refuse to register or turn such a cell (a guard test already fails when a
-  department's `levers` names one). The moment B4 calls `registry.may_change` and `runner.set_executor`, Plan Guard goes RED until their two entries
-  are deleted from `truth.UNWIRED_FUNCTIONS` and `UNWIRED_FUNCTIONS_MAX` is lowered to 8 - that is the rule working, not a fault.
-- New checks change the totals several tests and the rehearsal assert (22 script + 19 final today): search the tests for the old numbers.
-- Acceptance of B4 includes standing rules 1 and 2: the sweep (40 ids + 10 with ORG_ON = FALSE + 9 rehearsals took about 2 hours on this laptop with
-  3 jobs; start it in the background on a frozen copy of the commit as soon as the build step is done) and the final commit green on GitHub.
+**B5 - R&D + Review Board** (01 sections 2 (D2, D3), 5, 7 `research_cadence`, 9; 03 "B5"). Full seven-step MANDATORY BATCH LOOP. Effort: High.
+What B4 leaves ready for B5 (use it, do not rebuild it):
+- A research finding becomes a change through ONE doorway: research_memo (D2 -> D3) -> assessment_memo (D3 -> C) -> the Council's decision + tickets
+  (B6) -> `execute.apply`. B5 builds the first two; it must NOT write tickets itself except for D2's own levers (`RESEARCH_ON`, `IDEA_MIN_MULTIPLE`).
+- How a ticket must look so that the engine can compile it (also Palace item `b4.how_to_write_a_ticket`, served to the Council and D12):
+  A knowledge: target `palace:<key>`, value = the item (or empty to accept an item that is already `proposed`), sender C. B setting: target = the
+  Settings cell, addressed to the department that owns it (`levers.owner_of`). C experiment: target `playbook:<showrunner|writer|packager|director|reel>`,
+  value `rule`, `metric`, `source_url`. D prompt rule: as A with kind `style_rule` / `policy_rule`. E code: addressed to D12, value `spec`, `files`,
+  `tests_to_add`, `acceptance`. Anything else is refused with the reason and the ticket is rejected.
+- `execute.engine_tick` (every tick) takes up every new ticket of a WIRED department at once. A ticket to a pending department (D0, D1, D2, D3, D11, C, L)
+  still goes straight to the owner's level (B3 rule). The moment B5 wires D2 and D3 their tickets are executed like everybody's - nothing to add.
+- Wiring D2 / D3: a call site `runner.run("D2", "<trigger>", ...)` with `budget="org"` (the monthly thinking cap is then enforced: D2 Rs 300, D3 Rs 120),
+  an entry in `registry.ENTRY`, the department out of `registry.PENDING` (ratchet test), then `tools/gen_docs.py`.
+- Research memos already validate (`schemas.TYPES`): dated evidence is mandatory; `resolved_by` an `assessment_memo` whose id must exist.
+- Totals other tests and the rehearsal print: 43 hard checks (24 script + 19 final), 118 founding Palace items, 8 of 15 departments wired.
+- New org modules go on `tools/repair.py` PROTECTED first (levers.py, execute.py and builds.py are on it since B4).
+- Every function B5 adds must be called by production code, every new cell read, every new tab used (Plan Guard). A wiring whose function has a common
+  name is NOT protected by that scan: add a test that runs the real job (see `test_the_tick_job_itself_runs_the_engine_pass`).
+- Acceptance of B5 includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
-### B4 - Execution Engine (10 Nov 2026) - IN PROGRESS (steps recorded as they finish; resume at the first step that is missing below)
+### B4 - Execution Engine (10 Nov 2026) - ACCEPTED (all 7 loop steps recorded below; final code commit ad99fd2 GREEN in GitHub run 59)
+Result in one line: whatever the organisation decides can now only exist as a change that runs - a ticket is compiled into a typed change, written to a
+ledger before and after, verified by evidence somebody else wrote later, and rolled back when that fails; a decision without executed tickets fails a
+HARD check before picture money. Honest limits: no real ticket is written until the Council exists (B6), so B4 by itself changes no video; knowledge is
+proven "served", not yet "cited" (B6); the code lever is proven with stand-ins for GitHub, never on GitHub itself; tickets for the 7 departments that
+are still pending go straight to the owner's level.
 
 #### Step 1 RESEARCH (14 dated sources; E = measured evidence, O = opinion / practice / vendor documentation)
 Honest note: for sources 1-5 and 14 the abstract page was read, not the full paper; 4 and 9c are quoted from a search summary.
@@ -131,6 +132,124 @@ Decision: B + C + D together.
 - Rejected: executing the ticket's `acceptance_test` text (a self-written test is the thing sources 9 and 14 warn about); applying a setting in
   the EXECUTE step of an episode run (it would change the bar under a script already written); automatic revert of drift (it would fight the
   owner's hand edits); a department run for D12 on every tick (about 670 empty runs per two-week verification window).
+
+#### Step 4 BUILD (what changed)
+- NEW `whatifs/org/levers.py`: the lever table - 39 Settings cells (15 whole numbers, 6 decimals, 9 switches, 3 choices, 4 JSON maps, the publish days,
+  the list of switched-off checks), each with type, range, largest step, the direction that needs the owner (28 of 39 have one) and the contract
+  checks that judge it (22 of 39; the rest are judged by the next complete run of their department). `check`, `same`, `issues`, `owner_of`, `merge_scope`.
+- NEW `whatifs/org/execute.py` (599 lines): `apply` (the runner's EXECUTE step), `engine_tick` + `reconcile` (the tick pass), the five lever classes as
+  (plan, do, read-back, verify, undo), the owner's approval message and its answer, `decision_issues` / `lever_issues` (what the two checks judge).
+- Tabs appended: `Tickets` (24 columns), `Lever_Changes` (12). 9 settings: EXEC_ON, EXEC_VERIFY_RUNS (3), EXEC_VERIFY_DAYS (14), EXEC_ARM_OUTPUTS (2),
+  EXEC_RULES_PER_DEPT (12), EXEC_BUILD_RETRIES (2), EXEC_BUILD_WAIT_H (6), EXEC_AUTO_MERGE_ON (TRUE), EXEC_TICK_AT (auto).
+- `whatifs/org/memos.py`: a ticket closes as `lever_verified` / `rolled_back` (a build request as `merged_verified`) only when the ledger holds that row
+  with a proof for that ticket; only the engine may close them that way; `await_proof` (typed, needs the ledger row, at most 130 days).
+- `whatifs/org/runner.py`: the engine is the default executor (`_engine`); with `EXEC_ON` = FALSE a ticket is escalated at once. `set_executor` is gone.
+- `whatifs/org/registry.py`: D12 Operations is wired (`execute.py`, trigger `operate`; pending list 8 -> 7); the two new checks have owners (C, D12);
+  `data_issues` includes the lever table.
+- `whatifs/contract.py`: checks `decisions_executed` and `lever_verified`, both at the script gate: **43 hard checks (24 script + 19 final)**.
+- `whatifs/builds.py` + `whatifs/cli.py` + `.github/workflows/claude-build.yml`: a build can carry its build request id; the real diff (`pr_files`) and
+  the checks of any commit (`commit_state`) can be read; the workflow's Sheet, WhatsApp, owner and merge credentials moved from the whole job to its
+  last step - the step in which Claude Code reads the spec now holds only its own model credential and the workflow's own repository access.
+- `whatifs/manage.py` (tick: `EXE.engine_tick()` next to the watchdog), `whatifs/notify.py` (the approval answer is registered), `whatifs/episode.py`
+  (the long video's features now record its experiment arms - they were always empty for long videos).
+- `whatifs/truth.py`: two entries deleted, `UNWIRED_FUNCTIONS_MAX` 10 -> 8. `tools/repair.py` PROTECTED: + levers.py, execute.py, builds.py.
+- Generated docs: SYSTEM.md section 12 (states, the five classes, the whole lever table). 5 matrix rows. 7 founding items `b4.*`: 118, 0 refused.
+- `tools/rehearsal.py`: a Council decision with one knowledge ticket is written before the video and must end `verified` on the ledger.
+- Changed against the design memo after seeing real behaviour: (1) proof names the exact item VERSION (an updated item was "verified" by a playbook
+  that still held its old text); (2) a video that starts in the very second of a change counts as made after it; (3) the tick takes up new tickets
+  of every wired department itself - a department that only runs inside a video would have seen its ticket a week late and the ticket would have
+  climbed to the owner for a missed acknowledgement; (4) the tick records when it last finished and the check fails when tickets wait and that is a day
+  old; (5) a merge whose checks never report is escalated, never reverted on a guess; (6) the automatic merge scope is narrower than the master
+  spec's "tests + rules": NEW TEST FILES ONLY - rule data has its own lever (D) with verification and rollback, a build that edits it would bypass both;
+  (7) `decisions_executed` says N/A, not PASS, while nothing has been decided: the sweep showed 40 videos each "passing" a check that had judged nothing;
+  (8) found by GitHub, not by the laptop: "after the change" is judged to the second, and on a fast machine the next run of the department began in
+  the very second of the change - it was skipped and the proof named a later run. Now a run that begins in that second counts, and the run that
+  hands the ticket over is recorded (`Tickets.session`) and can never be the proof of its own ticket.
+- Existing tests changed because their expectation changed BY DESIGN (say so in the final PR): `tests/test_v94a.py` (the model credential sits on
+  the Claude step, not on the job), `tests/test_v12_org.py` (a ticket cannot be closed with a made-up reference any more; "no engine registered" is now
+  "engine switched off"; D12 left the pending set; the registry fixture copies execute.py).
+
+#### Step 5 ENFORCE (rule -> executing code -> fails when broken)
+| Rule | Executes | Fails when broken |
+|---|---|---|
+| A ticket is compiled into a typed change or refused with the reason; its free text is never executed | `execute.apply`, `_start`, the five `_plan_*` | ticket rejected, ledger row `refused`, nothing written (tests: more than 20 refusal cases) |
+| Intent before, applied + read-back after, then a verdict with its proof; rows only appended | `execute._start`, `_applied`, `_judge`, `_log` | `lever_verified` FAIL ("without an intent row", "verified without a proof", "rolled back without a ledger row") |
+| Verified only by rows another component wrote after the change | `_verify_knowledge` (later run, exact version), `_verify_setting` (video made after, the lever's checks), `_verify_arm` (features of later videos), `_verify_build` (checks on the merge commit) | stays `applied`; no evidence inside the window = rollback |
+| A department turns only its own registered lever, right type, inside range, one step, never a cell no code reads | `levers.check`, `registry.may_change` | refused before anything is written |
+| The direction that weakens a gate, costs more or changes the plan waits for the owner's tap | `levers._owner_reason`, `execute._ask_owner`, `_on_answer` | state `awaiting_owner`, cell unchanged; ONE message |
+| A setting / experiment changes between videos; one unverified change per department | `execute.idle`, `_start`, `_wait` | state `queued` with the reason (one ledger row per reason) |
+| Rollback never overwrites the owner's later value | `execute._undo_setting` (compare and swap) | ledger `rollback_skipped`, cell untouched |
+| A rollback that fails, or a build out of attempts, goes up at once and the owner hears | `execute._fail` -> `memos.escalate` -> watchdog | `lever_verified` FAIL; owner message (tests assert the message) |
+| A ticket closes only on the ledger; only the engine closes it that way | `memos._proof_problem`, `memos._roles` | MemoError, memo unchanged |
+| Waiting for proof is typed, bounded and needs the applied row | `memos.await_proof` | MemoError |
+| Knowledge by lever needs the Council's authority, never the owner's words, must fit the playbook at once | `_plan_knowledge`, `palace.add`, `_present_knowledge` | refused; an item that does not fit is retired again at once |
+| A department's rulebook is bounded | `_plan_knowledge` (`EXEC_RULES_PER_DEPT`) | refused |
+| A code build merges by itself only when the real diff adds new test files and nothing else | `levers.merge_scope`, `execute._verify_build` | owner's Merge message with the reason (tests: 10 kinds of diff) |
+| At most 1 + 2 builds; closed pull request, red main, silent main are never "done" | `execute._retry_build`, `_judge`, `_undo_build` | state `failed`, escalated |
+| No credential on the step that reads the spec | `.github/workflows/claude-build.yml` | `tests/test_v12_exec.py` (job env, step env), `tests/test_safety.py` |
+| Nothing decided stays text | `execute.decision_issues` | `decisions_executed` FAIL (no ticket, ghost ticket, forged close, late and nobody told) |
+| The tick pass is alive | `execute.engine_tick` (`EXEC_TICK_AT`), `lever_issues` | `lever_verified` FAIL after a day; a test runs the REAL tick job and fails when the call is removed |
+| The lever table is honest | `levers.issues` in `registry.data_issues` and in `lever_verified` | `python -m whatifs.org.runner` RED; check FAIL; tests |
+
+#### Step 6 PROVE
+- `tests/test_v12_exec.py`: **88 tests (46 functions)**, each rule both ways: 18 kinds of setting value refused; the direction rule for every lever
+  type; a setting from queue to applied to verified with the exact ledger rows; rollback on the lever's own check (and NOT on another check); the
+  owner's hand-typed value surviving a rollback; the window ending; the approval message word for word, asked once, Approve / Reject / approve while a
+  video is being made; one unverified change per department; a ticket a person closes; an apply killed before and after the write; a rollback that
+  fails (the owner hears); knowledge accepted, served, verified with the session named; a proposed takeaway accepted by the Council; a changed text
+  restored; knowledge nobody is served retired again; a prompt-mode department must cite; 8 kinds of knowledge ticket refused; the bounded rulebook;
+  an experiment arm from registration to the features of two later videos; an arm nobody carries retired; 4 kinds of arm refused; a code ticket to
+  build request to dispatch to pull request to automatic merge to green main; outside the scope -> the owner, once; red checks -> two re-builds ->
+  escalation; no pull request; red main -> revert build + escalation; silent main -> escalation, no revert; a closed pull request; 10 kinds of diff
+  against the merge scope; the workflow file; the memo doorway; both checks with every FAIL condition; the real tick job; and the real pipeline
+  twice (a knowledge ticket verified in the first video, a setting ticket applied in the gap and verified by the second video's retention check).
+- Faults the tests and the re-reading found in the new code, all fixed (repair attempts: none reached 3): points (1) to (5) of step 4 "changed against the design
+  memo" and the unnoticed removal of the tick call; plus two mistakes of my own on the way: a patch pasted through a shell here-document lost
+  its backslashes, failed its own assertion and the UNPATCHED script reformatted the whole founding-knowledge file (restored from git, redone from a
+  file - the warning under HOW TO RUN is right); and new founding items addressed to D1 and the Council pushed three more low-priority limits out of
+  D1's playbook (audiences narrowed: D1 is back at 3; the Council went from 5 to 6, open issue 6).
+- Live proof on the real repo: the engine's call removed from `manage.tick` -> the new wiring test fails (1 failed), restored -> passes. One lever rule
+  deleted from `levers.py` -> `python -m whatifs.org.runner` RED naming it. NOTE: the truth scan stayed GREEN in the first case - it counts names and
+  the name still appears in the rehearsal and in the docs generator; that is why the wiring test runs the real job.
+- Fake rehearsal on the final code: **GREEN** - contract script 24 / 24, final 19 / 19; 9 department runs, 9 takeaways; the rehearsal's decision:
+  ticket -> `intent > applied > verified`, proof "Sessions:... (D6 assets) ran after the change with PI-...@1 in its playbook".
+- Full suite: **1201 passed / 0 failed / 1 skipped** (65 files, one uninterrupted run by itself on a frozen copy of the final code commit ad99fd2; the skipped
+  test is the dashboard render, which needs node - GitHub runs it: 1202). An earlier full run (commit 822dfa3) had 1197 / 0 / 1 in 64 files and the 65th
+  file stopped by the runner's 15-minute limit - my mistake: the sweep was running at the same time (by itself that file takes 477 s).
+- Sweep (standing rule 2): on a frozen copy of 822dfa3 - A: 40 fixed ids, organisation ON: **40 ok, 0 held, 0 crashed** (each: status SCHEDULED, 9 department
+  runs verified, 0 live memos, 0 owner messages, 0 degraded steps); B: 10 ids with ORG_ON = FALSE: **10 ok** (35 PASS + 8 N/A); C: 8 full rehearsals with
+  a forced id: **8 ok** (status LIVE, 39 PASS + 4 N/A, the rehearsal's decision verified on the ledger in each). **58 of 58 green.** Warning classes: the
+  same 9 in every episode and 1 in 1 of 40 as in B0b - none is new. The two later code commits (one status word of one check; the one-second rule of the
+  verifier) each got a short sweep on its own frozen copy - 7f9e7fd: 4 + 1 + 2, ad99fd2: 3 + 3 rehearsals: **13 of 13 green** (organisation ON and
+  nothing decided: 38 PASS + 5 N/A).
+- Plan Guard **GREEN**. Truth scan **GREEN**. SYSTEM.md regenerated, no drift. Palace **GREEN** (118 founding items). Organisation **GREEN**.
+- GitHub Checks (standing rule 1): every commit of the batch read on the public run page. Runs 54, 55, 56 GREEN (56 = 822dfa3: 1201 passed, 0 skipped,
+  rehearsal GREEN). **Run 57 (7f9e7fd): RED - 1 failed / 1200 passed**: this batch's own end-to-end test, at an assertion whose first part held
+  (`'verified' == 'verified'`). Traced, not re-run (step 4, point 8): the proof named a later run than the test expected, because the next run of the
+  department had begun in the same clock second as the change. Honest limit of that diagnosis: the public run page shows only the first line of the
+  assertion (log lines need a sign-in); the failing part is INFERRED - it is the only part of that assertion that depends on timing - and the
+  mechanism is reproduced in `test_a_later_run_in_the_very_second_of_the_change_counts...`, which fails on the old code. Run 58 (e362042: the same
+  code + one CLAUDE.md recipe) GREEN half an hour later - the fault is a matter of milliseconds. **Run 59 (ad99fd2, the final code commit, with the fix and a test that fails on the old code): GREEN - 1202 passed,
+  0 skipped, rehearsal GREEN (episode id EP202611101921, script 24 / 24, final 19 / 19).** The one warning on every run page is GitHub's own (Node.js 20
+  deprecated for `actions/setup-node@v4`; open issue 37).
+- Money: Rs 0 added (no model call). Not measured in production: nothing is live until the final PR.
+
+#### Step 7 TAKEAWAY (also Palace item `b4.takeaway`)
+- WORKED: asking of every proof "who wrote it, and when?". The first verifier accepted a playbook holding the OLD text of an item and would have
+  called an unchanged department "verified". Proof now names the version, the session and the playbook.
+- WORKED: re-reading the finished engine as a stranger before the long runs. It found the three faults no test had asked about: the week-long wait of
+  a ticket for a department that only runs inside a video, the blind revert of a healthy merge, and the dead tick nobody would have noticed.
+- WORKED: testing the silence again (B3's lesson): every state that waits now has a clock that ends, and every end has somebody who is told.
+- WORKED: standing rules 1 and 2. GitHub's faster machine failed ONE test once (run 57) that the laptop, the 58-run sweep and the runs before and
+  after it all passed. Traced from the public run page alone to a one-second ordering rule, reproduced in a test, fixed. The run after it was green
+  on the SAME code: had the red run been re-run instead of traced, the fault would have gone into production as "flaky".
+- WATCH: until the Council exists (B6) NO real ticket is written. The engine is proven by tests and the rehearsal; it changes no video by itself.
+- WATCH: "served" is the proof for knowledge and rules today; "cited" arrives when B6 puts playbooks into prompts (the verifier already demands it then).
+- WATCH: the code lever has never touched the real GitHub (no keys on this laptop, by rule): the diff reader, the checks on the merge commit and the
+  changed workflow file are proven with stand-ins and by reading. The first organisation build must be watched (open issue 29).
+- WATCH: at one video a week a setting change takes about a week to verify and a failed check rolls it back even when the script was simply weak.
+  That is the price of isolation; the Council will see "rolled back: EP... failed <check>" and may ask again.
+- WATCH: a name-count scan cannot protect a wiring with a common name. For every new hook: one test that runs the real job.
 
 ### B0b - Baseline re-check (10 Nov 2026) - ACCEPTED (final code commit 9c5d0e3 GREEN in GitHub run 52)
 Result in one line: the code the build stands on was re-proven the hard way - 58 full fake pipelines over fixed episode ids are green - and the real
@@ -753,6 +872,15 @@ Rehearsal asserts `docs_current` ran and passed.
   (deterministic particle seed).
 
 ## PROTECTED-AREA FILES TOUCHED SO FAR (list them in the final PR)
+- B4: `whatifs/core.py` (2 tabs + 9 settings appended; nothing existing changed), `whatifs/episode.py` (ONE argument added to the brain's `tag` call: the
+  long video's experiment arms are recorded in its features), `whatifs/manage.py` (one call on the tick: `EXE.engine_tick()`), `tools/repair.py`
+  (PROTECTED list + levers.py, execute.py, builds.py), `whatifs/org/memos.py` / `schemas.py` / `runner.py` / `registry.py` (ledger proof on the memo
+  doorway, the engine as verifier, the typed wait for proof, the engine as default executor, D12 wired), `whatifs/contract.py` (2 checks added; no existing
+  check changed), `whatifs/truth.py` (2 list entries deleted, limit lowered). Also touched, not on the protected list before: `whatifs/builds.py` (new
+  optional arguments and three read functions; the owner's own builds behave as before), `whatifs/cli.py` (one optional argument), `whatifs/notify.py`
+  (one handler registered), `tools/gen_docs.py`, `tools/rehearsal.py`, and **`.github/workflows/claude-build.yml`** (one optional input `request`; the
+  Sheet, WhatsApp, owner and merge credentials moved from the job to its last step; the model credential to the Claude step) - a WORKFLOW change that
+  could not be run here: read it in the final PR.
 - B0b: `whatifs/core.py` (10 Settings NOTES reworded: the 8 cells no code reads, one stale cadence note, the safe-mode note; no default value changed),
   `.github/workflows/checks.yml` (unit tests run strict and report; rehearsal reports; pip line pinned) and the pip line of 12 more workflows (same
   bounds as `requirements.txt`; OpenCV goes from 5.0.0 back under 5 in `preview.yml` job 2, `sheets.yml`, `repair.yml`; pillow / requests / soundfile
@@ -788,8 +916,10 @@ Rehearsal asserts `docs_current` ran and passed.
    333 GB, so no risk; delete by hand only if space ever gets tight.
 5. (handoff folder, outside git) The handoff `CLAUDE.md` still says the repo's own CLAUDE.md "is historical until batch B1 rewrites it". B1 has
    rewritten it; the sentence is now simply spent. No action needed.
-6. (B2 -> B6 / B8) A few low-priority limits do not fit an 1,800-token playbook: D1 3, D4 4, D12 1, Council 5 (lowest priority first out; the health
-   check reports it as a note). Fix belongs to the Council / Librarian: merge overlapping limits, or raise the cap for those departments.
+6. (B2 -> B6 / B8) A few low-priority limits do not fit an 1,800-token playbook: D1 3, D4 4, D12 1, Council 6 (5 before B4: the Council now also gets
+   the item that says how a ticket must look) (lowest priority first out; the health
+   check reports it as a note). Fix belongs to the Council / Librarian: merge overlapping limits, or raise the cap for those departments - since B4
+   there is a lever for that (`PALACE_PLAYBOOK_TOKENS_BY_DEPT`, owned by L; a ticket to L reaches the engine once L is wired in B8).
 7. (B2 -> B8) An edit of the `Palace_Items` tab made outside the code is recorded as `external_edit` only when upkeep runs before the next Palace
    write. Served content is safe either way (the guard re-checks every row); only the audit entry can be missed.
 8. (B2 -> B5) Founding tool facts expire 60 days, and the two plans 45 days, after they are first written to the live Sheet (the clock starts at
@@ -850,6 +980,28 @@ Rehearsal asserts `docs_current` ran and passed.
    so the rehearsal never shows the full set of layers after frame 120 and says nothing about full size. First-run verification must read
    `Episodes.atmos_json` (`dropped`) of the first real videos; if layers are dropped there, D6 tunes the cell.
 27. (B0b, laptop) One test still skips on the laptop: the dashboard render needs node (GitHub runs it). Install node only if a batch changes the Worker.
+28. (B4 -> B6) Knowledge and rule levers (A, D) are verified as SERVED (the item, in that version, was in the playbook of a later complete run). CITED
+   is demanded by the same verifier as soon as a department runs in `prompt` mode (B6, open issue 12). Until then "verified" for A / D means handed over.
+29. (B4 -> B10) The code lever (E) has never run against the real GitHub: `builds.pr_files`, `builds.commit_state`, the dispatch of `checks.yml` on main
+   after a merge, the new `request` input and the moved credentials in `claude-build.yml` are proven with stand-ins, by a YAML test and by reading.
+   First-run verification must watch the first organisation build end to end. If the checks on a merge commit never report, the ticket is escalated
+   after `EXEC_VERIFY_DAYS` (never reverted on a guess).
+30. (B4 -> B5 / B6 / B8 / B9) A ticket for a department that has no wired run (D0, D1, D2, D3, D11, C, L) goes straight to the owner's level (B3 rule),
+   so the 16 levers of those departments are in the table but cannot be turned by ticket yet. Each batch that wires a department unlocks its levers.
+31. (B4 -> B7) A rollback reaches the sender only through the ticket's resolution note and an `Org_Audit` row (kind `lever`). No problem memo and no
+   failure lesson is written for it yet: B7's repair loop must feed rollbacks into both.
+32. (B4, low) The tick job and the produce job can touch the same ticket at the same moment (two processes, one Sheet, no lock). The engine's steps are
+   idempotent (same item id, compare-and-swap, a recovery pass for a half-done apply), so the worst case seen in thought is a doubled ledger row.
+33. (B4 -> B6) A script written BEFORE a setting change (an approved Script Preview) and adopted after it is judged against the new bar and counts as
+   "made after the change". A stricter bar can so fail an older draft and roll the setting back. B6 wraps the preview room: stamp the draft with the
+   lever values it was written under.
+34. (B4 -> B9) The owner's approval message for a lever goes out on tier `week` unless the ticket is P0 (as the stuck-item message does). D0 may want
+   `now` for approvals; and an approval that is never answered rests on his list after the usual reminders.
+35. (B4 -> B6 / B10) `EXEC_AUTO_MERGE_ON` defaults to TRUE with a scope of NEW TEST FILES ONLY. The master spec says "tests + rules only": narrowed on
+   purpose (rules have lever class D). Tell the owner in the final PR; he can widen it or switch it off.
+36. (B4 -> B7) `CACHE_ALIGN_EFFORT` (open issue 23) was NOT taken up in B4: it is not a lever of any department. Still open for B7.
+37. (B4, low -> B10) GitHub's run page shows one warning that is GitHub's own: Node.js 20 is deprecated and `actions/setup-node@v4` (in `checks.yml`) is
+   forced onto Node.js 24. Green today; move the action to its next major version when a batch touches the workflows anyway.
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`
@@ -874,6 +1026,12 @@ Rehearsal asserts `docs_current` ran and passed.
 - Real pytest for single files (same runner as GitHub): `PYTHONPATH= ../.venv/Scripts/python.exe -m pytest tests/<file>.py -q -p no:cacheprovider`;
   add `WI_NO_SKIPS=1` to run strict like GitHub's Checks.
 - Truth registry by hand: `../.venv/Scripts/python.exe -m whatifs.truth` (retired concepts, unread cells, unused tabs, uncalled functions).
+- The engine by hand in a test or a scratch store: write a ticket with `memos.write`, call `execute.engine_tick(now=...)`, read tab `Tickets` (state, proof,
+  note) and tab `Lever_Changes` (the events). Every engine function takes `now`, so a verification window can be walked through without waiting.
+- After adding a founding item addressed to a department: run the Palace command and read its `note:` line - an item for a crowded department (D1, D4,
+  D12, C) can push a low-priority limit out of that playbook. Narrow the audience instead.
+- NEVER run the full suite and the sweep at the same time: the suite runner stops a test file after 15 minutes, and under the sweep's load
+  `test_v91_flaky_root` (999 s that day) and `test_v82` (764 s) run into it. Suite first (about 40 minutes with the engine's tests), then the sweep.
 - NEVER paste code with backslashes through a shell here-document on this laptop: the shell halves them (it broke a file twice in B0b). Write the
   file with the file tools, then run it.
 - git: `core.autocrlf=false` (keep LF); write files with LF. Commit identity Rahul4869 (noreply address); push with
@@ -888,4 +1046,5 @@ Rehearsal asserts `docs_current` ran and passed.
 | B2 | done 10 Nov 2026 | 988 / 0 / 6 skipped | GREEN (21 + 18) | Knowledge Palace core: 92 founding items, write gate, life cycle with authority, guarded playbooks, check `palace_health` (39 hard checks now). GitHub run 38: RED at the rehearsal (the stale promise flag, reproduced in B0b; fixed in B3) |
 | B3 | done 10 Nov 2026 | 1088 / 0 / 6 skipped | GREEN (22 + 19) | Memos + department contract: 4 org modules + wrappers, 7 departments wired, SLA watchdog, checks `dept_contract` + `takeaways_written` (41 hard checks now); promise-flag fix. GitHub run 42: GREEN |
 | B0b | done 10 Nov 2026 | 1113 / 0 / 1 skipped | GREEN (22 + 19) | Baseline re-check: sweep 58 of 58 fixed ids green; reference frames always compared; no-skip rule; Checks pinned to production's library versions (they ran OpenCV 5.0.0); red runs name their cause in public; 8 cells / 2 tabs / 10 functions that were never wired are listed and may only shrink; owner: build the room value test in B8. GitHub run 52: GREEN (1114 passed, 0 skipped); runs 46-48 RED = OpenCV 5.0.0 before the pin |
-| B4 | next | | | Execution Engine |
+| B4 | done 10 Nov 2026 | 1201 / 0 / 1 skipped | GREEN (24 + 19) | Execution Engine: lever table (39 levers), 5 lever classes from ticket to ledger proof or rollback, owner approval by direction, between-videos rule, D12 wired, checks `decisions_executed` + `lever_verified` (43 hard checks now), build workflow hardened. GitHub run 59: GREEN (1202 passed, 0 skipped); run 57 RED = one test, a one-second ordering rule of the verifier, traced and fixed (runs 54-56 and 58 GREEN) |
+| B5 | next | | | R&D + Review Board |
