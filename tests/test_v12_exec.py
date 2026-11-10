@@ -17,6 +17,7 @@ def trow(tid): return EXE._get(tid, st())
 def ledger(tid=None): return [r for r in st().rows("Lever_Changes") if tid is None or r["ticket_id"] == tid]
 def acts(tid): return [r["action"] for r in ledger(tid)]
 def owner_msgs(kind): return [r for r in st().rows("Owner_Actions") if r["kind"] == kind]
+def sessions_by_id(): return {s["id"]: s for s in st().rows("Sessions")}
 def taker(out=None): return lambda b: (b.take(), {"x": 1} if out is None else out)[1]
 def run(dept="D4", trigger="write", ep="EP1", at=None, act=None, **k):
     k.setdefault("measure", lambda o: {"units": 30})
@@ -211,6 +212,24 @@ def test_a_knowledge_ticket_is_accepted_served_to_the_next_run_and_only_then_ver
     s = run("D6", "assets", at=T + 4 * H); assert EXE.reconcile(now=T + 5 * H)["moved"] == {t["id"]: "applied -> verified"}
     proof = trow(t["id"])["proof"]; assert f"Sessions:{s.session_id} (D6 assets) ran after the change with {iid}@1 in its playbook" in proof and "handed over with the work order" in proof
     assert MEM.get(t["id"])["resolution"]["kind"] == "lever_verified" and P.get(iid)["status"] == "accepted"
+
+class Exec:
+    """The run whose EXECUTE step hands the ticket to the engine (what the engine sees of it)."""
+    def __init__(self, session_id="", episode="EP1"): self.session_id, self.episode = session_id, episode
+
+def test_a_later_run_in_the_very_second_of_the_change_counts_and_the_run_that_made_the_change_never_does():
+    # GitHub run 57: on a fast machine the next D6 run began in the clock second in which the ticket was applied; it was skipped and the proof named a later run
+    P.ensure_seed(); t = ticket("D6", "A", "palace:b4-push-in", item()); T = now().replace(microsecond=0); iid = P.item_id("b4-push-in")
+    EXE.apply(MEM.get(t["id"]), Exec("S-MAKER"), now=T); s = run("D6", "assets", at=T)                                              # the same second, after the change
+    assert EXE.reconcile(now=T + H)["moved"] == {t["id"]: "applied -> verified"} and f"Sessions:{s.session_id} (D6 assets)" in trow(t["id"])["proof"]
+    s0 = run("D6", "render", at=T + 2 * H); assert f"{iid}@1" in EXE._books(st())[sessions_by_id()[s0.session_id]["playbook_id"]]      # this run was served the item BEFORE the next ticket
+    t2 = ticket("D6", "A", f"palace:{iid}", {}, subject="Confirm the push-in technique"); EXE.apply(MEM.get(t2["id"]), Exec(s0.session_id), now=T + 2 * H)      # applied inside that very run
+    assert trow(t2["id"])["state"] == "applied" and trow(t2["id"])["session"] == s0.session_id and EXE.reconcile(now=T + 3 * H)["moved"] == {}          # it cannot be its own proof
+    s1 = run("D6", "plan", ep="EP2", at=T + 4 * H); assert EXE.reconcile(now=T + 5 * H)["moved"] == {t2["id"]: "applied -> verified"} and s1.session_id in trow(t2["id"])["proof"]
+    t3 = ticket("D10", "B", "BRAIN_HOLDOUT", 0.3, subject="A larger holdout for the sampler"); s2 = RUN.run("D10", "daily", taker(), measure=lambda o: {"rows": 4}, now=T + 6 * H)
+    assert trow(t3["id"])["state"] == "applied" and trow(t3["id"])["session"] == s2.session_id and cell("BRAIN_HOLDOUT") == "0.3"          # a run without an episode applies its own lever at once ...
+    st().update("Tickets", "id", t3["id"], {"applied_at": core.iso(T + 6 * H)}); assert EXE.reconcile(now=T + 7 * H)["moved"] == {}          # ... and is never the proof of it, even in the same second
+    RUN.run("D10", "daily", taker(), measure=lambda o: {"rows": 4}, now=T + 30 * H, key="next day"); assert EXE.reconcile(now=T + 31 * H)["moved"] == {t3["id"]: "applied -> verified"}
 
 def test_the_council_accepts_a_takeaway_a_department_proposed_and_a_changed_text_is_restored_on_rollback(setting):
     P.ensure_seed(); P.add(item(key="run|D6|plan|dev"), "D6"); iid = P.item_id("run|D6|plan|dev"); assert P.get(iid)["status"] == "proposed"

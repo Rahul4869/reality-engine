@@ -162,8 +162,8 @@ def _verify_knowledge(row, st, now):
     if cur is None or cur["status"] not in PAL.SERVABLE or cur["content_hash"] != row["new"]:
         return "gone", f"{iid} is {cur['status'] if cur else 'gone'}" + (" with another text" if cur and cur["content_hash"] != row["new"] else "") + ": it was withdrawn or replaced after the change"
     books = _books(st); n = 0; cite = row["need"] == "cited"; ref = f"{iid}@{cur['version']}"          # the version the ticket wrote, not an older text of the same item
-    for s in st.rows(RUN.STAB):
-        if s.get("dept") != row["dept"] or s.get("status") != "ok" or not ((parse_iso(s.get("started")) or t0) > t0) or RUN.verify(s): continue
+    for s in st.rows(RUN.STAB):          # a later complete run: it began at or after the second of the change and is not the run that made the change
+        if s.get("dept") != row["dept"] or s.get("status") != "ok" or s.get("id") == row["session"] or (parse_iso(s.get("started")) or t0) < t0 or RUN.verify(s): continue
         served = ref in books.get(str(s.get("playbook_id")), ()); cited = iid in _js(s.get("applied_items"), [])
         if served and (cited or not cite):
             return "verified", (f"Sessions:{s['id']} ({row['dept']} {s.get('trigger')}) ran after the change with {ref} in its playbook {s.get('playbook_id')}"
@@ -213,7 +213,7 @@ def _verify_setting(row, st, now):
             if bad: return "rollback", f"{ep}, made after the change, failed {bad}: {str(got[bad].get('evidence'))[:160]}"
             if all(got.get(f, {}).get("status") == "PASS" for f in checks): return "verified", f"{ep} was made after the change and passed {', '.join(checks)} with {key} = {cur}"
         return None
-    runs = [s for s in ses if s.get("dept") == row["dept"] and (parse_iso(s.get("started")) or t0) > t0 and (not s.get("episode_id") or s.get("episode_id") in eps)]
+    runs = [s for s in ses if s.get("dept") == row["dept"] and s.get("id") != row["session"] and (parse_iso(s.get("started")) or t0) >= t0 and (not s.get("episode_id") or s.get("episode_id") in eps)]
     bad = next((s for s in runs if s.get("status") in ("failed", "breach")), None)
     if bad: return "rollback", f"{row['dept']} {bad.get('trigger')} ({bad['id']}) ended {bad.get('status')} after the change: {str(bad.get('error'))[:140]}"
     ok = next((s for s in runs if s.get("status") == "ok" and not RUN.verify(s)), None)
@@ -372,7 +372,8 @@ def apply(ticket, brief=None, st=None, now=None):
         b = ticket["body"]
         row = {"id": ticket["id"], "created": iso(now), "updated": iso(now), "from_dept": ticket["from_dept"], "dept": (ticket["to_depts"] or [""])[0], "lever_class": str(b.get("lever_class") or ""),
                "target": str(b.get("target") or "")[:200], "state": "queued", "change_id": "", "old": "", "new": "", "undo": [], "applied_at": "", "verify_by": "", "need": "", "proof": "",
-               "attempts": 0, "approved": "", "owner_action": "", "decision_ref": str(b.get("decision_ref") or ""), "request_id": "", "pr": "", "note": ""}
+               "attempts": 0, "approved": "", "owner_action": "", "decision_ref": str(b.get("decision_ref") or ""), "request_id": "", "pr": "", "note": "",
+               "session": str(getattr(brief, "session_id", "") or "")}          # the run that hands the ticket over: it began before the change and can never be its proof
         st.append(TAB, [row])
     elif row["state"] != "queued": return row["state"]
     return _start(row, ticket, st, now, episode=str(getattr(brief, "episode", "") or ""))

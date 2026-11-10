@@ -320,7 +320,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Sessions | 21 | id, key, dept, trigger, episode_id, attempt ... | one row per department run with its six chained receipts (whatifs/org/runner.py) |
 | Takeaways | 16 | id, ts, session_id, dept, trigger, episode_id ... | what every department run learned; new findings are also proposed to the Palace |
 | Org_Audit | 20 | ts, kind, run_id, dept, trigger, episode_id ... | one row per department run, escalation and watchdog pass that did something |
-| Tickets | 23 | id, created, updated, from_dept, dept, lever_class ... |  |
+| Tickets | 24 | id, created, updated, from_dept, dept, lever_class ... |  |
 | Lever_Changes | 12 | ts, change_id, ticket_id, lever_class, dept, target ... |  |
 
 ## 9. Modules

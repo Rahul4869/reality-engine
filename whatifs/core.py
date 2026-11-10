@@ -154,7 +154,7 @@ TABS = {
  # v12: the Execution Engine (whatifs/org/execute.py). Tickets = one row per ticket, the engine's state for it; Lever_Changes = one row per event of a
  # change (intent before it, applied after it, then verified or rolled_back), only ever appended.
  "Tickets":         ["id", "created", "updated", "from_dept", "dept", "lever_class", "target", "state", "change_id", "old", "new", "undo", "applied_at", "verify_by",
-                     "need", "proof", "attempts", "approved", "owner_action", "decision_ref", "request_id", "pr", "note"],
+                     "need", "proof", "attempts", "approved", "owner_action", "decision_ref", "request_id", "pr", "note", "session"],
  "Lever_Changes":   ["ts", "change_id", "ticket_id", "lever_class", "dept", "target", "action", "old", "new", "by", "proof", "note"],
 }
 
