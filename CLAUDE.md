@@ -69,3 +69,8 @@ pipeline run uses the new code. Nothing restarts.
   and is named in `registry.ENTRY` (a runner call that is not registered, or a registered one that is gone, fails check `dept_contract`). Memos go only through
   `memos.write` (types and clocks: `schemas.TYPES`) and are closed only by `memos.resolve` with proof. Never write the `Memos`, `Sessions` or `Takeaways` tabs directly.
   Wiring a pending department: add its call site, move it from `registry.PENDING` to `ENTRY`, run `python tools/gen_docs.py`.
+- **Execution Engine** (`whatifs/org/levers.py`, `execute.py`): whatever the organisation decides becomes a ticket, and a ticket becomes a change only
+  through `execute.apply` / `execute.engine_tick`: written to tab `Lever_Changes` before and after, verified by later evidence or rolled back. Never write
+  `Tickets` or `Lever_Changes` directly and never close a ticket by hand (`memos.resolve` asks the ledger). A Settings cell a department may turn by
+  ticket needs BOTH an entry in `registry.DEPTS[dept]["levers"]` and a rule in `levers.LEVERS` (type, range, largest step, the direction that needs the
+  owner, the checks that judge it). A new hook into a job gets a test that runs the real job (the name scan cannot see a common name being unwired).
