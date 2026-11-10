@@ -94,7 +94,7 @@
   {"key": "b2.takeaway", "batch": "B2", "kind": "takeaway", "title": "B2 build takeaway: read the real output, and make checkers accept anything",
    "summary": "Look at the real output of a selection rule on real data before trusting it: the first writers' playbook opened with a minor idea and left out the owner's core taste rule until priority and tighter addressing were added. And a checker must accept any input: the guard's own checker crashed on a retired row, and the audit trail hid outside edits until it ran first.",
    "departments": ["L", "C", "D12", "D8"], "topic_tags": ["palace", "build", "playbook", "testing"],
-   "evidence": [{"source": "v12 build, batch B2", "date": "2026-11-10", "type": "build record", "finding": "39 new tests found 2 real bugs (the playbook checker raised on a retired row; upkeep logged its own changes before the audit compared hashes); 92 founding items, none refused, every applied_in reference resolves; limits left out of an 1,800-token playbook: D1 3, D4 3, D12 1, C 4"}],
+   "evidence": [{"source": "v12 build, batch B2", "date": "2026-11-10", "type": "build record", "finding": "39 new tests found 2 real bugs (the playbook checker raised on a retired row; upkeep logged its own changes before the audit compared hashes); 92 founding items, none refused, every applied_in reference resolves; a few low-priority limits do not fit an 1,800-token playbook for D1, D4, D12 and the Council (reported by the health check as a note)"}],
    "applied_in": ["whatifs/org/palace.py:playbook_issues", "whatifs/org/palace.py:maintain", "tests/test_v12_palace.py", "handoff_v12/BUILD_STATE.md"]}
  ]
 }
