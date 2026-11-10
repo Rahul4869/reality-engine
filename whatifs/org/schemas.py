@@ -23,6 +23,7 @@ MOVES = {
 LADDER = ("department", "C", "owner")                            # level 0, 1, 2: who holds a memo after each escalation
 SUBJECT = (8, 140); DONE_WHEN = (10, 300); CONSTRAINT = (5, 240); MAX_CONSTRAINTS = 8; BODY_MAX = 6000; REASON_MIN = 20
 EVIDENCE_TYPES = tuple(_TRUST)                                    # the Palace's own evidence vocabulary: a memo's evidence can enter the Palace unchanged
+RESEARCH_KINDS = ("technique", "policy", "tool", "revalidate", "owner", "problem", "audience")   # v12 B5: what a research question is about (policy / tool / revalidate are FACTS)
 
 def _s(mn=1, mx=400): return {"type": "string", "minLength": mn, "maxLength": mx}
 def _arr(items, mn=0, mx=12): return {"type": "array", "minItems": mn, "maxItems": mx, "items": items}
@@ -50,7 +51,13 @@ TYPES = {
         "sla": "assessed within 48 h",
         "body": _obj(("question", "findings", "confidence", "proposed_actions", "expected_impact", "target_depts"),
                      {"question": _s(10, 300), "findings": _arr(_s(10, 600), 1, 12), "confidence": {"type": "number", "minimum": 0, "maximum": 1},
-                      "proposed_actions": _arr(_s(10, 400), 1, 8), "expected_impact": _s(10, 400), "cost_inr": _NUM, "target_depts": _arr(_DEPT, 1, 15)}),
+                      "proposed_actions": _arr(_s(10, 400), 1, 8), "expected_impact": _s(10, 400), "cost_inr": _NUM, "target_depts": _arr(_DEPT, 1, 15),
+                      # v12 B5 (optional, written by whatifs/org/rnd.py): what kind of question, which gap started it, the evidence ceiling code computed,
+                      # the pre-registered predictions (action index, metric, direction, horizon in videos) and the Palace item a re-validation is about
+                      "kind": {"type": "string", "enum": list(RESEARCH_KINDS)}, "gap": _obj(("source", "ref"), {"source": _s(2, 40), "ref": _s(1, 200)}),
+                      "evidence_ceiling": _SCORE, "palace_ref": _s(0, 60), "sources_dropped": {"type": "object"},
+                      "predictions": _arr(_obj(("action", "metric", "direction", "horizon_videos"), {"action": {"type": "integer", "minimum": 0, "maximum": 7}, "metric": _s(2, 40),
+                                                "direction": {"type": "string", "enum": ["up", "down"]}, "horizon_videos": {"type": "integer", "minimum": 1, "maximum": 8}}), 0, 8)}),
     },
     "assessment_memo": {
         "from": ("D3",), "to": ("C",), "mode": "ask", "urgency": "P1", "ack_h": 168, "resolve_h": 168,
@@ -59,7 +66,11 @@ TYPES = {
         "sla": "taken up by the Council within 7 days",
         "body": _obj(("memo_ref", "scores", "verdict", "jury", "rationale"),
                      {"memo_ref": _s(3, 40), "verdict": {"type": "string", "enum": ["accept", "test", "reject"]}, "jury": _arr(_s(2, 60), 2, 6), "rationale": _s(20, 800),
-                      "scores": _obj(("evidence", "novelty", "impact", "feasibility", "cost", "risk"), {k: _SCORE for k in ("evidence", "novelty", "impact", "feasibility", "cost", "risk")})}),
+                      "scores": _obj(("evidence", "novelty", "impact", "feasibility", "cost", "risk"), {k: _SCORE for k in ("evidence", "novelty", "impact", "feasibility", "cost", "risk")}),
+                      # v12 B5 (optional, written by whatifs/org/board.py): the share of "yes" per checklist question per family, the planted canary's
+                      # result, the research memo's kind and ceiling - everything code needs to RE-COMPUTE the verdict
+                      "checklist": {"type": "object"}, "canary": _s(0, 120), "kind": {"type": "string", "enum": list(RESEARCH_KINDS)}, "evidence_ceiling": _SCORE,
+                      "author_family": _s(0, 20), "predictions": {"type": "integer", "minimum": 0}, "cost_inr": _NUM}),
     },
     "creative_memo": {
         "from": ("D4", "D5", "D6", "D7"), "to": ("C",), "mode": "ask", "urgency": "P2", "ack_h": 84, "resolve_h": 84,

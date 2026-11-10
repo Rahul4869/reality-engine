@@ -110,6 +110,17 @@ def write(memo, st=None, now=None):
     st.append(TAB, [row])
     return dict(_parse(row), result="follows" if prev else "added")
 
+def id_for(memo, st=None, now=None):
+    """The id write() will store this memo under (a closed memo with the same identity gets a successor id), without writing anything. A department
+    that sends a memo and closes another one WITH it in the same run names its proof before the runner writes (v12 B5: assessment -> research memo)."""
+    c, p = SC.check_memo(memo, now)
+    if p: raise MemoError(p)
+    rs = rows(st or store()); gen = 0; key = c["dedupe_key"]
+    mid = SC.memo_id(c["type"], c["from_dept"], c["to_depts"], key); old = get(mid, rs=rs)
+    while old is not None and old["status"] in TERMINAL:
+        gen += 1; mid = SC.memo_id(c["type"], c["from_dept"], c["to_depts"], f"{key}#{gen}"); old = get(mid, rs=rs)
+    return mid
+
 def note_owner_told(mid, ref, st=None, now=None):
     """Record that the owner already has a message about this memo (e.g. the contract's own hold message), so the watchdog never sends a second one."""
     st = st or store()

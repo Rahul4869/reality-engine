@@ -11,7 +11,7 @@ PROTECTED = ("whatifs/qc.py", "whatifs/governor.py", "whatifs/fixes.py", "whatif
              "whatifs/tts_gemini.py", "whatifs/premise.py", "whatifs/craft.py", "whatifs/preview.py",
              "whatifs/immersion.py", "whatifs/room.py",
              "whatifs/org/palace.py", "whatifs/org/schemas.py", "whatifs/org/memos.py", "whatifs/org/registry.py", "whatifs/org/runner.py", "whatifs/org/wraps.py",
-             "whatifs/org/levers.py", "whatifs/org/execute.py", "whatifs/builds.py",
+             "whatifs/org/levers.py", "whatifs/org/execute.py", "whatifs/builds.py", "whatifs/org/rnd.py", "whatifs/org/board.py",
              "whatifs/contract.py", "whatifs/truth.py")      # v8.11: Kling placement and the model routing / ship-the-best gates      # v8.10: the new paid call (TTS) and the new quality gates
 RISKY = [r"\brequests\.", r"\burllib", r"\bsocket\b", r"\bhttp\.client", r"os\.environ", r"\benv\(", r"\bsubprocess\b", r"os\.system",
          r"\beval\(", r"\bexec\(", r"__import__", r"shutil\.rmtree", r"os\.remove", r"https?://", r"base64", r"pickle"]

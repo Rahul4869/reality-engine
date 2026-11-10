@@ -9,8 +9,49 @@ def _lines(n):
             "[reveal] By the end of the hour, the coastline has moved.", "[tension] And the strangest part is what happens to you.", "[callback] So next time, maybe just... don't."]
     return [pool[i % len(pool)] for i in range(n)]
 
+FAKE_SOURCES = (   # v12 B5: what a fake web search "returns" (url, title, age in days, quoted text) - an official page, a paper and a practitioner page
+    ("https://support.google.com/youtube/answer/1311392", "YouTube channel monetization policies - YouTube Help", 40, "Inauthentic content: content that is mass-produced or repetitive is not eligible."),
+    ("https://arxiv.org/abs/2506.20803", "The Ideation-Execution Gap", 300, "LLM-generated ideas scored higher before execution and dropped significantly more after it."),
+    ("https://www.creator-retention-notes.com/first-30-seconds", "What holds viewers in the first 30 seconds", 70, "Channels that re-hook every 40 seconds kept 9 points more viewers at 30 s."))
+
+def _ago(days):
+    import datetime as _dt
+    return (_dt.datetime.now(_dt.timezone.utc).date() - _dt.timedelta(days=days)).isoformat()
+
+def fake_search(prompt):
+    """(citations, results) a fake web search returns: the three FAKE_SOURCES, each cited with its quoted text."""
+    cites = [{"url": u, "title": t, "cited_text": q} for u, t, _d, q in FAKE_SOURCES]
+    return cites, [{"url": u, "title": t, "page_age": _ago(d)} for u, t, d, _q in FAKE_SOURCES]
+
+def _fake_research(prompt):
+    """A fake research answer: three grounded sources, one PHANTOM the search never returned (code must drop it) and one undated source."""
+    srcs = [{"url": u, "title": t, "date": _ago(d), "type": "official"} for u, t, d, _q in FAKE_SOURCES]
+    srcs += [{"url": "https://made-up-study.invalid/views", "title": "A study nobody can find", "date": _ago(30), "type": "measured"},
+             {"url": FAKE_SOURCES[2][0], "title": "same page, no date", "date": "", "type": "practice"}]
+    return json.dumps({"answer": "Re-hooking more often and opening on the viewer holds attention; repetitive formats risk monetisation.",
+                       "findings": [{"text": "Mass-produced or repetitive uploads are not eligible for monetisation; each video must differ in substance.", "sources": [0]},
+                                    {"text": "Channels that re-hook about every 40 seconds keep more viewers at 30 seconds than channels that do not.", "sources": [2, 1]},
+                                    {"text": "A secret study proves that courtroom shows triple their views overnight.", "sources": [3]}],
+                       "sources": srcs, "confidence": 0.8, "expected_impact": "more viewers still watching at 30 seconds in the next long video",
+                       "cost_inr": 0,
+                       "proposed_actions": [{"action": "Re-hook the viewer at least every 40 seconds in the long video's script", "target_depts": ["D4"], "lever_class": "C",
+                                             "metric": "retention", "direction": "up", "horizon_videos": 2},
+                                            {"action": "Make every video's cold open differ in setting and stakes from the last three", "target_depts": ["D4"], "lever_class": "D",
+                                             "metric": "originality", "direction": "up", "horizon_videos": 3}]})
+
+def _fake_board(prompt):
+    """A fake strong judge: every memo with dated sources gets yes on the good questions and no on the risk questions; a memo with no source fails."""
+    out = {}
+    for lab, block in re.findall(r"=== MEMO ([A-Z]) ===\n(.*?)(?=\n=== MEMO |\Z)", prompt, re.S):
+        bad = "SOURCES: none" in block or any(w in block.lower() for w in ("guarantee", "re-upload", "near-identical", "buy 10,000"))
+        out[lab] = {q: (["no", "nothing supports it"] if bad else ["yes", "the quoted sources support it"]) for q in ("E1", "E2", "N1", "N2", "I1", "I2", "I3", "F1", "F2")}
+        out[lab].update({q: (["yes", "it breaks a rule"] if bad else ["no", "no rule is touched"]) for q in ("R1", "R2", "R3")})
+    return json.dumps({"answers": out})
+
 def fake_reply(key, prompt):
     r = random.Random(len(prompt))
+    if key == "rnd_research": return _fake_research(prompt)
+    if key == "board": return _fake_board(prompt)
     if key == "outlier_video":
         return json.dumps({"hook_device": "a number on frame 0", "first_frame": "close-up of a hand", "cut_rhythm": "a cut every 1.5 s", "sound_moment": "a hit at 0:02",
                            "caption_style": "word-by-word", "why_it_works": "instant stakes", "how_to_adapt": "open on YOU + a number in the cold open"})

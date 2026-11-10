@@ -585,10 +585,7 @@ def learn():
     try:
         from whatifs import sheets as SH; SH.auto_lock()            # v9.3.1 (L6): unanswered sheets lock by default
     except Exception as x: log(f"sheet default lock skipped: {scrub(x)}", "WARN")
-    try:                                                        # v9.2: a stale research brief is renewed HERE (background), never inside a preview
-        from whatifs import research as RS
-        if S("RESEARCH_ON", bool) and not RS.latest_rows(S("RESEARCH_MAX_AGE_DAYS", int)): RS.save_brief(RS.run_research())
-    except Exception as x: log(f"research brief renewal skipped: {scrub(x)}", "WARN")
+    # v12 B5: the stale research brief is renewed by R&D's daily run (whatifs/org/rnd.py daily), which runs just before this job's learning part
     try:                                                        # v9: the jury outside the video (comment, tally, teacup finders, queue, Season, Experiments)
         from whatifs import community as CM
         for e9 in st.rows("Episodes"):
@@ -627,8 +624,8 @@ def learn():
     try:                                                        # v10 (K141/K142): daily pilot measurements and the Outlier Lab (never near a release)
         from whatifs import brain as BRN; BRN.daily()           # v11 (K155): Shorts outcomes, both technique libraries, forecast scoring
         from whatifs import reach as RCH; RCH.daily()           # v11 (K162): impressions + CTR (Reporting API)
-        from whatifs import pilots as PLT, outlier_lab as OLB, demand as DMD
-        PLT.measure(); OLB.run(); DMD.run()                    # v10.1 (K146): search-demand scores for bench premises
+        from whatifs import pilots as PLT
+        PLT.measure()                                          # v12 B5: the Outlier Lab and the search-demand scores run in R&D's daily run (whatifs/org/rnd.py)
     except Exception as x: log(f"pilots / Outlier Lab skipped: {scrub(x)}", "WARN")
     try:                                                        # v12: Knowledge Palace upkeep, then mirrors of the learning core (just updated above) and the show records
         from whatifs.org import palace as PAL; PAL.daily(st)

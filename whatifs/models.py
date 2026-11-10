@@ -91,6 +91,29 @@ _CALL = threading.local()
 
 def task_of_call(): return getattr(_CALL, "task", "")
 
+def last_call():
+    """v12 (B5): what the most recent text call on this thread REALLY was - provider ('claude' / 'gemini'), the chain role that answered ('sonnet',
+    'gem_pro', ...), the model id, the measured USD, and the citations and search results the API itself returned (never the model's own prose).
+    Code that must prove who judged or where a fact came from reads this; {} before any call."""
+    return dict(getattr(_CALL, "last", None) or {})
+
+def _note_call(provider, role, mid, usd=0.0, citations=(), results=()):
+    _CALL.last = {"provider": provider, "role": str(role or ""), "model": str(mid or ""), "usd": round(float(usd or 0), 6),
+                  "citations": [dict(c) for c in citations], "results": [dict(r) for r in results]}
+
+def _claude_sources(content):
+    """(citations, results) from Claude content blocks: web_search_result_location citations (url, title, cited_text) and search results (url, title, page_age)."""
+    cites, res = [], []
+    for b in content or []:
+        if not isinstance(b, dict): continue
+        if b.get("type") == "web_search_tool_result" and isinstance(b.get("content"), list):
+            res += [{"url": str(x.get("url") or ""), "title": str(x.get("title") or "")[:200], "page_age": str(x.get("page_age") or "")[:40]}
+                    for x in b["content"] if isinstance(x, dict) and x.get("url")]
+        for c in (b.get("citations") or []) if b.get("type") == "text" else []:
+            if isinstance(c, dict) and c.get("url"):
+                cites.append({"url": str(c["url"]), "title": str(c.get("title") or "")[:200], "cited_text": str(c.get("cited_text") or "")[:300]})
+    return cites, res
+
 def think_cap(task, eff):
     """v9.2: thinking room per role: THINK_CAPS (JSON {role: tokens}) first, else THINK_ROOM_BY_EFFORT capped by THINK_CAP_DEFAULT. Sized so one call
     can never cost more than its share of the writing allowance; a cut reply is retried at LOWER effort, never with more room."""
@@ -128,6 +151,7 @@ ROUTES = {
     "localize": ("sonnet", "edit"), "special": ("sonnet", "edit"), "occasions_check": ("haiku", "chore"), "policy_rescue": ("sonnet", "edit"), "pilot": ("haiku", "chore"),                    # v10: special reels' concept                                                   # v10 G4: titles/descriptions in other languages
     "owner_chat": ("sonnet", "edit"), "owner_chat_deep": ("opus", "creative"), "owner_chat_cheap": ("haiku", "chore"),
     "jury": ("critic", "judge"), "jury_flash": ("flash", "judge"), "jury_claude": ("sonnet", "judge"), "punchup": ("sonnet", "edit"),      # v11 (K157) room v2      # v9.4b: WhatsApp / dashboard chat
+    "rnd_research": ("sonnet", "edit"), "board_gemini": ("board_g", "judge"), "board_claude": ("board_c", "judge"),       # v12 B5: R&D research with web search; the Review Board's two families
 }
 SAVER_MEDIUM = ("scout", "showrunner", "bible", "premise_judge", "memo", "objections", "director", "director_read", "hooks", "packager", "reels", "immersion")
 CHAIN_EFFORT = {"opus": "creative", "fable": "creative", "sonnet": "edit", "haiku": "chore"}
@@ -397,11 +421,11 @@ def _claude(role, system, prompt, max_tokens, temperature, search, episode, effo
     if r.status_code == 400 and search and "tool" in r.text.lower():
         log("Claude web-search tool version rejected - answering without search (update ANTH_SEARCH_TOOL)", "WARN", episode)
         body.pop("tools", None); r = post()
-    txt, content = "", []; fam = _family(role)
+    txt, content = "", []; fam = _family(role); usd_all = 0.0; blocks = []
     for hop in range(4):                                                   # a long web search can pause the turn: it is continued, at most 3 times
         if r.status_code != 200: raise RuntimeError(f"Claude {r.status_code}: {r.text[:300]}")
         j = r.json(); u = dict(j.get("usage", {}) or {}); u["_sent_1h"] = info.get("sent_1h")
-        usd, saved, toks = claude_usd(fam, u)                              # output_tokens includes the thinking
+        usd, saved, toks = claude_usd(fam, u); usd_all += usd; blocks += [b for b in (j.get("content") or []) if isinstance(b, dict)]   # output_tokens includes the thinking
         cost(f"claude_{role}", "anthropic", u.get("output_tokens", 0), usd, episode, role=getattr(_CUR, "task", ""),
              model=mid, in_tok=toks["in"], cache_read_tok=toks["read"], cache_write_tok=toks["w5"] + toks["w1h"], out_tok=toks["out"], basis="measured",
              ms=int((time.time() - _t0) * 1000))                                   # v11: latency (incl. any retry above) for the cost/latency log
@@ -415,6 +439,7 @@ def _claude(role, system, prompt, max_tokens, temperature, search, episode, effo
     if stop == "max_tokens": raise Truncated(f"Claude {role} reply was cut at {room} tokens")
     if stop == "refusal": raise Declined(f"Claude {role} declined this request")
     if stop in ("pause_turn", "model_context_window_exceeded"): raise RuntimeError(f"Claude {role} stopped early ({stop})")
+    _note_call("claude", role, mid, usd_all, *_claude_sources(blocks))
     return txt
 
 def prewarm(role, system, prompt, max_tokens, search, effort, episode=None):
@@ -470,7 +495,7 @@ def _gemini(role, system, prompt, max_tokens, temperature, search, want_json, im
     r = requests.post(GEM + f"models/{mid}:generateContent", headers={"x-goog-api-key": env("GEMINI_KEY")}, json=body, timeout=600)
     _ms = int((time.time() - _t0) * 1000)                                  # v11: latency per call, for the cost/latency log
     if r.status_code != 200: raise RuntimeError(f"Gemini {r.status_code}: {r.text[:300]}")
-    j = r.json(); c = (j.get("candidates") or [{}])[0]
+    j = r.json(); c = (j.get("candidates") or [{}])[0]; usd = 0.0
     try:    # v8.1: Gemini calls were not in Cost_Log, so the "hard cap" under-counted. Logged from the usage numbers Google returns.
         u = j.get("usageMetadata") or {}; pro = "pro" in str(mid).lower()
         pin, pout = (S("PRICE_GEM_PRO_IN", float), S("PRICE_GEM_PRO_OUT", float)) if pro else (S("PRICE_GEM_FLASH_IN", float), S("PRICE_GEM_FLASH_OUT", float))
@@ -480,6 +505,8 @@ def _gemini(role, system, prompt, max_tokens, temperature, search, want_json, im
         CACHE.record_other(episode, usd)
     except Exception: pass
     if str(c.get("finishReason", "")).upper() == "MAX_TOKENS": raise Truncated(f"Gemini {role} reply was cut at {body['generationConfig']['maxOutputTokens']} tokens")
+    chunks = [x.get("web") or {} for x in ((c.get("groundingMetadata") or {}).get("groundingChunks") or []) if isinstance(x, dict)]
+    _note_call("gemini", role, mid, usd, (), [{"url": str(w.get("uri") or ""), "title": str(w.get("title") or "")[:200], "page_age": ""} for w in chunks if w.get("uri")])
     return "".join(p.get("text", "") for p in c.get("content", {}).get("parts", []))
 
 MAINTENANCE_JOBS = ("trends", "learn", "brief", "research", "money", "setup", "voices")     # may use the small reserve above the cap (policy guard, learning)
@@ -489,7 +516,8 @@ CHAINS = {"opus": [("c", "opus"), ("c", "sonnet"), ("g", "gem_pro"), ("g", "gem_
           "haiku": [("c", "haiku")],                                                                         # v8.11: chores only; no fallback (the caller has its own)
           "critic": [("g", "gem_pro"), ("g", "gem_flash"), ("c", "sonnet")],
           "flash": [("g", "gem_flash"), ("g", "gem_pro"), ("c", "sonnet")],
-          "research": [("g", "gem_pro"), ("g", "gem_flash"), ("c", "sonnet")]}
+          "research": [("g", "gem_pro"), ("g", "gem_flash"), ("c", "sonnet")],
+          "board_g": [("g", "gem_pro")], "board_c": [("c", "sonnet"), ("c", "opus")]}      # v12 B5: Review Board judges - strong models of ONE family each, never a cheap fallback
 
 # ---------------------------------------------------------------- v8.11: Haiku JSON repair, accepted only when provably identical (K90)
 def _words_of_text(t):
@@ -558,10 +586,13 @@ def ask(role, system, prompt, want_json=True, max_tokens=6000, temperature=0.8, 
     v8.11: role may be a writers'-room task (ROUTES: model + effort chosen by capability) or a chain key as before; system may be a prompts.Packed."""
     task = role; chain_key, ecls = route(role); _CUR.task = str(task); _CALL.task = str(task)          # v9.1: Cost_Log 'role'; v9.2: per-role caps
     if ASK_TAPS: system = _tap(task, system, prompt)
+    _CALL.last = {}
     if FAKE:
-        from whatifs.fakes import fake_reply
+        from whatifs.fakes import fake_reply, fake_search
         if chain_key in CHAINS and CHAINS[chain_key][0][0] == "c": simulate_claude(CHAINS[chain_key][0][1], system, prompt, max_tokens, search, effort_for(task, ecls), episode, fanout)
         out = fake_reply(fake_key or role, prompt)
+        p0, r0 = CHAINS[chain_key][0] if chain_key in CHAINS else ("c", _family(chain_key))
+        _note_call("claude" if p0 == "c" else "gemini", r0, f"fake-{r0}", 0.0, *(fake_search(prompt) if search else ((), ())))
         if not want_json: return out
         try: return parse_json(out)
         except ValueError:

@@ -421,6 +421,18 @@ def _exec_gate(which):
     return PASS, (f"{s['tickets']} ticket(s) in the engine: {s['verified']} verified, {s['rolled_back']} rolled back, {s['refused']} refused, {s['in_verification']} inside the verification window, "
                   f"{s['waiting']} waiting; every change has its ledger rows")
 
+def p_research_cadence(ctx):
+    """R&D and the Review Board on schedule (judged at the script gate): R&D's daily and weekly research ran, every research memo carries code-verified
+    sources and an evidence ceiling that re-computes, every one was assessed within its SLA or escalated, every assessment's verdict is the code's
+    verdict on its own blind two-family checklist with a rejected canary, and neither department spent past its cap without an owner question."""
+    from whatifs.org import rnd as RND
+    p, s, na = RND.cadence_issues()
+    if na: return NA, na
+    if p: return FAIL, f"{len(p)} problem(s): " + " | ".join(p[:3])
+    return PASS, (f"R&D daily {s.get('daily_h')} h ago, weekly {s.get('weekly_d')} d ago; {s.get('research_memos', 0)} research memo(s): {s.get('assessed', 0)} assessed, "
+                  f"{s.get('escalated', 0)} escalated; {s.get('assessments', 0)} assessment(s) re-computed ({s.get('accept', 0)} accept, {s.get('test', 0)} test, "
+                  f"{s.get('reject', 0)} reject); spent D2 Rs {s.get('D2_inr', 0)}, D3 Rs {s.get('D3_inr', 0)}")
+
 def p_decisions_executed(ctx): return _exec_gate("decisions")
 def p_lever_verified(ctx): return _exec_gate("levers")
 def p_dept_contract(ctx): return _org_gate(ctx, "script")
@@ -435,6 +447,7 @@ FEATURES = [
     ("dept_contract", "script", p_dept_contract, "every department that worked on the script ran under the department contract: memos and playbook loaded, work done, memos sent, takeaway written, tickets executed, run reported"),
     ("decisions_executed", "script", p_decisions_executed, "nothing the organisation decided stays text: every decision has tickets, every ticket is executed with proof, refused with a reason or escalated"),
     ("lever_verified", "script", p_lever_verified, "every change made by ticket is written down before and after, verified by later evidence or rolled back; none sits past its window"),
+    ("research_cadence", "script", p_research_cadence, "R&D researched on schedule with sources proven by code, and the Review Board judged every research memo in time, blind, across two model families, with a rejected canary and the verdict computed by code"),
     ("idea_evidence", "script", p_idea_evidence, "the premise is backed by an outlier at IDEA_MIN_MULTIPLE x"),
     ("joke_density",  "script", p_joke_density, "a [PUNCH] line at least every JOKE_EVERY_SEC_LONG seconds"),
     ("send_and_awe",  "script", p_send_awe,     "a [SEND] moment and an [AWE] peak (not in the last 20%)"),

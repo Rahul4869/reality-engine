@@ -156,6 +156,11 @@ TABS = {
  "Tickets":         ["id", "created", "updated", "from_dept", "dept", "lever_class", "target", "state", "change_id", "old", "new", "undo", "applied_at", "verify_by",
                      "need", "proof", "attempts", "approved", "owner_action", "decision_ref", "request_id", "pr", "note", "session"],
  "Lever_Changes":   ["ts", "change_id", "ticket_id", "lever_class", "dept", "target", "action", "old", "new", "by", "proof", "note"],
+ # v12 B5: R&D and the Review Board (whatifs/org/rnd.py, board.py). Research_Agenda = one row per gap the organisation should research (computed
+ # from its own failures, owner memos, outliers, expiring facts, policy and tools); Board_Log = one row per judge, order and memo of a Review Board session.
+ "Research_Agenda": ["id", "ts", "updated", "source", "ref", "signature", "question", "kind", "target_depts", "urgency", "priority", "status", "memo_id", "asked_at",
+                     "cost_inr", "note", "palace_ref"],
+ "Board_Log":       ["ts", "session_id", "memo_ref", "label", "canary", "judge", "family", "role", "model", "order", "answers", "verdict"],
 }
 
 class LocalStore:
@@ -995,6 +1000,14 @@ DEFAULTS = {
  "EXEC_BUILD_WAIT_H": ("6", "hours a code build may take to open its pull request before it counts as failed (1-48)"),
  "EXEC_TICK_AT": ("", "auto: when the Execution Engine's tick pass last finished (check lever_verified fails when tickets wait and this is more than a day old)"),
  "EXEC_AUTO_MERGE_ON": ("TRUE", "TRUE = a code build asked for by ticket merges by itself when every check is green AND its real diff only adds new test files (nothing deleted, no other file); anything else waits for the owner's Merge tap [FALSE = the owner merges every build]"),
+ # v12 B5: R&D (D2) and the Review Board (D3)
+ "RESEARCH_PER_WEEK": ("4", "questions the weekly deep research asks (web search, about Rs 10-15 each, inside the R&D cap of Rs 300 a month); the owner's own questions (P0) are asked on top (1-8)"),
+ "RESEARCH_EST_INR": ("15", "rupees one research question is assumed to cost before any is measured; the weekly run stops asking when the R&D budget left is below this or the median measured cost, whichever is higher"),
+ "RESEARCH_REPEAT_DAYS": ("28", "a research question that was answered is not asked again for this many days unless its gap grows (7-120)"),
+ "RESEARCH_DEEP_EVERY_DAYS": ("7", "the weekly deep research runs when its last complete run is this many days old (checked by every daily learning job, so a missed day never skips a week; 3-14)"),
+ "BOARD_MIN_EVIDENCE": ("5", "the Review Board rejects a research memo whose evidence score is below this (0-10; the score can never exceed what code could verify about its sources)"),
+ "BOARD_ORDERS": ("2", "how many orders each Review Board judge reads the memos in (2 = original and reversed: judges change their verdict with the order)"),
+ "BOARD_MAX_MEMOS": ("6", "research memos one Review Board session judges (plus one planted canary); the rest wait for the next session (1-10)"),
 }
 _settings_cache = None
 def settings(refresh=False) -> dict:

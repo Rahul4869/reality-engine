@@ -6,11 +6,11 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 ## 1. Facts (read from the code)
 - Channel: "Reality on Trial" (brand Reality Engine). Concept: `docs/CURRENT/CONCEPT.md`. Owner requirements: `docs/CURRENT/OWNER_REQUIREMENTS_LEDGER.md`.
 - Money: hard cap Rs 5,000 a month, everything included (`BUDGET_CEILING_INR`); extras pause at 90% of the cap; breakout fund carries over at most Rs 1,000. One month can be overridden in `MONTH_CAP_OVERRIDES`.
-- Quality: 43 HARD contract checks (24 at the script stage, 19 on the final video). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway). No upload below Breakout Score 80.
+- Quality: 44 HARD contract checks (25 at the script stage, 19 on the final video). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway). No upload below Breakout Score 80.
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `fal-ai/kling-video/o3/standard/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 1.5 standalone Shorts a day; spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 114 code modules, 700 settings, 80 Sheet tabs, 24 GitHub workflows.
+- Size: 116 code modules, 707 settings, 82 Sheet tabs, 24 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -82,6 +82,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | dept_contract | script | every department that worked on the script ran under the department contract: memos and playbook loaded, work done, memos sent, takeaway written, tickets executed, run reported |
 | decisions_executed | script | nothing the organisation decided stays text: every decision has tickets, every ticket is executed with proof, refused with a reason or escalated |
 | lever_verified | script | every change made by ticket is written down before and after, verified by later evidence or rolled back; none sits past its window |
+| research_cadence | script | R&D researched on schedule with sources proven by code, and the Review Board judged every research memo in time, blind, across two model families, with a rejected canary and the verdict computed by code |
 | idea_evidence | script | the premise is backed by an outlier at IDEA_MIN_MULTIPLE x |
 | joke_density | script | a [PUNCH] line at least every JOKE_EVERY_SEC_LONG seconds |
 | send_and_awe | script | a [SEND] moment and an [AWE] peak (not in the last 20%) |
@@ -322,6 +323,8 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Org_Audit | 20 | ts, kind, run_id, dept, trigger, episode_id ... | one row per department run, escalation and watchdog pass that did something |
 | Tickets | 24 | id, created, updated, from_dept, dept, lever_class ... |  |
 | Lever_Changes | 12 | ts, change_id, ticket_id, lever_class, dept, target ... |  |
+| Research_Agenda | 17 | id, ts, updated, source, ref, signature ... |  |
+| Board_Log | 12 | ts, session_id, memo_ref, label, canary, judge ... |  |
 
 ## 9. Modules
 | module | purpose |
@@ -423,11 +426,13 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | whatifs/wa.py | The WhatsApp control room: interactive buttons inside the 24-hour window, the approved template outside it, and inbound owner messages. |
 | whatifs/ypp.py | The North-Star tracker: weekly YouTube Analytics progress toward the Partner Program thresholds. |
 | whatifs/org/__init__.py | The Organisation: the departments and work stages every org module shares (Knowledge Palace now; memos, runner and registry build on these). |
+| whatifs/org/board.py | Review Board (D3): every research memo judged blind by strong judges of two model families on a fixed yes/no checklist, with a planted canary in every session; scores and the verdict are computed by code. |
 | whatifs/org/execute.py | Execution Engine: turns a ticket into a typed change, writes it down before and after, verifies it with evidence another component wrote later, and rolls it back when that fails. |
 | whatifs/org/levers.py | Lever registry: every Settings cell a department may change by ticket - type, range, largest step, the direction that needs the owner, the checks that judge it - and the scope of an automatic merge. |
 | whatifs/org/memos.py | Memos: the organisation's nervous system - validated on write, read only by their audience, moved only with proof, escalated by the SLA watchdog when a clock runs out. |
 | whatifs/org/palace.py | Knowledge Palace: the one repository every department reads and writes - guarded items, life cycle, versions and bounded department playbooks. |
 | whatifs/org/registry.py | Department registry: what each department is for, the code it wraps, its rhythm, levers, thinking cap, owned checks and the call sites that really run under the runner. |
+| whatifs/org/rnd.py | R&D (D2): a research agenda computed from the organisation's own gaps, one bounded web-search question at a time, every source proven by code, research memos to the Review Board. |
 | whatifs/org/runner.py | Department runner: the six-step contract of every department run - LOAD, ACT, EMIT, LEARN, EXECUTE, REPORT - each proven by a receipt the runner itself builds and chains. |
 | whatifs/org/schemas.py | Memo schemas: every memo type the organisation can send - sender, audience, body, clocks, statuses and legal moves as data - with the validator that runs on every write. |
 | whatifs/org/wraps.py | Department wrappers: what each wrapped production step reports about its own output (measures, lessons, problem memos) when it runs under the department runner. |
@@ -550,8 +555,8 @@ By kind: audience_insight 4, failure_lesson 1, owner_preference 26, plan 2, poli
 |---|---|---|---|---|---|---|
 | D0 | Owner Office | tick | pending (B9) | brief | - | WA_ON, DASH_ON |
 | D1 | Strategy & Planning | weekly | pending (B9) | brief | - | STANDARD_MAX_LONG_PER_MONTH, PUBLISH_DAYS, VIDEOS_PER_MONTH_EST |
-| D2 | R&D - Research | daily | pending (B5) | brief | 300 | RESEARCH_ON, IDEA_MIN_MULTIPLE |
-| D3 | Review Board | weekly | pending (B5) | brief | 120 | - |
+| D2 | R&D - Research | daily | daily (whatifs/cli.py), weekly (whatifs/cli.py) | brief | 300 | RESEARCH_ON, IDEA_MIN_MULTIPLE, RESEARCH_PER_WEEK |
+| D3 | Review Board | weekly | assess (whatifs/cli.py) | brief | 120 | BOARD_MIN_EVIDENCE |
 | D4 | Creative - Ideation & Writers' Room | episode | write (whatifs/episode.py) | brief | - | ROOM_MODE, ROOM_V2_DRAFTS, REHOOK_MAX_GAP_SEC, JOKE_EVERY_SEC_LONG, COLD_OPEN_LORE_FREE_SEC |
 | D5 | Packaging | episode | package (whatifs/episode.py) | brief | - | PROMISE_BY_SEC |
 | D6 | Visual Production | episode | plan (whatifs/episode.py), assets (whatifs/episode.py), render (whatifs/episode.py) | brief | - | ANIM_SHOTS, VISUAL_CHANGE_MAX_S, PARTICLES_ON, LIVING_CHARACTERS_ON, CAMERA_MOTION |
@@ -582,7 +587,7 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | build_request | D12 | D12 | ask | 24 / 72 | merged_verified, owner_answer | a code change that no lever can make: the spec, the files, the tests to add and the acceptance |
 | takeaway | any | L | record | 0 / 0 | - | one atomic learning from one department run (kept in the Takeaways tab, proposed to the Palace when it is new) |
 
-**Who owns each contract check** (a failed check becomes a problem memo to that department): D1: breakout_bar; D2: research; D4: audience_asks, cold_open, emotion_beat, end_tease, exhibits, grimm_prototype, hook_lab, idea_evidence, joke_density, no_retired, originality, owners_cut, retention, send_and_awe, time_ladder, verdict_line, verdict_style; D5: chapters, short_covers, thumbnails, titles; D6: aliveness, animation, impact_map, living_characters, no_frozen_frames, promise_paid, real_motion, slop_guard, visual_change; D7: designed_voices, music_bed; D8: dept_contract, self_review, takeaways_written; D9: shorts; D10: brain_playbook; D12: docs_current, lever_verified; C: decisions_executed; L: palace_health.
+**Who owns each contract check** (a failed check becomes a problem memo to that department): D1: breakout_bar; D2: research, research_cadence; D4: audience_asks, cold_open, emotion_beat, end_tease, exhibits, grimm_prototype, hook_lab, idea_evidence, joke_density, no_retired, originality, owners_cut, retention, send_and_awe, time_ladder, verdict_line, verdict_style; D5: chapters, short_covers, thumbnails, titles; D6: aliveness, animation, impact_map, living_characters, no_frozen_frames, promise_paid, real_motion, slop_guard, visual_change; D7: designed_voices, music_bed; D8: dept_contract, self_review, takeaways_written; D9: shorts; D10: brain_playbook; D12: docs_current, lever_verified; C: decisions_executed; L: palace_health.
 
 ## 12. The Execution Engine: from a decision to a change that runs (`whatifs/org/levers.py`, `execute.py`)
 - A ticket is ONE change: lever class, target, value. The engine compiles it into a typed operation with a registered way to verify and to undo it,
@@ -628,6 +633,8 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | VIDEOS_PER_MONTH_EST | D1 | int | 1 to 8 | 1 | always: it changes the plan you set | the next complete run |
 | RESEARCH_ON | D2 | bool | - | - | off: it switches off something you rely on | research |
 | IDEA_MIN_MULTIPLE | D2 | float | 2 to 20 | 2 | down: it weakens a quality gate | idea_evidence |
+| RESEARCH_PER_WEEK | D2 | int | 1 to 8 | 2 | up: it costs more money | research_cadence |
+| BOARD_MIN_EVIDENCE | D3 | int | 3 to 9 | 1 | down: it weakens a quality gate | research_cadence |
 | ROOM_MODE | D4 | enum | v2, v1 | - | value v1: v1 is the older writers' room without the blind jury | owners_cut |
 | ROOM_V2_DRAFTS | D4 | int | 2 to 5 | 1 | up: it costs more money | owners_cut |
 | REHOOK_MAX_GAP_SEC | D4 | int | 30 to 120 | 15 | up: it weakens a quality gate | retention |

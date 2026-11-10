@@ -173,13 +173,27 @@ def _guard_alert():
     except Exception: pass
     set_setting("BUDGET_GUARD_ALERTED", mk)
 
+def org_left_inr():
+    """v12 B5: the organisation's own thinking money not yet spent this month - the unspent part of the monthly caps of the WIRED departments that
+    think for money (R&D Rs 300 and the Review Board Rs 120 today, while research is on) - is never production money. 0 in Runway or with the
+    organisation off. Without this the month's plan would count the same rupees twice."""
+    if budget_mode() == "runway": return 0.0
+    try:
+        from whatifs.org import runner as ORG, registry as REG
+        if not ORG.on(): return 0.0
+        caps = REG.caps(); res = S("RESEARCH_ON", bool)
+        return round(sum(max(0.0, float(caps[d]) - REG.spent(d)) for d in caps if d in REG.ENTRY and (res or d not in ("D2", "D3"))), 2)
+    except Exception as e:
+        log(f"organisation reserve not computed: {str(e)[:100]}", "WARN"); return 0.0
+
 def remaining_inr(): return cap_inr() - month_spend()
 
 def production_room_inr():
     """v8.7: what production may still spend this month. The maintenance reserve is kept INSIDE the cap (it was above it until v8.6, so a month could total
     the cap + Rs 100): production stops BUDGET_MAINT_RESERVE_INR below the cap; the last part is for maintenance jobs and an in-flight overshoot only."""
     return (remaining_inr() - max(0.0, S("BUDGET_MAINT_RESERVE_INR", float)) - earmark_left_inr() - specials_left_inr()      # v9.4a/v10: earmarks are never production money
-            - breakout_fund_left_inr())                                                                                    # v11: nor is the breakout fund
+            - breakout_fund_left_inr()                                                                                     # v11: nor is the breakout fund
+            - org_left_inr())                                                                                              # v12 B5: nor the organisation's thinking caps
 
 def episodes_left_this_month():
     from zoneinfo import ZoneInfo

@@ -18,9 +18,9 @@ DEPTS = {
     "D1":  {"mission": "goals, the monthly and weekly plan, cadence, priorities, budget allocation, urgency", "cadence": "weekly", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/replan.py", "whatifs/manage.py"), "levers": ("STANDARD_MAX_LONG_PER_MONTH", "PUBLISH_DAYS", "VIDEOS_PER_MONTH_EST"), "takes": ()},
     "D2":  {"mission": "automatic research: outliers, techniques, platform policy, tools, audience, competitors", "cadence": "daily", "cap_inr": 300, "inject": "brief",
-            "wraps": ("whatifs/outlier_lab.py", "whatifs/demand.py", "whatifs/research.py", "whatifs/scout.py", "whatifs/reach.py"), "levers": ("RESEARCH_ON", "IDEA_MIN_MULTIPLE"), "takes": ()},
+            "wraps": ("whatifs/org/rnd.py", "whatifs/outlier_lab.py", "whatifs/demand.py", "whatifs/research.py", "whatifs/scout.py"), "levers": ("RESEARCH_ON", "IDEA_MIN_MULTIPLE", "RESEARCH_PER_WEEK"), "takes": ()},
     "D3":  {"mission": "assess every research and creative memo: evidence, novelty, impact, feasibility, cost, risk", "cadence": "weekly", "cap_inr": 120, "inject": "brief",
-            "wraps": ("whatifs/room2.py",), "levers": (), "takes": ("research_memo",)},
+            "wraps": ("whatifs/org/board.py", "whatifs/room2.py"), "levers": ("BOARD_MIN_EVIDENCE",), "takes": ("research_memo",)},
     "D4":  {"mission": "premises, scripts, jokes, hooks, world-building", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/premise.py", "whatifs/room.py", "whatifs/room2.py", "whatifs/hooks.py", "whatifs/show.py", "whatifs/playbook.py"),
             "levers": ("ROOM_MODE", "ROOM_V2_DRAFTS", "REHOOK_MAX_GAP_SEC", "JOKE_EVERY_SEC_LONG", "COLD_OPEN_LORE_FREE_SEC"), "takes": ()},
@@ -37,7 +37,7 @@ DEPTS = {
             "wraps": ("whatifs/publish.py", "whatifs/shorts2.py", "whatifs/spinoff.py", "whatifs/deeptrial.py", "whatifs/specials.py"),
             "levers": ("SHORTS_PER_DAY", "REEL1_DELAY_MIN", "REEL2_DELAY_MIN", "NEXT_LINK_ON"), "takes": ()},
     "D10": {"mission": "analytics, technique evidence, sampling, forecasts, the 48-hour monitor, breakout follow-ups", "cadence": "daily", "cap_inr": None, "inject": "brief",
-            "wraps": ("whatifs/brain.py", "whatifs/breakout.py", "whatifs/growth.py"), "levers": ("BRAIN_ON", "BRAIN_HOLDOUT"), "takes": ()},
+            "wraps": ("whatifs/brain.py", "whatifs/breakout.py", "whatifs/growth.py", "whatifs/reach.py"), "levers": ("BRAIN_ON", "BRAIN_HOLDOUT"), "takes": ()},
     "D11": {"mission": "caps, the guard, the breakout fund, cost forecasts, spend vetoes", "cadence": "daily", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/governor.py", "whatifs/costguard.py"), "levers": ("BUDGET_GUARD_PCT", "BREAKOUT_FUND_CAP_INR", "AUTO_FIX_PAID_INR"), "takes": ()},
     "D12": {"mission": "reliability, the watchdog, model ladders, deprecations, incidents, build requests", "cadence": "tick", "cap_inr": None, "inject": "brief",
@@ -60,10 +60,12 @@ ENTRY = {
     "D8":  (("whatifs/episode.py", "script_gate"), ("whatifs/episode.py", "final_gate")),
     "D9":  (("whatifs/episode.py", "publish"),),
     "D10": (("whatifs/cli.py", "daily"),),
+    "D2":  (("whatifs/cli.py", "daily"), ("whatifs/cli.py", "weekly")),             # v12 B5: the learning job runs R&D first (daily always, weekly when due)
+    "D3":  (("whatifs/cli.py", "assess"),),                                          # v12 B5: then the Review Board, whenever a research memo waits
     "D12": (("whatifs/org/execute.py", "operate"),),
 }
 # Departments with no run of their own yet -> the build batch that wires them. A RATCHET: this list may only shrink (tests/test_v12_org.py).
-PENDING = {"D0": "B9", "D1": "B9", "D2": "B5", "D3": "B5", "D11": "B9", "C": "B6", "L": "B8"}
+PENDING = {"D0": "B9", "D1": "B9", "D11": "B9", "C": "B6", "L": "B8"}
 
 # The runs an episode must have finished before each gate (the gate itself is the run in flight).
 EPISODE_RUNS = {
@@ -80,7 +82,7 @@ CHECK_OWNER = {
     "designed_voices": "D7", "music_bed": "D7", "animation": "D6", "real_motion": "D6", "no_frozen_frames": "D6", "slop_guard": "D6", "impact_map": "D6",
     "visual_change": "D6", "living_characters": "D6", "aliveness": "D6", "promise_paid": "D6", "thumbnails": "D5", "titles": "D5", "chapters": "D5",
     "short_covers": "D5", "shorts": "D9", "self_review": "D8", "breakout_bar": "D1", "dept_contract": "D8", "takeaways_written": "D8",
-    "decisions_executed": "C", "lever_verified": "D12",
+    "decisions_executed": "C", "lever_verified": "D12", "research_cadence": "D2",
 }
 
 def runnable(dept):

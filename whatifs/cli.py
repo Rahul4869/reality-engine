@@ -10,6 +10,22 @@ def _on_stop(signum, frame):
     finally:
         os._exit(143)
 
+def research_round():
+    """v12 B5: the first part of the daily learning job - R&D's daily run (the free collectors and the research agenda), its weekly deep research when
+    due (paid, inside the R&D cap; an owner question makes it P0), then the Review Board whenever a research memo waits. A failure here is recorded
+    by the department runner and never stops the learning job."""
+    from whatifs.org import runner as ORG, rnd as RND, board as BRD
+    try: ORG.work("D2", "daily", "", RND.daily)
+    except Exception as x: log(f"R&D daily run failed: {type(x).__name__}: {str(x)[:160]}", "WARN")
+    try:
+        if RND.deep_due(): ORG.run("D2", "weekly", RND.deep, budget="org", urgency="P0" if RND.p0_waiting() else "P1")
+    except ORG.CapReached as x: log(f"R&D weekly research waits: {x}", "WARN")
+    except Exception as x: log(f"R&D weekly research failed: {type(x).__name__}: {str(x)[:160]}", "WARN")
+    try:
+        if BRD.due(): ORG.run("D3", "assess", BRD.assess, budget="org")
+    except ORG.CapReached as x: log(f"Review Board waits: {x}", "WARN")
+    except Exception as x: log(f"Review Board session failed: {type(x).__name__}: {str(x)[:160]}", "WARN")
+
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "tick"
     JOB["name"] = cmd
@@ -41,6 +57,7 @@ def main():
         elif cmd == "learn":
             from whatifs.manage import learn, money_check
             from whatifs.org import runner as ORG, wraps as WR          # v12: the daily learning job is the Growth & Learning department's run
+            research_round()                                            # v12 B5: R&D and the Review Board run first
             ORG.work("D10", "daily", "", lambda b: learn(), measure=WR.m_learn); ORG.daily_check(); money_check()
         elif cmd == "brief":
             from whatifs.manage import monthly_brief; monthly_brief()

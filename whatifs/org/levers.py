@@ -22,6 +22,7 @@ LEVERS = {
     "STANDARD_MAX_LONG_PER_MONTH": _n("int", 1, 8, 1, "always", PLAN), "PUBLISH_DAYS": {"kind": "days", "owner": "always", "why": PLAN, "checks": ()},
     "VIDEOS_PER_MONTH_EST": _n("int", 1, 8, 1, "always", PLAN),
     "RESEARCH_ON": _b("off", OWNER, ("research",)), "IDEA_MIN_MULTIPLE": _n("float", 2, 20, 2, "down", GATE, ("idea_evidence",)),
+    "RESEARCH_PER_WEEK": _n("int", 1, 8, 2, "up", COST, ("research_cadence",)), "BOARD_MIN_EVIDENCE": _n("int", 3, 9, 1, "down", GATE, ("research_cadence",)),
     "ROOM_MODE": _e(("v2", "v1"), ("v1",), "v1 is the older writers' room without the blind jury", ("owners_cut",)),
     "ROOM_V2_DRAFTS": _n("int", 2, 5, 1, "up", COST, ("owners_cut",)), "REHOOK_MAX_GAP_SEC": _n("int", 30, 120, 15, "up", GATE, ("retention",)),
     "JOKE_EVERY_SEC_LONG": _n("int", 8, 60, 10, "up", GATE, ("joke_density",)), "COLD_OPEN_LORE_FREE_SEC": _n("int", 10, 45, 10, "down", GATE, ("cold_open",)),
