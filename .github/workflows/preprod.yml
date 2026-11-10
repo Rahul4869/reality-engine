@@ -41,7 +41,7 @@ jobs:
       - name: Is anything due? (no AI call)
         id: check
         run: |
-          pip install -q requests "numpy>=1.26,<2.1"
+          pip install -q "requests>=2.31,<3" "numpy>=1.26,<2.1"
           echo "due=$(python -m whatifs.cli preprod --check | tail -n 1)" >> "$GITHUB_OUTPUT"
       - name: Python packages
         if: steps.check.outputs.due == 'yes'

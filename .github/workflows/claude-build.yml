@@ -79,5 +79,5 @@ jobs:
           PR=$(gh pr list --repo "$GH_REPO" --head "$BUILD_BRANCH" --json number --jq '.[0].number')
           if [ -z "$PR" ]; then echo "no pull request was opened"; exit 1; fi
           gh workflow run checks.yml --repo "$GH_REPO" --ref "$BUILD_BRANCH" || true
-          pip install -q requests "numpy>=1.26,<2.1"
+          pip install -q "requests>=2.31,<3" "numpy>=1.26,<2.1"
           python -m whatifs.cli build_ready "$PR" "$BUILD_KIND" "$BUILD_BRANCH"

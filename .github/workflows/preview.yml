@@ -80,7 +80,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
-      - run: pip install -q requests "numpy>=1.26,<2.1" pillow opencv-python-headless
+      - run: pip install -q "requests>=2.31,<3" "numpy>=1.26,<2.1" "pillow>=10,<13" "opencv-python-headless>=4.9,<5"
       - name: Record the decision
         run: python -m whatifs.cli previewdecide "$ISSUE_TITLE"
       - name: Close the request

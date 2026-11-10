@@ -172,6 +172,63 @@ def test_sweep_refuses_a_work_folder_inside_the_repo_and_reports_a_dead_child(tm
     def slow_run(cmd, **k): raise SW.subprocess.TimeoutExpired(cmd, 60)
     monkeypatch.setattr(SW.subprocess, "run", slow_run); assert SW.child("EP209901010900", A, str(tmp_path / "w"))["outcome"] == "timeout"
 
+# ------------------------------------------------------------------ the tests run the library versions production runs
+# Found by the first run with public annotations: GitHub's Checks installed OpenCV without bounds and got 5.0.0, while production (requirements.txt)
+# pins it below 5 - every "green on GitHub" had been measured on another major version than the one that renders the videos.
+import re, glob
+ONLY_IN_PRODUCTION = {"kokoro", "transformers"}          # the voice engine and its models: too heavy for a test machine, replaced by stand-ins in every test
+
+def _pins(path=None):
+    out = {}
+    for l in open(path or os.path.join(ROOT, "requirements.txt"), encoding="utf-8"):
+        m = re.match(r"([A-Za-z0-9_.-]+)(.*)", l.split("#")[0].strip())
+        if m and m.group(2).strip(): out[m.group(1).lower()] = m.group(2).replace(" ", "")
+    return out
+
+def _v(s, n=3): return tuple((list(int(x) for x in re.findall(r"\d+", s)[:n]) + [0] * n)[:n])
+def _inside(version, spec):
+    ops = {">=": lambda a, b: a >= b, "<=": lambda a, b: a <= b, "==": lambda a, b: a == b, "<": lambda a, b: a < b, ">": lambda a, b: a > b}
+    return all(ops[m.group(1)](_v(version), _v(m.group(2))) for m in (re.match(r"(>=|<=|==|<|>)(.+)", p) for p in spec.split(",")) if m)
+
+def _pip_lines():
+    for f in sorted(glob.glob(os.path.join(ROOT, ".github", "workflows", "*.yml"))):
+        for l in open(f, encoding="utf-8").read().splitlines():
+            if "pip install" in l and "-r requirements.txt" not in l: yield os.path.basename(f), l.split("#")[0]
+
+def _unpinned(lines, pins):
+    bad = []
+    for f, l in lines:
+        for t in l.split("pip install", 1)[1].split():
+            bare = t.strip("\"'"); name = re.split(r"[<>=!~]", bare)[0].lower()
+            if name in pins and bare.lower() != name + pins[name]: bad.append(f"{f}: {bare} (production pins {name}{pins[name]})")
+    return bad
+
+def test_version_bounds_compare_correctly():
+    assert _inside("4.14.0.94", ">=4.9,<5") and not _inside("5.0.0", ">=4.9,<5") and not _inside("4.8.1", ">=4.9,<5")
+    assert _inside("2.0.2", ">=1.26,<2.1") and not _inside("2.1.0", ">=1.26,<2.1") and _inside("0.13.1", ">=0.12,<0.14") and not _inside("0.14", ">=0.12,<0.14")
+
+def test_every_workflow_installs_a_pinned_package_with_the_production_bounds():
+    pins = _pins(); assert {"numpy", "opencv-python-headless", "pillow", "requests", "soundfile"} <= set(pins)
+    lines = list(_pip_lines()); assert len(lines) >= 13 and any(f == "checks.yml" for f, _ in lines)
+    assert _unpinned(lines, pins) == []
+    # the other way round: the line GitHub's Checks used until this batch is caught, and so is a wrong bound
+    old = [("checks.yml", '      - run: pip install -q "numpy>=1.26,<2.1" opencv-python-headless pillow soundfile requests pytest')]
+    bad = _unpinned(old, pins); assert len(bad) == 4 and any("opencv-python-headless (production pins opencv-python-headless>=4.9,<5)" in b for b in bad)
+    assert _unpinned([("x.yml", 'pip install -q "opencv-python-headless>=4.9,<6"')], pins) and not _unpinned([("x.yml", "pip install -q pytest pyyaml")], pins)
+
+def test_this_machine_runs_the_library_versions_production_pins():
+    import importlib.metadata as MD
+    pins = _pins(); seen = {}
+    for name, spec in pins.items():
+        try: seen[name] = MD.version(name)
+        except MD.PackageNotFoundError:
+            assert name in ONLY_IN_PRODUCTION, f"{name} is pinned for production but not installed on this test machine"
+            continue
+        assert _inside(seen[name], spec), f"{name} {seen[name]} is outside the production pin {spec}: the tests would measure another version than the one that makes the videos"
+    assert {"numpy", "opencv-python-headless"} <= set(seen)
+    import cv2, numpy
+    assert _inside(cv2.__version__, pins["opencv-python-headless"]) and _inside(numpy.__version__, pins["numpy"])      # what is imported, not only what is installed
+
 # ------------------------------------------------------------------ no Settings cell that nothing reads
 def test_every_settings_cell_is_read_by_code_or_marked_not_active():
     from whatifs import truth as T, core

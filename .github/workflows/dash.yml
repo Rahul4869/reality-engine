@@ -39,5 +39,5 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
-      - run: pip install -q requests "numpy>=1.26,<2.1" "cryptography>=42,<46" pillow
+      - run: pip install -q "requests>=2.31,<3" "numpy>=1.26,<2.1" "cryptography>=42,<46" "pillow>=10,<13"
       - run: python -m whatifs.cli dash_action

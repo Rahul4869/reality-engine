@@ -32,5 +32,5 @@ jobs:
           python-version: "3.11"
       - run: |
           sudo apt-get update -y -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
-          pip install -q requests "numpy>=1.26,<2.1"
+          pip install -q "requests>=2.31,<3" "numpy>=1.26,<2.1"
       - run: python -m whatifs.cli upload_check --force

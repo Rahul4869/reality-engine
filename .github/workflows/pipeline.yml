@@ -50,7 +50,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
-      - run: pip install -q requests "numpy>=1.26,<2.1" pillow        # v10.3: chart images for the WhatsApp briefs
+      - run: pip install -q "requests>=2.31,<3" "numpy>=1.26,<2.1" "pillow>=10,<13"        # v10.3: chart images for the WhatsApp briefs
       - id: t
         run: python -m whatifs.cli tick
   produce:
