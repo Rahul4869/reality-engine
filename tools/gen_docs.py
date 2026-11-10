@@ -84,6 +84,8 @@ def render():
       f"(Rewrite / Approve anyway). No upload below Breakout Score {val('BREAKOUT_HARD_BAR')}.")
     A(f"- Writers' room: mode `{val('ROOM_MODE')}` ({val('ROOM_V2_DRAFTS')} drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.")
     A(f"- Animated scenes: {val('ANIM_SHOTS')} per long video on `{val('FAL_HERO_MODEL')}`; stills on `{val('FAL_STILL_MODEL')}`; look `{val('ART_STYLE')}`; voice engine `{val('TTS_ENGINE')}`.")
+    A(f"- Cadence: at most {val('STANDARD_MAX_LONG_PER_MONTH')} long videos a month, on {val('PUBLISH_DAYS')} (US Eastern); "
+      f"{val('SHORTS_PER_DAY')} standalone Shorts a day; spin-offs: the Case Files countdown and the monthly Deep Trial.")
     A(f"- Size: {len(mods)} code modules, {len(D)} settings, {len(core.TABS)} Sheet tabs, {len(jobs)} GitHub workflows.")
     A("")
     A("## 2. How it runs")

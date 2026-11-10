@@ -21,6 +21,7 @@ SAMPLES = {
     "history_pointer":        ("Read docs/KERNEL.md first and obey it.", "docs/ARCHIVE/KERNEL.md is history."),
     "kernel_rule_number":     ("Models are discovered live (K11).", None),
     "old_version_tag":        ("Since v9.4a the room runs early.", None),
+    "old_long_cadence":       ("Standard mode makes 8 long videos a month, twice a week.", None),
     "no_kling_statement":     ("The render is ffmpeg-only.", None),
 }
 

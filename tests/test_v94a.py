@@ -95,11 +95,11 @@ def test_runway_by_tap_and_growth_by_revenue(setting, monkeypatch):
     assert G.budget_mode() == "growth" and G.cap_inr() == pytest.approx(5000 + 10000 * 0.25)
     setting("GROWTH_AUTO_ON", "FALSE"); assert G.budget_mode() == "standard"
 
-def test_standard_makes_at_most_8_long_videos(setting):
+def test_standard_makes_at_most_4_long_videos(setting):                  # v12: the owner's cadence (10 Nov 2026: 4 a month); was 8
     mk = core.now_utc().strftime("%Y-%m")
-    core.store().append("Episodes", [{"episode_id": f"EP{i}", "slot_et": f"{mk}-0{(i % 9) + 1}T15:00:00Z", "status": "LIVE"} for i in range(8)])
+    core.store().append("Episodes", [{"episode_id": f"EP{i}", "slot_et": f"{mk}-0{(i % 9) + 1}T15:00:00Z", "status": "LIVE"} for i in range(4)])
     ok, why = G.can_start_episode()
-    assert not ok and "at most 8" in why
+    assert not ok and "at most 4" in why
 
 def test_extras_pause_before_production_is_squeezed(setting):
     ok, _ = G.extras_allowed(50); assert ok

@@ -49,6 +49,8 @@ from the code), CONCEPT.md (the show). Anything in docs/ARCHIVE is history and i
 - YPP until 31 Jan 2027: 1,000 subs + 4,000 long-form hours (or 10M Shorts views/90 days); from 1 Feb 2027: 8,000 hours or 20M Shorts views.
   Shorts hours do not count. Honest odds: 4,000 h by 1 Feb needs a breakout; base case 8,000 h ~months 8-12. Checkpoint 11 Jan.
 - Launch cadence: 4 long + ~1.5 Shorts/day + 2 spin-offs (Case Files countdown, Deep Trial) per month; spin-offs also breakout-engineered.
+  Confirmed by the owner on 10 Nov 2026 ("4 a month") and enforced: `STANDARD_MAX_LONG_PER_MONTH` = 4, `PUBLISH_DAYS` = Sat (one a week),
+  one-time Sheet move `manage.v12_upgrade`, gate `governor.can_start_episode`; lines for viewers say "every week".
 - Owner asked how watch hours work with fewer long videos: long videos + spin-offs earn hours; Shorts are discovery that funnels to long videos.
 
 ## E. RESEARCH CONCLUSIONS THAT ARE NOW RULES (and where they live)

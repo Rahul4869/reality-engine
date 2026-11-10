@@ -39,6 +39,8 @@ RETIRED = [
      "truth": "the numbered kernel rules are history; current rules are the checks listed in docs/CURRENT/ENFORCEMENT_MATRIX.md"},
     {"id": "old_version_tag", "pattern": r"\bv(?:7|8|9|10)(?:\.\d+)*[a-z]?\b", "flags": 0, "unless": None, "scopes": ("docs",),
      "truth": "current docs describe what the code does now, without the history of versions 7 to 10"},
+    {"id": "old_long_cadence", "pattern": r"\btwice a week\b|\b2 long videos\b|\b8 (?:long )?videos (?:a|per) month", "flags": I, "unless": None, "scopes": ("docs", "prompts"),
+     "truth": "the plan is 4 long videos a month, one a week (STANDARD_MAX_LONG_PER_MONTH, PUBLISH_DAYS); lines for viewers say 'every week'"},
     {"id": "no_kling_statement", "pattern": r"ffmpeg[- ]only|\bno[- ]Kling\b|without Kling", "flags": I, "unless": None, "scopes": ("docs",),
      "truth": "every long video has animated Kling scenes (ANIM_SHOTS) plus the ffmpeg/OpenCV render"},
 ]

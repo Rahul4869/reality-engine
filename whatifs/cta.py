@@ -36,7 +36,7 @@ POOLS = {
     ],
     "subscribe": [
         [("SKEPTIC", "aside", "Subscribe, and the next impossible thing lands in your feed. Don't, and I'll just wonder where you went."), ("DIRECTOR", "calm", "They will. Loudly.")],
-        [("DIRECTOR", "calm", "We run a new simulation twice a week. Subscribe, and the bell does the remembering for you.")],
+        [("DIRECTOR", "calm", "We run a new simulation every week. Subscribe, and the bell does the remembering for you.")],
         [("SKEPTIC", "aside", "Subscribing is the only experiment here with a guaranteed result. You get more of this.")],
         [("DIRECTOR", "calm", "Think of subscribing as keeping the control room lights on. We'd like them on.")],
         [("SKEPTIC", "aside", "If you stuck around this long, you're basically crew. Subscribe and make it official."), ("DIRECTOR", "aside", "Crew gets no pay. But there are snacks. Imaginary snacks.")],
@@ -61,7 +61,7 @@ CODE = {"like": "l", "subscribe": "s", "share": "h"}
 
 DESC_SUB = [
     "Subscribe so the next simulation finds you before it finds the group chat.",
-    "Subscribe: the control room runs twice a week, and we hate an empty chair.",
+    "Subscribe: the control room runs every week, and we hate an empty chair.",
     "Subscribe, and future disasters arrive politely, in your feed.",
     "Subscribe. It costs nothing, and the Curious One will stop asking.",
     "Subscribe to keep the simulation running. The Director insists it is not a plea.",
@@ -95,7 +95,7 @@ TRIAL_POOLS = {
         [("DIRECTOR", "calm", "The next case is already filed. Subscribe, and your seat on the jury is saved.")],
         [("JUDGE", "aside", "Every juror who subscribes votes next time. Everyone else gets my disappointed look.")],
         [("SKEPTIC", "aside", "Subscribe. The court needs jurors who actually stay for the evidence. Rare. Precious. You.")],
-        [("DIRECTOR", "calm", "Twice a week, a new impossible case. Subscribe, and the summons finds you first.")],
+        [("DIRECTOR", "calm", "Every week, a new impossible case. Subscribe, and the summons finds you first.")],
     ],
     "share": [
         [("JUDGE", "calm", "Send this to the friend who would vote guilty without reading the evidence. Mm. You know the one.")],
@@ -107,7 +107,7 @@ TRIAL_POOLS = {
     ],
 }
 TRIAL_DESC_SUB = [
-    "Subscribe and take your seat on the jury: a new impossible case twice a week.",
+    "Subscribe and take your seat on the jury: a new impossible case every week.",
     "Subscribe. Nana Rosa keeps a chair for every juror who stays for the evidence.",
     "Subscribe, so the next summons finds you before Dr. Grimm does.",
     "Subscribe to sit on the jury. Inspector Vale brings the evidence; you bring the verdict.",

@@ -295,6 +295,10 @@ def publish_days():
     """v9.4a: the publishing days of the current mode (Runway: RUNWAY_PUBLISH_DAYS)."""
     return S("RUNWAY_PUBLISH_DAYS") if budget_mode() == "runway" else S("PUBLISH_DAYS")
 
+def long_videos_per_week():
+    """How many long-video slots a week the current mode publishes (= the number of publishing days)."""
+    return max(1, len([d for d in str(publish_days() or "").split(",") if d.strip()]))
+
 def can_start_episode():
     """(ok, reason). False = do not start paid work for a new episode this month; already scheduled videos still publish."""
     if long_videos_this_month() >= max_long_videos():

@@ -573,6 +573,8 @@ def learn():
     except Exception as x: log(f"v10.2 flips skipped: {scrub(x)}", "WARN")
     try: v11_upgrade(st)                                         # v11: the owner's November allowance
     except Exception as x: log(f"v11 flips skipped: {scrub(x)}", "WARN")
+    try: v12_upgrade(st)                                         # v12: the owner's cadence (4 long videos a month, weekly)
+    except Exception as x: log(f"v12 flips skipped: {scrub(x)}", "WARN")
     try:
         from whatifs import craft as CRF; CRF.seed_techniques()       # v9.3.2: the owner's pre-judged technique cards, filed once
     except Exception as x: log(f"technique seeding skipped: {scrub(x)}", "WARN")
@@ -767,6 +769,20 @@ def v101_upgrade(st):
 
 V11_KEEP_FLIP = ("DRIVE_ARCHIVE_KEEP", "2", "12")
 V111_FLIPS = (("REHOOK_MAX_GAP_SEC", "90", "75"),)          # v11.1: research - re-hook at most every 75 s (now a hard contract check)
+
+# Owner decision 10 Nov 2026: the launch cadence is 4 long videos a month, one a week (Shorts and spin-offs carry the volume).
+V12_FLIPS = (("STANDARD_MAX_LONG_PER_MONTH", "8", "4"), ("PUBLISH_DAYS", "Tue,Sat", "Sat"), ("VIDEOS_PER_MONTH_EST", "9", "4"))
+
+def v12_upgrade(st):
+    """ONE time: cells still at the old defaults move to the owner's cadence (4 long videos a month, weekly). A value the owner typed is never touched."""
+    if str(S("V12_FLIPS_DONE") or "").strip(): return []
+    have = {r.get("key"): str(r.get("value", "")).strip() for r in st.rows("Settings")}
+    done = []
+    for k, old, new in V12_FLIPS:
+        if have.get(k) == old: set_setting(k, new); done.append(k)
+    set_setting("V12_FLIPS_DONE", iso() + " " + (",".join(done) or "none"))
+    if done: log("v12: launch cadence set (4 long videos a month, one a week): " + ", ".join(done))
+    return done
 
 V102_FLIPS = (("FAL_HERO_MODEL", "fal-ai/kling-video/v2.5-turbo/pro/image-to-video", "fal-ai/kling-video/o3/standard/image-to-video"),
               ("PRICE_KLING_USD", "0.35", "0.42"), ("KLING_CLIPS", "3", "4"), ("SPECIAL_REEL_CAP_INR", "150", "180"),
@@ -1180,6 +1196,8 @@ def setup():
     except Exception as x: log(f"v10.2 flips skipped: {scrub(x)}", "WARN")
     try: v11_upgrade(st)                                       # v11: the owner's November allowance
     except Exception as x: log(f"v11 flips skipped: {scrub(x)}", "WARN")
+    try: v12_upgrade(st)                                         # v12: the owner's cadence (4 long videos a month, weekly)
+    except Exception as x: log(f"v12 flips skipped: {scrub(x)}", "WARN")
     status("sheet_ready", True, f"{len(TABS)} tabs")
     from whatifs import launch as LA                                      # v9.3.1: the audit is only needed when the upload check found a lock
     status("youtube_api_audit", audit_state() == "approved" or LA.lock_state() != "on", AUDIT_WORDS[audit_state()] if LA.lock_state() == "on" else "not needed: YouTube lifted the private lock on 2 Nov 2026 (the upload check confirms it on this project)")      # v8.4: the audit form has its own Setup_Status row, so it cannot be forgotten

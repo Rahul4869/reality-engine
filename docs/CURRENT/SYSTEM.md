@@ -9,7 +9,8 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Quality: 38 HARD contract checks (20 at the script stage, 18 on the final video). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway). No upload below Breakout Score 80.
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `fal-ai/kling-video/o3/standard/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
-- Size: 103 code modules, 674 settings, 71 Sheet tabs, 24 GitHub workflows.
+- Cadence: at most 4 long videos a month, on Sat (US Eastern); 1.5 standalone Shorts a day; spin-offs: the Case Files countdown and the monthly Deep Trial.
+- Size: 103 code modules, 675 settings, 71 Sheet tabs, 24 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -32,7 +33,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 ## 4. Truth rules (enforced by `whatifs/truth.py`)
 - Follow only `docs/CURRENT/` and `CLAUDE.md`. `docs/ARCHIVE/` is history: never follow it.
 - Version labels and rule numbers inside code comments are history labels, not instructions.
-- Retired concepts (13 rules). Naming one in a current doc, a module docstring or a prompt fails Plan Guard, the tests and check `docs_current`:
+- Retired concepts (14 rules). Naming one in a current doc, a module docstring or a prompt fails Plan Guard, the tests and check `docs_current`:
   - `brand_what_ifs`: the brand is Reality Engine and the show is Reality on Trial.
   - `old_month_cap`: the cap is Rs 5,000 a month all-in (November 2026 only: Rs 5,226).
   - `kling_v3_path`: the hero clip model id is fal-ai/kling-video/o3/standard/image-to-video (Kling 3.0 Standard).
@@ -45,6 +46,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
   - `history_pointer`: the only docs to follow are in docs/CURRENT (start at docs/CURRENT/SYSTEM.md).
   - `kernel_rule_number`: the numbered kernel rules are history; current rules are the checks listed in docs/CURRENT/ENFORCEMENT_MATRIX.md.
   - `old_version_tag`: current docs describe what the code does now, without the history of versions 7 to 10.
+  - `old_long_cadence`: the plan is 4 long videos a month, one a week (STANDARD_MAX_LONG_PER_MONTH, PUBLISH_DAYS); lines for viewers say 'every week'.
   - `no_kling_statement`: every long video has animated Kling scenes (ANIM_SHOTS) plus the ffmpeg/OpenCV render.
 
 ## 5. Contract checks (`whatifs/contract.py` FEATURES)
@@ -100,13 +102,13 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | BUDGET_GUARD_PCT | 90 | at this % of the cap, extras pause (spin-offs, tool tests, Shorts above 1 a day); long episodes keep their money; one alert per month |
 | BREAKOUT_FUND_CAP_INR | 1000 | the most that carries over |
 | BUDGET_MODE | standard | standard / runway (owner's tap: email link 'MODE RUNWAY' / dashboard) / growth (set by itself when revenue exists, GROWTH_AUTO_ON) |
-| STANDARD_MAX_LONG_PER_MONTH | 8 | Standard makes at most this many long videos a month (decision 8) |
+| STANDARD_MAX_LONG_PER_MONTH | 4 | Standard makes at most this many long videos a month (owner, 10 Nov 2026: 4 - each one built to break out; daily Shorts and the spin-offs carry the volume) |
 
 **Schedule and formats**
 
 | setting | default | meaning |
 |---|---|---|
-| PUBLISH_DAYS | Tue,Sat | US Eastern days of the long-video slots (the month's long videos are capped by STANDARD_MAX_LONG_PER_MONTH and the money governor) |
+| PUBLISH_DAYS | Sat | US Eastern day(s) of the long-video slots. Owner plan (10 Nov 2026): ONE long video a week, 4 a month; the month's count is capped by STANDARD_MAX_LONG_PER_MONTH and the money governor |
 | SHORTS_TRACK_ON | TRUE | standalone daily Shorts (the month-1 launch plan) |
 | SHORTS_PER_DAY | 1.5 | standalone Shorts per day (1.5 = 2 on even days, 1 on odd days); the first of a day is core production, the rest are extras |
 | CASEFILES_ON | TRUE | one Case Files countdown a month once enough episodes are archived |

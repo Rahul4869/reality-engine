@@ -11,13 +11,19 @@ EXPIRY_SEED = [("Claude Max plan (back to Pro)", "2026-12-10", "Check the pipeli
                ("Meta WhatsApp token (WA_TOKEN)", "", "Business Settings -> System users -> Generate token; paste as the secret")]
 
 # ------------------------------------------------------------------ Policy Rescue
+def cadence_words():
+    """The channel's real output, read from the settings (a prompt must describe the channel as it is, not as it once was)."""
+    from whatifs import governor as G
+    n = G.long_videos_per_week(); sh = int(S("SHORTS_PER_DAY", float) * 7 + 0.5) if S("SHORTS_TRACK_ON", bool) else 0
+    return "about " + str(n) + (" long video" if n == 1 else " long videos") + " and " + str(sh) + " Shorts a week"
+
 def policy_rescue(items):
     from whatifs import notify as NT
     note = ""
     try:
         from whatifs.models import ask
         note = str(ask("policy_rescue", "You protect a faceless, AI-assisted science YouTube channel with original scripts, recurring characters, honest AI labels and "
-                       "about 2 long videos + 10-14 Shorts a week. In 4 short plain sentences: what this platform change means for it, what to change, and whether "
+                       + cadence_words() + ". In 4 short plain sentences: what this platform change means for it, what to change, and whether "
                        "to stay paused. No jargon.", json.dumps(items)[:4000], want_json=False, max_tokens=500, fake_key="policy_rescue") or "").strip()[:900]
     except Exception as e: log(f"policy impact note skipped: {scrub(e)[:100]}", "WARN")
     return NT.send("policy", "Platform policy change found (publishing paused 7 days): " + "; ".join(str(i.get("change"))[:160] for i in items) + (f"<br><b>What it means:</b> {note}" if note else ""),
