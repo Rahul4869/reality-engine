@@ -65,6 +65,18 @@ def run():
         assert pb["playbook_id"] and pb["tokens"] <= pb["cap"] and any(r.get("playbook_id") == pb["playbook_id"] for r in st.rows("Palace_Playbooks")), "writers' playbook out of bounds or not recorded"
         hp = PAL.health(st); assert hp["ok"], hp["problems"]
         print("knowledge palace:", len(pal), "items, version", hp["stats"]["version"], "; writers' playbook", pb["playbook_id"], pb["tokens"], "of", pb["cap"], "tokens")
+        from whatifs.org import runner as ORGR, registry as OREG, memos as OMEM          # v12: the long video ran under the department contract, step by step
+        from whatifs.core import S as _S12
+        ep12 = e["episode_id"]; ses12 = {(s["dept"], s["trigger"]): s for s in st.rows("Sessions") if s.get("episode_id") == ep12}
+        need12 = set(OREG.EPISODE_RUNS["final"]) | {("D8", "final_gate"), ("D9", "publish")}
+        assert need12 <= set(ses12) and all(s["status"] == "ok" and not ORGR.verify(s) for s in ses12.values()), ("a department run is missing, broken or unproven", {k: v["status"] for k, v in ses12.items()})
+        led12 = {r["feature"]: r["status"] for r in st.rows("Feature_Ledger") if r.get("episode_id") == ep12}
+        assert led12.get("dept_contract") == "PASS" and led12.get("takeaways_written") == "PASS", ("the organisation's checks did not pass", led12.get("dept_contract"), led12.get("takeaways_written"))
+        tk12 = [t for t in st.rows("Takeaways") if t.get("episode_id") == ep12]
+        assert len(tk12) >= len(need12) and not any(ORGR._takeaway_problems(t) for t in tk12), "a department run wrote no valid takeaway"
+        wd12 = OMEM.watchdog(st); oh12 = ORGR.health(st); assert oh12["ok"] and _S12("ORG_WATCHDOG_AT") and _S12("ORG_SINCE"), oh12["problems"]
+        assert not [m for m in OMEM.rows(st) if m["status"] in ("open", "escalated") and m["type"] == "problem_memo" and m["episode_id"] == ep12], "a problem memo of the scheduled episode is still open"
+        print("organisation:", len(ses12), "department runs,", len(tk12), "takeaways,", oh12["stats"]["live"], "live memos; watchdog checked", wd12["checked"])
         from whatifs.core import S as _S89; np89 = _S89("NEXT_PREMISE")      # v8.9: the scheduled video leaves its tease for the next episode (v8.9.1: only a saved plan uses it up)
         # v7.4 checks: research brief, ten opening hooks, reviewable cut map
         d74 = os.path.dirname(r["master"])

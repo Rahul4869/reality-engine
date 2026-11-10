@@ -11,8 +11,9 @@ def _len(x):
 # ------------------------------------------------------------------ measures: numbers read from the step's real output (never estimated, never typed)
 def m_room(room):
     """D4 write: the script the room delivered."""
-    script = str(((room or {}).get("script") or {}).get("script") or "")
-    return {"script_words": len(script.split()), "beats": _len(((room or {}).get("bible") or {}).get("beats") or []), "punch_marks": script.count("[PUNCH]"), "send_marks": script.count("[SEND]")}
+    room = room if isinstance(room, dict) else {}; sc = room.get("script"); bible = room.get("bible")
+    script = str((sc.get("script") if isinstance(sc, dict) else "") or "")
+    return {"script_words": len(script.split()), "beats": _len((bible.get("beats") if isinstance(bible, dict) else None) or []), "punch_marks": script.count("[PUNCH]"), "send_marks": script.count("[SEND]")}
 
 def m_voice(vo):
     """D7 voice: the narration as recorded."""
@@ -25,7 +26,7 @@ def m_pkg(pkg):
 
 def m_shots(shots):
     """D6 plan: the shot plan by kind."""
-    shots = [s for s in (shots or []) if isinstance(s, dict)]
+    shots = [s for s in shots if isinstance(s, dict)] if isinstance(shots, (list, tuple)) else []
     return {"shots": len(shots), "animated_shots": sum(1 for s in shots if s.get("type") in ("kling", "living")), "still_shots": sum(1 for s in shots if s.get("type") == "still")}
 
 def m_assets(files):

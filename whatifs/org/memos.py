@@ -14,6 +14,11 @@ PASSED = ("UPLOADED", "SCHEDULED", "AWAITING_APPROVAL", "LIVE1", "LIVE", "HELD")
 CLOSED = ("KILLED", "SKIPPED")                                                             # the episode will never be made: its problems are closed with it
 _URG = {"P0": 0, "P1": 1, "P2": 2}
 
+def core_default(key):
+    """The default of a Settings cell (for the generated docs)."""
+    from whatifs import core
+    return core.DEFAULTS[key][0]
+
 def _parse(row):
     m = dict(row)
     for c in _JSON:

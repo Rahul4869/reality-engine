@@ -281,6 +281,7 @@ def run(dept, trigger, act, *, episode="", topic="", stage=None, context=None, m
                     MEM.resolve(m["id"], dept, "repair_verified", sid, "the same step finished in a later run", st, t0); settled.append(m["id"])
             if native:                                                                             # coverage: a memo that was loaded must not be ignored
                 for m in inbound:
+                    if m["from_dept"] == dept and m["body"].get("error_class"): continue          # the runner's own memo about this department's runs: closed by a clean run, not by the department's word
                     a = out.memo_actions.get(m["id"])
                     if not a: breaches.append(("EMIT", f"inbound memo {m['id']} ({m['type']}) was loaded and ignored")); continue
                     _apply_action(m, a, dept, st); handled += 1

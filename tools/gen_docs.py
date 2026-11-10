@@ -15,14 +15,15 @@ KEY_SETTINGS = [
     ("Quality gates", ["CONTRACT_ON", "CONTRACT_OFF", "BREAKOUT_HARD_BAR", "REHOOK_MAX_GAP_SEC", "JOKE_EVERY_SEC_LONG", "VISUAL_CHANGE_MAX_S", "PROMISE_BY_SEC", "IDEA_MIN_MULTIPLE"]),
     ("Owner", ["WA_ON", "BUILDS_ON", "DASH_ON"]),
     ("Knowledge Palace", ["PALACE_ON", "PALACE_PLAYBOOK_TOKENS", "PALACE_PLAYBOOK_TOKENS_BY_DEPT", "PALACE_LIMITS_SHARE", "PALACE_REVIEW_DAYS", "PALACE_KIND_CAPS"]),
+    ("Organisation", ["ORG_ON", "ORG_SLA_HOURS", "ORG_ESCALATE_HOURS", "ORG_OWNER_REMINDS_MAX", "ORG_DEVIATION_PCT", "ORG_CAPS_INR", "ORG_RUN_STALE_H"]),
 ]
 
 # The v12 "Organisation" build, batch by batch. Edit ONLY when a batch is accepted (handoff_v12/BUILD_STATE.md is the detailed record).
 ORG_STATUS = [
     ("Truth hygiene: one current truth (this file, the registry of retired concepts, check `docs_current`)", "built"),
     ("Knowledge Palace core (`whatifs/org/palace.py`: guarded items, life cycle, versions, bounded playbooks, founding knowledge, check `palace_health`; section 10)", "built"),
-    ("Playbooks injected into every department's prompts and cited back (checks `palace_injected`, `palace_cited`), the Librarian's merges, outcome scores", "not built yet"),
-    ("Memos and the department contract", "not built yet"),
+    ("Memos and the department contract (`whatifs/org/schemas.py`, `memos.py`, `registry.py`, `runner.py`; the long-video pipeline and the daily learning job run under it; checks `dept_contract`, `takeaways_written`; section 11)", "built"),
+    ("Playbooks inside the creative departments' model prompts and cited back (checks `palace_injected`, `palace_cited`), the Librarian's merges, outcome scores", "not built yet"),
     ("Execution Engine (every decision becomes a verified change in what runs)", "not built yet"),
     ("R&D and Review Board, creative departments and Council, QA repair loop, learning loop, Owner Office", "not built yet"),
 ]
@@ -33,7 +34,11 @@ TAB_NOTES = {"Technique_Library": "the outlier-video library (techniques seen in
              "Playbook": "the older research rulebook (whatifs/playbook.py); NOT a Palace playbook",
              "Palace_Items": "the Knowledge Palace index (whatifs/org/palace.py)",
              "Palace_Versions": "one row per Palace change: running version + hash of the whole Palace",
-             "Palace_Playbooks": "each distinct department playbook the Palace built (id = hash of its text)"}
+             "Palace_Playbooks": "each distinct department playbook the Palace built (id = hash of its text)",
+             "Memos": "one row per memo between departments (whatifs/org/memos.py)",
+             "Sessions": "one row per department run with its six chained receipts (whatifs/org/runner.py)",
+             "Takeaways": "what every department run learned; new findings are also proposed to the Palace",
+             "Org_Audit": "one row per department run, escalation and watchdog pass that did something"}
 
 def clean(note):
     """A settings note without its version / rule-number labels (those are history; the doc states only what is true now)."""
@@ -78,7 +83,8 @@ def _palace(A):
       f"{PAL.core.DEFAULTS['PALACE_PLAYBOOK_TOKENS'][0]} estimated tokens; limits hold a reserved share of {PAL.core.DEFAULTS['PALACE_LIMITS_SHARE'][0]}. "
       "Same Palace state = byte-identical text; `playbook_id` is the hash of the text.")
     A("- Runs in production: `palace.daily` in the learning job, `palace.maintain` in Setup, contract check `palace_health` on every episode.")
-    A("- Not yet wired (later batches): injecting playbooks into department prompts, citing items back, the Council, the Librarian's merges, outcome scores.")
+    A("- Every wired department run loads its playbook (section 11). Not yet wired (later batches): the playbook inside the creative departments' model")
+    A("  prompts with items cited back, the Council, the Librarian's merges, outcome scores.")
     A("")
     A(f"**Founding knowledge** ({len(items)} items in `whatifs/org/seed/`; {len(bad)} invalid): " + ", ".join(f"{k} {v}" for k, v in sorted(by_file.items())) + ".")
     A("By kind: " + ", ".join(f"{k} {v}" for k, v in sorted(by_kind.items())) + ".")
@@ -100,6 +106,51 @@ def _palace(A):
     A("| id | department | default stage |")
     A("|---|---|---|")
     for d, (name, stage) in DEPARTMENTS.items(): A(f"| {d} | {name} | {stage} |")
+    A("")
+
+def _org(A):
+    """Section 11: the organisation - departments, the six-step run, memo types and clocks - read from whatifs/org (never typed here)."""
+    from whatifs.org import DEPARTMENTS, registry as REG, schemas as SC, runner as RUN, memos as MEM
+    A("## 11. The organisation: departments, the department contract, memos (`whatifs/org/`)")
+    A(f"- Every department run goes through `runner.run` and its {len(RUN.STEPS)} steps, always in this order: {' -> '.join(RUN.STEPS)}. Each step leaves a receipt that the")
+    A("  runner builds from what code observed (the playbook it loaded, the ids the Sheet returned, the money and model calls it counted); the receipts are")
+    A("  chained, stored in tab `Sessions`, and re-computed by the episode gates (`runner.verify`). A department cannot report its own progress.")
+    A("- LOAD is strict: it raises before any work or money. After ACT nothing is thrown away: the other steps always run and are recorded, the error of ACT")
+    A("  is re-raised, and a broken step is a BREACH. `runner.work` (existing production steps) records the breach and still returns the result - a paid")
+    A("  or uploaded result is never lost - and the gates `dept_contract` (before picture money) and `takeaways_written` (before upload) then hold the video.")
+    A("- Playbook: `brief` mode hands the department's Palace playbook over with the work order; `prompt` mode puts it into the cached layer of the system")
+    A("  prompt at the one doorway for text calls (`models.ask`) and proves it was there. A run whose playbook never reached the work is a breach.")
+    A("- Takeaway: every run writes at least one to tab `Takeaways`, built from what the run measured against the department's own earlier runs. A stock")
+    A("  or empty one is refused (`schemas.check_takeaway`). Only a new finding (a deviation, a failed check, a failure) is proposed to the Palace, as")
+    A("  `proposed`; it reaches no prompt until it is accepted. A takeaway cannot score itself.")
+    A("- Memos (tab `Memos`): validated on write (`schemas.check_memo`), read only by their audience (`memos.inbox`), closed only with proof")
+    A("  (`memos.resolve`), never rewritten while open, never reopened once closed. The id is the hash of type, sender, audience and dedupe key.")
+    A(f"- Statuses: {', '.join(SC.STATUSES)} (closed: {', '.join(SC.TERMINAL)}). Two clocks per memo: acknowledge and resolve. Acknowledging stops only the first.")
+    A("- The SLA watchdog (`memos.watchdog`, every tick): a memo whose clock ran out climbs department -> Council -> owner, skipping a level that has no")
+    A(f"  wired run. The owner hears about a stuck item once, then at most {MEM.core_default('ORG_OWNER_REMINDS_MAX')} reminders, {MEM.OWNER_MESSAGES_PER_PASS} messages a pass at most.")
+    A("- EXECUTE: a ticket is applied by the Execution Engine; until it is built a ticket is escalated at once with the reason, never left as text.")
+    A("")
+    A("**Departments** (`whatifs/org/registry.py`). Wired = real call sites run it under the runner (checked against the code); pending = the build batch that wires it.")
+    A("")
+    A("| id | department | rhythm | runs under the runner | playbook | thinking cap (Rs / month) | levers (Settings cells) |")
+    A("|---|---|---|---|---|---|---|")
+    for d, (name, _stage) in DEPARTMENTS.items():
+        v = REG.DEPTS[d]; runs = ", ".join(f"{t} ({f})" for f, t in REG.ENTRY.get(d, ())) or f"pending ({REG.PENDING.get(d, '?')})"
+        A(f"| {d} | {name} | {v['cadence']} | {runs} | {v['inject']} | {v['cap_inr'] if v['cap_inr'] is not None else '-'} | {', '.join(v['levers']) or '-'} |")
+    A("")
+    A("Runs an episode needs before each gate: " + "; ".join(f"{g}: " + ", ".join(f"{d} {t}" for d, t in runs) for g, runs in REG.EPISODE_RUNS.items()) + ".")
+    A("")
+    A("**Memo types** (`whatifs/org/schemas.py` TYPES; clocks in hours at urgency P1)")
+    A("")
+    A("| type | from | to | kind | acknowledge / resolve | closed by | purpose |")
+    A("|---|---|---|---|---|---|---|")
+    for t, d in SC.TYPES.items():
+        frm = "any" if d["from"] == SC.ANY else ("C or any department" if t == "ticket" else ", ".join(d["from"])); to = "any" if d["to"] == SC.ANY else ", ".join(d["to"])
+        a, r = SC.TYPES[t]["by_urgency"]["P1"] if d.get("by_urgency") else (d["ack_h"], d["resolve_h"])
+        A(f"| {t} | {frm} | {to} | {d['mode']} | {a} / {r} | {', '.join(d['resolved_by']) or '-'} | {_cell(d['purpose'])} |")
+    A("")
+    A("**Who owns each contract check** (a failed check becomes a problem memo to that department): "
+      + "; ".join(f"{d}: " + ", ".join(sorted(k for k, v in REG.CHECK_OWNER.items() if v == d)) for d in DEPARTMENTS if d in set(REG.CHECK_OWNER.values())) + ".")
     A("")
 
 def _jobs():
@@ -150,6 +201,7 @@ def render():
     A("  voice -> shot plan -> paid pictures and clips -> render (`whatifs/render.py`) -> final-stage contract -> held for the owner or scheduled ->")
     A("  release with Shorts and Reels -> 48-hour breakout monitor (`whatifs/breakout.py`) -> learning (`whatifs/brain.py`). Every paid step is checkpointed.")
     A("- Money: every paid call is logged (`core.cost`), estimated before it runs and stopped by the governor (`whatifs/governor.py`).")
+    A("- Organisation: each step of the long-video pipeline that belongs to a department runs under the department contract (`whatifs/org/runner.py`, section 11).")
     A("- Fake mode: `WI_FAKE=1` replaces every provider (`whatifs/fakes.py`); the rehearsal (`tools/rehearsal.py`) runs the whole pipeline at zero cost.")
     A("")
     A("## 3. The v12 Organisation build (status)")
@@ -190,6 +242,7 @@ def render():
     for rel, purpose in mods: A(f"| {rel} | {_cell(purpose)} |")
     A("")
     _palace(A)
+    _org(A)
     return "\n".join(L)
 
 def drift():

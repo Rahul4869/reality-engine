@@ -6,11 +6,11 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 ## 1. Facts (read from the code)
 - Channel: "Reality on Trial" (brand Reality Engine). Concept: `docs/CURRENT/CONCEPT.md`. Owner requirements: `docs/CURRENT/OWNER_REQUIREMENTS_LEDGER.md`.
 - Money: hard cap Rs 5,000 a month, everything included (`BUDGET_CEILING_INR`); extras pause at 90% of the cap; breakout fund carries over at most Rs 1,000. One month can be overridden in `MONTH_CAP_OVERRIDES`.
-- Quality: 39 HARD contract checks (21 at the script stage, 18 on the final video). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway). No upload below Breakout Score 80.
+- Quality: 41 HARD contract checks (22 at the script stage, 19 on the final video). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway). No upload below Breakout Score 80.
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `fal-ai/kling-video/o3/standard/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 1.5 standalone Shorts a day; spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 105 code modules, 682 settings, 74 Sheet tabs, 24 GitHub workflows.
+- Size: 110 code modules, 691 settings, 78 Sheet tabs, 24 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -21,13 +21,14 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
   voice -> shot plan -> paid pictures and clips -> render (`whatifs/render.py`) -> final-stage contract -> held for the owner or scheduled ->
   release with Shorts and Reels -> 48-hour breakout monitor (`whatifs/breakout.py`) -> learning (`whatifs/brain.py`). Every paid step is checkpointed.
 - Money: every paid call is logged (`core.cost`), estimated before it runs and stopped by the governor (`whatifs/governor.py`).
+- Organisation: each step of the long-video pipeline that belongs to a department runs under the department contract (`whatifs/org/runner.py`, section 11).
 - Fake mode: `WI_FAKE=1` replaces every provider (`whatifs/fakes.py`); the rehearsal (`tools/rehearsal.py`) runs the whole pipeline at zero cost.
 
 ## 3. The v12 Organisation build (status)
 - Truth hygiene: one current truth (this file, the registry of retired concepts, check `docs_current`): **built**
 - Knowledge Palace core (`whatifs/org/palace.py`: guarded items, life cycle, versions, bounded playbooks, founding knowledge, check `palace_health`; section 10): **built**
-- Playbooks injected into every department's prompts and cited back (checks `palace_injected`, `palace_cited`), the Librarian's merges, outcome scores: **not built yet**
-- Memos and the department contract: **not built yet**
+- Memos and the department contract (`whatifs/org/schemas.py`, `memos.py`, `registry.py`, `runner.py`; the long-video pipeline and the daily learning job run under it; checks `dept_contract`, `takeaways_written`; section 11): **built**
+- Playbooks inside the creative departments' model prompts and cited back (checks `palace_injected`, `palace_cited`), the Librarian's merges, outcome scores: **not built yet**
 - Execution Engine (every decision becomes a verified change in what runs): **not built yet**
 - R&D and Review Board, creative departments and Council, QA repair loop, learning loop, Owner Office: **not built yet**
 
@@ -58,6 +59,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | no_retired | script | no technique the learning core retired |
 | docs_current | script | one current truth: no retired concept in current docs, docstrings or prompts |
 | palace_health | script | Knowledge Palace fit to feed departments: evidenced items tied to real code, nothing retired or expired served, playbooks inside their caps |
+| dept_contract | script | every department that worked on the script ran under the department contract: memos and playbook loaded, work done, memos sent, takeaway written, tickets executed, run reported |
 | idea_evidence | script | the premise is backed by an outlier at IDEA_MIN_MULTIPLE x |
 | joke_density | script | a [PUNCH] line at least every JOKE_EVERY_SEC_LONG seconds |
 | send_and_awe | script | a [SEND] moment and an [AWE] peak (not in the last 20%) |
@@ -92,6 +94,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | living_characters | final | reaction cutaways show the approved character, blinking, breathing and talking |
 | breakout_bar | final | Breakout Score >= BREAKOUT_HARD_BAR (no upload below it) |
 | aliveness | final | no stretch of the video looks like a still photo |
+| takeaways_written | final | every department run of this episode finished its six steps and wrote a valid takeaway |
 
 ## 6. Settings that matter (defaults from `core.DEFAULTS`; the live Sheet wins)
 **Money**
@@ -173,6 +176,18 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | PALACE_LIMITS_SHARE | 0.4 | share of every department playbook reserved for limits (the owner's words, policy rules, failure lessons); limits are always served first (0.1-0.9) |
 | PALACE_REVIEW_DAYS | (blank) | optional JSON {kind: days} that overrides how long an item stays valid before it must be re-validated (defaults: REVIEW_DAYS in whatifs/org/palace.py; 0 = never) |
 | PALACE_KIND_CAPS | (blank) | optional JSON {kind: most served items}; over the cap the lowest-value item of that kind is expired by code (defaults: KIND_CAPS in whatifs/org/palace.py) |
+
+**Organisation**
+
+| setting | default | meaning |
+|---|---|---|
+| ORG_ON | TRUE | TRUE = every wired department runs under the department contract (load its memos and Palace playbook, act, emit memos, write a takeaway, execute tickets, report) and checks dept_contract and takeaways_written run on every episode [FALSE = the plain calls without the organisation; the organisation also needs PALACE_ON] |
+| ORG_SLA_HOURS | (blank) | optional JSON {memo type: [acknowledge hours, resolve hours]} that overrides a memo type's two clocks (defaults: TYPES in whatifs/org/schemas.py) |
+| ORG_ESCALATE_HOURS | (blank) | optional JSON {"1": [P0, P1, P2 hours a memo may sit with the Council], "2": [P0, P1, P2 hours between reminders to the owner]} (defaults: ESCALATE_H in whatifs/org/memos.py) |
+| ORG_OWNER_REMINDS_MAX | 2 | how many times the owner is reminded of the same stuck item after the first message (0-9); after that it rests on his list |
+| ORG_DEVIATION_PCT | 25 | a measure that moves this many percent against the median of a department's earlier runs turns the run's takeaway into a new finding for the Palace (5-200) |
+| ORG_CAPS_INR | (blank) | optional JSON {department: rupees a month} for the organisation's own paid thinking (defaults in whatifs/org/registry.py: D2 300, D3 120, C 150, L 40, takeaways 60) |
+| ORG_RUN_STALE_H | 6 | a department run still marked running after this many hours is flagged as abandoned and becomes a problem memo (1-48) |
 
 ## 7. Jobs (`.github/workflows/`)
 | file | name | schedule (cron, UTC) | other triggers | cli commands |
@@ -279,6 +294,10 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Palace_Items | 28 | id, kind, title, body_ref, summary, departments ... | the Knowledge Palace index (whatifs/org/palace.py) |
 | Palace_Versions | 10 | version, ts, actor, action, item_id, item_version ... | one row per Palace change: running version + hash of the whole Palace |
 | Palace_Playbooks | 11 | playbook_id, ts, dept, stage, topic, palace_hash ... | each distinct department playbook the Palace built (id = hash of its text) |
+| Memos | 30 | id, type, from_dept, to_depts, holder, level ... | one row per memo between departments (whatifs/org/memos.py) |
+| Sessions | 21 | id, key, dept, trigger, episode_id, attempt ... | one row per department run with its six chained receipts (whatifs/org/runner.py) |
+| Takeaways | 16 | id, ts, session_id, dept, trigger, episode_id ... | what every department run learned; new findings are also proposed to the Palace |
+| Org_Audit | 20 | ts, kind, run_id, dept, trigger, episode_id ... | one row per department run, escalation and watchdog pass that did something |
 
 ## 9. Modules
 | module | purpose |
@@ -380,7 +399,12 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | whatifs/wa.py | The WhatsApp control room: interactive buttons inside the 24-hour window, the approved template outside it, and inbound owner messages. |
 | whatifs/ypp.py | The North-Star tracker: weekly YouTube Analytics progress toward the Partner Program thresholds. |
 | whatifs/org/__init__.py | The Organisation: the departments and work stages every org module shares (Knowledge Palace now; memos, runner and registry build on these). |
+| whatifs/org/memos.py | Memos: the organisation's nervous system - validated on write, read only by their audience, moved only with proof, escalated by the SLA watchdog when a clock runs out. |
 | whatifs/org/palace.py | Knowledge Palace: the one repository every department reads and writes - guarded items, life cycle, versions and bounded department playbooks. |
+| whatifs/org/registry.py | Department registry: what each department is for, the code it wraps, its rhythm, levers, thinking cap, owned checks and the call sites that really run under the runner. |
+| whatifs/org/runner.py | Department runner: the six-step contract of every department run - LOAD, ACT, EMIT, LEARN, EXECUTE, REPORT - each proven by a receipt the runner itself builds and chains. |
+| whatifs/org/schemas.py | Memo schemas: every memo type the organisation can send - sender, audience, body, clocks, statuses and legal moves as data - with the validator that runs on every write. |
+| whatifs/org/wraps.py | Department wrappers: what each wrapped production step reports about its own output (measures, lessons, problem memos) when it runs under the department runner. |
 | tools/atmos_bench.py | Render performance check: times one still shot through the real render path with the atmosphere layer off and on (run: python tools/atmos_bench.py [seconds]). |
 | tools/gen_docs.py | Generates docs/CURRENT/SYSTEM.md from the live code (run: python tools/gen_docs.py); the test suite fails when the committed file differs. |
 | tools/google_signin.py | One-time Google sign-in helper run on GitHub: prints the sign-in links, swaps the pasted address for a long-life key and emails it to the owner (never printed in the log). |
@@ -401,10 +425,11 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Expiry: past `review_by` an item leaves every playbook until re-validated; a limit stays served, marked review due, and is reported.
 - Playbook (`palace.playbook(dept, stage, topic)`): guard, then lanes (limits, proven, accepted, testing), then relevance, filled under a hard cap of 1800 estimated tokens; limits hold a reserved share of 0.4. Same Palace state = byte-identical text; `playbook_id` is the hash of the text.
 - Runs in production: `palace.daily` in the learning job, `palace.maintain` in Setup, contract check `palace_health` on every episode.
-- Not yet wired (later batches): injecting playbooks into department prompts, citing items back, the Council, the Librarian's merges, outcome scores.
+- Every wired department run loads its playbook (section 11). Not yet wired (later batches): the playbook inside the creative departments' model
+  prompts with items cited back, the Council, the Librarian's merges, outcome scores.
 
-**Founding knowledge** (92 items in `whatifs/org/seed/`; 0 invalid): breakout.json 15, build.json 18, feel.json 15, owner.json 29, platform.json 15.
-By kind: audience_insight 4, failure_lesson 1, owner_preference 25, plan 2, policy_rule 10, strategy 7, takeaway 3, technique 27, tool_fact 13.
+**Founding knowledge** (103 items in `whatifs/org/seed/`; 0 invalid): breakout.json 15, build.json 29, feel.json 15, owner.json 29, platform.json 15.
+By kind: audience_insight 4, failure_lesson 1, owner_preference 25, plan 2, policy_rule 10, strategy 14, takeaway 3, technique 31, tool_fact 13.
 
 **Life cycle** (`palace.MOVES`; a move that is not listed is illegal for everyone)
 
@@ -470,3 +495,62 @@ By kind: audience_insight 4, failure_lesson 1, owner_preference 25, plan 2, poli
 | D12 | Operations | ops |
 | C | The Council | planning |
 | L | The Librarian | ops |
+
+## 11. The organisation: departments, the department contract, memos (`whatifs/org/`)
+- Every department run goes through `runner.run` and its 6 steps, always in this order: LOAD -> ACT -> EMIT -> LEARN -> EXECUTE -> REPORT. Each step leaves a receipt that the
+  runner builds from what code observed (the playbook it loaded, the ids the Sheet returned, the money and model calls it counted); the receipts are
+  chained, stored in tab `Sessions`, and re-computed by the episode gates (`runner.verify`). A department cannot report its own progress.
+- LOAD is strict: it raises before any work or money. After ACT nothing is thrown away: the other steps always run and are recorded, the error of ACT
+  is re-raised, and a broken step is a BREACH. `runner.work` (existing production steps) records the breach and still returns the result - a paid
+  or uploaded result is never lost - and the gates `dept_contract` (before picture money) and `takeaways_written` (before upload) then hold the video.
+- Playbook: `brief` mode hands the department's Palace playbook over with the work order; `prompt` mode puts it into the cached layer of the system
+  prompt at the one doorway for text calls (`models.ask`) and proves it was there. A run whose playbook never reached the work is a breach.
+- Takeaway: every run writes at least one to tab `Takeaways`, built from what the run measured against the department's own earlier runs. A stock
+  or empty one is refused (`schemas.check_takeaway`). Only a new finding (a deviation, a failed check, a failure) is proposed to the Palace, as
+  `proposed`; it reaches no prompt until it is accepted. A takeaway cannot score itself.
+- Memos (tab `Memos`): validated on write (`schemas.check_memo`), read only by their audience (`memos.inbox`), closed only with proof
+  (`memos.resolve`), never rewritten while open, never reopened once closed. The id is the hash of type, sender, audience and dedupe key.
+- Statuses: open, acknowledged, in_progress, escalated, resolved, rejected (closed: resolved, rejected). Two clocks per memo: acknowledge and resolve. Acknowledging stops only the first.
+- The SLA watchdog (`memos.watchdog`, every tick): a memo whose clock ran out climbs department -> Council -> owner, skipping a level that has no
+  wired run. The owner hears about a stuck item once, then at most 2 reminders, 3 messages a pass at most.
+- EXECUTE: a ticket is applied by the Execution Engine; until it is built a ticket is escalated at once with the reason, never left as text.
+
+**Departments** (`whatifs/org/registry.py`). Wired = real call sites run it under the runner (checked against the code); pending = the build batch that wires it.
+
+| id | department | rhythm | runs under the runner | playbook | thinking cap (Rs / month) | levers (Settings cells) |
+|---|---|---|---|---|---|---|
+| D0 | Owner Office | tick | pending (B9) | brief | - | WA_ON, DASH_ON |
+| D1 | Strategy & Planning | weekly | pending (B9) | brief | - | STANDARD_MAX_LONG_PER_MONTH, PUBLISH_DAYS, VIDEOS_PER_MONTH_EST |
+| D2 | R&D - Research | daily | pending (B5) | brief | 300 | RESEARCH_ON, IDEA_MIN_MULTIPLE |
+| D3 | Review Board | weekly | pending (B5) | brief | 120 | - |
+| D4 | Creative - Ideation & Writers' Room | episode | write (whatifs/episode.py) | brief | - | ROOM_MODE, ROOM_V2_DRAFTS, REHOOK_MAX_GAP_SEC, JOKE_EVERY_SEC_LONG, COLD_OPEN_LORE_FREE_SEC |
+| D5 | Packaging | episode | package (whatifs/episode.py) | brief | - | PROMISE_BY_SEC |
+| D6 | Visual Production | episode | plan (whatifs/episode.py), assets (whatifs/episode.py), render (whatifs/episode.py) | brief | - | ANIM_SHOTS, VISUAL_CHANGE_MAX_S, PARTICLES_ON, LIVING_CHARACTERS_ON, CAMERA_MOTION |
+| D7 | Sound | episode | voice (whatifs/episode.py) | brief | - | SOUND_DESIGN_ON, TTS_ENGINE |
+| D8 | QA & Enforcement | episode | script_gate (whatifs/episode.py), final_gate (whatifs/episode.py) | brief | - | CONTRACT_OFF, BREAKOUT_HARD_BAR, CRITIQUE_MIN |
+| D9 | Publishing & Distribution | episode | publish (whatifs/episode.py) | brief | - | SHORTS_PER_DAY, REEL1_DELAY_MIN, REEL2_DELAY_MIN, NEXT_LINK_ON |
+| D10 | Growth & Learning | daily | daily (whatifs/cli.py) | brief | - | BRAIN_ON, BRAIN_HOLDOUT |
+| D11 | Finance | daily | pending (B9) | brief | - | BUDGET_GUARD_PCT, BREAKOUT_FUND_CAP_INR, AUTO_FIX_PAID_INR |
+| D12 | Operations | tick | pending (B4) | brief | - | PREFLIGHT_ON |
+| C | The Council | weekly | pending (B6) | brief | 150 | ORG_SLA_HOURS |
+| L | The Librarian | weekly | pending (B8) | brief | 40 | PALACE_PLAYBOOK_TOKENS, PALACE_PLAYBOOK_TOKENS_BY_DEPT, PALACE_LIMITS_SHARE, PALACE_REVIEW_DAYS, PALACE_KIND_CAPS |
+
+Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, D6 plan; final: D4 write, D7 voice, D5 package, D6 plan, D8 script_gate, D6 assets, D6 render.
+
+**Memo types** (`whatifs/org/schemas.py` TYPES; clocks in hours at urgency P1)
+
+| type | from | to | kind | acknowledge / resolve | closed by | purpose |
+|---|---|---|---|---|---|---|
+| owner_memo | D0 | any | ask | 1 / 24 | ticket_executed, owner_answer | the owner's words VERBATIM, the interpretation and the departments it affects |
+| research_memo | D2 | D3 | ask | 24 / 48 | assessment_memo | a research question, what was found, the dated sources, proposed actions, expected impact, cost and the departments it targets |
+| assessment_memo | D3 | C | ask | 168 / 168 | decision_memo | the blind cross-family jury's scores for one memo and its verdict |
+| creative_memo | D4, D5, D6, D7 | C | ask | 84 / 84 | decision_memo, assessment_memo | a new idea, an experiment proposal, a joke or hook bank, a world-building proposal |
+| performance_memo | D10 | any | inform | 24 / 24 | read_by_all, closed_unread | 48 h / 7 d / 28 d outcomes of a video, changes in technique evidence, breakouts |
+| problem_memo | any | any | ask | 2 / 24 | repair_verified, owner_waived, episode_closed, repair_memo | what failed, where, the evidence and the attempt count |
+| repair_memo | any | D8 | ask | 24 / 24 | repair_verified, repair_refused | the fix that was applied and the proof that it passed again |
+| decision_memo | C | any | inform | 24 / 24 | read_by_all, closed_unread | what changes, why (the memos it cites), the lever class, the tickets and whether the owner must approve |
+| ticket | C or any department | any | ask | 24 / 48 | lever_verified, rolled_back, owner_answer | ONE executable change: lever, target, value or diff, acceptance test, rollback |
+| build_request | D12 | D12 | ask | 24 / 72 | merged_verified, owner_answer | a code change that no lever can make: the spec, the files, the tests to add and the acceptance |
+| takeaway | any | L | record | 0 / 0 | - | one atomic learning from one department run (kept in the Takeaways tab, proposed to the Palace when it is new) |
+
+**Who owns each contract check** (a failed check becomes a problem memo to that department): D1: breakout_bar; D2: research; D4: audience_asks, cold_open, emotion_beat, end_tease, exhibits, grimm_prototype, hook_lab, idea_evidence, joke_density, no_retired, originality, owners_cut, retention, send_and_awe, time_ladder, verdict_line, verdict_style; D5: chapters, short_covers, thumbnails, titles; D6: aliveness, animation, impact_map, living_characters, no_frozen_frames, promise_paid, real_motion, slop_guard, visual_change; D7: designed_voices, music_bed; D8: dept_contract, self_review, takeaways_written; D9: shorts; D10: brain_playbook; D12: docs_current; L: palace_health.

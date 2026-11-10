@@ -270,7 +270,7 @@ def check_memo(memo, now=None):
     if cost < 0: p.append("cost_estimate must be a number of rupees, 0 or more")
     safe = [subject, done] + cons + list(_strings(body, skip=("verbatim",)))
     if any(INJECT.search(x) for x in safe): p.append("the text reads like an instruction to a model; a memo is information (quote it as evidence instead)")
-    ov = m.get("owner_visible"); ov = d.get("owner_visible", False) if ov in (None, "") else ov in (True, 1, "1", "TRUE", "True", "true")
+    ov = m.get("owner_visible"); ov = d.get("owner_visible", d["mode"] == "ask") if ov in (None, "") else ov in (True, 1, "1", "TRUE", "True", "true")
     clean = {"type": mtype, "from_dept": frm, "to_depts": to, "urgency": urg, "subject": subject, "body": body if isinstance(body, dict) else {}, "done_when": done,
              "constraints": cons, "links": {str(k)[:40]: v for k, v in links.items()}, "evidence": ev, "cost_estimate": max(0.0, round(cost, 2)), "owner_visible": bool(ov),
              "episode_id": str(m.get("episode_id") or "")[:40], "session_id": str(m.get("session_id") or "")[:40]}

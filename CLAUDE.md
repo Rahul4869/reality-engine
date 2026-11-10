@@ -65,3 +65,7 @@ pipeline run uses the new code. Nothing restarts.
 - **Knowledge Palace** (`whatifs/org/palace.py`): knowledge enters only through `palace.add` / `add_many` (dated evidence, real `applied_in` code references)
   and leaves only through `palace.playbook` (the guard runs first). Never write the `Palace_Items` tab directly, never filter statuses yourself.
   A build's research and takeaway go into `whatifs/org/seed/build.json` (stable `key`); a new owner decision that replaces an old one uses `palace.supersede`.
+- **Organisation** (`whatifs/org/`): a production step that belongs to a department runs through `runner.work("<dept>", "<trigger>", episode, fn, measure=...)`
+  and is named in `registry.ENTRY` (a runner call that is not registered, or a registered one that is gone, fails check `dept_contract`). Memos go only through
+  `memos.write` (types and clocks: `schemas.TYPES`) and are closed only by `memos.resolve` with proof. Never write the `Memos`, `Sessions` or `Takeaways` tabs directly.
+  Wiring a pending department: add its call site, move it from `registry.PENDING` to `ENTRY`, run `python tools/gen_docs.py`.
