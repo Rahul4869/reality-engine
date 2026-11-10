@@ -403,8 +403,8 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Runs in production: `palace.daily` in the learning job, `palace.maintain` in Setup, contract check `palace_health` on every episode.
 - Not yet wired (later batches): injecting playbooks into department prompts, citing items back, the Council, the Librarian's merges, outcome scores.
 
-**Founding knowledge** (91 items in `whatifs/org/seed/`; 0 invalid): breakout.json 15, build.json 17, feel.json 15, owner.json 29, platform.json 15.
-By kind: audience_insight 4, failure_lesson 1, owner_preference 25, plan 2, policy_rule 10, strategy 7, takeaway 2, technique 27, tool_fact 13.
+**Founding knowledge** (92 items in `whatifs/org/seed/`; 0 invalid): breakout.json 15, build.json 18, feel.json 15, owner.json 29, platform.json 15.
+By kind: audience_insight 4, failure_lesson 1, owner_preference 25, plan 2, policy_rule 10, strategy 7, takeaway 3, technique 27, tool_fact 13.
 
 **Life cycle** (`palace.MOVES`; a move that is not listed is illegal for everyone)
 
