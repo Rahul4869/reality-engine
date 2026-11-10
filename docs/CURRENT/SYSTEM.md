@@ -10,7 +10,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `fal-ai/kling-video/o3/standard/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 1.5 standalone Shorts a day; spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 110 code modules, 691 settings, 78 Sheet tabs, 24 GitHub workflows.
+- Size: 111 code modules, 691 settings, 78 Sheet tabs, 24 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -412,6 +412,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | tools/plan_guard.py | Plan Guard: runs on every push; RED when code breaks a locked rule (typed model names, flagged words, duplicate definitions, retired concepts in current docs or prompts). |
 | tools/rehearsal.py | Full offline rehearsal: setup -> voices -> tick -> produce -> release -> trends -> learn -> brief with fake models, images and voice; proves every stage connects at zero cost. |
 | tools/repair.py | Repair bot: on a crashed job, sends the traceback and the failing file to the model, checks the fixed file with Plan Guard and the offline rehearsal, and opens a pull request. |
+| tools/sweep.py | Episode-id sweep: runs the whole fake pipeline once per FIXED episode id (the fake pipeline is seeded by the id) and writes one RESULT line per id; every hold, crash or warning class it shows is a fault to trace. |
 
 ## 10. Knowledge Palace (`whatifs/org/palace.py`)
 - One repository every department reads and writes. Index: tab `Palace_Items` (one row per item; enough to build a playbook in one read). Full bodies:
