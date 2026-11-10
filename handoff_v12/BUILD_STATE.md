@@ -1,18 +1,31 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 10 Nov 2026 (B3 in progress - see IN PROGRESS). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 10 Nov 2026 (end of B3). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## NEXT
-**B3 - Memo system + Department contract** (01 sections 4, 5; 03 "B3"). Full seven-step MANDATORY BATCH LOOP. Effort: High.
-What B2 leaves ready for B3 (use it, do not rebuild it):
-- `whatifs/org/__init__.py` holds DEPARTMENTS (D0-D12, C, L with a default stage) and STAGES: `org/registry.py` builds on it.
-- The runner's LOAD step calls `palace.playbook(dept, stage, topic)` (returns `playbook_id`, `text`, `items`); its LEARN step writes takeaways with
-  `palace.add(item, actor=<dept id>)` (a department can only PROPOSE; the write gate already rejects an empty or unevidenced takeaway); cited ids go
-  to `palace.mark_applied(ids)`. Checks `palace_injected` / `palace_cited` can compare a prompt with the stored text of `playbook_id` (tab `Palace_Playbooks`).
-- Tabs still to append in B3+: `Memos`, `Tickets`, `Sessions`, `Takeaways`, `Lever_Changes`, `Org_Audit` (B2 added only the three it uses).
-- First thing in B3: add `whatifs/org/palace.py` (and the new org modules) to `tools/repair.py` PROTECTED (see open issue 10).
+**B4 - Execution Engine** (01 section 6; 03 "B4"). Full seven-step MANDATORY BATCH LOOP. Effort: High.
+What B3 leaves ready for B4 (use it, do not rebuild it):
+- The EXECUTE step of every department run already reads the department's open tickets and calls `runner.EXECUTOR(ticket, brief)`; register the engine
+  with `runner.set_executor(fn)`. Until then a ticket is escalated at once with the reason. The engine closes a ticket with
+  `memos.resolve(id, dept, "lever_verified" | "rolled_back", ref)` (both kinds are already in `schemas.TYPES["ticket"]["resolved_by"]`).
+- A ticket is already a validated memo type: body `lever_class` A-E, `target`, `value`, `acceptance_test`, `rollback`, `decision_ref`; exactly one addressee;
+  clocks P0 6 h / P1 48 h / P2 7 days. An owner memo closes by `ticket_executed` ONLY when that ticket is resolved as `lever_verified` (enforced in `memos.resolve`).
+- `registry.DEPTS[dept]["levers"]` says which department owns which Settings cell and `registry.may_change(dept, key)` answers it; no lever has two owners
+  (tested). Build `org/levers.py` (ranges, steps, cost impact, needs-owner-above) on top; `may_change` is not yet called by any write path.
+- Proof for lever class A / D ("the next run had the item in its playbook and cited it"): tab `Sessions` holds `playbook_id` and the ACT receipt (`injected`,
+  `applied`); tab `Palace_Playbooks` holds the item ids of every playbook id.
+- Tabs still to append in B4: `Tickets`, `Lever_Changes`. Checks that belong to B4: `decisions_executed`, `lever_verified`.
+- D12 is pending with batch B4 in `registry.PENDING`: wiring its run (build requests, class E dry-run) means a call site + moving it to `registry.ENTRY`
+  (the ratchet test only lets the pending list shrink).
+- Paid organisation calls: start the run with `budget="org"`; the monthly thinking cap per department is then enforced by the runner (P0 continues).
+- First thing in B4: add the new org modules to `tools/repair.py` PROTECTED (B3's modules are on it).
 
-## IN PROGRESS
-### B3 - Memo system + Department contract (started 10 Nov 2026) - steps 1-3 recorded; resume at step 4 BUILD if this session stopped
+## DONE
+### B3 - Memo system + Department contract (10 Nov 2026) - ACCEPTED (all 7 loop steps recorded below)
+Result in one line: the project now runs like an organisation at the level of code - every step of the long video that belongs to a department, and the
+daily learning job, goes through LOAD -> ACT -> EMIT -> LEARN -> EXECUTE -> REPORT with a proof per step; departments talk through validated memos with
+deadlines that escalate to the owner; a failed check or a crashed step becomes a problem memo for the department that owns it; two new HARD checks hold
+the video when a department walks around the contract. Honest limits: 7 of 15 departments are wired (8 are pending by plan); the playbook is HANDED to
+each run but is not yet inside any model prompt (B6), so B3 by itself changes no video; no ticket can be executed until B4.
 
 #### Step 1 RESEARCH (11 dated sources; E = measured evidence, O = opinion / practice / official guidance)
 1. E - Cemri et al., "Why Do Multi-Agent LLM Systems Fail?" (MAST), arXiv 2503.13657, 17 Mar 2025 (v3 26 Oct 2025, NeurIPS 2025): 1,600+ annotated
@@ -108,7 +121,93 @@ lengths are best for an automated content organisation - the hours below are a d
 - Palace seed items: `whatifs/org/seed/build.json`, keys `b3.*`, written in step 4 once the code they point at exists (the write gate refuses a
   reference to code that is not there).
 
-## DONE
+#### Step 4 BUILD (what changed)
+- NEW `whatifs/org/schemas.py` (11 memo types as data: sender, audience, body, two clocks, statuses, legal moves, kinds of proof; a validator for the
+  JSON Schema subset used; `json_schema(type)` gives the real schema; `check_memo`, `check_takeaway`), `whatifs/org/memos.py` (write / inbox / ack /
+  start / resolve / reject / escalate / watchdog / sweep_episodes / render / stats), `whatifs/org/registry.py` (15 departments: mission, wrapped modules,
+  rhythm, levers, thinking cap, wired call sites or pending batch, runs each gate needs, owner of each of the 41 checks), `whatifs/org/runner.py`
+  (`run`, `work`, `verify`, `episode_issues`, `build_takeaway`, `audit`, `daily_check`, `health`; by hand: `python -m whatifs.org.runner`),
+  `whatifs/org/wraps.py` (measures of each wrapped step, gate memos and their settlement).
+- Tabs appended: `Memos` (30 columns), `Sessions` (21), `Takeaways` (16), `Org_Audit` (20). 9 settings: ORG_ON, ORG_SINCE, ORG_SLA_HOURS,
+  ORG_ESCALATE_HOURS, ORG_OWNER_REMINDS_MAX (2), ORG_DEVIATION_PCT (25), ORG_CAPS_INR, ORG_RUN_STALE_H (6), ORG_WATCHDOG_AT.
+- Two taps, each a few lines in a protected file: `models.ASK_TAPS` (every text call passes `models.ask`; the runner counts a run's calls and, in
+  "prompt" mode, puts the playbook into the cached layer of the system prompt) and `core.COST_TAPS` (every logged cost is attributed to the run in flight).
+- Production wiring: 9 call sites in `whatifs/episode.py` (D4 write, D7 voice, D5 package, D6 plan, D8 script_gate, D6 assets, D6 render, D8 final_gate,
+  D9 publish) and the daily learning job in `whatifs/cli.py` (D10 daily) now run through `runner.work`; the SLA watchdog and the check for runs that
+  never reported run on every tick (`manage.tick`); Setup and the first run mark when the organisation started on a Sheet (`ORG_SINCE`); the owner's
+  answer to a stuck-item message is registered with the owner messages (`notify._ensure_handlers`).
+- Checks: `dept_contract` (script stage) and `takeaways_written` (final stage): 41 HARD checks now (22 script + 19 final).
+- Founding knowledge: 12 new items `b3.*` in `whatifs/org/seed/build.json` (11 research-backed + the takeaway): 104 founding items, 0 refused.
+- Generated docs: SYSTEM.md section 11 (the six steps, the department table with wired / pending, memo types with clocks and kinds of proof, check owners).
+- Changed against the design memo after seeing real behaviour: (1) a memo that asks for work is visible to the owner by default - the first deadline
+  test showed a stuck memo reaching the owner's level and no message going out; (2) the runner settles the memos it wrote about a department's own
+  crashes and breaches itself (a clean run of the same step is the proof) - otherwise a department's own breach memo blocked its next run; (3) one
+  breach memo per CLASS (department, step, broken step), carrying no episode, so an episode going live can never close a broken contract.
+- FIX of an existing fault found on the way (not organisation code; say so in the final PR): `whatifs/anim.py` - when the Animation Director moved the
+  animated scenes, the `promise` flag stayed on a shot it had turned into a still; the re-aim in `episode.produce` was then skipped and `promise_paid`
+  HELD THE FINISHED VIDEO at the final gate, after the picture money ("promise first shown at 43.7 s"). It depended on where the room had put its first
+  animated scene, i.e. on the episode. Found because the new end-to-end test was held on one run out of four; reproduced with a fixed episode id with
+  the organisation ON and OFF (same hold); now the flag leaves with the demotion and that episode passes with the promise at 0.3 s.
+
+#### Step 5 ENFORCE (rule -> executing code -> check -> matrix row)
+| Rule | Executes | Fails when broken |
+|---|---|---|
+| Six steps, in order, each with a receipt built by the runner and chained | `runner.run`, `runner._Run.receipt` | ContractBreach at the step; `runner.verify` -> `dept_contract` / `takeaways_written` FAIL |
+| LOAD before any work: inbound memos acknowledged, a non-empty playbook from the Palace | `runner.run` (LOAD) | ContractBreach before ACT is called (also for `work`): nothing spent |
+| The playbook reaches the work (brief: taken; prompt: inside a model prompt of the run) | `Brief.take`, `runner._ask_tap` | breach "no playbook injection" |
+| A run may cite only Palace items its playbook served | `runner.run` (ACT) | breach "not in its playbook" |
+| Every outbound memo valid or none is sent; every inbound memo dispositioned | `schemas.check_memo`, `runner.run` (EMIT) | breach "invalid memo" / "loaded and ignored" |
+| At least one valid takeaway per run; stock, empty, ungrounded or self-scored refused | `schemas.check_takeaway`, `runner.build_takeaway` | breach at LEARN; `takeaways_written` FAIL |
+| Only a new finding is proposed to the Palace, as `proposed`, one item per class | `runner._propose` -> `palace.add` | tests; the Palace guard keeps `proposed` out of every playbook |
+| A ticket is executed by the engine or escalated at once | `runner.run` (EXECUTE) | tests; the ticket's own clocks |
+| Never lose paid or irreversible work | `runner.work` (strict=False after ACT) | tests (upload id returned; the gate holds instead) |
+| Every wired call site exists and is registered; pending list only shrinks | `registry.entry_issues` | `dept_contract` FAIL; `python -m whatifs.org.runner` RED; tests |
+| Memo: valid, to the right audience, closed only with proof, never rewritten, never reopened | `memos.write`, `memos.inbox`, `memos._move`, `memos.resolve` | MemoError, nothing written / status unchanged |
+| Two clocks; a miss climbs department -> Council -> owner, skipping a level that cannot act | `memos.watchdog`, `memos.escalate` | tests; `Org_Audit` rows |
+| The owner hears once, bounded reminders, 3 messages a pass at most; DROP / KEEP by one tap | `memos._tell_owner`, `memos._on_answer` | tests |
+| A dead watchdog is noticed | `runner.daily_check` (owner message after 6 h), `runner.episode_issues` (gate FAIL after 24 h) | tests |
+| A run that never reported is flagged and becomes a problem memo | `runner.audit` (every tick) | tests |
+| A failed check -> problem memo for its owner; closed by the ledger (passed / waived) or the episode's end | `wraps.gate_memos`, `wraps.gate_settle`, `memos.sweep_episodes` | tests |
+| A department's own paid thinking stays under its monthly cap (P0 continues) | `runner.run` (budget "org"), `registry.caps`, `registry.spent` | CapReached before the run starts |
+6 matrix rows added (docs/CURRENT/ENFORCEMENT_MATRIX.md; the meta-test proves every reference is wired). The rehearsal asserts: all 9 department runs
+of the episode present, ok and verified; both checks PASS (not N/A); 9 valid takeaways; the watchdog ran; organisation health; no open problem memo.
+
+#### Step 6 PROVE
+- `tests/test_v12_org.py`: 99 tests (56 functions), each rule both ways. The plan's acceptance tests are in it: a department run WITHOUT TAKEAWAY fails
+  (nothing reported / stock takeaway), WITHOUT PLAYBOOK INJECTION fails (brief mode never taken; prompt mode with no model call; Palace cannot feed it),
+  with an INVALID MEMO fails (and none of its memos is sent); SLA ESCALATION (unacknowledged, unresolved, third attempt, through the Council once it is
+  wired, never before the deadline). Also: 26 kinds of bad memo each refused with nothing written; all 150 combinations of status x move x role checked
+  against the move table; a tampered Sessions row (missing step, reordered, edited receipt, wrong chain) fails verification; the upload id survives a
+  broken contract; the real pipeline end to end (9 runs, both checks PASS) and the same pipeline with ONE department walking around the runner
+  (held at the script gate, nothing made or uploaded).
+- The tests found 3 real bugs in the new code, all fixed: the silent owner level, the self-blocking breach memo (both above), and a measure function that
+  crashed on odd output (it would have turned a healthy step into a breach and held a video).
+- Repair attempts used: test file first run 91 / 8 (4 causes: the 3 bugs and the voice stand-in missing in the end-to-end test) -> 98 / 1 (the
+  measure bug had a second input shape) -> 99 / 0. Nothing reached the cap of 3.
+- Live proof on the real repo: one wrapper removed from `whatifs/episode.py` + the stock-phrase rule switched off in `schemas.py` ->
+  `python -m whatifs.org.runner` RED (naming the missing call site), the test file 89 passed / 10 failed, and the real pipeline HELD the episode with
+  `contract:dept_contract`; files restored -> GREEN. The promise fix: its regression test fails on the old `anim.py` (13 / 1) and passes on the new.
+- Full suite (63 files), ONE uninterrupted run on the final code: **1088 passed / 0 failed / 6 skipped** (988 before + 99 organisation tests + 1 promise
+  regression test). No existing test needed a change. (A first full run before the promise fix was 1087 / 0.)
+- Fake rehearsal on the final code: **GREEN** - contract script 22 / 22 (`dept_contract` included), final 19 / 19 (`takeaways_written` included);
+  9 department runs, 9 takeaways, 0 live memos; Palace 109 items.
+- Plan Guard **GREEN**. Truth scan **GREEN**. SYSTEM.md regenerated, no drift. Palace **GREEN** (104 founding items). Organisation **GREEN**.
+- Money: Rs 0 added (no model call). Not measured in production: nothing is live until the final PR.
+
+#### Step 7 TAKEAWAY (also Palace item `b3.takeaway`)
+- WORKED: reading the production path BEFORE wrapping it. The upload id is saved only after the upload returns, so a raise in between means a second
+  upload on the retry: that one reading turned "any broken step raises" into "strict before the work, never throw the work away after it".
+- WORKED: testing the silence. The deadline test asked "who hears about it?" and the answer was nobody. For every escalation or alarm in later batches,
+  assert the message that goes out, not only the status that changes.
+- WORKED: an end-to-end test on the real pipeline. It found a fault in code B3 never touched (the stale promise flag) that had been holding finished
+  videos on some episodes. Trace an intermittent hold to its cause before calling it flaky: here it was reproducible with a fixed episode id.
+- WATCH: "handed over" is not "used". After B3 no model prompt contains Palace knowledge. B6 must flip the creative departments to "prompt" mode and
+  wrap the Script Preview / pre-production room first (open issues 12, 13).
+- WATCH: a receipt proves that a step happened and what the runner saw; it does not prove the work was good. Quality stays with the contract checks.
+- WATCH: the organisation's bookkeeping is now on the critical path: LOAD failing stops a department before it starts (by design). `ORG_ON` = FALSE
+  is the switch if the organisation layer itself ever misbehaves; the Palace switch turns the organisation off with it.
+- WATCH: until the Council is wired (B6) an unresolved memo goes straight from the department to the owner's level (issues 15, 17).
+
 ### B2 - Knowledge Palace core (10 Nov 2026) - ACCEPTED (all 7 loop steps recorded below)
 Result in one line: the organisation has ONE repository of knowledge - 92 founding items (the owner's words, the research, the build's own lessons),
 each with dated evidence and a pointer to the code that enforces it - with a write gate, a life cycle with authority, and one guarded doorway that
@@ -399,6 +498,11 @@ Rehearsal asserts `docs_current` ran and passed.
   (deterministic particle seed).
 
 ## PROTECTED-AREA FILES TOUCHED SO FAR (list them in the final PR)
+- B3: `whatifs/episode.py` (9 call sites wrapped with `ORG.work`; what each step does is unchanged), `whatifs/core.py` (4 tabs + 9 settings appended, `COST_TAPS`
+  hook in `cost`), `whatifs/models.py` (`ASK_TAPS` hook in `ask` and `ask_batch`; a no-op when nothing listens), `whatifs/manage.py` (watchdog + audit on the tick,
+  `install` in Setup), `tools/repair.py` (PROTECTED list extended with the org modules, `contract.py`, `truth.py`). Also touched, not on the protected list before:
+  `whatifs/contract.py` (2 checks added), `whatifs/cli.py` (learning job wrapped), `whatifs/notify.py` (one handler registered), `whatifs/anim.py` (the promise-flag
+  fix), `tools/gen_docs.py`, `tools/rehearsal.py`.
 - B2: `whatifs/core.py` (3 tabs + 7 settings appended; nothing existing changed), `whatifs/manage.py` (2 calls: `palace.daily` in the learning job,
   `palace.maintain` in Setup), `whatifs/publish.py` (`drive_upload` gained an optional `parent`; behaviour without it is unchanged). Also touched,
   not on the protected list: `whatifs/contract.py` (check `palace_health` added), `whatifs/truth.py` + `tools/gen_docs.py` (walk sub-packages),
@@ -431,16 +535,36 @@ Rehearsal asserts `docs_current` ran and passed.
 9. (B2 -> B10) The Palace's real Google Sheets / Drive path is proven with the local store and stubs only (no keys on this laptop, by rule). The
    first learning job after the merge writes 92 rows in one append and makes no Drive call (founding bodies resolve from the repo). B10's first-run
    verification must check tab `Palace_Items` and `palace_health` in `Feature_Ledger`.
-10. (B2 -> B3, small) `whatifs/org/palace.py` is not yet on the `tools/repair.py` PROTECTED list. In practice an automatic repair of it is never
-   auto-merged (the file contains network and file-removal calls, which the repair job treats as risky), but the list should say so explicitly.
+10. CLOSED in B3: `whatifs/org/palace.py` and every org module are on the `tools/repair.py` PROTECTED list.
 11. (B2, low) `Palace_Versions` numbers come from the last row + 1: two jobs writing in the same second could reuse a number (timestamp and hash
    still tell them apart; the tick's concurrency group makes it unlikely).
+
+12. (B3 -> B6) Brief mode is a hand-over: no model prompt contains Palace knowledge yet. B6: set `inject` to "prompt" for D4-D7 in `registry.DEPTS`
+   (and `inject_tasks` if the blind judges must not be handed the playbook), add `applied_items` to the creative outputs, build `palace_injected` /
+   `palace_cited`. An adopted Script Preview makes no model call, so in prompt mode it would (correctly) breach: wrap the preview room first.
+13. (B3 -> B5 / B6 / B9) Not under the runner yet: Script Preview and pre-production room runs (`whatifs/preview.py`, `preprod.py`), standalone Shorts,
+   specials, Case Files, Deep Trial, packaging rescue, releases (Reels), the research and trends jobs. Each needs its call site + registry entry in
+   its department's batch; B10 must end with `registry.PENDING` empty.
+14. (B3 -> B6) D7's voice run covers the first narration only; the "too short -> extend -> narrate again" loop re-narrates outside the run.
+15. (B3 -> B7) A step that keeps crashing may reach the owner twice: the pipeline's existing failure mail and the stuck-item message (after the third
+   attempt or 24 h; weekly tier unless P0). B7's repair loop must make it ONE path.
+16. (B3 -> B7) `promise_paid` is judged at the final gate although the shot plan exists at the script gate: a failure costs the picture money first.
+   Proposal: judge it at the script gate too (needs shots and units in the script-stage context).
+17. (B3 -> B6 / B8) Proposed takeaway items wait in the Palace until the Council exists. Bounded by class (department x step x signature), not by runs.
+18. (B3 -> B10) About 9-10 extra Sheets calls per department run, 9 runs an episode: proven on the local store only. First-run verification must watch
+   for quota errors and look at tabs `Memos`, `Sessions`, `Takeaways`, `Org_Audit` and at both organisation checks in `Feature_Ledger`.
+19. (B3 -> B9) The SLA hours are the master spec's defaults, not tuned. D1 owns tuning (setting ORG_SLA_HOURS).
+20. (B3, low) `tests/test_integration.py` and the rehearsal still make time-based episode ids and the fake pipeline is seeded by the id, so another
+   id-dependent fault could surface on some minute. That is a feature while faults remain: trace it, do not re-run it away.
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`
 - Suite: `bash ../shim/runall.sh . <outdir outside repo>` (~35 min; run it in the background). Some files: `bash ../shim/runseq.sh . <outdir> test_a test_b`.
 - Rehearsal: `WI_SMALL=1 WI_WORK=<dir outside repo> ../.venv/Scripts/python.exe -m whatifs.cli rehearsal > <log outside repo>` (~3 min); delete the work dir after.
 - Plan Guard: `../.venv/Scripts/python.exe tools/plan_guard.py`. Truth only: `../.venv/Scripts/python.exe -m whatifs.truth`.
+- Organisation only (registry honesty + data, prints GREEN / RED): `WI_WORK=<dir outside repo> ../.venv/Scripts/python.exe -m whatifs.org.runner`.
+- After adding or moving a runner call site: update `whatifs/org/registry.py` ENTRY / PENDING, then `tools/gen_docs.py`.
+- The end-to-end test in `tests/test_v12_org.py` runs two fake episodes (about 2 minutes); the file needs `tools/rehearsal.py` importable (it is).
 - Palace only (seeds a local store, prints GREEN / RED + every problem): `WI_WORK=<dir outside repo> ../.venv/Scripts/python.exe -m whatifs.org.palace`.
 - After ANY change to a seed file in `whatifs/org/seed/`: run that Palace command, then `tools/gen_docs.py` (SYSTEM.md prints the seed counts).
 - Stopping a background suite run: stopping the task does NOT stop the runner loop on Windows. Also stop the `bash.exe` processes whose command line
@@ -458,4 +582,5 @@ Rehearsal asserts `docs_current` ran and passed.
 | B1 | done 10 Nov 2026 | 940 / 0 / 6 skipped | GREEN (20 + 18) | Truth Registry; docs/CURRENT + ARCHIVE; generated SYSTEM.md; check `docs_current` (38 hard checks now) |
 | B1b | done 10 Nov 2026 | 949 / 0 / 6 skipped | GREEN (20 + 18) | Owner decision "4 a month" executed: cap 4, weekly Saturday, one-time Sheet move, truthful viewer lines, retired rule |
 | B2 | done 10 Nov 2026 | 988 / 0 / 6 skipped | GREEN (21 + 18) | Knowledge Palace core: 92 founding items, write gate, life cycle with authority, guarded playbooks, check `palace_health` (39 hard checks now) |
-| B3 | next | | | Memo system + Department contract |
+| B3 | done 10 Nov 2026 | 1088 / 0 / 6 skipped | GREEN (22 + 19) | Memos + department contract: 4 org modules + wrappers, 7 departments wired, SLA watchdog, checks `dept_contract` + `takeaways_written` (41 hard checks now); promise-flag fix |
+| B4 | next | | | Execution Engine |
