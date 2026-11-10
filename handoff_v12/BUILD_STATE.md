@@ -1,11 +1,23 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 10 Nov 2026 (end of B1 + B1b). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 10 Nov 2026 (end of B2). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## NEXT
-**B2 - Knowledge Palace core** is IN PROGRESS (steps 1-3 recorded below; resume at the first step not marked done in `git log -5`).
+**B3 - Memo system + Department contract** (01 sections 4, 5; 03 "B3"). Full seven-step MANDATORY BATCH LOOP. Effort: High.
+What B2 leaves ready for B3 (use it, do not rebuild it):
+- `whatifs/org/__init__.py` holds DEPARTMENTS (D0-D12, C, L with a default stage) and STAGES: `org/registry.py` builds on it.
+- The runner's LOAD step calls `palace.playbook(dept, stage, topic)` (returns `playbook_id`, `text`, `items`); its LEARN step writes takeaways with
+  `palace.add(item, actor=<dept id>)` (a department can only PROPOSE; the write gate already rejects an empty or unevidenced takeaway); cited ids go
+  to `palace.mark_applied(ids)`. Checks `palace_injected` / `palace_cited` can compare a prompt with the stored text of `playbook_id` (tab `Palace_Playbooks`).
+- Tabs still to append in B3+: `Memos`, `Tickets`, `Sessions`, `Takeaways`, `Lever_Changes`, `Org_Audit` (B2 added only the three it uses).
+- First thing in B3: add `whatifs/org/palace.py` (and the new org modules) to `tools/repair.py` PROTECTED (see open issue 10).
 
-## IN PROGRESS
-### B2 - Knowledge Palace core (10 Nov 2026)
+## DONE
+### B2 - Knowledge Palace core (10 Nov 2026) - ACCEPTED (all 7 loop steps recorded below)
+Result in one line: the organisation has ONE repository of knowledge - 92 founding items (the owner's words, the research, the build's own lessons),
+each with dated evidence and a pointer to the code that enforces it - with a write gate, a life cycle with authority, and one guarded doorway that
+builds a bounded playbook per department. It runs daily, at Setup and as HARD check `palace_health` on every episode. Honest limit: no department
+READS a playbook yet (that is B3 + B6), so B2 by itself changes no video.
+
 #### Step 1 RESEARCH (10 dated sources; E = measured evidence, O = opinion / practice / official guidance)
 1. E - Zhang et al., "Agentic Context Engineering" (ACE), arXiv 2510.04618, Oct 2025 (v3 Mar 2026, ICLR 2026): knowledge kept as itemised bullets
    (id + helpful/harmful counters), changed only by small delta entries merged with NON-model logic; asking a model to rewrite the whole memory
@@ -85,8 +97,78 @@ middle" work is about retrieval). The lane order below is therefore a design cho
 - Enforcement plan and tests: see steps 5-6 (every transition both ways, guard, cascade, expiry both kinds, caps, cap of the playbook, seed
   validity, contract PASS / FAIL, rehearsal assertion, matrix row).
 - Cost: Rs 0 (no model call). Sheet traffic: 1 read per playbook, 1-3 writes per change; seeding is one batched append.
+- Palace seed items: `whatifs/org/seed/build.json` (keys `b2.*`: 10 research-backed items + the takeaway). The seed moved out of `handoff_v12/palace_seed`
+  into the code tree, because production loads it.
 
-## DONE
+#### Step 4 BUILD (what changed)
+- NEW `whatifs/org/__init__.py` (departments + stages) and `whatifs/org/palace.py` (930 lines): `check` / `validate` (write gate), `add` / `add_many`,
+  `transition`, `supersede`, `expire`, `revalidate`, `mark_applied`, `enforce_caps`, `tidy`, `servable` (the guard), `playbook`, `playbook_issues`,
+  `body`, `seed_items` / `ensure_seed`, `sync_brain`, `sync_canon`, `reconcile`, `snapshot`, `maintain`, `daily`, `health`. By hand: `python -m whatifs.org.palace`.
+- NEW founding knowledge, 92 items in `whatifs/org/seed/`: owner.json 29 (his words, verbatim quote kept as evidence), breakout.json 15, feel.json 15,
+  platform.json 15, build.json 18 (B1, B1b, B2). By kind: owner_preference 25, technique 27, tool_fact 13, policy_rule 10, strategy 7, audience_insight 4,
+  takeaway 3, plan 2, failure_lesson 1. 0 refused by the gate. Over 120 `applied_in` references, every one resolves to a real check, setting, tab,
+  function or file. Second-hand research is honest about itself: status accepted, computed trust 0.5, nothing is "proven" until D10 measures it.
+- Mirrors of records that already exist (seed sources 3 and 4 of the plan): `sync_brain` (Technique_Evidence -> technique items, and a retired level
+  becomes an "avoid" lesson in the limits lane; the learning core stays the authority) and `sync_canon` (character bible + every published case from
+  Show_Log / Season; viewer handles never enter).
+- Tabs appended: `Palace_Items` (28 columns), `Palace_Versions`, `Palace_Playbooks`. 7 settings: PALACE_ON, PALACE_PLAYBOOK_TOKENS (1800),
+  PALACE_PLAYBOOK_TOKENS_BY_DEPT, PALACE_LIMITS_SHARE (0.4), PALACE_REVIEW_DAYS, PALACE_KIND_CAPS, PALACE_FOLDER_ID.
+- Production hooks: `manage.learn` -> `palace.daily` (after the learning core's own update), `manage.setup` -> `palace.maintain`,
+  contract check `palace_health` (39 hard checks now: 21 script + 18 final).
+- `truth.code_files` and `gen_docs._modules` now walk sub-packages, so `whatifs/org/` is under the truth scan and in SYSTEM.md; SYSTEM.md has a
+  generated section 10 (kinds, statuses, the whole move table, review windows, caps, departments, founding-knowledge counts).
+- `publish.drive_upload` gained `parent=` (the Drive folder palace/); bodies fall back to an inline copy when Drive fails.
+- Added during the build after looking at real output (not in the design memo): item `priority` 1-3 (3 = core, only owner / Council / seed may set it)
+  and tighter department addressing - the first writers' playbook had opened with a minor owner idea and left out "it happens to YOU".
+
+#### Step 5 ENFORCE (rule -> executing code -> check -> matrix row)
+| Rule | Executes | Fails when broken |
+|---|---|---|
+| Nothing enters without dated evidence, a known kind / department / stage, a 20-400 character summary; trust computed by code | `palace.check` | write refused (PalaceError), nothing stored; `palace_health` on stored rows |
+| Every `applied_in` reference exists in the code | `palace.ref_ok` | write refused; seed -> tests + `palace_health` FAIL; runtime row -> reference dropped + logged |
+| No retired concept, no instruction-like text, no platform-gaming proposal in the Palace | `palace.text_issues` (uses `truth.RETIRED`) | write refused; later hit -> never served, auto-expired (owner words: `palace_health` FAIL) |
+| Only listed moves, only by the listed roles, always with a reason | `palace.transition` + `MOVES` | PalaceError, status unchanged |
+| The owner's words change only by the owner | `palace._owner_rule` | PalaceError |
+| Nothing retired / superseded / expired / proposed reaches a prompt (also after a hand edit) | `palace.servable` inside `palace.playbook` | `playbook_issues` -> `palace_health` FAIL |
+| Withdrawn knowledge sends its descendants back | `palace._cascade` | tests |
+| Stale technique dropped; stale limit kept, marked, reported | `palace.expire` + guard | tests; note in `palace_health` |
+| Playbook inside its hard cap, limits first, deterministic, id = hash of text | `palace.playbook` | `playbook_issues` -> `palace_health` FAIL |
+| Size caps per kind by code; limits, owner words and canon never displaced | `palace.enforce_caps` | `palace_health` FAIL when a kind stays over its cap |
+| Founding knowledge present; a seed never resurrects a changed status | `palace.ensure_seed` | `palace_health` FAIL (missing items / broken seed file) |
+| Palace kept up every day, at Setup and before every episode's check | `palace.daily` / `maintain` | rehearsal asserts; `palace_health` |
+4 matrix rows added (docs/CURRENT/ENFORCEMENT_MATRIX.md; the meta-test proves every reference is wired). Rehearsal asserts `palace_health` PASS, the
+seed, mirrored canon, a recorded writers' playbook inside its cap, and a healthy Palace at the end.
+
+#### Step 6 PROVE
+- `tests/test_v12_palace.py`: 39 tests, each rule both ways. Highlights: 23 kinds of bad item each refused with nothing written; ALL 343 combinations
+  of from-status x to-status x role checked against the move table; a randomised 140-item Palace in every status, for 15 departments x 3 caps: nothing
+  unservable ever served, never over the cap, limits first, same text whatever the row order; a hand-edited status cell cannot bring a superseded
+  item back; Drive down -> learning continues; real-Drive path proven with stubs (folder found / created / unreachable).
+- The tests found 2 real bugs in my own code, both fixed: (1) the playbook checker crashed on a retired row instead of reporting it; (2) upkeep logged
+  its own changes before the audit compared hashes, so an edit made outside the code went unrecorded - the audit now runs first.
+- 3 test expectations were wrong on first run and corrected (repair attempt 1 of 3 each): a department's default stage, the count of mirrors created
+  when a retired level turns promising, an over-clever file-order assertion.
+- Live proof on the real repo: a dead code reference + a retired concept put into feel.json, and a retired brand name put into a string of
+  palace.py -> the test file went 34 passed / 5 failed, Plan Guard RED (naming the line), `python -m whatifs.org.palace` RED (naming both seed faults);
+  files restored -> 39/39, GREEN, GREEN.
+- Fake rehearsal on the final code: **GREEN** - contract script 21/21 (`palace_health` included), final 18/18; Palace 97 items (92 founding +
+  4 characters + the rehearsal's case), writers' playbook 1,745 of 1,800 estimated tokens, recorded in `Palace_Playbooks`.
+- Full suite (62 files), ONE uninterrupted run on the final code: **988 passed / 0 failed / 6 skipped** (949 before + the 39 new tests; no existing
+  test needed a change, although `palace_health` now runs inside every script-stage contract call of the older tests).
+- Plan Guard **GREEN**. Truth scan **GREEN**. SYSTEM.md regenerated, no drift.
+
+#### Step 7 TAKEAWAY (also Palace item `b2.takeaway`)
+- WORKED: writing the founding knowledge through the SAME gate as runtime knowledge. The `applied_in` rule forced every "this is enforced" claim to
+  name code that exists; the gate is exercised by 92 real items before any department uses it.
+- WORKED: reading the real output before trusting the rule. The ranking was correct by its own rules and still wrong for the writer; priority and
+  addressing fixed it. Do this for every selection or ranking rule in later batches (memo routing, the Council's agenda, the research agenda).
+- WORKED: testing the checker against inputs it should never see - that is how the crash on a retired row surfaced.
+- WATCH: a few low-priority limits do not fit an 1,800-token playbook (D1 3, D4 4, D12 1, Council 5). Reported by the health check as a note, nothing
+  is silent - but the Council (B6) / Librarian (B8) must merge them or the cap for those departments must rise (setting PALACE_PLAYBOOK_TOKENS_BY_DEPT).
+- WATCH: an edit made outside the code is recorded only if the next upkeep runs before the next Palace write (the hash is taken after each write).
+- WATCH: tool facts expire 60 days and plans 45 days after seeding unless re-validated: B5's research cadence must re-validate them.
+- WATCH: the Sheets / Drive path of the Palace is proven with the local store and stubs only (no keys on this laptop, by rule). First real proof =
+  the first learning job after the merge; the B10 first-run verification must look at tab `Palace_Items` and at `palace_health` in the Feature_Ledger.
 ### B1b - Owner decision executed: 4 long videos a month (10 Nov 2026) - ACCEPTED
 Not a plan batch: the generated SYSTEM.md from B1 exposed that the ledger said 4 long videos a month while the code allowed 8. The owner was asked
 in one line and answered "4 a month". Executed at code-line level the same session (no new research: the decision is the owner's).
@@ -220,6 +302,10 @@ Rehearsal asserts `docs_current` ran and passed.
   (deterministic particle seed).
 
 ## PROTECTED-AREA FILES TOUCHED SO FAR (list them in the final PR)
+- B2: `whatifs/core.py` (3 tabs + 7 settings appended; nothing existing changed), `whatifs/manage.py` (2 calls: `palace.daily` in the learning job,
+  `palace.maintain` in Setup), `whatifs/publish.py` (`drive_upload` gained an optional `parent`; behaviour without it is unchanged). Also touched,
+  not on the protected list: `whatifs/contract.py` (check `palace_health` added), `whatifs/truth.py` + `tools/gen_docs.py` (walk sub-packages),
+  `tools/rehearsal.py` (Palace assertions).
 - B0: `whatifs/reels.py`, `whatifs/render.py`.
 - B1b: `whatifs/core.py` (3 defaults changed: STANDARD_MAX_LONG_PER_MONTH, PUBLISH_DAYS, VIDEOS_PER_MONTH_EST; 1 new cell), `whatifs/manage.py`
   (`v12_upgrade` added + 2 calls), `whatifs/governor.py` (`long_videos_per_week` added; no existing rule changed).
@@ -239,12 +325,29 @@ Rehearsal asserts `docs_current` ran and passed.
    333 GB, so no risk; delete by hand only if space ever gets tight.
 5. (handoff folder, outside git) The handoff `CLAUDE.md` still says the repo's own CLAUDE.md "is historical until batch B1 rewrites it". B1 has
    rewritten it; the sentence is now simply spent. No action needed.
+6. (B2 -> B6 / B8) A few low-priority limits do not fit an 1,800-token playbook: D1 3, D4 4, D12 1, Council 5 (lowest priority first out; the health
+   check reports it as a note). Fix belongs to the Council / Librarian: merge overlapping limits, or raise the cap for those departments.
+7. (B2 -> B8) An edit of the `Palace_Items` tab made outside the code is recorded as `external_edit` only when upkeep runs before the next Palace
+   write. Served content is safe either way (the guard re-checks every row); only the audit entry can be missed.
+8. (B2 -> B5) Founding tool facts expire 60 days, and the two plans 45 days, after they are first written to the live Sheet (the clock starts at
+   seeding, not at the date of the research) unless re-validated. By design; B5's research cadence has to re-validate or replace them.
+9. (B2 -> B10) The Palace's real Google Sheets / Drive path is proven with the local store and stubs only (no keys on this laptop, by rule). The
+   first learning job after the merge writes 92 rows in one append and makes no Drive call (founding bodies resolve from the repo). B10's first-run
+   verification must check tab `Palace_Items` and `palace_health` in `Feature_Ledger`.
+10. (B2 -> B3, small) `whatifs/org/palace.py` is not yet on the `tools/repair.py` PROTECTED list. In practice an automatic repair of it is never
+   auto-merged (the file contains network and file-removal calls, which the repair job treats as risky), but the list should say so explicitly.
+11. (B2, low) `Palace_Versions` numbers come from the last row + 1: two jobs writing in the same second could reuse a number (timestamp and hash
+   still tell them apart; the tick's concurrency group makes it unlikely).
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`
 - Suite: `bash ../shim/runall.sh . <outdir outside repo>` (~35 min; run it in the background). Some files: `bash ../shim/runseq.sh . <outdir> test_a test_b`.
 - Rehearsal: `WI_SMALL=1 WI_WORK=<dir outside repo> ../.venv/Scripts/python.exe -m whatifs.cli rehearsal > <log outside repo>` (~3 min); delete the work dir after.
 - Plan Guard: `../.venv/Scripts/python.exe tools/plan_guard.py`. Truth only: `../.venv/Scripts/python.exe -m whatifs.truth`.
+- Palace only (seeds a local store, prints GREEN / RED + every problem): `WI_WORK=<dir outside repo> ../.venv/Scripts/python.exe -m whatifs.org.palace`.
+- After ANY change to a seed file in `whatifs/org/seed/`: run that Palace command, then `tools/gen_docs.py` (SYSTEM.md prints the seed counts).
+- Stopping a background suite run: stopping the task does NOT stop the runner loop on Windows. Also stop the `bash.exe` processes whose command line
+  contains `runall.sh` / `runseq.sh` and the `python.exe` running `minitest.py`, or tests keep starting.
 - After ANY change to settings, checks, tabs, workflows or a module docstring: `../.venv/Scripts/python.exe tools/gen_docs.py` and commit SYSTEM.md.
 - Plan Guard flags one specific word in every text file and several words in file names (see `tools/plan_guard.py` BANNED_NAME_WORDS) - keep
   BUILD_STATE and seed files clear of them.
@@ -257,4 +360,5 @@ Rehearsal asserts `docs_current` ran and passed.
 | B0 | done 10 Nov 2026 | 912 / 0 / 6 skipped | GREEN (19 + 18) | 2 small fixes (Windows ffmpeg path; particle seed determinism) |
 | B1 | done 10 Nov 2026 | 940 / 0 / 6 skipped | GREEN (20 + 18) | Truth Registry; docs/CURRENT + ARCHIVE; generated SYSTEM.md; check `docs_current` (38 hard checks now) |
 | B1b | done 10 Nov 2026 | 949 / 0 / 6 skipped | GREEN (20 + 18) | Owner decision "4 a month" executed: cap 4, weekly Saturday, one-time Sheet move, truthful viewer lines, retired rule |
-| B2 | next | | | Knowledge Palace core |
+| B2 | done 10 Nov 2026 | 988 / 0 / 6 skipped | GREEN (21 + 18) | Knowledge Palace core: 92 founding items, write gate, life cycle with authority, guarded playbooks, check `palace_health` (39 hard checks now) |
+| B3 | next | | | Memo system + Department contract |
