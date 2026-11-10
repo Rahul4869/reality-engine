@@ -109,6 +109,8 @@ def build_reel(k, plan, shot_files, cover, blend, style, out_dir, fonts_dir="fon
     aud = write_mix(mix, os.path.join(out_dir, f"r{k}_mix.wav"), lufs=-13)
     out = os.path.join(out_dir, f"reel{k}.mp4")
     fd = os.path.abspath(fonts_dir) if os.path.isdir(fonts_dir) else "/usr/share/fonts"
+    if os.name == "nt":                                      # Windows dev laptops only: drive colon + backslashes break ffmpeg filter args (Linux unchanged)
+        ass, fd = ("'" + p.replace("\\", "/").replace(":", "\\:") + "'" for p in (ass, fd))
     end_fade = "null" if loop else f"fade=t=out:st={max(0.1, dur - 0.35):.2f}:d=0.35"      # a loop must not fade to black (it would break the restart)
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", body, "-i", aud, "-filter_complex",
                     f"[0:v]tpad=stop_mode=clone:stop_duration=5,trim=duration={dur:.2f},ass={ass}:fontsdir={fd},{end_fade}[v]",

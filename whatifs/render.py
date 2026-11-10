@@ -173,7 +173,7 @@ class Particles:
     def __init__(self, world, src, seed, ww, wh, nframes, fpsv):
         style = PARTICLE_WORLDS[WORLD_PARTICLES.get(world, world) if WORLD_PARTICLES.get(world, world) in PARTICLE_WORLDS else "dust"]
         self.ww, self.wh, self.fps = ww, wh, fpsv; sc = wh / 1080.0; area = (ww * wh) / (1920 * 1080)
-        rng = np.random.default_rng(abs(hash(f"{seed}|{world}")) % (2 ** 32))
+        rng = np.random.default_rng(int(hashlib.md5(f"{seed}|{world}".encode()).hexdigest()[:8], 16))   # stable across processes (built-in hash() of a str is randomised per run)
         g = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY).astype(np.float32) / 255.0                 # light gate: where the picture is lit (with a floor),
         self.g98 = max(1e-3, float(np.percentile(g, 98))); self.floor = S("PARTICLE_GATE_FLOOR", float)   # measured on each rendered frame (follows the camera)
         top = src.reshape(-1, 3)[np.argsort(src.reshape(-1, 3).sum(1))[-max(10, src.shape[0] * src.shape[1] // 100):]].mean(0)   # key light colour
