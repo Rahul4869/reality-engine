@@ -215,6 +215,9 @@ def render():
     A(f"- Every Settings cell must be read by code. {len(TRU.UNREAD_SETTINGS)} cells are read by NO code (their notes start with '{TRU.NOT_ACTIVE}'); changing one changes nothing. "
       f"The list may only shrink (limit {TRU.UNREAD_SETTINGS_MAX}); a new unread cell fails Plan Guard, the tests and check `docs_current`:")
     for k, what in TRU.UNREAD_SETTINGS.items(): A(f"  - `{k}`: {what}.")
+    A(f"- Every Sheet tab must be used by code and every function of `whatifs/` must be called by production code. {len(TRU.UNUSED_TABS)} tabs and "
+      f"{len(TRU.UNWIRED_FUNCTIONS)} functions are not (built but never wired); both lists may only shrink and a new one fails the same three guards:")
+    for k, what in list(TRU.UNUSED_TABS.items()) + list(TRU.UNWIRED_FUNCTIONS.items()): A(f"  - `{k}`: {what}.")
     A("")
     A("## 5. Contract checks (`whatifs/contract.py` FEATURES)")
     A("| check | stage | what it guarantees |")

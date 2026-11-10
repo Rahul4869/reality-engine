@@ -241,9 +241,45 @@ def test_every_settings_cell_is_read_by_code_or_marked_not_active():
     doc = open(os.path.join(ROOT, "docs", "CURRENT", "SYSTEM.md"), encoding="utf-8").read()
     assert all(f"  - `{k}`: " in doc for k in unread) and f"{len(unread)} cells are read by NO code" in doc              # the generated doc names each one
 
-def _tree(tmp_path, cells, code, extra=None):
+def test_no_department_owns_a_lever_that_nothing_reads():
+    from whatifs import truth as T, core
+    from whatifs.org import registry as REG
+    unread = set(T.unread_settings()); levers = [(d, k) for d, spec in REG.DEPTS.items() for k in spec.get("levers", ())]
+    assert len(levers) > 20 and not [(d, k) for d, k in levers if k not in core.DEFAULTS or k in unread]               # the Execution Engine must never turn a dead cell
+
+def test_no_unused_tab_and_no_uncalled_function_beyond_the_listed_ones():
+    from whatifs import truth as T, core
+    T.reset(); assert T.wiring_issues() == []
+    tabs, funcs = T.unused(); assert set(tabs) == set(T.UNUSED_TABS) and set(funcs) == set(T.UNWIRED_FUNCTIONS)
+    assert len(tabs) <= T.UNUSED_TABS_MAX <= 2 and len(funcs) <= T.UNWIRED_FUNCTIONS_MAX <= 10                          # both lists only shrink
+    assert set(T.table_keys(None, "TABS")) == set(core.TABS) and all(t in core.TABS for t in T.UNUSED_TABS)            # the source reader sees every tab
+    for f in T.UNWIRED_FUNCTIONS:                                                                                       # every listed function really exists where the list says
+        path, name = f.split(":"); assert f"def {name}(" in open(os.path.join(ROOT, *path.split("/")), encoding="utf-8").read(), f
+    doc = open(os.path.join(ROOT, "docs", "CURRENT", "SYSTEM.md"), encoding="utf-8").read()
+    assert all(f"  - `{x}`: " in doc for x in list(T.UNUSED_TABS) + list(T.UNWIRED_FUNCTIONS))
+
+def test_a_new_unused_tab_or_uncalled_function_fails_and_a_wired_one_must_leave_the_list(tmp_path, monkeypatch):
+    from whatifs import truth as T
+    cells = {"USED_ONE": ("1", "a note")}; tabs = {"Used_Tab": ["a"], "Ghost_Tab": ["a"]}
+    code = 'def used(st, S): return st.rows("Used_Tab"), S("USED_ONE")\nX = used\ndef ghost_fn(): return 1\n'
+    monkeypatch.setattr(T, "UNREAD_SETTINGS", {}); monkeypatch.setattr(T, "UNUSED_TABS", {}); monkeypatch.setattr(T, "UNWIRED_FUNCTIONS", {})
+    root = _tree(tmp_path, cells, code, tabs=tabs); T.reset()
+    assert T.unused(root) == (["Ghost_Tab"], ["whatifs/work.py:ghost_fn"])
+    bad = T.wiring_issues(root); assert len(bad) == 2 and any(b.startswith("Ghost_Tab: this Sheet tab is used by no production code") for b in bad)
+    assert any(b.startswith("whatifs/work.py:ghost_fn: this function is used by no production code") for b in bad) and len([b for b in T.issues(root) if "used by no production code" in b]) == 2
+    monkeypatch.setattr(T, "UNUSED_TABS", {"Ghost_Tab": "never built"}); monkeypatch.setattr(T, "UNWIRED_FUNCTIONS", {"whatifs/work.py:ghost_fn": "never called"}); T.reset()
+    assert T.wiring_issues(root) == []                                                                                  # listed with what is true: accepted
+    monkeypatch.setattr(T, "UNWIRED_FUNCTIONS_MAX", 0); monkeypatch.setattr(T, "UNUSED_TABS_MAX", 0)
+    assert len([b for b in T.wiring_issues(root) if "may only shrink" in b]) == 2                                       # neither list may grow
+    monkeypatch.setattr(T, "UNWIRED_FUNCTIONS_MAX", 10); monkeypatch.setattr(T, "UNUSED_TABS_MAX", 2)
+    root = _tree(tmp_path, cells, code + 'def later(st): return ghost_fn(), st.rows("Ghost_Tab")\nY = later\n', tabs=tabs); T.reset()
+    bad = T.wiring_issues(root); assert len(bad) == 2 and all("used now or gone - delete the entry" in b for b in bad)  # wired: the entries must go
+    T.reset()
+
+def _tree(tmp_path, cells, code, extra=None, tabs=None):
     root = tmp_path / "repo"; (root / "whatifs").mkdir(parents=True, exist_ok=True)
-    (root / "whatifs" / "core.py").write_text("DEFAULTS = {\n" + "".join(f' "{k}": ("{d}", "{n}"),\n' for k, (d, n) in cells.items()) + "}\n", encoding="utf-8")
+    (root / "whatifs" / "core.py").write_text("DEFAULTS = {\n" + "".join(f' "{k}": ("{d}", "{n}"),\n' for k, (d, n) in cells.items()) + "}\n"
+                                              + ("TABS = {\n" + "".join(f' "{t}": {json.dumps(c)},\n' for t, c in tabs.items()) + "}\n" if tabs else ""), encoding="utf-8")
     (root / "whatifs" / "work.py").write_text(code, encoding="utf-8")
     for rel, text in (extra or {}).items():
         p = root / rel; p.parent.mkdir(parents=True, exist_ok=True); p.write_text(text, encoding="utf-8")

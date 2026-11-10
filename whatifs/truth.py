@@ -205,7 +205,6 @@ def _defaults_node(tree, name="DEFAULTS"):
     for n in getattr(tree, "body", []):
         if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == name for t in n.targets) and isinstance(n.value, ast.Dict): return n.value
     return None
-_TABLES = {"whatifs/core.py": "DEFAULTS", "whatifs/truth.py": "UNREAD_SETTINGS"}          # the two tables that LIST cells: being listed is not being read
 
 def settings_cells(root=None):
     """{key: (line, default, note)} of the DEFAULTS table in whatifs/core.py, read from the source (no import: Plan Guard runs without packages)."""
@@ -238,8 +237,9 @@ def named_in_code(root=None):
         try: tree = ast.parse(_read(p))
         except SyntaxError: continue
         skip = set()
-        table = _defaults_node(tree, _TABLES[_rel(root, p)]) if _rel(root, p) in _TABLES else None
-        if table is not None: skip = {id(x) for x in ast.walk(table)}
+        for name in _LISTS.get(_rel(root, p), ()):
+            table = _defaults_node(tree, name)
+            if table is not None: skip |= {id(x) for x in ast.walk(table)}
         for n in ast.walk(tree):
             if isinstance(n, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)) and _is_doc(n): skip.add(id(n.body[0].value))
         for n in ast.walk(tree):
@@ -282,11 +282,91 @@ def settings_issues(root=None):
     if len(UNREAD_SETTINGS) > UNREAD_SETTINGS_MAX: out.append(f"whatifs/truth.py: UNREAD_SETTINGS grew to {len(UNREAD_SETTINGS)} (limit {UNREAD_SETTINGS_MAX}): the list may only shrink")
     return out
 
+# ---------------- Sheet tabs nothing uses and functions nothing calls (same re-check, same rule: built but never wired = it does not exist)
+# A tab no code names stays empty for ever; a function no production code names is a feature that exists only in its own definition (and perhaps in
+# a test). Each entry says what is TRUE today or which batch wires it. Both lists may only shrink; a NEW unused tab or uncalled function fails
+# Plan Guard, the tests and check docs_current. A function reached only by a built name (getattr with a string) belongs on the list with that reason.
+UNUSED_TABS = {
+    "Repairs": "no code writes or reads it: the repair robot counts its repairs from the pull requests on GitHub",
+    "Room_Value": "the room value test was never built (see UNREAD_SETTINGS)",
+}
+UNWIRED_FUNCTIONS = {
+    "whatifs/models.py:aligned_effort": "never called (see UNREAD_SETTINGS, CACHE_ALIGN_EFFORT)",
+    "whatifs/show.py:bible_issues": "only tests call it: a hand edit of the Characters tab is not checked for protected names, real people or child characters",
+    "whatifs/enforce.py:fix_markers": "never called",
+    "whatifs/enforce.py:fix_retention": "never called: the writers' room runs its own retention fix",
+    "whatifs/prompts.py:episode_pack": "never called",
+    "whatifs/publish.py:meta_bio": "never called (a stub)",
+    "whatifs/data.py:ptype_for": "never called",
+    "whatifs/shotplan.py:prompt_variety": "a measure that only a test uses",
+    "whatifs/org/registry.py:may_change": "the Execution Engine calls it on every lever change once it is built",
+    "whatifs/org/runner.py:set_executor": "the Execution Engine registers itself with it once it is built",
+}
+UNUSED_TABS_MAX, UNWIRED_FUNCTIONS_MAX = 2, 10          # ratchets: lower them with every entry that is wired or removed, never raise them
+_IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+_LISTS = {"whatifs/core.py": ("DEFAULTS", "TABS"), "whatifs/truth.py": ("UNREAD_SETTINGS", "UNUSED_TABS", "UNWIRED_FUNCTIONS")}      # tables that LIST names: being listed is not being used
+
+def _production_text(root):
+    """{rel: text} of everything that can USE a name: the code, the workflows, the dashboard. The listing tables are blanked out."""
+    out = {}
+    for p in code_files(root):
+        rel = _rel(root, p); src = _read(p)
+        if rel in _LISTS:
+            try: tree = ast.parse(src)
+            except SyntaxError: tree = None
+            lines = src.split("\n")
+            for n in getattr(tree, "body", []):
+                if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id in _LISTS[rel] for t in n.targets):
+                    for i in range(n.lineno - 1, n.end_lineno): lines[i] = ""
+            src = "\n".join(lines)
+        out[rel] = src
+    for d in OTHER_READERS:
+        for dp, _, fn in os.walk(os.path.join(root, *d.split("/"))):
+            for f in sorted(fn):
+                if f.endswith((".js", ".mjs", ".html", ".yml")): out[_rel(root, os.path.join(dp, f))] = _read(os.path.join(dp, f))
+    return out
+
+def table_keys(root=None, name="TABS"):
+    """The keys of a dict table in whatifs/core.py, read from the source."""
+    try: node = _defaults_node(ast.parse(_read(os.path.join(root or ROOT, "whatifs", "core.py"))), name)
+    except (OSError, SyntaxError): return []
+    return [k.value for k in node.keys if isinstance(k, ast.Constant) and isinstance(k.value, str)] if node is not None else []
+
+def unused(root=None):
+    """(tabs, functions): tabs of core.TABS that no code names in quotes; functions of whatifs/ whose name appears in production only where it is defined."""
+    root = root or ROOT
+    if ("unused", root) not in _CACHE:
+        texts = _production_text(root); joined = "\n".join(texts.values()); count = {}
+        for w in _IDENT.findall(joined): count[w] = count.get(w, 0) + 1
+        tabs = [t for t in table_keys(root, "TABS") if ('"' + t + '"') not in joined and ("'" + t + "'") not in joined]
+        defs = {}
+        for rel, src in sorted(texts.items()):
+            if not (rel.startswith("whatifs/") and rel.endswith(".py")): continue
+            try: tree = ast.parse(src)
+            except SyntaxError: continue
+            for n in ast.walk(tree):
+                if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and not n.name.startswith("__"): defs.setdefault(n.name, []).append(rel)
+        funcs = sorted(f"{rels[0]}:{name}" for name, rels in defs.items() if count.get(name, 0) <= len(rels))
+        _CACHE[("unused", root)] = (tabs, funcs)
+    return tuple(list(x) for x in _CACHE[("unused", root)])
+
+def wiring_issues(root=None):
+    """A new unused tab or uncalled function, a listed one that is used again or gone, or a list that grew."""
+    root = root or ROOT
+    if not table_keys(root, "TABS"): return []          # a test fixture without the tables
+    tabs, funcs = unused(root); out = []
+    for kind, found, listed, limit in (("Sheet tab", tabs, UNUSED_TABS, UNUSED_TABS_MAX), ("function", funcs, UNWIRED_FUNCTIONS, UNWIRED_FUNCTIONS_MAX)):
+        name = "UNUSED_TABS" if kind == "Sheet tab" else "UNWIRED_FUNCTIONS"
+        for x in sorted(set(found) - set(listed)): out.append(f"{x}: this {kind} is used by no production code - wire it or remove it; built but never wired does not exist")
+        for x in sorted(set(listed) - set(found)): out.append(f"whatifs/truth.py: {name} lists {x}, which is used now or gone - delete the entry")
+        if len(listed) > limit: out.append(f"whatifs/truth.py: {name} grew to {len(listed)} (limit {limit}): the list may only shrink")
+    return out
+
 def issues(root=None, runtime=False):
     """Everything that would make a new chat (or a model prompt) act on a retired concept. Empty list = one current truth."""
     root = root or ROOT
     out = [f"{f['file']}:{f['line']}: retired '{f['rule']}' ({f['text']}) -> {f['truth']}" for f in scan(root)]
-    if ("layout", root) not in _CACHE: _CACHE[("layout", root)] = docstring_issues(root) + layout_issues(root) + settings_issues(root)
+    if ("layout", root) not in _CACHE: _CACHE[("layout", root)] = docstring_issues(root) + layout_issues(root) + settings_issues(root) + wiring_issues(root)
     out += _CACHE[("layout", root)]
     if runtime: out += live_prompt_issues()
     return out

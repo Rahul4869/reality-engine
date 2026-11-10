@@ -59,6 +59,19 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
   - `PKG_VARIANT_C_IMAGE`: the third packaging pair never gets an image of its own.
   - `VIEWER_NAME_ON_SCREEN`: no code puts a viewer's name on screen, so FALSE is what happens; TRUE would change nothing.
   - `PREMISE_BENCH_MAIL_MONTH`: no code writes or reads this bookkeeping cell.
+- Every Sheet tab must be used by code and every function of `whatifs/` must be called by production code. 2 tabs and 10 functions are not (built but never wired); both lists may only shrink and a new one fails the same three guards:
+  - `Repairs`: no code writes or reads it: the repair robot counts its repairs from the pull requests on GitHub.
+  - `Room_Value`: the room value test was never built (see UNREAD_SETTINGS).
+  - `whatifs/models.py:aligned_effort`: never called (see UNREAD_SETTINGS, CACHE_ALIGN_EFFORT).
+  - `whatifs/show.py:bible_issues`: only tests call it: a hand edit of the Characters tab is not checked for protected names, real people or child characters.
+  - `whatifs/enforce.py:fix_markers`: never called.
+  - `whatifs/enforce.py:fix_retention`: never called: the writers' room runs its own retention fix.
+  - `whatifs/prompts.py:episode_pack`: never called.
+  - `whatifs/publish.py:meta_bio`: never called (a stub).
+  - `whatifs/data.py:ptype_for`: never called.
+  - `whatifs/shotplan.py:prompt_variety`: a measure that only a test uses.
+  - `whatifs/org/registry.py:may_change`: the Execution Engine calls it on every lever change once it is built.
+  - `whatifs/org/runner.py:set_executor`: the Execution Engine registers itself with it once it is built.
 
 ## 5. Contract checks (`whatifs/contract.py` FEATURES)
 | check | stage | what it guarantees |
