@@ -1,44 +1,24 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 10 Nov 2026 (end of B3; B0b queued by the owner). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 10 Nov 2026 (end of B0b). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
-## STANDING RULE ADDED DURING THE BUILD (owner approved, 10 Nov 2026)
-A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the laptop
-runs (Windows, stand-in test runner) are necessary, not sufficient. Read it before writing "ACCEPTED" and record the run number in the batch log.
-How to read it without any sign-in: open https://github.com/Rahul4869/reality-engine/actions?query=branch%3Av12-organisation in the browser pane; a
-run's job page lists every step with its outcome (elements with `data-conclusion`). The log LINES need a GitHub sign-in: ask the owner ONCE, in one
-line, either to sign in to github.com in the browser pane or to approve installing the GitHub CLI (`winget install GitHub.cli`, one sign-in pop-up).
-A run takes about 30 minutes; do not wait idle for it - finish the write-up, then read it.
+## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
+1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
+   laptop runs (Windows, stand-in test runner) are necessary, not sufficient. Read it before writing "ACCEPTED" and record the run number in the batch log.
+   How to read it - NO sign-in needed since B0b: open https://github.com/Rahul4869/reality-engine/actions?query=branch%3Av12-organisation in the
+   browser pane and open the run. The section "Annotations" names every failed test, every skipped test, every failed contract check with its reason
+   and the episode ids; when green it shows the totals ("N passed") and the rehearsal's episode id. The job summary on the same page has the full list
+   (annotations are capped at 10 a step). A run takes about 30 minutes; do not wait idle for it - finish the write-up, then read it.
+2. (B0b) Before a batch is accepted, run the sweep (`tools/sweep.py`, recipe under HOW TO RUN): the fake pipeline is seeded by the episode id, so one
+   green rehearsal proves one id. A red rehearsal or a red test on GitHub is reproduced with the episode id its annotation prints
+   (`--mode rehearsal --ids <id>`), traced to its cause and fixed - never re-run until it passes.
+3. (B0b) Nothing may be built without being wired and no test may skip on GitHub: Plan Guard, the tests and check `docs_current` refuse a Settings cell
+   that no code reads, a Sheet tab that no code uses and a function that no production code calls. The three lists of old cases in `whatifs/truth.py`
+   (UNREAD_SETTINGS, UNUSED_TABS, UNWIRED_FUNCTIONS) may only shrink: wiring one means deleting its entry and lowering the limit next to the list.
+4. (B0b) Every workflow installs a package that `requirements.txt` pins with exactly those bounds (a test fails otherwise). To move to a new major
+   version of a library, change `requirements.txt` AND the workflows in one commit and re-verify the reference frames (`tests/golden_frames.py`).
 
 ## NEXT
-**B0b - Baseline re-check** (owner, 10 Nov 2026: "Yes, B0b first" - asked whether B0 should be checked before going on, so that anything weak is fixed
-together with its effects on B1-B3). Effort: High (root-cause fixes). No new feature. THEN B4.
-Why: B0 accepted the v11.1 code on "suite + ONE rehearsal green, on the laptop". B3 showed that is not enough twice over: (1) the fake pipeline is
-seeded by the episode id, and one id in about four hit a real fault that held a finished video (the stale promise flag, fixed in B3); (2) GitHub's
-own Checks were never read, and B2's final commit is RED there at the rehearsal step (open issue 21).
-Do, in this order (checkpoint-commit after each):
-1. READ GitHub Checks for every commit since the baseline: runs #42 (6b89d83, B3 final) and #43 (53e4a36) were still running when B3 closed. For every
-   RED run that is not already explained in open issue 21, find the failing step. Confirm the cause of run #38 (B2 final, c54b9b6, rehearsal step) from
-   its log (sign-in needed, see the standing rule); if the owner prefers no sign-in, reproduce it: check out nothing - run the sweep of step 2 on the
-   OLD `whatifs/anim.py` (`git stash` the one line or `git show c54b9b6:whatifs/anim.py`) and show a hold with `contract:promise_paid`.
-2. SWEEP the fake pipeline over at least 40 FIXED episode ids. Recipe (it is the body of the end-to-end test in `tests/test_v12_org.py`): per id a fresh
-   `core.LocalStore` in a temp dir outside the repo; settings CREATIVE_REVIEW_FIRST_N=0, V11_FLIPS_DONE=test, DEEP_TRIAL_ON=FALSE; `whatifs.voice.KokoroBackend`
-   replaced by `tools.rehearsal.ToneVoice`; `manage.setup()`; VOICE=C; `episode.produce(slot, episode_id=<id>)`. Use FUTURE-dated ids (`EP2099MMDDHHMM`)
-   so the organisation's checks judge the episode. About 1-2 minutes an id: run it in the background, write one RESULT line per id (ok / held + the
-   failing checks + evidence) to a file outside the repo, read only those lines. Also run a second sweep of 10 ids with ORG_ON=FALSE (the old path).
-   Make it a kept tool (`tools/sweep.py`) so every later batch can run it.
-3. TRACE every hold, crash or warning class the sweep shows to its cause (max 3 repair attempts each, then an open issue with the repro id). Fix at the
-   root with a regression test that fails without the fix (both ways). Known candidates: open issue 1 (rain particles can read as a still for some
-   seeds), open issue 16 (`promise_paid` judged only after the picture money), open issue 20.
-4. The 6 tests the laptop always skips (python-docx missing, node missing for the Mission Control Worker tests, golden frames made with other
-   OpenCV / NumPy versions, cast placeholders, documents outside the repo): say for each whether GitHub runs it; install what is cheap (python-docx in
-   the venv; node only with the owner's one-line approval) so the laptop skips fewer.
-5. Re-verify B0's two fixes on Linux by GitHub's result (the Windows-only ffmpeg path lines in `whatifs/reels.py`; the particle seed in `whatifs/render.py`).
-6. PROVE: full suite + rehearsal on the final code on the laptop AND the final commit green on GitHub (standing rule). Update this file, the batch log
-   (with GitHub run numbers for B0-B3 too), and a short takeaway as Palace item `b0b.takeaway`.
-Acceptance: the sweep is green on every id (or each remaining hold is an open issue with a repro id and the owner told in one line); no RED GitHub run
-is unexplained; B1-B3 still green.
-
-**After B0b: B4 - Execution Engine** (01 section 6; 03 "B4"). Full seven-step MANDATORY BATCH LOOP. Effort: High.
+**B4 - Execution Engine** (01 section 6; 03 "B4"). Full seven-step MANDATORY BATCH LOOP. Effort: High.
 What B3 leaves ready for B4 (use it, do not rebuild it):
 - The EXECUTE step of every department run already reads the department's open tickets and calls `runner.EXECUTOR(ticket, brief)`; register the engine
   with `runner.set_executor(fn)`. Until then a ticket is escalated at once with the reason. The engine closes a ticket with
@@ -54,8 +34,158 @@ What B3 leaves ready for B4 (use it, do not rebuild it):
   (the ratchet test only lets the pending list shrink).
 - Paid organisation calls: start the run with `budget="org"`; the monthly thinking cap per department is then enforced by the runner (P0 continues).
 - First thing in B4: add the new org modules to `tools/repair.py` PROTECTED (B3's modules are on it).
+What B0b adds for B4:
+- `truth.unread_settings()` lists the cells no code reads. `org/levers.py` must refuse to register or turn such a cell (a guard test already fails when a
+  department's `levers` names one). The moment B4 calls `registry.may_change` and `runner.set_executor`, Plan Guard goes RED until their two entries
+  are deleted from `truth.UNWIRED_FUNCTIONS` and `UNWIRED_FUNCTIONS_MAX` is lowered to 8 - that is the rule working, not a fault.
+- New checks change the totals several tests and the rehearsal assert (22 script + 19 final today): search the tests for the old numbers.
+- Acceptance of B4 includes standing rules 1 and 2: the sweep (40 ids + 10 with ORG_ON = FALSE + 9 rehearsals took about 2 hours on this laptop with
+  3 jobs; start it in the background on a frozen copy of the commit as soon as the build step is done) and the final commit green on GitHub.
 
 ## DONE
+### B0b - Baseline re-check (10 Nov 2026) - ACCEPTED (final code commit 9c5d0e3 GREEN in GitHub run 52)
+Result in one line: the code the build stands on was re-proven the hard way - 58 full fake pipelines over fixed episode ids are green - and the real
+faults turned out to sit in the PROOF, not in the pipeline: a comparison that ran on no machine, GitHub's Checks measuring another major version of
+OpenCV than production, red runs nobody could read, and features that were built or promised but never wired. All four classes are now refused by
+code. Honest limits: nothing here changes a video; the never-wired features are listed and marked, NOT built (open issues 22-25; the owner decided
+on 10 Nov that the largest one, the room value test, is to be BUILT in B8).
+No new feature, so no seven-step loop; the six steps of the B0b plan are recorded instead, plus the research behind the new rules.
+
+#### Step 1 - GitHub Checks read for every commit since the baseline
+- Runs 42, 43, 44 (B3's three last commits): GREEN. Run 45 (the sweep tool): GREEN.
+- Run 38 (B2 final, red at the rehearsal step): CAUSE CONFIRMED without a sign-in. The rehearsal step started at 11:11:33 UTC, the rehearsal names
+  its episode by the minute, and on the old B2 code `tools/sweep.py --mode rehearsal --ids EP202611101111` is HELD by `promise_paid` ("promise first
+  shown at 44.7 s (limit 30 s)") and then dies on `r["master"]`, exactly a red rehearsal; the ids of 11:12 and 11:13 pass. It is the stale promise
+  flag B3 fixed. On the NEW code the same id passes both gates (35 checks PASS, no FAIL, status SCHEDULED).
+- Runs 27, 30, 32: red at unit tests, already explained (before B0's fixes; the two mid-batch commits of B1 / B1b).
+- Runs 46, 47, 48: RED at unit tests BECAUSE THE NEW RULE WORKED - the first runs in which the reference-frame comparison really ran on GitHub. Their
+  annotation named the cause in one line: OpenCV 5.0.0 on GitHub, 36 of 36 frames differ (step 3 below). Run 49, the first with the library pin (step 5): GREEN - 1111 passed, 0 skipped, rehearsal GREEN. Runs 50, 51, 52: GREEN.
+
+#### Step 2 - the sweep (`tools/sweep.py`, kept tool)
+- One process per id (module state never leaks), fixed future-dated ids `EP2099MMDDHHMM` that are the same on every machine, one RESULT line per id
+  with the outcome, failed checks + evidence, warning classes, degraded steps, owner messages and the organisation's runs; a work folder inside the
+  repo is refused; episode folders are deleted after each id (117 MB each).
+- A: 40 ids, organisation ON: **40 ok, 0 held, 0 crashed**. Every id: status SCHEDULED, 37 checks PASS + 4 N/A, 9 department runs all verified, 0 live
+  memos, 0 owner messages, 0 degraded steps.
+- B: 10 ids with ORG_ON = FALSE (the old path): **10 ok, 0 held, 0 crashed** (35 PASS + 6 N/A: the two organisation checks are N/A by design when the organisation is off).
+- C: 9 full rehearsals with a forced id (the path GitHub runs): **8 of 8 fixed ids ok** (status LIVE, 37 PASS + 4 N/A, every assertion of the rehearsal holds).
+  The ninth run was the id of run 38's minute on the NEW code: it passes both gates (it was held on the old code); the rehearsal then stops on its own
+  assertion that the two organisation checks PASS, which cannot hold for an id dated before the organisation started on the Sheet (N/A by design).
+  Counted as explained, not as green: 40 + 10 + 8 = 58 green pipelines.
+- Warning classes: 9 appear in every episode and 1 in 1 of 40, all traced (step 3). None depends on the id.
+
+#### Step 3 - every class traced to its cause
+| Class | Cause | Verdict / action |
+|---|---|---|
+| JUDGE / WITNESS "no checked voice available" (every id) | the sweep recipe runs no voice lab, so tab Voice_Check is empty | recipe artifact; the fallback to the default prebuilt voice is the designed one |
+| "script length ... adjusting", "retention gate ... / fix did not reduce", "Showrunner's premise was not one of the scored pitches" (every id) | the canned fake replies (a 158-word script, a premise outside the pitch list) | fake-data artifacts; each is a guarded fallback, and the HARD checks judge the final script (`retention` PASS on all 40) |
+| "atmosphere over its time budget (153% > 30%) - particles switched off" (every id; fog too on 1 id) | the time valve `ATMOSPHERE_MAX_OVERHEAD_PCT`: in the SMALL fake render the rest of the frame work is tiny, so the share is always over | by design, logged, stored in `Episodes.atmos_json`; whether it trips at full size can only be seen on the first real render (open issue 26) |
+| "prompt cache: two calls share a prefix but differ in model parameters" (every id, twice) | REAL: `CACHE_ALIGN_EFFORT` (default TRUE) is read by no code; `models.aligned_effort` was tested but never called in any version | measured on one fake episode: 21 calls, 44,006 tokens read from cache, 14,538 written, hit ratio 0.75; the two misses cost about one extra cache write each, an estimated Rs 3-10 a video (NOT measured in production). Not wired now, because aligning efforts would LOWER or raise the effort of a creative or judging call (breakout first); cell marked NOT ACTIVE; open issue 23 |
+That one real class led to a scan of the whole table, and then of tabs and functions:
+- **8 of 691 Settings cells are read by no code, in any version ever pushed**: `CACHE_ALIGN_EFFORT`; `ROOM_VALUE_ON` (default TRUE), `ROOM_VALUE_EVERY`,
+  `ROOM_MIN_WINRATE` - the blind test "writers' room script against a single-prompt script", with its own tab, about Rs 15 a video, was NEVER BUILT;
+  `RUNTIME_HARD_MAX_SEC` (the code enforces `RUNTIME_MAX_SEC`); `PKG_VARIANT_C_IMAGE`; `VIEWER_NAME_ON_SCREEN` (no code shows a name, so the safe
+  default is what happens); `PREMISE_BENCH_MAIL_MONTH`.
+- **2 of 78 tabs are used by no code**: `Room_Value`, `Repairs`. **10 of 1,404 functions are called by no production code**: `models.aligned_effort`,
+  `show.bible_issues` (the check of the character bible for protected names, real people and child characters - only tests call it),
+  `enforce.fix_markers`, `enforce.fix_retention`, `prompts.episode_pack`, `publish.meta_bio`, `data.ptype_for`, `shotplan.prompt_variety`, and the two
+  hooks B4 will call (`registry.may_change`, `runner.set_executor`).
+- What was done about them now: each is listed in `whatifs/truth.py` with what is TRUE today, the 8 cell notes start with "NOT ACTIVE (no code reads this
+  cell)" and SYSTEM.md section 4 prints all three lists, so no chat and no owner is told a behaviour exists that does not. What was NOT done: none of
+  them was built or wired in this batch (each needs its department's batch or an owner word - open issues 22-25).
+- Known candidates of the plan: open issue 1 measured (below); open issue 16 not triggered by any id (stays with B7); open issue 20 closed by the
+  episode-id trace (step 4).
+- Open issue 1 measured: world particles at real 1080p, 12 seeds x 4 worlds, one 4-second shot each: 43 of 48 shots read 100% alive, the lowest are
+  rain 57% / 71% / 86% and embers 71%; dust and wind 100% on all seeds. No id of the sweep failed `aliveness`. The per-shot guarantee is still missing.
+
+#### Step 4 - the tests the laptop skipped (6)
+| Test | Did GitHub run it? | Now |
+|---|---|---|
+| `test_safety` restore step (python-docx) | yes | python-docx installed in the venv; the test now also uses the interpreter that runs it (it called whatever `python` was first on PATH) |
+| `test_v94b` dashboard render (node) | yes | still skipped on the laptop (node not installed; not worth an install - GitHub runs it) |
+| `test_v91_core` + 2 in `test_v91_matrix`: the picture equals the reference frames | **NO - on no machine** | always compared now, see below |
+| `test_v87` mirror files of the old upload package | **NO - on no machine** (the folder exists nowhere) | removed, with the dead branch of one `test_v89` test |
+- The reference-frame comparison skipped wherever OpenCV / NumPy differed from the versions the file was made with (4.13.0 / 2.4.4) - and production
+  and Checks pin NumPy below 2.1. 22 more comparisons in `test_each_flag_alone` and one in `test_v91_atmos` were switched off by the same guard without
+  even counting as skipped. Forced to run with the original versions on this laptop: **25 failures, 36 of 36 frames differ**. Bisected: the commit
+  that added the file matches on Windows too (so the frames are identical across Linux and Windows), live `main` matches, the handoff snapshot does not;
+  with `PARTICLES_ON` = FALSE the current code matches again on 4.13.0 / 2.4.4 AND on 4.14.0 / 2.0.2. So: NO regression in the base renderer; the
+  particle layer (on by default, intended) is the whole difference; and the version guard had been hiding that the promise "all switches off = the old
+  picture" was unchecked. Now: `tests/golden_frames.py` `v9_baseline` (later layers off) + `same_as_v9` (never skips; the message says whether the code
+  or an unverified library version is the suspect); a new default-on render layer fails it until its switch is listed.
+- The no-skip rule: `tests/skip_policy.py` + `tests/conftest.py` + `WI_NO_SKIPS=1` in the Checks workflow. Proven with real pytest on this laptop both
+  ways: the file with the node test exits 1 and names the test on a strict run, exits 0 on a normal run; files without a skip exit 0 on a strict run.
+- A red run names its cause in public: `tools/ci_report.py` after the unit tests and after the rehearsal writes annotations + an uncapped job summary
+  (failed and skipped tests, failed contract checks with the reason, the last error line, the episode ids a failed test printed, and the command that
+  reproduces a red rehearsal). The step still ends with the tests' own exit code.
+
+#### Step 5 - B0's two fixes on Linux, and what GitHub was really measuring
+- `whatifs/reels.py` (Windows-only path lines) and `whatifs/render.py` (particle seed): GitHub run 28 (B0 final) and every later unit-test step are green on
+  Linux, the particle test included.
+- FOUND by the first annotated run: `pip install opencv-python-headless` without bounds in the Checks workflow installs **OpenCV 5.0.0**, while
+  `requirements.txt` (production) pins `>=4.9,<5`. Every green GitHub run of B0-B3 was therefore measured on another major version than the one that
+  renders the videos; with 5.0.0 all 36 reference frames differ. Fixed at the root: all 13 workflow pip lines that name a pinned package now carry the
+  bounds of `requirements.txt` (OpenCV in 4 workflows, plus pillow, requests, soundfile); a test fails on any line that does not, and another fails when
+  the installed or imported version on the test machine is outside the pins. The pipeline's own jobs install from `requirements.txt` and were always right.
+
+#### Research behind the new rules (dated sources; E = measured, O = official / practice)
+1. E - Kim, Chen et al., "How Disabled Tests Manifest in Test Maintainability Challenges?", ESEC/FSE 2021: 122,000 commits, 15 systems; 41% of disabled
+   tests never come back, most stay disabled for years. -> no test may skip where acceptance is decided.
+2. E - Dutta et al., "Detecting Flaky Tests in Probabilistic and Machine Learning Applications" (FLASH), ISSTA 2020: running tests under many seeds found
+   11 new flaky tests in 20 projects. -> the sweep over fixed ids.
+3. E - Dutta et al., "To Seed or Not to Seed?", ICST 2022: 114 projects; fixing one seed is a workaround that hides the failing seeds. -> the rehearsal
+   keeps its time-based id, and the id is printed so a failure is reproduced, not re-run away.
+4. E - Parry et al., "Systemic Flakiness", EASE 2025 (arXiv 2504.16777): 810 flaky tests; failures cluster around shared causes. -> one cause (the promise
+   flag) explained both B3's held test and run 38; trace the cluster, not the single red.
+5. E - Chen et al., arXiv 2502.02760 (Feb 2025): randomised hash order exposes implementation-dependent flakiness. -> same class as B0's particle seed.
+6. O - GitHub Docs, workflow commands (read 10 Nov 2026): error / notice annotations, job summaries (20 step summaries a job); GitHub community
+   discussion 68471: 10 error annotations a step, the rest dropped silently. -> 8 causes + "and N more" + totals, full list in the job summary.
+7. O - Flutter golden-file guide and others: reference images are compared on one defined platform, usually with a tolerance. -> measured here instead
+   of assumed: the frames are bit-identical on two systems and two version pairs, so the comparison stays exact, and the failure message names an
+   unverified library version as the first suspect.
+
+#### What changed (code)
+- NEW `tools/sweep.py`, `tools/ci_report.py`, `tests/skip_policy.py`, `tests/test_v12_b0b.py` (20 tests).
+- `whatifs/truth.py`: `settings_issues` / `unread_settings`, `wiring_issues` / `unused`, the three shrinking lists; all three run inside `truth.issues`, so
+  Plan Guard, the tests and contract check `docs_current` enforce them. `tools/gen_docs.py`: SYSTEM.md section 4 prints the lists.
+- `whatifs/core.py`: 10 notes reworded (the 8 dead cells + one stale cadence note + the safe-mode note); NO default value changed.
+- `.github/workflows/`: Checks runs strict + reports (2 steps); 13 pip lines pinned like `requirements.txt`.
+- Tests: `tests/golden_frames.py`, `test_v91_core`, `test_v91_matrix`, `test_v91_atmos` (always compare), `test_v87` (-1 dead test), `test_v89`, `test_safety`,
+  `tests/conftest.py` (skips, episode ids of failed tests). `tests/golden/v9_render_frames.json`: verified versions recorded.
+- 8 matrix rows; 6 founding Palace items `b0b.*` + the owner's decision `owner.room_value_test` (111 items, 0 refused; build rules entered as techniques for D12 / D8 so that no limit was pushed out
+  of a playbook - the first try as policy rules pushed out 8).
+- Laptop venv: + python-docx, + pytest 9.2 (real pytest for single files: `../.venv/Scripts/python.exe -m pytest tests/<file> -q`; the stand-in runner
+  still wins when PYTHONPATH points at the shim).
+
+#### Proof
+- Each new rule both ways, live on the real repo: a Settings cell nothing reads -> Plan Guard RED, check `docs_current` FAIL, test file 12 / 1; a function
+  nothing calls -> Plan Guard RED; files restored -> GREEN. The particle layer left on -> the reference comparison FAILS (a kept test). A strict run with
+  a skip -> exit 1 (real pytest). A failed test under real pytest prints its `EPISODE-IDS` line.
+- Mistakes of my own on the way (repair attempts, none reached 3): the first sweep chain was started behind a failed clean-up command and ran on the
+  working tree (stopped, restarted on a frozen copy of the commit); `tools/ci_report.py` was broken twice by a shell that eats backslashes in pasted
+  code (now only written through the file tools); the settings scan first counted its own list as a reader; 4 truth tests failed on a fixture without
+  a settings table.
+- Laptop, final code: full suite (64 files), ONE uninterrupted run with the stand-in runner: **1113 passed / 0 failed / 1 skipped** (1088 before; + 20 in
+  `test_v12_b0b`, + 1 live test of the reference comparison, + 4 that used to skip and now run). The 1 skip is the dashboard render test (node), which GitHub runs.
+- Fake rehearsal on the final code: **GREEN** - episode id EP202611101515, contract script 22 / 22, final 19 / 19. Plan Guard GREEN (truth scan included), Palace GREEN
+  (111 founding items, 0 refused), SYSTEM.md regenerated, no drift.
+- GitHub: final code commit 9c5d0e3 = run 52: **GREEN** - 1114 passed, 0 skipped (real pytest, Ubuntu, OpenCV under 5), rehearsal GREEN with episode
+  id EP202611101504 (22 / 22 + 19 / 19) - read from the public annotations, no sign-in. Runs 49, 50, 51 GREEN too; runs 46, 47, 48 RED for the one
+  explained cause (OpenCV 5.0.0 before the pin). The commit that adds this record changes this file only (run 53): a record cannot contain its own
+  run, so the next session reads run 53 before it starts B4.
+- Money: Rs 0 (no model call, no paid step). Nothing is live until the final PR.
+
+#### Takeaway (also Palace item `b0b.takeaway`)
+- WORKED: making the failure readable first. The first run whose failures were written onto the public page showed in one glance what four batches of
+  green had hidden (OpenCV 5 on GitHub). Before trusting any proof, ask where it really runs and whether it can skip.
+- WORKED: following ONE warning to its cause instead of classing it as noise. The prompt-cache line led to a cell nothing reads, that to a scan of every
+  cell, tab and function, and that to a paid test that was never built.
+- WORKED: bisecting with the original library versions instead of regenerating the reference frames. Regenerating would have signed off the unknown.
+- WATCH: "listed and marked" is not "built". Open issues 22-25 are real gaps; the lists only stop them from growing and from being believed.
+- WATCH: the sweep is fake mode. It proves the plumbing for many ids, not the taste of a real script; and the time valve of the atmosphere always trips
+  in the small render, so the full set of layers is never rehearsed past frame 120.
+- WATCH: knowledge items written as limits push other limits out of the 1,800-token playbooks at once (seen and undone here; open issue 6 stands).
+
 ### B3 - Memo system + Department contract (10 Nov 2026) - ACCEPTED (all 7 loop steps recorded below)
 Result in one line: the project now runs like an organisation at the level of code - every step of the long video that belongs to a department, and the
 daily learning job, goes through LOAD -> ACT -> EMIT -> LEARN -> EXECUTE -> REPORT with a proof per step; departments talk through validated memos with
@@ -534,6 +664,11 @@ Rehearsal asserts `docs_current` ran and passed.
   (deterministic particle seed).
 
 ## PROTECTED-AREA FILES TOUCHED SO FAR (list them in the final PR)
+- B0b: `whatifs/core.py` (10 Settings NOTES reworded: the 8 cells no code reads, one stale cadence note, the safe-mode note; no default value changed),
+  `.github/workflows/checks.yml` (unit tests run strict and report; rehearsal reports; pip line pinned) and the pip line of 12 more workflows (same
+  bounds as `requirements.txt`; OpenCV goes from 5.0.0 back under 5 in `preview.yml` job 2, `sheets.yml`, `repair.yml`; pillow / requests / soundfile
+  resolve to the same versions as today). Also touched, not on the protected list: `whatifs/truth.py` (two scans + three lists), `tools/gen_docs.py`,
+  new `tools/sweep.py`, `tools/ci_report.py`.
 - B3: `whatifs/episode.py` (9 call sites wrapped with `ORG.work`; what each step does is unchanged), `whatifs/core.py` (4 tabs + 9 settings appended, `COST_TAPS`
   hook in `cost`), `whatifs/models.py` (`ASK_TAPS` hook in `ask` and `ask_batch`; a no-op when nothing listens), `whatifs/manage.py` (watchdog + audit on the tick,
   `install` in Setup), `tools/repair.py` (PROTECTED list extended with the org modules, `contract.py`, `truth.py`). Also touched, not on the protected list before:
@@ -554,6 +689,8 @@ Rehearsal asserts `docs_current` ran and passed.
 1. (D6/D8, for B6-B7) Rain particles ("office" world) can read as a still for some seeds (aliveness 0.0 seen). Now deterministic, and seed 7 passes,
    but the particle layer has no guarantee per seed. Proper fix: after rendering, measure aliveness and re-seed/boost when below the bar (needs an
    enforcement check + failing test).
+   MEASURED in B0b (real 1080p, 12 seeds x 4 worlds, one 4-second shot each, flat depth, push-in): 43 of 48 shots 100% alive; rain 57% / 71% / 86% on
+   seeds 8 / 2 / 9, embers 71% on seed 10; dust and wind 100% on every seed. No id of the 58-run sweep failed check `aliveness`. Still open for B6-B7.
 2. (B1b follow-up, low, for B9) In a month with 5 Saturdays one week has no long video (cap 4). By design today; D1 planning (B9) may choose which
    Saturday to skip or spread differently. `DIGEST_DAYS` (owner digests) still Tue,Sat,Sun - unrelated to publishing, left as is.
 3. (NEW, low) `mission_control/worker.js` line 27 comment still says fixes were "recorded in CHANGES.md". Left alone on purpose: it is a comment in the
@@ -590,10 +727,11 @@ Rehearsal asserts `docs_current` ran and passed.
 18. (B3 -> B10) About 9-10 extra Sheets calls per department run, 9 runs an episode: proven on the local store only. First-run verification must watch
    for quota errors and look at tabs `Memos`, `Sessions`, `Takeaways`, `Org_Audit` and at both organisation checks in `Feature_Ledger`.
 19. (B3 -> B9) The SLA hours are the master spec's defaults, not tuned. D1 owns tuning (setting ORG_SLA_HOURS).
-20. (B3, low) `tests/test_integration.py` and the rehearsal still make time-based episode ids and the fake pipeline is seeded by the id, so another
+20. CLOSED in B0b (the ids are traceable now: a failed test prints its episode ids onto the public run page, a red rehearsal prints its id and the
+   command that reproduces it, and `tools/sweep.py` runs any id on any machine). Was: (B3, low) `tests/test_integration.py` and the rehearsal still make time-based episode ids and the fake pipeline is seeded by the id, so another
    id-dependent fault could surface on some minute. That is a feature while faults remain: trace it, do not re-run it away.
 
-21. (FOUND 10 Nov after B3, verification gap of B0-B3) GitHub runs the `Checks` workflow on EVERY push of this branch (Ubuntu, Python 3.11, real pytest,
+21. CLOSED in B0b (every run read; run 38 reproduced with the id of its minute: the stale promise flag; standing rules 1-2). Was: (FOUND 10 Nov after B3, verification gap of B0-B3) GitHub runs the `Checks` workflow on EVERY push of this branch (Ubuntu, Python 3.11, real pytest,
    then the fake rehearsal) and no batch ever read its result: every "green" in this file is the laptop (Windows, the stand-in test runner). Read on
    10 Nov (step outcomes are public; log lines need a GitHub sign-in): baseline RED at unit tests (expected, before B0's fixes); B0 GREEN; B1 final
    GREEN; B1b final GREEN; the two mid-batch commits of B1 / B1b RED at unit tests (the 939 / 1 and 948 / 1 already recorded above, fixed one commit
@@ -602,6 +740,27 @@ Rehearsal asserts `docs_current` ran and passed.
    flag fixed in B3, which holds the rehearsal's episode on some minutes. To do: confirm from the log, sweep the fake pipeline over many fixed episode
    ids, and make "the batch's final commit is green on GitHub" part of every batch's acceptance.
    Where to look: https://github.com/Rahul4869/reality-engine/actions?query=branch%3Av12-organisation
+
+22. (B0b -> B8, OWNER DECIDED 10 Nov 2026: "build") The blind test "writers' room script against a single-prompt script" was NEVER BUILT: 3 Settings
+   cells (`ROOM_VALUE_ON` default TRUE, `ROOM_VALUE_EVERY`, `ROOM_MIN_WINRATE`) and tab `Room_Value` exist, no code does. The owner was asked "build it
+   with the learning loop (B8), or drop it?" and answered "build" (Palace item `owner.room_value_test`, addressed to D10). B8 builds it inside the full
+   batch loop: strong blind judges of another model family (cheap models never make taste calls), cost logged and counted in the estimates (the old
+   note says about Rs 15 a video - re-estimate it), fake replies, a switch, a matrix row, the win rate where the owner sees it. When it runs: delete
+   the three cells from `truth.UNREAD_SETTINGS` and the tab from `truth.UNUSED_TABS`, drop the NOT ACTIVE marks. Until then the cells do nothing.
+23. (B0b -> B4 / B7) `CACHE_ALIGN_EFFORT` is NOT ACTIVE: two calls with different effort on one cached prefix cost one extra cache write each, on every
+   episode (fake episode: 2 misses; an estimated Rs 3-10 a video, at most about Rs 40 a month at 4 videos; NOT measured in production). Wiring
+   `models.aligned_effort` as written would change the effort of a creative or judging call to whatever came first - against 'breakout first'. Options
+   for the batch that owns model levers: per-message effort (`CACHE_EFFORT_PER_MESSAGE`, needs a real API call to prove), or retire the cell.
+24. (B0b -> B6) `show.bible_issues` (protected names, real people, child characters, audio chain) is called by tests only: a hand edit of the
+   `Characters` tab is not checked in production. The seed bible is clean (a test proves it). B6 wires it into a check when it wraps the creative departments.
+25. (B0b -> B6 / B7 / B10) Never wired, harmless today, each to be wired or removed by its department's batch: cells `RUNTIME_HARD_MAX_SEC`,
+   `PKG_VARIANT_C_IMAGE`, `VIEWER_NAME_ON_SCREEN`, `PREMISE_BENCH_MAIL_MONTH`; functions `enforce.fix_markers`, `enforce.fix_retention`,
+   `prompts.episode_pack`, `publish.meta_bio`, `data.ptype_for`, `shotplan.prompt_variety`; tab `Repairs`. B10 must end with the three lists in
+   `whatifs/truth.py` as short as they can be and say so in the PR.
+26. (B0b -> B10) The atmosphere's time valve (`ATMOSPHERE_MAX_OVERHEAD_PCT` 30) switches its particles off on EVERY small fake render (153% measured),
+   so the rehearsal never shows the full set of layers after frame 120 and says nothing about full size. First-run verification must read
+   `Episodes.atmos_json` (`dropped`) of the first real videos; if layers are dropped there, D6 tunes the cell.
+27. (B0b, laptop) One test still skips on the laptop: the dashboard render needs node (GitHub runs it). Install node only if a batch changes the Worker.
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`
@@ -618,16 +777,26 @@ Rehearsal asserts `docs_current` ran and passed.
 - After ANY change to settings, checks, tabs, workflows or a module docstring: `../.venv/Scripts/python.exe tools/gen_docs.py` and commit SYSTEM.md.
 - Plan Guard flags one specific word in every text file and several words in file names (see `tools/plan_guard.py` BANNED_NAME_WORDS) - keep
   BUILD_STATE and seed files clear of them.
+- Sweep (standing rule 2; about 2 minutes an id alone, 4-5 with 3 jobs; ALWAYS on a frozen copy so that edits do not change the code under test):
+  `git worktree add --detach <scratch>/wt <commit>`, then from that folder `<venv python> tools/sweep.py --n 40 --jobs 3 --work <dir outside any repo> --out <file>`;
+  `--org off` = the old path; `--mode rehearsal --ids <id,...>` = the full rehearsal with a forced id; `--one <id> --work <dir>` = one id, folder kept.
+  Read only the `TOTAL` and `SUMMARY` lines; per-id logs are in `<work>/_logs/`. Afterwards `git worktree remove --force <scratch>/wt` and, if git then
+  complains about `.git/worktrees/<name>`, delete that folder by hand (OneDrive can hold it for a minute).
+- Real pytest for single files (same runner as GitHub): `PYTHONPATH= ../.venv/Scripts/python.exe -m pytest tests/<file>.py -q -p no:cacheprovider`;
+  add `WI_NO_SKIPS=1` to run strict like GitHub's Checks.
+- Truth registry by hand: `../.venv/Scripts/python.exe -m whatifs.truth` (retired concepts, unread cells, unused tabs, uncalled functions).
+- NEVER paste code with backslashes through a shell here-document on this laptop: the shell halves them (it broke a file twice in B0b). Write the
+  file with the file tools, then run it.
 - git: `core.autocrlf=false` (keep LF); write files with LF. Commit identity Rahul4869 (noreply address); push with
   `GIT_TERMINAL_PROMPT=1 GCM_INTERACTIVE=always git push` (credentials are saved).
 
 ## BATCH LOG
 | Batch | Status | Suite | Rehearsal | Notes |
 |---|---|---|---|---|
-| B0 | done 10 Nov 2026 | 912 / 0 / 6 skipped | GREEN (19 + 18) | 2 small fixes (Windows ffmpeg path; particle seed determinism) |
-| B1 | done 10 Nov 2026 | 940 / 0 / 6 skipped | GREEN (20 + 18) | Truth Registry; docs/CURRENT + ARCHIVE; generated SYSTEM.md; check `docs_current` (38 hard checks now) |
-| B1b | done 10 Nov 2026 | 949 / 0 / 6 skipped | GREEN (20 + 18) | Owner decision "4 a month" executed: cap 4, weekly Saturday, one-time Sheet move, truthful viewer lines, retired rule |
-| B2 | done 10 Nov 2026 | 988 / 0 / 6 skipped | GREEN (21 + 18) | Knowledge Palace core: 92 founding items, write gate, life cycle with authority, guarded playbooks, check `palace_health` (39 hard checks now) |
-| B3 | done 10 Nov 2026 | 1088 / 0 / 6 skipped | GREEN (22 + 19) | Memos + department contract: 4 org modules + wrappers, 7 departments wired, SLA watchdog, checks `dept_contract` + `takeaways_written` (41 hard checks now); promise-flag fix |
-| B0b | next | | | Baseline re-check (owner, 10 Nov): read GitHub Checks, sweep 40+ episode ids, fix what it shows |
-| B4 | after B0b | | | Execution Engine |
+| B0 | done 10 Nov 2026 | 912 / 0 / 6 skipped | GREEN (19 + 18) | 2 small fixes (Windows ffmpeg path; particle seed determinism). GitHub run 28: GREEN |
+| B1 | done 10 Nov 2026 | 940 / 0 / 6 skipped | GREEN (20 + 18) | Truth Registry; docs/CURRENT + ARCHIVE; generated SYSTEM.md; check `docs_current` (38 hard checks now). GitHub run 31: GREEN |
+| B1b | done 10 Nov 2026 | 949 / 0 / 6 skipped | GREEN (20 + 18) | Owner decision "4 a month" executed: cap 4, weekly Saturday, one-time Sheet move, truthful viewer lines, retired rule. GitHub run 33: GREEN |
+| B2 | done 10 Nov 2026 | 988 / 0 / 6 skipped | GREEN (21 + 18) | Knowledge Palace core: 92 founding items, write gate, life cycle with authority, guarded playbooks, check `palace_health` (39 hard checks now). GitHub run 38: RED at the rehearsal (the stale promise flag, reproduced in B0b; fixed in B3) |
+| B3 | done 10 Nov 2026 | 1088 / 0 / 6 skipped | GREEN (22 + 19) | Memos + department contract: 4 org modules + wrappers, 7 departments wired, SLA watchdog, checks `dept_contract` + `takeaways_written` (41 hard checks now); promise-flag fix. GitHub run 42: GREEN |
+| B0b | done 10 Nov 2026 | 1113 / 0 / 1 skipped | GREEN (22 + 19) | Baseline re-check: sweep 58 of 58 fixed ids green; reference frames always compared; no-skip rule; Checks pinned to production's library versions (they ran OpenCV 5.0.0); red runs name their cause in public; 8 cells / 2 tabs / 10 functions that were never wired are listed and may only shrink; owner: build the room value test in B8. GitHub run 52: GREEN (1114 passed, 0 skipped); runs 46-48 RED = OpenCV 5.0.0 before the pin |
+| B4 | next | | | Execution Engine |
