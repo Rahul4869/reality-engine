@@ -84,6 +84,84 @@ Honest note: for the arXiv papers the abstract page was read, not the full paper
 Re-read: 02 points 2 ("evaluated by another chat session objectively in its role"), 3 (cheap models never judge taste), 12, 14 ("AUTOMATIC
 RESEARCH, AUTOMATIC ASSESSMENT OF RESEARCH"), 15; 01 sections 2 (D2, D3), 5, 7 `research_cadence`, 8, 9; open issues 8, 13, 30.
 
+#### Step 2 CREATIVITY (4 designs; scores 1-5: breakout impact / enforceability / cost / reliability / owner effort)
+- A "Extend the topic brief": keep `research.py`'s brief, add one web-search call, let `room2.jury` rank the findings. 2 / 2 / 5 / 3 / 5. Rejected:
+  a ranking has no accept / test / reject, room2's jury includes a cheap judge (02 point 3), and the brief answers "which topic", not "what is wrong
+  with us and who does it better".
+- B "Deep-research agent": plan -> many searches -> read -> synthesise per question (the commercial deep-research shape). 4 / 2 / 1 / 2 / 5.
+  Rejected: sources 1-2 (most hallucinated URLs, accuracy falls ~42% as tool calls grow) and the cap (Rs 300 buys about 20 bounded questions a month).
+- C "Gap-driven agenda + grounded memo + checklist board": the agenda is computed by code from the organisation's own failures (failed checks,
+  weakest breakout component, recurring problems, owner memos, outliers, expiring facts, policy and tool changes); one bounded search call per
+  question; provenance verified by code; a blind cross-family jury answers fixed yes/no questions; code computes scores and the verdict.
+  4 / 5 / 4 / 4 / 5. Taken as the core.
+- D ORIGINAL, beyond the research - five rules that make a jury's verdict something code can check:
+  (1) PLANTED CANARY: every Board session contains one memo the code built to be rejected (no dated source, a guaranteed-views claim, a policy
+      breach, nothing measurable), shown blind among the real ones. Each FAMILY of judges must reject it on its own, or the whole session is void
+      (no verdict written, the memos wait for the next run). Calibration is measured on every session, not assumed (sources 5, 6).
+  (2) EVIDENCE CEILING: code computes the highest evidence score a memo can get from what it can verify (sources the search tool really returned,
+      that resolve, dated, distinct domains, official or measured types, how fresh); the jury can lower it, never raise it (sources 1, 2).
+  (3) FAMILY VETO: scores are the mean of FAMILY means, and nothing is accepted or sent to test unless the family that did NOT write the memo
+      clears the bar by itself (source 3).
+  (4) PRE-REGISTRATION: every proposed action carries a prediction in a fixed vocabulary (a contract check or an Analytics column, a direction, a
+      horizon in videos); without one a technique cannot reach "test" - the prediction becomes the experiment's metric when the Council issues it.
+  (5) FACTS ACCEPT, IDEAS TEST: only a fact (policy, tool, price, an expiring Palace fact) can be "accept"; a creative technique is at most "test"
+      (source 8: what juries love before execution falls hardest after it).
+  5 / 5 / 4 / 4 / 5.
+Decision: C + D. Rejected after scoring: Message Batches for research (searches cost the same in a batch, only tokens halve - about Rs 4 a question,
+~Rs 70 a month - while the batch API throttles searches and the daily job would wait up to 40 minutes per batch; recorded as an open issue for
+measurement, not built); a third (cheap) judge; letting the model choose the evidence type (code classifies by domain).
+
+#### Step 3 DESIGN MEMO
+- Decision: two native departments - `whatifs/org/rnd.py` (D2) and `whatifs/org/board.py` (D3) - the first departments whose ACT returns
+  `runner.Out` (memos, every inbound memo dispositioned, measures), so the runner proves every step.
+- Where they run (level-triggered, so a missed day never skips a week): the daily `learn` job, in this order: D2 `daily` (Rs 0: the Outlier Lab, the
+  search-demand scores and the research brief move here from `manage.learn`; then the agenda is refreshed) -> D2 `weekly` when the last complete
+  weekly run is RESEARCH_DEEP_EVERY_DAYS old (paid, budget "org", cap Rs 300) -> D3 `assess` when a research memo waits (paid, budget "org", cap
+  Rs 120) -> D10 `daily` as before. A research memo is therefore assessed the same day it is written (SLA 48 h).
+- D2 agenda (`Research_Agenda` tab, one row per gap, deduplicated by signature, a question answered is not asked again for RESEARCH_REPEAT_DAYS):
+  failed contract checks (28 days, by count; addressed to the check's owner), the weakest breakout component, recurring problem memos (attempt >= 2),
+  open owner memos (P0, always asked, outside the weekly count), Outlier Lab videos (14 days), Palace facts / plans / policy rules expiring within
+  14 days or expired (closes the research side of open issue 8), new or deprecated models in `Tool_Scout`, and a standing platform-policy question
+  every 28 days. Priority is computed; the weekly run asks the top RESEARCH_PER_WEEK while the D2 budget left covers the estimate per question
+  (RESEARCH_EST_INR or the median measured cost, whichever is higher); P0 is asked even past the cap (01 section 9).
+- One question = one `models.ask` call with the web-search tool (role `rnd_research`, Sonnet chain; Gemini grounding is the fallback), at most 4
+  searches. `models.last_call()` (new, additive) returns the provider, the model, the measured cost and the citations the API itself returned.
+- Provenance by code (`rnd.verify`): a source counts only if its URL is among the API's citations or results (a URL the model typed is a PHANTOM:
+  dropped, counted, and costs the memo 2 points of ceiling); it must resolve (404 / 410 / no host = dead; 401-429 = alive but blocked); it needs a
+  publication date not in the future (the result's page age or the model's date); its type is decided by its domain (platform / vendor = official,
+  research = measured, else practice), never by the model; its quoted text is the API's `cited_text`. A finding with no surviving source is dropped;
+  a question with no surviving finding writes no memo (agenda row "unanswered", the money is still counted). Evidence ceiling 0-10 from distinct
+  domains, official / measured sources, freshness and phantoms.
+- Research memo (to D3): question, findings, confidence (never above ceiling / 10), proposed actions, expected impact, cost, target departments; new
+  optional body fields kind, gap, evidence_ceiling, predictions, palace_ref; links carry the agenda row and the researcher's family (the jury never
+  sees it). Schema change is additive.
+- D3 Board session (`board.assess`): up to BOARD_MAX_MEMOS research memos + 1 canary, labelled A, B, C... with no department, model or id; for each
+  memo the jury also sees the target department's own playbook ("what we already do") for the novelty questions. Two judges of two families
+  (`board_gemini` = Gemini Pro only, `board_claude` = Sonnet then Opus: chains with NO cheap model), each in BOARD_ORDERS orders (original and
+  reversed). 11 yes/no questions with a one-line reason each: evidence 2, novelty 2, impact 3, feasibility 2, risk 3 (policy, owner rules /
+  canon, slop); cost is computed by code from the memo's cost. Scores per dimension = 10 x the share of "yes" (family-balanced); evidence is capped
+  by the ceiling. Verdict by code (`board.verdict`): reject when evidence < BOARD_MIN_EVIDENCE, risk >= 5 or impact < 4; accept only a FACT
+  (policy, tool, revalidate) with evidence >= 7, feasibility >= 5, risk < 3; test when impact >= 6, feasibility >= 5, novelty >= 5 and at least
+  one valid prediction; else reject; accept / test also need the non-author family alone to clear the same bar. A judge answered by the wrong model
+  (fallback to another family or to a cheap model), a single family, or a canary not rejected by every family = session void.
+- Assessment memo (to the Council) carries the scores, the verdict, the jury (family:model), the rationale, the family checklist shares and the
+  canary result; `research_cadence` RE-COMPUTES every stored verdict from the stored checklist and fails on a mismatch (a verdict nobody can forge).
+  Until the Council exists (B6) an assessment memo waits at the owner's level silently (owner_visible only for an accepted P0 fact).
+- Check `research_cadence` (script gate, owner D2): FAIL when (after a 48-hour grace from ORG_SINCE) D2's daily run is more than 50 hours old, the
+  weekly run more than RESEARCH_DEEP_EVERY_DAYS + 1 days old while budget is left, a research memo is past its SLA and neither assessed nor
+  escalated, a research memo lacks the provenance stamp (not written by `rnd.verify`), an assessment's verdict differs from the code's verdict on its
+  own checklist, an assessment lacks two families or the canary, or a department spent past its cap by more than one question's estimate without a P0.
+- Money (rule 2): D2 cap Rs 300 (about 4 questions a week at Rs ~10-15 each, measured per call), D3 cap Rs 120 (about Rs 10-20 a session).
+  The unspent part of the caps of WIRED departments is reserved from production like an earmark (`governor.org_left_inr`), so the month's plan
+  never counts the organisation's thinking money twice.
+- Levers: + RESEARCH_PER_WEEK (D2; up = costs more -> owner), + BOARD_MIN_EVIDENCE (D3; down = weaker gate -> owner). D2 and D3 leave
+  `registry.PENDING` (7 -> 5), so their tickets reach the engine.
+- Rejected: the Board writing Palace items or tickets (the Council decides, B6); the model choosing the evidence type; free 0-10 scores; one judge
+  family; Message Batches (see step 2); re-validating Palace facts directly (only owner, Council, D10 may - the memo carries `palace_ref` for B6).
+- Tests: provenance both ways (phantom, dead, undated, future-dated, type clamp, finding without source, empty memo), agenda from every gap source and
+  dedupe, cap and P0, the jury's family / model / canary rules, verdict table both ways, forged verdict, the check's every FAIL condition, the REAL
+  learn job running D2 and D3, a fake research cycle end to end (agenda -> memo -> assessment -> the Council's level).
+
 ### B4 - Execution Engine (10 Nov 2026) - ACCEPTED (all 7 loop steps recorded below; final code commit ad99fd2 GREEN in GitHub run 59)
 Result in one line: whatever the organisation decides can now only exist as a change that runs - a ticket is compiled into a typed change, written to a
 ledger before and after, verified by evidence somebody else wrote later, and rolled back when that fails; a decision without executed tickets fails a
