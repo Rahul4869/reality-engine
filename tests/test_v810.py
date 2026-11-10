@@ -294,6 +294,7 @@ def test_cap_is_4000_and_estimates_include_tts_and_thinking(setting):
     assert EP.est_cost_inr({"stills": 50, "living": 8, "kling": 3, "episode_id": "E"}) > 300
 
 def test_headroom_and_fourth_kling_only_when_it_fits(monkeypatch, setting):
+    setting("KLING_CLIPS", "3"); setting("KLING_MIN_CLIPS", "3")      # v10.2: this golden describes the 3-clip plan; option C's 4 scenes are tested in test_v102
     _legacy_budget(setting)
     h = G.headroom(); assert h["cap_inr"] == 4000 and h["per_video_inr"] > 0
     monkeypatch.setattr(G, "episodes_left_this_month", lambda: 1); assert G.kling4_proposal()           # one video left, a full month of money: it fits

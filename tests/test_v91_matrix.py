@@ -99,8 +99,11 @@ def test_upgrade_from_v9_sheet_is_additive_and_idempotent(tmp_path):
     MG.setup(); snap2 = {t: st.rows(t) for t in st.d}
     assert {t: len(r) for t, r in snap1.items()} == {t: len(r) for t, r in snap2.items()}       # Setup twice: nothing duplicated
     vals = {r["key"]: r["value"] for r in st.rows("Settings")}
-    flips = {k: (o, n) for k, o, n in tuple(MG.V93_FLIPS) + tuple(MG.V931_FLIPS) + tuple(MG.V101_FLIPS) + (("BUDGET_FLOOR_INR", "4000", "5000"), ("BUDGET_CEILING_INR", "4000", "5000"))}      # v9.3/v9.3.1/v9.4a/v10: documented one-time flips (4000 -> 4700 -> 5000)
-    assert all(vals[k] == v for k, v in vals9.items() if not (k in flips and v == flips[k][0]))      # every other existing value untouched
-    assert all(vals[k] == flips[k][1] for k, v in vals9.items() if k in flips and v == flips[k][0])  # a cell still at the old default got the new one
+    olds = {}
+    for k, o, n in tuple(MG.V93_FLIPS) + tuple(MG.V931_FLIPS) + tuple(MG.V101_FLIPS) + tuple(MG.V102_FLIPS) + (MG.V11_KEEP_FLIP,) + tuple(MG.V111_FLIPS) + (("BUDGET_FLOOR_INR", "4000", "5000"), ("BUDGET_CEILING_INR", "4000", "5000")):   # v11: + Drive archive 2 -> 12
+        olds.setdefault(k, set()).add(o)                       # v10.2: chained flips (v2.1 -> v2.5 -> v3) are all documented defaults
+    flips = {k: (sorted(v)[0], None) for k, v in olds.items()}      # v9.3/v9.3.1/v9.4a/v10: documented one-time flips (4000 -> 4700 -> 5000)
+    assert all(vals[k] == v for k, v in vals9.items() if not (k in olds and v in olds[k]))      # every other existing value untouched
+    assert all(vals[k] != v for k, v in vals9.items() if k in olds and v in olds[k] and k not in ("BUDGET_FLOOR_INR",))  # a cell still at an old default got a new one
     assert vals["V91_SAFE_MODE"] == "FALSE" and vals["ATMOSPHERE_ON"] == "TRUE" and st.rows("Episodes")[0]["title"] == "old"
     assert {"Retention_Map", "Role_ROI"} <= set(st.d) and not (set(sch["tabs"]) - set(st.d))

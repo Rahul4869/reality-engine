@@ -51,6 +51,33 @@ def fake_reply(key, prompt):
     if key == "bible":
         return json.dumps({"conflicts": [{"issue": "i", "decision": "d"}], "beats": [{"n": i, "purpose": "p", "feeling": "f", "visual_world": "v", "sound": "s", "key_line": "k"} for i in range(1, 7)],
             "look": "cinematic, deep teal shadows, single warm key light, 35mm, fine grain", "recurring_motif": "m", "cta": {"like": "Tap like if your pillow is still here.", "subscribe": "Subscribe before the next object leaves.", "share": "Send this to the friend who sleeps on three pillows."}})
+    if key == "jury":                                                 # v11 (K157): a blind ranking, the reverse of the order shown (exercises position handling)
+        import re as _re
+        letters = sorted(set(_re.findall(r"^\[([A-Z])\]$", prompt, _re.M)))
+        return json.dumps({"ranking": list(reversed(letters)) or ["A"], "weakest_point": {l: "make the stakes concrete in the first line" for l in letters[:1]}})
+    if key == "casefiles":                                            # v11 (K160)
+        n = len(re.findall(r'"case":', prompt)) if 're' in globals() else 5
+        import re as _re
+        n = len(_re.findall(r'"case":', prompt)) or 5
+        return json.dumps({"theme": "Every time the court nearly broke physics", "title": "5 Times the Court Nearly Broke Physics (Ranked)",
+                           "cold_open": "One of these cases got Dr. Grimm banned from the building. It is not the one you think.",
+                           "bridges": [f"Case #{n - i}: and still to come, the case that made Nana Rosa put down her tea." if i < n - 1 else "Number one. The jury still argues about it."
+                                       for i in range(n)],
+                           "verdicts": [["Guilty, with sprinkles.", "Acquitted. Reluctantly.", "Mistrial. Grimm ate the evidence.", "Guilty of being correct.", "Case reopened."][i % 5] for i in range(n)],
+                           "vote": "Which verdict was wrong? You are the jury. Vote in the pinned comment."})
+    if key == "short_script":                                         # v11 (K159): a valid standalone Short (4 beats, ~80 words, loops)
+        return json.dumps({"title": "The Moon Is On Trial (You're The Jury)", "loop_line": "and that is why the Moon",
+                           "beats": [{"who": "ROSA", "line": "[PUNCH] The Moon is charged with leaving you alone tonight.", "style": "deadpan"},
+                                     {"who": "GRIMM", "line": "[PUNCH] Objection! Without it your day shrinks, which I can fix with this lever.", "style": "manic"},
+                                     {"who": "ARCHIVIST", "line": "[PUNCH] [SEND] Exhibit A: the Moon slows Earth's spin, NASA 2023.", "style": "calm"},
+                                     {"who": "VALE", "line": "[PUNCH] The lever is glued to a teacup. Nana glued it.", "style": "noir"},
+                                     {"who": "ROSA", "line": "[PUNCH] Tides go quiet first, and the fish file a complaint.", "style": "deadpan"},
+                                     {"who": "VALE", "line": "[PUNCH] So if it walks out, the oceans notice first, and that is why the Moon", "style": "noir"}]})
+    if key == "punchup":
+        import re as _re
+        m = _re.search(r"SLOTS: (\[.*\])\s*$", prompt, _re.S)
+        slots = json.loads(m.group(1)) if m else []
+        return json.dumps({s["slot"]: [f"{s['line']} - and that, your honour, is why the Moon now pays rent", f"{s['line']} Objection: gravity."] for s in slots})
     if key == "writer":
         m = re.search(r"~(\d+) words", prompt); words = int(m.group(1)) if m else 300
         n = max(10, words // 11) if not SMALL else 12
@@ -61,13 +88,33 @@ def fake_reply(key, prompt):
             for ln in chunk:          # v8.1: Reality Engine dialogue; three label styles are mixed on purpose to exercise the tolerant parser
                 if ln.startswith("[pause"): body.append(ln); continue
                 who = "DIRECTOR" if k % 2 == 0 else "SKEPTIC"; tag = ln[:ln.index("]") + 1]; rest = ln[len(tag):].strip()
-                body.append([f"[{who}] {tag} {rest}", f"{tag} [{who}] {rest}", f"{who}: {rest}"][k % 3]); k += 1
+                every = 1 if "MARKER FIX" in prompt else 2                      # a marker-fix request gets a punchline on every line
+                mk = ("[SEND] " if k == 2 else "[AWE] " if k == 5 else "") + ("[PUNCH] " if k % every == 0 else "")   # v11.1: markers like the real writer
+                body.append(mk + [f"[{who}] {tag} {rest}", f"{tag} [{who}] {rest}", f"{who}: {rest}"][k % 3]); k += 1
+        mt = re.search(r"Title: ([^|]+?)\s*\|", prompt)                    # v11.1: a RETENTION FIX request is answered like a compliant writer:
         L = [i for i, x in enumerate(body) if not x.startswith(("## BEAT", "[pause"))]      # v9: the trial tags (never spoken; ignored when SHOW_MODE = off)
         if len(L) >= 8:
             h = len(L) // 2
             body[L[1]] = "[EXHIBIT A] [METER -1 grimm] " + body[L[1]]; body[L[h]] = "[JURY] [EXHIBIT B] [METER +2 vale] " + body[L[h]]
             body[L[h + 1]] = "[CLIPBAIT] " + body[L[h + 1]] + " [/CLIPBAIT]"; body[L[-3]] = "[JURY] " + body[L[-3]]; body[L[-2]] = "[JURY] [EXHIBIT C] " + body[L[-2]]
+            # v10.2: the trial grammar (time ladder, sourced exhibits, Grimm's Prototype, the verdict line), as the real brief demands
+            body[L[0]] += " At hour 1 the tide clock stalls."; body[L[2]] += " By day 1 the beaches are strange."; body[L[4]] += " By year 1 the reefs go quiet."
+            body[L[1]] += " Exhibit A: NOAA tide records, 2023."; body[L[h]] += " Exhibit B: UK tidal survey, 2021."; body[L[-2]] += " Exhibit C: Laskar, Nature, 1993."
+            body[L[3]] += " Behold, Prototype No. 41!"; body[L[-1]] += " Here's what's true: in a million years the tilt still wobbles."
+        if "RETENTION FIX" in prompt:                                            # answered like a compliant writer: a <=14-word YOU line with the
+            promise = (mt.group(1).strip().rstrip("?") + "?") if mt else "Something is wrong."     # promise first, and no exhibit/lore in the first 20 s
+            body.insert(1, f"[WITNESS] [tension] YOU wake up. Your pillow floats. {promise}")
+            moved = []
+            for j in range(2, min(len(body), 7)):                                # exhibits MOVE later (never deleted: the episode still needs them)
+                moved += re.findall(r"\[EXHIBIT[^\]]*\]", body[j]) + re.findall(r"Exhibit [A-H][^.]*\.", body[j])
+                body[j] = re.sub(r"\[EXHIBIT[^\]]*\]\s*", "", body[j]); body[j] = re.sub(r"Exhibit [A-H][^.]*\.\s*", "", body[j])
+            if moved:
+                k2 = next((j for j in range(max(8, len(body) // 2), len(body)) if not re.search(r"(?i)exhibit|^## BEAT|^\[pause", body[j])), len(body) - 2)
+                tags_ = " ".join(m for m in moved if m.startswith("[")); text_ = " ".join(m for m in moved if not m.startswith("["))
+                body[k2] = (tags_ + " " if tags_ else "") + body[k2] + (" " + text_ if text_ else "")
         return json.dumps({"title_working": "Pillows", "script": "\n".join(body), "facts": [{"claim": "c", "reasoning": "r"}]})
+    if key == "critic" and "MEASURED CHECKS" in prompt:          # v10.2: the 6-point creative self-review (contract)
+        return json.dumps({"hook": 8, "clarity": 8, "humour": 7, "visual_variety": 7, "audio": 8, "accuracy": 8, "notes": "Fake review: tighten the cold open; more Grimm."})
     if key == "critic":
         return json.dumps({"scores": {k: 8 for k in ["hook_strength", "curiosity_gap", "escalation", "unpredictable_answer", "science_plausible", "pacing_variety",
             "humour_cringe_free", "originality_vs_recent", "policy_safe", "title_thumb_promise_kept", "sounds_human", "psychological_pull"]}, "verdict": "PASS", "fixes": {}})

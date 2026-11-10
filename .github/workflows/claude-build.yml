@@ -39,6 +39,11 @@ jobs:
       OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
+      WA_TOKEN: ${{ secrets.WA_TOKEN }}
+      WA_PHONE_ID: ${{ secrets.WA_PHONE_ID }}
+      WA_WABA_ID: ${{ secrets.WA_WABA_ID }}
+      OWNER_WA: ${{ secrets.OWNER_WA }}
+      AA_API_KEY: ${{ secrets.AA_API_KEY }}
       BUILD_KIND: ${{ inputs.kind }}
       BUILD_BRANCH: claude/${{ inputs.kind }}-${{ github.run_id }}
       BUILD_SPEC: ${{ inputs.spec }}

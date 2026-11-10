@@ -23,6 +23,12 @@ jobs:
       META_PAGE_KEY: ${{ secrets.META_PAGE_KEY }}
       OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
       GH_REPO: ${{ github.repository }}
+      WA_TOKEN: ${{ secrets.WA_TOKEN }}
+      WA_PHONE_ID: ${{ secrets.WA_PHONE_ID }}
+      WA_WABA_ID: ${{ secrets.WA_WABA_ID }}
+      OWNER_WA: ${{ secrets.OWNER_WA }}
+      GH_MERGE_TOKEN: ${{ secrets.GH_MERGE_TOKEN }}
+      AA_API_KEY: ${{ secrets.AA_API_KEY }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6

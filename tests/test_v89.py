@@ -239,4 +239,4 @@ def test_camera_moves_add_no_cost_and_change_no_counts(setting):
     setting("PRICE_KLING_USD", "0.25")      # v10.1: this cost golden keeps the Kling 2.1 price; the new $0.35 is tested in test_v101
     d = {"episode_id": "EPX", "stills": 52, "living": 8, "kling": 3}
     assert EP.est_cost_inr(d) - G.voice_think_inr() == pytest.approx(376.45, abs=0.5)        # same as v8.7 (v8.10 allowances aside): camera motion is code on pictures already paid for
-    assert core.DEFAULTS["KLING_CLIPS"][0] == "3" and core.DEFAULTS["LIVING_STILLS"][0] == "8" and core.DEFAULTS["KLING_MIN_CLIPS"][0] == "3"
+    assert core.DEFAULTS["KLING_CLIPS"][0] == "4" and core.DEFAULTS["LIVING_STILLS"][0] == "8" and core.DEFAULTS["KLING_MIN_CLIPS"][0] == "4"

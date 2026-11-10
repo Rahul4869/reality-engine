@@ -9,7 +9,7 @@ Inbound (relay Worker -> repository_dispatch 'wa_inbound', AES-GCM): button payl
           CHAT_MONTHLY_CAP_INR), which answers honestly and, for a concrete idea, offers [Build it] [Park] (a Claude Code build on the owner's plan).
 Never prints message text (public logs, K32). The owner's number is the only accepted sender (the Worker drops everyone else)."""
 from __future__ import annotations
-import datetime as dt, json, re
+import datetime as dt, json, os, re
 from whatifs.core import S, log, store, iso, now_utc, parse_iso, env, set_setting, scrub, FAKE
 
 def configured():
@@ -38,6 +38,42 @@ def send_buttons(text, buttons):
     """Up to 3 reply buttons [(title, id)]; titles are cut to 20 characters (WhatsApp limit)."""
     bs = [{"type": "reply", "reply": {"id": str(i)[:256], "title": str(t)[:20]}} for t, i in buttons[:3]]
     return _post({"type": "interactive", "interactive": {"type": "button", "body": {"text": _plain(text)[:1024]}, "action": {"buttons": bs}}})
+
+MENU_ROWS = [("today", "Today", "next slot, what's being made"), ("numbers", "Numbers", "views, retention, subs + chart"),
+             ("hot_topics", "Hot topics", "cited signals this week"), ("recommendations", "What to post", "next cases + Shorts ideas"),
+             ("observations", "Observations", "what the engine noticed"), ("strategy", "Strategy", "the plan and why"),
+             ("experiments", "Experiments", "tests running"), ("money", "Spend", "money vs cap + chart")]
+
+def send_list(text, button, rows, header="Reality Engine"):
+    """Interactive list (max 10 rows; title <= 24, description <= 72 characters). rows = [(id, title, description)]."""
+    sec = [{"title": "Menu", "rows": [{"id": str(i)[:200], "title": str(t)[:24], "description": str(dd)[:72]} for i, t, dd in rows[:10]]}]
+    return _post({"type": "interactive", "interactive": {"type": "list", "header": {"type": "text", "text": header[:60]}, "body": {"text": _plain(text)[:1024]},
+                                                         "action": {"button": str(button)[:20], "sections": sec}}})
+
+def send_image(path, caption=""):
+    """Upload a PNG to WhatsApp's media store, then send it as an image message with a caption. Returns the message id or ''."""
+    if not path or not os.path.exists(path): return ""
+    if FAKE: return _post({"type": "image", "image": {"id": "FAKE_MEDIA_" + os.path.basename(path), "caption": _plain(caption)[:1000]}})
+    import requests
+    up = requests.post(f"https://graph.facebook.com/{S('WA_GRAPH_VERSION')}/{env('WA_PHONE_ID')}/media", headers={"Authorization": f"Bearer {env('WA_TOKEN')}"},
+                       data={"messaging_product": "whatsapp", "type": "image/png"}, files={"file": (os.path.basename(path), open(path, "rb"), "image/png")}, timeout=60)
+    if up.status_code >= 300: log(f"WhatsApp image upload failed {up.status_code}", "WARN"); return ""
+    return _post({"type": "image", "image": {"id": up.json().get("id"), "caption": _plain(caption)[:1000]}})
+
+def send_menu(text="What do you want to see?"):
+    return send_list(text, "Menu", [(f"MENU|{k}", t, dd) for k, t, dd in MENU_ROWS])
+
+def send_section(name, demo=False):
+    """One section: the text (with sources), a chart for Numbers/Spend, and 3 buttons to move on. Returns what was sent (for the log)."""
+    from whatifs import owner_view as OV, charts as CH
+    view = OV.build(demo=demo)
+    txt = OV.render(name, view)
+    chart = CH.numbers_chart(view) if name == "numbers" else (CH.money_chart(view) if name == "money" else None)
+    if chart: send_image(chart, OV.TITLES.get(name, name) + (" (DEMO)" if demo else ""))
+    nxt = {"today": "numbers", "numbers": "observations", "observations": "recommendations", "recommendations": "hot_topics", "hot_topics": "strategy",
+           "strategy": "experiments", "experiments": "money", "money": "today"}.get(name, "today")
+    send_buttons(txt, [("Menu", "MENU|menu"), (OV.TITLES[nxt][:20], f"MENU|{nxt}"), ("Pause" if not S("PAUSED", bool) else "Resume", "PAUSE" if not S("PAUSED", bool) else "RESUME")])
+    return txt + (f"\n[chart: {os.path.basename(chart)}]" if chart else "")
 
 def send_template(text, options, payloads):
     """The approved utility template: {{1}} = the text, {{2}} = '1) A  2) B  3) C'; quick replies 1/2/3 carry the payloads."""
@@ -90,7 +126,12 @@ def chat(text, deep=False):
     snap = DS.build_snapshot()
     ctx = {"engine": snap.get("engine"), "money": {k: snap["money"].get(k) for k in ("month_spend", "cap", "credit_cover")}, "open_items": len(snap.get("docket", [])),
            "progress": snap.get("progress", {}).get("kpis"), "learned": snap.get("learned")}
-    prompt = f"CONTEXT: {json.dumps(ctx, ensure_ascii=False)[:6000]}\nRECENT CHAT:\n{_history()}\nOWNER: {text}"
+    try:                                                         # v10.3: the same sections as the dashboard (numbers, hot topics, recommendations...)
+        from whatifs import owner_view as OV
+        ov = OV.build(); ctx["owner_view"] = {k: ov.get(k) for k in ("today", "numbers", "hot_topics", "recommendations", "observations", "strategy", "experiments", "money")}
+    except Exception: pass
+    prompt = (f"CONTEXT (every number has a src; cite the src when you use a number; say 'no data yet' when a section is empty; label guesses as interpretation): "
+              f"{json.dumps(ctx, ensure_ascii=False, default=str)[:12000]}\nRECENT CHAT:\n{_history()}\nOWNER: {text}")
     reply = ask(role, CHAT_SYSTEM, prompt, want_json=False, max_tokens=1200 if not deep else 3000, fake_key="owner_chat")
     reply = str(reply or "").strip()
     m = re.search(r"^SPEC:\s*(.+)$", reply, re.M); k = re.search(r"^KIND:\s*(tweak|feature)", reply, re.M | re.I)
@@ -132,6 +173,22 @@ def handle_inbound(payload_json):
         payload, text = str(m.get("payload") or ""), str(m.get("text") or "").strip()
         st.append("WA_Chat", [{"ts": iso(), "msg_id": mid, "who": "owner", "text": (payload or text)[:1500]}])
         try:
+            if payload.startswith("BRIEF|") or (not payload):               # v10.3 (K154): the owner-brief conversation (start, continue, lock)
+                from whatifs import owner_brief as OB
+                r = OB.button(payload) if payload.startswith("BRIEF|") else OB.handle(text)
+                if r:
+                    out, btns = r; send_buttons(out[-1020:], btns)
+                    st.append("WA_Chat", [{"ts": iso(), "msg_id": mid + ".r", "who": "assistant", "text": out[:1500]}]); continue
+            if payload.startswith("MENU|"):                              # v10.3: the menu system (list rows and buttons carry MENU|<section>)
+                sec = payload.split("|", 1)[1]
+                if sec == "menu": send_menu(); out = "(menu sent)"
+                else: out = send_section(sec)
+                st.append("WA_Chat", [{"ts": iso(), "msg_id": mid + ".r", "who": "assistant", "text": out[:1500]}]); continue
+            if not payload and text.lower() in ("menu", "hi", "start", "options"):
+                send_menu("Hi Rahul. What do you want to see?"); st.append("WA_Chat", [{"ts": iso(), "msg_id": mid + ".r", "who": "assistant", "text": "(menu sent)"}]); continue
+            if not payload and text.lower().startswith("demo"):
+                parts = text.lower().split(); sec = parts[1] if len(parts) > 1 and parts[1] in dict((k, 1) for k, _, _ in MENU_ROWS) else "numbers"
+                out = send_section(sec, demo=True); st.append("WA_Chat", [{"ts": iso(), "msg_id": mid + ".r", "who": "assistant", "text": out[:1500]}]); continue
             if payload and re.match(r"^[A-Z]{2,12}(\|[A-Za-z0-9_.:+\-]{0,80}){0,3}$", payload):
                 ok, note = DS.route(payload); out = ("Done: " if ok else "Not done: ") + str(note)
             elif m.get("type") in ("image", "video", "document"):
@@ -167,7 +224,21 @@ def ensure_templates():
     have = requests.get(base, headers=h, params={"name": S("WA_TEMPLATE_NAME")}, timeout=30).json().get("data", [])
     if have: return True
     body = {"name": S("WA_TEMPLATE_NAME"), "language": S("WA_TEMPLATE_LANG"), "category": "UTILITY",
-            "components": [{"type": "BODY", "text": "Reality Engine: {{1}} Options: {{2}}", "example": {"body_text": [["Video EP12 is held after the quality check.", "1) Fix and post  2) Skip"]]}},
+            "components": [{"type": "BODY", "text": "Reality Engine update: {{1}} Your options: {{2}} Tap a button to reply.", "example": {"body_text": [["Video EP12 is held after the quality check.", "1) Fix and post  2) Skip"]]}},
                            {"type": "BUTTONS", "buttons": [{"type": "QUICK_REPLY", "text": "1"}, {"type": "QUICK_REPLY", "text": "2"}, {"type": "QUICK_REPLY", "text": "3"}]}]}
     r = requests.post(base, headers=h, json=body, timeout=30)
-    log(f"WhatsApp template submitted ({r.status_code})"); return r.status_code < 300
+    if r.status_code >= 300:                                     # v10.2 (#10): Meta's reason is logged (code/subcode/message; never the token)
+        try: er = r.json().get("error", {}); why = f"code {er.get('code')}/{er.get('error_subcode')}: {er.get('error_user_msg') or er.get('message')}"
+        except Exception: why = r.text[:200]
+        log(f"WhatsApp template REJECTED ({r.status_code}): {why}", "ERROR"); return False
+    log(f"WhatsApp template submitted ({r.status_code})"); return True
+
+def ensure_subscribed():
+    """v10.2 (#11): Meta only delivers inbound messages after the app is subscribed to the WhatsApp Business Account (POST subscribed_apps)."""
+    if not (env("WA_TOKEN") and env("WA_WABA_ID")) or FAKE: return False
+    import requests
+    base = f"https://graph.facebook.com/{S('WA_GRAPH_VERSION')}/{env('WA_WABA_ID')}/subscribed_apps"
+    h = {"Authorization": f"Bearer {env('WA_TOKEN')}"}
+    r = requests.post(base, headers=h, timeout=30)
+    ok = r.status_code < 300 and bool((r.json() or {}).get("success", True))
+    log(f"WhatsApp app subscription to the business account: {'OK' if ok else 'FAILED ' + r.text[:160]}", "INFO" if ok else "ERROR"); return ok

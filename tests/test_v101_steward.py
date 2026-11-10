@@ -4,6 +4,11 @@ import pytest
 from whatifs import core, steward as ST, media as MD, notify as NT, publish as PUB, bakeoff as BK
 
 HERO = "fal-ai/kling-video/v2.5-turbo/pro/image-to-video"
+V101_LADDER = '{"hero": [{"id": "fal-ai/kling-video/v2.5-turbo/pro/image-to-video", "usd": 0.35}, {"id": "fal-ai/kling-video/v2.6/pro/image-to-video", "usd": 0.35}, {"id": "wan/v2.6/image-to-video/flash", "usd": 0.25}, {"id": "fal-ai/minimax/hailuo-2.3-fast/standard/image-to-video", "usd": 0.19}], "living": [{"id": "fal-ai/ltx-video/image-to-video", "usd": 0.02}, {"id": "code-motion", "usd": 0}], "still": [{"id": "fal-ai/flux/schnell", "usd": 0.006}], "premium": [{"id": "fal-ai/flux-pro/v1.1", "usd": 0.08}]}'
+
+@pytest.fixture(autouse=True)
+def _v101_ladder(setting):                    # these tests describe the v10.1 ladder; v10.2 only puts Kling 3.0 on top of it
+    setting("MODEL_LADDERS", V101_LADDER); setting("FAL_HERO_MODEL", HERO); setting("PRICE_KLING_USD", "0.35")
 
 def _quiet(monkeypatch):
     monkeypatch.setattr(PUB, "email", lambda *a, **k: True); monkeypatch.setattr(NT, "in_quiet_hours", lambda now=None: False)

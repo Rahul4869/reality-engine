@@ -105,3 +105,16 @@ Use the §1.2 babysitting format from the master file. Cloudflare's dashboard wo
 3. **PIN hashing at 30,000 PBKDF2 iterations** (`PIN_ITERATIONS`), measured at 6.5 ms vs 13.4 ms for 100,000 in Node. The Workers Free plan allows 10 ms CPU per request; going over returns Error 1102. Iterations are stored per hash, so they can be raised later. The secret path, the 5-try lockout and the session cookie carry the rest.
 4. **Never demo data when served:** a network error or a missing snapshot used to switch the live app into demo mode, where taps went nowhere. Now it keeps the last real data, shows "No connection / No data yet", and refuses taps ("Your tap was not sent"). Demo data is only used when the file is opened directly.
 5. **Worker tests:** `relay/test_worker.mjs` (8 tests: handshake, bad signature, owner-only + encrypted forward, first-PIN setup flag, enrol + cookie, lockout, verb regex + encrypted dispatch, thumb route, wrong path, old-hash compatibility). Plus a Python AES-GCM decrypt of a real Worker payload (interop with the pipeline). Run them in Checks: `node --test relay/test_worker.mjs`.
+
+## Amendment v11 (9 Nov 2026): the watchdog clock (Stage A)
+GitHub's scheduled runs can be hours late or dropped (documented by GitHub). The Worker now has a `scheduled()` handler: every 10 minutes it reads the newest
+run of `pipeline.yml` and, if it is older than 45 minutes, sends a `tick` (`repository_dispatch`). The tick job queues (concurrency group `tick`), so an
+extra tick never runs side by side with another.
+
+Owner / setup chat, one time (about 3 minutes):
+1. Paste the new `worker.js` into the Worker (same as before) and **Deploy**.
+2. Worker → **Settings → Triggers → Cron Triggers → Add** → `*/10 * * * *` → Save.
+3. GitHub → Settings → Developer settings → Fine-grained tokens → the `GH_DISPATCH_TOKEN` token → **Repository permissions → Actions: Read** (keep
+   Contents: Read and write) → Save. Without Actions: Read the watchdog still works in "blind" mode (one tick at most every 60 minutes).
+4. Optional variables: `WATCHDOG_STALE_MIN` (default 45), `WATCHDOG_BLIND_MIN` (default 60).
+5. Check: the dashboard KV key `wd_status` shows the last check time, what was seen and whether a tick was sent.

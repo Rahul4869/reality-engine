@@ -21,6 +21,7 @@ def test_reserve_is_inside_the_cap(setting):
     _spend(95); assert G.monthly_cap_reached(maintenance=True)
 
 def test_a_full_nine_video_month_fits_under_the_production_line(setting):
+    setting("KLING_CLIPS", "3"); setting("KLING_MIN_CLIPS", "3")      # v10.2: this golden describes the 3-clip plan; option C's 4 scenes are tested in test_v102
     setting("PRICE_KLING_USD", "0.25")      # v10.1: this cost golden keeps the Kling 2.1 price; the new $0.35 is tested in test_v101
     d = {"stills": 52, "living": 8, "kling": 3, "episode_id": "EPC"}
     per = EP.est_cost_inr(d)
@@ -115,7 +116,8 @@ def test_insert_before_json_keeps_the_reply_format_last():
     assert "@@PROMISE@@" not in P.fill(P.PACKAGER, promise="PROMISE-X") and "PROMISE-X" in P.fill(P.PACKAGER, promise="PROMISE-X")
     assert "at most 4 shots" in P.fill(P.DIRECTOR, sounds=4) and '"promise"' in P.SHOWRUNNER
 
-def test_writer_brief_carries_the_promise_the_rhythm_and_the_playbook(monkeypatch):
+def test_writer_brief_carries_the_promise_the_rhythm_and_the_playbook(monkeypatch, setting):
+    setting("ROOM_MODE", "v1")                                 # v1 path (single writer call); the v2 path is checked below
     PB.ensure_seed(); seen = {}
     real = ROOM.ask
     def spy(role, system, prompt, *a, **k):
@@ -125,6 +127,20 @@ def test_writer_brief_carries_the_promise_the_rhythm_and_the_playbook(monkeypatc
     w = seen["Write the narration."]
     assert "THE PROMISE" in w and "RHYTHM BLUEPRINT" in w and "PLAYBOOK" in w and w.index("THE PROMISE") < w.rindex("Return JSON")
     assert r["spine"]["promise"]["title"] and d["retention_check"]["checked"] and d["promise"] == r["spine"]["promise"]
+
+
+def test_room_v2_drafts_carry_the_same_brief_and_the_critic_still_gates(monkeypatch, setting):
+    """v11: every v2 draft gets the full writer brief (promise, rhythm, playbook); the critic (policy-safety scores) still runs after the jury."""
+    setting("ROOM_MODE", "v2"); PB.ensure_seed()
+    import whatifs.models as M
+    briefs, critics = [], []
+    real_many = M.ask_many
+    monkeypatch.setattr(M, "ask_many", lambda reqs, *a, **k: (briefs.extend(r["system"] for r in reqs if "COLD-OPEN ARCHETYPE" in r.get("prompt", "")), real_many(reqs, *a, **k))[1])
+    real_critic = ROOM.critic
+    monkeypatch.setattr(ROOM, "critic", lambda *a, **k: (critics.append(1), real_critic(*a, **k))[1])
+    d = DRAW("EPW2", "collective"); ROOM.run_room(d, "EPW2")
+    assert len(briefs) == core.S("ROOM_V2_DRAFTS", int) and all("THE PROMISE" in w and "RHYTHM BLUEPRINT" in w and "PLAYBOOK" in w for w in briefs)
+    assert critics, "the critic (policy-safety gate) must still run in room v2"
 
 # ------------------------------------------------------------------ retention gate
 FILL = "[DIRECTOR] [calm] The light settles over the quiet street and nothing moves."

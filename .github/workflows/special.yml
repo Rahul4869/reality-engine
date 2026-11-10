@@ -32,6 +32,14 @@ jobs:
       META_PAGE_KEY: ${{ secrets.META_PAGE_KEY }}
       OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
       GH_REPO: ${{ github.repository }}
+      # v11 audit fix: owner cards go by WhatsApp; the tick can start Shorts / Case Files jobs; optional tool-scout key
+      WA_TOKEN: ${{ secrets.WA_TOKEN }}
+      WA_PHONE_ID: ${{ secrets.WA_PHONE_ID }}
+      WA_WABA_ID: ${{ secrets.WA_WABA_ID }}
+      OWNER_WA: ${{ secrets.OWNER_WA }}
+      GH_MERGE_TOKEN: ${{ secrets.GH_MERGE_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+      AA_API_KEY: ${{ secrets.AA_API_KEY }}
       SPECIAL_KIND: ${{ inputs.kind }}
     steps:
       - uses: actions/checkout@v6

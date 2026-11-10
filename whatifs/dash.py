@@ -11,7 +11,7 @@ import base64, datetime as dt, json, re
 from whatifs.core import S, log, store, iso, now_utc, parse_iso, env, set_setting, scrub, FAKE
 
 MODE_IDS = {"lean": "runway", "runway": "runway", "standard": "standard", "growth": "growth"}
-SETTINGS_MAP = {"shorts_per_day": ("SHORTS_PER_DAY", "int"), "localizations": ("LOCALIZATIONS_ON", "bool"), "affiliate_block": ("AFFILIATE_ON", "bool"),
+SETTINGS_MAP = {"shorts_per_day": ("SHORTS_PER_DAY", "half"),   # v11: standalone Shorts per day in half steps (1.5 = 2 on even days, 1 on odd) "localizations": ("LOCALIZATIONS_ON", "bool"), "affiliate_block": ("AFFILIATE_ON", "bool"),
                 "native_test_reminder": ("NATIVE_TEST_REMINDER_ON", "bool"), "visual_lab": ("VISUAL_LAB_ON", "bool"), "facts_watch": ("FACTS_WATCH_ON", "bool")}
 
 # ------------------------------------------------------------------ snapshot
@@ -140,7 +140,7 @@ def build_snapshot():
             "docket": _docket(), "progress": _progress(), "learned": (rules + lessons)[-6:],
             "lab": _lab(), "money": _money(),
             "health": _health(),
-            "settings": {"shorts_per_day": S("SHORTS_PER_DAY", int) if "SHORTS_PER_DAY" in __import__("whatifs.core", fromlist=["DEFAULTS"]).DEFAULTS else 2,
+            "settings": {"shorts_per_day": S("SHORTS_PER_DAY", float) if "SHORTS_PER_DAY" in __import__("whatifs.core", fromlist=["DEFAULTS"]).DEFAULTS else 2,
                          "localizations": bool(S("LOCALIZATIONS_ON", bool)) if "LOCALIZATIONS_ON" in __import__("whatifs.core", fromlist=["DEFAULTS"]).DEFAULTS else False,
                          "visual_lab": bool(S("VISUAL_LAB_ON", bool)), "facts_watch": bool(S("FACTS_WATCH_ON", bool))},
             "acks": acks, "whatsapp": str(S("WA_BOT_NUMBER") or "")}
@@ -225,7 +225,7 @@ def route(verb):
         val = parts[2]
         if kind == "bool": val = "TRUE" if val.lower() in ("true", "1", "yes", "on") else "FALSE"
         else:
-            try: val = str(max(0, min(4, int(float(val)))))
+            try: val = str(max(0.0, min(4.0, round(float(val) * 2) / 2))) if kind == "half" else str(max(0, min(4, int(float(val)))))
             except ValueError: return False, "not a number"
         set_setting(key, val); return True, f"{key} = {val}"
     return False, "That action is not allowed."

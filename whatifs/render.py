@@ -156,7 +156,71 @@ def camera_path(move, nframes, sw, sh, ww, wh, base_scale, rng, energy="calm", c
         out.append((cx, cy, z, th, par_px * (t - 0.5), fd))
     return out
 
-def parallax_segment(img_path, path, nframes, seed, detail=False, depth=None, focus=None, look=None, energy="calm", move=None):
+# ---------------- v11 (K161b) WORLD PARTICLE LAYER: independent motion that makes a still read as alive (research 9 Nov 2026) ----------------
+# Three depth layers (far/mid/near: size 1:3:8, nearer = faster and softer), light-gated (particles glint where the picture is lit, with a floor so
+# dark noir frames still breathe), tinted toward the scene's key light, screen-blended, motion-streaked along velocity, faded in/out over their
+# life, pre-rolled (frame 0 is already populated). One look per world: court/case dust, lab embers, office rain, outdoor wind.
+PARTICLE_WORLDS = {
+    # count per 1920x1080 (scaled by area), size px at 1080p (far, mid, near), speed px/s at 1080p, opacity (far, mid, near), direction, streak, tint BGR
+    "dust":  dict(n=(110, 70, 14), size=(2.0, 3.5, 9.0), speed=(6, 14, 26), op=(0.35, 0.55, 0.22), vx=(-0.3, 0.3), vy=(-0.25, 0.15), streak=0.0, tint=(170, 225, 255), wobble=1.0),
+    "embers": dict(n=(55, 34, 8), size=(1.6, 3.0, 7.0), speed=(40, 90, 150), op=(0.55, 0.85, 0.35), vx=(-0.25, 0.25), vy=(-1.0, -0.6), streak=0.5, tint=(60, 150, 255), wobble=0.6),
+    "rain":  dict(n=(190, 110, 22), size=(1.0, 1.6, 3.0), speed=(900, 1500, 2200), op=(0.22, 0.34, 0.18), vx=(0.10, 0.22), vy=(1.0, 1.0), streak=1.0, tint=(255, 225, 200), wobble=0.0),
+    "wind":  dict(n=(120, 70, 12), size=(1.4, 3.0, 8.0), speed=(60, 130, 220), op=(0.30, 0.55, 0.25), vx=(1.0, 1.0), vy=(-0.10, 0.25), streak=0.25, tint=(215, 230, 240), wobble=0.8),
+}
+WORLD_PARTICLES = {"court": "dust", "case": "dust", "lab": "embers", "office": "rain", "outdoor": "wind"}
+
+class Particles:
+    def __init__(self, world, src, seed, ww, wh, nframes, fpsv):
+        style = PARTICLE_WORLDS[WORLD_PARTICLES.get(world, world) if WORLD_PARTICLES.get(world, world) in PARTICLE_WORLDS else "dust"]
+        self.ww, self.wh, self.fps = ww, wh, fpsv; sc = wh / 1080.0; area = (ww * wh) / (1920 * 1080)
+        rng = np.random.default_rng(abs(hash(f"{seed}|{world}")) % (2 ** 32))
+        g = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY).astype(np.float32) / 255.0                 # light gate: where the picture is lit (with a floor),
+        self.g98 = max(1e-3, float(np.percentile(g, 98))); self.floor = S("PARTICLE_GATE_FLOOR", float)   # measured on each rendered frame (follows the camera)
+        top = src.reshape(-1, 3)[np.argsort(src.reshape(-1, 3).sum(1))[-max(10, src.shape[0] * src.shape[1] // 100):]].mean(0)   # key light colour
+        key = top / max(1.0, top.max()); tint = np.array(style["tint"], np.float32) / 255.0
+        self.col = (0.55 * tint + 0.45 * key).astype(np.float32)
+        dens = S("PARTICLE_DENSITY", float); self.layers = []
+        for li, (n, size, speed, op) in enumerate(zip(style["n"], style["size"], style["speed"], style["op"])):
+            m = max(1, int(round(n * area * dens)))
+            vx = rng.uniform(*style["vx"], m); vy = rng.uniform(*style["vy"], m); norm = np.maximum(1e-3, np.hypot(vx, vy))
+            sp = speed * sc * rng.uniform(0.7, 1.3, m)
+            self.layers.append(dict(x=rng.uniform(0, ww, m), y=rng.uniform(0, wh, m), vx=vx / norm * sp, vy=vy / norm * sp,
+                                    r=np.maximum(0.6, size * sc * rng.lognormal(0, 0.35, m)), a=op * rng.uniform(0.5, 1.0, m),
+                                    life=rng.uniform(2.0, 6.0, m), age=rng.uniform(0, 6.0, m), ph=rng.uniform(0, 6.28, m),
+                                    blur=(1.2, 0.0, 3.5)[li] * sc, streak=style["streak"], wob=style["wobble"] * sc * (4, 7, 12)[li]))
+        self.dt = 1.0 / fpsv
+        for _ in range(int(S("PARTICLE_PREROLL_S", float) * fpsv)): self._step()
+    def _step(self):
+        for L in self.layers:
+            L["x"] = (L["x"] + L["vx"] * self.dt) % self.ww; L["y"] = (L["y"] + L["vy"] * self.dt) % self.wh
+            L["age"] += self.dt; dead = L["age"] > L["life"]; L["age"][dead] = 0.0
+    def apply(self, fr, k):
+        dv = max(1, S("PARTICLE_RES_DIV", int)); hw, hh = self.ww // dv, self.wh // dv          # v11: drawn at 1/dv resolution, scaled up (soft particles hide it)
+        acc = np.zeros((hh, hw), np.float32); t = k * self.dt; sh = 4                           # sub-pixel positions (cv2 shift bits)
+        for L in self.layers:
+            lay = np.zeros_like(acc)
+            fade = np.clip(np.minimum(L["age"], L["life"] - L["age"]) / 0.6, 0, 1)
+            wx = (L["x"] + L["wob"] * np.sin(L["ph"] + t * 0.9)) / dv; wy = (L["y"] + L["wob"] * np.cos(L["ph"] * 1.3 + t * 0.7)) / dv
+            for x, y, r, a, f, vx, vy in zip(wx, wy, L["r"] / dv, L["a"], fade, L["vx"] / dv, L["vy"] / dv):
+                val = float(a * f)
+                if val < 0.02: continue
+                p0 = (int(x * 16), int(y * 16))
+                if L["streak"] > 0:                                     # motion streak along the velocity (180-degree shutter)
+                    ex, ey = x - vx * self.dt * 0.5 * (1 + 4 * L["streak"]), y - vy * self.dt * 0.5 * (1 + 4 * L["streak"])
+                    cv2.line(lay, p0, (int(ex * 16), int(ey * 16)), val, max(1, int(round(r))), cv2.LINE_AA, sh)
+                else: cv2.circle(lay, p0, max(16, int(round(r * 16))), val, -1, cv2.LINE_AA, sh)
+            if L["blur"] / dv > 0.3: lay = cv2.GaussianBlur(lay, (0, 0), L["blur"] / dv)
+            acc += lay
+        self._step()
+        q = cv2.resize(cv2.cvtColor(fr, cv2.COLOR_BGR2GRAY), (max(8, hw // 2), max(8, hh // 2)), interpolation=cv2.INTER_AREA).astype(np.float32) / 255.0
+        q = cv2.GaussianBlur(q, (0, 0), max(1.5, hw * 0.01))
+        gate = cv2.resize(np.clip(self.floor + (1 - self.floor) * q / self.g98, 0, 1), (hw, hh), interpolation=cv2.INTER_LINEAR)
+        over = (np.clip(acc * gate, 0, 1)[..., None] * (self.col * 255.0)[None, None, :]).astype(np.uint8)
+        over = cv2.resize(over, (self.ww, self.wh), interpolation=cv2.INTER_LINEAR)
+        inv = cv2.multiply(cv2.bitwise_not(fr), cv2.bitwise_not(over), scale=1.0 / 255.0)     # screen blend in 8-bit: 255 - (255-a)(255-b)/255
+        return cv2.bitwise_not(inv)
+
+def parallax_segment(img_path, path, nframes, seed, detail=False, depth=None, focus=None, look=None, energy="calm", move=None, world=None):
     """v8.9: one cinematic camera move per shot (push-in + depth parallax, pull, drift, subtle orbit, controlled handheld, rack-focus, variable-speed Ken Burns
     with a 1-2.5 degree roll, whip-and-settle). energy='high' (opening window, the shot before a reaction) = the strongest moves, ~45 % bigger.
     Never the same move twice in a row. Settings CAMERA_MOTION = gentle restores the v8.7 moves exactly."""
@@ -178,16 +242,26 @@ def parallax_segment(img_path, path, nframes, seed, detail=False, depth=None, fo
     cam = camera_path(move, nframes, sw, sh, ww, wh, base_scale, rng, energy, cx0, cy0, detail)
     du, dv = np.meshgrid(np.arange(ww, dtype=np.float32) - ww / 2, np.arange(wh, dtype=np.float32) - wh / 2)
     soft = cv2.GaussianBlur(src, (0, 0), max(1.5, ww * 0.0045)) if move == "rack_focus" else None
+    life = S("LIFE_LAYER_ON", bool); amp = S("LIFE_AMP", float) * wh; ph = rng.uniform(0, 6.28); f_ = fps()
+    flat = float(np.std(D)) < 0.05                       # v11: depth failed / flat -> the subject is assumed in the centre (screen-space breath)
+    parts = Particles(world or S("PARTICLE_DEFAULT_WORLD"), src, seed, ww, wh, nframes, fps()) if S("PARTICLES_ON", bool) else None   # v11 (K161b)
+    centre = np.clip(1.0 - (du / (ww * 0.33)) ** 2 - (dv / (wh * 0.4)) ** 2, 0.0, 1.0).astype(np.float32) if life else None
     def frames():
-        for cx, cy, z, th, pshift, fd in cam:
+        for k, (cx, cy, z, th, pshift, fd) in enumerate(cam):
             c, s_ = math.cos(th), math.sin(th)
             mx = (cx + (du * c - dv * s_) / z).astype(np.float32); my = (cy + (du * s_ + dv * c) / z).astype(np.float32)
-            d = cv2.remap(D, mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT) if (pshift or fd is not None) else None
+            d = cv2.remap(D, mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT) if (pshift or fd is not None or life) else None
             if pshift: mx = mx + pshift * (d - 0.5) * 2
+            if life:                                   # v11 (K161) life layer: the NEAR part of the picture breathes and sways (local, non-camera motion)
+                near = centre if flat else np.clip((d - S("LIFE_NEAR_DEPTH", float)) * 3.0, 0.0, 1.0)
+                tt = k / f_
+                my = my + (amp * math.sin(6.2832 * 0.22 * tt + ph)) * near
+                mx = mx + (amp * 0.45 * math.sin(6.2832 * 0.13 * tt + ph * 1.7)) * near
             fr = cv2.remap(src, mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
             if fd is not None:
                 b = cv2.remap(soft, mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT); w = np.clip(np.abs(d - fd) * 2.6, 0, 1)[..., None]
                 fr = (fr.astype(np.float32) * (1 - w) + b.astype(np.float32) * w).astype(np.uint8)
+            if parts is not None: fr = parts.apply(fr, k)
             yield fr
     return _pipe(path, frames(), nframes, ww, wh)
 
@@ -355,7 +429,7 @@ def score(duration, seed, events, voice_wav=None, bed_db=-24, duck_db=9, design=
         s0 = max(0, -i0); i0 = max(0, i0); e = min(n, i0 + len(a2) - s0); sfx2[i0:e] += a2[s0:s0 + e - i0] * lvl
     if design:
         from whatifs import sound as SD
-        for kind, at in design.get("foley", []): put2(at, SD.foley(kind, f"{seed}{at}", SR), SD.FOLEY_LEVEL)
+        for kind, at in design.get("foley", []): put2(at, SD.foley(kind, f"{seed}{at}", SR), SD.FOLEY_LEVEL * SD.KIND_GAIN.get(kind, 1.0))      # v11: per-kind level (ASMR touches quieter)
     rush_end = sorted(at for kind, at in events if kind == "rush_end")
     for kind, at in events:
         i0 = int(at * SR)

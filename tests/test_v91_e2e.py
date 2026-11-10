@@ -3,14 +3,14 @@ v9.1 feature that runs inside an episode is code-only or reuses what was paid fo
 itself off, the video is still rendered, checked and scheduled."""
 import json, os
 import pytest
-from tests.paid_calls import count
+from tests.paid_calls import count, allowed_base
 from whatifs import core
 
 ALL_ON = ["ATMOSPHERE_ON", "PULSE_ON", "LIGHTING_DIRECTIVE_ON", "HERO_STILL_REELS_ON", "CHAR_GRAMMAR_ON", "RETENTION_MAP_ON", "ROLE_ROI_ON",
           "COMMENT_MINING_ON", "COMMENT_AI_DRAFTS_ON", "VARIETY_REWRITE_ON", "AUDIO_DROP_POST_ON", "VOICE_SUBSTITUTE_ON"]
 
 def test_all_flags_on_no_new_paid_call(monkeypatch, tmp_path):
-    base = json.load(open(os.path.join(os.path.dirname(__file__), "golden", "v9_paid_calls.json")))["calls"]
+    base = allowed_base(json.load(open(os.path.join(os.path.dirname(__file__), "golden", "v9_paid_calls.json")))["calls"])      # v10.2: documented additions only
     from whatifs import manage as MG
     real_setup = MG.setup
     def setup_all_on():

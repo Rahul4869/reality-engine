@@ -25,7 +25,7 @@ def discover_models(write=True) -> dict:
     global _models
     chosen = {}
     if FAKE:
-        chosen = {"opus": "fake-opus", "sonnet": "fake-sonnet", "haiku": "fake-haiku", "fable": "fake-fable", "gem_pro": "fake-pro", "gem_flash": "fake-flash", "gem_tts": "fake-tts"}
+        chosen = {"gem_image": "fake-image", "opus": "fake-opus", "sonnet": "fake-sonnet", "haiku": "fake-haiku", "fable": "fake-fable", "gem_pro": "fake-pro", "gem_flash": "fake-flash", "gem_tts": "fake-tts"}
     else:
         try:
             r = requests.get(ANTH + "models?limit=100", headers=AH(), timeout=30); r.raise_for_status()
@@ -42,6 +42,8 @@ def discover_models(write=True) -> dict:
                 c = [m for m in ms if word in m and not any(b in m for b in bad)] or [m for m in ms if word in m and "lite" not in m]
                 c.sort(key=_vernum, reverse=True); return c[0] if c else None
             chosen["gem_pro"] = pick("pro"); chosen["gem_flash"] = pick("flash")
+            img = [m for m in ms if "image" in m and "flash" in m and "lite" not in m]                 # v10.2 (K152): reference-image start frames
+            img.sort(key=_vernum, reverse=True); chosen["gem_image"] = img[0] if img else None
             from whatifs.tts_gemini import pick_tts                 # v8.10: the TTS model is discovered live like every other model (K11)
             chosen["gem_tts"] = pick_tts([m["name"].split("/")[-1] for m in r.json().get("models", [])])
         except Exception as e: log(f"Gemini model list failed: {e}", "WARN")
@@ -129,7 +131,8 @@ ROUTES = {
     "hooks": ("sonnet", "edit"), "strategy": ("sonnet", "edit"), "brief": ("sonnet", "edit"), "repair": ("sonnet", "edit"),
     "json_repair": ("haiku", "chore"), "technique_intake": ("sonnet", "edit"),
     "localize": ("sonnet", "edit"), "special": ("sonnet", "edit"), "occasions_check": ("haiku", "chore"), "policy_rescue": ("sonnet", "edit"), "pilot": ("haiku", "chore"),                    # v10: special reels' concept                                                   # v10 G4: titles/descriptions in other languages
-    "owner_chat": ("sonnet", "edit"), "owner_chat_deep": ("opus", "creative"), "owner_chat_cheap": ("haiku", "chore"),      # v9.4b: WhatsApp / dashboard chat
+    "owner_chat": ("sonnet", "edit"), "owner_chat_deep": ("opus", "creative"), "owner_chat_cheap": ("haiku", "chore"),
+    "jury": ("critic", "judge"), "jury_flash": ("flash", "judge"), "jury_claude": ("sonnet", "judge"), "punchup": ("sonnet", "edit"),      # v11 (K157) room v2      # v9.4b: WhatsApp / dashboard chat
 }
 SAVER_MEDIUM = ("scout", "showrunner", "bible", "premise_judge", "memo", "objections", "director", "director_read", "hooks", "packager", "reels", "immersion")
 CHAIN_EFFORT = {"opus": "creative", "fable": "creative", "sonnet": "edit", "haiku": "chore"}
@@ -382,6 +385,7 @@ def _claude(role, system, prompt, max_tokens, temperature, search, episode, effo
     body, headers, info, room, mid, eff = _claude_body(role, system, prompt, max_tokens, temperature, search, effort, fanout)
     started = time.time()
     def post(): return _post(body, headers)
+    _t0 = time.time()
     r = post()
     if r.status_code == 400 and info.get("per_msg") and re.search(r"output_config|beta|per-turn|Extra inputs", r.text, re.I):
         _PER_MSG_OFF[0] = True; log("per-message effort was rejected - top-level effort is used for the rest of this job", "WARN", episode)
@@ -404,7 +408,8 @@ def _claude(role, system, prompt, max_tokens, temperature, search, episode, effo
         j = r.json(); u = dict(j.get("usage", {}) or {}); u["_sent_1h"] = info.get("sent_1h")
         usd, saved, toks = claude_usd(fam, u)                              # output_tokens includes the thinking
         cost(f"claude_{role}", "anthropic", u.get("output_tokens", 0), usd, episode, role=getattr(_CUR, "task", ""),
-             model=mid, in_tok=toks["in"], cache_read_tok=toks["read"], cache_write_tok=toks["w5"] + toks["w1h"], out_tok=toks["out"], basis="measured")
+             model=mid, in_tok=toks["in"], cache_read_tok=toks["read"], cache_write_tok=toks["w5"] + toks["w1h"], out_tok=toks["out"], basis="measured",
+             ms=int((time.time() - _t0) * 1000))                                   # v11: latency (incl. any retry above) for the cost/latency log
         CACHE.record(episode, mid, toks, usd, saved, info)
         txt += "".join(b.get("text", "") for b in j.get("content", []) if b.get("type") == "text")      # thinking blocks are skipped
         stop = j.get("stop_reason")
@@ -466,7 +471,9 @@ def _gemini(role, system, prompt, max_tokens, temperature, search, want_json, im
             "generationConfig": {"temperature": temperature, "maxOutputTokens": min(OUT_CEILING, int(max_tokens) + THINK_ROOM)}}      # v8.9.3: thinking shares this limit
     if search: body["tools"] = [{"google_search": {}}]
     elif want_json: body["generationConfig"]["responseMimeType"] = "application/json"
+    _t0 = time.time()
     r = requests.post(GEM + f"models/{mid}:generateContent", headers={"x-goog-api-key": env("GEMINI_KEY")}, json=body, timeout=600)
+    _ms = int((time.time() - _t0) * 1000)                                  # v11: latency per call, for the cost/latency log
     if r.status_code != 200: raise RuntimeError(f"Gemini {r.status_code}: {r.text[:300]}")
     j = r.json(); c = (j.get("candidates") or [{}])[0]
     try:    # v8.1: Gemini calls were not in Cost_Log, so the "hard cap" under-counted. Logged from the usage numbers Google returns.
@@ -474,7 +481,7 @@ def _gemini(role, system, prompt, max_tokens, temperature, search, want_json, im
         pin, pout = (S("PRICE_GEM_PRO_IN", float), S("PRICE_GEM_PRO_OUT", float)) if pro else (S("PRICE_GEM_FLASH_IN", float), S("PRICE_GEM_FLASH_OUT", float))
         out_tok = int(u.get("candidatesTokenCount", 0) or 0) + int(u.get("thoughtsTokenCount", 0) or 0); in_tok = int(u.get("promptTokenCount", 0) or 0)
         usd = (in_tok * pin + out_tok * pout) / 1e6
-        cost("gemini_" + ("pro" if pro else "flash"), "google", out_tok, usd, episode, role=getattr(_CUR, "task", ""), model=mid, in_tok=in_tok, out_tok=out_tok, basis="measured")
+        cost("gemini_" + ("pro" if pro else "flash"), "google", out_tok, usd, episode, role=getattr(_CUR, "task", ""), model=mid, in_tok=in_tok, out_tok=out_tok, basis="measured", ms=_ms)
         CACHE.record_other(episode, usd)
     except Exception: pass
     if str(c.get("finishReason", "")).upper() == "MAX_TOKENS": raise Truncated(f"Gemini {role} reply was cut at {body['generationConfig']['maxOutputTokens']} tokens")

@@ -2,7 +2,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { writeFileSync } from "node:fs";
-import worker, { hmacHex, encrypt, decrypt, pinHash, pinVerify, signSession, verifySession } from "./worker.js";
+import worker, { hmacHex, encrypt, decrypt, pinHash, pinVerify, signSession, verifySession, watchdog } from "./worker.js";
 import { webcrypto } from "node:crypto";
 if (!globalThis.crypto) globalThis.crypto = webcrypto;          // Node 18 only; Cloudflare and Node 20+ have it (never put this in worker.js)
 
@@ -121,3 +121,27 @@ test("public carousel image route: only 32-hex keys, jpeg, 404 when gone", async
   r = await worker.fetch(req("https://w.example/pub/" + k + ".jpg", { method: "POST" }), e); assert.equal(r.status, 404);
 });
 
+
+
+// v11: the watchdog clock
+test("watchdog dispatches a tick only when the last pipeline run is stale", async () => {
+  const calls = [];
+  const realFetch = globalThis.fetch;
+  const mk = (createdMinAgo, status = 200) => async (url, opt = {}) => {
+    calls.push([String(url), opt.method || "GET"]);
+    if (String(url).includes("/actions/workflows/")) {
+      if (status !== 200) return new Response("no", { status });
+      return new Response(JSON.stringify({ workflow_runs: [{ created_at: new Date(Date.now() - createdMinAgo * 60e3).toISOString() }] }), { status: 200 });
+    }
+    return new Response(null, { status: 204 });
+  };
+  try {
+    const e = env();
+    globalThis.fetch = mk(20); let r = await watchdog(e); assert.equal(r.due, false); assert.equal(r.sent, false);
+    globalThis.fetch = mk(70); r = await watchdog(e); assert.equal(r.due, true); assert.equal(r.sent, true);
+    assert.ok(calls.some(([u, m]) => u.endsWith("/dispatches") && m === "POST"));
+    globalThis.fetch = mk(0, 403); calls.length = 0;
+    r = await watchdog(e); assert.equal(r.seen, "http 403"); assert.equal(r.sent, false);   // blind mode: dispatched < 60 min ago -> wait
+    const st = JSON.parse(await e.RE_KV.get("wd_status")); assert.equal(st.seen, "http 403");
+  } finally { globalThis.fetch = realFetch; }
+});

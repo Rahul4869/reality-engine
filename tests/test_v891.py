@@ -19,7 +19,7 @@ def test_animate_without_url_sends_the_real_picture_never_the_test_clip(tmp_path
     monkeypatch.setattr(M, "fake_clip", lambda *a, **k: pytest.fail("the offline test clip must never be used in production"))
     img = _jpg(str(tmp_path / "img.jpg"))
     out = M.animate(None, img, "fog", str(tmp_path / "c.mp4"), "EP", hero=True)
-    assert out.endswith("c.mp4") and sent["image_url"].startswith("data:image/jpeg;base64,")
+    assert out.endswith("c.mp4") and (sent.get("image_url") or sent.get("start_image_url")).startswith("data:image/jpeg;base64,")
     with pytest.raises(RuntimeError, match="no picture to animate"):
         M.animate("", str(tmp_path / "missing.jpg"), "fog", str(tmp_path / "d.mp4"), "EP")
 

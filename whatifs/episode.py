@@ -24,6 +24,8 @@ BLENDS = {        # v8.9 clarity: two voices at most, one dominant, only Kokoro'
     "C": {"af_heart": 0.80, "af_bella": 0.20},
     "D": {"af_bella": 0.75, "af_heart": 0.25},
 }
+MERGED_UNITS = set()          # v11.1: units folded into the previous shot by the last render (the visual_change check mirrors it)
+
 def speaker_blends(guest=None, cast=None):
     """The two recurring roles get their own voice recipes (Settings DIRECTOR_VOICE / SKEPTIC_VOICE). Always two DIFFERENT recipes. None in classic mode.
     v8.9: with GUEST_ROTATION_ON the Curious One is this episode's guest (data.GUESTS, chosen in the draw and saved with the plan, so a retry and the reels
@@ -111,6 +113,9 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     """Steps 1-3 of an episode. Returns a JSON-able state dict (this is what the 'plan' checkpoint stores)."""
     st = store(); eps_left = eps_left or episodes_left_this_month()
     d = DRAW(ep, "collective"); d["slot"] = slot_iso
+    try:                                                     # v11 (K163): the monthly Deep Trial
+        from whatifs import deeptrial as DT; DT.maybe(d, ep, slot_iso)
+    except Exception as x: log(f"Deep Trial check skipped: {scrub(x)}", "WARN", ep)
     plan = plan_for_episode(est_cost_inr(d), eps_left)
     if plan.get("hold"): raise RuntimeError(plan["reason"] + " - nothing was spent; the slot is skipped (budget gate)")
     d["kling"], d["living"] = plan["kling"], plan["living"]; _apply_tier(d, plan)
@@ -121,7 +126,7 @@ def _stage_plan(ep, out, eps_left, slot_iso):
         sd, room = took
         for k in ("strategies", "rhythm_plan", "playbook", "cast", "guest", "promise", "next_tease", "owners_cut", "family", "ptype", "research_brief", "retention_check", "table_read", "hook_sec"):
             if k in sd: d[k] = sd[k]
-        d["from_preview"] = True
+        d["from_preview"] = True; d["preview_room_ts"] = sd.get("_t_last")      # v10.2: when the approved draft was written
     log(f"draw: {json.dumps(d)} | spend plan: {plan['reason']}")
     if not took: room = ROOM.run_room(d, ep)
     d["ptype"] = room["spine"].get("ptype", d["ptype"])
@@ -237,10 +242,13 @@ def _assets(shots, units, out, ep, budget=56, have=None):
         s = shots[i]; p = os.path.join(out, f"img{i:03d}.jpg"); last = None
         for attempt in range(2):
             try:
+                if s.get("anim"):                                # v10.2: a staged, reference-locked start frame for an animated scene
+                    from whatifs import anim as ANIM
+                    path, how = ANIM.start_frame(s, p, ep, out); s["anim"]["frame"] = how; return i, path, None
                 path, url = M.still(s.get("prompt") or units[i]["text"], p, ep, seed=f"{ep}{i}{attempt}"); return i, path, url
             except Exception as e: last = e; time.sleep(2)
         log(f"image {i} failed twice: {last}", "WARN"); return i, None, None
-    todo = [i for i in anchors if i not in img_paths]      # v8.9.1: a restored picture without its URL is animated from the file itself (media.animate), never paid for again
+    todo = [i for i in sorted(set(anchors) | {k for k, s in enumerate(shots) if s.get("anim")}) if i not in img_paths]      # v8.9.1: a restored picture without its URL is animated from the file itself (media.animate), never paid for again
     with cf.ThreadPoolExecutor(max_workers=6) as ex:
         for i, p, u in ex.map(get_img, todo):
             if p: img_paths[i] = p; img_urls[i] = u
@@ -250,7 +258,8 @@ def _assets(shots, units, out, ep, budget=56, have=None):
             try:
                 if s["type"] == "stock": return i, M.stock(s.get("search", "space"), p, ep)
                 if s["type"] in ("living", "kling") and i in img_paths:
-                    return i, M.animate(img_urls.get(i), img_paths[i], motion_prompt(s, units[i]["text"], i in opening), p, ep, hero=s["type"] == "kling")
+                    mp = __import__("whatifs.anim", fromlist=["x"]).acting_prompt(s) if s.get("anim") else motion_prompt(s, units[i]["text"], i in opening)
+                    return i, M.animate(img_urls.get(i), img_paths[i], mp, p, ep, hero=s["type"] == "kling")
                 return i, None
             except Exception as e: log(f"clip {i} failed ({s['type']}, try {attempt + 1}/{tries}): {e}", "WARN"); time.sleep(3)
         log(f"clip {i} gave up ({s['type']}) -> still", "WARN"); return i, None
@@ -382,6 +391,11 @@ def _render(job):
     RN._LAST["move"] = None
     from whatifs import v91 as _V91
     micro_ = _V91.on("MICRO_CUTS_ON", ep)                                      # v9.3: computed once per render
+    MERGED_UNITS.clear()                                                         # v11.1: a still line under UNIT_MERGE_SEC (own picture or not)
+    for i in range(1, len(units)):                                               # continues the previous shot (no sub-second picture flash = no overload)
+        if (bounds[i + 1] - bounds[i]) < S("UNIT_MERGE_SEC", float) and shots[i].get("type") != "kling" \
+                and i - 1 not in MERGED_UNITS:
+            bounds[i] = bounds[i + 1]; MERGED_UNITS.add(i)
     for i, u in enumerate(units):
         s = shots[i]; a, b = bounds[i], bounds[i + 1]; dur = b - a
         n_total = int(round(b * fps)) - int(round(a * fps))
@@ -408,13 +422,17 @@ def _render(job):
             def draw(path, ovl):
                 RN.set_overlay(RN.with_fx(ovl, fxk, nf, f"{ep}{i}{k}", f0)); RN.set_cursor(f0)
                 if k == 0 and i in files["clips"]: RN.clip_segment(files["clips"][i], path, nf, loop=s["type"] == "stock", push=(0.07 if i in strong else 0.035) if (s["type"] == "living" and dyn) else 0.0)
-                elif s["type"] == "graphic" and k == 0: RN.graphic_segment(s.get("graphic") or {}, img, path, nf)
-                elif s["type"] == "reaction" and k == 0:                    # v9.2: the code-made reaction cutaway (no image bought)
-                    from whatifs import shotplan as SP
-                    SP.reaction_segment(s.get("speaker") or units[i].get("speaker"), img, path, nf)
+                elif s["type"] == "graphic": RN.graphic_segment(s.get("graphic") or {}, img, path, nf)      # v11.1: every piece re-animates
+                elif s["type"] == "reaction":                    # v9.2: the code-made reaction cutaway (no image bought)
+                    from whatifs import shotplan as SP, living as LV
+                    spk_ = s.get("speaker") or units[i].get("speaker"); u_ = units[i] if i < len(units) else {}
+                    done_ = LV.render(spk_, u_.get("text", ""), u_.get("words"), float(u_.get("start", 0) or 0), path, nf, ep, seed=f"{ep}{i}") \
+                        if S("LIVING_CHARACTERS_ON", bool) else None             # v11.1 (K167): the approved character, blinking / breathing / talking
+                    if not done_: SP.reaction_segment(spk_, img, path, nf)
                 elif img:
                     RN.parallax_segment(img, path, nf, seed=f"{ep}{i}{k}", detail=((k + reuse) % 2 == 1), focus=s.get("focus"), look=None if own else RN.LOOKS[reuse % len(RN.LOOKS)], energy="high" if (i in strong and k == 0) else "calm",
-                                       move=s.get("camera") if k == 0 else None)      # v8.9: the Director's suggested move (validated in render.pick_move)
+                                       move=s.get("camera") if k == 0 else None,      # v8.9: the Director's suggested move (validated in render.pick_move)
+                                       world=_world_of_unit(units[i] if i < len(units) else {}))   # v11 (K161b): the particle look follows the scene
                 else: RN.graphic_segment({"label": "", "from": 0, "to": 0}, None, path, nf)
             try: draw(p, job.overlay)
             except Exception as e:
@@ -489,7 +507,8 @@ def plan_check(S_, units):
     S_["shots"] = shots; S_["plan_check"] = {"repairs": len(fixes)}
     return S_
 
-_TAKEN = ("PLANNING", "VOICING", "VISUALS", "UPLOADED", "SCHEDULED", "LIVE1", "LIVE", "HELD", "HOLD_QC", "STUCK_PRIVATE", "SKIPPED")      # v8.10: a skipped slot is not retried
+_TAKEN = ("PLANNING", "VOICING", "VISUALS", "UPLOADED", "SCHEDULED", "LIVE1", "LIVE", "HELD", "HOLD_QC", "STUCK_PRIVATE", "SKIPPED",
+          "AWAITING_APPROVAL", "HELD_BY_OWNER")      # v10.2: a video waiting for the owner's review still owns its slot      # v8.10: a skipped slot is not retried
 def _slot_taken(st, slot_iso):
     """v8.3: one episode per slot. Two ticks close together (or a manual 'Run workflow') used to make two videos for the same slot and pay twice."""
     return next((e for e in st.rows("Episodes") if e.get("slot_et") == slot_iso and e.get("status") in _TAKEN), None)
@@ -539,11 +558,27 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
             if not fal_allowed(): raise RuntimeError("image credit is empty or the monthly cap is reached - nothing more will be spent; will retry next hour")
         else:
             if not fal_allowed(): raise RuntimeError("image credit is empty - top up fal.ai (reminder email sent); will retry next hour")
+            if S("CONTRACT_ON", bool) and S("RESEARCH_ON", bool):   # v10.2: research is mandatory; the room only READS the brief (v9.2), so production makes sure one exists
+                try:
+                    from whatifs import research as RS_
+                    RS_.room_research(ep, allow_run=True)
+                except Exception as e: log(f"research before the room failed: {scrub(e)[:120]} (the contract will report it)", "WARN", ep)
             S_ = _stage_plan(ep, out, eps_left, slot_iso); CK.save(out, ep, "plan", {"plan.json": S_})
+            set_setting("OWNER_BRIEF_ACTIVE", "")                  # v10.3: the owner brief was used by this episode's room
             consume_tease(S_)              # v8.9.1: the teased premise is used up only now that the plan (which made it) is safely saved
         d, plan, shots = S_["d"], S_["plan"], S_["shots"]
         vo = _vo_of(S_, out); tl = json.load(open(vo.timeline_path)); units = tl["units"]
         S_ = plan_check(S_, units); shots = S_["shots"]          # v8.9: the last free check before any picture money is spent
+        from whatifs import anim as ANIM                        # v10.2 (K152): exactly ANIM_SHOTS animated scenes, at the retention cliffs
+        ANIM.apply(shots, units, plan); S_["shots"] = shots
+        if not any(s_.get("promise") for s_ in shots):                 # v11.1 fix: the Animation Director re-places the scenes and can drop the promise
+            shots = ROOM.promise_shot(shots, units, S_.get("pkg") or {}); S_["shots"] = shots       # flag (v8.6) - re-aim the opening scene again
+        from whatifs import contract as CON                     # v10.2 (K151): every script-stage promise checked BEFORE any picture is paid for
+        g = CON.run("script", {"d": d, "room": S_["room"], "hook_rec": S_.get("hook_rec"), "ep": ep}, ep)
+        if not g["ok"]:
+            st.update("Episodes", "episode_id", ep, {"status": "HOLD_QC", "notes": CK.set_attempts("contract hold (script): " + ", ".join(f for f, _ in g["failed"]), 1), "updated": iso()})
+            CON.owner_card(ep, "script", g["failed"], "No picture money was spent.")
+            return {"ok": False, "held": True, "episode": ep, "problems": ["contract:" + f for f, _ in g["failed"]]}
         st.update("Episodes", "episode_id", ep, {"status": "VISUALS", "updated": iso()})
         # ---- assets (only what is missing is made on a resume)
         have = _load_assets(out) if stage in ("assets", "hold") else None
@@ -582,6 +617,12 @@ def atmosphere_layer(ep, units, shots, plan, fps, show_overlay=None):
         hud += [(t_, t_ + 4.0) for t_, k_, _ in SFX2.events(units) if k_ == "exhibit"]
         atm = AT.Atmosphere(units, shots, plan or {}, ww, wh, fps, seed=ep, recon=getattr(show_overlay, "recon", []), beats=beats, hud_spans=hud)
     return atm
+
+def _world_of_unit(u):
+    """v11 (K161b): which world a line plays in (the speaker's world: lab / office / court / case), for the particle look."""
+    from whatifs import sound as SD
+    try: return SD._world_of(u) or None
+    except Exception: return None
 
 def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     d, room, shots, pkg, rplans, chs, hook_rec = S_["d"], S_["room"], S_["shots"], tidy_pkg(S_["pkg"]), S_["rplans"], S_["chs"], S_["hook_rec"]
@@ -649,8 +690,33 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         except Exception as e: log(f"next-video link skipped: {scrub(e)}", "WARN")
     desc = _description(pkg.get("description", ""), chs, room, ep, nxt)
     if fix: slot_iso = _fix_slot(slot_iso)
+    from whatifs import contract as CON                         # v10.2 (K151): every finished-video promise checked; a failure is HELD, never uploaded
+    clips = list((files.get("clips") or {}).values()) if isinstance(files.get("clips"), dict) else list(files.get("clips") or [])
+    cctx = {"d": d, "room": room, "ep": ep, "title": title, "master": master, "timeline": tl, "clips": [c if isinstance(c, str) else (c or {}).get("path") for c in clips],
+            "holds": holds, "qc_info": chk.get("info") or {}, "thumb": thumb, "thumb_b": thumb_b, "thumb_ok": okt or have_art, "pkg": pkg, "chapters": chs, "reel_files": reel_files,
+            "shots": S_.get("shots"), "units": units}                                          # v11: the promise check reads the shot plan
+    pre = CON.run("final", dict(cctx, critique={"hook": 10, "clarity": 10, "humour": 10, "visual_variety": 10, "audio": 10, "accuracy": 10}), ep, write=False)   # measured checks first (not logged)
+    cctx["ledger_rows"] = pre["rows"]; cctx["critique"] = CON.critique(cctx, ep)
+    g = CON.run("final", cctx, ep)
+    try:                                                         # v11 (K158): the Breakout Score - ranks and alerts, never holds by itself
+        from whatifs import breakout as BRK
+        d["breakout"] = BRK.score(d, g.get("rows"), room, cctx.get("critique")); BRK.record(ep, "long", d["breakout"])
+        b = d["breakout"]
+        if b.get("score") is not None:
+            log(f"Breakout Score {b['score']} ({b['grade']}; weakest: {b.get('weakest')}; no evidence for: {', '.join(b.get('missing') or []) or 'none'})", episode=ep)
+    except Exception as e: log(f"breakout score skipped: {scrub(e)}", "WARN", ep)
+    if not g["ok"]:
+        CON.owner_card(ep, "final", g["failed"], "Nothing was uploaded.")
+        return _hold(st, ep, out, {"problems": [{"code": "contract:" + f, "detail": str(ev)} for f, ev in g["failed"]]}, notes, fix)
     vid = PUB.yt_upload(master, title, desc, pkg.get("tags", []), publish_at=slot_iso, ai_label=S("AI_LABEL_DEFAULT", bool))
     st.update("Episodes", "episode_id", ep, {"title": title, "yt_id": vid, "slot_et": slot_iso, "status": "UPLOADED", "updated": iso()})   # recorded at once: no double upload
+    try:                                                         # v11 (K155): the brain's features + a logged forecast for this video
+        from whatifs import brain as BRN
+        hk = (hook_rec or {}).get("archetype") or (pkg.get("hook_shape") if isinstance(pkg, dict) else "") or "unknown"
+        BRN.tag(ep, "long", title=title, premise=room["spine"].get("premise", ""), hook=hk, sec=vo.duration, lead=((d.get("show_plan") or {}).get("lead") or ""),
+                origin="owner_idea" if d.get("owner_brief") else "ai", yt_id=vid)
+        BRN.forecast(ep, "long", hook=hk)
+    except Exception as e: log(f"brain tag skipped: {scrub(e)}", "WARN", ep)
     try:
         PUB.yt_thumbnail(vid, thumb); PUB.yt_captions(vid, srt); PUB.yt_playlist(vid, _playlist(d.get("family") or d["ptype"]))
         rel = {"title": title, "pinned": pkg.get("pinned_comment", "") + (f"\n\nWatch next: {nxt['title']} {nxt['url']}" if nxt else ""), "reels": [],
@@ -732,6 +798,12 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     if not S("PILOT_DONE", bool): set_setting("PILOT_DONE", "TRUE"); log("pilot episode made")
     PUB.email("Video scheduled", f"<p>{title}<br>Goes live {slot_iso} (UTC). To stop it, type KILL in the Episodes tab, kill column.</p>"
               f"<p>{_review_note(hook_rec, cut_map)}</p>", kind="info")
+    try:                                                         # v10.2: the first CREATIVE_REVIEW_FIRST_N videos stay private until the owner taps Approve
+        if CON.review_needed("long"):
+            cr = cctx.get("critique") or {}
+            CON.await_approval(ep, vid, slot_iso, f"'{title}'. Self-review: " + ", ".join(f"{k} {cr.get(k)}" for k in CON.CRIT_KEYS if k in cr) +
+                               f". {cr.get('notes', '')} Checks: {sum(1 for r in g['rows'] if r['status'] != 'FAIL')}/{len(g['rows'])} pass.")
+    except Exception as e: log(f"review gate failed - the video stays as uploaded: {scrub(e)}", "WARN", ep)
     return {"ok": True, "episode": ep, "yt": vid, "master": master, "reels": [r[0] for r in reel_files], "thumb": thumb, "title": title, "qc_fixes": notes}
 
 def tidy_pkg(pkg):

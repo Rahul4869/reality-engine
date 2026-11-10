@@ -3,7 +3,7 @@ v8.7 review fix: in rehearsal mode (WI_FAKE=1) the tone placeholders go to the w
 import os, subprocess
 from whatifs.voice import Blend, narrate
 from whatifs.episode import BLENDS
-from whatifs.core import set_setting, iso, FAKE, WORK
+from whatifs.core import set_setting, iso, FAKE, WORK, S
 
 DEMO = """[calm] Right now, about eight billion people have fingernails. And every week... we cut a little bit off.
 [tension] So picture this. At exactly noon, everyone on Earth drops their clippings into the ocean. At once.
@@ -21,7 +21,7 @@ def main(backend=None):
         r = narrate(DEMO, Blend(k, parts), f"{out}/voice_{k}", style="slow_burn", seed="lab", backend=backend); links.append((k, mp3(r.wav_path), r.voiceprint))
     r = narrate(DEMO, Blend("C", BLENDS["C"]), f"{out}/voice_E_no_pacing", humanize=False, seed="lab", backend=backend); links.append(("E", mp3(r.wav_path), "flat"))
     links += cast_samples(out) if backend is None else []        # v8.10: the Gemini cast (one short exchange per guest with an expert)
-    set_setting("VOICE_SAMPLES_AT", iso())
+    if not S("VOICE_SAMPLES_AT"): set_setting("VOICE_SAMPLES_AT", iso())        # v10.2 (#9): a re-run of Setup never restarts the wait
     if not FAKE:
         from whatifs import publish as PUB
         html = ["<p>Listen on your phone with earphones. Then open the Sheet, Settings tab, and type A, B, C or D in the VOICE cell (or A+C to mix two).</p><ul>"]
@@ -30,7 +30,7 @@ def main(backend=None):
             try: _, url = PUB.drive_upload(path, os.path.basename(path), public=True); html.append(f"<li><a href='{url}'>Voice {k}</a> ({vp})</li>")
             except Exception as e: html.append(f"<li>Voice {k}: see GitHub artifact ({e})</li>")
         html.append("</ul><p>E is voice C with the human pacing switched off, for comparison. If you don't choose within 72 hours, A is used.</p>")
-        PUB.email("Pick your narrator voice", "".join(html))
+        PUB.email("Fallback narrator voice (optional - your designed character voices are used)", "".join(html))      # v10.2 (#9)
     return links
 
 if __name__ == "__main__":

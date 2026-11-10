@@ -1,3 +1,5 @@
+> HISTORICAL (v7-v11 history) - DO NOT FOLLOW AS CURRENT. Current truth: docs/OWNER_REQUIREMENTS_LEDGER.md + the handoff 01_MASTER_SPEC (v12 build).
+
 # REALITY ENGINE — KERNEL v8.9.1 (locked rules)
 Setup assistant (Claude, in the setup Project): quote the K# you rely on. A rule changes only when the owner types `AMEND K#`.
 
@@ -248,4 +250,60 @@ Setup assistant (Claude, in the setup Project): quote the K# you rely on. A rule
   - **Retirement watch (weekly):** every model page is read for retirement dates. `MODEL_SWITCH_LEAD_DAYS` ahead the owner gets a 'This week' card with the replacement and the date (7 days before retirement). [Keep until it stops] is honoured; silence = switch (`apply_planned`, daily).
   - **Upgrade scout (weekly):** fal's listing is scanned for newer versions of the ladder families. A readable price inside the rule queues an automatic capped test (`bakeoff.judge_pair`: same scenes, vision judge 0-10). At least `MODEL_UPGRADE_MARGIN` better schedules a switch `MODEL_UPGRADE_NOTICE_DAYS` later with a card ([Keep current] [Switch now]). An unreadable price or schema only asks the owner.
   - **Logging:** every switch is written to `Model_Changes`. Explicitly chosen models (bake-off) are never switched.
+
+## v10.2 (K151-K152) - enforced features and real animation (owner 2026-11-09, option C)
+- K151 Feature Contract (`whatifs/contract.py`): every promised feature is a mandatory, evidence-based check; script check (13) before any picture money, final check (12) before upload; a failure HOLDS (never uploaded) with an owner card (Rewrite/Fix, Approve anyway = a per-episode waiver); Feature_Ledger tab; the first CREATIVE_REVIEW_FIRST_N videos and every special stay private until the owner approves. A feature without a check fails the build (tests/test_v102.py).
+- K152 Animation director (`whatifs/anim.py`): ANIM_SHOTS (4) animated scenes at the cold open, ~3:00, ~6:00 and the verdict; reference-locked staged start frames from Google's image model (role gem_image, discovered live); Toybox Noir style lock and per-world lighting; Kling 3.0 Standard on fal with acting prompts; the Steward ladder as fallback.
+- Trial grammar (`show.TRIAL_GRAMMAR`): time ladder, sourced exhibits, Grimm's Prototype, Vale's twist, but/therefore, "Here's what's true", staged scenes; checked by the contract.
+- Cast intro: scripted, voiced with the designed voices (never without them), set-driven, cover first frame, owner approval before posting. Character masters from the locked portraits as references before any expression.
+
+## v11 Stage A (K155-K156) - learning core + reliability + money rules (9 Nov 2026)
+- K155 Channel Brain (`whatifs/brain.py`): Video_Features per video/Short; outcomes = YouTube engaged views / views (+ avg % viewed); Technique_Evidence
+  (Beta-binomial vs the channel's pooled rate; proven at P>=0.9 with >=5 videos and >=2,000 views; retired at P<=0.3; rules expire after 60 days);
+  Thompson sampling with a 20% holdout; forecasts logged and scored against the channel median ('NOT LEARNING YET' when they don't beat it).
+  Note: Technique_Library stays the v8.10 outlier-video library; the brain's own evidence lives in Technique_Evidence.
+- K156 Money rules (`governor.py`): MONTH_CAP_OVERRIDES (owner one-month caps; v11 writes 2026-11=5226 once), a breakout fund (last month's unspent,
+  capped at Rs 1,000, usable only by breakout follow-ups; follow-up episodes use ids starting 'BRK'), a 90% guard that pauses extras with one alert per
+  month (production keeps its money: extras_allowed already reserves the remaining slots' cost).
+- Reliability: Cloudflare watchdog clock (Worker scheduled(), every 10 min; dispatches a tick when pipeline.yml has not run for 45 min); the tick job
+  queues (concurrency group). Uploads were already private + publishAt with post-upload verification.
+- Observability: Cost_Log gains `ms` (latency) for Claude and Gemini calls (tokens/model/role were already logged).
+- Guard test: no setting or tab may be defined twice in core.py.
+
+## v11 Stages B-E (K157-K165), 9-10 Nov 2026
+- K157 room v2 (room2.py): 3 Opus drafts (different cold-open archetypes; the brain picks the first) -> blind cross-family jury (Gemini Pro, Gemini
+  Flash, Claude Sonnet; both orders; Borda; Jury_Log) -> one checklist revision -> the critic still runs (policy-safety gate) -> joke tournament
+  (JOKE_SLOTS x JOKE_CANDIDATES; the original competes; strong judges see every candidate) before the fact check. ROOM_MODE v1 restores the old room.
+- K158 breakout.py: promise_paid + aliveness contract checks (27 checks total); still detector = residual change after removing the camera affine,
+  edge-masked, 480 px, 2 fps (ALIVE_* settings, measured 9 Nov); Breakout Score (ranks, never holds); 48-hour monitor -> Breakout_Queue card.
+- K159 shorts2.py: standalone daily Shorts (special.yml kind=short, dispatched by the tick). K160 spinoff.py: Case Files countdown (G0-G3 gates).
+- K161 sound worlds (sound.worlds/story_events) + world particle layer (render.Particles; PARTICLES_ON; dust/embers/rain/wind by speaker world).
+  LIFE_LAYER (breathing warp) stays OFF: measured to read as a camera zoom.
+- K162 reach.py: Reporting API channel_reach_basic_a1 job (created once), daily CSV -> Reach tab (key date|video_id), reach.ctr().
+- K163 deeptrial.py: monthly ~20-minute Deep Trial (DEEP_TRIAL_DAY, x1.9 words, three acts + Jury Room note in the writer brief).
+- K164 replan.py: Monday money check (free = production room - long-slot reserve - floor) -> owner card -> temporary setting changes, undone at month end.
+- K165 scout.py: weekly fal catalog + prices, deprecation watch (urgent card), Kling price auto-correction, Artificial Analysis free ranking (AA_API_KEY).
+- Weekly brief: digests.learned() (proven / promising / disproven + forecast honesty).
+
+## v11 Stages B-E (K157-K165) + audit (10 Nov 2026)
+- K157 room v2 (`room2.py`, ROOM_MODE=v2): ROOM_V2_DRAFTS drafts with different cold-open archetypes (brain picks the first); blind jury Gemini Pro +
+  Gemini Flash + Claude Sonnet (never the writer), JURY_ORDERINGS orders, Borda, logged to Jury_Log; one checklist revision; then the SAME critic as
+  v1 runs (its policy_safe score is the policy gate); joke tournament (JOKE_SLOTS x JOKE_CANDIDATES, original always competes) before the fact check.
+- K158 `breakout.py`: contract checks promise_paid (PROMISE_BY_SEC) and aliveness (edge-masked residual motion, ALIVE_DETECT_WIDTH 480, DELTA 12,
+  SHARE 0.0002, MIN_SHARE 0.75, MAX_DEAD_S 4; calibrated at 1080p); Breakout Score (ranks, never holds); 48-h monitor -> card -> Breakout_Queue
+  (2 follow-up Shorts, 'left' counter) + a sequel premise (Premise_Bench, source=breakout, combined 99).
+- K159 `shorts2.py`: standalone Shorts (SHORTS_PER_DAY; first of a day = core money; extras via guard); dispatched by the tick (special.yml kind=short).
+- K160 `spinoff.py`: Case Files countdown (CASEFILES_*; gates G0 cost, G1 >= 35% new, G2 theme + loops, G3 variety); masters from Drive archive
+  (DRIVE_ARCHIVE_KEEP 12); assets cell read as dict/JSON/py-dict.
+- K161 sound worlds (`sound.py` worlds/story_events; gavel/paper/fizzle) + K161b world particles (`render.Particles`, PARTICLES_ON; half-res 8-bit
+  screen blend ~35 ms/frame at 1080p). LIFE_LAYER (breathing warp) stays OFF (measured: reads as a camera zoom).
+- K162 `reach.py`: Reporting API channel_reach_basic_a1 job (created once), daily CSV -> Reach tab keyed date|video_id.
+- K163 `deeptrial.py`: one long slot a month from DEEP_TRIAL_DAY becomes ~20 min (DEEP_TRIAL_WORDS_MULT) with 3 acts + Jury Room (writer note).
+- K164 `replan.py`: Monday money check -> card (owner veto) -> SHORTS_PER_DAY / SHORTS_KLING_EVERY until month end (restored at rollover).
+- K165 `scout.py`: weekly fal catalog + prices + deprecation alert for used endpoints; Artificial Analysis free endpoints if AA_API_KEY.
+- Hero model: fal-ai/kling-video/o3/standard/image-to-video (input image_url, generate_audio false). v3/standard (v10.2) was not a listed endpoint;
+  v11_upgrade rewrites it in the live Sheet (FAL_HERO_MODEL and MODEL_LADDERS).
+- Audit fixes: every workflow that runs the pipeline now has WA_TOKEN/WA_PHONE_ID/WA_WABA_ID/OWNER_WA (owner cards by WhatsApp), GH_MERGE_TOKEN +
+  GH_TOKEN (the tick starts Shorts/Case Files jobs; pipeline.yml has actions: write) and optional AA_API_KEY. tests/test_v11_audit.py guards it
+  (all workflows parse with no duplicate keys).
 

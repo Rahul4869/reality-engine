@@ -71,6 +71,10 @@ def video_args(model, image_url, prompt, hero=False):
     default; Wan 2.6 wants a resolution; Kling 2.5 Turbo Pro takes cfg_scale. Unknown models get the plain prompt + image_url."""
     m = str(model or "")
     neg = "blur, distort, and low quality, text, watermark"
+    if "kling-video/o3" in m:                                 # v11 fix: Kling O3 takes image_url (verified on fal's model page); audio off
+        return {"prompt": prompt, "image_url": image_url, "duration": "5", "negative_prompt": neg, "generate_audio": False}
+    if "kling-video/v3" in m:                                 # v10.2: Kling 3.0 (fal) takes start_image_url; audio off (our own mix)
+        return {"prompt": prompt, "start_image_url": image_url, "duration": "5", "negative_prompt": neg, "generate_audio": False}
     if "kling-video/v2.6" in m: return {"prompt": prompt, "start_image_url": image_url, "duration": "5", "negative_prompt": neg, "generate_audio": False}
     if "kling-video/v2.5-turbo" in m: return {"prompt": prompt, "image_url": image_url, "duration": "5", "negative_prompt": neg, "cfg_scale": 0.5}
     if m.startswith("wan/v2.6"): return {"prompt": prompt, "image_url": image_url, "resolution": "720p", "duration": "5"}
@@ -88,12 +92,20 @@ def still(prompt, path, episode, seed=None, w=None, h=None, premium=False, model
         with V91.guard("LIGHTING_DIRECTIVE_ON"):
             from whatifs.atmosphere import with_directive
             lock_ = str(S("STYLE_LOCK") or "").strip()
-            prompt = with_directive(prompt, S("IMAGE_PROMPT_MAX_CHARS", int) - (len(lock_) + 2 if lock_ and not premium else 0), vertical=h > w)
+            try:
+                from whatifs.anim import style_words as _sw; sw_len = len(_sw()) + 2      # v10.2: room for the show's look words
+            except Exception: sw_len = 0
+            prompt = with_directive(prompt, S("IMAGE_PROMPT_MAX_CHARS", int) - (len(lock_) + 2 if lock_ and not premium else 0) - sw_len, vertical=h > w)
     if FAKE: return fake_image(path, w, h, seed or prompt, prompt), None
     if not fal_allowed(): raise RuntimeError("fal credit exhausted")
     model = model or (S("FAL_PREMIUM_MODEL") if premium else S("FAL_STILL_MODEL"))      # v10: an explicit model only for the bake-off
     lock = str(S("STYLE_LOCK") or "").strip()
     if not premium and lock and lock not in prompt: prompt = prompt.rstrip(". ") + ". " + lock      # v8.9: repair stills keep the same look
+    try:                                                     # v10.2: the show's ONE look (ART_STYLE) on every picture, thumbnails included
+        from whatifs.anim import style_words
+        sw = style_words()
+        if sw and sw not in prompt: prompt = prompt.rstrip(". ") + ". " + sw
+    except Exception: pass
     args = {"prompt": prompt, "image_size": {"width": w, "height": h}, "num_images": 1, "enable_safety_checker": True}
     if not premium: args["num_inference_steps"] = 4
     else: args["safety_tolerance"] = "2"

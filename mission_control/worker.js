@@ -105,6 +105,35 @@ export async function dispatch(env, eventType, payload) {
   return r.status === 204;
 }
 
+/* ---------------------------------------------------------------- v11: watchdog clock (GitHub cron can run hours late or be dropped)
+   Cloudflare Cron Trigger (every 10 min) -> look at the newest run of pipeline.yml; if it is older than WATCHDOG_STALE_MIN (default 45), dispatch a
+   'tick' (repository_dispatch). The pipeline's tick job has its own concurrency group, so an extra tick only queues. If the token cannot read Actions
+   runs (403), dispatch at most once per WATCHDOG_BLIND_MIN (default 60) using the KV timestamp, so the channel never stops. */
+export async function watchdog(env, now = Date.now()) {
+  const stale = Number(env.WATCHDOG_STALE_MIN || 45) * 60e3, blind = Number(env.WATCHDOG_BLIND_MIN || 60) * 60e3;
+  const h = { "authorization": `Bearer ${env.GH_DISPATCH_TOKEN}`, "accept": "application/vnd.github+json", "user-agent": "reality-engine-relay",
+              "x-github-api-version": "2022-11-28" };
+  let last = null, seen = "unknown";
+  try {
+    const r = await fetch(`https://api.github.com/repos/${env.GH_REPO}/actions/workflows/pipeline.yml/runs?per_page=1`, { headers: h });
+    if (r.ok) { const j = await r.json(); const run = (j.workflow_runs || [])[0]; if (run) { last = Date.parse(run.created_at); seen = "runs"; } else seen = "none"; }
+    else seen = `http ${r.status}`;
+  } catch (e) { seen = "error"; }
+  let due;
+  if (last !== null) due = now - last > stale;
+  else {                                                     // blind mode: rate-limited by our own last dispatch
+    const prev = Number(env.RE_KV ? (await env.RE_KV.get("wd_last_dispatch")) || 0 : 0);
+    due = now - prev > blind;
+  }
+  let sent = false;
+  if (due) {
+    sent = await dispatch(env, "tick", { source: "watchdog", at: new Date(now).toISOString() });
+    if (sent && env.RE_KV) await env.RE_KV.put("wd_last_dispatch", String(now));
+  }
+  if (env.RE_KV) await env.RE_KV.put("wd_status", JSON.stringify({ at: new Date(now).toISOString(), seen, last_run: last ? new Date(last).toISOString() : null, dispatched: sent }));
+  return { due, sent, seen };
+}
+
 /* ---------------------------------------------------------------- WhatsApp webhook */
 function waVerify(url, env) {
   const mode = url.searchParams.get("hub.mode"), token = url.searchParams.get("hub.verify_token"), ch = url.searchParams.get("hub.challenge");
@@ -207,6 +236,7 @@ async function login(req, env, root) {
 
 /* ---------------------------------------------------------------- router */
 export default {
+  async scheduled(event, env, ctx) { ctx.waitUntil(watchdog(env)); },      // v11: Cloudflare Cron Trigger "*/10 * * * *"
   async fetch(req, env) {
     const url = new URL(req.url);
     if (url.pathname === "/webhook") {

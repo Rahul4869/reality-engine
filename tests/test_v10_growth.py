@@ -80,7 +80,7 @@ def test_cast_intro_is_made_in_fake_mode_within_its_caps(monkeypatch):
     assert r["ok"] and os.path.exists(r["path"]) and r["kind"] == "cast_intro"
     import subprocess
     dur = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", r["path"]], capture_output=True, text=True).stdout)
-    assert 13.0 <= dur <= 16.5                                                          # ~15 s: 4 beats + 2.5 s end card
+    assert 17.0 <= dur <= 30.0                                                          # v10.2: cover + 4 voiced beats + 2.5 s end card
     assert core.store().rows("Specials")[-1]["title"].startswith("Meet the court")
 
 def test_special_concept_falls_back_safely_and_respects_the_money(setting, monkeypatch):
@@ -89,7 +89,7 @@ def test_special_concept_falls_back_safely_and_respects_the_money(setting, monke
     monkeypatch.setattr(M, "ask", lambda *a, **k: {"beats": [{"who": "OGGY"}]})            # a third-party character is refused -> safe fallback
     assert SP.concept("special")["title"].startswith("Meet the court")
     setting("SPECIAL_REEL_CAP_INR", "10"); ok, why = SP.allowed(4); assert not ok and "per-reel cap" in why
-    setting("SPECIAL_REEL_CAP_INR", "150")
+    setting("SPECIAL_REEL_CAP_INR", "180")                     # v10.2 default (Kling 3.0)
     core.store().append("Cost_Log", [{"ts": core.iso(), "episode_id": "SP202611020000", "item": "hero_clip", "provider": "fal", "inr": "290"}])
     ok, why = SP.allowed(4); assert not ok and "specials money" in why
     assert SP.run(kind="special", publish=False)["ok"] is False
@@ -135,8 +135,8 @@ def test_backstory_uses_a_canon_fact_and_the_right_ask(monkeypatch):
 
 def test_festive_cast_intro(setting):
     setting("CAST_INTRO_FESTIVE", "Diwali")
-    c = SP.concept("cast_intro"); assert "Happy Diwali from the court" in c["beats"][-1]["line"] and "lamps" in c["beats"][-1]["motion"]
-    setting("CAST_INTRO_FESTIVE", ""); assert "Court opens Tuesday" in SP.concept("cast_intro")["beats"][-1]["line"]
+    c = SP.concept("cast_intro"); assert "Happy Diwali from the court" in c["beats"][-1]["line"] and c["beats"][-1]["world"] == "case"      # v10.2: voiced, set-driven
+    setting("CAST_INTRO_FESTIVE", ""); assert "reality goes on trial" in SP.concept("cast_intro")["beats"][-1]["line"]
 
 def test_record_views_after_7_days(monkeypatch):
     old = (core.now_utc() - dt.timedelta(days=8)).strftime("%Y-%m-%dT%H:%M:%SZ")

@@ -111,6 +111,7 @@ def scout_and_pick(draw, ctx, episode):
              "\nAlso score: illogical-sounding but physically showable in FIRST PERSON with our pictures; headline 4-11 words.\n" + CR.brief("scout"))
     try:
         from whatifs import viewers as VW; taste += VW.scout_block()                     # v10.1 (K147): viewer questions as premise DATA
+        from whatifs import owner_brief as OB2; taste += OB2.taste_block()                # v10.3 (K154): the owner's measured winners
     except Exception: pass
     past = [e.get("premise") or e.get("title") for e in store().rows("Episodes") if e.get("premise") or e.get("title")]
 
@@ -118,7 +119,8 @@ def scout_and_pick(draw, ctx, episode):
 
     def showrun(good, tz, below=None):
         """The Showrunner chooses among vetted pitches and sets the spine. None when it returns no premise."""
-        tz_note = ("TEASED AT THE END OF OUR LAST VIDEO (viewers were promised it): the FIRST pitch. Choose it and keep its premise unless it breaks a channel rule." if tz else "")
+        tz_note = ("THE OWNER'S DECISION (discussed and locked with him): the FIRST pitch. Choose it and keep its premise." if tz and tz.get("owner") else
+                   "TEASED AT THE END OF OUR LAST VIDEO (viewers were promised it): the FIRST pitch. Choose it and keep its premise unless it breaks a channel rule." if tz else "")
         spine = ask("showrunner", FE.inject(GR.insert_before_json(P.fill(P.SHOWRUNNER, pitches=_j(good[:5]), draw=_j(draw), defs=_j({k: ctx["defs"].get(v, "") for k, v in draw["strategies"].items()}),
                     trends=ctx["trends"], lessons=ctx["lessons"], research=ctx.get("research", "")[:3000]), "\n".join(x for x in (PB.text_for("showrunner", draw.get("playbook")), tz_note, CR.brief("showrunner"), _show_block()) if x)), "showrunner"), "Choose and set the spine.", episode=episode, fake_key="showrunner")
         if not spine.get("premise"): return None
@@ -143,11 +145,12 @@ def scout_and_pick(draw, ctx, episode):
         return spine
 
     if dual and S("PREMISE_BENCH_ON", bool):                     # v8.11: the bench first (already judged; the code rules are re-checked today)
-        tz = teased_pitch(ctx, recent_fams)
+        from whatifs import owner_brief as OB
+        tz = OB.take_for_episode(episode) or teased_pitch(ctx, recent_fams)          # v10.3 (K154): the owner's locked brief comes first
         bench = PR.bench_pitches(ctx["banned"], ctx["recent"], past, lambda f: _family_ok(f, recent_fams))
         if tz:
             PR.score([tz], ctx["recent"] + past[-20:], episode)
-            if tz.get("combined", 0) < S("PREMISE_MIN_SCORE", float):
+            if tz.get("combined", 0) < S("PREMISE_MIN_SCORE", float) and not tz.get("owner"):
                 log("the teased premise did not reach the quality bar - dropped (quality over the promise)", "WARN", episode); set_setting("NEXT_PREMISE", ""); tz = None
         if bench:
             good = ([tz] if tz else []) + [p for p in bench if not (tz and same(p["premise"], tz["premise"]))]
@@ -218,12 +221,15 @@ def run_room(draw, episode):
     spine["promise"] = GR.clean_promise(spine); d["promise"] = spine["promise"]       # v8.7: packaging first - the click promise is fixed BEFORE a word is written
     log(f"premise: {spine['premise']} | format: {spine.get('presentation_format', 'classic')}", episode=episode, public="premise chosen (text kept private until release)")
     roles = TR.ROLES
+    v2 = str(S("ROOM_MODE") or "v1").lower() == "v2"                       # v11 (K157): no role memos / objections in v2 (research: theatre)
+    if v2: roles = []
     arm, tmode = TR.active_arm(episode); d["table_read"] = {"mode": tmode, "arm": arm}      # recorded with the episode so the two arms can be compared later
+    if v2: arm = "off"; d["table_read"]["arm"] = "off"; d["room_mode"] = "v2"
     tr = TR.new_record(episode, arm, tmode)
     mpack = dict(episode={"spine": _j(spine), "draw": _j(d), "trends": ctx["trends"][:2500], "research": ctx.get("research", "")[:2500]},      # v8.11: one cached
                  labels={"trends": "TREND BRIEF", "research": "AUDIENCE RESEARCH"}, extra_global=_craft_extra())                              # episode pack, role last
     memos = ask_many([dict(role="memo", system=P.pack(P.MEMO, role=r, craft=CRAFT_BY_ROLE.get(r, ""), **mpack).map_role(lambda t: FE.inject(t, "memo")),
-                           prompt="Memo now.", episode=episode, fake_key="memo", max_tokens=1200) for r in roles])
+                           prompt="Memo now.", episode=episode, fake_key="memo", max_tokens=1200) for r in roles]) if roles else []
     memo_by_role = dict(zip(roles, memos))
     objections = "none (no table read this time)"
     from whatifs import costguard as CG
@@ -241,6 +247,13 @@ def run_room(draw, episode):
     wbrief = P.fill(P.WRITER, words=d["words"], wmin=wmin, wmax=wmax, story=stg["story"], storydef=defs.get(stg["story"], ""),
                     hook=stg["hook"], hookdef=defs.get(stg["hook"], ""), hooksec=d["hook_sec"], humour=stg["humour"], voice=stg["voice"], bible=_j(bible, 9000),
                     banter=defs.get(stg.get("banter") or "", "") or "natural", budget=budget_brief(d))
+    from whatifs import enforce as EN                        # v11.1 (K166): the markers rule + the channel's own evidence, in every brief
+    wbrief = GR.insert_before_json(wbrief, EN.writer_rules("long"))
+    d["brain_block"] = EN.brain_block("long")
+    if d["brain_block"]: wbrief = GR.insert_before_json(wbrief, d["brain_block"])
+    d["brain_block_in_brief"] = bool(d["brain_block"]) and d["brain_block"] in wbrief
+    if d.get("deep_trial"):                                  # v11 (K163): the monthly ~20-minute special
+        from whatifs import deeptrial as DT; wbrief = GR.insert_before_json(wbrief, DT.NOTE)
     wbrief += f"\nHUMOUR SHARE: at most {int(round(S('HUMOUR_SHARE', float) * 100))}% of lines may be wit (setting HUMOUR_SHARE)."
     wbrief = FE.inject(wbrief, "writer")
     wbrief += ("\nRETENTION RULES: " + CRAFT["retention"] +                       # v8.6: the writer itself gets the retention rules and its own lessons
@@ -255,12 +268,17 @@ def run_room(draw, episode):
         _M.EFFORT_RUN[episode] = {"writer": arm, "rewrite": arm}; d["effort_arm"] = arm
     wbrief = P.Packed.as_episode(wbrief)                  # v8.11: house rules cached 1 h, the whole brief cached as the episode layer; each call's task is its user message
     _mark(d, "bible")
-    script = ask("writer", wbrief, "Write the narration.", episode=episode, fake_key="writer", max_tokens=16000); _mark(d, "writer (first draft)")
+    if v2:                                                 # v11 (K157): diverse drafts -> blind cross-family jury -> one checklist revision
+        from whatifs import room2 as R2
+        script, verdict_v2 = R2.write(spine, wbrief, d, episode); _mark(d, "room v2 (drafts + jury + revision)")
+    else:
+        script = ask("writer", wbrief, "Write the narration.", episode=episode, fake_key="writer", max_tokens=16000); _mark(d, "writer (first draft)")
     script = _fix_length(script, wbrief, wmin, wmax, episode)
     script = humanize(script, episode)
     script = format_pass(script, wbrief, episode)
     script, d["retention_check"] = retention_pass(script, wbrief, spine.get("promise"), episode)      # v8.7: opening + re-hooks checked by code, one fix at most
-    verdict = critic(spine, script, ctx, episode)
+    verdict = critic(spine, script, ctx, episode)          # v11 fix: v2 keeps the critic - its scores carry the POLICY-SAFETY gate (checked below)
+    if v2: verdict["room"] = "v2"; verdict.setdefault("scores", {}).update(verdict_v2.get("scores") or {})
     if verdict.get("verdict") != "PASS":
         log(f"critic asked for revision: {verdict.get('fixes')}", "WARN", episode, public="critic asked for a revision (details kept private)")
         rfix = GR.retention_issues(script.get("script", ""), spine.get("promise"), S("WPM_ESTIMATE", float), script.get("loops"))["issues"] if S("RETENTION_GATE_ON", bool) else []
@@ -282,6 +300,9 @@ def run_room(draw, episode):
                 raise RuntimeError("policy risk after rewrite - premise skipped")
             log("critic still unhappy after one rewrite - continuing (fail-forward)", "WARN", episode)
     _mark(d, "critic + rewrites + edits")
+    if v2:                                                 # v11: the joke tournament runs BEFORE the fact check, so new lines are checked too
+        from whatifs import room2 as R2
+        script, d["joke_tournament"] = R2.jokes(script, wbrief, episode); _mark(d, "joke tournament")
     script = fact_check(spine, script, episode)           # v8.3: search-grounded check of the claims, before any picture money is spent
     _mark(d, "fact check")
     try:                                                   # v10 (K133): early, crowded or doubled asks out first; cta.ensure then puts any missing kind back at a calm slot
@@ -334,6 +355,13 @@ def run_room(draw, episode):
             iss = SHOW.check_tags(script.get("script", ""), d["show_plan"])
         d["show_tag_issues"] = iss
         if iss: note_degraded("show tags: " + "; ".join(iss[:3]))
+    from whatifs import enforce as EN                        # v11.1: AFTER the last rewrite (fact check, asks, tease, Owner's Cut, variety, tags) -
+    script, d["enforce_fix"] = EN.fix_all(script, wbrief, spine, episode, "long")   # ONE mandatory rewrite for every open retention + marker problem
+    if d.get("enforce_fix"):                                 # a rewrite may drop the code-added lines: put the asks and the tease back (both idempotent)
+        if S("CTA_ON", bool):
+            new, added, _code = CTA.ensure(script.get("script", ""), episode, S("CTA_LAST"))
+            if added: script = dict(script, script=new)
+        script = ensure_tease(script, spine.get("next_tease"), episode)
     d["owners_cut"] = {"mean": (oc.get("rounds") or [{}])[-1].get("mean"), "rounds": len(oc.get("rounds") or [])} if oc.get("checked") else {}
     below = [x for x in (spine.get("below_bar"), oc.get("below_bar")) if x]                     # v8.11: made below the bar = noted + ONE email
     if below:

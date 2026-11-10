@@ -19,11 +19,13 @@ def pieces_for(dur, shot_type, opening=False, episode=None):
     Any failure = the v9.2 rule for this episode (v91.guard)."""
     base = 1 if dur < 7.5 or shot_type in ("graphic", "reaction") else (2 if dur < 13 else 3)
     from whatifs import v91 as V91
-    if shot_type in ("graphic", "reaction") or not V91.on("MICRO_CUTS_ON", episode): return base
+    if shot_type in ("graphic", "reaction"):                       # v11.1: animated, but never one piece longer than VISUAL_ANIMATED_MAX_S
+        return max(base, int(math.ceil(float(dur) / max(1.0, S("VISUAL_ANIMATED_MAX_S", float)) - 1e-9)))
+    if not V91.on("MICRO_CUTS_ON", episode): return base
     res = base
     with V91.guard("MICRO_CUTS_ON", episode):
         mx = S("PIECE_MAX_SEC_OPENING" if opening else "PIECE_MAX_SEC", float); mn = max(0.5, S("PIECE_MIN_SEC", float))
-        if mx > 0: res = max(base, min(int(math.ceil(float(dur) / mx - 1e-9)), max(1, int(float(dur) // mn)), 8))
+        if mx > 0: res = max(base, min(int(math.ceil(float(dur) / mx - 1e-9)), max(1, int(float(dur) // mn)), 24))   # v11.1: cap 8 -> 24 (a 40 s line still changes every <= 4 s)
     return res
 
 SCENES = [

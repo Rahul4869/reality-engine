@@ -60,7 +60,8 @@ def test_routes(monkeypatch, setting):
     assert DS.route("MODE|growth")[0] is False
     assert DS.route("PAUSE") == (True, "paused") and core.S("PAUSED", bool); DS.route("RESUME"); assert not core.S("PAUSED", bool)
     assert DS.route("SET|visual_lab|false")[0] and not core.S("VISUAL_LAB_ON", bool)
-    assert DS.route("SET|shorts_per_day|3") == (False, "that switch arrives with a later release")
+    assert DS.route("SET|shorts_per_day|3") == (True, "SHORTS_PER_DAY = 3.0")              # v11: the switch is live (standalone Shorts track)
+    assert DS.route("SET|shorts_per_day|9") == (True, "SHORTS_PER_DAY = 4.0")              # capped; the budget guard still applies
     assert DS.route("SET|BUDGET_CEILING_INR|99999")[0] is False                                          # not on the allow-list
     assert DS.route("LOCKSHEETS|ROSA") == (True, "1 portrait(s) locked")
     monkeypatch.setattr(BD, "merge_pr", lambda n, why="": (True, f"merged #{n}"))

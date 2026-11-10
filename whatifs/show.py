@@ -143,6 +143,18 @@ def next_style(hist=None, seed=""):
     free = [s for s in VERDICT_STYLES if s not in used] or VERDICT_STYLES
     return free[int(hashlib.md5(str(seed or len(used)).encode()).hexdigest()[:6], 16) % len(free)]
 
+TRIAL_GRAMMAR = (
+    "\nTRIAL GRAMMAR (mandatory; code checks every point and holds the episode if one is missing):"
+    " (1) COLD OPEN: show the consequence first, with stakes and a withheld fact; no greeting."
+    " (2) TIME LADDER: examine the case at HOUR 1, DAY 1, YEAR 1 and A MILLION YEARS, saying those words; the timescale is where Grimm is wrong."
+    " (3) EXHIBITS: every scientific claim treated as true is entered by THE ARCHIVIST as 'Exhibit A', 'Exhibit B'... naming a real source and"
+    " its year on the same line (e.g. 'Exhibit B: NOAA tide records, 2023'); Grimm's exaggerations are testimony and get corrected on screen."
+    " (4) Around minute 3, DR. GRIMM demonstrates 'Prototype No.' plus the case number; it fails comically (smoke, sparks) but reveals one true thing."
+    " (5) Around minute 6, INSPECTOR VALE finds the contradiction on his evidence board: the twist."
+    " (6) Link beats with BUT or THEREFORE, never 'and then'."
+    " (7) NANA ROSA opens the verdict with the exact words \"Here's what's true\"."
+    " (8) STAGING: every scene says who is on screen and with which prop (lab, office, courtroom, or the case scene); no lone talking head.")
+
 def villain_due(hist=None):
     """The villain wins about 1 in 3: True when his share of the recent verdicts is below a third (he may win, only on a real detail)."""
     hist = hist if hist is not None else history(9)
@@ -178,7 +190,9 @@ def prompt_block(hist=None):
             "\"teacup_scenes\":[\"2-4 RECON exhibit ids\"],\"stinger\":\"<=25 words: the next case\",\"demand_evidence\":{}}\n"
             + ("Dr. Grimm MAY win this one, but only on a detail he is genuinely right about. " if villain_due(hist) else "Dr. Grimm should not win this one. ")
             + "The meter swings must add up to the verdict."
-            + ((f" VERDICT STYLE for this case (different from recent cases; put it in verdict.style): {next_style(hist)}.") if S("VERDICT_ROTATION_ON", bool) else ""))
+            + ((f" VERDICT STYLE for this case (different from recent cases; put it in verdict.style): {next_style(hist)}.") if S("VERDICT_ROTATION_ON", bool) else "")
+            + (TRIAL_GRAMMAR if S("TRIAL_GRAMMAR_ON", bool) else "")
+            + __import__("whatifs.owner_brief", fromlist=["x"]).brief_block())
 
 def _irange():
     lo = max(0, min(3, S("CHARACTER_INTENSITY_MIN", int))); hi = max(lo, min(3, S("CHARACTER_INTENSITY_MAX", int)))
@@ -394,7 +408,7 @@ def last_case_text():
 
 # ---------------------------------------------------------------- script-tag contract (validated now; consumed by voice / render / QC in stage 2)
 TAG_RE = re.compile(r"\[(CLIPBAIT|/CLIPBAIT|METER [+-]?\d+ (?:grimm|vale)|EXHIBIT [A-H]|JURY)\]", re.I)
-SHOW_TAG_RE = re.compile(r"\[(?:/?CLIPBAIT|METER[^\]]*|EXHIBIT[^\]]*|JURY|TEACUP)\]", re.I)
+SHOW_TAG_RE = re.compile(r"\[(?:/?CLIPBAIT|METER[^\]]*|EXHIBIT[^\]]*|JURY|TEACUP|PUNCH|SEND|AWE)\]", re.I)        # v11.1: + markers
 
 def strip_tags(text):
     """Show tags are never spoken: removed before TTS, captions and descriptions."""

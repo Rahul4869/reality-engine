@@ -20,7 +20,7 @@ DEFAULTS = {}          # kind -> callable(row) run when the row expires unanswer
 
 def _ensure_handlers():
     """Every feature's answer/default handlers are known before an answer or a default runs (any entry point: email, dashboard, WhatsApp, tick)."""
-    for mod, fn in (("whatifs.builds", "ensure_registered"), ("whatifs.visual_lab", "register"), ("whatifs.wa", "register"), ("whatifs.caretaker", "register"), ("whatifs.bakeoff", "register"), ("whatifs.steward", "register")):
+    for mod, fn in (("whatifs.builds", "ensure_registered"), ("whatifs.visual_lab", "register"), ("whatifs.wa", "register"), ("whatifs.caretaker", "register"), ("whatifs.bakeoff", "register"), ("whatifs.steward", "register"), ("whatifs.contract", "register"), ("whatifs.specials", "register"), ("whatifs.sheets", "register"), ("whatifs.breakout", "register"), ("whatifs.replan", "register")):
         try: getattr(__import__(mod, fromlist=[fn]), fn)()
         except Exception as e: log(f"handlers from {mod} not loaded: {scrub(e)[:80]}", "WARN")
 
@@ -180,7 +180,7 @@ def digest(now=None, force=False):
         from whatifs import publish as PUB
         PUB.email("Reality Engine: " + (now or now_utc()).astimezone(IST).strftime("%a %d %b") + " digest", "".join(lines))
     except Exception as e: log(f"digest email failed: {scrub(e)[:120]}", "WARN")
-    set_setting("DIGEST_SENT_AT", iso()); return True
+    set_setting("DIGEST_SENT_AT", (now or now_utc()).astimezone(IST).isoformat()); return True      # v10.2: the digest's own IST date (was wall-clock UTC)
 
 
 def tick():

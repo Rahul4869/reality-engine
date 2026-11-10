@@ -12,15 +12,15 @@ import numpy as np
 from whatifs.core import S, log, store, iso, now_utc, parse_iso, FAKE, WORK, scrub, SMALL
 
 LOOK_SUFFIX = "cinematic, dramatic rim light, shallow depth of field, rich film colour, vertical 9:16 framing, no text"
-CAST_INTRO = [
-    {"who": "VALE", "sec": 3.0, "motion": "slow push-in, he lifts a worn evidence notebook toward the camera and gives a knowing half-smile, rain-lit city glow behind, dust in the light",
-     "card": "INSPECTOR VALE", "line": "finds the flaw in reality"},
-    {"who": "GRIMM", "sec": 3.0, "motion": "he turns sharply to camera from a chalkboard of equations, raises one eyebrow, claps once, sparks from a coil behind him",
-     "card": "DR. GRIMM", "line": "objects to everything. Even gravity."},
-    {"who": "ROSA", "sec": 3.0, "motion": "she sips from a floral teacup, sets it down, lifts a wooden gavel, unimpressed smile, warm courtroom lamps",
-     "card": "NANA ROSA", "line": "presiding. Tea first."},
-    {"who": "SET", "sec": 3.5, "motion": "tall courtroom doors swing open toward the camera, golden light floods in, dust swirls, camera glides forward",
-     "card": "REALITY ON TRIAL", "line": "Court opens Tuesday. You're the jury."},
+CAST_INTRO = [        # v10.2 (owner 2026-11-09: witty, set-driven, voiced): one comic beat per character in their own world, then the doors
+    {"who": "GRIMM", "world": "lab", "sec": 4.5, "card": "DR. GRIMM", "style": "theatrical, gleeful, then deflated",
+     "line": "Science demands a DEMONSTRATION! ...Prototype number one. Possibly number two."},
+    {"who": "VALE", "world": "office", "sec": 4.5, "card": "INSPECTOR VALE", "style": "dry, calm, noir",
+     "line": "Three facts. One flaw. The flaw is usually Grimm."},
+    {"who": "ROSA", "world": "court", "sec": 4.5, "card": "NANA ROSA", "style": "deadpan, unimpressed, warm underneath",
+     "line": "Sit down, Doctor. Tea first. Then the universe."},
+    {"who": "ARCHIVIST", "world": "case", "sec": 4.0, "card": "REALITY ON TRIAL", "style": "formal, warm, a hint of mischief",
+     "line": "Every Tuesday and Saturday, reality goes on trial. You are the jury."},
 ]
 # ---------------------------------------------------------------- the Character Love Engine (owner 2026-11-08)
 # Renewable formats (weights are learned from each format's engaged views at 7 days, with an exploration floor); lore drops are rationed.
@@ -64,13 +64,16 @@ def spent_this_month():
             except Exception: pass
     return tot
 
-def est_inr(n_clips):
+def est_inr(n_clips, kind="special"):
     fx = S("USD_INR", float) or 99.0
     from whatifs.media import still_usd
-    return n_clips * S("PRICE_KLING_USD", float) * fx + 4 * still_usd(576, 1024) * fx + 2.0
+    pics = n_clips * S("PRICE_GEM_IMAGE_USD", float) if kind == "cast_intro" else 4 * still_usd(576, 1024)       # v10.2: reference start frames
+    return n_clips * S("PRICE_KLING_USD", float) * fx + pics * fx + 2.0
 
-def allowed(n_clips):
-    e = est_inr(n_clips)
+def allowed(n_clips, kind="special"):
+    e = est_inr(n_clips, kind)
+    if kind == "cast_intro":                                   # v10.2: the one-time intro (owner-requested remake) has its own cap, outside the monthly specials money
+        return (True, f"Rs {e:.0f}") if e <= S("CAST_INTRO_CAP_INR", float) else (False, f"estimated Rs {e:.0f} is above CAST_INTRO_CAP_INR")
     if e > S("SPECIAL_REEL_CAP_INR", float): return False, f"estimated Rs {e:.0f} is above the per-reel cap Rs {S('SPECIAL_REEL_CAP_INR', float):.0f}"
     if spent_this_month() + e > S("SPECIALS_EARMARK_INR", float): return False, "this month's specials money is used"
     return True, f"Rs {e:.0f}"
@@ -79,6 +82,7 @@ def _portrait(who, workdir, episode):
     """A locked portrait for the cast member (downloaded from Drive), or a freshly drawn one (counted as the reel's cost)."""
     from whatifs import media as MD, show as SHOW, publish as PUB
     rows = [r for r in store().rows("Character_Sheets") if r.get("character") == who and r.get("status") == "LOCKED" and r.get("file")]
+    rows.sort(key=lambda r: {"master": 0, "neutral": 1}.get(r.get("expression"), 2))      # v10.2: the Toybox Noir master first
     path = os.path.join(workdir, f"{who}.png")
     if rows and not FAKE:
         try:
@@ -165,12 +169,61 @@ def _sound(total, beats, path, sr=48000):
     import soundfile as sf
     sf.write(path, st, sr); return path
 
+def _voice_line(who, text, style, path, episode):
+    """v10.2: one line in the character's DESIGNED voice (the same speaker blends the episodes use). Returns (path, seconds)."""
+    from whatifs import tts_gemini as TG, episode as EPI
+    import soundfile as sf
+    from whatifs import show as SHOW
+    bl = EPI.speaker_blends() or {}
+    spk = next((c.get("speaker") for c in SHOW.CHARACTERS if c["id"] == who), who)        # VALE -> DIRECTOR, GRIMM -> SKEPTIC, ROSA -> JUDGE, ARCHIVIST -> WITNESS
+    b = bl.get(spk)
+    gv = getattr(b, "gvoice", "") if b else ""
+    if not gv and FAKE: gv = "Gacrux"                          # the rehearsal has no designed voices; live it must be the owner's designed voice
+    if not gv: raise RuntimeError(f"no designed voice for {who} ({spk})")
+    a, sec = TG.synth([(spk, text, style)], {spk: gv}, episode)
+    sf.write(path, a, TG.SR); return path, float(sec)
+
+def _mix(bed, voices, out, sr=48000):
+    """The code-made bed with each voice line placed at its beat start; the bed ducks under speech (about -10 dB)."""
+    import soundfile as sf
+    x, r = sf.read(bed, dtype="float32")
+    if x.ndim == 1: x = np.stack([x, x], 1)
+    duck = np.ones(len(x), np.float32)
+    for vp, at in voices:
+        v, vr = sf.read(vp, dtype="float32")
+        if v.ndim > 1: v = v.mean(1)
+        if vr != r: v = np.interp(np.linspace(0, len(v) - 1, int(len(v) * r / vr)), np.arange(len(v)), v).astype(np.float32)
+        k = int(at * r); e = min(len(x), k + len(v))
+        if e <= k: continue
+        duck[max(0, k - int(0.15 * r)):e] = 0.32
+        x[k:e] += np.stack([v[:e - k], v[:e - k]], 1) * 0.95
+    x[:, 0] *= np.maximum(duck, 0); x[:, 1] *= np.maximum(duck, 0)
+    for vp, at in voices:                                        # voices back at full level over the ducked bed
+        v, vr = sf.read(vp, dtype="float32")
+        if v.ndim > 1: v = v.mean(1)
+        if vr != r: v = np.interp(np.linspace(0, len(v) - 1, int(len(v) * r / vr)), np.arange(len(v)), v).astype(np.float32)
+        k = int(at * r); e = min(len(x), k + len(v))
+        if e > k: x[k:e] += np.stack([v[:e - k], v[:e - k]], 1) * 0.68
+    x = x / (np.max(np.abs(x)) + 1e-9) * 0.89
+    sf.write(out, x, r); return out
+
+def _cover(frame, title, path, W, H):
+    """v10.2: the designed cover = the first frame viewers see (Shorts have no custom thumbnail): the strongest start frame + the show title."""
+    from PIL import Image, ImageDraw
+    from whatifs.media import font
+    im = Image.open(frame).convert("RGB"); r = max(W / im.width, H / im.height)
+    im = im.resize((int(im.width * r) + 1, int(im.height * r) + 1)); x0, y0 = (im.width - W) // 2, (im.height - H) // 2; im = im.crop((x0, y0, x0 + W, y0 + H))
+    d = ImageDraw.Draw(im); f = font(max(28, W // 9)); y = int(H * 0.70)
+    for line in _wrap(d, title.upper(), f, int(W * 0.9))[:3]:
+        w = d.textlength(line, font=f); d.text(((W - w) / 2 + 3, y + 3), line, font=f, fill=(0, 0, 0)); d.text(((W - w) / 2, y), line, font=f, fill=(255, 214, 0)); y += int(f.size * 1.15)
+    im.save(path, "PNG"); return path
+
 def _assemble(clips, beats, cards, end_card, sound, out_path, W, H):
     """Clips (cropped to 9:16, trimmed), crossfaded, card overlays faded in, the end card, the sound. One ffmpeg run."""
     inputs, filt = [], []
     for i, c in enumerate(clips):
         inputs += ["-i", c]
-        filt.append(f"[{i}:v]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1,fps=30,trim=0:{beats[i]:.2f},setpts=PTS-STARTPTS,format=yuv420p[v{i}]")
+        filt.append(f"[{i}:v]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1,fps=30,tpad=stop_mode=clone:stop_duration=6,trim=0:{beats[i]:.2f},setpts=PTS-STARTPTS,format=yuv420p[v{i}]")
     k = len(clips)
     for j, cp in enumerate(cards): inputs += ["-loop", "1", "-t", f"{beats[j]:.2f}", "-i", cp]
     inputs += ["-loop", "1", "-t", "2.5", "-i", end_card, "-i", sound]
@@ -230,10 +283,15 @@ def concept(kind, fmt=None, occasion=None, topical=""):
         beats = [dict(b) for b in CAST_INTRO]
         fest = str(S("CAST_INTRO_FESTIVE") or "").strip()
         if fest:                                                   # e.g. "Diwali": the courtroom glows with lamps and the court greets the viewers
-            beats[-1]["motion"] += ", the courtroom glowing with rows of small oil lamps and warm festive lights"
-            beats[-1]["line"] = f"Happy {fest} from the court. Tuesday: you're the jury."
+            beats[-1]["line"] = f"Happy {fest} from the court. Every Tuesday and Saturday, reality goes on trial. You are the jury."
         return {"title": "Meet the court: Reality on Trial", "beats": beats, "format": "cast_intro", "ask": ASKS["identity"]}
     from whatifs.models import ask
+    try:                                                         # v10.3 (K154): the owner's locked reel topic comes first
+        ot = json.loads(S("OWNER_SPECIAL_TOPIC") or "{}")
+    except Exception: ot = {}
+    if ot.get("premise") and kind == "special":
+        topical = f"THE OWNER'S LOCKED TOPIC: {ot['premise']}. Brief: {json.dumps(ot.get('brief') or {})[:1200]}"
+        from whatifs.core import set_setting as _ss; _ss("OWNER_SPECIAL_TOPIC", "")
     occ = _occasion_concept(occasion) if occasion else None
     fmt = "occasion" if occ else (fmt or pick_format())
     if occ: brief = f"{occ['name']} special: {occ['brief']} Last beat: a warm, slightly touching family moment and the line '{occ['ask']}'"
@@ -284,12 +342,37 @@ def run(kind="special", force=False, publish=True):
             occasion = OC.slot_for(now_utc().date()) or None
             if not occasion and S("SPECIALS_TOPICAL_ON", bool): topical = OC.topical_hook()
         c = concept(kind, occasion=occasion, topical=topical); beats = c["beats"]
-        ok, why = allowed(len(beats))
+        ok, why = allowed(len(beats), kind)
         if not ok: log(f"special reel not made: {why}", "WARN", episode); return {"ok": False, "why": why}
         from whatifs import media as MD
         W, H = _vsize(); wd = os.path.join(WORK, episode); os.makedirs(wd, exist_ok=True)
-        clips, cards = [], []
+        clips, cards, voices = [], [], []
+        if kind == "cast_intro":                                   # v10.2: the voiced, set-driven intro (each character in their own lit world)
+            from whatifs import anim as ANIM
+            at = 0.6
+            for i, b in enumerate(beats):
+                try:
+                    vp, vs = _voice_line(b["who"], b["line"], b.get("style", ""), os.path.join(wd, f"v{i}.wav"), episode)
+                    b["sec"] = max(float(b.get("sec", 4)), vs + 0.7); voices.append((vp, at + 0.15))
+                except Exception as e:
+                    raise RuntimeError(f"designed voice for {b['who']} failed ({scrub(e)[:80]}): the intro is not made without its voices")
+                at += b["sec"]
         for i, b in enumerate(beats):
+            if kind == "cast_intro":
+                shot = {"anim": {"world": b.get("world", "case"), "line": b.get("line", ""), "slot": i}}
+                img, how = ANIM.start_frame(shot, os.path.join(wd, f"frame{i}.png"), episode, wd, aspect="9:16")
+                clip = os.path.join(wd, f"clip{i}.mp4")
+                MD.animate(None, img, ANIM.acting_prompt(shot), clip, episode, hero=True)
+                if b["who"] in ANIM.FACE_CAST:                         # K139 face check against the locked reference
+                    try:
+                        ref = _portrait(b["who"], wd, episode)
+                        if not _face_ok(clip, ref, b["who"], episode):
+                            log(f"special: {b['who']}'s face drifted; using a push-in on the reference-locked start frame", "WARN", episode)
+                            clip = _portrait_motion(img, os.path.join(wd, f"clip{i}_portrait.mp4"), b["sec"], W, H)
+                    except Exception as e: log(f"face check skipped: {scrub(e)[:100]}", "WARN", episode)
+                if i == 0: first_frame = img
+                b["card_text"] = (b.get("card", ""), b["line"])
+                clips.append(clip); cards.append(_card_png(b.get("card", ""), b["line"], os.path.join(wd, f"card{i}.png"), W, H)); continue
             img = _portrait(b["who"], wd, episode)
             clip = os.path.join(wd, f"clip{i}.mp4")
             MD.animate(None, img, f"{b['motion']}, {LOOK_SUFFIX}", clip, episode, hero=True)
@@ -300,10 +383,19 @@ def run(kind="special", force=False, publish=True):
             except Exception as e: log(f"face check skipped: {scrub(e)[:100]}", "WARN", episode)
             clips.append(clip); cards.append(_card_png(b.get("card", ""), b.get("line", ""), os.path.join(wd, f"card{i}.png"), W, H))
         end = _card_png(c.get("ask") or ASKS["identity"], "Reality Engine on YouTube + Instagram", os.path.join(wd, "end.png"), W, H, end=True)
+        if kind == "cast_intro":                                   # the designed cover is the first 0.6 s (the first frame viewers see)
+            cov = _cover(first_frame, "Reality on Trial", os.path.join(wd, "cover.png"), W, H)
+            covclip = os.path.join(wd, "cover.mp4")
+            subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-t", "0.6", "-i", cov, "-vf", f"scale={W}:{H},fps=30,format=yuv420p", "-c:v", "libx264", covclip], check=True, timeout=120)
+            blank = _card_png("", "", os.path.join(wd, "blank.png"), W, H)
+            clips.insert(0, covclip); cards.insert(0, blank); beats = [{"sec": 0.6, "who": "COVER"}] + beats
         snd = _sound(sum(b["sec"] for b in beats) + 2.5, [b["sec"] for b in beats], os.path.join(wd, "sound.wav"))
+        if voices: snd = _mix(snd, voices, os.path.join(wd, "mix.wav"))
         out = _assemble(clips, [b["sec"] for b in beats], cards, end, snd, os.path.join(wd, f"{episode}.mp4"), W, H)
         rec = {"ts": iso(), "id": episode, "kind": kind, "title": c["title"], "format": c.get("format", ""), "ask": c.get("ask", ""), "yt_id": "", "ig": "", "fb": "", "status": "MADE", "views_7d": ""}
-        if publish: rec.update(_publish(out, c["title"], episode))
+        if publish and S("SPECIALS_REVIEW_ON", bool):            # v10.2: the owner sees it first; nothing is posted before Approve
+            rec.update(_await_review(out, c, kind, episode, beats))
+        elif publish: rec.update(_publish(out, c["title"], episode))
         store().append("Specials", [rec]); log(f"special reel {episode} ({kind}) {rec['status']}", episode=episode)
         return {"ok": True, **rec, "path": out}
     except Exception as e:
@@ -343,3 +435,45 @@ def due(now=None):
     now = now or now_utc()
     if OC.slot_for(now.date()) is None: return False
     return not any(str(r.get("ts", "")).startswith(now.strftime("%Y-%m-%d")) and r.get("kind") == "special" for r in store().rows("Specials"))
+
+# ---------------------------------------------------------------- v10.2: owner review before any special goes public
+def _await_review(path, c, kind, episode, beats):
+    from whatifs import publish as PUB, notify as NT
+    fid, _ = PUB.drive_upload(path, f"{episode}.mp4", public=False)
+    script = " | ".join(f"{b.get('who')}: {b.get('line', '')}" for b in beats if b.get("line"))
+    btn = [("Approve", f"SPECIAL APPROVE {episode}"), ("Remake", f"SPECIAL REMAKE {kind}")]
+    if kind == "cast_intro" and any(r.get("kind") == "cast_intro" and r.get("yt_id") for r in store().rows("Specials")):
+        btn.insert(1, ("Approve + hide old", f"SPECIAL APPROVE {episode} REPLACE"))
+    NT.send("special_review", f"New {kind.replace('_', ' ')} ready for your review (nothing is posted yet). Watch: https://drive.google.com/file/d/{fid}/view  Script: {script[:600]}",
+            btn, tier="now", urgent=True, episode=episode, default="not posted", expires_h=72, dedupe_key=f"special|{episode}")
+    return {"status": "AWAITING_APPROVAL", "file": f"drive:{fid}"}
+
+def _answer(row, choice):
+    p = str(choice).split()
+    if len(p) >= 3 and p[0].upper() == "SPECIAL" and p[1].upper() == "APPROVE":
+        return approve(p[2], replace=len(p) > 3 and p[3].upper() == "REPLACE")
+    if len(p) >= 3 and p[0].upper() == "SPECIAL" and p[1].upper() == "REMAKE":
+        try:
+            from whatifs import builds as BL; BL.dispatch("special.yml", {"kind": p[2]}); return f"a new {p[2]} is being made"
+        except Exception as e: return f"remake could not start: {scrub(e)[:80]}"
+    return "recorded"
+
+def approve(sid, replace=False):
+    """Post an approved special (downloaded from Drive); REPLACE hides the earlier cast intro on YouTube (set private, reversible)."""
+    from whatifs import publish as PUB
+    st = store(); row = next((r for r in st.rows("Specials") if r.get("id") == sid), None)
+    if not row: return f"{sid} not found"
+    path = os.path.join(WORK, sid, f"{sid}.mp4"); os.makedirs(os.path.dirname(path), exist_ok=True)
+    if not os.path.exists(path): PUB.drive_download(str(row.get("file", "")).replace("drive:", ""), path)
+    old = [r for r in st.rows("Specials") if r.get("kind") == "cast_intro" and r.get("yt_id") and r.get("id") != sid] if replace else []
+    res = _publish(path, row.get("title") or "Reality on Trial", sid)
+    st.update("Specials", "id", sid, res)
+    for r in old:
+        try: PUB.yt_set_privacy(r["yt_id"], "private"); st.update("Specials", "id", r["id"], {"status": "REPLACED"})
+        except Exception as e: log(f"old intro not hidden: {scrub(e)[:80]}", "WARN", sid)
+    return f"posted {sid}" + (f"; the old intro is now private on YouTube (archive it on Instagram by hand)" if old else "")
+
+def register():
+    from whatifs import notify as NT
+    NT.register("special_review", on_answer=_answer)
+

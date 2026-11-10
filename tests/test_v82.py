@@ -212,7 +212,7 @@ def test_a_video_that_fails_final_qc_is_held_not_uploaded_and_the_fix_schedules_
     slot = _produce(monkeypatch, tmp_path); sent, uploads = [], []
     monkeypatch.setattr(PUB, "email", lambda subj, *a, **k: sent.append(subj)); monkeypatch.setattr(PUB, "yt_upload", lambda *a, **k: uploads.append(1) or "VID1")
     bad = {"ok": False, "problems": [{"code": "av_offset", "detail": "late", "fix": "free", "t": 1.0, "idx": None}], "info": {}}
-    good = {"ok": True, "problems": [], "info": {}}; state = {"bad": True}
+    good = {"ok": True, "problems": [], "info": {"slop": 10}}; state = {"bad": True}      # v10.2: the contract needs the slop score QC reports
     monkeypatch.setattr(QC, "full_check", lambda ctx: bad if state["bad"] else good)
     from whatifs import fixes; monkeypatch.setattr(fixes, "auto_fix", lambda job, chk, cap, recheck, rounds=2: (chk, [], 0.0))
     r = EP.produce(slot); rows = core.store().rows("Episodes"); ep = rows[-1]["episode_id"]

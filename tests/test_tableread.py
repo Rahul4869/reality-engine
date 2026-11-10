@@ -3,6 +3,13 @@ import pytest
 from whatifs import tableread as TR, core, prompts as P
 from whatifs.data import CRAFT_BY_ROLE, CRAFT
 
+
+@pytest.fixture(autouse=True)
+def _room_v1():
+    """v11: the table read, department memos and the director read belong to room v1 (room v2 drops them by design); these tests pin v1."""
+    from whatifs import core as _core
+    _core.set_setting("ROOM_MODE", "v1"); yield
+
 def test_default_mode_is_on_and_writer_room_clearance_is_enabled():
     assert core.DEFAULTS["TABLE_READ_MODE"][0] == "on"
     assert TR.active_arm("EP1") == ("on", "on")

@@ -18,6 +18,11 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GH_MERGE_TOKEN: ${{ secrets.GH_MERGE_TOKEN }}
       GH_REPO: ${{ github.repository }}
+      WA_TOKEN: ${{ secrets.WA_TOKEN }}
+      WA_PHONE_ID: ${{ secrets.WA_PHONE_ID }}
+      WA_WABA_ID: ${{ secrets.WA_WABA_ID }}
+      OWNER_WA: ${{ secrets.OWNER_WA }}
+      AA_API_KEY: ${{ secrets.AA_API_KEY }}
       ISSUE_TITLE: ${{ github.event.issue.title }}
       ISSUE_NUMBER: ${{ github.event.issue.number }}
     steps:

@@ -113,7 +113,7 @@ def test_produce_slot_does_not_create_rows_or_start_when_the_budget_gate_closes(
     assert MG._produce_slot(core.store().rows("Episodes")) is None and len(sent) == 1       # one email per month, not one per tick
 
 def test_the_shipped_defaults_are_the_documented_budget_profile():
-    assert core.DEFAULTS["BUDGET_FLOOR_INR"][0] == "5000" == core.DEFAULTS["BUDGET_CEILING_INR"][0] and core.S("KLING_MIN_CLIPS", int) == 3 and core.S("PUBLISH_DAYS") == "Tue,Sat"      # v8.10: the owner raised the cap to 4,000
+    assert core.DEFAULTS["BUDGET_FLOOR_INR"][0] == "5000" == core.DEFAULTS["BUDGET_CEILING_INR"][0] and core.S("KLING_MIN_CLIPS", int) == 4 and core.S("PUBLISH_DAYS") == "Tue,Sat"      # v8.10: the owner raised the cap to 4,000; v10.2: option C keeps 4 animated scenes
 
 def test_gemini_calls_are_written_to_the_cost_log(monkeypatch):
     from whatifs import models

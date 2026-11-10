@@ -82,7 +82,7 @@ _BRACKET_RE = re.compile(r"^\[([^\[\]]{1,26})\]\s*")
 _COLON_RE = re.compile(r"^(" + _NAME_ALT + r")\s*(?:\([^)]{0,24}\))?\s*(?::\s*|[\u2014\u2013-]\s+)", re.IGNORECASE)
 _SPLIT_SPK_RE = re.compile(r"(?=\[(?:" + _NAME_ALT + r")\])", re.IGNORECASE)
 _STRAY_RE = re.compile(r"\[[A-Za-z_ ]{1,26}(?::[A-Za-z_]{1,12})?\]")      # a bracket word must never be read aloud
-_SHOW_RE = re.compile(r"\[\s*(?:/?CLIPBAIT|METER\s*[+-]?\d+\s+(?:GRIMM|VALE)|EXHIBIT\s+[A-H]|JURY|TEACUP)\s*\]", re.IGNORECASE)      # v9
+_SHOW_RE = re.compile(r"\[\s*(?:/?CLIPBAIT|METER\s*[+-]?\d+\s+(?:GRIMM|VALE)|EXHIBIT\s+[A-H]|JURY|TEACUP|PUNCH|SEND|AWE)\s*\]", re.IGNORECASE)      # v9; v11.1: + PUNCH/SEND/AWE markers
 _STAGE_RE = re.compile(r"^\(([A-Za-z ,'\u2019-]{1,32})\)\s*")                 # '(laughing) Okay that is wild.' -> a delivery hint, never spoken
 
 def _speaker_of(name):
@@ -146,6 +146,8 @@ def parse_script(script: str) -> list[Unit]:
             show = pend_show + show; pend_show = []; close_later = False
             spk, tag, pause, line = _peel(chunk)
             pending_gap += pause
+            if any("PUNCH" in s_ for s_ in show):                              # v11.1 (K166): pause-then-punch (300-700 ms of silence)
+                from whatifs.core import S as _S; pending_gap += _S("PUNCH_PAUSE_S", float)
             if tag == "none": tag = carry                                      # '[tension] [SKEPTIC] text': the tag belongs to the text that follows
             if not line:
                 carry = tag

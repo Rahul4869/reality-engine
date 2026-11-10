@@ -1,4 +1,36 @@
+> HISTORICAL (v7-v11 history) - DO NOT FOLLOW AS CURRENT. Current truth: docs/OWNER_REQUIREMENTS_LEDGER.md + the handoff 01_MASTER_SPEC (v12 build).
+
 # Changes (newest first). Claude Code adds one dated entry per merged change: what, why, cost, how to switch it off.
+
+## 2026-11-10 v11 Stages B-E - writers' room v2, Breakout Protocol, Shorts track, spin-offs, feel layer, re-planner
+- Room v2 (ROOM_MODE): 3 archetype drafts, blind cross-family jury, one checklist revision, joke tournament; the critic's policy-safety gate kept.
+- Breakout: promise-on-screen check, still detector (edge-masked, 1080p-calibrated), Breakout Score (ranks, never holds), 48-h breakout monitor.
+- Standalone daily Shorts (SHORTS_TRACK_ON), Case Files countdown (CASEFILES_ON), monthly Deep Trial (DEEP_TRIAL_ON).
+- Feel: world particle layer (PARTICLES_ON; ~+10 min render per 10 min of stills), sound worlds + story sounds (SOUND_WORLDS_ON).
+- Reach report (REACH_ON): impressions + CTR from the Reporting API. Monday re-planner (REPLAN_ON, owner veto). Weekly tool scout (SCOUT_ON).
+- Fixes: Kling 3.0 endpoint -> fal-ai/kling-video/o3/standard (v10.2 named v3/standard, not in fal's verified list); Specials 'file' column (cast-intro
+  approval); DRIVE_ARCHIVE_KEEP 2 -> 12; Technique_Library name clash; room v2 had skipped the policy-safety critic.
+
+## 2026-11-10 v11 Stages B-E - writers' room v2, breakout layer, Shorts track, Case Files, sound worlds + particles, reach, Deep Trial, re-planner, scout
+- Room v2 with blind cross-family jury + joke tournament; critic/policy gate kept (ROOM_MODE). About +Rs 40/episode net.
+- Still detector + promise check (contract 27 checks); Breakout Score; 48-hour monitor with follow-up approval.
+- Standalone Shorts (SHORTS_TRACK_ON), Case Files countdown (CASEFILES_ON), Deep Trial (DEEP_TRIAL_ON).
+- Sound worlds (SOUND_WORLDS_ON) and world particles (PARTICLES_ON; about +10 min render per episode).
+- Reach report (REACH_ON), Monday re-plan (REPLAN_ON), tool scout (SCOUT_ON), weekly "What we learned".
+- Fixed: Specials file column (cast-intro approval), DRIVE_ARCHIVE_KEEP 2->12, Kling O3 image field, critic dropped by room v2.
+
+## 2026-11-09 v11 Stage A - learning core, money rules, watchdog clock
+- Channel Brain: features, Technique_Evidence, Thompson sampling with holdout, forecasts vs median (BRAIN_ON). Rs 0.
+- November cap Rs 5,226 (Rs 1,226 spent + Rs 4,000 approved); from December Rs 5,000 (MONTH_CAP_OVERRIDES).
+- Breakout fund: last month's unspent up to Rs 1,000, for breakout follow-ups only (BREAKOUT_FUND_ON). 90% guard pauses extras, one alert (BUDGET_GUARD_PCT).
+- Cloudflare watchdog clock (Worker cron */10) + tick concurrency group. Cost_Log latency (ms).
+- Fixed before release: a duplicate Technique_Library tab definition (would have broken the v8.10 library); new guard test.
+
+## 2026-11-09 v10.2 - enforced features, real animation, voiced cast intro
+- Feature Contract: 25 mandatory checks with evidence; failures hold the video with an owner card; Feature_Ledger tab; first 3 videos and every special wait for the owner's Approve. Switches: CONTRACT_ON, CONTRACT_OFF, CREATIVE_REVIEW_FIRST_N, SPECIALS_REVIEW_ON.
+- Animation director: 4 animated scenes per video (Kling 3.0 Standard on fal) from reference-locked Google start frames, Toybox Noir look, worlds per character. Switches: ANIM_DIRECTOR_ON, ANIM_SHOTS. Cost about +Rs 660/month (inside the cap).
+- Trial grammar in the writers' room (TRIAL_GRAMMAR_ON); research is run in the room when no brief exists.
+- Cast intro remade (voiced, set-driven, cover, approval, 'Approve + hide old'); character masters from the approved portraits (#8); voice gate (#9), WhatsApp template/version/subscription (#10/#11), Meta app check (#6); specials cap 180; digest date bug fixed.
 
 ## 2026-11-08 v10.1b Steward parser fix (setup-chat finding)
 - fal model pages embed fal's whole list of deprecation rules (for many endpoints) in scripts. The Steward read them all, so 7 models got another endpoint's date (25 Oct 2026). It now reads only the page's own visible notice; a date shared by 3+ models (MODEL_SHARED_DATE_MAX) is ignored; a date never blocks a model by itself (real outages are caught by runtime failover); a past date is never acted on.

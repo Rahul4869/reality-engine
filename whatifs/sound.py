@@ -5,6 +5,7 @@ dimension is scored on how much of the video is watched, like every other strate
 from __future__ import annotations
 import hashlib, re
 import numpy as np
+from whatifs.core import S
 
 KINDS = ("drip", "crackle", "wind", "heartbeat", "hum", "fizz", "rumble", "tick", "rain", "glass")
 DENSITY = {"sparse": 0.10, "textured": 0.20, "rich": 0.30}        # share of shots that may carry a texture
@@ -160,6 +161,12 @@ def texture(kind, sec, seed="", sr=48000):
 # =====================================================================================================================================
 AMBIENCE = ("wind", "hum", "rumble", "rain", "crackle", "drip")
 FOLEY = ("creak", "fabric", "tap")
+# v11 (K161) sound worlds: each location has its own bed; story events get their own sounds (research: voice changes keep pulling attention,
+# repeated identical effects stop working -> every use is a fresh variant; ASMR textures only as quiet touches, never in the first 30 s)
+WORLD_AMB = {"lab": "crackle", "office": "rain", "court": "hum", "case": "wind"}
+SPEAKER_WORLD = {"DIRECTOR": "office", "VALE": "office", "SKEPTIC": "lab", "GRIMM": "lab", "JUDGE": "court", "ROSA": "court", "NANA": "court",
+                 "WITNESS": "case", "ARCHIVIST": "case"}
+KIND_GAIN = {"paper": 0.45, "gavel": 1.15, "fizzle": 0.8}
 AMB_LEVEL = 0.022          # a low-level bed: felt more than heard
 CLOSE_LEVEL = 0.03
 FOLEY_LEVEL = 0.06
@@ -190,7 +197,37 @@ def immersive(shots, units, total, seed=""):
         if (units[i].get("tag") == "reveal" or shots[i].get("pov") or shots[i].get("pov_fx")) and t - last >= 20.0 and len(foley) < 8:
             foley.append((FOLEY[len(foley) % len(FOLEY)], max(0.0, t - 0.15))); last = t
     impacts = [float(units[i]["start"]) for i in range(n) if shots[i].get("pov_fx") == "impact_shake"][:3]
+    if S("SOUND_WORLDS_ON", bool):
+        amb = worlds(units, total, seed) or amb
+        foley = sorted(foley + story_events(units), key=lambda x: x[1])
     return {"ambience": amb, "close": close[:8], "foley": foley, "impacts": impacts}
+
+def _world_of(u):
+    sp = str(u.get("speaker") or "").upper()
+    return next((w for k, w in SPEAKER_WORLD.items() if k in sp), None)
+
+def worlds(units, total, seed=""):
+    """v11: the bed follows WHERE we are (the speaking character's world); a world must last >= SOUND_WORLD_MIN_S before the bed changes."""
+    amb, cur, start = [], None, 0.0
+    for u in units:
+        w = _world_of(u)
+        if not w: continue
+        k = WORLD_AMB[w]; t = float(u.get("start", 0) or 0)
+        if cur is None: cur, start = k, 0.0
+        elif k != cur and t - start >= S("SOUND_WORLD_MIN_S", float): amb.append((cur, start, t)); cur, start = k, t
+    if cur: amb.append((cur, start, float(total)))
+    return amb
+
+def story_events(units):
+    """v11: sounds tied to the story: a paper crinkle under each Exhibit (quiet, never in the first 30 s), the gavel on Nana's verdict line,
+    a fizzle after Grimm's Prototype. Each kind at least 6 s apart, at most SOUND_EVENTS_MAX in total."""
+    out, last = [], {}
+    for u in units:
+        t = float(u.get("start", 0) or 0); txt = str(u.get("text", ""))
+        for kind, pat, dt_, first_ok in (("paper", "exhibit", 0.0, 30.0), ("gavel", "here's what's true", -0.1, 0.0), ("fizzle", "prototype", 1.2, 0.0)):
+            if pat in txt.lower().replace("\u2019", "'") and t >= first_ok and t - last.get(kind, -99) >= 6.0:
+                out.append((kind, max(0.0, t + dt_))); last[kind] = t
+    return out[: S("SOUND_EVENTS_MAX", int)]
 
 def impact_gain(t, impacts):
     """Bed + texture gain around each impact: 1-2 beats of near-silence before it, a deep hole after it (ringing time), a slow recovery."""
@@ -209,6 +246,18 @@ def foley(kind, seed="", sr=48000):
     elif kind == "fabric":
         m = int(0.6 * sr); t = np.arange(m) / sr; nz = rng.standard_normal(m).astype(np.float32)
         x = (nz - _smooth(nz, 8)) * (np.sin(np.pi * t / t[-1]) ** 1.5)
+    elif kind == "gavel":                                    # v11: wood knock + low body, slight variation every use
+        m = int(0.7 * sr); t = np.arange(m) / sr; f0 = float(rng.uniform(180, 230))
+        x = (np.sin(2 * np.pi * f0 * t) * np.exp(-t * 18) * 0.8 + np.sin(2 * np.pi * f0 * 3.1 * t) * np.exp(-t * 45) * 0.5
+             + rng.standard_normal(m) * np.exp(-t * 160) * 0.6)
+    elif kind == "paper":                                    # v11: an ASMR-light paper crinkle (several tiny bursts)
+        m = int(0.8 * sr); x = np.zeros(m, np.float32)
+        for _ in range(int(rng.integers(5, 9))):
+            a = int(rng.uniform(0, 0.7) * sr); L = int(rng.uniform(0.01, 0.04) * sr); nz = rng.standard_normal(L).astype(np.float32)
+            x[a:a + L] += (nz - _smooth(nz, 3))[: max(0, min(L, m - a))] * float(rng.uniform(0.4, 1.0))
+    elif kind == "fizzle":                                   # v11: Grimm's device dying: a falling tone + crackles
+        m = int(1.1 * sr); t = np.arange(m) / sr; f = 900 * np.exp(-t * 2.2) + float(rng.uniform(-40, 40))
+        x = np.sin(2 * np.pi * np.cumsum(f) / sr) * np.exp(-t * 2.5) * 0.6 + (rng.random(m) < 0.004) * rng.standard_normal(m) * 0.9
     else:
         m = int(0.18 * sr); t = np.arange(m) / sr
         x = (np.sin(2 * np.pi * 420 * t) * np.exp(-t * 60) + rng.standard_normal(m) * np.exp(-t * 220) * 0.4)

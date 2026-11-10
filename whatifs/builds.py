@@ -7,7 +7,7 @@ from whatifs.core import S, log, env, iso, store, scrub, FAKE
 API = "https://api.github.com"
 
 def _h():
-    tok = env("GH_MERGE_TOKEN") or env("GH_TOKEN")
+    tok = env("GH_MERGE_TOKEN") or env("GH_ACTIONS_TOKEN") or env("GH_TOKEN")      # v11.1: the tick's own token (actions: write only)
     return {"Authorization": f"Bearer {tok}", "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
 
 def dispatch(workflow, inputs, ref="main"):

@@ -1,7 +1,7 @@
 """whatifs/governor.py v8.10 (TTS + thinking in every estimate, headroom, 4th-Kling proposal, Gemini credit; v8.7) - hard monthly cap (v8.7: the maintenance reserve is INSIDE the cap; v8.5: the B thumbnail is counted) WITH a pre-flight gate. Preserve minimum Kling shots; trim living-still animation first.
 The controller estimates spend but cannot guarantee provider billing; Cost_Log is authoritative."""
 import datetime as dt, re
-from whatifs.core import S, store, month_spend, lifetime_spend_usd, now_utc
+from whatifs.core import S, store, month_spend, lifetime_spend_usd, now_utc, set_setting, log
 
 def month_key(s):
     """'2027-03', '2027-03-01', '01/03/2027', '3/1/2027', 'Mar 2027' or a Sheets date number -> '2027-03'. Unknown -> ''."""
@@ -46,13 +46,61 @@ def budget_mode():
     if m == "growth" or (S("GROWTH_AUTO_ON", bool) and last_month_revenue() > 0): return "growth"
     return "standard"
 
+def month_override_inr(mk=None):
+    """v11 (owner 2026-11-09): a one-month cap set by the owner, e.g. MONTH_CAP_OVERRIDES = '2026-11=5226' (Rs 1,226 spent + Rs 4,000 approved for the
+    rest of November). None when this month has no override."""
+    mk = mk or now_utc().strftime("%Y-%m")
+    for part in str(S("MONTH_CAP_OVERRIDES") or "").split(","):
+        k, _, v = part.strip().partition("=")
+        if k.strip() == mk:
+            try: return float(v)
+            except ValueError: return None
+    return None
+
+def breakout_fund_inr():
+    """v11: last month's unspent money carried in as a BREAKOUT FUND (capped at BREAKOUT_FUND_CAP_INR), usable only by breakout follow-ups and extra long
+    episodes on proven topics (kind 'breakout'); 0 when off or not set for this month (set once at the month's first tick by rollover_month())."""
+    if not S("BREAKOUT_FUND_ON", bool) or str(S("BREAKOUT_FUND_MONTH") or "") != now_utc().strftime("%Y-%m"): return 0.0
+    return max(0.0, S("BREAKOUT_FUND_INR", float))
+
+BREAKOUT_EP_PREFIX = "BRK"      # follow-ups produced for a breakout use episode ids starting with this, so every one of their costs is counted here
+
+def breakout_spend_inr():
+    mk = now_utc().strftime("%Y-%m"); tot = 0.0; pre = _prefixes("BREAKOUT_ITEMS")
+    for r in store().rows("Cost_Log"):
+        if r.get("basis") == "summary" or not str(r.get("ts", "")).startswith(mk): continue
+        key = f"{r.get('role') or ''} {r.get('item') or ''}".lower()
+        if str(r.get("episode_id") or "").startswith(BREAKOUT_EP_PREFIX) or any(key.startswith(x) or f" {x}" in key for x in pre):
+            try: tot += float(r.get("inr") or 0)
+            except Exception: pass
+    return tot
+
+def breakout_fund_left_inr():
+    return max(0.0, breakout_fund_inr() - breakout_spend_inr())
+
+def rollover_month(now=None):
+    """Once per month: record last month's cap/spend and set this month's breakout fund = min(cap, unspent). Idempotent."""
+    now = now or now_utc(); mk = now.strftime("%Y-%m")
+    if str(S("BREAKOUT_FUND_MONTH") or "") == mk: return None
+    prev_cap, prev_spend = S("LAST_MONTH_CAP_INR", float), S("LAST_MONTH_SPEND_INR", float)
+    fund = min(S("BREAKOUT_FUND_CAP_INR", float), max(0.0, prev_cap - prev_spend)) if (S("BREAKOUT_FUND_ON", bool) and prev_cap > 0) else 0.0
+    set_setting("BREAKOUT_FUND_INR", f"{fund:.0f}"); set_setting("BREAKOUT_FUND_MONTH", mk)
+    log(f"month {mk}: breakout fund Rs {fund:.0f} (last month cap Rs {prev_cap:.0f}, spent Rs {prev_spend:.0f})")
+    return fund
+
+def record_month_close():
+    """Keeps LAST_MONTH_* current every tick (the values at month end are what rollover uses)."""
+    set_setting("LAST_MONTH_CAP_INR", f"{cap_inr():.0f}"); set_setting("LAST_MONTH_SPEND_INR", f"{month_spend():.0f}")
+
 def cap_inr():
     rec = last_month_revenue()
     base = min(S("BUDGET_CEILING_INR", float), max(S("BUDGET_FLOOR_INR", float), rec * S("REVENUE_SHARE", float)))
+    ov = month_override_inr()
+    if ov is not None: base = ov                                                              # v11: the owner's one-month cap
     mode = budget_mode()
     if mode == "runway": return min(base, S("RUNWAY_CAP_INR", float))
-    if mode == "growth": return base + max(0.0, rec) * S("GROWTH_REVENUE_SHARE", float)          # revenue funds extra on top of the cap
-    return base
+    if mode == "growth": return base + max(0.0, rec) * S("GROWTH_REVENUE_SHARE", float) + breakout_fund_inr()   # revenue funds extra on top of the cap
+    return base + breakout_fund_inr()                                                         # v11: the carried-in breakout fund (breakout use only)
 
 def month_spend_of(prefixes):
     """v9.4a: this month's spend on Cost_Log rows whose role or item starts with one of the prefixes (earmarked lines, growth extras)."""
@@ -102,6 +150,11 @@ def credit_cover_inr():
 def extras_allowed(est_inr, kind="extra"):
     """v9.4a (K124, protected core): (ok, reason) for any growth extra (Shorts Lab, research, chat...). Allowed only while (a) the month's extras stay inside
     GROWTH_ALLOWANCE_INR and (b) after this spend the remaining slots' production still fits. Extras pause first; production is never squeezed."""
+    if kind == "breakout":                                                                    # v11: breakout follow-ups first use the carried-in fund
+        if est_inr <= breakout_fund_left_inr(): return True, "breakout fund"
+    elif month_spend() + est_inr > S("BUDGET_GUARD_PCT", float) / 100.0 * cap_inr():          # v11: the 90% guard pauses extras (never production)
+        _guard_alert()
+        return False, f"paused: the month is at {100 * month_spend() / max(1.0, cap_inr()):.0f}% of the cap (guard {S('BUDGET_GUARD_PCT', float):.0f}%)"
     spent = month_spend_of(_prefixes("GROWTH_ITEMS"))
     if spent + est_inr > S("GROWTH_ALLOWANCE_INR", float): return False, f"growth allowance used (Rs {spent:.0f} of Rs {S('GROWTH_ALLOWANCE_INR', float):.0f})"
     left_slots = max(0, min(episodes_left_this_month(), max_long_videos() - long_videos_this_month()))
@@ -110,12 +163,24 @@ def extras_allowed(est_inr, kind="extra"):
     if room < need: return False, f"paused to protect production (Rs {room:.0f} left after this, Rs {need:.0f} needed for {left_slots} video(s))"
     return True, "ok"
 
+def _guard_alert():
+    """One WhatsApp/email card per month when the guard first pauses extras."""
+    mk = now_utc().strftime("%Y-%m")
+    if str(S("BUDGET_GUARD_ALERTED") or "") == mk: return
+    try:
+        from whatifs import notify as NT
+        NT.send("budget_guard", f"Budget guard: Rs {month_spend():.0f} of Rs {cap_inr():.0f} spent this month. Extras (spin-offs, tool tests, Shorts above 1 a day) "
+                "are paused; scheduled long episodes keep their money.", [("OK", "OK")], tier="now", default="ok", expires_h=48, dedupe_key=f"guard|{mk}")
+    except Exception: pass
+    set_setting("BUDGET_GUARD_ALERTED", mk)
+
 def remaining_inr(): return cap_inr() - month_spend()
 
 def production_room_inr():
     """v8.7: what production may still spend this month. The maintenance reserve is kept INSIDE the cap (it was above it until v8.6, so a month could total
     the cap + Rs 100): production stops BUDGET_MAINT_RESERVE_INR below the cap; the last part is for maintenance jobs and an in-flight overshoot only."""
-    return remaining_inr() - max(0.0, S("BUDGET_MAINT_RESERVE_INR", float)) - earmark_left_inr() - specials_left_inr()      # v9.4a/v10: earmarks are never production money
+    return (remaining_inr() - max(0.0, S("BUDGET_MAINT_RESERVE_INR", float)) - earmark_left_inr() - specials_left_inr()      # v9.4a/v10: earmarks are never production money
+            - breakout_fund_left_inr())                                                                                    # v11: nor is the breakout fund
 
 def episodes_left_this_month():
     from zoneinfo import ZoneInfo

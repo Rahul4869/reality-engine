@@ -48,7 +48,15 @@ def run():
         assert probe_dur(r["master"]) >= 20, "runtime floor not enforced"
         imgs = [c for c in st_rows("Cost_Log") if c["item"] == "image"]
         print("rehearsal images logged:", len(imgs))
-        st = store(); e = st.rows("Episodes")[-1]; assert e["status"] == "SCHEDULED", e
+        st = store(); e = st.rows("Episodes")[-1]
+        if e["status"] == "AWAITING_APPROVAL":                 # v10.2: the first videos wait for the owner; the rehearsal plays the owner's Approve tap
+            from whatifs import contract as CON
+            assert any(r.get("kind") == "creative_review" for r in st.rows("Owner_Actions")), "review card missing"
+            led = [r for r in st.rows("Feature_Ledger") if r.get("episode_id") == e["episode_id"]]
+            assert led and not [r for r in led if r["status"] == "FAIL"], ("contract ledger", [r for r in led if r["status"] == "FAIL"])
+            print("contract ledger:", len(led), "checks,", sum(1 for r in led if r["status"] == "PASS"), "pass; review card sent; approving as the owner")
+            CON.approve(e["episode_id"]); e = st.rows("Episodes")[-1]
+        assert e["status"] == "SCHEDULED", e
         from whatifs.core import S as _S89; np89 = _S89("NEXT_PREMISE")      # v8.9: the scheduled video leaves its tease for the next episode (v8.9.1: only a saved plan uses it up)
         # v7.4 checks: research brief, ten opening hooks, reviewable cut map
         d74 = os.path.dirname(r["master"])
@@ -85,9 +93,10 @@ def run():
         from whatifs import room as ROOM, tableread as TR
         from whatifs.sampler import draw as DRAW
         assert TR.active_arm("ANY", "off")[0] == "off" and e.get("draw_json"), "table read must be off by default"
-        set_setting("TABLE_READ_MODE", "on")
+        set_setting("TABLE_READ_MODE", "on"); set_setting("ROOM_MODE", "v1")      # v11: the table read belongs to room v1 (v2 drops role memos by design)
         rr = ROOM.run_room(DRAW("EPTABLE", "collective"), "EPTABLE")
         assert rr["table_read"]["arm"] == "on" and rr["director_notes"], "table read did not run"
+        set_setting("ROOM_MODE", "v2")
         assert {x["kind"] for x in st.rows("Table_Read") if x["episode_id"] == "EPTABLE"} >= {"objection", "director_note"}, "Table_Read rows missing"
         set_setting("TABLE_READ_MODE", "off")
         assert "NOT ENOUGH DATA" in TR.abtest_report()["verdict"], "abtest must refuse to conclude without data"

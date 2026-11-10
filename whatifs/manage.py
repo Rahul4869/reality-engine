@@ -191,6 +191,34 @@ def tick():
     try:                                                        # v9.4a (WP4): queued owner messages, silence = default, the digest
         from whatifs import notify as NT
         NT.tick()
+        try:                                                    # v11 (K159): start a standalone Short when one is due (one dispatch per 50 min at most)
+            from whatifs import shorts2 as SH2
+            last = parse_iso(S("SHORTS_LAST_DISPATCH"))
+            if SH2.due() and (not last or (now_utc() - last).total_seconds() > 3000):
+                from whatifs import builds as BLD
+                if BLD.dispatch("special.yml", {"kind": "short"}): set_setting("SHORTS_LAST_DISPATCH", iso())
+        except Exception as x: log(f"Shorts dispatch skipped: {scrub(x)}", "WARN")
+        try:                                                    # v11 (K160): the monthly Case Files countdown (once enough episodes are archived)
+            from whatifs import spinoff as SPO
+            mk = now_utc().strftime("%Y-%m")
+            made = any(r.get("kind") == "casefiles" and str(r.get("ts", "")).startswith(mk) for r in store().rows("Specials"))
+            if (S("CASEFILES_ON", bool) and not made and now_utc().day >= S("CASEFILES_DAY", int) and len(SPO.eligible()) >= S("CASEFILES_CASES", int)
+                    and str(S("CASEFILES_LAST_DISPATCH") or "")[:7] != mk):
+                from whatifs import builds as BLD
+                if BLD.dispatch("special.yml", {"kind": "casefiles"}): set_setting("CASEFILES_LAST_DISPATCH", iso())
+        except Exception as x: log(f"Case Files dispatch skipped: {scrub(x)}", "WARN")
+        try:                                                    # v11 (K158): the 48-hour breakout monitor (1 API unit per 50 videos)
+            from whatifs import breakout as BRKM; BRKM.monitor()
+        except Exception as x: log(f"breakout monitor skipped: {scrub(x)}", "WARN")
+        try:                                                    # v11 (K164/K165): Monday money re-plan, weekly tool scout, month restore
+            from whatifs import replan as RPL, scout as SCT; RPL.month_restore(); RPL.weekly(); SCT.weekly()
+        except Exception as x: log(f"re-plan / tool scout skipped: {scrub(x)}", "WARN")
+        try:                                                    # v11: month rollover (breakout fund) + month close records
+            from whatifs import governor as GVR; GVR.rollover_month(); GVR.record_month_close()
+        except Exception as x: log(f"month records skipped: {scrub(x)}", "WARN")
+        try:                                                    # v10.3 (K153): the daily / weekly WhatsApp briefs with a chart
+            from whatifs import digests as DGS; DGS.tick()
+        except Exception as x: log(f"WhatsApp briefs skipped: {scrub(x)}", "WARN")
     except Exception as x: log(f"owner messages skipped: {scrub(x)}", "WARN")
     try:                                                        # v10 (K140): key/plan expiry reminders (14 and 3 days before), once a day
         from whatifs import caretaker as CT
@@ -214,7 +242,7 @@ def tick():
         from whatifs import dash as DS
         DS.publish()
     except Exception as x: log(f"dashboard snapshot skipped: {scrub(x)}", "WARN")
-    if not S("VOICE"):
+    if not S("VOICE") and not _designed_voices_ok():           # v10.2 (#9): with the four designed voices passing Voice_Check, no narrator pick is needed
         t = parse_iso(S("VOICE_SAMPLES_AT"))
         if not t: return {"action": "waiting_for_voice_samples"}
         if now_utc() - t > dt.timedelta(hours=S("VOICE_WAIT_HOURS", float)):
@@ -542,6 +570,10 @@ def learn():
     except Exception as x: log(f"v10 cap move skipped: {scrub(x)}", "WARN")
     try: v101_upgrade(st)                                        # v10.1: verified models, still size, Shorts cap
     except Exception as x: log(f"v10.1 flips skipped: {scrub(x)}", "WARN")
+    try: v102_upgrade(st)                                        # v10.2: Kling 3.0, 4 animated scenes
+    except Exception as x: log(f"v10.2 flips skipped: {scrub(x)}", "WARN")
+    try: v11_upgrade(st)                                         # v11: the owner's November allowance
+    except Exception as x: log(f"v11 flips skipped: {scrub(x)}", "WARN")
     try:
         from whatifs import craft as CRF; CRF.seed_techniques()       # v9.3.2: the owner's pre-judged technique cards, filed once
     except Exception as x: log(f"technique seeding skipped: {scrub(x)}", "WARN")
@@ -588,6 +620,8 @@ def learn():
     try: pkg_rescue()
     except Exception as x: log(f"packaging check skipped: {scrub(x)}", "WARN")
     try:                                                        # v10 (K141/K142): daily pilot measurements and the Outlier Lab (never near a release)
+        from whatifs import brain as BRN; BRN.daily()           # v11 (K155): Shorts outcomes, both technique libraries, forecast scoring
+        from whatifs import reach as RCH; RCH.daily()           # v11 (K162): impressions + CTR (Reporting API)
         from whatifs import pilots as PLT, outlier_lab as OLB, demand as DMD
         PLT.measure(); OLB.run(); DMD.run()                    # v10.1 (K146): search-demand scores for bench premises
     except Exception as x: log(f"pilots / Outlier Lab skipped: {scrub(x)}", "WARN")
@@ -730,6 +764,64 @@ def v101_upgrade(st):
         if k in have and have[k].upper() == old.upper(): set_setting(k, new); done.append(k)
     set_setting("V101_FLIPS_DONE", iso() + " " + (",".join(done) or "none"))
     if done: log(f"v10.1: settings moved to verified values ({', '.join(done)})")
+    return done
+
+V11_KEEP_FLIP = ("DRIVE_ARCHIVE_KEEP", "2", "12")
+V111_FLIPS = (("REHOOK_MAX_GAP_SEC", "90", "75"),)          # v11.1: research - re-hook at most every 75 s (now a hard contract check)
+
+V102_FLIPS = (("FAL_HERO_MODEL", "fal-ai/kling-video/v2.5-turbo/pro/image-to-video", "fal-ai/kling-video/o3/standard/image-to-video"),
+              ("PRICE_KLING_USD", "0.35", "0.42"), ("KLING_CLIPS", "3", "4"), ("SPECIAL_REEL_CAP_INR", "150", "180"),
+              ("KLING_MIN_CLIPS", "3", "4"), ("WA_GRAPH_VERSION", "v21.0", "v27.0"))
+
+def _designed_voices_ok():
+    """True when TTS is Gemini and every core character's designed voice is listed and synthesised OK in Voice_Check."""
+    try:
+        if str(S("TTS_ENGINE") or "").lower() != "gemini": return False
+        from whatifs import show as SHOW
+        chars = {r.get("id"): str(r.get("gvoice") or "").strip() for r in store().rows("Characters")}
+        need = [chars.get(c["id"]) for c in SHOW.CHARACTERS if c["id"] in ("VALE", "GRIMM", "ROSA", "ARCHIVIST")]
+        if not need or not all(need): return False
+        vc = store().rows("Voice_Check")
+        ok = {}
+        for r in vc:                                             # Voice_Check: voice, source, listed, synth_ok (the latest row per voice wins)
+            ok[str(r.get("voice") or "").strip()] = str(r.get("synth_ok")).upper() == "TRUE"
+        return all(ok.get(v) for v in need)
+    except Exception: return False
+
+def v11_upgrade(st, now=None):
+    """v11: ONE time. Writes the owner's November allowance (2026-11=5226) when the month is still November 2026 and the cell is empty."""
+    if str(S("V11_FLIPS_DONE") or "").strip(): return []
+    now = now or now_utc(); done = []
+    if now.strftime("%Y-%m") == "2026-11" and not str(S("MONTH_CAP_OVERRIDES") or "").strip():
+        set_setting("MONTH_CAP_OVERRIDES", "2026-11=5226"); done.append("MONTH_CAP_OVERRIDES")
+    have = {r.get("key"): str(r.get("value", "")).strip() for r in st.rows("Settings")}
+    k, old, new = V11_KEEP_FLIP
+    if have.get(k) == old: set_setting(k, new); done.append(k)          # Case Files needs past masters (owner's Drive has room)
+    for k, old, new in V111_FLIPS:
+        if have.get(k) == old: set_setting(k, new); done.append(k)
+    bad, good = "fal-ai/kling-video/v3/standard/image-to-video", "fal-ai/kling-video/o3/standard/image-to-video"
+    if have.get("FAL_HERO_MODEL") == bad: set_setting("FAL_HERO_MODEL", good); done.append("FAL_HERO_MODEL")   # v11 fix: v10.2 named an endpoint fal does not list
+    lad = have.get("MODEL_LADDERS") or ""
+    if bad in lad: set_setting("MODEL_LADDERS", lad.replace(bad, good)); done.append("MODEL_LADDERS")
+    set_setting("V11_FLIPS_DONE", iso(now) + " " + (",".join(done) or "none"))
+    if done: log("v11: November allowance set (Rs 1,226 spent + Rs 4,000 for the rest of the month)")
+    return done
+
+def v102_upgrade(st):
+    """v10.2: ONE time; cells still at the v10.1 defaults move to the option-C animation stack (owner-set values never touched)."""
+    if not S("V102_FLIPS_ON", bool) or str(S("V102_FLIPS_DONE") or "").strip(): return []
+    have = {r.get("key"): str(r.get("value", "")).strip() for r in st.rows("Settings")}
+    done = []
+    for k, old, new in V102_FLIPS:
+        if k in have and have[k] == old: set_setting(k, new); done.append(k)
+    lad = have.get("MODEL_LADDERS", "")
+    if lad and "kling-video/o3/standard" not in lad:
+        try:
+            L = json.loads(lad); L["hero"] = [{"id": "fal-ai/kling-video/o3/standard/image-to-video", "usd": 0.42}] + [e for e in L.get("hero", []) if "v3/standard" not in e.get("id", "")]
+            set_setting("MODEL_LADDERS", json.dumps(L)); done.append("MODEL_LADDERS")
+        except Exception: pass
+    set_setting("V102_FLIPS_DONE", iso() + " " + (",".join(done) or "none"))
+    if done: log(f"v10.2: animation stack settings moved ({', '.join(done)})")
     return done
 
 def v10_upgrade(st):
@@ -913,11 +1005,12 @@ def _reaction_learning(rows):
 
 def _analytics(vid, t, dur=None):
     if FAKE:
-        r = random.Random(vid); return {"views": r.randint(200, 9000), "avg_view_pct": r.uniform(25, 55), "avg_view_sec": r.uniform(120, 330), "ret30": r.uniform(0.5, 0.8),
+        r = random.Random(vid); vv = r.randint(200, 9000)
+        return {"views": vv, "engaged_views": int(vv * r.uniform(0.45, 0.8)), "avg_view_pct": r.uniform(25, 55), "avg_view_sec": r.uniform(120, 330), "ret30": r.uniform(0.5, 0.8),
                                         "ctr": 0.0, "ctr_kind": "proxy", "likes": 10, "shares": 2, "subs": 3, "from_shorts": r.randint(0, 150)}
     try:
         p = {"ids": "channel==MINE", "startDate": t.strftime("%Y-%m-%d"), "endDate": now_utc().strftime("%Y-%m-%d"), "filters": f"video=={vid}",
-             "metrics": "views,averageViewPercentage,averageViewDuration,likes,shares,subscribersGained"}
+             "metrics": "views,averageViewPercentage,averageViewDuration,likes,shares,subscribersGained,engagedViews"}      # v11: engaged views = the 'stayed' signal
         a = requests.get("https://youtubeanalytics.googleapis.com/v2/reports", headers=gheaders(), params=p, timeout=30).json()
         if a.get("error"): log(f"analytics error for {vid}: {str(a['error'])[:200]}", "WARN"); return None
         if not a.get("rows"): return {"pending": True}               # v8.6: no rows yet (Analytics lags); never recorded as 0 views
@@ -945,7 +1038,8 @@ def _analytics(vid, t, dur=None):
             if rr:
                 rel30 = next((float(r[1]) for r in rr if float(r[0]) >= cut), None); rel_avg = round(sum(float(r[1]) for r in rr) / len(rr), 4)
         except Exception: pass
-        return {"ctr_kind": kind, "views": row[0], "avg_view_pct": row[1], "avg_view_sec": row[2], "likes": row[3], "shares": row[4], "subs": row[5], "ret30": None if ret30 is None else float(ret30), "ctr": ctr if kind == "real" else None, "from_shorts": from_shorts,
+        return {"ctr_kind": kind, "views": row[0], "avg_view_pct": row[1], "avg_view_sec": row[2], "likes": row[3], "shares": row[4], "subs": row[5],
+                "engaged_views": row[6] if len(row) > 6 else None, "ret30": None if ret30 is None else float(ret30), "ctr": ctr if kind == "real" else None, "from_shorts": from_shorts,
                 "impressions": imp, "rel30": rel30, "rel_avg": rel_avg,
                 "curve": [(float(r[0]), float(r[1])) for r in ret if len(r) > 1]}
     except Exception as e: log(f"analytics failed for {vid}: {e}", "WARN"); return None
@@ -1083,6 +1177,10 @@ def setup():
     except Exception as x: log(f"v10 cap move skipped: {scrub(x)}", "WARN")
     try: v101_upgrade(st)                                      # v10.1: verified models, still size, Shorts cap
     except Exception as x: log(f"v10.1 flips skipped: {scrub(x)}", "WARN")
+    try: v102_upgrade(st)                                      # v10.2: Kling 3.0, 4 animated scenes
+    except Exception as x: log(f"v10.2 flips skipped: {scrub(x)}", "WARN")
+    try: v11_upgrade(st)                                       # v11: the owner's November allowance
+    except Exception as x: log(f"v11 flips skipped: {scrub(x)}", "WARN")
     status("sheet_ready", True, f"{len(TABS)} tabs")
     from whatifs import launch as LA                                      # v9.3.1: the audit is only needed when the upload check found a lock
     status("youtube_api_audit", audit_state() == "approved" or LA.lock_state() != "on", AUDIT_WORDS[audit_state()] if LA.lock_state() == "on" else "not needed: YouTube lifted the private lock on 2 Nov 2026 (the upload check confirms it on this project)")      # v8.4: the audit form has its own Setup_Status row, so it cannot be forgotten
@@ -1125,7 +1223,7 @@ def _meta_ids():
             live = requests.get(GV + str(app.get("id", "")), headers={"Authorization": "Bearer " + k}, params={"fields": "name,app_mode"}, timeout=30).json() if app.get("id") else {}
             mode = str(live.get("app_mode") or "").lower()
             if mode: status("meta_app_live", mode == "live", mode + (" - switch the app to Live (SETUP_CHECKLIST Step 8.8)" if mode != "live" else ""))
-            else: status("meta_app_live", False, "unknown - check in developers.facebook.com that App Mode = Live (SETUP_CHECKLIST Step 8.8)")
-        except Exception as e: status("meta_app_live", False, "unknown - check App Mode = Live (SETUP_CHECKLIST Step 8.8): " + str(e)[:200])
+            else: status("meta_app_live", True, "informational: a Page token cannot read App Mode; check once in developers.facebook.com that the app is Published/Live")
+        except Exception as e: status("meta_app_live", True, "informational: App Mode not readable with a Page token (" + str(e)[:120] + "); check the Meta dashboard once")
     except Exception as e: status("meta_connected", False, str(e)[:300])
 

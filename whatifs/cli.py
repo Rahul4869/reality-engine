@@ -1,6 +1,6 @@
 """whatifs/cli.py v8.10 - entry point for every GitHub workflow.  python -m whatifs.cli <command>"""
 import sys, os, json, traceback
-from whatifs.core import JOB, log, flush_log
+from whatifs.core import FAKE, JOB, log, flush_log
 
 def _on_stop(signum, frame):
     """v8.3: GitHub cancels a job with SIGTERM / SIGINT. Write the spend and the log first, so a cancelled or timed-out job never loses its Cost_Log rows."""
@@ -60,7 +60,11 @@ def main():
         elif cmd == "preview":                                            # v8.10: Script Preview (scout + writers' room only, emailed as a DRAFT)
             from whatifs.preview import run as pv; print(json.dumps(pv(), default=str)[:300])
         elif cmd == "sheets":                                             # v9: the one-time character sheets (manual workflow only, lifetime image cap)
-            from whatifs.sheets import run as sh; print(json.dumps(sh(), default=str))
+            from whatifs.core import S as _S
+            if str(_S("STYLE_SAMPLES_REQUEST") or "").upper() == "TRUE":      # v10.2: the first run shows the cast in 3 looks; the owner taps one
+                from whatifs.sheets import style_samples as ss; print(json.dumps(ss(), default=str))
+            else:
+                from whatifs.sheets import run as sh; print(json.dumps(sh(), default=str))
         elif cmd == "previewdecide":
             from whatifs.preview import decide; print(decide(sys.argv[2] if len(sys.argv) > 2 else ""))
         elif cmd == "voicecheck":                                         # v8.10: which Gemini voices this key can use
@@ -77,13 +81,21 @@ def main():
         elif cmd == "special":                                           # v10: a special reel (--kind cast_intro|special; --if-due = only on SPECIALS_DAYS)
             from whatifs import specials as SP
             kind = sys.argv[sys.argv.index("--kind") + 1] if "--kind" in sys.argv else "special"
+            if kind == "casefiles":                                      # v11 (K160): the monthly Case Files countdown
+                from whatifs import spinoff as SPO
+                print(json.dumps({k: v for k, v in SPO.run(force="--force" in sys.argv).items() if k != "path"}, default=str)); return
+            if kind == "short":                                          # v11 (K159): one standalone Short (only when due unless --force)
+                from whatifs import shorts2 as SH2
+                print(json.dumps({k: v for k, v in SH2.run(force="--force" in sys.argv).items() if k != "path"}, default=str)); return
             if "--if-due" in sys.argv and not SP.due(): print("not due")
             else: print(SP.run(kind=kind, force=kind == "cast_intro"))
         elif cmd == "wa_inbound":                                        # v9.4b: WhatsApp messages / button taps / delivery statuses (encrypted)
             import os as _os
             from whatifs.wa import handle_inbound; print(handle_inbound(_os.environ.get("WA_PAYLOAD", "{}")))
-        elif cmd == "wa_templates":
-            from whatifs.wa import ensure_templates; print(ensure_templates())
+        elif cmd == "wa_templates":                                      # v10.2 (#10/#11): subscribe the app, create the template; a failure fails the job (red, not green)
+            from whatifs.wa import ensure_templates, ensure_subscribed
+            sub = ensure_subscribed(); tpl = ensure_templates(); print({"subscribed": sub, "template": tpl})
+            if not (sub and tpl) and not FAKE: sys.exit(1)
         elif cmd == "dash_action":                                       # v9.4b: one encrypted dashboard tap (from repository_dispatch)
             import os as _os
             from whatifs.dash import handle_action; print("ok" if handle_action(_os.environ.get("DASH_PAYLOAD", "{}")) else "not done")

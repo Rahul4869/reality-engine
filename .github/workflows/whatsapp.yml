@@ -32,11 +32,13 @@ jobs:
       CF_KV_NAMESPACE_ID: ${{ secrets.CF_KV_NAMESPACE_ID }}
       CF_KV_TOKEN: ${{ secrets.CF_KV_TOKEN }}
       GH_REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ github.token }}
+      AA_API_KEY: ${{ secrets.AA_API_KEY }}
       WA_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
-      - run: pip install -q requests "numpy>=1.26,<2.1" "cryptography>=42,<46"
+      - run: pip install -q requests "numpy>=1.26,<2.1" "cryptography>=42,<46" pillow
       - run: python -m whatifs.cli wa_inbound

@@ -71,6 +71,7 @@ def test_batch_failure_runs_the_normal_call_once(monkeypatch, setting):
 # ---------------------------------------------------------------- character sheets
 def test_sheets_lifetime_cap_idempotent_and_lock(monkeypatch, setting):
     MG.setup(); setting("SHEET_EXPRESSIONS", "2"); setting("CHARACTER_SHEET_IMAGE_CAP", "4"); mails = []
+    core.store().append("Character_Sheets", [{"character": c, "expression": "master", "status": "LOCKED", "file": ""} for c in ("VALE", "GRIMM", "ROSA")])   # v10.2: masters approved first
     from whatifs import publish as PUB
     monkeypatch.setattr(PUB, "email", lambda *a, **k: mails.append(1))
     r1 = SH.run(); assert r1["made"] == 4 and r1["skipped_cap"] == len(SH.plan()) - 4 and SH.used() == 4

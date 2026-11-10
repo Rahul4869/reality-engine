@@ -121,8 +121,9 @@ def test_rotation_runs_after_the_launch_window_with_enough_views(monkeypatch, se
 # ------------------------------------------------------------------ K112 micro-cuts + measured holds
 def test_micro_cuts_split_stills_and_keep_graphics_and_reactions(setting):
     assert SP.pieces_for(6.0, "still") == 2 and SP.pieces_for(6.0, "still", opening=True) == 3
-    assert SP.pieces_for(3.3, "still") == 1 and SP.pieces_for(20.0, "still") == 7 and SP.pieces_for(40.0, "still") == 8
-    assert SP.pieces_for(20.0, "graphic") == 1 and SP.pieces_for(20.0, "reaction") == 1
+    assert SP.pieces_for(3.3, "still") == 1 and SP.pieces_for(20.0, "still") == 7 and SP.pieces_for(40.0, "still") == 13   # v11.1: cap 8 -> 24
+    assert SP.pieces_for(10.0, "graphic") == 1 and SP.pieces_for(10.0, "reaction") == 1                                      # animated: one piece...
+    assert SP.pieces_for(20.0, "graphic") == 2 and SP.pieces_for(20.0, "reaction") == 2                                      # ...up to 12 s (v11.1)
     setting("MICRO_CUTS_ON", "FALSE")
     assert [SP.pieces_for(d, "still") for d in (6.0, 10.0, 20.0)] == [1, 2, 3]                  # the v9.2 rule
     setting("MICRO_CUTS_ON", "TRUE"); setting("V91_SAFE_MODE", "TRUE"); assert SP.pieces_for(6.0, "still") == 1

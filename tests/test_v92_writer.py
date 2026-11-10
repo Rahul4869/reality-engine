@@ -39,7 +39,7 @@ def test_preview_room_never_runs_background_jobs(monkeypatch):
     txt, bid = RS.room_research("EPX", allow_run=False); assert "research" not in called
     from whatifs.sampler import draw as DRAW
     d = DRAW("EPBG", "collective"); ROOM.run_room(d, "EPBG")
-    assert "bank" not in called and "research" not in called and "writer (first draft)" in d.get("stage_times", {}) and "owner's cut" in d["stage_times"]
+    assert "bank" not in called and "research" not in called and ("writer (first draft)" in d.get("stage_times", {}) or "room v2 (drafts + jury + revision)" in d.get("stage_times", {})) and "owner's cut" in d["stage_times"]
 
 def test_setup_fills_an_empty_bench_once(monkeypatch):
     n = []; real = PR.refill_bench
