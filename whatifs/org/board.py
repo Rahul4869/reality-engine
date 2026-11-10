@@ -203,7 +203,7 @@ def assess(brief):
                            "checklist": {"families": fs, "min_evidence": min_ev, "orders": orders}, "canary": f"rejected by {', '.join(fams)} (memo {next(x for x, mm in by.items() if mm is can)})",
                            "kind": b.get("kind") or "technique", "evidence_ceiling": b.get("evidence_ceiling", 0), "author_family": author, "predictions": preds, "cost_inr": float(b.get("cost_inr") or 0)},
                   "evidence": [dict(e) for e in (m.get("evidence") or [])[:6]], "links": {"research": m["id"], "session": sid},
-                  "owner_visible": v == "accept" and m["urgency"] == "P0", "dedupe_key": f"assess|{m['id']}"}
+                  "owner_visible": False, "dedupe_key": f"assess|{m['id']}"}          # until the Council exists (B6) it waits silently at the owner's level
             _c, p = SC.check_memo(dict(am), now)
             if p:
                 acts[m["id"]] = ("deferred", f"assessment refused by the memo write gate: {'; '.join(p[:1])}"[:300]); continue

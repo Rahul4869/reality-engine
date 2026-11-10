@@ -12,6 +12,7 @@ OUTLIER_DAYS = 14             # Outlier Lab videos and new models younger than t
 EXPIRY_SOON_DAYS = 14         # a Palace fact, plan or policy rule this close to its review date (or past it) is re-researched
 POLICY_EVERY_DAYS = 28        # the standing platform-policy question comes back this often
 GRACE_H = 48                  # research_cadence judges nothing until the organisation is this old on a Sheet
+STALE_ASK_H = 20              # a question still marked "asked" (its run died) or "failed" (no model answered) is open again after this long
 DAILY_MAX_H = 50              # R&D's daily run may be at most this old
 REVALIDATE_KINDS = ("tool_fact", "plan", "policy_rule")
 FACT_KINDS = ("policy", "tool", "revalidate")            # questions about facts: the only ones the Review Board may "accept"
@@ -156,10 +157,10 @@ def ceiling_of(memo, now=None):
     """Recompute a stored research memo's ceiling from what it carries (evidence, kind, phantoms, grounding): check research_cadence compares."""
     now = now or now_utc(); b = memo.get("body") or {}; ev = memo.get("evidence") or []; kind = b.get("kind")
     fresh_days = 120 if kind in FACT_KINDS else 730
+    created = (parse_iso(memo.get("created")) or now).date()
     def age(e):
-        d = parse_date(e.get("date"), now); return (now.date() - d).days if d else 10 ** 6
-    created = parse_iso(memo.get("created")) or now
-    fresh = any(age(e) - (now - created).days <= fresh_days for e in ev)
+        d = parse_date(e.get("date"), now); return (created - d).days if d else 10 ** 6
+    fresh = any(age(e) <= fresh_days for e in ev)
     doms = {_domain(_host(e.get("url"))) for e in ev if e.get("url")}
     strong = any(e.get("type") in ("official", "measured") for e in ev)
     quoted = (sum(1 for e in ev if str(e.get("finding") or "").startswith("quote: ")) / len(ev)) if ev else 0.0
@@ -249,7 +250,10 @@ def refresh(st=None, now=None):
                             memo_id="", asked_at="", cost_inr="", note="", palace_ref=g["palace_ref"])); rep["new"] += 1
         elif r.get("status") == "open":
             if any(str(r.get(k)) != str(upd[k]) for k in ("question", "priority", "urgency", "target_depts")): st.update(TAB, "id", r["id"], upd)
-        elif (r.get("status") in ("answered", "unanswered", "failed", "dropped") and (parse_iso(r.get("asked_at") or r.get("updated")) or now) + repeat <= now
+        elif r.get("status") in ("asked", "failed") and (parse_iso(r.get("asked_at") or r.get("updated")) or now) + dt.timedelta(hours=STALE_ASK_H) <= now:
+            st.update(TAB, "id", r["id"], dict(upd, status="open", note=("the run that asked it did not finish" if r.get("status") == "asked" else
+                                                                          f"asked again after a failed call ({str(r.get('note') or '')[:120]})"))); rep["reopened"] += 1
+        elif (r.get("status") in ("answered", "unanswered", "dropped") and (parse_iso(r.get("asked_at") or r.get("updated")) or now) + repeat <= now
               and (MEM.get(r.get("memo_id"), st) or {}).get("status") not in SC.LIVE):           # never while its last memo is still open
             st.update(TAB, "id", r["id"], dict(upd, status="open", note=f"asked again: the gap is still there ({str(r.get('note') or '')[:120]})")); rep["reopened"] += 1
     if new: st.append(TAB, new)
@@ -273,7 +277,8 @@ def deep_due(st=None, now=None):
     from whatifs.org import runner as ORG
     if not S("RESEARCH_ON", bool) or not ORG.on(): return False            # without the organisation a memo could not be sent: no paid question
     st = st or store(); now = now or now_utc()
-    last = max((parse_iso(r.get("started")) for r in st.rows("Sessions") if r.get("dept") == "D2" and r.get("trigger") == "weekly" and r.get("status") == "ok"), default=None)
+    last = max((parse_iso(r.get("started")) for r in st.rows("Sessions") if r.get("dept") == "D2" and r.get("trigger") == "weekly"
+                and r.get("status") in ("ok", "breach")), default=None)                  # a run that broke the contract is not re-paid daily: research_cadence fails on it
     return p0_waiting(st) or last is None or now - last >= dt.timedelta(days=S("RESEARCH_DEEP_EVERY_DAYS", float)) - dt.timedelta(hours=2)
 
 # ------------------------------------------------------------------ one question -> one research memo

@@ -154,6 +154,19 @@ def test_a_question_is_never_asked_again_while_its_last_memo_is_open():
     RND.refresh(); assert agenda()["policy"]["status"] == "answered"
     MEM.reject(m["id"], "D3", "closed for this test: the question may come back"); RND.refresh(); assert agenda()["policy"]["status"] == "open"
 
+def test_a_question_whose_run_died_or_whose_call_failed_opens_again_the_next_day_not_in_a_month():
+    RND.refresh(); r = agenda()["policy"]
+    st().update(RND.TAB, "id", r["id"], {"status": "asked", "asked_at": core.iso(now() - 2 * H)}); RND.refresh(); assert agenda()["policy"]["status"] == "asked"
+    st().update(RND.TAB, "id", r["id"], {"asked_at": core.iso(now() - 21 * H)}); RND.refresh()
+    assert agenda()["policy"]["status"] == "open" and "did not finish" in agenda()["policy"]["note"]
+    st().update(RND.TAB, "id", r["id"], {"status": "failed", "asked_at": core.iso(now() - 21 * H), "note": "no answer: all models failed"}); RND.refresh()
+    assert agenda()["policy"]["status"] == "open" and "after a failed call" in agenda()["policy"]["note"]
+
+def test_a_stored_ceiling_is_recomputed_from_the_day_the_memo_was_written():
+    RND.refresh(); m = MEM.write(dict(RND.ask_one(dict(agenda()["policy"]), "")["memo"]))
+    assert RND.ceiling_of(m) == m["body"]["evidence_ceiling"] == 8
+    assert RND.ceiling_of(m, now() + 400 * D) == 8                                   # sources that were fresh when it was written stay fresh for the check
+
 # ------------------------------------------------------------------ the weekly run: cap and P0
 def test_the_weekly_run_asks_the_top_questions_inside_the_cap_and_the_owners_question_beyond_it(setting):
     _gaps_everywhere(); setting("RESEARCH_PER_WEEK", "1")
@@ -169,6 +182,8 @@ def test_the_deep_research_is_due_by_level_not_by_calendar(setting):
     st().append("Sessions", [{"id": "S-W", "dept": "D2", "trigger": "weekly", "status": "ok", "started": core.iso(now() - 2 * D)}]); assert not RND.deep_due()
     st().update("Sessions", "id", "S-W", {"started": core.iso(now() - 7 * D)}); assert RND.deep_due()
     st().update("Sessions", "id", "S-W", {"started": core.iso(now() - D)}); _gaps_everywhere(); RND.refresh(); assert RND.p0_waiting() and RND.deep_due()
+    st().d["Research_Agenda"] = []; st().update("Sessions", "id", "S-W", {"started": core.iso(now() - D), "status": "breach"}); st().save()
+    assert not RND.deep_due()                                                            # a run that broke the contract is not paid for again tomorrow
     setting("RESEARCH_ON", "FALSE"); assert not RND.deep_due()
     setting("RESEARCH_ON", "TRUE"); setting("ORG_ON", "FALSE"); assert not RND.deep_due()
 
