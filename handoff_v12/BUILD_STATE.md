@@ -1,8 +1,44 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 10 Nov 2026 (end of B3). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 10 Nov 2026 (end of B3; B0b queued by the owner). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+
+## STANDING RULE ADDED DURING THE BUILD (owner approved, 10 Nov 2026)
+A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the laptop
+runs (Windows, stand-in test runner) are necessary, not sufficient. Read it before writing "ACCEPTED" and record the run number in the batch log.
+How to read it without any sign-in: open https://github.com/Rahul4869/reality-engine/actions?query=branch%3Av12-organisation in the browser pane; a
+run's job page lists every step with its outcome (elements with `data-conclusion`). The log LINES need a GitHub sign-in: ask the owner ONCE, in one
+line, either to sign in to github.com in the browser pane or to approve installing the GitHub CLI (`winget install GitHub.cli`, one sign-in pop-up).
+A run takes about 30 minutes; do not wait idle for it - finish the write-up, then read it.
 
 ## NEXT
-**B4 - Execution Engine** (01 section 6; 03 "B4"). Full seven-step MANDATORY BATCH LOOP. Effort: High.
+**B0b - Baseline re-check** (owner, 10 Nov 2026: "Yes, B0b first" - asked whether B0 should be checked before going on, so that anything weak is fixed
+together with its effects on B1-B3). Effort: High (root-cause fixes). No new feature. THEN B4.
+Why: B0 accepted the v11.1 code on "suite + ONE rehearsal green, on the laptop". B3 showed that is not enough twice over: (1) the fake pipeline is
+seeded by the episode id, and one id in about four hit a real fault that held a finished video (the stale promise flag, fixed in B3); (2) GitHub's
+own Checks were never read, and B2's final commit is RED there at the rehearsal step (open issue 21).
+Do, in this order (checkpoint-commit after each):
+1. READ GitHub Checks for every commit since the baseline: runs #42 (6b89d83, B3 final) and #43 (53e4a36) were still running when B3 closed. For every
+   RED run that is not already explained in open issue 21, find the failing step. Confirm the cause of run #38 (B2 final, c54b9b6, rehearsal step) from
+   its log (sign-in needed, see the standing rule); if the owner prefers no sign-in, reproduce it: check out nothing - run the sweep of step 2 on the
+   OLD `whatifs/anim.py` (`git stash` the one line or `git show c54b9b6:whatifs/anim.py`) and show a hold with `contract:promise_paid`.
+2. SWEEP the fake pipeline over at least 40 FIXED episode ids. Recipe (it is the body of the end-to-end test in `tests/test_v12_org.py`): per id a fresh
+   `core.LocalStore` in a temp dir outside the repo; settings CREATIVE_REVIEW_FIRST_N=0, V11_FLIPS_DONE=test, DEEP_TRIAL_ON=FALSE; `whatifs.voice.KokoroBackend`
+   replaced by `tools.rehearsal.ToneVoice`; `manage.setup()`; VOICE=C; `episode.produce(slot, episode_id=<id>)`. Use FUTURE-dated ids (`EP2099MMDDHHMM`)
+   so the organisation's checks judge the episode. About 1-2 minutes an id: run it in the background, write one RESULT line per id (ok / held + the
+   failing checks + evidence) to a file outside the repo, read only those lines. Also run a second sweep of 10 ids with ORG_ON=FALSE (the old path).
+   Make it a kept tool (`tools/sweep.py`) so every later batch can run it.
+3. TRACE every hold, crash or warning class the sweep shows to its cause (max 3 repair attempts each, then an open issue with the repro id). Fix at the
+   root with a regression test that fails without the fix (both ways). Known candidates: open issue 1 (rain particles can read as a still for some
+   seeds), open issue 16 (`promise_paid` judged only after the picture money), open issue 20.
+4. The 6 tests the laptop always skips (python-docx missing, node missing for the Mission Control Worker tests, golden frames made with other
+   OpenCV / NumPy versions, cast placeholders, documents outside the repo): say for each whether GitHub runs it; install what is cheap (python-docx in
+   the venv; node only with the owner's one-line approval) so the laptop skips fewer.
+5. Re-verify B0's two fixes on Linux by GitHub's result (the Windows-only ffmpeg path lines in `whatifs/reels.py`; the particle seed in `whatifs/render.py`).
+6. PROVE: full suite + rehearsal on the final code on the laptop AND the final commit green on GitHub (standing rule). Update this file, the batch log
+   (with GitHub run numbers for B0-B3 too), and a short takeaway as Palace item `b0b.takeaway`.
+Acceptance: the sweep is green on every id (or each remaining hold is an open issue with a repro id and the owner told in one line); no RED GitHub run
+is unexplained; B1-B3 still green.
+
+**After B0b: B4 - Execution Engine** (01 section 6; 03 "B4"). Full seven-step MANDATORY BATCH LOOP. Effort: High.
 What B3 leaves ready for B4 (use it, do not rebuild it):
 - The EXECUTE step of every department run already reads the department's open tickets and calls `runner.EXECUTOR(ticket, brief)`; register the engine
   with `runner.set_executor(fn)`. Until then a ticket is escalated at once with the reason. The engine closes a ticket with
@@ -593,4 +629,5 @@ Rehearsal asserts `docs_current` ran and passed.
 | B1b | done 10 Nov 2026 | 949 / 0 / 6 skipped | GREEN (20 + 18) | Owner decision "4 a month" executed: cap 4, weekly Saturday, one-time Sheet move, truthful viewer lines, retired rule |
 | B2 | done 10 Nov 2026 | 988 / 0 / 6 skipped | GREEN (21 + 18) | Knowledge Palace core: 92 founding items, write gate, life cycle with authority, guarded playbooks, check `palace_health` (39 hard checks now) |
 | B3 | done 10 Nov 2026 | 1088 / 0 / 6 skipped | GREEN (22 + 19) | Memos + department contract: 4 org modules + wrappers, 7 departments wired, SLA watchdog, checks `dept_contract` + `takeaways_written` (41 hard checks now); promise-flag fix |
-| B4 | next | | | Execution Engine |
+| B0b | next | | | Baseline re-check (owner, 10 Nov): read GitHub Checks, sweep 40+ episode ids, fix what it shows |
+| B4 | after B0b | | | Execution Engine |
