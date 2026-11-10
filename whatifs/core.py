@@ -141,6 +141,16 @@ TABS = {
                      "applied_in", "content_hash", "actor", "status_note", "priority"],
  "Palace_Versions": ["version", "ts", "actor", "action", "item_id", "item_version", "from_status", "to_status", "palace_hash", "note"],          # one row per change
  "Palace_Playbooks": ["playbook_id", "ts", "dept", "stage", "topic", "palace_hash", "n_items", "tokens", "cap", "item_ids", "body_ref"],        # each distinct playbook once
+ # v12: the organisation (whatifs/org/memos.py, runner.py). Memos = one row per memo; Sessions = one row per department run with its six receipts;
+ # Takeaways = what every run learned; Org_Audit = one row per run, escalation and watchdog pass that did something.
+ "Memos":           ["id", "type", "from_dept", "to_depts", "holder", "level", "status", "urgency", "created", "updated", "ack_due", "sla_due", "subject", "body", "done_when",
+                     "constraints", "links", "evidence", "cost_estimate", "owner_visible", "owner_notified", "episode_id", "session_id", "dedupe_key", "body_hash", "acks",
+                     "resolution", "escalations", "attempt", "reminders"],
+ "Sessions":        ["id", "key", "dept", "trigger", "episode_id", "attempt", "status", "started", "ended", "playbook_id", "palace_hash", "inject", "inbound", "emitted",
+                     "takeaways", "applied_items", "steps", "chain", "cost_inr", "budget", "error"],
+ "Takeaways":       ["id", "ts", "session_id", "dept", "trigger", "episode_id", "kind", "did", "worked", "failed", "next_time", "measures", "evidence", "novel", "signature", "palace_item"],
+ "Org_Audit":       ["ts", "kind", "run_id", "dept", "trigger", "episode_id", "outcome", "steps", "chain", "latency_s", "cost_inr", "budget", "model_calls", "inbound", "emitted",
+                     "takeaways", "sla_overdue", "playbook_id", "error", "note"],
 }
 
 class LocalStore:
@@ -961,6 +971,15 @@ DEFAULTS = {
  "PALACE_REVIEW_DAYS": ("", "optional JSON {kind: days} that overrides how long an item stays valid before it must be re-validated (defaults: REVIEW_DAYS in whatifs/org/palace.py; 0 = never)"),
  "PALACE_KIND_CAPS": ("", "optional JSON {kind: most served items}; over the cap the lowest-value item of that kind is expired by code (defaults: KIND_CAPS in whatifs/org/palace.py)"),
  "PALACE_FOLDER_ID": ("", "auto: the Drive folder palace/ for item bodies, playbook texts and snapshots; found or created on first use"),
+ "ORG_ON": ("TRUE", "TRUE = every wired department runs under the department contract (load its memos and Palace playbook, act, emit memos, write a takeaway, execute tickets, report) and checks dept_contract and takeaways_written run on every episode [FALSE = the plain calls without the organisation; the organisation also needs PALACE_ON]"),
+ "ORG_SINCE": ("", "auto: when the organisation was installed on this Sheet; an episode started before that moment is not judged by the organisation's checks"),
+ "ORG_SLA_HOURS": ("", "optional JSON {memo type: [acknowledge hours, resolve hours]} that overrides a memo type's two clocks (defaults: TYPES in whatifs/org/schemas.py)"),
+ "ORG_ESCALATE_HOURS": ("", "optional JSON {\"1\": [P0, P1, P2 hours a memo may sit with the Council], \"2\": [P0, P1, P2 hours between reminders to the owner]} (defaults: ESCALATE_H in whatifs/org/memos.py)"),
+ "ORG_OWNER_REMINDS_MAX": ("2", "how many times the owner is reminded of the same stuck item after the first message (0-9); after that it rests on his list"),
+ "ORG_DEVIATION_PCT": ("25", "a measure that moves this many percent against the median of a department's earlier runs turns the run's takeaway into a new finding for the Palace (5-200)"),
+ "ORG_CAPS_INR": ("", "optional JSON {department: rupees a month} for the organisation's own paid thinking (defaults in whatifs/org/registry.py: D2 300, D3 120, C 150, L 40, takeaways 60)"),
+ "ORG_RUN_STALE_H": ("6", "a department run still marked running after this many hours is flagged as abandoned and becomes a problem memo (1-48)"),
+ "ORG_WATCHDOG_AT": ("", "auto: when the SLA watchdog last finished a pass (the episode gate fails when this is more than a day old)"),
 }
 _settings_cache = None
 def settings(refresh=False) -> dict:
@@ -1018,6 +1037,7 @@ def flush_log():
 # ---------------- money (buffered: one Sheet read per job, one write per flush) ----------------
 _clock = threading.Lock()
 _cost_buf, _session = [], {}
+COST_TAPS = []          # v12: listeners called with (rupees, provider, item) on every logged cost (the department runner attributes spend to the run in flight)
 _base = {"v": None}
 def _spend_base():
     if _base["v"] is None:
@@ -1038,6 +1058,9 @@ def cost(item, provider, units, usd, episode=None, **detail):
         _cost_buf.append(dict({k: v for k, v in detail.items() if k in TABS["Cost_Log"]}, ts=iso(), episode_id=episode or JOB["episode"], item=item, provider=provider, units=units, inr=inr))
         _session[provider] = _session.get(provider, 0) + inr
         due = len(_cost_buf) >= 6 or time.time() - _last_cost_flush[0] > 45
+    for _fn in COST_TAPS:
+        try: _fn(inr, provider, item)
+        except Exception: pass
     if due: flush_costs()        # v8.3: spend reaches the Sheet within seconds, so a killed or timed-out job cannot lose it
     return inr
 def flush_costs():

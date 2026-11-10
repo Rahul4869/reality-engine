@@ -39,7 +39,9 @@ def main():
         elif cmd == "trends":
             from whatifs.manage import trend_scout; trend_scout()
         elif cmd == "learn":
-            from whatifs.manage import learn, money_check; learn(); money_check()
+            from whatifs.manage import learn, money_check
+            from whatifs.org import runner as ORG, wraps as WR          # v12: the daily learning job is the Growth & Learning department's run
+            ORG.work("D10", "daily", "", lambda b: learn(), measure=WR.m_learn); ORG.daily_check(); money_check()
         elif cmd == "brief":
             from whatifs.manage import monthly_brief; monthly_brief()
         elif cmd == "research":

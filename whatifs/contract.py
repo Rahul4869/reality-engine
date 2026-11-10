@@ -400,12 +400,26 @@ def p_palace_health(ctx):
     return PASS, (f"{s['items']} items ({s['served']} served, {s['owner']} owner), {len(DEPARTMENTS)} playbooks inside their caps, version {s['version']}"
                   + (f"; notes: {'; '.join(h['notes'])}" if h["notes"] else ""))
 
+def _org_gate(ctx, gate):
+    """The organisation judged at an episode gate: every department this episode needed so far finished a complete run under the department contract
+    (six chained receipts, the latest attempt ok) and wrote a valid takeaway; no run broke the contract; the registry is honest; the watchdog is alive."""
+    from whatifs.org import runner as ORG
+    if not ORG.on(): return NA, "organisation switched off"
+    r = ORG.episode_issues(ctx.get("ep"), gate)
+    if r["na"]: return NA, r["na"]
+    if r["problems"]: return FAIL, f"{len(r['problems'])} problem(s): " + " | ".join(r["problems"][:3])
+    return PASS, f"{r['runs']} department run(s) complete: six receipts each, playbook handed over, valid takeaway"
+
+def p_dept_contract(ctx): return _org_gate(ctx, "script")
+def p_takeaways_written(ctx): return _org_gate(ctx, "final")
+
 FEATURES = [
     ("retention",     "script", p_retention,    "re-hook at least every REHOOK_MAX_GAP_SEC, promise shown early, every opened question answered"),
     ("brain_playbook", "script", p_brain_playbook, "the channel's own proven/retired evidence reached the writer"),
     ("no_retired",    "script", p_no_retired,   "no technique the learning core retired"),
     ("docs_current",  "script", p_docs_current, "one current truth: no retired concept in current docs, docstrings or prompts"),
     ("palace_health", "script", p_palace_health, "Knowledge Palace fit to feed departments: evidenced items tied to real code, nothing retired or expired served, playbooks inside their caps"),
+    ("dept_contract", "script", p_dept_contract, "every department that worked on the script ran under the department contract: memos and playbook loaded, work done, memos sent, takeaway written, tickets executed, run reported"),
     ("idea_evidence", "script", p_idea_evidence, "the premise is backed by an outlier at IDEA_MIN_MULTIPLE x"),
     ("joke_density",  "script", p_joke_density, "a [PUNCH] line at least every JOKE_EVERY_SEC_LONG seconds"),
     ("send_and_awe",  "script", p_send_awe,     "a [SEND] moment and an [AWE] peak (not in the last 20%)"),
@@ -441,6 +455,7 @@ FEATURES = [
     ("living_characters", "final", p_living,   "reaction cutaways show the approved character, blinking, breathing and talking"),
     ("breakout_bar",  "final",  p_breakout_bar, "Breakout Score >= BREAKOUT_HARD_BAR (no upload below it)"),
     ("aliveness",     "final",  p_alive,        "no stretch of the video looks like a still photo"),
+    ("takeaways_written", "final", p_takeaways_written, "every department run of this episode finished its six steps and wrote a valid takeaway"),
 ]
 CRIT_KEYS = ("hook", "clarity", "humour", "visual_variety", "audio", "accuracy")
 

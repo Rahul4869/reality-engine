@@ -219,6 +219,10 @@ def tick():
             from whatifs import digests as DGS; DGS.tick()
         except Exception as x: log(f"WhatsApp briefs skipped: {scrub(x)}", "WARN")
     except Exception as x: log(f"owner messages skipped: {scrub(x)}", "WARN")
+    try:                                                        # v12: the organisation's SLA watchdog (overdue memos climb the ladder) and the check for runs that never reported
+        from whatifs.org import memos as MEMO, runner as ORGR
+        if ORGR.on(): MEMO.watchdog(); ORGR.audit()
+    except Exception as x: log(f"organisation watchdog skipped: {scrub(x)}", "WARN")
     try:                                                        # v10 (K140): key/plan expiry reminders (14 and 3 days before), once a day
         from whatifs import caretaker as CT
         if now_utc().hour == 8 and now_utc().minute < 30:
@@ -1202,7 +1206,7 @@ def setup():
     try: v12_upgrade(st)                                         # v12: the owner's cadence (4 long videos a month, weekly)
     except Exception as x: log(f"v12 flips skipped: {scrub(x)}", "WARN")
     try:                                                         # v12: the founding knowledge is in the Palace from the first run
-        from whatifs.org import palace as PAL; PAL.maintain(st)
+        from whatifs.org import palace as PAL, runner as ORGR; PAL.maintain(st); ORGR.install(st)
     except Exception as x: log(f"palace seed skipped: {scrub(x)}", "WARN")
     status("sheet_ready", True, f"{len(TABS)} tabs")
     from whatifs import launch as LA                                      # v9.3.1: the audit is only needed when the upload check found a lock

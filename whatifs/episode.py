@@ -10,6 +10,7 @@ from whatifs.sampler import draw as DRAW
 from whatifs.governor import plan_for_episode, fal_allowed, episodes_left_this_month
 from whatifs import governor as G
 from whatifs import growth as GR
+from whatifs.org import runner as ORG, wraps as WR          # v12: every step below that names a department runs under the department contract
 from whatifs import format_engine as FE, cta as CTA
 from whatifs import sound as SD
 
@@ -123,7 +124,7 @@ def _stage_plan(ep, out, eps_left, slot_iso):
             if k in sd: d[k] = sd[k]
         d["from_preview"] = True; d["preview_room_ts"] = sd.get("_t_last")      # v10.2: when the approved draft was written
     log(f"draw: {json.dumps(d)} | spend plan: {plan['reason']}")
-    if not took: room = ROOM.run_room(d, ep)
+    room = ORG.work("D4", "write", ep, (lambda b: took[1]) if took else (lambda b: ROOM.run_room(d, ep)), measure=WR.m_room, topic=str(d.get("ptype") or ""))      # v12: an approved Script Preview is adopted as written
     d["ptype"] = room["spine"].get("ptype", d["ptype"])
     if room["spine"].get("family"): d["strategies"]["family"] = room["spine"]["family"]; d["family"] = room["spine"]["family"]
     st.update("Episodes", "episode_id", ep, {"premise": room["spine"]["premise"], "ptype": d["ptype"], "presentation_format": room["spine"].get("presentation_format", "classic"),
@@ -136,7 +137,7 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     clean, beat_marks = _strip_beats(script)
     hook = RX.ensure_units if FE.mode() != "classic" else None
     vkw = dict(style=d["strategies"]["voice"] or "slow_burn", seed=ep, speaker_blends=speaker_blends(d.get("guest"), d.get("cast")), unit_hook=hook)
-    vo = narrate(clean, blend(), os.path.join(out, "voice"), **vkw)
+    vo = ORG.work("D7", "voice", ep, lambda b: narrate(clean, blend(), os.path.join(out, "voice"), **vkw), measure=WR.m_voice)
     floor = 20 if SMALL else S("RUNTIME_MIN_SEC", int) + 3
     for attempt in range(2):
         if vo.duration >= floor: break
@@ -156,8 +157,8 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     beats_at = [(units[i]["start"], beat_names[k] if k < len(beat_names) else f"Part {k+1}") for k, i in enumerate(beat_marks) if i < len(units)]
     chs = chapters(tl, beats_at)
     d["duration_sec"] = round(vo.duration, 1); d["beat_map"] = [[round(float(t), 1), str(n)[:40]] for t, n in beats_at][:24]      # v8.7: retention dips are mapped to beats
-    pkg = tidy_pkg(ROOM.package(room, chs, d, ep))          # v8.6: title + thumbnail are decided BEFORE the shots (the opening must pay off the click)
-    shots = ROOM.plan_shots(room, units, d, plan, ep)
+    pkg = tidy_pkg(ORG.work("D5", "package", ep, lambda b: ROOM.package(room, chs, d, ep), measure=WR.m_pkg, topic=str(room["spine"].get("premise") or "")))          # v8.6: title + thumbnail are decided BEFORE the shots (the opening must pay off the click)
+    shots = ORG.work("D6", "plan", ep, lambda b: ROOM.plan_shots(room, units, d, plan, ep), measure=WR.m_shots, topic=str(room["spine"].get("premise") or ""))
     sync = ROOM.continuity({"script": clean[:20000], "shots": shots[:80], "spine": room["spine"]}, ep)
     if not sync.get("ok", True) and sync.get("problems"):
         log(f"continuity problems: {sync['problems'][:5]} - re-planning shots once", "WARN", public=f"continuity problems ({len(sync['problems'])}) - re-planning shots once (details kept private)")
@@ -569,7 +570,8 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
         if not any(s_.get("promise") for s_ in shots):                 # v11.1 fix: the Animation Director re-places the scenes and can drop the promise
             shots = ROOM.promise_shot(shots, units, S_.get("pkg") or {}); S_["shots"] = shots       # flag (v8.6) - re-aim the opening scene again
         from whatifs import contract as CON                     # v10.2 (K151): every script-stage promise checked BEFORE any picture is paid for
-        g = CON.run("script", {"d": d, "room": S_["room"], "hook_rec": S_.get("hook_rec"), "ep": ep}, ep)
+        g = ORG.work("D8", "script_gate", ep, lambda b: CON.run("script", {"d": d, "room": S_["room"], "hook_rec": S_.get("hook_rec"), "ep": ep}, ep),
+                     measure=WR.m_gate, lesson=WR.gate_lessons, emit=WR.gate_memos(ep, "script"), settle=WR.gate_settle(ep, "script"))
         if not g["ok"]:
             st.update("Episodes", "episode_id", ep, {"status": "HOLD_QC", "notes": CK.set_attempts("contract hold (script): " + ", ".join(f for f, _ in g["failed"]), 1), "updated": iso()})
             CON.owner_card(ep, "script", g["failed"], "No picture money was spent.")
@@ -579,7 +581,7 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
         have = _load_assets(out) if stage in ("assets", "hold") else None
         try: refresh_spend()
         except Exception: pass
-        files = _assets(shots, units, out, ep, budget=d["stills"] + plan["living"] + plan["kling"], have=have)
+        files = ORG.work("D6", "assets", ep, lambda b: _assets(shots, units, out, ep, budget=d["stills"] + plan["living"] + plan["kling"], have=have), measure=WR.m_assets)
         need_img = files["anchors"]; miss = [i for i in need_img if i not in files["img"]]
         log(f"images: {len(files['img'])} for {len(shots)} shots (budget {d['stills'] + plan['living'] + plan['kling']}, Kling delivered {files['delivered']['kling']}/{plan['kling']})")
         if need_img and len(miss) / len(need_img) > 0.15:
@@ -624,7 +626,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     rx = RX.find_events(units) if (FE.mode() != "classic" and S("REACTION_FX_ON", bool)) else []
     job = Job(ep=ep, out=out, files=files, shots=shots, units=units, vo=vo, tl=tl, rx=rx, fps=RN.fps(), srt=os.path.join(out, "captions.srt"), overlay=None, rhythm=d.get("rhythm_plan") or {}, d=d,
               reel_shots={int(i) for rp in rplans[:4] for i in rp.get("shots", [])})
-    t_r0 = time.time(); master = job.render_all(); RN.srt(tl, job.srt)
+    t_r0 = time.time(); master = ORG.work("D6", "render", ep, lambda b: job.render_all(), measure=WR.m_render); RN.srt(tl, job.srt)
     atm_ = getattr(job, "atmosphere", None)                      # v9.1: render minutes per episode + the atmosphere's share and any automatic degrade
     try: st.update("Episodes", "episode_id", ep, {"render_min": round((time.time() - t_r0) / 60, 2), "atmos_json": json.dumps({"overhead_pct": round(atm_.overhead_pct(), 1),
                    "dropped": atm_.dropped, "pulses": len({p for p, _ in atm_.pulse_log})}) if atm_ else ""})
@@ -692,7 +694,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
             "shots": S_.get("shots"), "units": units}                                          # v11: the promise check reads the shot plan
     pre = CON.run("final", dict(cctx, critique={"hook": 10, "clarity": 10, "humour": 10, "visual_variety": 10, "audio": 10, "accuracy": 10}), ep, write=False)   # measured checks first (not logged)
     cctx["ledger_rows"] = pre["rows"]; cctx["critique"] = CON.critique(cctx, ep)
-    g = CON.run("final", cctx, ep)
+    g = ORG.work("D8", "final_gate", ep, lambda b: CON.run("final", cctx, ep), measure=WR.m_gate, lesson=WR.gate_lessons, emit=WR.gate_memos(ep, "final"), settle=WR.gate_settle(ep, "final"))
     try:                                                         # v11 (K158): the Breakout Score - ranks and alerts, never holds by itself
         from whatifs import breakout as BRK
         d["breakout"] = BRK.score(d, g.get("rows"), room, cctx.get("critique")); BRK.record(ep, "long", d["breakout"])
@@ -703,7 +705,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     if not g["ok"]:
         CON.owner_card(ep, "final", g["failed"], "Nothing was uploaded.")
         return _hold(st, ep, out, {"problems": [{"code": "contract:" + f, "detail": str(ev)} for f, ev in g["failed"]]}, notes, fix)
-    vid = PUB.yt_upload(master, title, desc, pkg.get("tags", []), publish_at=slot_iso, ai_label=S("AI_LABEL_DEFAULT", bool))
+    vid = ORG.work("D9", "publish", ep, lambda b: PUB.yt_upload(master, title, desc, pkg.get("tags", []), publish_at=slot_iso, ai_label=S("AI_LABEL_DEFAULT", bool)), measure=WR.m_upload)
     st.update("Episodes", "episode_id", ep, {"title": title, "yt_id": vid, "slot_et": slot_iso, "status": "UPLOADED", "updated": iso()})   # recorded at once: no double upload
     try:                                                         # v11 (K155): the brain's features + a logged forecast for this video
         from whatifs import brain as BRN

@@ -546,10 +546,18 @@ def _preprod_batch(chain_key, search):
     if chain_key not in CHAINS or CHAINS[chain_key][0][0] != "c": return False
     return not (PREPROD["deadline"] and time.time() > PREPROD["deadline"])      # past the job guard: the remaining calls run directly
 
+ASK_TAPS = []          # v12: listeners at the one doorway for text calls; each fn(task, system, prompt) returns the system prompt to send (the department runner)
+def _tap(task, system, prompt):
+    for fn in list(ASK_TAPS):
+        try: system = fn(str(task), system, prompt)
+        except Exception as e: log(f"ask tap failed: {type(e).__name__}", "WARN")
+    return system
+
 def ask(role, system, prompt, want_json=True, max_tokens=6000, temperature=0.8, search=False, episode=None, fake_key=None, fanout=False, _direct=False):
     """Never blocks: walks the fallback chain. Claude roles move to Gemini when Claude credit runs out.
     v8.11: role may be a writers'-room task (ROUTES: model + effort chosen by capability) or a chain key as before; system may be a prompts.Packed."""
     task = role; chain_key, ecls = route(role); _CUR.task = str(task); _CALL.task = str(task)          # v9.1: Cost_Log 'role'; v9.2: per-role caps
+    if ASK_TAPS: system = _tap(task, system, prompt)
     if FAKE:
         from whatifs.fakes import fake_reply
         if chain_key in CHAINS and CHAINS[chain_key][0][0] == "c": simulate_claude(CHAINS[chain_key][0][1], system, prompt, max_tokens, search, effort_for(task, ecls), episode, fanout)
@@ -612,6 +620,7 @@ def ask_batch(role, system, prompt, want_json=True, max_tokens=6000, episode=Non
     answers: a cancelled batch request that already finished is used instead). Cost is logged at PRICE_BATCH_DISCOUNT x the normal rate.
     Prompt caching inside batches is applied as usual; whether the discounts stack was not verified (see the report)."""
     chain_key, ecls = route(role)
+    if ASK_TAPS: system = _tap(role, system, prompt)
     if FAKE or not (S("BATCH_ON", bool) or force) or chain_key not in CHAINS or CHAINS[chain_key][0][0] != "c":
         return ask(role, system, prompt, want_json=want_json, max_tokens=max_tokens, episode=episode, fake_key=fake_key, temperature=temperature, _direct=True)
     from whatifs.governor import claude_allowed, monthly_cap_reached, opus_allowed
