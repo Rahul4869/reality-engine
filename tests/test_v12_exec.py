@@ -53,7 +53,7 @@ def test_tabs_settings_and_the_lever_table_are_honest(monkeypatch):
     assert core.TABS["Tickets"][0] == "id" and "state" in core.TABS["Tickets"] and core.TABS["Lever_Changes"][:3] == ["ts", "change_id", "ticket_id"]
     for k in ("EXEC_ON", "EXEC_VERIFY_RUNS", "EXEC_VERIFY_DAYS", "EXEC_ARM_OUTPUTS", "EXEC_RULES_PER_DEPT", "EXEC_BUILD_RETRIES", "EXEC_BUILD_WAIT_H", "EXEC_AUTO_MERGE_ON"): assert k in core.DEFAULTS
     reg = {k for v in REG.DEPTS.values() for k in v["levers"]}
-    assert LV.issues() == [] and set(LV.LEVERS) == reg and len(reg) == 39 and REG.data_issues() == []
+    assert LV.issues() == [] and set(LV.LEVERS) == reg and len(reg) == 41 and REG.data_issues() == []
     assert all(LV.owner_of(k) and REG.may_change(LV.owner_of(k), k) for k in reg) and LV.owner_of("FAL_STILL_MODEL") == ""
     saved = LV.LEVERS.pop("ANIM_SHOTS"); assert any("ANIM_SHOTS of D6 has no rule" in x for x in LV.issues()) and any("ANIM_SHOTS" in x for x in REG.data_issues()); LV.LEVERS["ANIM_SHOTS"] = saved
     monkeypatch.setitem(LV.LEVERS, "FAL_STILL_MODEL", LV._b()); assert any("FAL_STILL_MODEL, which is no department's lever" in x for x in LV.issues()); monkeypatch.delitem(LV.LEVERS, "FAL_STILL_MODEL")
@@ -484,7 +484,7 @@ def decision(tickets, cls="B", **k):
 
 def test_decisions_executed_passes_on_real_tickets_and_fails_on_text_only_decisions():
     assert {(f[0], f[1]) for f in CON.FEATURES} >= {("decisions_executed", "script"), ("lever_verified", "script")} and REG.check_owner("decisions_executed") == "C" and REG.check_owner("lever_verified") == "D12"
-    assert sum(1 for f in CON.FEATURES if f[1] == "script") == 24 and sum(1 for f in CON.FEATURES if f[1] == "final") == 19
+    assert sum(1 for f in CON.FEATURES if f[1] == "script") == 25 and sum(1 for f in CON.FEATURES if f[1] == "final") == 19
     s, ev = CON.p_decisions_executed({}); assert s == CON.NA and "nothing to execute" in ev and CON.p_lever_verified({})[0] == CON.PASS          # nothing decided yet: not a PASS (the lever table is still judged)
     t, T = applied_setting(); d = decision([t["id"]]); s, ev = CON.p_decisions_executed({}); assert s == CON.PASS and ev.startswith("1 decision(s), 1 ticket(s): none is text only; 1 open")
     d2 = decision([], subject="Change the camera style for the cold open"); assert CON.p_decisions_executed({})[0] == CON.PASS                # inside the two hours in which its tickets may still arrive

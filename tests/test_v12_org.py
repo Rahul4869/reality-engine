@@ -223,7 +223,7 @@ def test_the_ladder_goes_through_the_council_once_it_can_act(monkeypatch):
 def test_escalation_never_waits_on_a_department_that_cannot_act():
     a = MEM.write(GOOD["assessment_memo"])                                                           # the Council has no run yet
     assert a["level"] == 2 and a["status"] == "escalated" and "no addressed department can act" in a["escalations"][0]["why"]
-    b = MEM.write(problem(to="D2", dedupe_key="research")); assert b["level"] == 2 and MEM.write(problem(to="D4", dedupe_key="write"))["level"] == 0
+    b = MEM.write(problem(to="D11", dedupe_key="finance")); assert b["level"] == 2 and MEM.write(problem(to="D4", dedupe_key="write"))["level"] == 0   # v12 B5: D2 is wired now; D11 waits for B9
 
 def test_a_third_failed_attempt_escalates_at_once():
     t0 = now(); a = MEM.write(problem(session_id="S-1"), now=t0); MEM.write(problem(session_id="S-2"), now=t0)

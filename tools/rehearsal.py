@@ -92,6 +92,19 @@ def run():
         assert row4.get("state") == "verified" and log4 == ["intent", "applied", "verified"], ("the rehearsal's decision did not become a verified change", row4.get("state"), row4.get("note"), log4)
         assert (OMEM4.get(tk4["id"], st)["resolution"] or {}).get("kind") == "lever_verified" and not EXE4.lever_issues(st)[0] and not EXE4.decision_issues(st)[0], "the ticket was not closed on the ledger"
         print("execution engine: ticket", tk4["id"], "->", row4["state"], "|", " > ".join(log4), "|", str(row4.get("proof"))[:110])
+        from whatifs import cli as CLI5, contract as CON5                 # v12 B5: the learning job's research round, run for real: agenda -> research memo -> blind Board -> the Council's level
+        from whatifs.org import rnd as RND5, board as BRD5
+        CLI5.research_round()
+        rs5 = {(s["dept"], s["trigger"]): s["status"] for s in st.rows("Sessions") if s.get("dept") in ("D2", "D3")}
+        assert rs5.get(("D2", "daily")) == "ok" and rs5.get(("D2", "weekly")) == "ok" and rs5.get(("D3", "assess")) == "ok", ("R&D or the Review Board did not finish a clean run", rs5)
+        rm5 = [m for m in OMEM.rows(st) if m["type"] == "research_memo"]; am5 = [m for m in OMEM.rows(st) if m["type"] == "assessment_memo"]
+        assert rm5 and all(m["status"] == "resolved" and (m["resolution"] or {}).get("kind") == "assessment_memo" for m in rm5), "a research memo was not assessed"
+        assert len(am5) == len(rm5) and all(not BRD5.assessment_issues(m) for m in am5), [BRD5.assessment_issues(m) for m in am5]
+        assert all((m.get("links") or {}).get("verified") == "rnd.verify" and RND5.ceiling_of(m) >= m["body"]["evidence_ceiling"] for m in rm5), "a research memo without code-verified sources"
+        bl5 = st.rows("Board_Log"); assert {r["family"] for r in bl5} == {"claude", "gemini"} and {r["verdict"] for r in bl5 if r["canary"]} == {"canary"}, "the Board was not two families or missed its canary"
+        since5 = _S12("ORG_SINCE"); set_setting("ORG_SINCE", (now_utc() - dt.timedelta(hours=72)).strftime("%Y-%m-%dT%H:%M:%SZ"))   # the check waits 48 h on a new Sheet: age it to judge the cycle just run
+        rc5 = CON5.p_research_cadence({}); set_setting("ORG_SINCE", since5); assert rc5[0] == "PASS", rc5
+        print("R&D + Review Board:", len(rm5), "research memo(s) ->", ", ".join(f"{m['body']['kind']}:{m['body']['verdict']}" for m in am5), "| canary rejected by both families |", rc5[1][:120])
         from whatifs.core import S as _S89; np89 = _S89("NEXT_PREMISE")      # v8.9: the scheduled video leaves its tease for the next episode (v8.9.1: only a saved plan uses it up)
         # v7.4 checks: research brief, ten opening hooks, reviewable cut map
         d74 = os.path.dirname(r["master"])

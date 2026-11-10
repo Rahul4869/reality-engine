@@ -15,7 +15,7 @@ def _spend(inr): core.cost("test_spend", "fal", 1, inr / core.S("USD_INR", float
 # ------------------------------------------------------------------ money: the month never totals more than the cap
 def test_reserve_is_inside_the_cap(setting):
     _legacy_budget(setting)
-    assert abs(G.production_room_inr() - (G.remaining_inr() - 100)) < 1e-6
+    assert abs(G.production_room_inr() - (G.remaining_inr() - 100 - G.org_left_inr())) < 1e-6          # v12 B5: the organisation's thinking caps are reserved too
     _spend(3905); assert G.monthly_cap_reached()      # v8.10 cap 4,000 and not G.monthly_cap_reached(maintenance=True)
     ok, why = G.can_start_episode(); assert not ok and "maintenance" in why
     _spend(95); assert G.monthly_cap_reached(maintenance=True)

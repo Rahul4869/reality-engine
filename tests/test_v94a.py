@@ -81,7 +81,7 @@ from whatifs import governor as G, manage as MG
 def test_cap_is_4700_with_the_earmark_kept_out_of_production(setting):
     setting("BUDGET_FLOOR_INR", "4700"); setting("BUDGET_CEILING_INR", "4700"); setting("SPECIALS_ON", "FALSE")      # the v9.4a profile (v10 raised it to ₹5,000)
     assert G.budget_mode() == "standard" and G.cap_inr() == 4700
-    assert G.production_room_inr() == pytest.approx(4700 - core.S("BUDGET_MAINT_RESERVE_INR", float) - 200)
+    assert G.production_room_inr() == pytest.approx(4700 - core.S("BUDGET_MAINT_RESERVE_INR", float) - 200 - G.org_left_inr())      # v12 B5: nor the organisation's thinking caps
     core.store().append("Cost_Log", [{"ts": core.iso(), "role": "faces_ref", "item": "image", "inr": "150", "basis": "measured"}])
     assert G.earmark_left_inr() == pytest.approx(50)                                   # spending the earmark does not cut production twice
 

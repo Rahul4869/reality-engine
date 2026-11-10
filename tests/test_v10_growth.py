@@ -100,7 +100,7 @@ def test_specials_days_and_off_switch(setting):
 
 def test_cap_is_5000_with_both_earmarks_out_of_production(setting):
     assert core.DEFAULTS["BUDGET_CEILING_INR"][0] == "5000" and G.cap_inr() == 5000
-    assert G.production_room_inr() == pytest.approx(5000 - core.S("BUDGET_MAINT_RESERVE_INR", float) - 200 - 300)
+    assert G.production_room_inr() == pytest.approx(5000 - core.S("BUDGET_MAINT_RESERVE_INR", float) - 200 - 300 - G.org_left_inr())      # v12 B5: the organisation's thinking caps
     st = core.store(); st.append("Settings", [{"key": "BUDGET_FLOOR_INR", "value": "4700", "note": ""}, {"key": "BUDGET_CEILING_INR", "value": "6000", "note": ""}])
     core._settings_cache = None
     assert MG.v10_upgrade(st) == ["BUDGET_FLOOR_INR"] and MG.v10_upgrade(st) == []
