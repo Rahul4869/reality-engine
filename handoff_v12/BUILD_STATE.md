@@ -1,11 +1,37 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 10 Nov 2026 (end of B1). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 10 Nov 2026 (end of B1 + B1b). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## NEXT
 **B2 - Knowledge Palace core** (01 section 3; 03 "B2"). Full seven-step MANDATORY BATCH LOOP. Effort: High.
-Start by ingesting `handoff_v12/palace_seed/B1.json` (6 seed items: 2 strategies, 3 techniques, 1 takeaway) - B2 defines the Palace schema and must load it.
+Start by ingesting `handoff_v12/palace_seed/B1.json` (8 seed items: 2 strategies, 3 techniques, 2 takeaways, 1 owner decision) - B2 defines the Palace schema and must load it.
 
 ## DONE
+### B1b - Owner decision executed: 4 long videos a month (10 Nov 2026) - ACCEPTED
+Not a plan batch: the generated SYSTEM.md from B1 exposed that the ledger said 4 long videos a month while the code allowed 8. The owner was asked
+in one line and answered "4 a month". Executed at code-line level the same session (no new research: the decision is the owner's).
+- BUILD: `core.DEFAULTS` STANDARD_MAX_LONG_PER_MONTH 8 -> 4, PUBLISH_DAYS Tue,Sat -> Sat (one a week; Saturday was already one of the two days and
+  is the Runway day), VIDEOS_PER_MONTH_EST 9 -> 4, new cell V12_FLIPS_DONE. `manage.v12_upgrade` + `V12_FLIPS`: ONE-time move of the live Sheet,
+  only for cells still at the old default (an owner-typed value is never touched); called from both setup paths. `governor.long_videos_per_week`.
+  Viewer lines in `whatifs/cta.py`: 4 subscribe lines promised "twice a week" -> "every week" (true at any cadence of one a week or more, so no
+  runtime substitution and nothing to leak). `caretaker.cadence_words`: the policy-rescue prompt now describes the channel from the settings
+  (it said "about 2 long videos + 10-14 Shorts a week").
+- Design note: a cadence placeholder filled at use time was considered for the viewer lines and rejected (leak risk into a spoken script, and tests
+  compare pool lines verbatim); wording that cannot become false won.
+- ENFORCE: gate `governor.can_start_episode` (already existed; now reads 4); new retired rule `old_long_cadence` in `truth.RETIRED` (14 rules) so
+  "twice a week" / "8 videos a month" / "2 long videos" fail Plan Guard, the tests and contract `docs_current`; matrix row added; ledger section D updated.
+- PROVE: `tests/test_v12_cadence.py` 8 tests, both ways (4th allowed / 5th blocked / cell change lifts it; Sheet move flips old defaults once and
+  leaves owner values; no viewer line states a numeric cadence; prompt follows the settings). The new rule caught a 4th "Twice a week" line that a
+  case-sensitive search had missed. Expectation updates forced by the decision: test_v94a (at most 8 -> 4), test_hardening (PUBLISH_DAYS),
+  test_v91_matrix (V12_FLIPS added to the documented one-time moves), test_v91_insights (see below).
+- Full suite (61 files): **949 passed / 0 failed / 6 skipped**. Honest detail: the uninterrupted run was 948 / 1. The 1 = test_v91_insights estimator
+  bound (comment-mining share + variety rewrite < Rs 3 per video): the MONTHLY comment-mining money is unchanged (about Rs 6) but is now shared by 4
+  videos instead of 9, so the per-video line rose from Rs 0.7 to Rs 1.5. Test now asserts the monthly amount (repair attempt 1 of 3) -> file 9/9.
+  No second uninterrupted full run after that one-file test edit. Rehearsal **GREEN** (20 + 18). Plan Guard **GREEN**.
+- EFFECT ON MONEY (not measured in production - nothing is live until the final PR): the planner now splits the month over 4-5 weekly slots instead
+  of 8-9, so each long video gets a larger share of the cap and extras (Shorts, breakout follow-ups) have more free money. The cap itself is unchanged.
+- TAKEAWAY: a decision is only executed when every place that SAYS the old thing is found; registering the old value as a retired concept found one
+  the manual search missed. Do this for every future owner decision that replaces something.
+
 ### B1 - Truth hygiene (10 Nov 2026) - ACCEPTED (all 7 loop steps recorded below)
 Result in one line: there is now ONE current truth, and code refuses anything else - in docs, CLAUDE.md, module docstrings, the build prompt and
 every prompt string - on every push (Plan Guard), in the suite, in the rehearsal and on every episode (contract check `docs_current`).
@@ -114,6 +140,8 @@ Rehearsal asserts `docs_current` ran and passed.
 
 ## PROTECTED-AREA FILES TOUCHED SO FAR (list them in the final PR)
 - B0: `whatifs/reels.py`, `whatifs/render.py`.
+- B1b: `whatifs/core.py` (3 defaults changed: STANDARD_MAX_LONG_PER_MONTH, PUBLISH_DAYS, VIDEOS_PER_MONTH_EST; 1 new cell), `whatifs/manage.py`
+  (`v12_upgrade` added + 2 calls), `whatifs/governor.py` (`long_videos_per_week` added; no existing rule changed).
 - B1: `tools/plan_guard.py` (truth hook added), `whatifs/contract.py` (check `docs_current` added; no existing check changed), `whatifs/core.py`
   (10 settings NOTES reworded, no default value changed), `tools/repair.py` / `whatifs/governor.py` / `whatifs/publish.py` / `whatifs/episode.py` /
   `whatifs/manage.py` and the other protected modules: docstring line only.
@@ -122,10 +150,8 @@ Rehearsal asserts `docs_current` ran and passed.
 1. (D6/D8, for B6-B7) Rain particles ("office" world) can read as a still for some seeds (aliveness 0.0 seen). Now deterministic, and seed 7 passes,
    but the particle layer has no guarantee per seed. Proper fix: after rendering, measure aliveness and re-seed/boost when below the bar (needs an
    enforcement check + failing test).
-2. (NEW, owner decision or B9) CADENCE MISMATCH found while generating SYSTEM.md: the ledger (section D) says the launch cadence is 4 long videos a
-   month; the code defaults allow up to 8 (`PUBLISH_DAYS` = Tue,Sat; `STANDARD_MAX_LONG_PER_MONTH` = 8) and no code sets 4. Either the money governor
-   yields about 4 in practice or the month-1 plan is not enforced. Not changed in B1 (not a truth-hygiene call). Best hypothesis: the plan lives only
-   in the docs; D1/D11 (B9) must turn the monthly plan into settings, or the owner says which number is right.
+2. (B1b follow-up, low, for B9) In a month with 5 Saturdays one week has no long video (cap 4). By design today; D1 planning (B9) may choose which
+   Saturday to skip or spread differently. `DIGEST_DAYS` (owner digests) still Tue,Sat,Sun - unrelated to publishing, left as is.
 3. (NEW, low) `mission_control/worker.js` line 27 comment still says fixes were "recorded in CHANGES.md". Left alone on purpose: it is a comment in the
    deployed Worker file, and JS comments are outside the scan. Fix it the next time the Worker is changed anyway.
 4. (laptop) Test temp dirs `mt_*` accumulate in `%TEMP%`; automatic cleanup of that shared folder was blocked by the app's safety rule. Disk free
@@ -149,4 +175,5 @@ Rehearsal asserts `docs_current` ran and passed.
 |---|---|---|---|---|
 | B0 | done 10 Nov 2026 | 912 / 0 / 6 skipped | GREEN (19 + 18) | 2 small fixes (Windows ffmpeg path; particle seed determinism) |
 | B1 | done 10 Nov 2026 | 940 / 0 / 6 skipped | GREEN (20 + 18) | Truth Registry; docs/CURRENT + ARCHIVE; generated SYSTEM.md; check `docs_current` (38 hard checks now) |
+| B1b | done 10 Nov 2026 | 949 / 0 / 6 skipped | GREEN (20 + 18) | Owner decision "4 a month" executed: cap 4, weekly Saturday, one-time Sheet move, truthful viewer lines, retired rule |
 | B2 | next | | | Knowledge Palace core |

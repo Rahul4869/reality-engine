@@ -69,7 +69,9 @@ def test_audio_drop_posting_needs_flag_and_keys_and_is_idempotent(monkeypatch, s
 def test_estimator_has_v91_lines_and_defaults_are_small():
     L = CG.estimate_lines()
     for k in ("atmosphere", "hero_reels", "retention_map", "role_roi", "comment_mining", "comment_ai_drafts", "variety_rewrite"): assert k in L
-    assert L["atmosphere"] == L["hero_reels"] == L["comment_ai_drafts"] == 0.0 and L["comment_mining"] + L["variety_rewrite"] < 3
+    assert L["atmosphere"] == L["hero_reels"] == L["comment_ai_drafts"] == 0.0 and L["variety_rewrite"] <= 1.5
+    # v12 (owner cadence, 4 long videos a month): the MONTHLY comment-mining money is unchanged (about Rs 6); it is now shared by 4 videos, not 9
+    assert L["comment_mining"] * core.S("VIDEOS_PER_MONTH_EST", int) <= 6.1 and L["comment_mining"] + L["variety_rewrite"] <= 3.0
 
 def test_comment_candidates_are_judged_at_the_next_refill_once():
     from whatifs import premise as PR
