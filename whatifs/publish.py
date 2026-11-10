@@ -247,11 +247,11 @@ def yt_channel():
 # ---------------- Google Drive (public link for Meta + archive) ----------------
 def _fake_drive(): d = os.path.join(WORK, "_drive"); os.makedirs(d, exist_ok=True); return d
 
-def drive_upload(path, name, public=False):
+def drive_upload(path, name, public=False, parent=None):
     if FAKE:      # rehearsal: a local folder stands in for Drive, so checkpoints and fixes can be tested end to end
         import shutil; shutil.copyfile(path, os.path.join(_fake_drive(), name)); return name, "https://example.invalid/" + name
     h = gdrive_headers(); meta = {"name": name}
-    if S("DRIVE_FOLDER_ID"): meta["parents"] = [S("DRIVE_FOLDER_ID")]
+    if parent or S("DRIVE_FOLDER_ID"): meta["parents"] = [parent or S("DRIVE_FOLDER_ID")]          # v12: parent = a sub-folder (the Knowledge Palace keeps its files in palace/)
     mime = ("video/mp4" if path.endswith(".mp4") else "image/jpeg" if path.endswith(".jpg") else "audio/mpeg" if path.endswith(".mp3")
             else "text/plain" if path.endswith((".srt", ".md")) else "application/json")
     h.update({"Content-Type": "application/json; charset=UTF-8", "X-Upload-Content-Type": mime})

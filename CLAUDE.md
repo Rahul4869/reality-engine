@@ -62,3 +62,6 @@ pipeline run uses the new code. Nothing restarts.
 - **Owner messages** go only through `whatifs/notify.py`; builds go through `whatifs/builds.py` and the `claude-build` workflow.
 - **Premium tier (future)**: each draw records `tier` ("public"). Discuss with the owner before building anything members-only.
 - **New format or series idea**: enter it as an experiment arm or a Playbook trial so the data decides; never replace the whole format at once.
+- **Knowledge Palace** (`whatifs/org/palace.py`): knowledge enters only through `palace.add` / `add_many` (dated evidence, real `applied_in` code references)
+  and leaves only through `palace.playbook` (the guard runs first). Never write the `Palace_Items` tab directly, never filter statuses yourself.
+  A build's research and takeaway go into `whatifs/org/seed/build.json` (stable `key`); a new owner decision that replaces an old one uses `palace.supersede`.

@@ -77,9 +77,10 @@ def doc_files(root=None):
 
 def code_files(root=None):
     root = root or ROOT; out = []
-    for d in ("whatifs", "tools"):
-        dd = os.path.join(root, d)
-        if os.path.isdir(dd): out += [os.path.join(dd, f) for f in sorted(os.listdir(dd)) if f.endswith(".py")]
+    for d in ("whatifs", "tools"):                                   # sub-packages too (whatifs/org): an org module is a prompt source like any other
+        for dp, dn, fn in os.walk(os.path.join(root, d)):
+            dn[:] = sorted(x for x in dn if x != "__pycache__")
+            out += [os.path.join(dp, f) for f in sorted(fn) if f.endswith(".py")]
     return out
 
 def _is_doc(node):

@@ -1,6 +1,6 @@
 # OWNER REQUIREMENTS LEDGER - Reality Engine ("Reality on Trial")
 Single source of truth for EVERYTHING the owner asked for, what was decided, and exactly HOW each point is applied in code.
-Read this first in every build chat. Never ask the owner to repeat a point listed here. Updated 10 Nov 2026 (v12 build, batch B1).
+Read this first in every build chat. Never ask the owner to repeat a point listed here. Updated 10 Nov 2026 (v12 build, batch B2).
 Companion files (all in docs/CURRENT): ENFORCEMENT_MATRIX.md (requirement -> code check, test-enforced), SYSTEM.md (what the code does, generated
 from the code), CONCEPT.md (the show). Anything in docs/ARCHIVE is history and is never followed.
 
@@ -104,4 +104,6 @@ takeaways from every session into one ever-growing KNOWLEDGE PALACE (world-build
 (even execution) reads and writes, learns BOTH WAYS from every other department, sends problem memos back for brainstorm-and-repair, and EVERYTHING
 learned, brainstormed or decided is EXECUTED AT CODE-LINE LEVEL and HARD-ENFORCED - tested, rehearsed, executed, re-looped until corrected.
 Urgency is do-or-die. Spec: handoff 01_MASTER_SPEC_ORGANISATION_BRAIN.md; plan: 03_BATCH_PLAN.md; progress: handoff_v12/BUILD_STATE.md.
-Built so far: B1 truth hygiene (one current truth, enforced). Everything else in this section is being built batch by batch (B2-B10).
+Built so far: B1 truth hygiene (one current truth, enforced).
+B2 Knowledge Palace core (`whatifs/org/palace.py`, check `palace_health`): every point of this ledger and every research finding is a Palace item with dated evidence and, where it is enforced, a pointer to the code that enforces it.
+Not built yet (B3-B10): memos and the department contract, playbooks injected into prompts and cited back, the Execution Engine, R&D and the Review Board, the Council, the repair loop, the learning loop with the Librarian, the Owner Office.

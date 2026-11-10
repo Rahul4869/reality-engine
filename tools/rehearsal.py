@@ -54,9 +54,17 @@ def run():
             led = [r for r in st.rows("Feature_Ledger") if r.get("episode_id") == e["episode_id"]]
             assert led and not [r for r in led if r["status"] == "FAIL"], ("contract ledger", [r for r in led if r["status"] == "FAIL"])
             assert any(r["feature"] == "docs_current" and r["status"] == "PASS" for r in led), "truth hygiene check (docs_current) did not run"
+            assert any(r["feature"] == "palace_health" and r["status"] == "PASS" for r in led), "Knowledge Palace check (palace_health) did not run"
             print("contract ledger:", len(led), "checks,", sum(1 for r in led if r["status"] == "PASS"), "pass; review card sent; approving as the owner")
             CON.approve(e["episode_id"]); e = st.rows("Episodes")[-1]
         assert e["status"] == "SCHEDULED", e
+        from whatifs.org import palace as PAL                    # v12: the Knowledge Palace holds the founding knowledge, mirrors the show records and feeds a bounded playbook
+        dly = PAL.daily(st); pal = PAL.rows(st); pb = PAL.playbook("D4", topic=e.get("premise", ""))
+        assert len(pal) >= len(PAL.seed_items()[0]) > 50 and not PAL.seed_issues(), "Knowledge Palace not seeded"
+        assert dly.get("canon") is not None and sum(1 for x in pal if x["kind"] == "world_canon") >= 4, ("world canon not mirrored", dly)
+        assert pb["playbook_id"] and pb["tokens"] <= pb["cap"] and any(r.get("playbook_id") == pb["playbook_id"] for r in st.rows("Palace_Playbooks")), "writers' playbook out of bounds or not recorded"
+        hp = PAL.health(st); assert hp["ok"], hp["problems"]
+        print("knowledge palace:", len(pal), "items, version", hp["stats"]["version"], "; writers' playbook", pb["playbook_id"], pb["tokens"], "of", pb["cap"], "tokens")
         from whatifs.core import S as _S89; np89 = _S89("NEXT_PREMISE")      # v8.9: the scheduled video leaves its tease for the next episode (v8.9.1: only a saved plan uses it up)
         # v7.4 checks: research brief, ten opening hooks, reviewable cut map
         d74 = os.path.dirname(r["master"])

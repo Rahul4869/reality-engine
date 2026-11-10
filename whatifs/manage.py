@@ -626,6 +626,9 @@ def learn():
         from whatifs import pilots as PLT, outlier_lab as OLB, demand as DMD
         PLT.measure(); OLB.run(); DMD.run()                    # v10.1 (K146): search-demand scores for bench premises
     except Exception as x: log(f"pilots / Outlier Lab skipped: {scrub(x)}", "WARN")
+    try:                                                        # v12: Knowledge Palace upkeep, then mirrors of the learning core (just updated above) and the show records
+        from whatifs.org import palace as PAL; PAL.daily(st)
+    except Exception as x: log(f"palace upkeep skipped: {scrub(x)}", "WARN")
     try:                                                        # v9.4a: weekly platform change-log watch + Visual Lab ideas (₹0), never near a release
         from whatifs import orchestra as OR, facts_watch as FW, visual_lab as VL
         if OR.heavy_allowed(what="weekly watch") and now_utc().strftime("%a") in ("Sun",):
@@ -1198,6 +1201,9 @@ def setup():
     except Exception as x: log(f"v11 flips skipped: {scrub(x)}", "WARN")
     try: v12_upgrade(st)                                         # v12: the owner's cadence (4 long videos a month, weekly)
     except Exception as x: log(f"v12 flips skipped: {scrub(x)}", "WARN")
+    try:                                                         # v12: the founding knowledge is in the Palace from the first run
+        from whatifs.org import palace as PAL; PAL.maintain(st)
+    except Exception as x: log(f"palace seed skipped: {scrub(x)}", "WARN")
     status("sheet_ready", True, f"{len(TABS)} tabs")
     from whatifs import launch as LA                                      # v9.3.1: the audit is only needed when the upload check found a lock
     status("youtube_api_audit", audit_state() == "approved" or LA.lock_state() != "on", AUDIT_WORDS[audit_state()] if LA.lock_state() == "on" else "not needed: YouTube lifted the private lock on 2 Nov 2026 (the upload check confirms it on this project)")      # v8.4: the audit form has its own Setup_Status row, so it cannot be forgotten

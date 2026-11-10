@@ -6,11 +6,11 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 ## 1. Facts (read from the code)
 - Channel: "Reality on Trial" (brand Reality Engine). Concept: `docs/CURRENT/CONCEPT.md`. Owner requirements: `docs/CURRENT/OWNER_REQUIREMENTS_LEDGER.md`.
 - Money: hard cap Rs 5,000 a month, everything included (`BUDGET_CEILING_INR`); extras pause at 90% of the cap; breakout fund carries over at most Rs 1,000. One month can be overridden in `MONTH_CAP_OVERRIDES`.
-- Quality: 38 HARD contract checks (20 at the script stage, 18 on the final video). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway). No upload below Breakout Score 80.
+- Quality: 39 HARD contract checks (21 at the script stage, 18 on the final video). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway). No upload below Breakout Score 80.
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `fal-ai/kling-video/o3/standard/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 1.5 standalone Shorts a day; spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 103 code modules, 675 settings, 71 Sheet tabs, 24 GitHub workflows.
+- Size: 105 code modules, 682 settings, 74 Sheet tabs, 24 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -25,7 +25,8 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 
 ## 3. The v12 Organisation build (status)
 - Truth hygiene: one current truth (this file, the registry of retired concepts, check `docs_current`): **built**
-- Knowledge Palace (one repository every department reads and writes): **not built yet**
+- Knowledge Palace core (`whatifs/org/palace.py`: guarded items, life cycle, versions, bounded playbooks, founding knowledge, check `palace_health`; section 10): **built**
+- Playbooks injected into every department's prompts and cited back (checks `palace_injected`, `palace_cited`), the Librarian's merges, outcome scores: **not built yet**
 - Memos and the department contract: **not built yet**
 - Execution Engine (every decision becomes a verified change in what runs): **not built yet**
 - R&D and Review Board, creative departments and Council, QA repair loop, learning loop, Owner Office: **not built yet**
@@ -56,6 +57,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | brain_playbook | script | the channel's own proven/retired evidence reached the writer |
 | no_retired | script | no technique the learning core retired |
 | docs_current | script | one current truth: no retired concept in current docs, docstrings or prompts |
+| palace_health | script | Knowledge Palace fit to feed departments: evidenced items tied to real code, nothing retired or expired served, playbooks inside their caps |
 | idea_evidence | script | the premise is backed by an outlier at IDEA_MIN_MULTIPLE x |
 | joke_density | script | a [PUNCH] line at least every JOKE_EVERY_SEC_LONG seconds |
 | send_and_awe | script | a [SEND] moment and an [AWE] peak (not in the last 20%) |
@@ -161,6 +163,17 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | BUILDS_ON | TRUE | owner-ordered changes and repairs are built by Claude Code in GitHub Actions on the owner's Claude plan (secret CC_OAUTH_TOKEN); FALSE = nothing is built automatically |
 | DASH_ON | TRUE | the pipeline writes the dashboard snapshot to Cloudflare KV after each tick (only once CF_ACCOUNT_ID / CF_KV_NAMESPACE_ID / CF_KV_TOKEN exist) |
 
+**Knowledge Palace**
+
+| setting | default | meaning |
+|---|---|---|
+| PALACE_ON | TRUE | TRUE = the Knowledge Palace is kept up (founding knowledge, expiry, size caps, mirrors of the learning core and the show records) and check palace_health runs on every episode [FALSE = the Palace is left untouched and the check does not apply] |
+| PALACE_PLAYBOOK_TOKENS | 1800 | hard cap, in estimated tokens, of the knowledge block one department receives from the Palace before it acts (200-6000) |
+| PALACE_PLAYBOOK_TOKENS_BY_DEPT | (blank) | optional JSON {department id: cap} that overrides PALACE_PLAYBOOK_TOKENS for single departments, e.g. {"D4": 2400} |
+| PALACE_LIMITS_SHARE | 0.4 | share of every department playbook reserved for limits (the owner's words, policy rules, failure lessons); limits are always served first (0.1-0.9) |
+| PALACE_REVIEW_DAYS | (blank) | optional JSON {kind: days} that overrides how long an item stays valid before it must be re-validated (defaults: REVIEW_DAYS in whatifs/org/palace.py; 0 = never) |
+| PALACE_KIND_CAPS | (blank) | optional JSON {kind: most served items}; over the cap the lowest-value item of that kind is expired by code (defaults: KIND_CAPS in whatifs/org/palace.py) |
+
 ## 7. Jobs (`.github/workflows/`)
 | file | name | schedule (cron, UTC) | other triggers | cli commands |
 |---|---|---|---|---|
@@ -204,7 +217,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Revenue_Log | 4 | month, source, inr_received, note |  |
 | Trend_Brief | 5 | week, kind, item, detail, source |  |
 | Lessons | 4 | ts, lesson, evidence, applies_to |  |
-| Playbook | 13 | rule_id, department, rule, metric, source, evidence ... |  |
+| Playbook | 13 | rule_id, department, rule, metric, source, evidence ... | the older research rulebook (whatifs/playbook.py); NOT a Palace playbook |
 | Strategy_Log | 7 | ts, dimension, action, name, replaces, mean_at_change ... |  |
 | Analytics | 23 | episode_id, yt_id, pulled, views, avg_view_pct, avg_view_sec ... |  |
 | Repairs | 5 | ts, file, error, result, pr |  |
@@ -263,6 +276,9 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Role_ROI | 9 | ts, episode_id, role, calls, notes, accepted ... |  |
 | Characters | 21 | id, name, speaker, role, philosophy, rhythm ... |  |
 | Cache_Stats | 17 | updated, episode_id, job, run_id, calls, cached_calls ... |  |
+| Palace_Items | 28 | id, kind, title, body_ref, summary, departments ... | the Knowledge Palace index (whatifs/org/palace.py) |
+| Palace_Versions | 10 | version, ts, actor, action, item_id, item_version ... | one row per Palace change: running version + hash of the whole Palace |
+| Palace_Playbooks | 11 | playbook_id, ts, dept, stage, topic, palace_hash ... | each distinct department playbook the Palace built (id = hash of its text) |
 
 ## 9. Modules
 | module | purpose |
@@ -363,6 +379,8 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | whatifs/voiceq.py | Designed character voices (by voice ID) and voice loudness. |
 | whatifs/wa.py | The WhatsApp control room: interactive buttons inside the 24-hour window, the approved template outside it, and inbound owner messages. |
 | whatifs/ypp.py | The North-Star tracker: weekly YouTube Analytics progress toward the Partner Program thresholds. |
+| whatifs/org/__init__.py | The Organisation: the departments and work stages every org module shares (Knowledge Palace now; memos, runner and registry build on these). |
+| whatifs/org/palace.py | Knowledge Palace: the one repository every department reads and writes - guarded items, life cycle, versions and bounded department playbooks. |
 | tools/atmos_bench.py | Render performance check: times one still shot through the real render path with the atmosphere layer off and on (run: python tools/atmos_bench.py [seconds]). |
 | tools/gen_docs.py | Generates docs/CURRENT/SYSTEM.md from the live code (run: python tools/gen_docs.py); the test suite fails when the committed file differs. |
 | tools/google_signin.py | One-time Google sign-in helper run on GitHub: prints the sign-in links, swaps the pasted address for a long-life key and emails it to the owner (never printed in the log). |
@@ -370,3 +388,85 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | tools/plan_guard.py | Plan Guard: runs on every push; RED when code breaks a locked rule (typed model names, flagged words, duplicate definitions, retired concepts in current docs or prompts). |
 | tools/rehearsal.py | Full offline rehearsal: setup -> voices -> tick -> produce -> release -> trends -> learn -> brief with fake models, images and voice; proves every stage connects at zero cost. |
 | tools/repair.py | Repair bot: on a crashed job, sends the traceback and the failing file to the model, checks the fixed file with Plan Guard and the offline rehearsal, and opens a pull request. |
+
+## 10. Knowledge Palace (`whatifs/org/palace.py`)
+- One repository every department reads and writes. Index: tab `Palace_Items` (one row per item; enough to build a playbook in one read). Full bodies:
+  founding items resolve from `whatifs/org/seed/`, runtime items live in the Drive folder palace/. Nothing is ever deleted.
+- Kinds (11): takeaway, technique, strategy, plan, world_canon, style_rule, policy_rule, tool_fact, audience_insight, failure_lesson, owner_preference. Limits (served first, never dropped silently): policy_rule, owner_preference, failure_lesson and every item holding the owner's words.
+- Statuses: proposed, accepted, testing, proven, retired, superseded, expired. Only proven, accepted, testing can reach a prompt (`palace.servable`, the guard that runs before any ranking).
+- The write gate (`palace.check`): dated evidence is required, trust is computed from the evidence type, every `applied_in` reference must exist in the code,
+  and text that names a retired concept, reads like an instruction to a model or proposes gaming the platform is refused.
+- Evidence types and the trust code gives them: owner decision 1.0, own data 0.9, show record 0.9, measured 0.8, official 0.8, build record 0.7, practice 0.6, research digest 0.5, opinion 0.3, model 0.2.
+- The owner's words change only by the owner. An item that is retired or superseded sends everything derived from it back for re-validation (`palace._cascade`).
+- Expiry: past `review_by` an item leaves every playbook until re-validated; a limit stays served, marked review due, and is reported.
+- Playbook (`palace.playbook(dept, stage, topic)`): guard, then lanes (limits, proven, accepted, testing), then relevance, filled under a hard cap of 1800 estimated tokens; limits hold a reserved share of 0.4. Same Palace state = byte-identical text; `playbook_id` is the hash of the text.
+- Runs in production: `palace.daily` in the learning job, `palace.maintain` in Setup, contract check `palace_health` on every episode.
+- Not yet wired (later batches): injecting playbooks into department prompts, citing items back, the Council, the Librarian's merges, outcome scores.
+
+**Founding knowledge** (91 items in `whatifs/org/seed/`; 0 invalid): breakout.json 15, build.json 17, feel.json 15, owner.json 29, platform.json 15.
+By kind: audience_insight 4, failure_lesson 1, owner_preference 25, plan 2, policy_rule 10, strategy 7, takeaway 2, technique 27, tool_fact 13.
+
+**Life cycle** (`palace.MOVES`; a move that is not listed is illegal for everyone)
+
+| from | to | who may make the move |
+|---|---|---|
+| proposed | accepted | owner, council |
+| proposed | retired | owner, council |
+| proposed | superseded | owner, council, librarian, build |
+| accepted | testing | owner, council, D10 |
+| accepted | proven | D10 |
+| accepted | retired | owner, council, D10 |
+| accepted | expired | clock, librarian |
+| accepted | superseded | owner, council, D10, librarian, build |
+| testing | accepted | council, D10 |
+| testing | proven | D10 |
+| testing | retired | owner, council, D10 |
+| testing | expired | clock, librarian |
+| testing | superseded | owner, council, D10, librarian, build |
+| proven | testing | D10 |
+| proven | retired | owner, council, D10 |
+| proven | expired | clock, librarian |
+| proven | superseded | owner, council, D10, librarian, build |
+| expired | accepted | owner, council, D10 |
+| expired | testing | council, D10 |
+| expired | proven | D10 |
+| expired | retired | owner, council, D10, librarian |
+| expired | superseded | owner, council, D10, librarian, build |
+| retired | proposed | anyone |
+| retired | testing | D10 |
+
+**Review window and size cap by kind** (days before re-validation, 0 = never; most served items)
+
+| kind | review days | cap |
+|---|---|---|
+| takeaway | 180 | 400 |
+| technique | 120 | 300 |
+| strategy | 180 | 80 |
+| plan | 45 | 40 |
+| world_canon | 0 | 600 |
+| style_rule | 180 | 120 |
+| policy_rule | 90 | 120 |
+| tool_fact | 60 | 150 |
+| audience_insight | 120 | 120 |
+| failure_lesson | 365 | 200 |
+| owner_preference | 0 | 150 |
+
+**Departments** (`whatifs/org/__init__.py`; stage = the stage a playbook is built for when none is named). Stages: ideation, writing, packaging, visual, sound, qa, publishing, growth, finance, ops, planning, research.
+
+| id | department | default stage |
+|---|---|---|
+| D0 | Owner Office | ops |
+| D1 | Strategy & Planning | planning |
+| D2 | R&D - Research | research |
+| D3 | Review Board | research |
+| D4 | Creative - Ideation & Writers' Room | writing |
+| D5 | Packaging | packaging |
+| D6 | Visual Production | visual |
+| D7 | Sound | sound |
+| D8 | QA & Enforcement | qa |
+| D9 | Publishing & Distribution | publishing |
+| D10 | Growth & Learning | growth |
+| D11 | Finance | finance |
+| D12 | Operations | ops |
+| C | The Council | planning |
+| L | The Librarian | ops |

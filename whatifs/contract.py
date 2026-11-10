@@ -388,11 +388,24 @@ def p_docs_current(ctx):
     if bad: return FAIL, f"{len(bad)} retired or stale reference(s): " + " | ".join(bad[:3])
     return PASS, f"no retired concept in current docs, docstrings or prompts ({len(TRU.RETIRED)} rules)"
 
+def p_palace_health(ctx):
+    """Knowledge Palace: founding knowledge present, every served item valid, evidenced and tied to code that exists, every department's playbook
+    inside its cap with nothing retired, superseded or expired in it. Upkeep (seed, clock, self-repair, caps) runs first; the check judges the result."""
+    if not S("PALACE_ON", bool): return NA, "Knowledge Palace switched off"
+    from whatifs.org import palace as PAL, DEPARTMENTS
+    PAL.maintain()
+    h = PAL.health()
+    if not h["ok"]: return FAIL, f"{len(h['problems'])} Palace problem(s): " + " | ".join(h["problems"][:3])
+    s = h["stats"]
+    return PASS, (f"{s['items']} items ({s['served']} served, {s['owner']} owner), {len(DEPARTMENTS)} playbooks inside their caps, version {s['version']}"
+                  + (f"; notes: {'; '.join(h['notes'])}" if h["notes"] else ""))
+
 FEATURES = [
     ("retention",     "script", p_retention,    "re-hook at least every REHOOK_MAX_GAP_SEC, promise shown early, every opened question answered"),
     ("brain_playbook", "script", p_brain_playbook, "the channel's own proven/retired evidence reached the writer"),
     ("no_retired",    "script", p_no_retired,   "no technique the learning core retired"),
     ("docs_current",  "script", p_docs_current, "one current truth: no retired concept in current docs, docstrings or prompts"),
+    ("palace_health", "script", p_palace_health, "Knowledge Palace fit to feed departments: evidenced items tied to real code, nothing retired or expired served, playbooks inside their caps"),
     ("idea_evidence", "script", p_idea_evidence, "the premise is backed by an outlier at IDEA_MIN_MULTIPLE x"),
     ("joke_density",  "script", p_joke_density, "a [PUNCH] line at least every JOKE_EVERY_SEC_LONG seconds"),
     ("send_and_awe",  "script", p_send_awe,     "a [SEND] moment and an [AWE] peak (not in the last 20%)"),

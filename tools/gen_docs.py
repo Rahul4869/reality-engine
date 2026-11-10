@@ -14,12 +14,14 @@ KEY_SETTINGS = [
     ("Pictures, motion, voice", ["ART_STYLE", "FAL_HERO_MODEL", "FAL_STILL_MODEL", "ANIM_SHOTS", "PARTICLES_ON", "LIVING_CHARACTERS_ON", "LIFE_LAYER_ON", "TTS_ENGINE"]),
     ("Quality gates", ["CONTRACT_ON", "CONTRACT_OFF", "BREAKOUT_HARD_BAR", "REHOOK_MAX_GAP_SEC", "JOKE_EVERY_SEC_LONG", "VISUAL_CHANGE_MAX_S", "PROMISE_BY_SEC", "IDEA_MIN_MULTIPLE"]),
     ("Owner", ["WA_ON", "BUILDS_ON", "DASH_ON"]),
+    ("Knowledge Palace", ["PALACE_ON", "PALACE_PLAYBOOK_TOKENS", "PALACE_PLAYBOOK_TOKENS_BY_DEPT", "PALACE_LIMITS_SHARE", "PALACE_REVIEW_DAYS", "PALACE_KIND_CAPS"]),
 ]
 
 # The v12 "Organisation" build, batch by batch. Edit ONLY when a batch is accepted (handoff_v12/BUILD_STATE.md is the detailed record).
 ORG_STATUS = [
     ("Truth hygiene: one current truth (this file, the registry of retired concepts, check `docs_current`)", "built"),
-    ("Knowledge Palace (one repository every department reads and writes)", "not built yet"),
+    ("Knowledge Palace core (`whatifs/org/palace.py`: guarded items, life cycle, versions, bounded playbooks, founding knowledge, check `palace_health`; section 10)", "built"),
+    ("Playbooks injected into every department's prompts and cited back (checks `palace_injected`, `palace_cited`), the Librarian's merges, outcome scores", "not built yet"),
     ("Memos and the department contract", "not built yet"),
     ("Execution Engine (every decision becomes a verified change in what runs)", "not built yet"),
     ("R&D and Review Board, creative departments and Council, QA repair loop, learning loop, Owner Office", "not built yet"),
@@ -27,7 +29,11 @@ ORG_STATUS = [
 
 # Tabs whose name invites a wrong reading.
 TAB_NOTES = {"Technique_Library": "the outlier-video library (techniques seen in other channels' outliers); NOT the learning core",
-             "Technique_Evidence": "the learning core's evidence table (whatifs/brain.py)"}
+             "Technique_Evidence": "the learning core's evidence table (whatifs/brain.py)",
+             "Playbook": "the older research rulebook (whatifs/playbook.py); NOT a Palace playbook",
+             "Palace_Items": "the Knowledge Palace index (whatifs/org/palace.py)",
+             "Palace_Versions": "one row per Palace change: running version + hash of the whole Palace",
+             "Palace_Playbooks": "each distinct department playbook the Palace built (id = hash of its text)"}
 
 def clean(note):
     """A settings note without its version / rule-number labels (those are history; the doc states only what is true now)."""
@@ -41,13 +47,60 @@ def _cell(s):
 def _modules():
     rows = []
     for d in ("whatifs", "tools"):
-        for f in sorted(os.listdir(os.path.join(ROOT, d))):
-            if not f.endswith(".py"): continue
-            src = open(os.path.join(ROOT, d, f), encoding="utf-8").read()
-            if not src.strip(): continue
-            doc = (ast.get_docstring(ast.parse(src)) or "").strip().splitlines()
-            rows.append((f"{d}/{f}", (doc[0] if doc else "").replace(" See docs/CURRENT/SYSTEM.md.", "")))
+        for dp, dn, fn in os.walk(os.path.join(ROOT, d)):               # sub-packages too (whatifs/org)
+            dn[:] = sorted(x for x in dn if x != "__pycache__")
+            for f in sorted(fn):
+                if not f.endswith(".py"): continue
+                src = open(os.path.join(dp, f), encoding="utf-8").read()
+                if not src.strip(): continue
+                doc = (ast.get_docstring(ast.parse(src)) or "").strip().splitlines()
+                rows.append((os.path.relpath(os.path.join(dp, f), ROOT).replace(os.sep, "/"), (doc[0] if doc else "").replace(" See docs/CURRENT/SYSTEM.md.", "")))
     return rows
+
+def _palace(A):
+    """Section 10: the Knowledge Palace, read from whatifs/org/palace.py and the seed files (never typed here)."""
+    from whatifs.org import palace as PAL, DEPARTMENTS, STAGES
+    items, bad = PAL.seed_items()
+    by_kind, by_file = {}, {}
+    for it in items:
+        by_kind[it["kind"]] = by_kind.get(it["kind"], 0) + 1; by_file[it["seed_file"]] = by_file.get(it["seed_file"], 0) + 1
+    A("## 10. Knowledge Palace (`whatifs/org/palace.py`)")
+    A("- One repository every department reads and writes. Index: tab `Palace_Items` (one row per item; enough to build a playbook in one read). Full bodies:")
+    A("  founding items resolve from `whatifs/org/seed/`, runtime items live in the Drive folder palace/. Nothing is ever deleted.")
+    A(f"- Kinds ({len(PAL.KINDS)}): {', '.join(PAL.KINDS)}. Limits (served first, never dropped silently): {', '.join(PAL.LIMIT_KINDS)} and every item holding the owner's words.")
+    A(f"- Statuses: {', '.join(PAL.STATUSES)}. Only {', '.join(PAL.SERVABLE)} can reach a prompt (`palace.servable`, the guard that runs before any ranking).")
+    A("- The write gate (`palace.check`): dated evidence is required, trust is computed from the evidence type, every `applied_in` reference must exist in the code,")
+    A("  and text that names a retired concept, reads like an instruction to a model or proposes gaming the platform is refused.")
+    A("- Evidence types and the trust code gives them: " + ", ".join(f"{k} {v}" for k, v in PAL.EVIDENCE.items()) + ".")
+    A("- The owner's words change only by the owner. An item that is retired or superseded sends everything derived from it back for re-validation (`palace._cascade`).")
+    A("- Expiry: past `review_by` an item leaves every playbook until re-validated; a limit stays served, marked review due, and is reported.")
+    A(f"- Playbook (`palace.playbook(dept, stage, topic)`): guard, then lanes (limits, proven, accepted, testing), then relevance, filled under a hard cap of "
+      f"{PAL.core.DEFAULTS['PALACE_PLAYBOOK_TOKENS'][0]} estimated tokens; limits hold a reserved share of {PAL.core.DEFAULTS['PALACE_LIMITS_SHARE'][0]}. "
+      "Same Palace state = byte-identical text; `playbook_id` is the hash of the text.")
+    A("- Runs in production: `palace.daily` in the learning job, `palace.maintain` in Setup, contract check `palace_health` on every episode.")
+    A("- Not yet wired (later batches): injecting playbooks into department prompts, citing items back, the Council, the Librarian's merges, outcome scores.")
+    A("")
+    A(f"**Founding knowledge** ({len(items)} items in `whatifs/org/seed/`; {len(bad)} invalid): " + ", ".join(f"{k} {v}" for k, v in sorted(by_file.items())) + ".")
+    A("By kind: " + ", ".join(f"{k} {v}" for k, v in sorted(by_kind.items())) + ".")
+    A("")
+    A("**Life cycle** (`palace.MOVES`; a move that is not listed is illegal for everyone)")
+    A("")
+    A("| from | to | who may make the move |")
+    A("|---|---|---|")
+    for (frm, to), who in PAL.MOVES.items(): A(f"| {frm} | {to} | {'anyone' if who == PAL.ANY else ', '.join(who)} |")
+    A("")
+    A("**Review window and size cap by kind** (days before re-validation, 0 = never; most served items)")
+    A("")
+    A("| kind | review days | cap |")
+    A("|---|---|---|")
+    for k in PAL.KINDS: A(f"| {k} | {PAL.REVIEW_DAYS[k]} | {PAL.KIND_CAPS[k]} |")
+    A("")
+    A("**Departments** (`whatifs/org/__init__.py`; stage = the stage a playbook is built for when none is named). Stages: " + ", ".join(STAGES) + ".")
+    A("")
+    A("| id | department | default stage |")
+    A("|---|---|---|")
+    for d, (name, stage) in DEPARTMENTS.items(): A(f"| {d} | {name} | {stage} |")
+    A("")
 
 def _jobs():
     rows = []; wd = os.path.join(ROOT, ".github", "workflows")
@@ -136,6 +189,7 @@ def render():
     A("|---|---|")
     for rel, purpose in mods: A(f"| {rel} | {_cell(purpose)} |")
     A("")
+    _palace(A)
     return "\n".join(L)
 
 def drift():

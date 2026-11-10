@@ -135,6 +135,12 @@ TABS = {
                      "voice_style", "sound", "audio_chain", "status", "updated", "gvoice", "gstyle", "cast_id", "grammar_json"],     # gvoice: Gemini voice (Voice_Check); cast_id: a Cast row to borrow                                     # the character bible (core cast; owner-editable)
  "Cache_Stats":     ["updated", "episode_id", "job", "run_id", "calls", "cached_calls", "cache_read_tok", "cache_write_5m_tok", "cache_write_1h_tok",
                      "uncached_in_tok", "out_tok", "hit_ratio", "tokens_saved", "usd_saved", "ai_measured_inr", "ai_estimated_inr", "warnings"],   # one row per episode and job
+ # v12: the Knowledge Palace (whatifs/org/palace.py). The index row holds everything a department playbook needs, so one read builds it.
+ "Palace_Items":    ["id", "kind", "title", "body_ref", "summary", "departments", "stages", "topic_tags", "evidence", "confidence", "status", "version", "supersedes",
+                     "superseded_by", "derived_from", "owner_input", "created", "updated", "review_by", "applied_count", "last_applied", "outcome_score", "cost_note",
+                     "applied_in", "content_hash", "actor", "status_note", "priority"],
+ "Palace_Versions": ["version", "ts", "actor", "action", "item_id", "item_version", "from_status", "to_status", "palace_hash", "note"],          # one row per change
+ "Palace_Playbooks": ["playbook_id", "ts", "dept", "stage", "topic", "palace_hash", "n_items", "tokens", "cap", "item_ids", "body_ref"],        # each distinct playbook once
 }
 
 class LocalStore:
@@ -947,6 +953,14 @@ DEFAULTS = {
  "AI_SAVER_ON": ("TRUE", "TRUE = AI-side savings (about Rs 30 per video, no visual cut): planning roles (scout, showrunner, bible, premise judge, memos, objections, Director, hooks, packager, reels) run at medium effort; the script, rewrites and every edit of the script keep their EFFORT_* level"),
  "BELOW_BAR_MAIL_ON": ("TRUE", "TRUE = one email per video that was made from a below-the-bar premise or script (scores attached); never an email for normal videos"),
  "TREND_CHANNELS": ("@WhatIfScienceShow,@kurzgesagt,@veritasium,@Vsauce,@RealLifeLore,@TheInfographicsShow,@zackdfilms,@MrBeast", "channels watched weekly"),
+ # v12: the Knowledge Palace (whatifs/org/palace.py)
+ "PALACE_ON": ("TRUE", "TRUE = the Knowledge Palace is kept up (founding knowledge, expiry, size caps, mirrors of the learning core and the show records) and check palace_health runs on every episode [FALSE = the Palace is left untouched and the check does not apply]"),
+ "PALACE_PLAYBOOK_TOKENS": ("1800", "hard cap, in estimated tokens, of the knowledge block one department receives from the Palace before it acts (200-6000)"),
+ "PALACE_PLAYBOOK_TOKENS_BY_DEPT": ("", "optional JSON {department id: cap} that overrides PALACE_PLAYBOOK_TOKENS for single departments, e.g. {\"D4\": 2400}"),
+ "PALACE_LIMITS_SHARE": ("0.4", "share of every department playbook reserved for limits (the owner's words, policy rules, failure lessons); limits are always served first (0.1-0.9)"),
+ "PALACE_REVIEW_DAYS": ("", "optional JSON {kind: days} that overrides how long an item stays valid before it must be re-validated (defaults: REVIEW_DAYS in whatifs/org/palace.py; 0 = never)"),
+ "PALACE_KIND_CAPS": ("", "optional JSON {kind: most served items}; over the cap the lowest-value item of that kind is expired by code (defaults: KIND_CAPS in whatifs/org/palace.py)"),
+ "PALACE_FOLDER_ID": ("", "auto: the Drive folder palace/ for item bodies, playbook texts and snapshots; found or created on first use"),
 }
 _settings_cache = None
 def settings(refresh=False) -> dict:
