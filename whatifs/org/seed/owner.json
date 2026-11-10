@@ -135,6 +135,7 @@
    "summary": "The first 3 long videos and the first 3 Shorts are held private until the owner taps Approve on the review card.",
    "departments": ["D9", "D0", "D8"], "topic_tags": ["review", "publishing"],
    "evidence": [{"source": "owner-approved review gate, requirements ledger section G", "date": "2026-11-09", "type": "owner decision", "finding": "First 3 long videos + first 3 Shorts wait for the owner's Approve card."}],
-   "applied_in": ["setting:CREATIVE_REVIEW_FIRST_N", "whatifs/contract.py:await_approval"]}
+   "applied_in": ["setting:CREATIVE_REVIEW_FIRST_N", "whatifs/contract.py:await_approval"]},
+  {"key": "owner.room_value_test", "departments": ["D10"], "title": "Build the blind test of the writers' room against a single prompt", "summary": "The owner decided to BUILD the blind test that compares the writers' room script with a single-prompt script for the same premise, judged blind by strong judges of another model family, with the win rate shown to him. It had been promised by three Settings cells and a tab and was never built. It belongs to the learning loop.", "topic_tags": ["writers room", "learning", "experiment", "judging"], "evidence": [{"source": "owner, build chat of 10 Nov 2026 (asked: build it with the learning loop, or drop it)", "date": "2026-11-10", "type": "owner decision", "finding": "build"}], "applied_in": ["setting:ROOM_VALUE_ON", "tab:Room_Value", "whatifs/truth.py:UNREAD_SETTINGS"]}
  ]
 }

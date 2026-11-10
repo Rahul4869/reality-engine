@@ -188,7 +188,7 @@ def live_prompt_issues():
 NOT_ACTIVE = "NOT ACTIVE"
 UNREAD_SETTINGS = {
     "CACHE_ALIGN_EFFORT": "each call keeps the effort its task is routed with; two efforts on one cached prefix cost one extra cache write, logged on every run",
-    "ROOM_VALUE_ON": "the blind test of the writers' room against a single prompt was never built; tab Room_Value stays empty",
+    "ROOM_VALUE_ON": "the blind test of the writers' room against a single prompt was never built; tab Room_Value stays empty. Owner, 10 Nov 2026: build it (with the learning loop)",
     "ROOM_VALUE_EVERY": "belongs to the room value test, which was never built",
     "ROOM_MIN_WINRATE": "belongs to the room value test, which was never built",
     "RUNTIME_HARD_MAX_SEC": "the ceiling the code enforces is RUNTIME_MAX_SEC (sampler and governor)",

@@ -52,7 +52,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
   - `no_kling_statement`: every long video has animated Kling scenes (ANIM_SHOTS) plus the ffmpeg/OpenCV render.
 - Every Settings cell must be read by code. 8 cells are read by NO code (their notes start with 'NOT ACTIVE'); changing one changes nothing. The list may only shrink (limit 8); a new unread cell fails Plan Guard, the tests and check `docs_current`:
   - `CACHE_ALIGN_EFFORT`: each call keeps the effort its task is routed with; two efforts on one cached prefix cost one extra cache write, logged on every run.
-  - `ROOM_VALUE_ON`: the blind test of the writers' room against a single prompt was never built; tab Room_Value stays empty.
+  - `ROOM_VALUE_ON`: the blind test of the writers' room against a single prompt was never built; tab Room_Value stays empty. Owner, 10 Nov 2026: build it (with the learning loop).
   - `ROOM_VALUE_EVERY`: belongs to the room value test, which was never built.
   - `ROOM_MIN_WINRATE`: belongs to the room value test, which was never built.
   - `RUNTIME_HARD_MAX_SEC`: the ceiling the code enforces is RUNTIME_MAX_SEC (sampler and governor).
@@ -452,8 +452,8 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Every wired department run loads its playbook (section 11). Not yet wired (later batches): the playbook inside the creative departments' model
   prompts with items cited back, the Council, the Librarian's merges, outcome scores.
 
-**Founding knowledge** (110 items in `whatifs/org/seed/`; 0 invalid): breakout.json 15, build.json 36, feel.json 15, owner.json 29, platform.json 15.
-By kind: audience_insight 4, failure_lesson 1, owner_preference 25, plan 2, policy_rule 10, strategy 14, takeaway 5, technique 36, tool_fact 13.
+**Founding knowledge** (111 items in `whatifs/org/seed/`; 0 invalid): breakout.json 15, build.json 36, feel.json 15, owner.json 30, platform.json 15.
+By kind: audience_insight 4, failure_lesson 1, owner_preference 26, plan 2, policy_rule 10, strategy 14, takeaway 5, technique 36, tool_fact 13.
 
 **Life cycle** (`palace.MOVES`; a move that is not listed is illegal for everyone)
 
