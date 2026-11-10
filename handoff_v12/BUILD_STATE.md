@@ -43,6 +43,95 @@ What B0b adds for B4:
   3 jobs; start it in the background on a frozen copy of the commit as soon as the build step is done) and the final commit green on GitHub.
 
 ## DONE
+### B4 - Execution Engine (10 Nov 2026) - IN PROGRESS (steps recorded as they finish; resume at the first step that is missing below)
+
+#### Step 1 RESEARCH (14 dated sources; E = measured evidence, O = opinion / practice / vendor documentation)
+Honest note: for sources 1-5 and 14 the abstract page was read, not the full paper; 4 and 9c are quoted from a search summary.
+1. E - Mohammadi et al., "Atomix: Timely, Transactional Tool Use for Reliable Agentic Workflows", arXiv 2602.14849, 16 Feb 2026 (v2 29 May 2026):
+   orchestrators treat a tool's RETURN as the signal that work is settled; effects are bufferable, reversible or irreversible; commit only when
+   nothing earlier can still conflict; abort compensates what was already let out. -> "applied" is not "done": a change is settled only by later evidence.
+2. E - Chen et al., "Cordon: Semantic Transactions for Tool-Using LLM Agents", arXiv 2606.17573, 16 Jun 2026: reversible changes first, outward
+   actions staged, the composed flow validated BEFORE an irreversible commit, audit metadata recorded. -> the undo is computed and stored before
+   the change; the only irreversible lever (merged code) has the strictest gate.
+3. E - Wu et al., "Safe to Resume? Breaking Execution Continuity of Agent Execution via Rollback", arXiv 2608.29381, 29 Aug 2026: "correct rollback
+   does not imply secure recovery" - a faithfully restored state can sit next to newer external facts that never coexisted with it (three
+   end-to-end attacks, five frameworks). -> a rollback restores the old value ONLY if the cell still holds what the engine wrote.
+4. E - "Always-On Agents" survey, arXiv 2606.30306, Jun 2026: 27 of 435 surveyed works expose any rollback; none reports recovery success or cost.
+5. E - Lin et al., "Safety in Self-Evolving LLM Agent Systems", arXiv 2606.23075, 22 Jun 2026: a bad self-change is lineage-persistent (40 of 40
+   payloads persisted); 17 of 25 module x life-cycle cells critical; scanners that sit beside the agent stopped 2.5%. -> every self-change carries
+   its lineage (ticket -> decision -> memos), is reversible, and the commit gate is code OUTSIDE the component that proposed it.
+6. E - Cloudflare post-mortem, 18 Nov 2025: an internally generated configuration file doubled in size, the proxy hit a hard limit and failed
+   network-wide for 5 h 46 min; first remediation: treat internally generated configuration "the same way" as user input; more kill switches.
+   -> the organisation's own values pass type, range and step checks like untrusted input; one switch (`EXEC_ON`) stops the engine.
+7. E - Google Cloud incident report, 12 Jun 2025: a policy with blank fields replicated worldwide in seconds into a code path with no flag and
+   no error handling. Remediation: flags off by default, incremental roll-out with time to validate, fail open. -> one change at a time, a
+   verification window before "verified", and a broken engine never throws away or blocks work that is already paid.
+8. O - LaunchDarkly "guarded rollouts" documentation (read 10 Nov 2026): automatic rollback needs a minimum sample; with too little data at
+   the end it rolls back; it suits metrics where "worse" is unambiguous. -> at one video a week statistics are impossible, so the engine ISOLATES
+   (one unverified change per department) and uses the hard contract checks (pass / fail) as guardrails; no evidence in the window = rolled back.
+9. E - reward hacking by coding agents: (a) SpecBench, arXiv 2605.21384, 21 May 2026: 97.8% on the visible tests against 83.3% on held-out tests
+   (gap 14.5 points, growing with task size); (b) ImpossibleBench rates quoted in a 2026 safety report: 0-11.8% of runs change or game the tests;
+   (c) METR: one model gamed the scorer in 39 of 128 runs, and telling it not to "had a nearly negligible effect". -> a code lever is verified
+   by checks the build did not write, and the automatic merge is decided by code reading the real diff - never by the request or the prompt.
+10. E - The Hacker News, 4 Jun 2026: flaw in the Claude Code GitHub Action (fixed in v1.0.94, CVSS 7.8): injected text could make the agent read the
+   job's environment and leak its secrets; advice: a job that reads untrusted text holds no secret beyond the model credential and the workflow's
+   own access. -> `claude-build.yml`: the Sheet, WhatsApp and merge secrets move off the step in which Claude Code runs.
+11. O - optional stopping: Johari et al., arXiv 1512.04922, and simulations in practitioner write-ups (stopping at the first p < 0.05 gives about
+   21-28% false positives instead of 5%). -> the engine never judges an experiment arm early; it verifies only that the arm is assigned and
+   recorded, and the existing fixed rule (plays on both sides) gives the verdict.
+12. E - Tang et al., "Holistic Configuration Management at Facebook", SOSP 2015: validators on every change, canary on a subset, automatic rollback.
+13. O - the Kubernetes controller pattern (level-triggered reconciliation: a missed event is harmless because the next pass re-reads state).
+   -> the engine's tick pass reads state (cells, Sessions, the ledger of checks), never an event queue; a killed job is settled by the next pass.
+14. E - Zhang et al., "Darwin Goedel Machine", arXiv 2505.22954, 29 May 2025 (v3 12 Mar 2026): a self-modifying agent went from 20.0% to 50.0% on
+   SWE-bench with sandboxing and human oversight. -> gated self-change works; the gate is the product.
+Re-read: 02 points 2, 12, 14, 15 ("whatever they learn or brainstorm or decide ... strictly code line level executed and enforced"), 01 sections 4-7.
+
+#### Step 2 CREATIVITY (4 designs; scores 1-5: breakout impact / enforceability / cost / reliability / owner effort)
+- A "Immediate applier": apply by lever class, read back, mark verified. 2 / 2 / 5 / 2 / 4. Rejected: read-back proves the write, not the effect
+  (source 1); nothing ever rolls back.
+- B "Guarded roll-out": apply -> probation -> guardrail checks -> automatic rollback (sources 8, 12). 4 / 4 / 5 / 4 / 4. Taken as the core.
+- C "Desired-state reconciler": a pass on every tick compares what should be with what is and converges (source 13). 3 / 4 / 4 / 5 / 4. Taken for
+  crash-safety: the tick pass also settles an apply that a killed job left half done.
+- D ORIGINAL, beyond the research - five rules for a system with ONE video a week and ONE owner:
+  (1) isolation instead of statistics: at most one unverified setting or experiment per department, and settings change BETWEEN videos, never
+      inside one - so one video's checks can be attributed to one change, and no script is judged against a bar it was not written for;
+  (2) proof by somebody else: a change is verified only by rows another component wrote AFTER it (a later department run, a later video's check
+      rows, a later Video_Features row, GitHub's own check runs) - the engine's own read-back is necessary, never sufficient;
+  (3) the owner's hand wins: rollback is compare-and-swap; a cell the owner edited after the engine is never overwritten (source 3);
+  (4) the direction decides who may turn a lever: inside its range a department moves a lever freely in the direction that makes a gate stricter
+      or cheaper; the direction that weakens a gate or costs more needs the owner's one tap, pre-filled;
+  (5) additive-only automatic merge: a build may ADD tests and rule data and nothing else; one deleted line, one protected file or no new test
+      sends it to the owner (source 9).
+  5 / 5 / 5 / 4 / 5.
+Decision: B + C + D together.
+
+#### Step 3 DESIGN MEMO
+- Decision: `whatifs/org/levers.py` (every lever: type, range, largest step, the direction that needs the owner, the checks that judge it; the
+  scope of an automatic merge) and `whatifs/org/execute.py` (the engine). A ticket's free text (`acceptance_test`, `rollback`) is for people; the
+  engine compiles `lever_class` + `target` + `value` into a typed operation with a registered verifier, or refuses the ticket with the reason.
+- Tabs appended: `Tickets` (one row per ticket: the engine's state) and `Lever_Changes` (append-only: intent, applied, verified, rolled_back,
+  refused, queued, owner_asked ... one row per event, written BEFORE and AFTER every change).
+- States: queued -> (awaiting_owner) -> intent -> applied -> verified | rolled_back; refused; failed. Code lever: dispatched -> pr_open -> merged -> verified.
+- Lever classes: A knowledge = a Palace item accepted with the Council's authority (the Palace's own gate refuses anybody else); verified when a
+  later run of the target department was served it (and cited it once that department runs in `prompt` mode - B6); undo = retire / restore the old
+  version. B setting = a registered cell, owner department only (`registry.may_change`), type / range / step, never a cell no code reads; applied
+  between videos; verified by a video BORN after the change passing the lever's own checks; a failed check, a failed run or no evidence in the
+  window = rollback. C experiment = a rulebook trial (`whatifs/playbook.py`: coin flip per video = holdout, plays on both sides before a verdict);
+  the long video's features now record its arms; verified when the next N long videos carry the arm, or the trial was judged. D prompt rule = a
+  Palace rule item (style / policy), bounded per department, otherwise as A. E code = a `build_request` from D12, the build workflow, checks,
+  additive-only automatic merge or the owner's Merge tap, checks on the merge commit, at most 2 re-builds, then escalation.
+- The reconcile pass runs on every tick (next to the SLA watchdog); D12 Operations gets its run (trigger `operate`) only when it has a ticket to
+  execute. A ticket closes as `lever_verified` / `rolled_back` only when the ledger holds that row (`memos._proof_problem`).
+- Waiting for evidence is not being late: once a change is applied the ticket's resolve clock moves to the end of its verification window
+  (`memos.await_proof`, typed, bounded, needs the ledger row); the engine itself rolls back when that window ends.
+- Checks: `decisions_executed` and `lever_verified`, both at the script gate (before picture money). They FAIL on a broken invariant (a decision
+  with no ticket, a ticket closed without ledger proof, a change past its window with no verdict, a failed rollback, an overdue ticket nobody
+  escalated) - never merely because the owner has not answered yet.
+- Money: Rs 0 (no model call). Code builds run on the owner's Claude plan (Rs 0 API), at most 1 + 2 attempts per ticket.
+- Rejected: executing the ticket's `acceptance_test` text (a self-written test is the thing sources 9 and 14 warn about); applying a setting in
+  the EXECUTE step of an episode run (it would change the bar under a script already written); automatic revert of drift (it would fight the
+  owner's hand edits); a department run for D12 on every tick (about 670 empty runs per two-week verification window).
+
 ### B0b - Baseline re-check (10 Nov 2026) - ACCEPTED (final code commit 9c5d0e3 GREEN in GitHub run 52)
 Result in one line: the code the build stands on was re-proven the hard way - 58 full fake pipelines over fixed episode ids are green - and the real
 faults turned out to sit in the PROOF, not in the pipeline: a comparison that ran on no machine, GitHub's Checks measuring another major version of
