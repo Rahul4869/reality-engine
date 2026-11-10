@@ -557,6 +557,16 @@ Rehearsal asserts `docs_current` ran and passed.
 20. (B3, low) `tests/test_integration.py` and the rehearsal still make time-based episode ids and the fake pipeline is seeded by the id, so another
    id-dependent fault could surface on some minute. That is a feature while faults remain: trace it, do not re-run it away.
 
+21. (FOUND 10 Nov after B3, verification gap of B0-B3) GitHub runs the `Checks` workflow on EVERY push of this branch (Ubuntu, Python 3.11, real pytest,
+   then the fake rehearsal) and no batch ever read its result: every "green" in this file is the laptop (Windows, the stand-in test runner). Read on
+   10 Nov (step outcomes are public; log lines need a GitHub sign-in): baseline RED at unit tests (expected, before B0's fixes); B0 GREEN; B1 final
+   GREEN; B1b final GREEN; the two mid-batch commits of B1 / B1b RED at unit tests (the 939 / 1 and 948 / 1 already recorded above, fixed one commit
+   later); **B2's final commit c54b9b6 RED at the REHEARSAL step (unit tests green there)** although the laptop rehearsal was green; B3's first three
+   commits GREEN; B3's final commit 6b89d83 was still running. Best hypothesis for the B2 failure, NOT confirmed (no log access): the stale promise
+   flag fixed in B3, which holds the rehearsal's episode on some minutes. To do: confirm from the log, sweep the fake pipeline over many fixed episode
+   ids, and make "the batch's final commit is green on GitHub" part of every batch's acceptance.
+   Where to look: https://github.com/Rahul4869/reality-engine/actions?query=branch%3Av12-organisation
+
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`
 - Suite: `bash ../shim/runall.sh . <outdir outside repo>` (~35 min; run it in the background). Some files: `bash ../shim/runseq.sh . <outdir> test_a test_b`.
