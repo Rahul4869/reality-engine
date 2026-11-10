@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 10 Nov 2026 (end of B2). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 10 Nov 2026 (B3 in progress - see IN PROGRESS). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## NEXT
 **B3 - Memo system + Department contract** (01 sections 4, 5; 03 "B3"). Full seven-step MANDATORY BATCH LOOP. Effort: High.
@@ -10,6 +10,103 @@ What B2 leaves ready for B3 (use it, do not rebuild it):
   to `palace.mark_applied(ids)`. Checks `palace_injected` / `palace_cited` can compare a prompt with the stored text of `playbook_id` (tab `Palace_Playbooks`).
 - Tabs still to append in B3+: `Memos`, `Tickets`, `Sessions`, `Takeaways`, `Lever_Changes`, `Org_Audit` (B2 added only the three it uses).
 - First thing in B3: add `whatifs/org/palace.py` (and the new org modules) to `tools/repair.py` PROTECTED (see open issue 10).
+
+## IN PROGRESS
+### B3 - Memo system + Department contract (started 10 Nov 2026) - steps 1-3 recorded; resume at step 4 BUILD if this session stopped
+
+#### Step 1 RESEARCH (11 dated sources; E = measured evidence, O = opinion / practice / official guidance)
+1. E - Cemri et al., "Why Do Multi-Agent LLM Systems Fail?" (MAST), arXiv 2503.13657, 17 Mar 2025 (v3 26 Oct 2025, NeurIPS 2025): 1,600+ annotated
+   traces, 7 frameworks, 14 failure modes. Largest: step repetition 15.7%, reasoning-action mismatch 13.2%, unaware of termination conditions 12.4%,
+   disobey task specification 11.8%; verification failures together 23.5%; "ignored other agent's input" 1.9%, "fail to ask for clarification" 6.8%.
+   Better role prompts gave +9.4%, an added verification step +15.6%, and the authors say prompt fixes are inconsistent and the cause is
+   organisational design, not the model. -> the six steps are a state machine in CODE with a proof per step; nothing relies on a prompt saying "follow the steps".
+2. E - Wang et al., "The Unreliable Progress Bar", arXiv 2609.08589, 8 Sep 2026: models report their own task progress unreliably while work is under
+   way; "frameworks should not control task flow on the strength of the model's state reports alone". -> a memo or a step changes state only on
+   evidence that code observed (ids returned by the store, a cost counter, a ledger row), never on a claim.
+3. E - Wang, Goyal, Chandrasekharan, Sundaram, "Facts Without Rules: Boundary Metadata Collapse in Multi-Agent LLM Handoffs", arXiv 2608.29028,
+   29 Aug 2026: a compressed handoff keeps the facts and loses the rules about how they may be used (boundary survival 0.80 -> 0.57 at a 25-word
+   budget while facts stay near ceiling); vague boundary wording leaked in 73% / 50% of cases, explicit constraints under 15%, a typed audience
+   allowlist nearly zero. -> a memo carries a typed audience list enforced by code on read and a `constraints` list that is never shortened.
+4. E - Dubey, "Real-Time Detection and Repair of LLM Agent Failures", arXiv 2608.02464, 3 Aug 2026 (2,823 episodes): a deterministic verification
+   layer (recompute stated totals from tool results, check required calls) caught 60% of failures, 96% with a coverage check, 0 false positives;
+   roll back + re-run recovered 45% vs 16%. -> the runner recomputes cost and counts itself and runs a coverage check: every inbound memo that was
+   loaded must be dispositioned.
+5. E - Dennis et al., "In-Context Prompting Obsoletes Agent Orchestration for Procedural Tasks", arXiv 2604.27891, 30 Apr 2026: an external
+   orchestrator graph failed 9-24% of conversations against 0.5-11.5% for one prompt holding the whole procedure. -> departments are code wrappers;
+   the organisation adds NO model hop; knowledge goes into the existing call's context (and Rs 0).
+6. O/official - Anthropic, "How we built our multi-agent research system", 13 Jun 2025: a delegated task needs an objective, an output format,
+   tool guidance and clear boundaries; multi-agent runs cost about 15x a chat; resume from a checkpoint instead of restarting; pass artifacts by
+   reference. -> every asking memo needs `subject` + `done_when` + `constraints`; bodies are small and link to artifacts; each run leaves a durable row at start.
+7. O/official - PagerDuty escalation policy docs (read 10 Nov 2026): not acknowledged inside the timeout -> next level; acknowledging halts
+   escalation but does not resolve; a policy repeats a bounded number of times (9) and then stops. -> two clocks per memo (acknowledge, resolve),
+   a ladder as data, bounded owner reminders.
+8. O/official - A2A Protocol specification 1.0.0 (a2a-protocol.org, read 10 Nov 2026): task states submitted / working / input-required /
+   auth-required / completed / failed / canceled / rejected; a task in a terminal state accepts no further message; the sender's message id is used
+   to detect duplicates. -> memo statuses and legal moves are data; a terminal memo is immutable; a recurrence is a new, linked memo.
+9. O/practice - Richardson, "Transactional outbox" (microservices.io, read 10 Nov 2026): a relay can publish the same message twice, so the
+   consumer must be idempotent. -> a Sheet has no transaction, so the memo id is the hash of (type, sender, audience, dedupe key): writing it twice is a no-op.
+10. E - Yin et al., "From Reflection to Co-Evolution: Self-Evolving Agents with Locally Verified Memory" (Anchor), arXiv 2611.10382, 7 Nov 2026:
+    most self-written lessons barely change a decision and some reinforce the wrong action; admitting only verified ones gave up to +19.9% success
+    with 41% fewer stored memories. And E - Asadolahi et al., "Memory Reward Inflation in Self-Improving LLM Agents", arXiv 2608.00017, 29 Jun 2026:
+    self-graded memories inflate and a judge with correlated errors cannot fix it. -> a takeaway cannot score itself, is built on measured outcomes,
+    enters the Palace only as `proposed`, and only when it is new (a confirmation is counted, not stored again).
+11. E (numbers from secondary summaries, not re-checked against the paper) - Hong et al., MetaGPT, arXiv 2308.00352 (2023, ICLR 2024): structured
+    documents and subscriptions instead of free dialogue raised executability (reported 3.75 of 4). -> departments subscribe to memo types.
+Not established by any source found: a controlled study that isolates typed schema validation of handoffs (only vendor claims exist); and what SLA
+lengths are best for an automated content organisation - the hours below are a design choice taken from the master spec, to be tuned by D1 later.
+
+#### Step 2 CREATIVITY (3 designs; scores 1-5: breakout impact / enforceability / cost / reliability / owner effort)
+- A "Spec-literal": a Memos tab with a JSON body, `write / ack / resolve`, a watchdog that flips overdue rows to escalated, a runner that calls six
+  functions in order. 2/2/5/3/5 = 17. Weak: "the step ran" is proven only by the call; a re-run duplicates memos; a takeaway can be boilerplate;
+  nothing stops production from calling the old module directly; a raise after the upload step could cause a second upload on the retry.
+- B "Research stack": typed schemas, statuses and moves as data, two clocks + bounded ladder, hashed idempotent ids, deterministic verification
+  with a coverage check, delegation fields, boundary fields, takeaways gated by measurement. 3/4/5/4/5 = 21. Weak: still a wrapper production can
+  walk around; "a takeaway every run" floods the Palace; escalation would wait on departments that do not exist yet.
+- C "The receipt chain" (ORIGINAL, on B's mechanics):
+  1. Receipts, not claims: the proof of each step is assembled by the runner from what code observed and hash-chained in order; a run is complete
+     only with all six links; the gate re-computes the chain.
+  2. Never lose paid or irreversible work (my own rule, from reading the upload path): before ACT the runner is strict (it raises before any money);
+     after ACT a failed step becomes a recorded BREACH and the result of ACT is still returned - the gate, not an exception, then holds the video.
+  3. The episode gate judges the organisation: HARD checks `dept_contract` (script stage, before picture money) and `takeaways_written` (final stage,
+     before upload).
+  4. Escalation never waits on a department that cannot act: the ladder department -> Council -> owner skips every holder that has no wired entry
+     point, computed from the registry, so the Council is skipped until B6 wires it and joins by itself afterwards.
+  5. An honest registry: a department either names real call sites that run under the runner (verified by reading the code) or is listed as
+     pending with its batch; the pending list can only shrink and SYSTEM.md prints it.
+  6. Measured takeaways with a novelty gate: built from the run's measured outcomes against the department's own history; only a deviation or a
+     failure is proposed to the Palace; a confirmation is counted. Model-written lessons join in B6 / B8 through the same validator.
+  7. Boundaries travel verbatim: audience allowlist enforced on read, constraints never shortened (too long = refused on write), ONE render function.
+  8. Two clocks plus attempts: a third failed attempt escalates at once; a terminal memo is immutable; a recurrence opens a linked successor.
+  9. One tap at the one model doorway (`models.ask`): counts a run's model calls and, for a department in "prompt" mode, puts the playbook into the
+     cached layer of the system prompt and proves it was there. B3 wraps the real departments in "brief" mode (behaviour unchanged, as the plan
+     orders); B6 flips the creative ones to "prompt" in the registry.
+  4/5/5/4/5 = 23.
+- DECISION: C.
+
+#### Step 3 DESIGN MEMO
+- Decision: `whatifs/org/schemas.py` (memo types, bodies, SLA clocks, statuses and moves as data; real JSON Schema output; a small validator, no
+  new dependency), `whatifs/org/memos.py` (write / inbox / ack / start / resolve / reject / escalate / watchdog / render), `whatifs/org/registry.py`
+  (15 departments: mission, wrapped modules, cadence, levers, monthly thinking cap, subscriptions, owned checks, wired entry points or pending batch),
+  `whatifs/org/runner.py` (`run` = strict six steps; `work` = the wrapper for existing production call sites). Tabs appended: `Memos`, `Sessions`,
+  `Takeaways`, `Org_Audit` (`Tickets` and `Lever_Changes` arrive with the Execution Engine in B4; a ticket is already a validated memo type).
+- Wrapped in B3 (behaviour unchanged; 9 call sites in `whatifs/episode.py`, 1 in `whatifs/cli.py`): D4 write, D7 voice, D5 package, D6 plan,
+  D8 script gate, D6 assets, D6 render, D8 final gate, D9 publish; D10 daily learning. The SLA watchdog runs on every tick.
+  Pending by plan: D0, D1 (B9), D2, D3 (B5), D11, D12 (B4 / B7), Council (B6), Librarian (B8).
+- Memo traffic that is real after B3: problem memos (a department run that crashed -> D12; a failed contract check -> the department that owns the
+  check), resolved by code when the same check passes again, the owner waives it or the episode is closed; takeaways from every run.
+- EXECUTE in B3: the step always runs and reads the department's open tickets; with no engine registered a ticket is escalated at once with the
+  reason (never left as text). B4 registers `execute.apply`.
+- Money: Rs 0 (no model call is added). Monthly thinking caps per department are data now and enforced by the runner for runs that declare
+  `budget="org"` (P0 continues, P1 / P2 wait - master spec section 9); the paid organisation calls themselves arrive in B5 / B6.
+- Sheet traffic per run: about 4 reads and 4 writes; 9 runs per episode.
+- Rejected: a JSON Schema library (new dependency for a subset we can validate in 60 lines); wrapping inside `room.py` / `publish.py` themselves
+  (every test and side path would change behaviour at once - call sites first, the rest per department batch); a model-written takeaway per run
+  now (about Rs 0.5 each and exactly the unverified self-lesson sources 10 warn about); raising on a bookkeeping error after ACT (double-upload risk);
+  one owner message per stuck memo (noise - one grouped message, bounded reminders).
+- Enforcement plan and tests: steps 5-6 (each rule both ways; the acceptance tests of the plan: a run without takeaway / without playbook
+  injection / with an invalid memo FAILS; SLA escalation).
+- Palace seed items: `whatifs/org/seed/build.json`, keys `b3.*`, written in step 4 once the code they point at exists (the write gate refuses a
+  reference to code that is not there).
 
 ## DONE
 ### B2 - Knowledge Palace core (10 Nov 2026) - ACCEPTED (all 7 loop steps recorded below)
