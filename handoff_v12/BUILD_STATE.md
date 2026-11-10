@@ -18,9 +18,15 @@ Updated: 11 Nov 2026 (B5 ACCEPTED). Branch: `v12-organisation` (never main). Res
    version of a library, change `requirements.txt` AND the workflows in one commit and re-verify the reference frames (`tests/golden_frames.py`).
 
 ## NEXT
-**B6 - Creative departments + Council** (01 sections 2 (D4-D7, C), 3, 5, 7 `council_held`, `canon_in_brief`, `palace_injected`, `palace_cited`; 03 "B6").
-Full seven-step MANDATORY BATCH LOOP. Effort: High.
-What B5 leaves ready for B6 (use it, do not rebuild it):
+**B6 is SPLIT (token discipline rule 6, decided 11 Nov 2026 at the start of B6): B6 has two large halves that each need the full seven-step loop,
+the 40-minute suite, the sweep and a GitHub run - one window cannot hold both.**
+- **B6a - Creative departments (D4/D5/D6/D7)** - IN PROGRESS (this session): the Palace playbook goes INTO the creative model prompts and is proven
+  there (`palace_injected`), the models cite the items they used and code verifies each citation (`palace_cited`), world canon (the show's living
+  bible) is written after every episode and reaches the next writer brief (`canon_in_brief`), creative runs emit creative memos to the Council.
+- **B6b - The Council (C)** - next: gathers open research / assessment / creative / owner / performance / problem memos; diverge -> blind
+  cross-family jury -> converge -> decision memo + tickets; owner cards only above thresholds; check `council_held`. Effort: High.
+Original B6 scope: 01 sections 2 (D4-D7, C), 3, 5, 7 `council_held`, `canon_in_brief`, `palace_injected`, `palace_cited`; 03 "B6".
+What B5 leaves ready for B6b (use it, do not rebuild it):
 - Assessment memos (D3 -> C) already carry everything a decision needs: the verdict (accept / test / reject, computed by code), six scores, the
   family checklist, the research memo's evidence, its kind and `palace_ref` (a re-validation names the Palace item), and the pre-registered
   predictions (in the research memo body: action index, metric, direction, horizon). They wait SILENTLY at the owner's level until C is wired: the
@@ -39,6 +45,50 @@ What B5 leaves ready for B6 (use it, do not rebuild it):
 - Acceptance of B6 includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
+### B6a - Creative departments D4/D5/D6/D7 (11 Nov 2026) - IN PROGRESS
+#### Step 1 RESEARCH (13 sources, 12 of them dated; E = measured evidence, O = opinion / practice / vendor documentation)
+1. E - Wallat, Heuss, de Rijke, Anand, "Correctness is not Faithfulness in RAG Attributions", arXiv 2412.18004 (Dec 2024; ICTIR 2025),
+   https://arxiv.org/abs/2412.18004 : a citation can be CORRECT (the source supports the claim) while the model never used it ("post-rationalised");
+   up to 57% of citations unfaithful in their adversarial tests (Command-R+). -> a self-reported `applied_items` list proves nothing by itself.
+2. E - Saxena et al., "Generation-Time vs. Post-hoc Citation", arXiv 2509.21557 (Sep 2025; NeurIPS 2025 workshop), https://arxiv.org/abs/2509.21557 :
+   citing while generating (G-Cite) wins on precision, citing afterwards (P-Cite) on coverage; the quality of what was retrieved drives attribution
+   quality in both. -> cite at generation time (precision) AND check afterwards by code (coverage); keep the injected block small and relevant.
+3. O (vendor) - Anthropic, "Introducing Citations on the Anthropic API" (23 Jan 2025), https://www.anthropic.com/news/introducing-citations-api :
+   citations point at quoted spans of the given documents, which code can match back; internal evals: up to 15% better recall than custom
+   prompting. -> a citation should carry a QUOTE that code can find, not only an id.
+4. E - Liu et al., "Lost in the Middle", TACL 12 (2024) 157-173, https://aclanthology.org/2024.tacl-1.9/ : U-shaped accuracy - information at the
+   start or end of the context is used, in the middle it is lost. -> the playbook and the canon go at the START (cached system layer), not mid-brief.
+5. E - Hong, Troynikov, Huber (Chroma), "Context Rot" (14 Jul 2025), https://research.trychroma.com/context-rot : 18 models get less reliable as
+   input grows, and distractors hurt more as length grows. -> bounded blocks; canon filtered to what is relevant for THIS case, not the whole bible.
+6. E - "How Many Instructions Can LLMs Follow at Once?" (IFScale), arXiv 2507.11538 (Jul 2025; NeurIPS 2025), https://arxiv.org/abs/2507.11538 :
+   the best frontier models reach about 68% at 500 simultaneous instructions; earlier instructions are favoured. -> caps on playbook size stay; limits first.
+7. E - Li et al., "Measuring and Controlling Instruction (In)Stability in Language Model Dialogs", arXiv 2402.10962 (Feb 2024; COLM 2024),
+   https://arxiv.org/abs/2402.10962 : significant persona drift within 8 rounds. -> character canon must be re-stated in EVERY creative call of the
+   run (the tap re-injects per call), not once at the top of a long chain.
+8. E - ConStory-Bench, arXiv 2603.05890 (Mar 2026; ACL Findings 2026), https://arxiv.org/abs/2603.05890 : in long generated stories consistency
+   errors are most common in FACTUAL and TEMPORAL dimensions, mostly mid-narrative; an automated checker grounds each judgment in explicit text.
+   -> canon items must be concrete facts (who won, which prototype number, what was promised next) so code can check them.
+9. E - "Finding Flawed Fictions" (FlawedFictions), arXiv 2504.11900 (Apr 2025; COLM 2025), https://arxiv.org/abs/2504.11900 :
+   LLM-written stories carry 50-100% more plot holes than human originals; detection gets worse with length. -> continuity must be kept by code
+   records, not trusted to the model's memory.
+10. E - Park et al., "Generative Agents", UIST 2023, arXiv 2304.03442, https://arxiv.org/abs/2304.03442 : ablations - observation (memory),
+    reflection and planning EACH contribute critically to believability. -> an episode record (memory) + a distilled canon line (reflection) both.
+11. E - Doshi & Hauser, "Generative AI enhances individual creativity but reduces the collective diversity of novel content", Science Advances
+    10(28), 12 Jul 2024, https://doi.org/10.1126/sciadv.adn5290 : AI ideas made single stories better but the set MORE ALIKE. -> creative memos must
+    be checked for sameness against earlier ones by code; the Council (B6b) must see diverse options, not 10 copies.
+12. E (survey) - University of Essex, parasocial study (23 May 2024), https://www.essex.ac.uk/news/2024/05/23/watching-youtube-cheers-people-up-more-than-meeting-casual-friends :
+    52% of 1,080+ participants report a strong parasocial relationship with a YouTuber; classic TV research: bonds grow with REPEATED exposure and
+    self-address. Backed by our own 9 Nov concept research (04 digest: winners share recurring characters and lore). -> canon is a breakout lever.
+13. O (practice) - Final Draft, "10 Easy Steps to Developing Your TV Show Bible" (blog, undated),
+    https://www.finaldraft.com/blog/10-easy-steps-to-developing-your-tv-show-bible , and Fiveable "running gags" (TV studies glossary): the bible is the
+    archival record every incoming writer reads; running gags come back across the series and change a little each time (too much change and the
+    audience stops recognising them). -> the canon keeps each gag's history; the brief asks for a VARIATION, never a repeat.
+Plus official pricing: Anthropic prompt caching (docs, read 11 Nov 2026), https://platform.claude.com/docs/en/build-with-claude/prompt-caching :
+cache reads 0.1x input (0.05x / 0.025x on the newest models), writes 1.25x -> a playbook in the cached system layer costs almost nothing per call.
+Owner's words re-read for B6a: 02 #2 ("the writer room also should learn from researcher and R&D to enhance their performance everytime"), #6 (every
+output a BREAKOUT), #8 (personify, attachment, characters to love), #12/#14/#15 (hard-enforced to the line, executed at code level), B (characters to
+fall in love with, return factor, no slop, no repetition).
+
 ### B5 - R&D + Review Board (11 Nov 2026) - ACCEPTED (final code commit a1c5204 GREEN in GitHub run 67; sweep 58 of 58 green)
 
 #### Step 1 RESEARCH (12 dated sources; E = measured evidence, O = opinion / practice / vendor documentation)
