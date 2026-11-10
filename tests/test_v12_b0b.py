@@ -37,6 +37,23 @@ def test_the_test_run_itself_applies_the_rule(monkeypatch):
     finally:
         C._SKIPPED.clear(); C._SKIPPED.extend(kept)
 
+def test_a_failed_test_leaves_the_episode_ids_that_reproduce_it():
+    import tests.conftest as C
+    class Rep:
+        skipped = False; nodeid = "tests/test_integration.py::test_full"; longrepr = "boom"
+        def __init__(self, failed, out=""): self.failed = failed; self.capstdout = out; self.capstderr = ""
+    kept = list(C._FAILED_IDS); C._FAILED_IDS.clear()
+    try:
+        C.pytest_runtest_logreport(Rep(False, "[INFO] setup EP202611101356: contract script: 22/22 pass")); assert C._FAILED_IDS == []          # a passing test leaves nothing
+        C.pytest_runtest_logreport(Rep(True, "no id here")); assert C._FAILED_IDS == []
+        log = "[INFO] setup EP202611101356: draw\n[WARN] setup EP202611101356: contract final: 18/19 pass; FAILED: aliveness\n[INFO] x EP202611101401: y"
+        C.pytest_runtest_logreport(Rep(True, log)); C.pytest_runtest_logreport(Rep(True, log))
+        assert C._FAILED_IDS == ["tests/test_integration.py::test_full: EP202611101356, EP202611101401"]                 # once, every id it used
+        red = CI.unit("FAILED tests/test_integration.py::test_full - assert 0\nEPISODE-IDS " + C._FAILED_IDS[0] + "\n1 failed, 5 passed in 9.00s\n", 1)
+        assert ("error", "Unit tests", "EPISODE-IDS tests/test_integration.py::test_full: EP202611101356, EP202611101401") in red
+    finally:
+        C._FAILED_IDS.clear(); C._FAILED_IDS.extend(kept)
+
 def test_githubs_checks_run_strict_and_report_and_keep_the_real_exit_code():
     unit = _step("Unit tests"); reh = _step("Free rehearsal"); rep = _step("Repeat the unit tests")
     assert str(unit["env"]["WI_NO_SKIPS"]) == "1" and str(rep["env"]["WI_NO_SKIPS"]) == "1"
@@ -154,3 +171,45 @@ def test_sweep_refuses_a_work_folder_inside_the_repo_and_reports_a_dead_child(tm
     monkeypatch.setattr(SW.subprocess, "run", good_run); assert SW.child("EP209901010900", A, str(tmp_path / "w"))["outcome"] == "ok"
     def slow_run(cmd, **k): raise SW.subprocess.TimeoutExpired(cmd, 60)
     monkeypatch.setattr(SW.subprocess, "run", slow_run); assert SW.child("EP209901010900", A, str(tmp_path / "w"))["outcome"] == "timeout"
+
+# ------------------------------------------------------------------ no Settings cell that nothing reads
+def test_every_settings_cell_is_read_by_code_or_marked_not_active():
+    from whatifs import truth as T, core
+    T.reset(); assert T.settings_issues() == []
+    unread = set(T.unread_settings()); assert unread == set(T.UNREAD_SETTINGS) and len(unread) <= T.UNREAD_SETTINGS_MAX <= 8          # the list only shrinks
+    assert set(T.settings_cells()) == set(core.DEFAULTS)                                                                # the source reader sees every cell of the table
+    for k in unread: assert core.DEFAULTS[k][1].startswith(T.NOT_ACTIVE), k                                             # the Sheet and SYSTEM.md tell the truth meanwhile
+    assert not [k for k, v in core.DEFAULTS.items() if v[1].startswith(T.NOT_ACTIVE) and k not in unread]
+    for k in ("PRICE_OPUS_IN", "ATMOS_FOG_ON", "EFFORT_JUDGE", "REEL3_DELAY_MIN", "FPS", "VOICE", "ORG_ON"): assert k in core.DEFAULTS and k not in unread      # names the code BUILDS count as read
+    doc = open(os.path.join(ROOT, "docs", "CURRENT", "SYSTEM.md"), encoding="utf-8").read()
+    assert all(f"  - `{k}`: " in doc for k in unread) and f"{len(unread)} cells are read by NO code" in doc              # the generated doc names each one
+
+def _tree(tmp_path, cells, code, extra=None):
+    root = tmp_path / "repo"; (root / "whatifs").mkdir(parents=True, exist_ok=True)
+    (root / "whatifs" / "core.py").write_text("DEFAULTS = {\n" + "".join(f' "{k}": ("{d}", "{n}"),\n' for k, (d, n) in cells.items()) + "}\n", encoding="utf-8")
+    (root / "whatifs" / "work.py").write_text(code, encoding="utf-8")
+    for rel, text in (extra or {}).items():
+        p = root / rel; p.parent.mkdir(parents=True, exist_ok=True); p.write_text(text, encoding="utf-8")
+    return str(root)
+
+def test_a_new_unread_cell_a_revived_cell_an_unmarked_note_and_a_grown_list_all_fail(tmp_path, monkeypatch):
+    from whatifs import truth as T
+    cells = {"USED_ONE": ("1", "a note"), "BUILT_A_ON": ("TRUE", "a layer switch"), "ON_DASH": ("x", "shown on the dashboard"), "GHOST_CELL": ("TRUE", "promises a behaviour; see USED_ONE")}
+    code = 'def f(S, k):\n    """GHOST_CELL is only named in this docstring."""\n    # GHOST_CELL in a comment\n    return S("USED_ONE"), S(f"BUILT_{k}_ON")\n'
+    root = _tree(tmp_path, cells, code, {"mission_control/worker.js": "const v = settings.ON_DASH;"})
+    monkeypatch.setattr(T, "UNREAD_SETTINGS", {}); T.reset()
+    assert T.unread_settings(root) == ["GHOST_CELL"]                                                                    # a docstring, a comment and another cell's note are not a read
+    bad = T.settings_issues(root); assert len(bad) == 1 and "GHOST_CELL is read by no code" in bad[0] and bad[0].startswith("whatifs/core.py:5:")
+    assert any("GHOST_CELL is read by no code" in b for b in T.issues(root))                                            # Plan Guard and check docs_current run this list
+    monkeypatch.setattr(T, "UNREAD_SETTINGS", {"GHOST_CELL": "nothing reads it"}); T.reset()
+    bad = T.settings_issues(root); assert len(bad) == 1 and "must start with 'NOT ACTIVE'" in bad[0]                    # listed, but the note still promises the behaviour
+    cells["GHOST_CELL"] = ("TRUE", "NOT ACTIVE (no code reads this cell): nothing happens"); root = _tree(tmp_path, cells, code); T.reset()
+    assert T.settings_issues(root) == []                                                                                # listed and honest: accepted
+    monkeypatch.setattr(T, "UNREAD_SETTINGS_MAX", 0); assert any("may only shrink" in b for b in T.settings_issues(root)); monkeypatch.setattr(T, "UNREAD_SETTINGS_MAX", 8)
+    root = _tree(tmp_path, cells, code + 'def g(S): return S("GHOST_CELL")\n'); T.reset()
+    bad = T.settings_issues(root); assert len(bad) == 1 and "GHOST_CELL is read by code now - delete its UNREAD_SETTINGS entry" in bad[0]      # wired: the entry must go
+    monkeypatch.setattr(T, "UNREAD_SETTINGS", {}); T.reset()
+    bad = T.settings_issues(root); assert len(bad) == 1 and "is read by code but its note says 'NOT ACTIVE'" in bad[0]
+    monkeypatch.setattr(T, "UNREAD_SETTINGS", {"LONG_GONE": "x"}); cells["GHOST_CELL"] = ("TRUE", "a real note"); root = _tree(tmp_path, cells, code + 'def g(S): return S("GHOST_CELL")\n'); T.reset()
+    bad = T.settings_issues(root); assert len(bad) == 1 and "LONG_GONE, which is not a Settings cell any more" in bad[0]
+    T.reset()

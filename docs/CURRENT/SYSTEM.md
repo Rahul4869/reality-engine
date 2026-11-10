@@ -50,6 +50,15 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
   - `old_version_tag`: current docs describe what the code does now, without the history of versions 7 to 10.
   - `old_long_cadence`: the plan is 4 long videos a month, one a week (STANDARD_MAX_LONG_PER_MONTH, PUBLISH_DAYS); lines for viewers say 'every week'.
   - `no_kling_statement`: every long video has animated Kling scenes (ANIM_SHOTS) plus the ffmpeg/OpenCV render.
+- Every Settings cell must be read by code. 8 cells are read by NO code (their notes start with 'NOT ACTIVE'); changing one changes nothing. The list may only shrink (limit 8); a new unread cell fails Plan Guard, the tests and check `docs_current`:
+  - `CACHE_ALIGN_EFFORT`: each call keeps the effort its task is routed with; two efforts on one cached prefix cost one extra cache write, logged on every run.
+  - `ROOM_VALUE_ON`: the blind test of the writers' room against a single prompt was never built; tab Room_Value stays empty.
+  - `ROOM_VALUE_EVERY`: belongs to the room value test, which was never built.
+  - `ROOM_MIN_WINRATE`: belongs to the room value test, which was never built.
+  - `RUNTIME_HARD_MAX_SEC`: the ceiling the code enforces is RUNTIME_MAX_SEC (sampler and governor).
+  - `PKG_VARIANT_C_IMAGE`: the third packaging pair never gets an image of its own.
+  - `VIEWER_NAME_ON_SCREEN`: no code puts a viewer's name on screen, so FALSE is what happens; TRUE would change nothing.
+  - `PREMISE_BENCH_MAIL_MONTH`: no code writes or reads this bookkeeping cell.
 
 ## 5. Contract checks (`whatifs/contract.py` FEATURES)
 | check | stage | what it guarantees |

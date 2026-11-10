@@ -24,10 +24,16 @@ def fresh_store(tmp_path):
     core._settings_cache = None
 
 _SKIPPED = []          # v12 B0b: every skipped test of the run, for the no-skip rule (tests/skip_policy.py)
+_FAILED_IDS = []       # v12 B0b: the episode ids a FAILED test printed. Some tests make time-based ids and the fake pipeline is seeded by the id, so the id reproduces the failure (tools/sweep.py)
 def pytest_runtest_logreport(report):
     if report.skipped and not hasattr(report, "wasxfail"):
         why = report.longrepr[2] if isinstance(report.longrepr, tuple) and len(report.longrepr) == 3 else report.longrepr
         _SKIPPED.append(f"{report.nodeid}: {why}")
+    if getattr(report, "failed", False):
+        import re
+        ids = sorted(set(re.findall(r"EP\d{12}", str(getattr(report, "capstdout", "") or "") + str(getattr(report, "capstderr", "") or ""))))
+        line = f"{report.nodeid}: {', '.join(ids[:6])}"
+        if ids and line not in _FAILED_IDS: _FAILED_IDS.append(line)
 
 def _no_skip_verdict(session):
     from tests.skip_policy import verdict
@@ -37,6 +43,7 @@ def _no_skip_verdict(session):
 
 def pytest_sessionfinish(session, exitstatus):
     shutil.rmtree(_TMP, ignore_errors=True)
+    for line in _FAILED_IDS: print("\nEPISODE-IDS " + line, flush=True)          # read by tools/ci_report.py: the ids go onto the public run page
     _no_skip_verdict(session)
 
 @pytest.fixture

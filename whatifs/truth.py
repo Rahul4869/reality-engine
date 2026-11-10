@@ -180,11 +180,113 @@ def live_prompt_issues():
     except Exception:
         return []
 
+# ---------------- Settings cells that no code reads (found by the baseline re-check, 10 Nov 2026)
+# A cell nothing reads is a promise nothing keeps: the Sheet and SYSTEM.md say a behaviour exists and no line of code executes it. Every cell of the
+# DEFAULTS table must be named by code outside that table (as a word in a string, or by a name the code builds, e.g. f"PRICE_{F}_IN").
+# The cells below were unread in every version ever pushed. key -> what is TRUE today. The list can only shrink: wire the cell and delete its entry,
+# or retire it. Meanwhile its note in the table must start with NOT_ACTIVE. A NEW unread cell fails Plan Guard, the tests and check docs_current.
+NOT_ACTIVE = "NOT ACTIVE"
+UNREAD_SETTINGS = {
+    "CACHE_ALIGN_EFFORT": "each call keeps the effort its task is routed with; two efforts on one cached prefix cost one extra cache write, logged on every run",
+    "ROOM_VALUE_ON": "the blind test of the writers' room against a single prompt was never built; tab Room_Value stays empty",
+    "ROOM_VALUE_EVERY": "belongs to the room value test, which was never built",
+    "ROOM_MIN_WINRATE": "belongs to the room value test, which was never built",
+    "RUNTIME_HARD_MAX_SEC": "the ceiling the code enforces is RUNTIME_MAX_SEC (sampler and governor)",
+    "PKG_VARIANT_C_IMAGE": "the third packaging pair never gets an image of its own",
+    "VIEWER_NAME_ON_SCREEN": "no code puts a viewer's name on screen, so FALSE is what happens; TRUE would change nothing",
+    "PREMISE_BENCH_MAIL_MONTH": "no code writes or reads this bookkeeping cell",
+}
+UNREAD_SETTINGS_MAX = 8          # ratchet: lower it with every cell that is wired or retired, never raise it
+_WORD = re.compile(r"\b[A-Z][A-Z0-9_]{2,}\b")
+_WILD = "[A-Z0-9_]+"
+OTHER_READERS = ("mission_control", ".github/workflows")          # the dashboard Worker and the workflows may name a cell too
+
+def _defaults_node(tree, name="DEFAULTS"):
+    for n in getattr(tree, "body", []):
+        if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == name for t in n.targets) and isinstance(n.value, ast.Dict): return n.value
+    return None
+_TABLES = {"whatifs/core.py": "DEFAULTS", "whatifs/truth.py": "UNREAD_SETTINGS"}          # the two tables that LIST cells: being listed is not being read
+
+def settings_cells(root=None):
+    """{key: (line, default, note)} of the DEFAULTS table in whatifs/core.py, read from the source (no import: Plan Guard runs without packages)."""
+    root = root or ROOT
+    try: node = _defaults_node(ast.parse(_read(os.path.join(root, "whatifs", "core.py"))))
+    except (OSError, SyntaxError): return {}
+    out = {}
+    for k, v in zip(node.keys, node.values) if node is not None else ():
+        if not (isinstance(k, ast.Constant) and isinstance(k.value, str)): continue
+        try: val = ast.literal_eval(v)
+        except Exception: val = ()
+        val = val if isinstance(val, tuple) else ()
+        out[k.value] = (k.lineno, str(val[0]) if val else "", str(val[1]) if len(val) > 1 else "")
+    return out
+
+def _template(parts):
+    """A regex for a name the code builds from constant pieces and inserted values, or None when the constant pieces are not name-like or too short."""
+    const = "".join(p for p in parts if p is not None)
+    if None not in parts or len(const) < 5 or not re.fullmatch(r"[A-Z0-9_]+", const): return None
+    return "".join(_WILD if p is None else re.escape(p) for p in parts)
+
+def _flat_add(n):
+    return _flat_add(n.left) + _flat_add(n.right) if isinstance(n, ast.BinOp) and isinstance(n.op, ast.Add) else [n]
+
+def named_in_code(root=None):
+    """(words, templates): every upper-case name in a string of the code (docstrings, comments and the DEFAULTS table itself do not count) and a
+    regex for every name the code builds."""
+    root = root or ROOT; words, templates = set(), set()
+    for p in code_files(root):
+        try: tree = ast.parse(_read(p))
+        except SyntaxError: continue
+        skip = set()
+        table = _defaults_node(tree, _TABLES[_rel(root, p)]) if _rel(root, p) in _TABLES else None
+        if table is not None: skip = {id(x) for x in ast.walk(table)}
+        for n in ast.walk(tree):
+            if isinstance(n, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)) and _is_doc(n): skip.add(id(n.body[0].value))
+        for n in ast.walk(tree):
+            if id(n) in skip: continue
+            if isinstance(n, ast.Constant) and isinstance(n.value, str): words.update(_WORD.findall(n.value))
+            elif isinstance(n, ast.JoinedStr):
+                t = _template([v.value if isinstance(v, ast.Constant) and isinstance(v.value, str) else None for v in n.values])
+                if t: templates.add(t)
+            elif isinstance(n, ast.BinOp) and isinstance(n.op, ast.Add):
+                t = _template([x.value if isinstance(x, ast.Constant) and isinstance(x.value, str) else None for x in _flat_add(n)])
+                if t: templates.add(t)
+    for d in OTHER_READERS:
+        for dp, _, fn in os.walk(os.path.join(root, *d.split("/"))):
+            for f in sorted(fn):
+                if f.endswith((".js", ".mjs", ".html", ".yml")): words.update(_WORD.findall(_read(os.path.join(dp, f))))
+    return words, templates
+
+def unread_settings(root=None):
+    """Settings cells that no code names: nothing can be reading them."""
+    root = root or ROOT
+    if ("unread", root) not in _CACHE:
+        words, templates = named_in_code(root); pats = [re.compile(t) for t in sorted(templates)]
+        _CACHE[("unread", root)] = [k for k in settings_cells(root) if k not in words and not any(p.fullmatch(k) for p in pats)]
+    return list(_CACHE[("unread", root)])
+
+def settings_issues(root=None):
+    """A new unread cell, a listed cell that is read again or gone, a listed cell whose note does not say NOT ACTIVE, or a list that grew."""
+    root = root or ROOT; out = []
+    cells = settings_cells(root)
+    if not cells: return []          # a tree without a settings table (a test fixture) has nothing to check; a test proves the real table is read in full
+    unread = set(unread_settings(root))
+    for k in sorted(unread - set(UNREAD_SETTINGS)):
+        out.append(f"whatifs/core.py:{cells[k][0]}: Settings cell {k} is read by no code - wire it, or remove it; hard enforcement or it does not exist")
+    for k in sorted(UNREAD_SETTINGS):
+        if k not in cells: out.append(f"whatifs/truth.py: UNREAD_SETTINGS lists {k}, which is not a Settings cell any more - delete the entry")
+        elif k not in unread: out.append(f"whatifs/truth.py: Settings cell {k} is read by code now - delete its UNREAD_SETTINGS entry and the NOT ACTIVE mark in its note")
+        elif not cells[k][2].startswith(NOT_ACTIVE): out.append(f"whatifs/core.py:{cells[k][0]}: the note of the unread cell {k} must start with '{NOT_ACTIVE}'")
+    for k in sorted(set(cells) - unread):
+        if cells[k][2].startswith(NOT_ACTIVE) and k not in UNREAD_SETTINGS: out.append(f"whatifs/core.py:{cells[k][0]}: {k} is read by code but its note says '{NOT_ACTIVE}'")
+    if len(UNREAD_SETTINGS) > UNREAD_SETTINGS_MAX: out.append(f"whatifs/truth.py: UNREAD_SETTINGS grew to {len(UNREAD_SETTINGS)} (limit {UNREAD_SETTINGS_MAX}): the list may only shrink")
+    return out
+
 def issues(root=None, runtime=False):
     """Everything that would make a new chat (or a model prompt) act on a retired concept. Empty list = one current truth."""
     root = root or ROOT
     out = [f"{f['file']}:{f['line']}: retired '{f['rule']}' ({f['text']}) -> {f['truth']}" for f in scan(root)]
-    if ("layout", root) not in _CACHE: _CACHE[("layout", root)] = docstring_issues(root) + layout_issues(root)
+    if ("layout", root) not in _CACHE: _CACHE[("layout", root)] = docstring_issues(root) + layout_issues(root) + settings_issues(root)
     out += _CACHE[("layout", root)]
     if runtime: out += live_prompt_issues()
     return out

@@ -212,6 +212,9 @@ def render():
     A("- Version labels and rule numbers inside code comments are history labels, not instructions.")
     A(f"- Retired concepts ({len(TRU.RETIRED)} rules). Naming one in a current doc, a module docstring or a prompt fails Plan Guard, the tests and check `docs_current`:")
     for r in TRU.RETIRED: A(f"  - `{r['id']}`: {r['truth']}.")
+    A(f"- Every Settings cell must be read by code. {len(TRU.UNREAD_SETTINGS)} cells are read by NO code (their notes start with '{TRU.NOT_ACTIVE}'); changing one changes nothing. "
+      f"The list may only shrink (limit {TRU.UNREAD_SETTINGS_MAX}); a new unread cell fails Plan Guard, the tests and check `docs_current`:")
+    for k, what in TRU.UNREAD_SETTINGS.items(): A(f"  - `{k}`: {what}.")
     A("")
     A("## 5. Contract checks (`whatifs/contract.py` FEATURES)")
     A("| check | stage | what it guarantees |")

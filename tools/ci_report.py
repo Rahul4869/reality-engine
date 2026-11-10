@@ -18,6 +18,7 @@ def unit(text, rc, cap=MAX_ERRORS):
     total = next((l for l in reversed(ls) if re.search(r"\b\d+ (passed|failed|errors?|skipped)\b", l)), "")
     if rc != 0:
         causes = [l for l in ls if l.startswith(("FAILED ", "ERROR "))] + [l.strip() for l in ls if l.strip().startswith("SKIPPED ")]
+        causes += [l for l in ls if l.startswith("EPISODE-IDS ")]          # the episode ids a failed test used (tests/conftest.py): they reproduce it
         if any(l.startswith("NO-SKIP RULE") for l in ls): causes.insert(0, next(l for l in ls if l.startswith("NO-SKIP RULE")))
         for l in causes[:cap]: out.append(("error", "Unit tests", l))
         if len(causes) > cap: out.append(("error", "Unit tests", f"... and {len(causes) - cap} more (the full list is in the job summary on the same page)"))
