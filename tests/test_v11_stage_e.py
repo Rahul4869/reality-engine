@@ -42,7 +42,9 @@ def test_scout_logs_new_models_and_raises_deprecation(monkeypatch, setting):
 
 def test_scout_uses_the_current_endpoints_only():
     src = open("whatifs/scout.py", encoding="utf-8").read()
-    assert "/api/v2/media/image-to-video/models/free" in src and '"/api/v2/data/' not in src and "x-api-key" in src and "Key {env('FAL_KEY')}" in src
+    from whatifs import scout as _SC                                    # v12 B1: judged from the CODE (base constant + the call), no longer from docstring text
+    assert _SC.AA.endswith("/api/v2") and '{AA}/media/image-to-video/models/free' in src
+    assert '"/api/v2/data/' not in src and "{AA}/data/" not in src and "x-api-key" in src and "Key {env('FAL_KEY')}" in src
 
 def test_scout_corrects_the_kling_price_from_fal(monkeypatch, setting):
     _quiet(monkeypatch); setting("SCOUT_WEEKDAY", "0"); setting("PRICE_KLING_USD", "0.42")
