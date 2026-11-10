@@ -2,8 +2,89 @@
 Updated: 10 Nov 2026 (end of B1 + B1b). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## NEXT
-**B2 - Knowledge Palace core** (01 section 3; 03 "B2"). Full seven-step MANDATORY BATCH LOOP. Effort: High.
-Start by ingesting `handoff_v12/palace_seed/B1.json` (8 seed items: 2 strategies, 3 techniques, 2 takeaways, 1 owner decision) - B2 defines the Palace schema and must load it.
+**B2 - Knowledge Palace core** is IN PROGRESS (steps 1-3 recorded below; resume at the first step not marked done in `git log -5`).
+
+## IN PROGRESS
+### B2 - Knowledge Palace core (10 Nov 2026)
+#### Step 1 RESEARCH (10 dated sources; E = measured evidence, O = opinion / practice / official guidance)
+1. E - Zhang et al., "Agentic Context Engineering" (ACE), arXiv 2510.04618, Oct 2025 (v3 Mar 2026, ICLR 2026): knowledge kept as itemised bullets
+   (id + helpful/harmful counters), changed only by small delta entries merged with NON-model logic; asking a model to rewrite the whole memory
+   collapses it into a vague summary. +10.6% on agent tasks, +8.6% finance, 86.9% lower adaptation latency. Limit: without a reliable outcome
+   signal the memory turns noisy or harmful. -> items, never a rewritten document; deterministic merges; outcome counters come from D10 only.
+2. E - Shen, Toyoda, Leung, "Revoked but Still Authoritative", arXiv 2609.08258, 8 Sep 2026: five memory systems that mark a contradicted fact
+   "invalid" but keep it; 9 scenarios x 9 models: NO system enforces the revocation by default - if the retrieval layer can see the revoked record it
+   is returned, ranks above its replacement and the agent acts on it. Fix that worked: a guard between agent and memory that withholds it.
+   -> the status filter runs in code BEFORE ranking; a retired / superseded / expired item can never reach a prompt, label or no label.
+3. E - Nakayashiki, "When Stale Constraints Go Unchecked", arXiv 2608.25553, 26 Aug 2026: 16 models; a consolidated memory whose source record was
+   later withdrawn still drove the decision in 77.3 / 74.7 / 74.7% of episodes; models checked where a memory came from in about 1 episode in 5; a
+   "freshness" cue did nothing; a rule that prefers memories stating a LIMIT recovered +89.3 points. -> (a) code, not the reader, invalidates items
+   derived from a withdrawn source; (b) limits get a reserved lane at the top of every playbook.
+4. E - Rasmussen et al., "Zep: a temporal knowledge graph architecture for agent memory", arXiv 2501.13956, Jan 2025: contradicted facts get an end
+   date instead of being deleted; 94.8% vs 93.4% on Deep Memory Retrieval; up to +18.5% accuracy and -90% latency on LongMemEval, mostly because the
+   context shrank from ~115,000 to ~1,600 tokens. -> keep history, serve a small current slice.
+5. E - Dash et al., "From Untrusted Input to Trusted Memory" (MPBench), arXiv 2606.04329, 3 Jun 2026: one hostile memory write has long-term effect;
+   4 write channels, 9 structural weaknesses; agents that write and read memory more eagerly are more exploitable; prompt-injection defences do not
+   cover it. -> a write gate: evidence required, the trust level is computed by code from the evidence type, viewer / web text never enters as an
+   accepted item, items are rendered to models as data.
+6. O/official - Anthropic, "Effective context engineering for AI agents", 29 Sep 2025: the smallest set of high-signal tokens; hybrid loading (a
+   small preloaded block + fetch the rest on demand). -> a bounded playbook is preloaded; full bodies are fetched by id only when needed.
+7. O/official - Anthropic prompt-caching docs (read 10 Nov 2026): a cache hit needs a 100% identical prefix; minimum cacheable length 512-4,096
+   tokens by model; cache reads cost 0.1x (0.05x on the newest Opus / Sonnet). -> the same Palace state must give a byte-identical playbook
+   (deterministic order, id = hash of the text), and it only changes when knowledge changes.
+8. O/practice - Consortium for Service Innovation, KCS v6 Practices Guide, technique 5.2 (article states): Work in Progress / Not Validated /
+   Validated / Archived; the life cycle is non-linear; an article is validated by being REUSED successfully; archive, never delete.
+   -> status life cycle with re-validation, promotion by evidence of use, nothing deleted.
+9. E/official - Google Sheets API limits (developers.google.com, read 10 Nov 2026): 300 requests a minute per project, 60 per user, 2 MB payload
+   advised; a cell holds 50,000 characters. -> the Sheet row is a small index that is enough to build a playbook in ONE read; long bodies live
+   outside the Sheet; writes are batched.
+10. E - "BM25 wins at scale" (2026 scaling study, as reported; primary id not verified): keyword ranking beats dense retrieval and agent search on
+   large piles, and at small sizes exact matching is enough. -> tag + keyword scoring in code (Rs 0, deterministic, no new dependency); an embedding
+   scorer can be plugged in later if the Palace outgrows it.
+Not established by any source found: that a rule placed first in a long prompt is obeyed more reliably than one placed last (the "lost in the
+middle" work is about retrieval). The lane order below is therefore a design choice backed by source 3, not by a placement study.
+
+#### Step 2 CREATIVITY (3 designs; scores 1-5: breakout impact / enforceability / cost / reliability / owner effort)
+- A "Spec-literal store": item rows edited in place, bodies on Drive, playbook = top items by tag overlap cut at a character cap. 2/3/5/3/5 = 18.
+  Weak: a retired item is only as safe as every caller's filter; nothing ties knowledge to the code that applies it; ids change with wording.
+- B "Research stack" (ACE + Zep + KCS): itemised entries, deterministic delta merges, end-dating instead of deleting, promotion by reuse, keyword
+  retrieval, small preloaded block. 4/4/4/4/5 = 21. Weak: still trusts labels at read time (source 2) and lets a stale limit vanish quietly.
+- C "The guarded ledger" (ORIGINAL, built on B's mechanics):
+  1. ONE doorway out: every playbook is built by one function whose first step is the status-and-date guard, so nothing retired, superseded,
+     expired or still only proposed can reach a prompt even if maintenance never ran.
+  2. Provenance cascade: when an item is superseded or retired, everything `derived_from` it is expired by code in the same call.
+  3. Limits lane: owner words, policy rules and failure lessons are served first and hold a reserved share of every playbook.
+  4. Asymmetric expiry (my own rule, from sources 2-3): a stale TECHNIQUE is dropped until re-validated; a stale LIMIT keeps being served, marked
+     "review due" and reported - a limit must never disappear silently.
+  5. Content-addressed playbooks: id = hash of the exact text, so the id is proof of what was injected and the cached prefix stays stable.
+  6. Trust is computed, not typed: confidence comes from the evidence types (owner decision > own measured data > measured study / official
+     > practice > research digest > opinion > model claim); nothing enters without dated evidence.
+  7. Knowledge is tied to code: every `applied_in` reference (a check, a setting, a function, a file) must exist or the Palace is unhealthy.
+  8. Founding knowledge is code: seed items live in the repo (`whatifs/org/seed/*.json`), load idempotently, and can never resurrect a status that
+     the organisation later changed.
+  9. The truth registry guards the door: an item naming a retired concept is refused on write and flagged if a concept is retired later.
+  4/5/5/4/5 = 23.
+- DECISION: C.
+
+#### Step 3 DESIGN MEMO
+- Decision: `whatifs/org/palace.py` (+ `whatifs/org/__init__.py` with the department and stage lists, `whatifs/org/seed/*.json`). Tabs appended:
+  `Palace_Items` (index: everything a playbook needs, so one Sheet read builds it), `Palace_Versions` (one row per change with a running version and
+  a hash of the whole Palace), `Palace_Playbooks` (each distinct playbook once). Bodies: seed items resolve from the repo; runtime items go to the
+  Drive folder `palace/` (retry, then an inline fallback so learning never stops on a Drive hiccup).
+- Life cycle as DATA: proposed -> accepted -> testing -> proven / retired; superseded; expired; each move lists who may make it (owner, council,
+  D10, librarian, clock, build). Owner items change only by the owner. An illegal move raises.
+- Playbook: guard -> lanes (limits, proven, accepted, testing) -> relevance (department, stage, topic keywords) -> greedy fill under a hard cap
+  (default 1,800 estimated tokens per department) -> id = hash.
+- Size caps per kind: when a kind is over its cap the lowest-value item (never owner words or limits) is expired by code, not by a model.
+- Runs in production now: daily learning job + both setup paths (`palace.daily` / `palace.maintain`), and a new HARD contract check `palace_health`
+  on every episode (index valid, seed present, no dead code reference, no retired concept, caps, every department's playbook builds inside its cap
+  with only servable items). NOT in this batch (by the plan): injecting playbooks into department prompts and citing them (B3 runner, B6 checks
+  `palace_injected` / `palace_cited`), the Council, the Librarian's merges, D10 outcome scores.
+- Rejected: an embedding index (new dependency or paid calls for a few hundred short items; source 10); storing bodies only in Sheet cells
+  (cell limit, heavy reads); letting a model merge or rewrite items (source 1); deleting anything (sources 4, 8); a hand-kept Palace doc (the
+  generated SYSTEM.md gets a Palace section instead).
+- Enforcement plan and tests: see steps 5-6 (every transition both ways, guard, cascade, expiry both kinds, caps, cap of the playbook, seed
+  validity, contract PASS / FAIL, rehearsal assertion, matrix row).
+- Cost: Rs 0 (no model call). Sheet traffic: 1 read per playbook, 1-3 writes per change; seeding is one batched append.
 
 ## DONE
 ### B1b - Owner decision executed: 4 long videos a month (10 Nov 2026) - ACCEPTED
