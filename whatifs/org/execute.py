@@ -382,8 +382,10 @@ def _refuse(row, t, why, st, now, by=None):
     _memo_move(MEM.reject, row["id"], by or row["dept"], f"refused by the Execution Engine: {why}"[:300], st, now)
     return "refused"
 
-def _wait(row, why, st, now):
+def _wait(row, t, why, st, now):
+    """Not yet: the reason is written once (not once per tick) and the ticket is marked as taken up, so only its resolve clock keeps running."""
     if row["note"] != why: _save(st, row, now, state="queued", note=why[:400]); _log(st, row, "queued", now, note=why)
+    if t and t["status"] in ("open", "acknowledged") and t["level"] == 0: _memo_move(MEM.start, row["id"], row["dept"], f"with the Execution Engine: {why}"[:200], st, now)
     return "queued"
 
 def _start(row, t, st, now, episode=""):
@@ -395,9 +397,9 @@ def _start(row, t, st, now, episode=""):
     except (Refused, PalaceError, MemoError) as e: return _refuse(row, t, str(e), st, now)
     if op.get("owner") and not row["approved"]: return _ask_owner(row, t, op, st, now)
     if cls in ("B", "C"):
-        if episode or not idle(st, now): return _wait(row, "a setting or an experiment changes between videos, never while one is being made", st, now)
+        if episode or not idle(st, now): return _wait(row, t, "a setting or an experiment changes between videos, never while one is being made", st, now)
         busy = next((r for r in _rows(st) if r["dept"] == row["dept"] and r["lever_class"] in ("B", "C") and r["state"] in ("intent", "applied") and r["id"] != row["id"]), None)
-        if busy: return _wait(row, f"waits until change {busy['change_id']} ({busy['target']}) of {row['dept']} is verified: one unverified change per department", st, now)
+        if busy: return _wait(row, t, f"waits until change {busy['change_id']} ({busy['target']}) of {row['dept']} is verified: one unverified change per department", st, now)
     n = row["attempts"] + 1
     _save(st, row, now, state="intent", change_id=_cid(row["id"], n), target=op["target"], old=op["old"], new=op["new"], undo=op["undo"], need=op["need"], attempts=n, note="")
     _log(st, row, "intent", now, by=row["dept"], note=f"asked by {t['from_dept']}: {t['subject']}")
@@ -477,14 +479,15 @@ def _judge(row, t, st, now):
     verify = _CLASS[row["lever_class"]][3]
     v = verify(row, st, now, t) if row["lever_class"] == "E" else verify(row, st, now)
     late = (parse_iso(row["verify_by"]) or now) < now
-    if v is None and late: v = ("fail" if row["lever_class"] == "E" and row["state"] != "merged" else "rollback", f"no evidence within {_days(row)} days")
+    if v is None and late: v = ("fail" if row["lever_class"] == "E" else "rollback", f"no evidence within {_days(row)} days" + (": the checks on the merge commit never reported" if row["state"] == "merged" else ""))
     if v is None: return row["state"]
     kind, text = v
     if kind == "verified":
         _save(st, row, now, state="verified", proof=text[:500]); _log(st, row, "verified", now, proof=text); _audit(st, row, "verified", text, now)
         _close(row, "lever_verified", text[:300], st, now); return "verified"
-    if kind == "fail":
-        try: _undo_build(row, st, now)
+    if kind == "fail":                                                 # a build that ran out of attempts or time: an unmerged pull request is closed; merged code is never reverted on a guess
+        try:
+            if row["state"] != "merged": _undo_build(row, st, now)
         except Exception as e: log(f"execution engine: pull request of {row['id']} not closed: {scrub(e)[:120]}", "WARN")
         return _fail(row, t, text, st, now)
     return _rollback(row, t, text, st, now, gone=(kind == "gone"))
@@ -532,15 +535,28 @@ def overview(st=None):
     out["waiting"] = sum(1 for r in rows if r["state"] in WAITING); out["in_verification"] = sum(1 for r in rows if r["state"] in FLYING)
     return out
 
-def tick(st=None, now=None):
-    """Every tick, next to the SLA watchdog: the reconcile pass; then, only when Operations holds a ticket the engine has not seen yet, one D12 run
-    (its EXECUTE step starts the ticket). An idle engine costs one read."""
+def tick_age_h(now=None):
+    """Hours since the engine's tick pass last finished (None = it has never run on this Sheet)."""
+    t = parse_iso(S("EXEC_TICK_AT"))
+    return None if not t else round(((now or now_utc()) - t).total_seconds() / 3600, 2)
+
+def engine_tick(st=None, now=None):
+    """Every tick, next to the SLA watchdog. (1) The reconcile pass. (2) Every new ticket of a wired department is taken up at once - a department
+    that only runs inside a video would otherwise see its ticket a week late: knowledge is applied now, a setting at the next gap between videos.
+    (3) Only when Operations itself holds a new ticket, one D12 run: its EXECUTE step starts it. An idle engine costs two reads."""
     st = st or store(); now = now or now_utc()
     if not on(): return {"on": False}
-    rep = reconcile(st, now); known = {r["id"] for r in _rows(st)}
-    new = [m["id"] for m in MEM.inbox("D12", st, now, types=("ticket",)) if m["id"] not in known]
-    if new:
-        RUN.work("D12", "operate", "", lambda b: overview(st), measure=dict, st=st, now=now); rep["operated"] = new
+    rep = reconcile(st, now); known = {r["id"] for r in _rows(st)}; own = []
+    for m in MEM.rows(st):
+        if m["type"] != "ticket" or m["status"] not in SC.LIVE or m["level"] != 0 or m["id"] in known or len(m["to_depts"]) != 1: continue
+        if m["to_depts"][0] == "D12": own.append(m["id"]); continue
+        if not REG.runnable(m["to_depts"][0]): continue
+        try: rep["moved"][m["id"]] = f"new -> {apply(m, None, st, now)}"
+        except Exception as e: log(f"execution engine: new ticket {m['id']} not taken up this pass: {type(e).__name__}: {scrub(e)[:160]}", "WARN")
+    if own:
+        RUN.work("D12", "operate", "", lambda b: overview(st), measure=dict, st=st, now=now); rep["operated"] = own
+    try: set_setting("EXEC_TICK_AT", iso(now))
+    except Exception as e: log(f"engine tick time not recorded: {scrub(e)[:100]}", "WARN")
     return dict(rep, on=True)
 
 # ------------------------------------------------------------------ what the two contract checks judge
@@ -568,6 +584,9 @@ def lever_issues(st=None, now=None):
     its proof after), nothing sits past its verification window, nothing failed without being taken back, and the lever table is honest."""
     st = st or store(); now = now or now_utc(); p = LV.issues()[:5]; rows = _rows(st); grace = dt.timedelta(hours=GRACE_H); acts = {}
     for r in st.rows(LOG): acts.setdefault(str(r.get("ticket_id")), []).append(r)
+    waiting = [r for r in rows if r["state"] not in DONE and (parse_iso(r["created"]) or now) + dt.timedelta(hours=24) < now]; age = tick_age_h(now)
+    if waiting and (age is None or age > 24):
+        p.append(f"the Execution Engine's tick pass has {'never run' if age is None else f'not run for {age:.0f} h'} while {len(waiting)} ticket(s) wait: nothing is being verified or rolled back")
     for r in rows:
         a = [str(x.get("action")) for x in acts.get(r["id"], [])]; tag = f"change {r['change_id'] or r['id']} ({r['target']})"
         if r["state"] in FLYING and r["state"] != "intent" and (parse_iso(r["verify_by"]) or now) + grace < now: p.append(f"{tag} is past its verification window with no verdict (the tick pass is not doing its work)")

@@ -90,7 +90,7 @@ def test_inside_its_range_the_direction_decides_whether_the_owner_is_needed(monk
 def test_a_setting_waits_for_the_gap_between_videos_then_is_applied_verified_and_closed_with_ledger_proof():
     t = ticket(); r = run(); row = trow(t["id"])                                             # the ticket is executed inside the run of an episode
     assert next(x for x in r.receipts if x["step"] == "EXECUTE")["executed"] == [t["id"]] and row["state"] == "queued" and "between videos" in row["note"]
-    assert cell("JOKE_EVERY_SEC_LONG") == "15" and acts(t["id"]) == ["queued"] and MEM.get(t["id"])["status"] == "acknowledged"
+    assert cell("JOKE_EVERY_SEC_LONG") == "15" and acts(t["id"]) == ["queued"] and MEM.get(t["id"])["status"] == "in_progress"          # taken up: only the resolve clock runs now
     T = now(); st().append("Episodes", [{"episode_id": "EP1", "status": "VISUALS", "updated": core.iso(T)}])
     assert EXE.reconcile(now=T + H)["moved"] == {} and cell("JOKE_EVERY_SEC_LONG") == "15"          # a video is being made: nothing changes under it
     st().update("Episodes", "episode_id", "EP1", {"status": "UPLOADED"})
@@ -315,62 +315,91 @@ class Hub:
 NEW_TEST = {"filename": "tests/test_pause.py", "status": "added", "additions": 30, "deletions": 0, "patch": "+import pytest\n+def test_a_missing_pause_fails():\n+    assert True\n"}
 
 def build_ticket(mp, **k):
-    hub = Hub(mp); t = ticket("D12", "E", "code:pause-check", dict(BUILD), subject="Add a sound check for the pause before a punchline", **k); T = now(); rep = EXE.tick(now=T)
+    hub = Hub(mp); t = ticket("D12", "E", "code:pause-check", dict(BUILD), subject="Add a sound check for the pause before a punchline", **k); T = now(); rep = EXE.engine_tick(now=T)
     return hub, t, T, rep
 
 def test_a_code_ticket_becomes_a_build_request_and_one_operations_run_starts_the_build(monkeypatch):
-    assert EXE.tick() == {"open": 0, "moved": {}, "on": True} and not st().rows("Sessions")                                          # an idle engine starts no run
+    assert EXE.engine_tick() == {"open": 0, "moved": {}, "on": True} and not st().rows("Sessions") and EXE.tick_age_h() is not None          # an idle engine starts no run
     hub, t, T, rep = build_ticket(monkeypatch); row = trow(t["id"]); ses = st().rows("Sessions"); req = MEM.get(row["request_id"])
     assert rep["operated"] == [t["id"]] and len(ses) == 1 and (ses[0]["dept"], ses[0]["trigger"], ses[0]["status"]) == ("D12", "operate", "ok") and RUN.verify(ses[0]) == []
     assert row["state"] == "dispatched" and req["type"] == "build_request" and req["links"]["ticket"] == t["id"] and req["body"]["files"] == ["whatifs/contract.py"]
     wf, inputs, ref = hub.sent[0]; assert wf == "claude-build.yml" and inputs["kind"] == "feature" and inputs["request"] == req["id"] and len(hub.sent) == 1
     assert inputs["spec"].startswith(f"ORGANISATION BUILD REQUEST {req['id']} (ticket {t['id']})") and "TESTS TO ADD (each must fail without the change):\n- a test that fails when the pause" in inputs["spec"] and "Do not edit or delete an existing test" in inputs["spec"]
     assert acts(t["id"]) == ["intent", "dispatched"] and MEM.get(t["id"])["status"] == "in_progress"
-    assert "operated" not in EXE.tick(now=T + H) and len(st().rows("Sessions")) == 1                                                 # the engine has the ticket: no second run
+    assert "operated" not in EXE.engine_tick(now=T + H) and len(st().rows("Sessions")) == 1                                                 # the engine has the ticket: no second run
     assert REG.runnable("D12") and "D12" not in REG.PENDING and MEM.get(t["id"])["level"] == 0 and REG.entry_issues() == []
 
 def test_a_green_build_that_only_adds_tests_merges_by_itself_and_is_verified_on_the_merge_commit(monkeypatch):
     hub, t, T, _ = build_ticket(monkeypatch); req = trow(t["id"])["request_id"]
     assert "the Execution Engine follows it" in BLD.build_ready("41", "feature", "claude/feature-1", req) and trow(t["id"])["state"] == "pr_open" and trow(t["id"])["pr"] == "41" and not owner_msgs("build_ready")
-    EXE.tick(now=T + H); assert not hub.merged                                                                                      # checks still running
+    EXE.engine_tick(now=T + H); assert not hub.merged                                                                                      # checks still running
     hub.pr["41"] = {"checks": "green"}; hub.files = [NEW_TEST, {"filename": "docs/CURRENT/SYSTEM.md", "status": "modified", "additions": 2, "deletions": 1, "patch": ""}]
-    EXE.tick(now=T + 2 * H); assert hub.merged == ["41"] and not owner_msgs("build_ready") and "auto_merge" in acts(t["id"])
-    EXE.tick(now=T + 3 * H); assert trow(t["id"])["state"] == "merged" and trow(t["id"])["new"] == "abc123def4567" and hub.sent[-1] == ("checks.yml", {}, "main")
-    EXE.tick(now=T + 4 * H); assert trow(t["id"])["state"] == "merged"                                                              # the checks on main are not finished
-    hub.commit = "green"; EXE.tick(now=T + 5 * H); row = trow(t["id"])
+    EXE.engine_tick(now=T + 2 * H); assert hub.merged == ["41"] and not owner_msgs("build_ready") and "auto_merge" in acts(t["id"])
+    EXE.engine_tick(now=T + 3 * H); assert trow(t["id"])["state"] == "merged" and trow(t["id"])["new"] == "abc123def4567" and hub.sent[-1] == ("checks.yml", {}, "main")
+    EXE.engine_tick(now=T + 4 * H); assert trow(t["id"])["state"] == "merged"                                                              # the checks on main are not finished
+    hub.commit = "green"; EXE.engine_tick(now=T + 5 * H); row = trow(t["id"])
     assert row["state"] == "verified" and row["proof"] == "pull request #41 is merged and every check on the merge commit abc123def4 is green"
     assert MEM.get(t["id"])["resolution"]["kind"] == "lever_verified" and MEM.get(req)["resolution"]["kind"] == "merged_verified" and MEM.get(req)["resolution"]["by"] == "engine"
 
 def test_a_build_outside_the_scope_waits_for_the_owners_merge_and_is_asked_for_once(monkeypatch):
     hub, t, T, _ = build_ticket(monkeypatch); BLD.build_ready("42", "feature", "", trow(t["id"])["request_id"])
     hub.pr["42"] = {"checks": "green"}; hub.files = [NEW_TEST, {"filename": "whatifs/contract.py", "status": "modified", "additions": 12, "deletions": 0, "patch": "+x"}]
-    EXE.tick(now=T + H); EXE.tick(now=T + 2 * H); msgs = owner_msgs("build_ready")
+    EXE.engine_tick(now=T + H); EXE.engine_tick(now=T + 2 * H); msgs = owner_msgs("build_ready")
     assert not hub.merged and len(msgs) == 1 and "It needs your Merge because whatifs/contract.py: outside the automatic scope (new test files only)." in msgs[0]["text"] and "MERGE #42" in msgs[0]["buttons"]
     assert trow(t["id"])["owner_action"] == msgs[0]["id"] and "owner_asked" in acts(t["id"]) and msgs[0]["default_action"].startswith("waits")
-    hub.pr["42"].update(merged=True, merge_sha="feed1234beef"); hub.commit = "green"; EXE.tick(now=T + 3 * H); EXE.tick(now=T + 4 * H)
+    hub.pr["42"].update(merged=True, merge_sha="feed1234beef"); hub.commit = "green"; EXE.engine_tick(now=T + 3 * H); EXE.engine_tick(now=T + 4 * H)
     assert trow(t["id"])["state"] == "verified" and next(x for x in ledger(t["id"]) if x["action"] == "merged")["by"] == "owner"
     assert not BLD.build_ready("77", "tweak", "", "M-UNKNOWN00001").startswith("pull request") and len(owner_msgs("build_ready")) == 2          # not an organisation build: the owner's usual message
 
 def test_red_checks_are_rebuilt_twice_then_the_ticket_goes_up_and_the_owner_hears(monkeypatch):
     hub, t, T, _ = build_ticket(monkeypatch); req = trow(t["id"])["request_id"]
     for i, pr in enumerate(("50", "51", "52")):
-        BLD.build_ready(pr, "feature", "", req); hub.pr[pr] = {"checks": "red"}; EXE.tick(now=T + (i + 1) * H)
+        BLD.build_ready(pr, "feature", "", req); hub.pr[pr] = {"checks": "red"}; EXE.engine_tick(now=T + (i + 1) * H)
         if i < 2: assert trow(t["id"])["state"] == "dispatched" and trow(t["id"])["attempts"] == i + 2 and hub.sent[-1][1]["kind"] == "repair" and f"THE PREVIOUS ATTEMPT FAILED: the checks of pull request #{pr} are red" in hub.sent[-1][1]["spec"]
     row = trow(t["id"]); assert row["state"] == "failed" and "3 builds were tried" in row["note"] and hub.closed == ["50", "51", "52"] and len([s for s in hub.sent if s[0] == "claude-build.yml"]) == 3
     assert MEM.get(t["id"])["status"] == "escalated" and MEM.get(req)["status"] == "rejected" and CON.p_lever_verified({})[0] == CON.FAIL
     MEM.watchdog(now=T + 4 * H); assert len(owner_msgs("org_stuck")) == 1
 
 def test_a_build_that_opens_no_pull_request_or_fails_on_main_is_not_called_done(monkeypatch):
-    hub, t, T, _ = build_ticket(monkeypatch); EXE.tick(now=T + 5 * H); assert trow(t["id"])["state"] == "dispatched" and len(hub.sent) == 1
-    EXE.tick(now=T + 7 * H); assert trow(t["id"])["attempts"] == 2 and "no pull request was opened within 6 hours" in hub.sent[-1][1]["spec"]
-    BLD.build_ready("60", "repair", "", trow(t["id"])["request_id"]); hub.pr["60"] = {"checks": "green"}; hub.files = [NEW_TEST]; EXE.tick(now=T + 8 * H); EXE.tick(now=T + 9 * H)
-    hub.commit = "red"; EXE.tick(now=T + 10 * H); row = trow(t["id"])
+    hub, t, T, _ = build_ticket(monkeypatch); EXE.engine_tick(now=T + 5 * H); assert trow(t["id"])["state"] == "dispatched" and len(hub.sent) == 1
+    EXE.engine_tick(now=T + 7 * H); assert trow(t["id"])["attempts"] == 2 and "no pull request was opened within 6 hours" in hub.sent[-1][1]["spec"]
+    BLD.build_ready("60", "repair", "", trow(t["id"])["request_id"]); hub.pr["60"] = {"checks": "green"}; hub.files = [NEW_TEST]; EXE.engine_tick(now=T + 8 * H); EXE.engine_tick(now=T + 9 * H)
+    hub.commit = "red"; EXE.engine_tick(now=T + 10 * H); row = trow(t["id"])
     assert row["state"] == "failed" and "the checks on the merge commit abc123def4 of pull request #60 are red" in row["note"] and "a revert was sent to the build workflow and waits for your Merge" in row["note"]
     assert "Revert the merge commit abc123def4567 of pull request #60" in hub.sent[-1][1]["spec"] and hub.sent[-1][1]["kind"] == "repair" and "request" not in hub.sent[-1][1] and MEM.get(t["id"])["status"] == "escalated"
 
+def test_a_merge_whose_checks_never_report_is_escalated_and_never_reverted_on_a_guess(monkeypatch):
+    hub, t, T, _ = build_ticket(monkeypatch); BLD.build_ready("80", "feature", "", trow(t["id"])["request_id"]); hub.pr["80"] = {"checks": "green"}; hub.files = [NEW_TEST]
+    EXE.engine_tick(now=T + H); EXE.engine_tick(now=T + 2 * H); assert trow(t["id"])["state"] == "merged"; n = len(hub.sent)
+    EXE.engine_tick(now=T + 15 * D); row = trow(t["id"])
+    assert row["state"] == "failed" and "the checks on the merge commit never reported" in row["note"] and len(hub.sent) == n and not hub.closed and MEM.get(t["id"])["status"] == "escalated"
+
+def test_the_tick_takes_up_a_new_ticket_of_any_wired_department_without_waiting_for_its_next_video(setting):
+    P.ensure_seed(); ta = ticket("D6", "A", "palace:b4-push-in", item()); tb = ticket(); tx = ticket("D1", "B", "VIDEOS_PER_MONTH_EST", 5, subject="Plan for five videos"); T = now()
+    st().append("Episodes", [{"episode_id": "EP1", "status": "PLANNING", "updated": core.iso(T)}]); rep = EXE.engine_tick(now=T)
+    assert rep["moved"] == {ta["id"]: "new -> applied", tb["id"]: "new -> queued"} and "operated" not in rep and not st().rows("Sessions")          # no department run was needed
+    assert P.get(P.item_id("b4-push-in"))["status"] == "accepted" and cell("JOKE_EVERY_SEC_LONG") == "15" and MEM.get(tb["id"])["status"] == "in_progress"
+    assert trow(tx["id"]) is None and MEM.get(tx["id"])["level"] == 2                                                              # D1 has no wired run: its ticket is with the owner, not with the engine
+    assert MEM.watchdog(now=T + 30 * H)["escalated"] == [] and acts(tb["id"]) == ["queued"]                                         # taken up in time: nothing climbs for a missed acknowledgement
+    st().update("Episodes", "episode_id", "EP1", {"status": "UPLOADED"}); assert EXE.engine_tick(now=T + 31 * H)["moved"] == {tb["id"]: "queued -> applied"} and cell("JOKE_EVERY_SEC_LONG") == "10"
+    setting("EXEC_ON", "FALSE"); t3 = ticket("D6", "B", "ANIM_SHOTS", 3, subject="One animated scene fewer"); assert EXE.engine_tick(now=T + 32 * H) == {"on": False} and trow(t3["id"]) is None
+
+def test_the_tick_job_itself_runs_the_engine_pass(setting):
+    from whatifs import manage as MG
+    t = ticket("D6", "A", "palace:b4-push-in", item()); MG.tick()                                                                # the real tick job, nothing called by hand
+    assert EXE.tick_age_h() is not None and trow(t["id"])["state"] == "applied" and P.get(P.item_id("b4-push-in"))["status"] == "accepted"
+    setting("EXEC_ON", "FALSE"); setting("EXEC_TICK_AT", ""); t2 = ticket(subject="A ticket while the engine is off"); MG.tick(); assert EXE.tick_age_h() is None and trow(t2["id"]) is None
+
+def test_a_dead_tick_pass_is_noticed_while_tickets_wait():
+    t, T = applied_setting(); assert CON.p_lever_verified({})[0] == CON.PASS and EXE.tick_age_h() is None                              # a fresh ticket: the first tick is not late yet
+    st().update("Tickets", "id", t["id"], {"created": core.iso(T - 30 * H)}); s, ev = CON.p_lever_verified({})
+    assert s == CON.FAIL and "tick pass has never run while 1 ticket(s) wait: nothing is being verified or rolled back" in ev
+    EXE.engine_tick(now=T - 26 * H); assert "tick pass has not run for 26 h while 1 ticket(s) wait" in CON.p_lever_verified({})[1]
+    EXE.engine_tick(now=T); assert CON.p_lever_verified({})[0] == CON.PASS and EXE.tick_age_h(T + H) == 1.0
+
 def test_a_pull_request_the_owner_closes_ends_the_build(monkeypatch):
     hub, t, T, _ = build_ticket(monkeypatch); BLD.build_ready("70", "feature", "", trow(t["id"])["request_id"]); hub.pr["70"] = {"checks": "green", "state": "closed"}
-    EXE.tick(now=T + H); assert trow(t["id"])["state"] == "failed" and "pull request #70 was closed without a merge" in trow(t["id"])["note"]
+    EXE.engine_tick(now=T + H); assert trow(t["id"])["state"] == "failed" and "pull request #70 was closed without a merge" in trow(t["id"])["note"]
 
 @pytest.mark.parametrize("to,value,flag,why", [("D6", BUILD, "TRUE", "a code change is built by Operations"), ("D12", dict(BUILD, spec="too short"), "TRUE", "not a valid build request: body.spec is too short"),
                                                ("D12", dict(BUILD, tests_to_add=[]), "TRUE", "body.tests_to_add"), ("D12", BUILD, "FALSE", "builds are switched off (BUILDS_ON)")])
@@ -423,7 +452,7 @@ def test_a_ticket_closes_only_on_the_engines_ledger_and_waiting_for_proof_is_typ
 
 def test_engine_off_changes_nothing_and_the_checks_do_not_apply(setting):
     setting("EXEC_ON", "FALSE"); t = ticket(); run()
-    assert trow(t["id"]) is None and MEM.get(t["id"])["status"] == "escalated" and EXE.tick() == {"on": False} and EXE.reconcile() == {"open": 0, "moved": {}} and not ledger()
+    assert trow(t["id"]) is None and MEM.get(t["id"])["status"] == "escalated" and EXE.engine_tick() == {"on": False} and EXE.reconcile() == {"open": 0, "moved": {}} and not ledger()
     assert CON.p_decisions_executed({})[0] == CON.NA and CON.p_lever_verified({})[0] == CON.NA and not EXE.build_opened("M-X", "1")
     setting("EXEC_ON", "TRUE"); setting("ORG_ON", "FALSE"); assert not EXE.on() and CON.p_lever_verified({})[0] == CON.NA
 
@@ -489,10 +518,10 @@ def test_two_real_episodes_carry_a_decision_from_ticket_to_ledger_proof(monkeypa
     assert led["decisions_executed"]["status"] == "PASS" and led["lever_verified"]["status"] == "PASS" and "1 decision(s), 2 ticket(s)" in led["decisions_executed"]["evidence"]
     assert trow(ta["id"])["state"] == "applied" and trow(tb["id"])["state"] == "queued" and cell("REHOOK_MAX_GAP_SEC") == "75"          # knowledge at once; the setting waits for the gap
     feats = [f for f in st().rows("Video_Features") if f["video_key"] == "EP209901010900"]; assert feats and "playbook" in json.loads(feats[0]["arm"])
-    EXE.tick(); assert trow(ta["id"])["state"] == "verified" and "(D6 assets)" in trow(ta["id"])["proof"] and trow(tb["id"])["state"] == "applied" and cell("REHOOK_MAX_GAP_SEC") == "70"
+    EXE.engine_tick(); assert trow(ta["id"])["state"] == "verified" and "(D6 assets)" in trow(ta["id"])["proof"] and trow(tb["id"])["state"] == "applied" and cell("REHOOK_MAX_GAP_SEC") == "70"
     core.set_setting("CONTRACT_OFF", "originality")          # the fake writers' room returns the same script for every episode: only that check is taken out for the second video
     r2 = EP.produce(slot(34), episode_id="EP209901020900"); assert r2.get("ok"), r2
-    EXE.tick(); row = trow(tb["id"]); seen = [(x["feature"], x["status"], x["ts"]) for x in st().rows("Feature_Ledger") if x["episode_id"] == "EP209901020900" and x["feature"] == "retention"]
+    EXE.engine_tick(); row = trow(tb["id"]); seen = [(x["feature"], x["status"], x["ts"]) for x in st().rows("Feature_Ledger") if x["episode_id"] == "EP209901020900" and x["feature"] == "retention"]
     assert row["state"] == "verified", (row["state"], row["applied_at"], seen, [(s["trigger"], s["started"]) for s in st().rows("Sessions") if s["episode_id"] == "EP209901020900"][:2])
     assert row["state"] == "verified" and row["proof"] == "EP209901020900 was made after the change and passed retention with REHOOK_MAX_GAP_SEC = 70", row
     assert MEM.get(tb["id"])["resolution"]["kind"] == "lever_verified" and CON.p_decisions_executed({})[0] == CON.PASS and CON.p_lever_verified({})[0] == CON.PASS

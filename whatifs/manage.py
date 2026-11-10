@@ -221,7 +221,7 @@ def tick():
     except Exception as x: log(f"owner messages skipped: {scrub(x)}", "WARN")
     try:                                                        # v12: the organisation's SLA watchdog (overdue memos climb the ladder) and the check for runs that never reported
         from whatifs.org import memos as MEMO, runner as ORGR, execute as EXE
-        if ORGR.on(): MEMO.watchdog(); ORGR.audit(); EXE.tick()          # the Execution Engine's pass: start, verify or roll back every change made by ticket
+        if ORGR.on(): MEMO.watchdog(); ORGR.audit(); EXE.engine_tick()          # the Execution Engine's pass: start, verify or roll back every change made by ticket
     except Exception as x: log(f"organisation watchdog skipped: {scrub(x)}", "WARN")
     try:                                                        # v10 (K140): key/plan expiry reminders (14 and 3 days before), once a day
         from whatifs import caretaker as CT

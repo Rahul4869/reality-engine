@@ -88,7 +88,7 @@ def run():
         assert not [m for m in OMEM.rows(st) if m["status"] in ("open", "escalated") and m["type"] == "problem_memo" and m["episode_id"] == ep12], "a problem memo of the scheduled episode is still open"
         print("organisation:", len(ses12), "department runs,", len(tk12), "takeaways,", oh12["stats"]["live"], "live memos; watchdog checked", wd12["checked"])
         assert led12.get("decisions_executed") == "PASS" and led12.get("lever_verified") == "PASS", ("the Execution Engine's checks did not pass", led12.get("decisions_executed"), led12.get("lever_verified"))
-        EXE4.tick(st); row4 = next((x for x in st.rows("Tickets") if x.get("id") == tk4["id"]), {}); log4 = [x["action"] for x in st.rows("Lever_Changes") if x.get("ticket_id") == tk4["id"]]
+        EXE4.engine_tick(st); row4 = next((x for x in st.rows("Tickets") if x.get("id") == tk4["id"]), {}); log4 = [x["action"] for x in st.rows("Lever_Changes") if x.get("ticket_id") == tk4["id"]]
         assert row4.get("state") == "verified" and log4 == ["intent", "applied", "verified"], ("the rehearsal's decision did not become a verified change", row4.get("state"), row4.get("note"), log4)
         assert (OMEM4.get(tk4["id"], st)["resolution"] or {}).get("kind") == "lever_verified" and not EXE4.lever_issues(st)[0] and not EXE4.decision_issues(st)[0], "the ticket was not closed on the ledger"
         print("execution engine: ticket", tk4["id"], "->", row4["state"], "|", " > ".join(log4), "|", str(row4.get("proof"))[:110])

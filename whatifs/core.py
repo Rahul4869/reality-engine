@@ -993,6 +993,7 @@ DEFAULTS = {
  "EXEC_RULES_PER_DEPT": ("12", "the most prompt rules one department may hold that were made by ticket (lever class D); over it a new rule is refused until one is retired (1-40)"),
  "EXEC_BUILD_RETRIES": ("2", "how many times a code build that failed its checks, or opened no pull request, is built again before the ticket is escalated (0-4)"),
  "EXEC_BUILD_WAIT_H": ("6", "hours a code build may take to open its pull request before it counts as failed (1-48)"),
+ "EXEC_TICK_AT": ("", "auto: when the Execution Engine's tick pass last finished (check lever_verified fails when tickets wait and this is more than a day old)"),
  "EXEC_AUTO_MERGE_ON": ("TRUE", "TRUE = a code build asked for by ticket merges by itself when every check is green AND its real diff only adds new test files (nothing deleted, no other file); anything else waits for the owner's Merge tap [FALSE = the owner merges every build]"),
 }
 _settings_cache = None

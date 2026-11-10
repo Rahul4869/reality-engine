@@ -10,7 +10,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `fal-ai/kling-video/o3/standard/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 1.5 standalone Shorts a day; spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 114 code modules, 699 settings, 80 Sheet tabs, 24 GitHub workflows.
+- Size: 114 code modules, 700 settings, 80 Sheet tabs, 24 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -456,8 +456,8 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Every wired department run loads its playbook (section 11). Not yet wired (later batches): the playbook inside the creative departments' model
   prompts with items cited back, the Council, the Librarian's merges, outcome scores.
 
-**Founding knowledge** (117 items in `whatifs/org/seed/`; 0 invalid): breakout.json 15, build.json 42, feel.json 15, owner.json 30, platform.json 15.
-By kind: audience_insight 4, failure_lesson 1, owner_preference 26, plan 2, policy_rule 10, strategy 15, takeaway 5, technique 40, tool_fact 14.
+**Founding knowledge** (118 items in `whatifs/org/seed/`; 0 invalid): breakout.json 15, build.json 43, feel.json 15, owner.json 30, platform.json 15.
+By kind: audience_insight 4, failure_lesson 1, owner_preference 26, plan 2, policy_rule 10, strategy 15, takeaway 6, technique 40, tool_fact 14.
 
 **Life cycle** (`palace.MOVES`; a move that is not listed is illegal for everyone)
 
@@ -592,8 +592,10 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
   read-back after it, then `verified` with the proof or `rolled_back` with what was restored. A row is never edited.
 - A change is verified only by rows another component wrote AFTER it: a later department run, the check rows of a video made after it, the features
   of later videos, GitHub's own check runs. The engine's read-back is necessary, never enough.
-- The tick pass (`execute.tick`, next to the SLA watchdog) reads state, not events: it starts a waiting ticket when its moment is free, settles an apply
-  that a killed job left half done, verifies or rolls back, follows a build to its merge, and takes back a change whose ticket a person closed.
+- The tick pass (`execute.engine_tick`, next to the SLA watchdog) reads state, not events: it takes up every new ticket of a wired department at once,
+  starts a waiting ticket when its moment is free, settles an apply that a killed job left half done, verifies or rolls back, follows a build to its
+  merge, and takes back a change whose ticket a person closed. It records when it last finished (`EXEC_TICK_AT`); check `lever_verified` fails when
+  tickets wait and that is more than a day old.
 - A setting or an experiment changes BETWEEN videos (no video with status PLANNING / VOICING / VISUALS), and a department has at most one unverified setting or
   experiment at a time - so the checks of one video can be attributed to one change.
 - Rollback of a setting is compare-and-swap: the old value returns only if the cell still holds what the engine wrote. A value typed by the owner afterwards wins.
