@@ -89,6 +89,71 @@ Owner's words re-read for B6a: 02 #2 ("the writer room also should learn from re
 output a BREAKOUT), #8 (personify, attachment, characters to love), #12/#14/#15 (hard-enforced to the line, executed at code level), B (characters to
 fall in love with, return factor, no slop, no repetition).
 
+What the code does TODAY (read before designing, 11 Nov): all 15 departments run in "brief" mode - the playbook is "handed over" (`brief.take()`)
+but `room.run_room`, `room.package` and `room.plan_shots` never read it, so NO Palace knowledge reaches any creative model call; and with
+PREPROD_ON = TRUE (the default) the script is written in pre-production by `preview.run` OUTSIDE any department run, so production's D4 run only
+adopts a finished draft. No world_canon item exists (0 of 126 founding items). The runner's prompt mode (the tap in `models.ask` puts the playbook
+into the cached system layer and counts the calls) exists since B3 but no department uses it.
+
+#### Step 2 CREATIVITY (6 designs + 1 parked; scores 1-5: breakout impact / enforceability / cost / reliability / owner effort)
+- A. Paste the playbook into the writer brief by hand; models list the ids they used; checks count the ids. 2/1/5/3/5. Rejected: a self-reported
+  list proves nothing (research 1: up to 57% post-rationalised), and it reaches one call of one department.
+- B. ONE DOORWAY IN, ONE DOORWAY OUT, QUOTE-ANCHORED CITATIONS: D4/D5/D6 switch to prompt mode for their NAMED creative calls (D4: scout,
+  showrunner, bible, writer, rewrite, punchup, memo; D5: packager; D6: director) - never the judges, never the mechanical passes; the playbook sits at
+  the START of the cached system layer (research 4, official caching price). A new reply tap at the same doorway collects every reply's
+  `applied_items` [{id, where}] and strips it before the caller sees it. Code verifies each citation: the id was in the injected playbook, and the
+  `where` quote (4-30 words) is found in the run's FINAL output (tolerant match: exact, or 80% of its words in order inside a short window). Only
+  verified citations count as applied (applied_count, later D10 outcome attribution); limits are not citable (they always apply). 4/5/4/4/5.
+- C. Post-hoc citation pass: after the run a model maps output lines to playbook items. 3/3/3/3/5. Rejected: one extra paid call per run; the mapper
+  can rationalise the same way (research 1, 2); a cheap mapper would be a cheap model judging (rule 9).
+- D. Canon as its own block (`canon.py` text pasted into the writer brief). 3/3/5/3/5. Rejected: a second doorway and a second id space; showrunner,
+  bible, packager and director would each need it pasted by hand. Canon becomes Palace items (kind world_canon) in a RESERVED CANON LANE of the same
+  playbook instead (limits, then canon, then proven > accepted > testing), bounded by PALACE_CANON_SHARE.
+- E. ORIGINAL - CONTINUITY DEBTS: the canon is a ledger WRITTEN BY CODE from the show's own records after every D4 write (case, charge, verdict
+  winner + style + deciding detail, witness twist, Grimm's prototype, the stinger's promise of the next case) - concrete factual / temporal facts, the
+  kind long stories get wrong (research 8, 9). A case record becomes canon only when the platform confirms the upload ("what aired"; D9 holds the
+  video id - the only status move D9 may make). The newest aired case is a MUST-CITE item for D4: the script must call back to it in at least one
+  line that code finds IN THE SCRIPT (not in the notes). Repeated exposure is what builds attachment (research 12, 13) - enforced at line level and
+  verified like any citation, at zero extra cost. 5/5/5/4/5.
+- F. ORIGINAL - SAME-IDEA GUARD ON CREATIVE MEMOS: the showrunner, bible, packager and director may add ONE `proposal` (idea / experiment / bank /
+  world_building) inside the call they already make (no extra cost); code keeps at most CREATIVE_MEMO_MAX_PER_RUN per run, validates it as a
+  creative_memo to the Council and DROPS one whose word set overlaps an earlier creative memo by CREATIVE_MEMO_SAME_MAX or more (homogenisation,
+  research 11) - the Council (B6b) gets distinct options, not ten copies. 4/4/5/4/5.
+- G. ORIGINAL, PARKED for B8 - counterfactual ablation: re-run one creative call WITHOUT the playbook and diff the outputs to measure whether the
+  knowledge changes the work causally. The most honest measure, but one extra strong call per test: it belongs to D10 as an experiment arm.
+CHOSEN: B + E + F, plus the draft fix (pre-production writing runs as a D4 department run and production adopts it with proof).
+
+#### Step 3 DESIGN MEMO
+Decision: knowledge enters a creative model through ONE doorway (the ask tap) and the proof of use leaves through ONE doorway (the reply tap);
+proof = a quote code can find, never a list the model typed. The show's canon is code-written history in the same Palace, served in its own lane,
+accepted only on air, and the newest case is a debt the next script must pay in a line code finds.
+- Runner (`whatifs/org/runner.py`): prompt mode adds CITE_RULE (the JSON key `applied_items`, and `proposal` for the proposing tasks) to the
+  injected block; records WHICH tasks carried it; the reply tap collects citations + proposals per run; ACT verifies (id in playbook, quote in the
+  final output) -> ACT receipt: `injected_tasks`, `cited`, `applied` (verified only), `unverified`, `ghost`; a wrapped run's citations count too.
+  `work(..., adopt=<draft session>)`: production's D4 write adopts a pre-production draft only with the draft run's proof (a D4 `draft` run, ok,
+  prompt mode, injected) - its verified citations carry over, re-verified against the adopted text.
+- Registry: D4/D5/D6 inject "prompt" with `inject_tasks` and `key_task` (writer / packager / director) and `propose_tasks`; new D4 call site
+  `whatifs/preview.py` "draft"; owners of the three new checks.
+- Palace (`palace.py`): canon lane with PALACE_CANON_SHARE (default 0.25 of the cap) for departments addressed by canon; kind rule: world_canon
+  `proposed -> accepted` by D9 only with a "show record" evidence (what aired); D9 may make no other move.
+- Canon (`whatifs/org/canon.py`, new, PROTECTED): `record(ep, room)` after D4 write (proposed case record, key `canon|case|<ep>`, derived from
+  the D4 session); `on_air(ep, video_id)` after the upload is verified; `required(...)` (cast canon + the newest aired case at that time);
+  `episode_issues(ep)` for the check. Cast canon = 4 founding items from `show.CHARACTERS` (seed `canon.json`; a test keeps them equal to the code).
+- Creative memos: validated + same-idea guard in the runner's EMIT for D4-D7 (`creative_memo` to C; it waits silently at the owner level until
+  B6b wires the Council - the B5 pattern for assessment memos).
+- Checks (script gate, 47 hard checks): `palace_injected` (each creative run of the episode - D4 write or its adopted draft, D5 package, D6 plan -
+  ran in prompt mode, its key task carried the playbook, the playbook text is stored), `palace_cited` (each of those runs has >= 1 verified citation
+  when its playbook had a citable item; unverified / ghost shown), `canon_in_brief` (D4's playbook held every required canon item; with
+  CANON_CALLBACK_ON and an aired earlier case, the newest case is cited with a quote found in the SCRIPT; this episode's case record exists).
+  NA when the organisation or ORG_PROMPT_INJECT is off, or no creative run is recorded.
+- Settings (safe defaults): ORG_PROMPT_INJECT TRUE, PALACE_CANON_SHARE 0.25, CANON_CALLBACK_ON TRUE, CREATIVE_MEMO_MAX_PER_RUN 1,
+  CREATIVE_MEMO_SAME_MAX 0.5, PALACE_PROMPT_EST_INR 8 (counted in the episode estimate).
+- Cost: no new paid call. Extra input: about 1,900 tokens on about 12 creative calls per long video (cached on the packed calls: writer, rewrite,
+  punchup, director), plus about 100 output tokens per call for the citations: estimated Rs 4-8 a video, Rs 16-32 a month at 4 long videos
+  (PALACE_PROMPT_EST_INR = 8 in the estimate). Off switch: ORG_PROMPT_INJECT = FALSE (the creative runs go back to brief mode; the three checks say NA).
+- Rejected: A, C, D (reasons above); G parked for B8. Risks to watch: a rewrite pass may edit away a cited line (only verified citations count; a
+  run with none fails); a draft written before the previous episode aired cannot cite it (canon_in_brief judges what was aired at writing time).
+
 ### B5 - R&D + Review Board (11 Nov 2026) - ACCEPTED (final code commit a1c5204 GREEN in GitHub run 67; sweep 58 of 58 green)
 
 #### Step 1 RESEARCH (12 dated sources; E = measured evidence, O = opinion / practice / vendor documentation)
