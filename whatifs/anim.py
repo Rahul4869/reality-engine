@@ -1,16 +1,4 @@
-"""v10.2 Animation director (K152; owner 2026-11-09, option C: 8 videos/month, ~20 s of real animation each; stack = fal Kling + Google
-images + Claude + ffmpeg only, nothing new).
-
-What it does, per long video:
-1. SLOTS: exactly ANIM_SHOTS shots become animated scenes, at the retention cliffs: the cold open (0:00), the ~3:00 and ~6:00 re-engagement
-   points and the verdict (scaled to the video's length: 0, 0.29, 0.57, 0.92 of the runtime). Nothing else is animated by the paid model.
-2. START FRAMES: each animated scene starts from a STAGED picture made by Google's image model (discovered live as role 'gem_image') with the
-   locked character portraits attached as reference images, so faces stay the same; the scene is set in the character's own lit world
-   ('Toybox Noir': stylized 3D puppet look, felt/clay/wood materials, one hard noir key light). If the Google picture fails, the normal still
-   (fal) is used with the same style lock and the ledger records it.
-3. ACTING: the motion prompt is an acting beat (anticipation -> action -> settle), a lighting event and ONE camera move, with an avoid list.
-   The hero video model is Kling on fal (FAL_HERO_MODEL; the Model Steward keeps it alive).
-The Feature Contract then measures the result (seconds, real motion); nothing here is trusted on its word."""
+"""Animation director: places the animated (Kling) scenes of a long video at the retention cliffs and writes their motion prompts. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import base64, json, os, re
 from whatifs.core import S, log, FAKE, env, cost, scrub

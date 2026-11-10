@@ -1,16 +1,4 @@
-"""v11 Stage C (K158): the Breakout Protocol pieces that were still missing (research: Breakout Protocol + Feel Layer reports, 9 Nov 2026).
-
-1. promise_paid(): the thumbnail/title promise must be ON SCREEN early (the promise shot starts by PROMISE_BY_SEC). Deterministic contract check.
-2. aliveness(): the 'looks like a still' detector. At 2 frames per second it removes the camera move between frames (a fitted affine transform);
-   whatever motion is LEFT (eyes, mouths, particles, parallax, animation) is what makes a frame feel alive. A window is alive when more than
-   ALIVE_PIXEL_SHARE of its pixels changed by more than ALIVE_PIXEL_DELTA grey levels after that correction, ignoring a thin band around sharp
-   edges (where a camera move's interpolation noise lives). Measured 9 Nov at 1080p: a photo with only a camera move = exactly 0; every particle
-   world > 0.0004 in every half second.
-   Contract check: alive share >= ALIVE_MIN_SHARE and no dead stretch longer than ALIVE_MAX_DEAD_S.
-3. score(): the Breakout Score (0-100) from evidence already measured for the video (research weights). It RANKS and ALERTS; it never holds a
-   video by itself (research: LLM-judge scores are not validated predictors; holds come only from deterministic checks).
-4. monitor(): the 48-hour breakout monitor. A video at >= BREAKOUT_MULT x the channel's usual 48-hour views (or BREAKOUT_MIN_VIEWS while there is
-   no history) gets a card: 'approve follow-ups' (2 Shorts + a sequel premise, paid from the breakout fund). Nothing is spent without the tap."""
+"""Breakout Protocol checks and tools: promise-paid, the aliveness (still-photo) detector, the Breakout Score and the 48-hour breakout monitor. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, os, statistics, subprocess
 import numpy as np

@@ -1,5 +1,4 @@
-"""tools/rehearsal.py v8.0 - full offline run: setup -> voices -> tick -> produce -> release x2 -> trends -> learn -> brief.
-Fake models, fake images, synthetic voice. Proves every stage connects. Costs nothing. Used by CI and the repair bot."""
+"""Full offline rehearsal: setup -> voices -> tick -> produce -> release -> trends -> learn -> brief with fake models, images and voice; proves every stage connects at zero cost. See docs/CURRENT/SYSTEM.md."""
 import os, re, json, shutil, datetime as dt
 import numpy as np
 from whatifs import checkpoint as CK
@@ -54,6 +53,7 @@ def run():
             assert any(r.get("kind") == "creative_review" for r in st.rows("Owner_Actions")), "review card missing"
             led = [r for r in st.rows("Feature_Ledger") if r.get("episode_id") == e["episode_id"]]
             assert led and not [r for r in led if r["status"] == "FAIL"], ("contract ledger", [r for r in led if r["status"] == "FAIL"])
+            assert any(r["feature"] == "docs_current" and r["status"] == "PASS" for r in led), "truth hygiene check (docs_current) did not run"
             print("contract ledger:", len(led), "checks,", sum(1 for r in led if r["status"] == "PASS"), "pass; review card sent; approving as the owner")
             CON.approve(e["episode_id"]); e = st.rows("Episodes")[-1]
         assert e["status"] == "SCHEDULED", e

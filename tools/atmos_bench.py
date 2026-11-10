@@ -1,6 +1,4 @@
-"""v9.1 render performance check (run: python tools/atmos_bench.py [seconds]). Renders the same still shot through the REAL render path (camera move +
-show overlay + encoder) at the production work size with ATMOSPHERE_ON false and true, prints the time of each, the overhead %, and the automatic
-degrade steps when the budget is forced low."""
+"""Render performance check: times one still shot through the real render path with the atmosphere layer off and on (run: python tools/atmos_bench.py [seconds]). See docs/CURRENT/SYSTEM.md."""
 import os, sys, time, tempfile, json
 import numpy as np, cv2
 os.environ.setdefault("WI_FAKE", "1")

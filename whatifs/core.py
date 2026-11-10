@@ -1,4 +1,4 @@
-"""whatifs/core.py v8.10 (Gemini voice, cast, premise scores, craft tabs; v8.9) - settings, storage (Google Sheet or local rehearsal store), logging, cost log, Google sign-in."""
+"""Settings, storage (Google Sheet or local rehearsal store), logging, cost log and Google sign-in. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, os, re, time, datetime as dt, threading
 import requests
@@ -288,7 +288,7 @@ DEFAULTS = {
  # schedule
  "PAUSED": ("FALSE", "TRUE stops everything"),
  "PAUSED_UNTIL": ("", "auto-set by Guardian"),
- "PUBLISH_DAYS": ("Tue,Sat", "US Eastern days; 2 long videos/week to fit the ₹4,000 cap while preserving 3 Kling clips and writer-room reviews"),
+ "PUBLISH_DAYS": ("Tue,Sat", "US Eastern days of the long-video slots (the month's long videos are capped by STANDARD_MAX_LONG_PER_MONTH and the money governor)"),
  "PUBLISH_HOUR_ET": ("10:00", "centre of slot, US Eastern"),
  "PUBLISH_JITTER_MIN": ("90", "+/- minutes"),
  "PRODUCE_AHEAD_HOURS": ("30", "start producing this long before a slot"),
@@ -304,7 +304,7 @@ DEFAULTS = {
  "FPS": ("30", ""),
  # visuals and money
  "STILLS_MIN": ("44", ""), "STILLS_MAX": ("56", ""), "LIVING_STILLS": ("8", ""), "KLING_CLIPS": ("4", "v10.2 (option C): animated scenes per long video (= ANIM_SHOTS)"), "KLING_MIN_CLIPS": ("4", "v10.2 (option C): the budget controller never trims animated scenes below this; it trims living stills, then stills, then runtime"),
- "BUDGET_FLOOR_INR": ("5000", "monthly budget floor; paired with the ceiling for a hard cap (v10: ₹5,000 incl. ₹300 for special reels, owner 2026-11-08; v9.4a ₹4,700; was ₹4,000)"), "BUDGET_CEILING_INR": ("5000", "v10: ₹5,000 incl. ₹300 for special reels (owner 2026-11-08); v9.4a ₹4,700. hard monthly spending cap, everything included: pictures, clips, Claude writing incl. thinking, Gemini incl. TTS"), "REVENUE_SHARE": ("0.10", ""),
+ "BUDGET_FLOOR_INR": ("5000", "monthly budget floor; paired with the ceiling for a hard cap (₹5,000 all-in incl. ₹300 for special reels, owner 2026-11-08)"), "BUDGET_CEILING_INR": ("5000", "hard monthly spending cap, everything included: pictures, clips, Claude writing incl. thinking, Gemini incl. TTS, retries and repairs (₹5,000 incl. ₹300 for special reels, owner 2026-11-08; a single month can be overridden in MONTH_CAP_OVERRIDES)"), "REVENUE_SHARE": ("0.10", ""),
  "USD_INR": ("99", "rupees per dollar incl. forex"),
  "PRICE_STILL_USD": ("0.0046", "legacy estimate of one cheap still (v10.1: media uses PRICE_STILL_PER_MP x megapixels rounded up)"), "PRICE_STILL_PER_MP": ("0.003", "v10.1: FLUX schnell on fal, USD per megapixel, billed rounded UP to the next whole megapixel (verified 8 Nov 2026)"), "PRICE_THUMB_USD": ("0.08", "premium image, about 2MP"),
  "PRICE_LIVING_USD": ("0.02", "living still clip"), "PRICE_KLING_USD": ("0.42", "one 5 s animated scene (v10.2: Kling 3.0 Standard on fal, audio off)"),
@@ -335,7 +335,7 @@ DEFAULTS = {
  "FAL_STILL_MODEL": ("fal-ai/flux/schnell", "cheap stills"),
  "FAL_PREMIUM_MODEL": ("fal-ai/flux-pro/v1.1", "thumbnails + reel covers"),
  "FAL_LIVING_MODEL": ("fal-ai/ltx-video/image-to-video", "living stills"),
- "FAL_HERO_MODEL": ("fal-ai/kling-video/o3/standard/image-to-video", "animated scenes (v10.2: Kling 3.0 Standard on fal, $0.084/s audio off = $0.42 per 5 s; the Steward falls back along MODEL_LADDERS)"),
+ "FAL_HERO_MODEL": ("fal-ai/kling-video/o3/standard/image-to-video", "animated scenes (Kling 3.0 Standard on fal, $0.084/s audio off = $0.42 per 5 s; the Steward falls back along MODEL_LADDERS)"),
  "STILL_W": ("1872", "v10.1: still width; 1872x1056 = 1.98 MP is billed as 2 MP, the same price as the old 1632x918, with sharper pictures"), "STILL_H": ("1056", ""),
  "PARALLAX_ON": ("TRUE", "depth parallax on stills"),
  "DRIVE_ARCHIVE": ("TRUE", "copy masters to Google Drive"),
@@ -449,7 +449,7 @@ DEFAULTS = {
  "PR_MAIL_ON": ("TRUE", "TRUE = when a code change (from Claude Code or the Repair Bot) passes every check, you get an email with a one-click merge link"),
  # v8.10: Gemini voice + cast, premise quality, immersion / POV, voice acting, sound design, creative constitution, Script Preview, budget view.
  # Every new behaviour has a switch: setting it to the value in brackets restores v8.9 behaviour.
- "TTS_ENGINE": ("gemini", "gemini = Gemini TTS (two speakers per request, expression tags, word timings derived by code) with automatic fallback to Kokoro on failure; kokoro = v8.9 voices [kokoro]"),
+ "TTS_ENGINE": ("gemini", "gemini = Gemini TTS (two speakers per request, expression tags, word timings derived by code) with automatic fallback to Kokoro on failure; kokoro = the Kokoro blended voices [kokoro]"),
  "TTS_FALLBACK_ON": ("TRUE", "TRUE = if Gemini TTS fails for an episode, the WHOLE narration is re-voiced with Kokoro (never a mix of engines in one video) and the notes say so"),
  "TTS_CHUNK_WORDS": ("220", "most words per Gemini TTS request (about 90 s of speech; the model takes 8,192 input tokens and returns at most ~10 min of audio)"),
  "TTS_RPM": ("8", "Gemini TTS requests per minute this job allows itself (Tier 1 limits vary; a 429 waits and retries)"),
@@ -474,7 +474,7 @@ DEFAULTS = {
  "POV_CAMERA_ON": ("TRUE", "TRUE = free POV camera moves and effects in render (pov_rush, impact_shake, debris parallax) on stills, living stills, Kling clips, stock and graphics, locked to sound events [FALSE = v8.9 camera]"),
  "EMOTION_CURVE_ON": ("TRUE", "TRUE = the writer marks each line's delivery curve {slow, low, whisper, breath, gasp...}; Gemini acts it, Kokoro uses its pace part [FALSE = tags only]"),
  "SOUND_IMMERSIVE_ON": ("TRUE", "TRUE = ambient beds per scene, close-mic textures under key lines, tactile foley, the impact recipe and stereo movement in POV scenes (all code-generated, free) [FALSE = v8.9 sound]"),
- "CONSTITUTION": ("", "the Creative Constitution (blank = the built-in one, see docs/CHANGES.md v8.10). Type your own text here to replace it; every department reads it"),
+ "CONSTITUTION": ("", "the Creative Constitution (blank = the built-in one in data.CONSTITUTION). Type your own text here to replace it; every department reads it"),
  "CRAFT_NOTEBOOK_ON": ("TRUE", "TRUE = active rows of the Craft_Notebook tab are top-priority creative input for the scout and every writer"),
  "TECHNIQUE_RESEARCH_ON": ("TRUE", "TRUE = the weekly scout reads titles, descriptions and top comments of top niche videos (YouTube API quota, about 120 units) and files technique observations"),
  "TECHNIQUE_MAX_VIDEOS": ("6", "top videos studied per week for the Technique Library"),
@@ -490,7 +490,7 @@ DEFAULTS = {
  # v8.11: opening Kling, no skipped slots, prompt caching, model routing by capability, measured AI cost. Every behaviour has a switch; the value in
  # brackets in a note restores v8.10.
  # v9 "Reality on Trial" (stage 1: the Show Plan is requested, validated, repaired and logged; the script / render read it from stage 2)
- "SHOW_MODE": ("auto", "auto = the Showrunner also returns a Show Plan (no extra AI call), validated and logged in Show_Log; off = exactly the v8.11 Showrunner prompt"),
+ "SHOW_MODE": ("auto", "auto = the Showrunner also returns a Show Plan (no extra AI call), validated and logged in Show_Log; off = the Showrunner prompt without a Show Plan"),
  "SHOW_FORMAT": ("trial", "trial = Reality on Trial (charge, exhibits, witness, jury, verdict); wager = reserved for the bet-based variant"),
  "CHARACTER_INTENSITY_MIN": ("0", "lowest character intensity (0-3) the Show Plan may choose"),
  "CHARACTER_INTENSITY_MAX": ("3", "highest character intensity (0-3) the Show Plan may choose"),
@@ -585,7 +585,7 @@ DEFAULTS = {
  "QC_VISION_OPENING_MAX": ("6", "v9.3.2: the picture check also looks at up to this many shots inside the opening window (the seconds that decide retention), on top of QC_VISION_FRAMES"),
  "V932_SEEDS_DONE": ("", "auto - when the owner's seeded technique cards were filed"),
  # v9.4a (K123): pre-production at half price
- "PREPROD_ON": ("TRUE", "v9.4a: the writers' room for the next slot runs early (when nobody waits) through Message Batches at half price; production takes the result as written [FALSE = v9.3.2: the room runs inside production]"),
+ "PREPROD_ON": ("TRUE", "v9.4a: the writers' room for the next slot runs early (when nobody waits) through Message Batches at half price; production takes the result as written [FALSE = the room runs inside production]"),
  "PREPROD_LEAD_HOURS": ("72", "v9.4a: pre-production may start this many hours before a slot"),
  "PREPROD_MIN_LEAD_HOURS": ("34", "v9.4a: and must start at least this many hours before it (production starts at PRODUCE_AHEAD_HOURS)"),
  "ROOM_BATCH_ON": ("TRUE", "v9.4a: Claude calls in pre-production go through Message Batches (50% off; stacks with prompt caching) [FALSE = normal calls]"),
@@ -758,7 +758,7 @@ DEFAULTS = {
  "LAST_MONTH_CAP_INR": ("0", "auto"), "LAST_MONTH_SPEND_INR": ("0", "auto"),
  "BUDGET_GUARD_PCT": ("90", "v11: at this % of the cap, extras pause (spin-offs, tool tests, Shorts above 1 a day); long episodes keep their money; one alert per month"),
  "BUDGET_GUARD_ALERTED": ("", "auto"),
- "BRAIN_ON": ("TRUE", "v11 (K155): the learning core: features per video, Technique_Library from YouTube's engaged views, Thompson sampling with a holdout, forecasts scored against the median"),
+ "BRAIN_ON": ("TRUE", "v11 (K155): the learning core: features per video, Technique_Evidence from YouTube's engaged views, Thompson sampling with a holdout, forecasts scored against the median"),
  "BRAIN_HOLDOUT": ("0.2", "v11: share of Shorts that keep the default hook (the control the sampler must beat)"),
  "BRAIN_DEFAULT_HOOK": ("verdict_first", "v11: the control hook archetype"),
  "BRAIN_PRIOR_STRENGTH": ("20", "v11: empirical-Bayes prior weight (views) centred on the channel's own rate"),
@@ -926,7 +926,7 @@ DEFAULTS = {
  "SCRIPT_MODEL": ("opus", "opus = Claude Opus writes the first draft and the critic / Owner's Cut rewrites; fable = Claude Fable (stronger, 2.5x the price; its extra safety filters may refuse some biology topics, then Opus takes over by itself) [v8.10 = sonnet]"),
  "OWNERS_CUT_JUDGE": ("gemini", "gemini = Gemini Pro judges the Owner's Cut, independent of the Opus writer (v8.10 behaviour, default); opus = Claude Opus at EFFORT_JUDGE (same family as the writer, so it may favour its own style)"),
  "HAIKU_CHORES_ON": ("TRUE", "TRUE = a reply that is not valid JSON is repaired by Claude Haiku (about Rs 0.05) and accepted ONLY if every word of the original survives unchanged; otherwise the old retry runs [FALSE = v8.10]"),
- "MODEL_ROUTES": ("", "optional JSON to move a room role to another model family, e.g. {\"immersion\": \"opus\"}. Blank = the built-in routing (see docs/CHANGES.md v8.11)"),
+ "MODEL_ROUTES": ("", "optional JSON to move a room role to another model family, e.g. {\"immersion\": \"opus\"}. Blank = the built-in routing (models.ROUTES)"),
  "EFFORT_CREATIVE": ("high", "Claude effort for creative generation (scout, showrunner, bible, premise bank / bench, first draft, rewrites): low | medium | high | xhigh | max"),
  "EFFORT_JUDGE": ("high", "Claude effort for judgment (premise judge, Owner's Cut)"),
  "EFFORT_EDIT": ("high", "Claude effort for edits (format, fact fix, humanize, length, packager, reels, memos, Director). high = the Sonnet default, i.e. v8.10 behaviour"),

@@ -1,5 +1,4 @@
-"""whatifs/governor.py v8.10 (TTS + thinking in every estimate, headroom, 4th-Kling proposal, Gemini credit; v8.7) - hard monthly cap (v8.7: the maintenance reserve is INSIDE the cap; v8.5: the B thumbnail is counted) WITH a pre-flight gate. Preserve minimum Kling shots; trim living-still animation first.
-The controller estimates spend but cannot guarantee provider billing; Cost_Log is authoritative."""
+"""The money governor: hard monthly cap with a pre-flight gate, per-episode estimates, the extras guard and the breakout fund. See docs/CURRENT/SYSTEM.md."""
 import datetime as dt, re
 from whatifs.core import S, store, month_spend, lifetime_spend_usd, now_utc, set_setting, log
 

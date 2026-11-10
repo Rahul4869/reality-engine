@@ -1,8 +1,4 @@
-"""tools/repair.py v8.3 - repair bot. When a job crashes, send the traceback + the failing file to Claude, get a COMPLETE fixed file,
-run Plan Guard + the offline rehearsal (with every key removed from its environment), and open a pull request.
-Auto-merged only if all checks pass, AUTO_MERGE_REPAIRS is TRUE and the fix adds no new network, key, shell or file-deleting code;
-otherwise the pull request waits for the owner (one email). Cap = MAX_REPAIRS_PER_WEEK from the Settings tab.
-Gemini and the owner never edit code."""
+"""Repair bot: on a crashed job, sends the traceback and the failing file to the model, checks the fixed file with Plan Guard and the offline rehearsal, and opens a pull request. See docs/CURRENT/SYSTEM.md."""
 import os, re, sys, subprocess, json, time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from whatifs import prompts as P

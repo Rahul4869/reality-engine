@@ -1,13 +1,4 @@
-"""whatifs/premise.py v8.11 (Premise_Bench; ship the best instead of skipping) / v8.10 - premise quality, automatic (no manual rating):
-(a) an LLM-generated seed bank of 'illogical-sounding but physically showable' premises, regenerated monthly, deduplicated against Banned and past episodes
-    (PREMISE_BANK_ON; FALSE = the v8.9 template grid);
-(b)+(c) every pitch is scored by TWO independent BLIND judges (Claude + Gemini; neither sees the scout's scores, the other judge, or who wrote it) on
-    weirdness, counter-intuitive-but-explainable, showable in first person, self-relevance, emotional peak, novelty and headline fit (4-11 words, checked by code),
-    and the two are combined (PREMISE_DUAL_SCORE_ON);
-(d) both judges are calibrated with the owner's taste examples (data.TASTE_LIKED / TASTE_BORING) and the Craft_Notebook;
-(e) NO fail-forward floor: if nothing reaches PREMISE_MIN_SCORE, the scout tries again with fresh seeds (PREMISE_RETRY_ROUNDS), then the slot is SKIPPED
-    and the owner is emailed (PREMISE_FAIL_FORWARD = TRUE restores v8.9);
-(f) every pitch and score goes to Premise_Scores; the daily learning job adds the video's CTR / retention to the chosen row for later learning."""
+"""Premise quality: the generated premise bank, scoring and the Premise_Bench that ships the best premise. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import hashlib, json, random, re
 from whatifs.core import S, store, safe_rows, safe_append, log, iso, set_setting, now_utc, scrub

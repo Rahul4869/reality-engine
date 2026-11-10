@@ -1,7 +1,4 @@
-"""v10.1 (K148): the North-Star tracker. Weekly, YouTube Analytics (verified metric names 8 Nov 2026: estimatedMinutesWatched, engagedViews,
-subscribersGained/Lost; dimension creatorContentType) gives an UPPER-BOUND proxy of the 500-subscriber YPP tier (500 subs + 3 qualified uploads
-in 90 days + 3,000 qualified long-form watch hours in 365 days, or 3M qualified Shorts views in 90 days). Studio's tracker is the only authority,
-so the owner gets ONE card 'check Studio > Earn and apply' when the proxy passes. Progress goes to YPP_PROGRESS for the dashboard."""
+"""The North-Star tracker: weekly YouTube Analytics progress toward the Partner Program thresholds. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, datetime as dt
 from whatifs.core import S, log, store, iso, now_utc, FAKE, scrub, set_setting

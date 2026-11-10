@@ -95,9 +95,9 @@ def test_breakout_bar_blocks_below_80(monkeypatch, setting):
     assert CON.p_breakout_bar({"d": {}})[0] == "PASS"
 
 def test_every_owner_requirement_in_the_matrix_is_wired_to_a_real_check():
-    """docs/ENFORCEMENT_MATRIX.md lists every owner requirement with the code that enforces it; this fails if any named check / function is missing."""
+    """docs/CURRENT/ENFORCEMENT_MATRIX.md lists every owner requirement with the code that enforces it; this fails if any named check / function is missing."""
     import re, importlib
-    rows = [l for l in open("docs/ENFORCEMENT_MATRIX.md", encoding="utf-8").read().splitlines() if l.startswith("| ") and "`" in l]
+    rows = [l for l in open("docs/CURRENT/ENFORCEMENT_MATRIX.md", encoding="utf-8").read().splitlines() if l.startswith("| ") and "`" in l]
     ids = {f for f, *_ in CON.FEATURES}
     missing = []
     for l in rows:

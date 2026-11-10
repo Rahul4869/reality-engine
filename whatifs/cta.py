@@ -1,16 +1,4 @@
-"""whatifs/cta.py v8.3 - the three audience asks (LIKE, SUBSCRIBE, SHARE), written as witty moments of the show itself.
-
-Why: v8.2 had only one optional subscribe line and nothing for like or share. A viewer asks themselves "did I enjoy this?" at the moments right after a payoff,
-and "who would love this?" at the end. So the asks are placed there, spoken by the two recurring roles in their own voices, and kept short.
-
-How it works (three layers, so an ask is never missing and never ugly):
-  1. The Showrunner's bible invents three premise-specific lines (the writer prompt places them: like ~40%, subscribe ~65%, share in the last 40 s).
-  2. check()/ensure() verify by code that all three asks exist in the final script. A missing one is inserted from the hand-written pools below, at a calm
-     moment (never right before or after a reaction, a reveal or a peak), rotating so two videos in a row never use the same line.
-  3. Extras: a small code-drawn chip while the line is spoken (overlay.CtaChip), a witty description footer with a one-click subscribe link, and a follow / share ask
-     at the end of each reel.
-Nothing here calls an AI model or costs money. Everything is original text.
-"""
+"""The three audience asks (like, subscribe, share), written as witty in-show moments and placed by rules. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import re, random, hashlib
 

@@ -1,5 +1,4 @@
-"""whatifs/manage.py v8.9 - scheduler, release (reels at launch + reels 3-4 on the next days), packaging rescue, hold/resume on pause, trend scout, learning loop, strategy evolution, guardian,
-money reminders, monthly brief, setup + self-test. All automatic; the owner is emailed only for money, launch, monthly brief."""
+"""Scheduler and upkeep: tick, release, packaging rescue, hold/resume, trend scout, learning loop, guardian, setup, self-test and the one-time setting moves. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import os, json, random, re, datetime as dt, statistics
 import requests

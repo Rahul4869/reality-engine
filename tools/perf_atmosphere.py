@@ -1,5 +1,4 @@
-"""v9.1: render time of one standard (rehearsal-size) episode with ATMOSPHERE_ON TRUE vs FALSE, plus 1080p per-frame cost of the layers.
-Usage: WI_FAKE=1 WI_SMALL=1 python tools/perf_atmosphere.py"""
+"""Render-time comparison of one rehearsal-size episode with ATMOSPHERE_ON true vs false (usage: WI_FAKE=1 WI_SMALL=1 python tools/perf_atmosphere.py). See docs/CURRENT/SYSTEM.md."""
 import datetime as dt, json, sys, tempfile, time
 sys.path.insert(0, ".")
 import numpy as np

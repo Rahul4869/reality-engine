@@ -1,12 +1,4 @@
-"""whatifs/community.py v9 (stage 3b) - the Jury outside the video (K101):
-- the in-character JURY COMMENT after release (top-level; the YouTube Data API cannot pin, so the text is emailed for you to pin),
-- the JURY TALLY by deterministic keyword parsing (no AI), fed to the next episode's opening,
-- TEACUP FINDERS (comments with a timestamp within 3 s of a hidden teacup; handles only, filtered, at most TEACUP_FINDERS_MAX),
-- the COMMENT QUEUE: every comment triaged by code (question / prediction / feedback / spam-risk); COMMENT_REPLY_MODE off | draft | auto
-  (auto = only template thank-yous to predictions, signed by a character, capped per day); a weekly digest email,
-- the SEASON tab (verdicts, tallies, clues) and the EXPERIMENTS tab (hypothesis + 48 h / 7 d / 28 d results; recommendations only, never auto-changes),
-- the VARIETY GUARD on the Show Plan (verdict streaks, a charge too close to a recent one).
-Comment text is UNTRUSTED data: it is only matched by code, never followed and never put into a prompt."""
+"""The jury outside the video: the in-character jury comment, the keyword-parsed jury tally and viewer finds fed to the next episode. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, re, datetime as dt
 from whatifs.core import S, log, store, iso, now_utc, parse_iso, FAKE, set_setting

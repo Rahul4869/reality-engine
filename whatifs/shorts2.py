@@ -1,16 +1,4 @@
-"""v11 Stage D (K159): standalone daily Shorts - each one a complete mini-trial built to break out (research: cold start + Breakout Protocol + Feel Layer).
-
-Every Short:
-- TOPIC: an approved breakout follow-up first (Breakout_Queue), else the best unused premise on the bench.
-- HOOK ARCHETYPE: chosen by the Channel Brain (Thompson sampling; BRAIN_HOLDOUT keep the default as the control) and recorded as a feature.
-- SCRIPT: 3 variants by Claude Sonnet, judged BLIND by Gemini Pro + Gemini Flash (a different family from the writer), both orders; deterministic
-  checks: 60-120 words, 3-6 beats, first line <= 14 words, canon cast only, a loop line that feeds the first line.
-- PICTURES/MOTION: beat 1 starts from a reference-locked staged frame (Google); one new Kling shot every SHORTS_KLING_EVERY Shorts (or for a breakout
-  follow-up), everything else cheap living-still motion. Designed voices, captions, a cover as the first frame.
-- REVIEW: the first SHORTS_REVIEW_FIRST_N Shorts wait for the owner's Approve; then they post directly.
-- LEARNING: Video_Features + a forecast are written before posting; outcomes come back through brain.ingest_shorts().
-- MONEY: the first Short of a day is core production (it may not eat the money reserved for the month's long slots); further Shorts are extras
-  (growth allowance + the 90% guard). Episode ids start with 'SH' (not counted as specials)."""
+"""Standalone daily Shorts: each a complete mini-trial built to break out, with topic and hook chosen from the breakout queue and the Channel Brain. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, os
 from whatifs.core import S, log, store, iso, now_utc, parse_iso, FAKE, WORK, scrub

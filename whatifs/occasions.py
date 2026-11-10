@@ -1,8 +1,4 @@
-"""v10 (K136; owner 2026-11-08): the Character Love Engine knows the calendar. Twice a month the special reel slots go first to the most-loved
-occasions of that month (Halloween, Christmas, New Year, Diwali, Holi, Valentine's, Pi Day...), each with a witty in-world brief for the three
-characters and a warm family ending with the subscribe ask. Months without an occasion use topical hooks (this week's safe science/space
-trend from Trend_Brief) or the renewable formats. Three days before an occasion special the owner gets one 'This week' card with the idea
-([OK] / [Change idea]); silence = it goes ahead. Lunar-calendar dates come from OCCASION_DATES (verified 2026-11-08; refreshed yearly)."""
+"""Calendar-aware special reels: the special-reel slots go first to the month's best-loved occasions. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import datetime as dt, json
 from whatifs.core import S, log, store, now_utc, set_setting

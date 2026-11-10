@@ -1,1 +1,1 @@
-"""Reality Engine v8.2. Written only by Claude (Kernel K1). Gemini never edits code."""
+"""Reality Engine: the automated pipeline behind the YouTube channel Reality on Trial. See docs/CURRENT/SYSTEM.md."""

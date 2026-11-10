@@ -1,11 +1,4 @@
-"""whatifs/playbook.py v8.7 - the proactive, research-based rulebook (KERNEL K68).
-Once a week (inside the Trend Scout job) an independent researcher with Google Search proposes NEW or CHANGED practices for clicks, the first 30 seconds,
-full retention, Shorts and subscribers. Code, not the model, decides what is kept: a rule needs a real source link, a department and the metric it should
-move; anything that games the platform is refused; the evidence label is set by code (official only for YouTube / Google pages, never more than
-'plausible' otherwise); at most 3 new rules a week and 3 trials at once. A trial rule is given to the writers on a recorded coin flip per episode, so the
-learning job can compare episodes WITH and WITHOUT it on the one metric it claims to move. Better by a clear margin after PLAYBOOK_EVAL_PLAYS videos per side
-= active; clearly worse = retired; no measurable effect after three times that = retired (an official rule stays active: it is guidance from YouTube itself).
-Nothing unsourced ever reaches a prompt. The code itself is never rewritten by this loop (the Repair Bot alone changes code, behind Plan Guard + tests)."""
+"""The research-based rulebook: weekly proposed practices, vetted by code (source, evidence label) and trialled on half the episodes. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import hashlib, json, re
 from whatifs.core import store, S, iso, log, scrub, safe_rows, safe_append

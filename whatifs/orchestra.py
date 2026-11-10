@@ -1,5 +1,4 @@
-"""v9.4a (ORCHESTRA, K127): heavy optional jobs never run inside a release window or a production run, so nothing clashes, times out or fights
-for quotas. Locks between workflows are GitHub concurrency groups (produce, release, preprod, build, sheet-heavy); this module is the time-window rule."""
+"""Time-window rule so heavy optional jobs never run inside a release window or a production run. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 from whatifs.core import S, log, store, now_utc, parse_iso
 

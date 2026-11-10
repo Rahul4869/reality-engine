@@ -1,6 +1,4 @@
-"""whatifs/room.py v8.9 (rotating guest, next-episode tease, style lock; v8.7: packaging-first promise, retention gate, rhythm blueprint, sound cues, playbook rules; v8.6: routed lessons, promise shot) - the writers' room. Scout -> Showrunner -> department memos -> Production Bible -> Writer ->
-Critic/Spectacle gate (Gemini, independent) -> one rewrite -> Director -> Packager -> Reel Producer -> Continuity check.
-Fail-forward: 3 premise tries, then relax one step, then go. No human decision ever blocks."""
+"""Writers' room v1 and the shared room steps: scout, showrunner, production bible, writer, critic and policy-safety gate, promise shot. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, hashlib, re, random
 from whatifs import prompts as P

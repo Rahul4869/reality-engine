@@ -1,7 +1,4 @@
-"""v10 model bake-off (K143; D4 + carry-over: current vs Kling 2.5 Turbo Pro vs Kling 2.6 Pro, no Kling 3). One time, started by hand
-(workflow 'Model bake-off'), at most BAKEOFF_CAP_INR. The same two scenes are animated by the current hero model and each candidate in
-BAKEOFF_CLIP_MODELS; the clips go to the owner's Drive (private) and one card asks which to use ([Keep current] / [Use 2] / [Use 3]).
-Silence = keep the current model (the safe default). A candidate fal rejects is skipped (fal retires models: verify ids before running)."""
+"""One-time, hand-started clip-model bake-off: the same scenes animated by the current hero model and each candidate, capped by BAKEOFF_CAP_INR. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import os
 from whatifs.core import S, log, store, iso, now_utc, FAKE, WORK, scrub, set_setting

@@ -1,10 +1,4 @@
-"""v10.3 (K153): the OWNER VIEW - one data layer for WhatsApp, the dashboard, the digests and the chat brain, so they never disagree.
-
-Evidence rules (pack rule, owner 9 Nov 2026):
-  - every number carries `src` (the Sheet tab / API it came from) and `date`; nothing is invented; missing data says WHEN it will appear;
-  - interpretations are labelled `kind: "interpretation"` and built from the observed numbers next to them;
-  - demo mode (`demo=True`) returns a clearly marked DEMO data set so the owner can see finished designs before real data exists.
-All sections are rule-based (Rs 0). Sections: today, numbers, hot_topics, recommendations, observations, strategy, experiments, money."""
+"""The owner view: one evidence-labelled data layer for WhatsApp, the dashboard, the digests and the chat brain. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import datetime as dt, json, statistics
 from whatifs.core import S, store, iso, now_utc, parse_iso

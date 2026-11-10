@@ -1,12 +1,4 @@
-"""whatifs/checkpoint.py v8.2 - save and restore the expensive state of an episode in your private Drive.
-
-Why: before v8.2 a failure after the AI writing (about Rs 140) or after the paid images/clips threw all of it away and the retry paid again. Now:
-  plan   = script, voice (the narration clock), shot list, bible, packaging inputs      -> saved after planning
-  assets = every paid picture and clip                                                    -> saved after the assets are made
-  hold   = everything needed to re-render (plus thumbnail, covers, reels)                 -> saved when final QC fails (the one-click fix reads it)
-A retry of the same slot, or the one-click fix, restores the newest stage and continues from there. Best effort: if Drive is unavailable the episode simply
-runs as before. Segments and the master are never stored (they are cheap to render again).
-"""
+"""Saves and restores an episode's expensive state (plan, assets) in the owner's Drive so a retry never pays twice. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import os, re, json, zipfile
 from whatifs.core import log, store, S, scrub

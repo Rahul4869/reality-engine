@@ -1,20 +1,4 @@
-"""whatifs/tts_gemini.py v8.10 - Gemini TTS narration (Settings TTS_ENGINE=gemini; kokoro = v8.9 voices).
-
-How it works (API facts from Google's TTS guide, Oct 2026; the model NAME is discovered live, K11):
-- POST v1beta/interactions, one request per CHUNK of consecutive lines (<= TTS_CHUNK_WORDS words, about 90 s): every line is its own turn with
-  speech_metadata {speaker, style}. Two speakers per request work with PREBUILT voices only; a designed/replicated voice ("voice_...") is voiced one
-  speaker-run at a time. The transcript is read VERBATIM, so our tags never go into the text: delivery goes into the turn's style, moments into
-  inline vocal tags (<breath>, <gasp>, <laugh>, <sigh>, <short pause>...).
-- Unary replies are WAV (24 kHz mono 16-bit). Gemini returns NO word timings, so this module MEASURES them:
-  1) each line's start/end inside a chunk comes from the pauses actually found in the audio, matched to the expected line lengths (dynamic programming);
-     if the match is not convincing the chunk is re-voiced ONE LINE PER REQUEST (then every line's duration is measured exactly);
-  2) words inside a line: CTC forced alignment (wav2vec2 via transformers, free, CPU) when it loads (TTS_ALIGN=auto|ctc), else voiced-energy + syllable
-     timing that snaps word edges to the line's own internal pauses (TTS_ALIGN=energy).
-  The narration timeline (the master clock for every visual) is then built from these measured pieces exactly like the Kokoro path, so cuts stay
-  frame-accurate; final QC still checks the audio against the clock (QC_SYNC_TOL_SEC).
-- Rate limits: at most TTS_RPM requests a minute from this job; 429 / 5xx wait (Retry-After, else growing back-off) up to TTS_MAX_RETRIES.
-- Cost: every request is logged in Cost_Log (item gemini_tts, provider google) from the usage Google returns, else from the audio length (25 tokens a second).
-Fake mode (WI_FAKE=1): a local stand-in returns a WAV with one tone per turn and real pauses, so segmentation and alignment are exercised offline."""
+"""Gemini TTS narration: chunked requests, designed voices, retries and timing (the model name is discovered live). See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import base64, io, json, re, time, wave, datetime as dt
 import numpy as np

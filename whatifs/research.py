@@ -1,14 +1,4 @@
-"""whatifs/research.py v8.0 - audience and topic research that runs BEFORE topic selection.
-
-Evidence and interpretation are kept apart:
-  OBSERVED  = public, aggregate signals with a link, a date and the numbers we actually saw (YouTube search/chart, Google Trends US feed,
-              public question titles from Stack Exchange science sites). Collected by code, not by an AI.
-  AI TEXT   = the audience need, click emotion and channel fit. Labelled as interpretation and never used as evidence.
-Words like 'trending', 'viral' and 'high intent' are checked by code against the cited signals and removed when unsupported.
-If a source is down the brief says so ('partial' / 'none'). Production is never blocked and nothing is invented.
-Privacy: only public titles, links, view/score counts. No author names, no comments, no private communities, no logins other than the
-channel owner's own YouTube key that the project already uses. Emails and @handles found in titles are redacted.
-"""
+"""Audience and topic research before topic selection, with observed evidence kept apart from interpretation. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import datetime as dt, html, json, os, re, time
 import xml.etree.ElementTree as ET

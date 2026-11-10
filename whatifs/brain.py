@@ -1,20 +1,4 @@
-"""v11 (K155) Channel Brain - the learning core (research report 9 Nov 2026, sections B, E, G, H).
-
-What it does, with no theatre:
-- Every published video / Short gets FEATURES (hook archetype, title pattern, topic cluster, length band, lead character, origin) in Video_Features.
-- OUTCOMES come only from YouTube Analytics: for every video, trials = views and successes = engaged views (YouTube's own 'stayed' signal; views
-  count every play since 31 Mar 2025 / 24 Aug 2026), plus average % viewed. Owner's own views are never added; nothing is imputed.
-- The TECHNIQUE EVIDENCE table (Technique_Evidence) holds one row per feature level. Evidence is pooled across videos (families, not single videos) with a
-  Beta-binomial model against the channel's pooled baseline. P(level beats baseline) is computed by sampling. Rules:
-    proven  : P >= BRAIN_PROVEN_P and >= BRAIN_MIN_VIDEOS videos and >= BRAIN_MIN_TRIALS views
-    promising: P >= BRAIN_PROMISING_P
-    retired : P <= BRAIN_RETIRE_P with >= BRAIN_MIN_VIDEOS videos, or not re-confirmed within BRAIN_RULE_DAYS
-  Every rule carries a mechanism, an expiry date and a kill condition.
-- CHOICES: Thompson sampling picks the hook archetype (and other levels) for each new Short; BRAIN_HOLDOUT (20%) keep the default, so the
-  sampler must beat a real control. Assignments are logged.
-- FORECASTS before publishing: an 80% interval for the engaged rate and average % viewed (from the posterior); scored weekly for coverage and
-  error against the naive 'channel median' forecast. A brain that can't beat the median is reported as NOT learning.
-All maths is numpy (Rs 0)."""
+"""Channel Brain, the learning core: video features, engaged-view outcomes, Technique_Evidence (Beta-binomial), Thompson sampling with a holdout, forecasts and the weekly 'what we learned'. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import datetime as dt, json, re
 import numpy as np

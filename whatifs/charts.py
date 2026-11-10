@@ -1,5 +1,4 @@
-"""v10.3 (K153): charts as PNG images for WhatsApp and the digests (Pillow, Rs 0). Only real numbers from the owner view; a DEMO chart says so on
-its face; no data = no chart (never an invented one)."""
+"""Charts as PNG images for WhatsApp and the digests (real numbers only; no data = no chart). See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import os
 from whatifs.core import WORK

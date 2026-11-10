@@ -1,12 +1,4 @@
-"""whatifs/voiceq.py v9.2 (K107) - designed character voices and voice loudness.
-
-DESIGNED VOICES: Gemini Voice Design voices are used BY ID ("voice_...") in speechConfig.voiceConfig.voice (Google's TTS + Voice design docs, Nov 2026).
-The Characters tab's gvoice cell may hold that ID or the DISPLAY NAME from AI Studio (e.g. "Dr Grimm 3"); the name is resolved to its ID with the
-voices list endpoint (GET v1beta/voices). A designed voice is used only when it is listed AND passed Voice_Check (synth_ok); otherwise the closest
-PREBUILT voice by descriptors is used (v9.1 substitution), and only then Kokoro. Every substitution is logged.
-
-LOUDNESS: every voiced line is levelled per character to one RMS target (VOICE_TARGET_RMS_DB, consistent between characters), then -VOICE_HEADROOM_DB
-(about 3 dB) and a look-ahead peak limiter at VOICE_PEAK_DBFS (<= -1 dBFS). Deterministic, code only."""
+"""Designed character voices (by voice ID) and voice loudness. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import re
 import numpy as np

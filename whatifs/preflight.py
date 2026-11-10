@@ -1,8 +1,4 @@
-"""whatifs/preflight.py v8.3 - free health checks BEFORE any paid step. A red critical check means: do not start (no episode row, no spend, one email per day).
-
-Most wasted retries come from a problem that was knowable in advance: a missing key, a full disk, a voice engine that cannot load, a Google sign-in that
-expired, a model list that is empty. Those are checked here, once, for free.
-"""
+"""Free health checks before any paid step; a red critical check stops the run before money is spent. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import os, shutil
 from whatifs.core import env, log, FAKE, SMALL, WORK, scrub

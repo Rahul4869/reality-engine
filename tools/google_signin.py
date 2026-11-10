@@ -1,8 +1,4 @@
-"""tools/google_signin.py v8.9.2 - ONE-TIME helper run on GitHub. Step 1 prints two sign-in links (safe to show).
-Step 2 swaps a pasted address for a long-life Google key and EMAILS it to you. The key is never printed in the (public) log.
-v8.9.2: Google now refuses Drive and YouTube permissions in ONE consent ("scopes that cannot be requested together"),
-so Drive gets its own consent and its own key: link 1 -> G_REFRESH (YouTube, Analytics, Sheets, Gmail send),
-link 2 -> G_REFRESH_DRIVE (Drive files this app creates). Same OAuth client, same Google account."""
+"""One-time Google sign-in helper run on GitHub: prints the sign-in links, swaps the pasted address for a long-life key and emails it to the owner (never printed in the log). See docs/CURRENT/SYSTEM.md."""
 import os, sys, base64, urllib.parse, requests
 from email.mime.text import MIMEText
 SC = ["https://www.googleapis.com/auth/youtube", "https://www.googleapis.com/auth/youtube.upload", "https://www.googleapis.com/auth/youtube.force-ssl",

@@ -1,8 +1,4 @@
-"""v10 G2 Shorts Lab (K135; decision 6): the owner links only WINNING Shorts to the full episode (YouTube offers no API for the 'related video' link).
-- link_pack(): weekly (Sunday) ONE 'This week' card listing up to SHORTS_LINK_MAX Shorts from the last 7 days whose views beat the channel's Shorts
-  median at 24 h+, each with its exact Studio edit link; [Done] closes it. Skipped = the description link + auto comment still work.
-- breakouts(): every tick, a Short of the last 48 h getting more than SHORTS_BREAKOUT_X times the median views per hour = one 'Act now' card (once per Short).
-- Kinetic captions (reels.py) and the weekly Shorts cap (SHORTS_WEEKLY_CAP, checked by allowed_today()) live here too. Views: one batched videos.list call."""
+"""Shorts Lab: the weekly list of winning Shorts for the owner to link to the full episode. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import statistics
 from whatifs.core import S, log, store, now_utc, parse_iso, FAKE, scrub

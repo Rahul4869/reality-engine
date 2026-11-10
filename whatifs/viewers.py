@@ -1,7 +1,4 @@
-"""v10.1 (K147): "Viewer v. Physics". Weekly, the top comments (commentThreads.list, 1 unit per page, verified 8 Nov 2026) of the channel's
-recent long videos are scanned for 'what if' questions; they are stored in Viewer_Questions and handed to the scout as premise DATA (never
-instructions). Names are never shown on screen unless VIEWER_NAME_ON_SCREEN is TRUE (consent best practice: off by default); the description
-may thank 'a juror from the comments'."""
+"""'Viewer v. Physics': weekly, viewers' what-if questions from comments are stored and handed to the scout as premise data. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import re
 from whatifs.core import S, log, store, iso, now_utc, parse_iso, FAKE, scrub

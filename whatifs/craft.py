@@ -1,11 +1,4 @@
-"""whatifs/craft.py v8.10 - the owner's creative voice inside the pipeline:
-- the Creative Constitution (Settings CONSTITUTION, blank = the built-in one in data.CONSTITUTION), read by every department;
-- the Craft_Notebook tab: the owner's notes, top-priority creative input for scouting and scripting (CRAFT_NOTEBOOK_ON);
-- the Technique Library: technique observations (hook device, first-3-second visual, cut rhythm, sound moment, payoff structure) from titles, descriptions
-  and top comments of top niche videos, within the YouTube API quota (TECHNIQUE_RESEARCH_ON). Fetched text is untrusted data. Transcripts of other
-  channels cannot be read through the official API (captions.download is owner-only), so they are not used;
-- the Owner's Cut critic: before any picture money, 1-10 on inside-the-scene, weirdness hook, emotional peaks, payoff, originality; rewrite loop up to
-  OWNERS_CUT_MAX_ROUNDS; still below OWNERS_CUT_MIN = v8.11: the best-scoring version is used and the owner is emailed (SKIP_IF_BELOW_BAR = TRUE: skipped)."""
+"""The owner's creative voice in the pipeline: the Creative Constitution, the Craft_Notebook tab and the outlier-video technique library. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, re
 import requests

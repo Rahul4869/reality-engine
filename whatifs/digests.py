@@ -1,6 +1,4 @@
-"""v10.3 (K153): the daily and weekly WhatsApp briefs (owner change request C3). Built ONLY from the owner view (every number with its source;
-interpretations labelled; 'no data yet' when empty) plus one chart image. Inside WhatsApp's 24-hour window: text + chart + buttons; outside it: the
-approved template with Menu / Numbers / Pause quick replies (the full brief also goes by email). Rs 0 (rule-based, code-made chart)."""
+"""The daily and weekly WhatsApp briefs, built only from the owner view. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import datetime as dt
 from whatifs.core import S, log, store, iso, now_utc, set_setting, FAKE, scrub

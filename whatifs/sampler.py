@@ -1,4 +1,4 @@
-"""whatifs/sampler.py v8.9 (rotating guest, tier field; v8.7: rhythm blueprint + sound density + playbook trials; hook within 3-8 s) - per-episode draw (runtime, counts, strategies). Bandit with exploration; leader capped near 60%."""
+"""The per-episode draw (runtime, counts, strategies): a bandit with exploration. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import hashlib, json, random
 from whatifs.core import S, store

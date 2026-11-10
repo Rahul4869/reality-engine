@@ -1,7 +1,4 @@
-"""v10.1 (K146): search-demand score for bench premises (compliant: YouTube search.list, own 100-calls/day bucket, 1 unit each, plus
-videos.list statistics, verified 8 Nov 2026; no autocomplete scraping). Daily, up to DEMAND_DAILY READY bench premises are scored once:
-median views of the top results for the premise's headline in the last DEMAND_LOOKBACK_DAYS, as log10, mapped to 0..1. The score adds
-DEMAND_WEIGHT x score to the premise's combined bench score (once; demand_json records it)."""
+"""Search-demand score for bench premises from the YouTube search API (no scraping). See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, math, statistics, datetime as dt
 from whatifs.core import S, log, store, iso, now_utc, FAKE, scrub

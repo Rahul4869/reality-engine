@@ -1,66 +1,64 @@
-> **v12 BUILD SESSION:** the handoff folder's CLAUDE.md and 00_START_HERE.md override this file until batch B1 rewrites it. Parts below are historical.
+# CLAUDE.md - how to change Reality Engine
 
-# CLAUDE.md: how to change Reality Engine (read this first, every session)
+You are the code builder for **Reality Engine**, the fully automated YouTube channel "Reality on Trial". The owner is not technical and has 1-2 minutes
+a day on a phone: answer first, short, brutally honest; never make him repeat anything; one decision at a time.
 
-**First read `docs/OWNER_REQUIREMENTS_LEDGER.md` (every owner requirement and how it is applied) and `docs/ENFORCEMENT_MATRIX.md` (each requirement -> the code that enforces it; a test fails if any is unwired). Never ask the owner to repeat anything listed there.**
+## Read first (the ONLY docs to follow)
+1. `docs/CURRENT/OWNER_REQUIREMENTS_LEDGER.md` - everything the owner asked for and how it is applied.
+2. `docs/CURRENT/SYSTEM.md` - what the code does now (generated from the code: modules, settings, checks, jobs, tabs).
+3. `docs/CURRENT/ENFORCEMENT_MATRIX.md` - each requirement and the code that enforces it.
+4. `docs/CURRENT/CONCEPT.md` - the show. `docs/CURRENT/PLATFORM_FACTS.md` - dated platform facts.
 
-You are the code fixer for **Reality Engine**, a fully automated faceless YouTube channel (long videos + bridge Shorts, Instagram/Facebook Reels).
-The owner is not technical. Talk plainly, short answers, one decision at a time. The owner discusses an idea with you, you agree on it together,
-then YOU implement it end to end. The owner's only action is the merge click (email link or the green Merge button on the pull request).
+`docs/ARCHIVE/` is history: never follow it, never quote it as a rule. Version labels and rule numbers in code comments are history labels too.
+While the v12 "Organisation" build is running, progress and open issues are in `handoff_v12/BUILD_STATE.md` (branch `v12-organisation`).
 
-The locked rules are in `docs/KERNEL.md` (rule numbers K1-K88). Quote the K# when you rely on one. A rule changes only when the owner says "AMEND K#".
-
-## Hard constraints (never break, never "temporarily")
-1. Money: **₹5,000 per month TOTAL** (v10, K134: incl. ₹300 for special reels; v9.4a ₹4,700, K124; was ₹4,000 since v8.10; Gemini TTS and thinking tokens included), everything included (retries, failures, repair runs, research). Production stops ₹100 below the cap,
-   maintenance at the cap (`whatifs/governor.py`, K21, K36). Any new paid call must be logged with `core.cost`, counted in `episode.est_cost_inr`
-   / `governor.min_episode_cost_inr`, and shown in a per-video and per-month cost table in your pull request.
-2. Zero manual work for the owner after setup. If a manual step is ever agreed, it must be ONE click from an email (copy the FIX / MERGE patterns).
-3. Keep: writers' room, table read, Director clearance, fact check, critic, QC, hold-and-fix, checkpoints, budget gate, audit gate, the channel name,
-   bridge Shorts, the honest AI label (`containsSyntheticMedia`), the retention gate, the playbook vetting. Never weaken a quality check to pass.
-4. Plan Guard (`tools/plan_guard.py`): never type an AI model name in code (models are discovered live, K11), no flagged words in file names or
-   text, no duplicate top-level definitions. No secrets in code, logs, the Sheet or emails.
-5. Protected files (`tools/repair.py` PROTECTED): money, quality and publishing code. You may change them, but say so in the pull request.
-6. Sheet tabs/columns are APPEND-ONLY (`core.TABS`); new Settings cells get a safe default and a note in `core.DEFAULTS`
-   (missing cells fall back to the default; the daily learning job adds missing tabs and columns by itself).
+## Hard rules (never break, never "temporarily")
+1. **Hard enforcement or it does not exist.** Every rule has code that executes it AND a check or test that fails when it is not executed.
+   Prove both ways: the test passes when satisfied and fails when violated. No documentation-only features.
+2. **Money: Rs 5,000 a month TOTAL**, everything included (retries, failures, repairs, research). Every new paid call is logged with `core.cost`,
+   counted in the estimates (`costguard.estimate_lines`, `governor.min_episode_cost_inr`), asks `governor.extras_allowed()` if it is an extra, and is
+   shown in a cost table in the pull request.
+3. **Breakout first, money second, savings never the goal.** Never weaken or switch off a quality check to make something pass.
+4. **Zero manual work for the owner.** If a step truly needs him it is ONE tap, pre-filled, sent through `whatifs/notify.py`.
+5. **Plan Guard** (`tools/plan_guard.py`): no AI model name typed in code (models are discovered live or held in Settings), no flagged words in
+   file names or text, no duplicate top-level definitions, no retired concept in current docs or prompts. No secrets in code, logs, the Sheet or mail.
+6. **Sheet tabs and columns are append-only** (`core.TABS`). A new Settings cell gets a safe default and a note in `core.DEFAULTS`; a changed default
+   that must reach the live Sheet needs a one-time move in `whatifs/manage.py` (the default alone never changes a written cell).
+7. **Protected files** (`tools/repair.py` PROTECTED: money, quality, publishing). You may change them; say so in the pull request.
+8. **One current truth.** When something is replaced, add it to `truth.RETIRED` (what replaced it goes in `truth`), move old docs to `docs/ARCHIVE/` (history,
+   under the HISTORICAL header), and run `python tools/gen_docs.py`. A module docstring is ONE line: purpose + "See docs/CURRENT/SYSTEM.md."
+9. **Cheap models never make taste calls.** Strong, cross-family, blind judges see every candidate; cheap models only do mechanical work.
 
 ## A change is not done until (integration checklist)
-- [ ] Production code really reads it (a prompt in `prompts.py` / `room.py`, a check, a scorer, or a Setting). No documentation-only features.
-- [ ] Creative changes reach the right department: Scout/Showrunner/memos/bible/writer/Director/Packager/Reel Producer (`room.py`, `data.CRAFT`).
-- [ ] The learning loop can measure it: a strategy dimension (`data.STRATEGIES` + `growth.DIM_METRIC`), a Playbook rule (`playbook.py`), or an
-      Analytics field. Say which metric it should move (pack / open / hold / shorts) and how many videos before it can be judged.
-- [ ] Research-based practices go through the Playbook (source link, evidence label set by code, A/B on half the episodes).
-- [ ] Cost: estimate updated, cost table in the PR, still under the cap for a 9-video month with retries.
-- [ ] Tests: a new `tests/test_vNN.py` with the happy path AND failure paths (API error, missing data, cap reached, double posting).
-- [ ] The rehearsal still passes and, if visible in the pipeline, asserts the new behaviour (`tools/rehearsal.py`).
-- [ ] `docs/KERNEL.md` gets a new or amended K-rule; `docs/CHANGES.md` gets a dated entry in plain words (what, why, cost, how to switch it off).
-- [ ] Run all three and paste the results in the PR:
-      `python tools/plan_guard.py` · `python -m pytest tests -q` · `WI_FAKE=1 WI_SMALL=1 WI_WORK=rh python -m whatifs.cli rehearsal`
+- [ ] Production code really runs it (a prompt, a check, a scorer or a Setting) and a contract check or test fails without it.
+- [ ] It has a row in `docs/CURRENT/ENFORCEMENT_MATRIX.md` (the meta-test in `tests/test_v111_enforce.py` proves the row is wired).
+- [ ] Creative changes reach the right place: `whatifs/room2.py`, `whatifs/prompts.py`, `whatifs/enforce.py`, `whatifs/packaging.py`, `whatifs/shorts2.py`.
+- [ ] The learning core can measure it (`whatifs/brain.py` feature or a Playbook trial); say which metric it should move.
+- [ ] Every new behaviour sits behind a Settings switch with a safe default; paid steps have bounded retries and fake replies in `whatifs/fakes.py`.
+- [ ] Tests cover the happy path AND the failure paths (API error, missing data, cap reached, double posting).
+- [ ] All four are green, results pasted in the pull request:
+      `python tools/gen_docs.py` (no diff left uncommitted) - `python tools/plan_guard.py` - `python -m pytest tests -q` -
+      `WI_FAKE=1 WI_SMALL=1 WI_WORK=<dir outside the repo> python -m whatifs.cli rehearsal`
 
 ## Delivering
-Work on a branch, open a pull request with: plain-English summary, the agreed decision, cost impact, how to switch it off (a Settings cell), and
-the three check results. The Checks workflow re-runs everything and, when green, emails the owner a **one-click merge link** (Merge workflow,
-owner-only, merges only if every check is green). Tell the owner: "Check your email for the Merge link, or press Merge on the pull request."
-After the merge, the next half-hourly Pipeline run uses the new code. Nothing restarts, nothing is re-set-up.
+Work on a branch; never push to `main`. Open a pull request with: plain-English summary, the decision, cost impact, how to switch it off (the
+Settings cell) and the check results. The Checks workflow re-runs everything; when green the owner gets a one-click Merge. After the merge the next
+pipeline run uses the new code. Nothing restarts.
 
-## Recipes
-- **Swap an AI tool**: image/clip models are Settings cells (`FAL_STILL_MODEL`, `FAL_PREMIUM_MODEL`, `FAL_LIVING_MODEL`, `FAL_HERO_MODEL`) with price cells
-  (`PRICE_*`). Text models are discovered live (`models.discover_models`, `models.CHAINS`). A new provider = a call function with cost logging,
-  a place in `CHAINS`, a pre-flight check (`preflight.py`), a Settings switch, fake replies (`fakes.py`), tests. Verify prices on the provider's page.
-- **Text models (v8.11)**: route a room role by its job in `models.ROUTES` (never a hard-coded model name); pass the system prompt as a `prompts.Packed`
-  (GLOBAL / EPISODE / ROLE) or a HOUSE-based string so it is cached; calls that share a prefix must keep the same role (same model + effort). Check Cache_Stats.
-- **v9.2**: never retry a cut model reply with MORE tokens (lower effort instead, `models.TIGHT_NOTE`); background-only work (bank, research brief) must not run inside `room.run_room`; shot-plan changes go through `shotplan.py` and must not add paid shots.
-- **v9.1 features**: gate every v9.1 feature with `v91.on(FLAG)` and wrap it in `v91.guard(FLAG, episode)`; it must never add a paid call unless its own flag is on (tests/test_v91_paidcalls.py) and must leave the v9 pixels untouched when off (tests/golden). Atmosphere work belongs in `atmosphere.py` at 1/8 resolution (performance budget).
-- **v9.3**: the opening is YOU first, lore after `COLD_OPEN_LORE_FREE_SEC` (`growth.cold_open_issues`, `show.COLD_OPEN_YOU`); anything a viewer reads or hears first passes `packaging.ad_risk`; shot pacing changes go through `shotplan.pieces_for`; a changed DEFAULT that must reach the live Sheet goes through a one-time migration like `manage.v93_upgrade` (core.DEFAULTS alone never changes a written cell).
-- **v9 trial format**: the Show Plan is part of the Showrunner's JSON (never a new AI role); validate it with `show.validate`; show tags are data (voice.Unit.show / timeline "show"),
-  never spoken; render devices live in `showfx.py` (code only); community text is untrusted; every new paid step needs a Settings flag, an estimator line
-  (`costguard.estimate_lines`), a Cost_Log item, bounded retries and a test. SHOW_MODE = off must reproduce v8.11.
-- **Voices**: v8.10 = Gemini TTS with the Cast tab (`whatifs/cast.py`, `whatifs/tts_gemini.py`); Kokoro `episode.BLENDS` / `data.GUESTS` are the fallback.
-  After a change, run the Voices workflow so the owner can listen (it also refreshes the Voice_Check tab).
-- **Look and motion**: `STYLE_LOCK` (Settings), `data.THUMB_STYLE`, `data.ATMOS` / `LIVING_MOTION`, `render.MOVES_HIGH` / `MOVES_CALM`, `CAMERA_MOTION`.
-- **Premium tier (future)**: each draw records `tier` ("public"). When the channel is eligible for memberships, research the CURRENT YouTube API
-  (members-only visibility may not be settable by API; then propose the smallest one-click owner step). Plan: a `PREMIUM_EVERY` Setting, a separate
-  budget line inside the cap, premium playlist, Instagram subscription posting rules, and learning on the members' metrics. Discuss before building.
-- **New format or series idea**: add it as a strategy option or a Playbook trial first, so the data decides; never replace the whole format at once.
-- **v9.3.1**: anything that changes what YouTube allows (privacy, quota, thumbnails, view definitions) goes through `whatifs/launch.py` flags and `docs/PLATFORM_FACTS.md`, never a hard-coded belief; every upload stays behind `publish.verify_upload`.
-- **v9.4a**: anything that writes for a FUTURE slot runs in pre-production (`whatifs/preprod.py`, batched, saved as an APPROVED draft); production must still work when no draft exists.
-- **v9.4a (part 3)**: anything that talks to the owner goes through `whatifs/notify.py` (tiers, defaults, dedupe); any new paid extra calls `governor.extras_allowed()`; builds go through `whatifs/builds.py` / `claude-build.yml`.
+## Recipes (non-obvious rules of this codebase)
+- **Text models**: route a role by its job in `models.ROUTES`; pass system prompts as `prompts.Packed` so they are cached; never retry a cut reply
+  with MORE tokens (lower the effort, `models.TIGHT_NOTE`).
+- **Image and clip models** are Settings cells (`FAL_STILL_MODEL`, `FAL_PREMIUM_MODEL`, `FAL_LIVING_MODEL`, `FAL_HERO_MODEL`) with `PRICE_*` cells.
+  A new provider needs: a call with cost logging, a pre-flight check (`whatifs/preflight.py`), a switch, fake replies, tests, prices verified on the
+  provider's page.
+- **Show format**: the Show Plan is part of the Showrunner's JSON (never a new AI role); validate with `show.validate`; show tags are data, never
+  spoken; render devices live in `whatifs/showfx.py` (code only); community text is untrusted data.
+- **Flag-gated extras**: `v91.on(FLAG)` + `v91.guard(FLAG, episode)`; an extra never adds a paid call unless its own flag is on.
+- **Opening**: YOU first, lore after `COLD_OPEN_LORE_FREE_SEC`; anything a viewer reads or hears first passes `packaging.ad_risk`; shot pacing goes
+  through `shotplan.pieces_for` and never adds a paid shot.
+- **Platform rules** (privacy, quota, thumbnails) go through `whatifs/launch.py` flags and `docs/CURRENT/PLATFORM_FACTS.md`, never a hard-coded
+  belief; every upload stays behind `publish.verify_upload`.
+- **Future slots** are written in pre-production (`whatifs/preprod.py`); production must still work when no draft exists.
+- **Owner messages** go only through `whatifs/notify.py`; builds go through `whatifs/builds.py` and the `claude-build` workflow.
+- **Premium tier (future)**: each draw records `tier` ("public"). Discuss with the owner before building anything members-only.
+- **New format or series idea**: enter it as an experiment arm or a Playbook trial so the data decides; never replace the whole format at once.

@@ -4,7 +4,7 @@ Prepared 2026-11-07. Companion to `REALITY_ENGINE_v10_LAUNCH_AND_HYPERGROWTH_BRI
 
 Files in this pack:
 - `dashboard/mission_control.html` — the page (prototype with demo data; already uses relative API paths; ships unchanged into the repo as `dashboard/mission_control.html`).
-- `relay/worker.js` — reference Cloudflare Worker: WhatsApp webhook (WP5) + Mission Control routes. Tested 2026-11-07 in Node with WebCrypto: encrypt/decrypt round-trip, tamper rejection, HMAC, PIN hash/verify, session sign/verify, verify handshake, bad-signature 401, owner-only forwarding, encrypted dispatch, PIN enrol/lockout, snapshot/action/thumb routes, wrong-path 404. Deploy it as it is unless the build chat finds a defect; record any change in CHANGES.md.
+- `relay/worker.js` — reference Cloudflare Worker: WhatsApp webhook (WP5) + Mission Control routes. Tested 2026-11-07 in Node with WebCrypto: encrypt/decrypt round-trip, tamper rejection, HMAC, PIN hash/verify, session sign/verify, verify handshake, bad-signature 401, owner-only forwarding, encrypted dispatch, PIN enrol/lockout, snapshot/action/thumb routes, wrong-path 404. Deploy it as it is unless the build chat finds a defect; describe any change in the pull request.
 
 **One brain, three remotes.** WhatsApp (WP5), email links (existing) and Mission Control all send the same verbs to the same router (`cli wa_inbound`). Mission Control adds a rich screen: thumbnails side by side, meters, charts, settings.
 
@@ -23,7 +23,7 @@ Files in this pack:
   - `health`: `Expiry_Calendar` rows, last run per workflow from `Run_Log`.
   - `settings`: the allow-listed quick toggles (`SLEEP_SESSIONS_ON`, `LOCALIZATIONS_ON`, `AFFILIATE_BLOCK_ON`, `NATIVE_TEST_REMINDER_ON`, `SHORTS_PER_DAY`).
   - `whatsapp`: the test-number link (`wa.me/<number>`) when WP5 is set up, else "".
-  - Never include secrets, premises not yet released, scripts or critic notes (K32). Titles of **scheduled** episodes are fine (the owner must see them to pick).
+  - Never include secrets, premises not yet released, scripts or critic notes. Titles of **scheduled** episodes are fine (the owner must see them to pick).
 - `push_snapshot()` → `PUT https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}/storage/kv/namespaces/{CF_KV_NAMESPACE_ID}/values/snapshot` with `Authorization: Bearer {CF_KV_TOKEN}`; body = JSON. Then for each open pick: `PUT .../values/thumb:<episode>:<key>` with the 640-px JPEG (≤ 60 KB each; re-encode from Drive `thumb_A/B/C`). Skip thumbs already pushed (`Dash_Pushed` tab or a hash cell).
 - `push_app()` → `PUT .../values/app_html` with `dashboard/mission_control.html` whenever its SHA-256 differs from Setting `DASH_APP_SHA` (so dashboard updates deploy from the repo, never from the Cloudflare editor).
 - Called from: end of `cli tick` (every 30 min), end of produce/release/learn/preprod jobs, and from the verb router after every handled action (so "Queued" becomes "Done" quickly). Budget: ~70–120 KV writes/day. VERIFY Cloudflare KV free-tier write limit (expected 1,000/day) and keep a daily counter in Settings; above 800 writes, only the tick pushes.
@@ -51,13 +51,13 @@ Files in this pack:
 
 ### A5. Security notes for the record
 - The page lives at `/app/<APP_PATH>/`; without the secret path nothing answers. The PIN gates every API call; 5 misses lock the IP for 15 minutes. Session cookie: HttpOnly, Secure, SameSite=Strict, 30 days.
-- Everything sent to GitHub is AES-GCM encrypted; public Actions logs show counts and status only (K32).
+- Everything sent to GitHub is AES-GCM encrypted; public Actions logs show counts and status only.
 - To reset the PIN: delete the KV key `pin_hash` in the Cloudflare dashboard (babysat, 1 minute); the next login enrols a new one.
 - If the owner's phone is lost: rotate `APP_PATH` and `SESSION_KEY` (2 minutes, babysat).
 
 ---
 
-## Part B — tests the build chat must run (`tests/test_v94b_dash.py` + the Worker test)
+## Part B — tests the build chat must run (`tests/test_v94b.py` + the Worker test `mission_control/test_worker.mjs`)
 - `build_snapshot()` on the fake store: contract keys present; no secrets, no unreleased premise text, no critic notes in the JSON (string scan against Settings secrets and the DRAFT tab).
 - Thumb push skips already-pushed hashes; 640-px JPEG ≤ 60 KB.
 - `push_app()` pushes only when the SHA changed.

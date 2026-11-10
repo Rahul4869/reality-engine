@@ -1,18 +1,4 @@
-"""whatifs/cutmap.py v8.0 - reviewable cut map (edit decision list proposal) from the ACTUAL rendered narration / video.
-
-NOTHING IS EVER CUT AUTOMATICALLY. The project has no editor that can safely re-time narration, captions, pictures, effects and music together,
-so this module only measures and proposes. A person reviews cutmap.md / the Cut_Map tab before the video goes public.
-
-Evidence used (best first):
-  1. word-level timeline written by voice.py (exact for the synthesized narration; includes which pauses were planned: [pause], paragraph, tags, breaths)
-  2. the rendered narration WAV, measured with a frame-RMS silence detector (works without any transcript; results are ESTIMATES when used alone)
-  3. optional ffmpeg scan of the finished video for frozen picture / black frames
-Stumbles: a stumble cannot be detected reliably from audio alone. With word timings only these signals are measured: repeated adjacent words and
-unusually slow sentences. Without word timings no stumble check is done and the map says so.
-Sync: narration is the master clock (render.py cuts every shot at narration unit starts). Cuts are placed only inside silence between words, snapped
-inward to video frames, and carry the ripple information (shift of everything after, captions, shot boundary, sound effects) needed to apply
-the same cut to picture, captions, sfx and music together. ripple_remap()/apply_to_timeline() show exactly how.
-"""
+"""Reviewable cut map (edit-decision proposal) measured from the rendered video; nothing is ever cut automatically. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, math, os, re, statistics, subprocess
 import numpy as np

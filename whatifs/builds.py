@@ -1,5 +1,4 @@
-"""v9.4a (WP3, K126): owner builds and repairs through Claude Code in GitHub Actions (workflow claude-build.yml, ₹0 API money) and the Merge / Reject /
-auto-merge rules (decision 11). GitHub is reached with the owner's fine-grained GH_MERGE_TOKEN (Contents, Pull requests, Workflows, Actions: write)."""
+"""Owner builds and repairs through Claude Code in GitHub Actions (claude-build workflow) and the Merge / Reject / auto-merge rules. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import os, json
 from whatifs.core import S, log, env, iso, store, scrub, FAKE

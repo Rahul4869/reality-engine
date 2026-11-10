@@ -1,12 +1,4 @@
-"""whatifs/tableread.py v8.0 - the optional "table read": departments read and challenge each other's memos BEFORE the production bible
-is written, and the Director reads the FINAL script before any shot is planned. Both happen before any image money is spent.
-
-Honest status: this is OFF by default. All departments are the same kind of AI model, so extra rounds of discussion may add polish
-rather than new ideas. Nobody has measured whether it helps this channel. TABLE_READ_MODE = alternate flips a recorded coin per
-episode so that, after about 10 episodes per arm, `python -m whatifs.cli abtest` can compare real results (watch time, retention, cost).
-
-Everything here is fail-forward: any error returns "no objections" / "no notes" and the normal pipeline carries on.
-Objection and note text is creative material from unreleased episodes: it goes to the private Sheet and Drive only, never to the public Actions log."""
+"""The optional table read of writers' room v1 (off by default; room v2 does not use it) and its with/without comparison. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import hashlib, json, os, random, statistics
 from whatifs.core import S, log, iso, scrub, safe_append, safe_rows, WORK

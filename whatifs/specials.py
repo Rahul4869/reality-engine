@@ -1,11 +1,4 @@
-"""v10 Specials (K134; owner request 2026-11-08): short (~15 s) cast reels that are NOT episode cut-downs.
-- 'cast_intro' (one time, the channel's launch reel): a cinematic dramatic entrance of the three cast members (about 3 s each, in their signature
-  look and pride), a courtroom-doors teaser and an end card that points to the YouTube and Instagram profiles. Written here, no AI writing call.
-- 'special' (SPECIALS_DAYS, twice a month): one witty in-world micro-story with the same cast (concept picked from IDEAS by one Sonnet call).
-Pictures: the cast's LOCKED character-sheet portraits animated by the hero video model (Kling, fal); a missing portrait is drawn first.
-Text, cards and sound are made by code (₹0); the end card always carries the subscribe line. Original cast and scenes only (K99): techniques
-from technique cards, never copied scenes or third-party characters.
-Money: each reel <= SPECIAL_REEL_CAP_INR; all specials in a month <= SPECIALS_EARMARK_INR (owner's +₹300, kept out of production)."""
+"""Specials: short cast reels that are not episode cut-downs (cast intro, occasion reels). See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import hashlib, json, os, subprocess
 import numpy as np

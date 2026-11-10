@@ -1,12 +1,4 @@
-"""whatifs/costguard.py v9 (stage 3a) - cost controls that never touch pictures (K96):
-- ESTIMATOR: one line per cost stage, used by Script Preview and the weekly deviation email.
-- SPEND MONITOR: one email at 70 % and one at 90 % of the monthly cap (SPEND_WARN_PCTS); the existing budget gate still holds new episodes at the cap.
-- OVERRUN LADDER: when an episode's measured AI spend passes OVERRUN_FACTOR x its AI estimate, the room steps down ON THE AI SIDE ONLY:
-  (1) drop optional lowest-ROI reviews (table-read objections, the Director's script read), (2) fewer rewrite rounds (Owner's Cut max 1),
-  (3) reuse cached assets (the checkpoint already does). Visuals are never trimmed; the episode is finished and the owner gets one email with the reason.
-- WEEKLY DEVIATION email: measured vs estimated per stage over the last 7 days, deviations over DEVIATION_PCT.
-- KIDS-RISK GUARD: after upload, YouTube's own made-for-kids value is read; TRUE = an email at once (never changed by code).
-Everything here only READS Cost_Log / Settings and sends at most a few emails: no paid call lives in this module."""
+"""Cost controls that never touch pictures: the per-stage estimator, the spend monitor and the overrun ladder. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json
 from whatifs.core import S, log, store, iso, now_utc, month_spend, set_setting, JOB

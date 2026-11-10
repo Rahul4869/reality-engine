@@ -1,8 +1,4 @@
-"""v10.3 (K154) Owner Brief: the owner proposes the next video's or reel's topic on WhatsApp; the Showrunner discusses it with him until it is
-excellent (premise, angle, hook and title options, must-include, avoid, honest scores, search demand from YouTube); 'lock' makes it the FORCED
-premise of the next long video (or the next special reel). Outcomes are measured after 7 days and owner picks that beat the channel median become
-calibration examples for the scout and the research brief (learning from human input, with evidence; never on opinion alone).
-WhatsApp words: 'brief <idea>' / 'next video: <idea>' / 'next reel: <idea>' start; any text continues; 'lock' / 'cancel' / 'show brief'."""
+"""Owner Brief: the owner proposes a topic on WhatsApp, the Showrunner refines it with him, and 'lock' makes it the forced premise. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, re, statistics
 from whatifs.core import S, log, store, iso, now_utc, set_setting, scrub, FAKE

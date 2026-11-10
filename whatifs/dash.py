@@ -1,11 +1,4 @@
-"""v9.4b (M1 + Mission Control 2-a, K130): the phone dashboard's data and its taps.
-
-build_snapshot()  -> the JSON the dashboard page renders (same shape as the page's DEMO: engine, docket, progress, learned, lab, money, health,
-                     settings, acks, whatsapp). Never contains secrets, scripts or unreleased premises beyond scheduled titles (K32).
-publish()         -> writes it to Cloudflare KV ('snapshot') through the Cloudflare API (CF_ACCOUNT_ID, CF_KV_NAMESPACE_ID, CF_KV_TOKEN). Called by tick.
-handle_action()   -> one tap from the page (repository_dispatch 'dash_action', AES-GCM encrypted by the Worker): decrypt, dedupe, route, record an ack.
-Routes: PICK|EP|B · MERGE|n · REJECT|n · LOCKSHEETS|CHAR · REDOSHEETS|CHAR · BUILD|id · PARK|id · LINKED|EP · MODE|lean/standard/growth ·
-        PAUSE · RESUME · SET|key|value (allow-list) · ACT|id|n (any Owner_Actions button)."""
+"""The phone dashboard's data snapshot and its taps (never contains secrets, scripts or unreleased premises). See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import base64, datetime as dt, json, re
 from whatifs.core import S, log, store, iso, now_utc, parse_iso, env, set_setting, scrub, FAKE

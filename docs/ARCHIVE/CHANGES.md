@@ -1,3 +1,5 @@
+> HISTORICAL - DO NOT FOLLOW. Superseded by docs/CURRENT/SYSTEM.md (what the code does now) and the git history (what changed when) on 10 Nov 2026 (v12 truth hygiene). Kept unedited below as history.
+
 > HISTORICAL (v7-v11 history) - DO NOT FOLLOW AS CURRENT. Current truth: docs/OWNER_REQUIREMENTS_LEDGER.md + the handoff 01_MASTER_SPEC (v12 build).
 
 # Changes (newest first). Claude Code adds one dated entry per merged change: what, why, cost, how to switch it off.

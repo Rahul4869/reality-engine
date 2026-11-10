@@ -1,5 +1,4 @@
-"""whatifs/voice_lab.py v8.10 (Gemini cast samples + voice check; v8.7) - 4 original voices + 1 flat comparison. Samples are emailed + uploaded to Drive + kept as a GitHub artifact.
-v8.7 review fix: in rehearsal mode (WI_FAKE=1) the tone placeholders go to the work folder, so a local rehearsal never overwrites the repo's voice_samples folder."""
+"""Voice samples and the voice check: samples emailed, uploaded to Drive and kept as a GitHub artifact. See docs/CURRENT/SYSTEM.md."""
 import os, subprocess
 from whatifs.voice import Blend, narrate
 from whatifs.episode import BLENDS

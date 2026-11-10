@@ -1,3 +1,5 @@
+> HISTORICAL - DO NOT FOLLOW. Superseded by CLAUDE.md (how to change the code) on 10 Nov 2026 (v12 truth hygiene). Kept unedited below as history.
+
 # LAPTOP CHANGE PROMPT — paste into the Claude desktop app (Code tab) or a claude.ai chat, then describe your change
 
 ---

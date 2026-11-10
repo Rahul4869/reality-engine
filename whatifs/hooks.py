@@ -1,11 +1,4 @@
-"""whatifs/hooks.py v8.0 - ten opening-line candidates per episode, validated and scored, best one used as the opening.
-
-Pipeline: write candidates (Sonnet-class model) -> CODE validates (word limit, greetings, hype phrases, numbers, overlap with the script)
-          -> an independent judge (Gemini critic role, same as the script critic) scores clarity / relevance / curiosity / promise accuracy
-          -> best eligible line is inserted as the first spoken line (insert-only: nothing the writer wrote is deleted),
-             or, if nothing is safe enough or HOOK_APPLY_MODE = suggest, the candidates are only recorded for a human to pick.
-If the judge is unavailable the scores are labelled 'heuristic' and nothing is applied automatically.
-Every failure leaves the script untouched. Hook text is never written to the public Actions log (only counts)."""
+"""Opening-line candidates per episode: written, validated by code, scored by an independent judge; the best one opens the video. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, os, re
 from whatifs.core import S, log, iso, scrub, safe_append

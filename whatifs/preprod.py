@@ -1,8 +1,4 @@
-"""v9.4a (WP2, K123): pre-production at half price. The writers' room for the next slot runs PREPROD_LEAD_HOURS early (when nobody is waiting), every
-Claude call through the Message Batches API (50% off, stacks with prompt caching), and the result is saved as an APPROVED draft that the normal production
-job takes as written (preview.take_approved). Nothing else changes: voice, pictures, render and upload still happen PRODUCE_AHEAD_HOURS before the slot.
-Safety: a call that waits longer than ROOM_BATCH_MAX_WAIT_MIN runs directly (never two paid answers); after PREPROD_JOB_MAX_HOURS all remaining calls run
-directly; if pre-production fails or is late, production simply writes the episode itself as before (a slot is never skipped, K92)."""
+"""Pre-production: the writers' room for a future slot runs early through the Message Batches API and saves an approved draft. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import time
 from whatifs.core import S, log, store, now_utc, parse_iso, JOB, flush_log

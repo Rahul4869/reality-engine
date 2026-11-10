@@ -1,16 +1,10 @@
-"""whatifs/packaging.py v9 (stage 3b) - three title + thumbnail pairs per video, an owner pick for the first THUMB_APPROVAL_FIRST_N videos that never
-blocks a slot, rotation of the pairs in the first 48 hours with the result measured, and the hook shapes (K100).
-
-YouTube Studio's "Test & Compare" has no public API that we could verify, so the fallback is used: the pairs are rotated through the Data API
-(videos.update title + thumbnails.set) in equal windows inside the first PKG_ROTATE_HOURS, and each window's views per hour (and the impression CTR when
-the Analytics API returns it) is recorded in Packaging_Tests; the best pair stays. A third pair re-uses the main thumbnail picture with its own text unless
-PKG_VARIANT_C_IMAGE is TRUE (then one more premium image is bought: about Rs 8)."""
+"""Title and thumbnail pairs per video, the owner pick, rotation in the first 48 hours, hook shapes and the ad-risk check. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, re
 import datetime as dt
 from whatifs.core import S, log, store, iso, now_utc, parse_iso, env, FAKE, set_setting
 
-# Hook shapes adapted (ideas only, not installed) from the MIT-licensed open-source YouTube agent skill pack; credited in docs/CHANGES.md.
+# Hook shapes adapted (ideas only, not installed) from the MIT-licensed open-source YouTube agent skill pack; credited in docs/ARCHIVE/CHANGES.md (history).
 HOOK_SHAPES = {"statistic": "The Statistic (a number with its stated source)", "contrarian": "Contrarian Flip", "reveal": "The Reveal", "clock": "The Clock",
                "question": "The Question", "impossible": "The Impossible Claim", "comparison": "The Comparison", "list": "The List", "superlative": "The Superlative"}
 

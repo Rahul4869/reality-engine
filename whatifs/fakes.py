@@ -1,4 +1,4 @@
-"""whatifs/fakes.py v8.11 (+ a fake Claude cache server that applies the documented caching rules) - offline stand-ins for every model call (rehearsal mode WI_FAKE=1). Zero cost."""
+"""Offline stand-ins for every model call (rehearsal mode WI_FAKE=1), including a fake prompt-cache server; zero cost. See docs/CURRENT/SYSTEM.md."""
 import json, re, random
 from whatifs.core import SMALL
 

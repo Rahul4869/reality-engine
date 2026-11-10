@@ -1,9 +1,4 @@
-"""whatifs/models.py v8.11 (prompt caching, routing by capability, per-role effort, measured cost; v8.10 TTS model discovered too) - model discovery
-(never typed in), Claude + Gemini calls, JSON repair, automatic fallback, fake mode.
-v8.11 (K89-K91): every Claude call goes through the CACHE MANAGER: the system prompt is sent as layers (prompts.Packed) with EXPLICIT cache_control
-breakpoints, stable first: GLOBAL (house rules, constitution, craft rules) 1 h, EPISODE (spine, bible, script) 5 min or 1 h (CACHE_TTL_AUTO), the
-role's own instruction last and uncached. Calls that run side by side get ONE serial warm-up first. Real cache read / write prices per model come from
-Settings. Each room role is routed to the model that fits its job (ROUTES) and runs at its own effort (EFFORT_*)."""
+"""Model discovery (names never typed in code), Claude and Gemini calls with prompt caching and routing, JSON repair, fallback and fake mode. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import hashlib, json, os, re, threading, time, concurrent.futures as cf
 import requests

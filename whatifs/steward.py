@@ -1,20 +1,4 @@
-"""v10.1 Model Steward (K150; owner 2026-11-08: "future proof: auto-update to the best model and tell me in advance").
-
-Text and voice models were already self-updating: models.discover_models() picks the newest Opus/Sonnet/Haiku/Gemini Flash/Pro/TTS every week
-and again after any 'model not found' (K11). The Steward does the same job for the PICTURE and VIDEO models on fal, which have no such list:
-
-1. RUNTIME FAILOVER (every call): a model that answers 'deprecated / not found / no longer supported' is marked dead at once; any other error
-   counts; MODEL_FAILS_TO_SWITCH errors in a row = failing. The next healthy model on the role's ladder (MODEL_LADDERS) takes over for the same
-   call, inside the price rule, and the owner gets one card. Living stills end on 'code-motion' (a ₹0 camera move) so they can never stop a video.
-2. RETIREMENT WATCH (weekly, ₹0): each model page on fal is read; 'will be deprecated on <date>' or 'deprecated' is recorded. MODEL_SWITCH_LEAD_DAYS
-   before the date the owner gets a 'This week' card naming the replacement and the switch date ([OK] / [Keep until it stops] / [Discuss]);
-   silence = the switch happens on that date.
-3. UPGRADE SCOUT (weekly): fal's model listing is scanned for NEWER versions of the families on the ladders. A newer one with a readable price
-   inside the price rule gets an automatic, capped test (bake-off: same scenes, vision-model judge). If it scores at least MODEL_UPGRADE_MARGIN
-   better, a switch is scheduled MODEL_UPGRADE_NOTICE_DAYS later with a card ([Keep current] / [Switch now] / [Discuss]); silence = switch.
-   Unreadable price or schema = a card asking for the owner's input, never a blind switch.
-Price rule: a switch never raises the per-clip price above MODEL_MAX_PRICE_RATIO x the current price or MODEL_MAX_USD_CLIP (budget gates
-still apply on top). Everything is logged in Model_Changes."""
+"""Model Steward: watches picture and clip models and prices, proposes upgrades and tells the owner in advance. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import datetime as dt, json, re
 from whatifs.core import S, log, store, iso, now_utc, set_setting, DEFAULTS, FAKE, scrub

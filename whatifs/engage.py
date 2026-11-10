@@ -1,12 +1,4 @@
-"""v10 growth: Engagement Engine + Emotion Beats (K133; specs ENGAGEMENT_ENGINE_SPEC.md, EMOTION_BEATS_SPEC.md).
-
-Writer brief (ENGAGE_RULES_ON / EMOTION_BEAT_ON): in-character, witty audience prompts from a typed library (prediction, side-taking,
-personal stake, expert flex, share trigger, subscribe identity), never rewards for likes/subs/shares (YouTube fake-engagement policy), and ONE
-earned emotion beat whose type the code chooses per episode (awe most often).
-Code check (enforce, runs BEFORE cta.ensure): one ask per kind (like / subscribe / share, K-rule: every video asks for all three), none in the
-first ENGAGE_NO_ASK_FIRST_PCT of the spoken lines, never two asks (CTA or [JURY]) within ENGAGE_MIN_GAP_LINES spoken lines, at most ENGAGE_MAX_CTA;
-removed asks are put back by cta.ensure at its safe, calm slots (story [JURY] prompts are kept).
-Learning: the chosen emotion type and the ask types are logged in the episode's draw (Experiments / Retention Microscope read them)."""
+"""Engagement engine and emotion beats: typed, in-character audience prompts and one earned emotion beat in the writer brief. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import hashlib, re
 from whatifs.core import S, log

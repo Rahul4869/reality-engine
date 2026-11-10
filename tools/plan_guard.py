@@ -1,7 +1,4 @@
-"""
-tools/plan_guard.py  v8.0
-Runs on every GitHub save. RED = something broke the locked plan (Kernel v7.3 rule numbers). Operator only reports GREEN/RED.
-"""
+"""Plan Guard: runs on every push; RED when code breaks a locked rule (typed model names, flagged words, duplicate definitions, retired concepts in current docs or prompts). See docs/CURRENT/SYSTEM.md."""
 import ast, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -21,6 +18,18 @@ RULES = [
 BANNED_NAME_WORDS = ["payment", "card", "billing", "password", "secret", "token", "bank", "transfer", "pwc", J(["conf", "ident", "ial"])]
 SCAN_EXT = (".py", ".yml", ".yaml", ".gs", ".js", ".json")
 TEXT_EXT = (".md", ".txt", ".yml", ".yaml", ".py", ".json", ".cfg", ".toml")      # v8.0: the flagged word must not appear in any text file either
+
+def truth_issues():
+    """One current truth: retired concepts in current docs, docstrings or prompts turn the guard RED (rules: whatifs/truth.py). The registry is loaded
+    by path so the guard needs nothing installed; a copy of this file alone (no registry beside it) checks only the rules above."""
+    p = os.path.join(ROOT, "whatifs", "truth.py")
+    if not os.path.exists(p): return []
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("truth_registry", p); mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+        return ["truth: " + b for b in mod.issues(ROOT)]
+    except Exception as e:
+        return [f"truth: the registry could not run ({e})"]
 
 def main() -> int:
     bad = []
@@ -48,6 +57,7 @@ def main() -> int:
                             seen.add(node.name)
                 except SyntaxError as e:
                     bad.append(f"{rel}:{e.lineno}: Python syntax error")
+    bad += truth_issues()
     if bad:
         print("PLAN GUARD: RED"); [print("  -", b) for b in bad]; return 1
     print("PLAN GUARD: GREEN"); return 0

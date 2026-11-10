@@ -1,14 +1,4 @@
-"""v11.1 (K167): LIVING CHARACTERS (research top-15 #3: blink + breathing + viseme mouth flaps on every character shot; free after the variants).
-
-Before v11.1 the reaction cutaways drew a procedural silhouette and the owner-approved expression sheets were never shown. Now:
-- every reaction cutaway shows the character's LOCKED expression still (Character_Sheets), picked by the line's mood;
-- BREATHING: a slow 0.6% scale swell of the frame (0.22 Hz);
-- BLINKS: every 2-6 s (seeded), 3 frames of the eyes-closed variant;
-- MOUTH: while that character's words are being spoken (word timings from the narration), the mouth-open variant shows during words, closed
-  between words (viseme-lite);
-- variants are made ONCE per character from the locked still (image edit with the still as the reference, identity-checked) and composited only
-  where they differ from the base (soft change mask), so nothing but the eyes / mouth moves (no flicker).
-Cost: 2 images per character for the 'neutral' still (LIVING_VARIANT_EXPRESSIONS), ~Rs 50 one time, capped by LIVING_VARIANTS_CAP_INR."""
+"""Living characters: locked expression art in every reaction cutaway, with blink, breathing and mouth movement. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, os, re, random
 import numpy as np

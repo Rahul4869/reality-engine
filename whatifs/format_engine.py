@@ -1,9 +1,4 @@
-"""Presentation-format controls for Reality Engine (v8.2). Defaults to the Reality Engine hybrid.
-
-Switch: the Settings cell PRESENTATION_FORMAT (reality_engine | classic). The environment variable WHATIFS_PRESENTATION_FORMAT, if set, wins.
-v8.1: the format is now CHECKED by code (check_script), not only requested in the prompt; the instructions are placed before the JSON
-reply format (inject) instead of after it; rewrite steps may not drop speaker labels (labels_preserved).
-"""
+"""Presentation-format controls (Settings cell PRESENTATION_FORMAT) and the code check of the script's format. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import os, re
 

@@ -1,9 +1,4 @@
-"""v9.4a (Visual Lab, K128; owner request 2026-11-08): the learning loop also proposes how the PICTURES could grab more attention at the same cost.
-
-Weekly (learning job), once at least VISUAL_LAB_MIN_VIDEOS videos have retention data, it ranks picture treatments by how viewers held during them
-(Retention_Map: shot types per beat, drop per 30 s vs the channel median) and matches the weakest ones to a catalog of ZERO-COST code effects that
-are not switched on yet. Each match becomes ONE 'This week' card for the owner with the evidence and [Discuss] [Build it] [Park]. Nothing is built or
-switched by itself (silence = parked). Rule-based: no AI call, ₹0. New effects found by research enter the same catalog through technique cards."""
+"""Visual Lab: weekly ranking of picture treatments by how viewers held during them, proposed at the same cost. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import statistics
 from whatifs.core import S, log, store, now_utc

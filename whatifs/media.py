@@ -1,4 +1,4 @@
-"""whatifs/media.py v8.3 - fal.ai images/clips, free NASA/Pexels footage, depth maps, motion graphics, fake assets for rehearsal."""
+"""fal.ai images and clips, free NASA/Pexels footage, depth maps, motion graphics and fake assets for rehearsal. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import os, time, json, hashlib, random, subprocess
 import numpy as np, requests

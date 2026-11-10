@@ -1,16 +1,4 @@
-"""whatifs/atmosphere.py v9.1 - the ATMOSPHERE PACK (K104). Code only: zero API cost, deterministic per shot (seeds from the episode id + shot index).
-One overlay object for the whole video, applied BEFORE the show overlay, speaker chip and CTA chip, so the HUD, exhibit pins, meter and chips are always
-drawn on top of it (readable by construction); in addition the atmosphere is faded to 30 % inside those regions and the caption band.
-
-Layers (each has its own flag; ATMOSPHERE_LEVEL = auto follows the Show Plan intensity, +1 for fire / space / impact moods, max 3):
-  god-rays from the brightest region (slow drift, <= 3 % flicker) + a diagonal light sweep; particles in 3 layers (near / mid / far) chosen by mood
-  (dust, embers, ash, snow, rain, sparks, space dust), parallax-matched and occluded by a depth PROXY; fog / smoke from tileable noise scrolled at
-  different speeds, denser far, tinted by the shot's colour; heat shimmer (fire / desert / engine); lens detail (edge chromatic aberration, anamorphic
-  streaks, halation, breathing focus); breath fog on found-footage RECON spans; the beat-synced PULSE; aura glow + energy swirl around the focal point.
-DEPTH: an overlay only sees finished frames, so "depth" here is a PROXY from each frame (vertical position + blurred luminance + local contrast), not the
-image's depth map. Safety caps are hard-coded: PULSE <= 2 per second and <= 8 % luminance swing, never red-dominant, never in the first 2 s of a long
-video, never during HUD / exhibit readouts; total added light <= MAX_GAIN. Performance: ATMOSPHERE_MAX_OVERHEAD_PCT; above it the layers degrade
-automatically (particles, then fog, then god-rays) and the step is logged."""
+"""Atmosphere pack: code-only, deterministic per-shot overlays applied under the show overlay at zero API cost. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import hashlib, math, re, time
 import numpy as np

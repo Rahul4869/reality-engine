@@ -1,4 +1,4 @@
-"""whatifs/qc.py v8.3 - quality checks before anything goes public. Any FAIL stops upload of that file (fail-safe, logged)."""
+"""Quality checks before anything goes public; any FAIL stops the upload of that file. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import subprocess, re, json
 from whatifs.render import probe_dur

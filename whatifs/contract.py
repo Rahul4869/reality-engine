@@ -1,16 +1,4 @@
-"""v10.2 Feature Contract (K151; owner 2026-11-09: "not adjectives - the mechanism has to force-implement every feature at its stage and pass
-quality checks"). Every promised feature is a named, MANDATORY check at a stage, judged from real evidence (the script, the timeline, the
-rendered files, the room's own scores), never from the fact that code exists. A feature that crashed and was 'skipped' leaves no evidence and
-therefore FAILS here - that is the point.
-
-Stages and what happens on a failure:
-  script  (before any paid picture is made)  -> deterministic repairs where they exist (asks, end tease); anything else = HOLD before spending,
-                                                with an owner card [Rewrite] [Approve anyway]
-  final   (after QC, before upload)          -> HOLD (never uploaded) with the existing one-click fix + an owner card [Fix] [Approve anyway]
-  review  (after upload, first CREATIVE_REVIEW_FIRST_N videos and every special) -> the video stays PRIVATE until the owner taps Approve;
-                                                the card carries the 6-point self-critique and the ledger
-Every check writes one row to Feature_Ledger (episode, stage, feature, PASS/FAIL/WAIVED, evidence). A waiver is per episode and per feature,
-written only by the owner's tap (CONTRACT_WAIVERS). tests/test_contract.py fails the build if a feature has no probe."""
+"""Feature Contract: every promised feature is a named HARD check at a stage, judged from real evidence; a FAIL holds the episode and sends the owner a decision message. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import os
 import json, math, os, re, statistics, subprocess
@@ -393,10 +381,18 @@ def p_critique(ctx):
     if low: return FAIL, "below the bar: " + ", ".join(f"{k} {v}" for k, v in low.items())
     return PASS, ", ".join(f"{k} {cr.get(k)}" for k in CRIT_KEYS)
 
+def p_docs_current(ctx):
+    """One current truth: no retired concept in the current docs, CLAUDE.md, module docstrings, prompt strings or the owner's CONSTITUTION cell."""
+    from whatifs import truth as TRU
+    bad = TRU.issues(runtime=True)
+    if bad: return FAIL, f"{len(bad)} retired or stale reference(s): " + " | ".join(bad[:3])
+    return PASS, f"no retired concept in current docs, docstrings or prompts ({len(TRU.RETIRED)} rules)"
+
 FEATURES = [
     ("retention",     "script", p_retention,    "re-hook at least every REHOOK_MAX_GAP_SEC, promise shown early, every opened question answered"),
     ("brain_playbook", "script", p_brain_playbook, "the channel's own proven/retired evidence reached the writer"),
     ("no_retired",    "script", p_no_retired,   "no technique the learning core retired"),
+    ("docs_current",  "script", p_docs_current, "one current truth: no retired concept in current docs, docstrings or prompts"),
     ("idea_evidence", "script", p_idea_evidence, "the premise is backed by an outlier at IDEA_MIN_MULTIPLE x"),
     ("joke_density",  "script", p_joke_density, "a [PUNCH] line at least every JOKE_EVERY_SEC_LONG seconds"),
     ("send_and_awe",  "script", p_send_awe,     "a [SEND] moment and an [AWE] peak (not in the last 20%)"),

@@ -1,4 +1,4 @@
-"""whatifs/cli.py v8.10 - entry point for every GitHub workflow.  python -m whatifs.cli <command>"""
+"""Entry point for every GitHub workflow: python -m whatifs.cli <command>. See docs/CURRENT/SYSTEM.md."""
 import sys, os, json, traceback
 from whatifs.core import FAKE, JOB, log, flush_log
 

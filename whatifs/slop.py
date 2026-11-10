@@ -1,8 +1,4 @@
-"""v10 Slop Guard (K137; SLOP_GUARD_SPEC.md): one 0-100 'AI slop' risk score per video, from measurements we already have (₹0):
-still share (time on plain stills vs living/Kling motion), template fingerprint (shot-type pattern vs the last 6 videos), voice flatness (spread
-of words per second across lines) and opening repetition (vs the last 10 openings). Hard defects (garbled text, broken faces, frozen or black
-picture, sync) are already HOLD problems in qc.full_check; this score never holds a video by itself. It is recorded per video (Slop_Scores),
-shown on the dashboard, and a score above SLOP_WARN sends one FYI card naming the biggest factor (the Visual Lab then proposes fixes)."""
+"""Slop Guard: one 0-100 'AI slop' risk score per video from existing measurements. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import re, statistics
 from whatifs.core import S, log, store, iso

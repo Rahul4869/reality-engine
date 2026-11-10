@@ -1,9 +1,4 @@
-"""whatifs/episode.py v8.9 - one full episode, in three resumable stages (v8.5: fresh opening pictures, up to 4 Shorts, B thumbnail):
-  PLAN    AI writing, hooks, narration (the master clock), shots, packaging text, reel plans      -> checkpoint "plan"
-  ASSETS  every paid picture and clip (retried individually, only the missing ones on a resume)   -> checkpoint "assets"
-  FINISH  render -> thumbnail + covers + reels -> full QC (+ free fixes) -> upload scheduled, or HOLD with a one-click fix
-Long video is uploaded PRIVATE with publishAt = slot. Reels go out 15 min and 6 h after it is live, reels 3-4 the next two days (separate 'release' job).
-Nothing that fails final QC is ever uploaded. A retry of the same slot resumes from the newest checkpoint instead of paying for the plan and assets again."""
+"""One full episode in resumable stages: plan (writing, voice, shots), assets (paid pictures and clips) and the final render with its checks and packaging. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import os, hashlib, json, re, time, datetime as dt, concurrent.futures as cf
 from PIL import Image

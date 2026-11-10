@@ -1,6 +1,4 @@
-"""whatifs/reels.py v8.5 - 9:16 reels from the long video's own shots: cover frame first, new order, re-voiced lines, burned captions. 1080x1920.
-REEL_STYLE bridge (default): one payoff given, the bigger question left open, an invite to the full video, then the follow/share ask.
-standalone: a complete loopable mini-story (no fade). teaser: v8.4 (cut on the question, end card)."""
+"""9:16 reels cut from the long video's own shots: cover first, new order, re-voiced lines, burned captions. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import os, re, subprocess
 from whatifs.core import SMALL, S

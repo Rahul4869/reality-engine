@@ -1,8 +1,4 @@
-"""whatifs/preview.py v8.10 - Script Preview: scout + writers' room ONLY (no pictures, no voice, no upload), then ONE email with the title, the hook, the full
-script, the shot list with POV notes and the estimated cost of the full video. Saved as a DRAFT in the Script_Previews tab WITHOUT using up the premise
-(nor the next-episode tease) until it is approved. Approve / reject = one click from the email (a pre-filled GitHub issue 'APPROVE DRAFT...' /
-'REJECT DRAFT...', owner-only, workflow preview.yml). With PREVIEW_USE_APPROVED the next production slot uses the approved draft (its writing is not paid
-for twice; the voice, the real-timing shot list and the pictures are made then). Cost of a preview: the writing allowance only (about Rs 150-200)."""
+"""Script Preview: scout and writers' room only, then one email with title, hook, script, shot list and estimated cost. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import base64, html, json, re, zlib
 from whatifs.core import S, store, log, iso, now_utc, env, JOB, flush_log, set_setting, scrub, safe_rows

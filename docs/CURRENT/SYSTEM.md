@@ -1,0 +1,370 @@
+# SYSTEM - what Reality Engine does now
+
+GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: change the code, run the generator, commit both.
+`tests/test_docs_current.py` fails when this file differs from what the code says, or when any current doc names a retired concept.
+
+## 1. Facts (read from the code)
+- Channel: "Reality on Trial" (brand Reality Engine). Concept: `docs/CURRENT/CONCEPT.md`. Owner requirements: `docs/CURRENT/OWNER_REQUIREMENTS_LEDGER.md`.
+- Money: hard cap Rs 5,000 a month, everything included (`BUDGET_CEILING_INR`); extras pause at 90% of the cap; breakout fund carries over at most Rs 1,000. One month can be overridden in `MONTH_CAP_OVERRIDES`.
+- Quality: 38 HARD contract checks (20 at the script stage, 18 on the final video). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway). No upload below Breakout Score 80.
+- Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
+- Animated scenes: 4 per long video on `fal-ai/kling-video/o3/standard/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
+- Size: 103 code modules, 674 settings, 71 Sheet tabs, 24 GitHub workflows.
+
+## 2. How it runs
+- Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
+  append-only), media in Google Drive. A Cloudflare Worker (`mission_control/worker.js`) relays WhatsApp, serves the phone dashboard and is the watchdog clock.
+- Providers: fal (clips and stills), Gemini (text, images, designed voices), Claude (showrunner, writer, jury member, chores), ffmpeg + OpenCV (render).
+  Model names are never typed in code: they are discovered live (`whatifs/models.py`) or held in Settings cells.
+- One long episode: tick (`whatifs/manage.py`) -> writers' room (`whatifs/room2.py`, early through `whatifs/preprod.py`) -> script-stage contract ->
+  voice -> shot plan -> paid pictures and clips -> render (`whatifs/render.py`) -> final-stage contract -> held for the owner or scheduled ->
+  release with Shorts and Reels -> 48-hour breakout monitor (`whatifs/breakout.py`) -> learning (`whatifs/brain.py`). Every paid step is checkpointed.
+- Money: every paid call is logged (`core.cost`), estimated before it runs and stopped by the governor (`whatifs/governor.py`).
+- Fake mode: `WI_FAKE=1` replaces every provider (`whatifs/fakes.py`); the rehearsal (`tools/rehearsal.py`) runs the whole pipeline at zero cost.
+
+## 3. The v12 Organisation build (status)
+- Truth hygiene: one current truth (this file, the registry of retired concepts, check `docs_current`): **built**
+- Knowledge Palace (one repository every department reads and writes): **not built yet**
+- Memos and the department contract: **not built yet**
+- Execution Engine (every decision becomes a verified change in what runs): **not built yet**
+- R&D and Review Board, creative departments and Council, QA repair loop, learning loop, Owner Office: **not built yet**
+
+## 4. Truth rules (enforced by `whatifs/truth.py`)
+- Follow only `docs/CURRENT/` and `CLAUDE.md`. `docs/ARCHIVE/` is history: never follow it.
+- Version labels and rule numbers inside code comments are history labels, not instructions.
+- Retired concepts (13 rules). Naming one in a current doc, a module docstring or a prompt fails Plan Guard, the tests and check `docs_current`:
+  - `brand_what_ifs`: the brand is Reality Engine and the show is Reality on Trial.
+  - `old_month_cap`: the cap is Rs 5,000 a month all-in (November 2026 only: Rs 5,226).
+  - `kling_v3_path`: the hero clip model id is fal-ai/kling-video/o3/standard/image-to-video (Kling 3.0 Standard).
+  - `kling_25_hero`: the hero clip model is Kling 3.0 Standard; older Kling models exist only as fallback rungs of MODEL_LADDERS.
+  - `table_read_room`: the writers' room is v2 (diverse drafts + blind cross-family jury + one checklist revision); the table read belongs to the optional room v1.
+  - `life_layer_active`: the breathing warp is OFF (measured ineffective); the world particle layer replaced it.
+  - `technique_library_core`: Technique_Library is the outlier-video library; the learning core uses Technique_Evidence.
+  - `case_file_you`: the concept is Reality on Trial; CASE FILE: YOU is parked and may return only as an R&D proposal that wins in the Council.
+  - `master_build_plans`: the plan is the v12 Organisation build (handoff_v12/BUILD_STATE.md).
+  - `history_pointer`: the only docs to follow are in docs/CURRENT (start at docs/CURRENT/SYSTEM.md).
+  - `kernel_rule_number`: the numbered kernel rules are history; current rules are the checks listed in docs/CURRENT/ENFORCEMENT_MATRIX.md.
+  - `old_version_tag`: current docs describe what the code does now, without the history of versions 7 to 10.
+  - `no_kling_statement`: every long video has animated Kling scenes (ANIM_SHOTS) plus the ffmpeg/OpenCV render.
+
+## 5. Contract checks (`whatifs/contract.py` FEATURES)
+| check | stage | what it guarantees |
+|---|---|---|
+| retention | script | re-hook at least every REHOOK_MAX_GAP_SEC, promise shown early, every opened question answered |
+| brain_playbook | script | the channel's own proven/retired evidence reached the writer |
+| no_retired | script | no technique the learning core retired |
+| docs_current | script | one current truth: no retired concept in current docs, docstrings or prompts |
+| idea_evidence | script | the premise is backed by an outlier at IDEA_MIN_MULTIPLE x |
+| joke_density | script | a [PUNCH] line at least every JOKE_EVERY_SEC_LONG seconds |
+| send_and_awe | script | a [SEND] moment and an [AWE] peak (not in the last 20%) |
+| hook_lab | script | 15-candidate Hook Lab, best opening applied |
+| owners_cut | script | independent judge scores the script above the bar |
+| cold_open | script | no greeting: the video opens inside the story |
+| emotion_beat | script | one earned emotion beat |
+| audience_asks | script | comment/predict/share asks placed by the rules |
+| verdict_style | script | verdict style rotates (no same-outcome repetition) |
+| originality | script | not a near-copy of an earlier script |
+| end_tease | script | the video ends on the next case |
+| research | script | the writers' room used the research brief |
+| time_ladder | script | the case is examined on the time ladder (ticking clock) |
+| exhibits | script | science claims entered as Exhibits with real sources |
+| grimm_prototype | script | Grimm's failed Prototype demonstration (mad-scientist beat) |
+| verdict_line | script | Nana's verdict opens with 'Here's what's true' |
+| designed_voices | final | every character speaks in its designed voice |
+| music_bed | final | music/ambience bed under the story |
+| animation | final | minimum seconds of animated character scenes |
+| real_motion | final | animated scenes really move (no template push-ins) |
+| no_frozen_frames | final | no still picture held too long |
+| slop_guard | final | anti-'AI slop' score under the hold line |
+| thumbnails | final | thumbnail passes the phone check + runner-up |
+| titles | final | several scored titles |
+| chapters | final | YouTube chapters (at least 3) |
+| shorts | final | Shorts cut, checked and ready |
+| short_covers | final | every Short has a designed cover |
+| self_review | final | 6-point creative self-review at or above the bar |
+| promise_paid | final | the thumbnail's promise is on screen early |
+| impact_map | final | Impact Map: hook in 3 s, timed punchlines, sound spacing, variety vs last 10, flash safety |
+| visual_change | final | a new picture state every <= VISUAL_CHANGE_MAX_S, no overload |
+| living_characters | final | reaction cutaways show the approved character, blinking, breathing and talking |
+| breakout_bar | final | Breakout Score >= BREAKOUT_HARD_BAR (no upload below it) |
+| aliveness | final | no stretch of the video looks like a still photo |
+
+## 6. Settings that matter (defaults from `core.DEFAULTS`; the live Sheet wins)
+**Money**
+
+| setting | default | meaning |
+|---|---|---|
+| BUDGET_CEILING_INR | 5000 | hard monthly spending cap, everything included: pictures, clips, Claude writing incl. thinking, Gemini incl. TTS, retries and repairs (₹5,000 incl. ₹300 for special reels, owner 2026-11-08; a single month can be overridden in MONTH_CAP_OVERRIDES) |
+| BUDGET_FLOOR_INR | 5000 | monthly budget floor; paired with the ceiling for a hard cap (₹5,000 all-in incl. ₹300 for special reels, owner 2026-11-08) |
+| MONTH_CAP_OVERRIDES | (blank) | one-month caps 'YYYY-MM=INR,...' set by the owner (the v11 upgrade writes 2026-11=5226: Rs 1,226 already spent + Rs 4,000 approved on 9 Nov for the rest of November; December is back to Rs 5,000) |
+| BUDGET_GUARD_PCT | 90 | at this % of the cap, extras pause (spin-offs, tool tests, Shorts above 1 a day); long episodes keep their money; one alert per month |
+| BREAKOUT_FUND_CAP_INR | 1000 | the most that carries over |
+| BUDGET_MODE | standard | standard / runway (owner's tap: email link 'MODE RUNWAY' / dashboard) / growth (set by itself when revenue exists, GROWTH_AUTO_ON) |
+| STANDARD_MAX_LONG_PER_MONTH | 8 | Standard makes at most this many long videos a month (decision 8) |
+
+**Schedule and formats**
+
+| setting | default | meaning |
+|---|---|---|
+| PUBLISH_DAYS | Tue,Sat | US Eastern days of the long-video slots (the month's long videos are capped by STANDARD_MAX_LONG_PER_MONTH and the money governor) |
+| SHORTS_TRACK_ON | TRUE | standalone daily Shorts (the month-1 launch plan) |
+| SHORTS_PER_DAY | 1.5 | standalone Shorts per day (1.5 = 2 on even days, 1 on odd days); the first of a day is core production, the rest are extras |
+| CASEFILES_ON | TRUE | one Case Files countdown a month once enough episodes are archived |
+| DEEP_TRIAL_ON | TRUE | one long slot a month becomes a ~20-minute Deep Trial (three acts + a Jury Room segment) |
+| PREPROD_ON | TRUE | the writers' room for the next slot runs early (when nobody waits) through Message Batches at half price; production takes the result as written [FALSE = the room runs inside production] |
+| PAUSED | FALSE | TRUE stops everything |
+
+**Writers' room and show**
+
+| setting | default | meaning |
+|---|---|---|
+| ROOM_MODE | v2 | v2 = diverse drafts + blind cross-family jury + one checklist revision (no role memos); v1 = the previous room |
+| ROOM_V2_DRAFTS | 3 | drafts per episode, each with a different cold-open archetype |
+| SHOW_MODE | auto | auto = the Showrunner also returns a Show Plan (no extra AI call), validated and logged in Show_Log; off = the Showrunner prompt without a Show Plan |
+| CONSTITUTION | (blank) | the Creative Constitution (blank = the built-in one in data.CONSTITUTION). Type your own text here to replace it; every department reads it |
+| BRAIN_ON | TRUE | the learning core: features per video, Technique_Evidence from YouTube's engaged views, Thompson sampling with a holdout, forecasts scored against the median |
+| BRAIN_HOLDOUT | 0.2 | share of Shorts that keep the default hook (the control the sampler must beat) |
+
+**Pictures, motion, voice**
+
+| setting | default | meaning |
+|---|---|---|
+| ART_STYLE | toybox_noir | the look of animated scenes, masters and the intro: toybox_noir (owner-approved 9 Nov 2026), photoreal (matches the first locked portraits) or illustrated. STYLE words only; faces and costumes always come from Characters.visual |
+| FAL_HERO_MODEL | fal-ai/kling-video/o3/standard/image-to-video | animated scenes (Kling 3.0 Standard on fal, $0.084/s audio off = $0.42 per 5 s; the Steward falls back along MODEL_LADDERS) |
+| FAL_STILL_MODEL | fal-ai/flux/schnell | cheap stills |
+| ANIM_SHOTS | 4 | animated scenes per long video (~20 s) |
+| PARTICLES_ON | TRUE | world particle layer on every still (dust in court/case, embers in the lab, rain in the office, wind outdoors) - independent motion that reads as alive |
+| LIVING_CHARACTERS_ON | TRUE | reaction cutaways show the LOCKED expression still with blinks, breathing and word-synced mouth movement |
+| LIFE_LAYER_ON | FALSE | breathing warp of the near part of a still. OFF: measured on 9 Nov it reads like a camera zoom (the still detector cannot tell it apart, and neither can a viewer); the world particle layer replaces it |
+| TTS_ENGINE | gemini | gemini = Gemini TTS (two speakers per request, expression tags, word timings derived by code) with automatic fallback to Kokoro on failure; kokoro = the Kokoro blended voices [kokoro] |
+
+**Quality gates**
+
+| setting | default | meaning |
+|---|---|---|
+| CONTRACT_ON | TRUE | every promised feature is a mandatory check; a failure HOLDS the video (never uploaded) with an owner card |
+| CONTRACT_OFF | (blank) | comma-separated feature ids switched off (owner decision only; shown in the ledger as not checked) |
+| BREAKOUT_HARD_BAR | 80 | HARD - no upload below this Breakout Score (held with the weakest part named; owner can approve anyway) |
+| REHOOK_MAX_GAP_SEC | 75 | longest stretch of script allowed without a re-hook (a question, a turn, a reveal) |
+| JOKE_EVERY_SEC_LONG | 15 | at least one [PUNCH] line per this many seconds of narration (long) |
+| VISUAL_CHANGE_MAX_S | 4 | V2 - longest a picture state may hold in a long video (graphics / clips 2x) |
+| PROMISE_BY_SEC | 30 | the thumbnail/title promise must be on screen by this second of a long video |
+| IDEA_MIN_MULTIPLE | 5 | outlier multiple required |
+
+**Owner**
+
+| setting | default | meaning |
+|---|---|---|
+| WA_ON | TRUE | WhatsApp messages and chat (only once WA_TOKEN / WA_PHONE_ID / OWNER_WA secrets exist); email always goes too |
+| BUILDS_ON | TRUE | owner-ordered changes and repairs are built by Claude Code in GitHub Actions on the owner's Claude plan (secret CC_OAUTH_TOKEN); FALSE = nothing is built automatically |
+| DASH_ON | TRUE | the pipeline writes the dashboard snapshot to Cloudflare KV after each tick (only once CF_ACCOUNT_ID / CF_KV_NAMESPACE_ID / CF_KV_TOKEN exist) |
+
+## 7. Jobs (`.github/workflows/`)
+| file | name | schedule (cron, UTC) | other triggers | cli commands |
+|---|---|---|---|---|
+| bakeoff.yml | Model bake-off | - | workflow_dispatch | bakeoff |
+| brief.yml | Monthly Brief | 15 6 1 * * | workflow_dispatch | brief |
+| checks.yml | Checks | - | workflow_dispatch, push, pull_request | prready, rehearsal |
+| claude-build.yml | Claude build | - | workflow_dispatch, issues | build_ready |
+| dash.yml | Dashboard action | - | repository_dispatch | dash_action |
+| fix.yml | Fix held video | - | issues | fixheld |
+| google_signin.yml | Google Sign-in (one time) | - | workflow_dispatch | - |
+| keepalive.yml | Keep Alive | 0 3 1,15 * * | workflow_dispatch | - |
+| learn.yml | Learning Loop | 41 9 * * * | workflow_dispatch | learn |
+| merge.yml | Merge change | - | issues | - |
+| pipeline.yml | Pipeline | 7,37 * * * * | workflow_dispatch, repository_dispatch | produce, tick |
+| preprod.yml | Pre-production | 17 * * * * | workflow_dispatch | preprod |
+| preview.yml | Script Preview | - | workflow_dispatch, issues | preview, previewdecide |
+| repair.yml | Repair Bot | - | workflow_run | - |
+| research.yml | Research Brief | - | workflow_dispatch | research |
+| restore.yml | Restore code | - | workflow_dispatch, push | - |
+| setup.yml | Setup | - | workflow_dispatch | setup, voices |
+| sheets.yml | sheets | - | workflow_dispatch | sheets |
+| special.yml | Special reel | 40 14 * * * | workflow_dispatch | pilot, special |
+| trends.yml | Trend Scout | 23 5 * * 1 | workflow_dispatch | trends |
+| upload_check.yml | Upload check | - | workflow_dispatch | upload_check |
+| voices.yml | Voice Lab | - | workflow_dispatch | voices |
+| wa_setup.yml | WhatsApp setup | - | workflow_dispatch | wa_templates |
+| whatsapp.yml | WhatsApp | - | repository_dispatch | wa_inbound |
+
+## 8. Sheet tabs (`core.TABS`; append-only)
+| tab | columns | first columns | note |
+|---|---|---|---|
+| Settings | 3 | key, value, note |  |
+| Setup_Status | 4 | step, status, detail, updated |  |
+| Models | 4 | role, provider, model, chosen_at |  |
+| Premises | 10 | premise_id, grid, anchor, rule, lens, premise ... |  |
+| Banned | 2 | phrase, reason |  |
+| Strategies | 9 | dimension, name, definition, status, plays, score_sum ... |  |
+| Episodes | 34 | episode_id, slot_et, premise, ptype, presentation_format, title ... |  |
+| Cost_Log | 16 | ts, episode_id, item, provider, units, inr ... |  |
+| Run_Log | 5 | ts, job, episode_id, level, message |  |
+| Revenue_Log | 4 | month, source, inr_received, note |  |
+| Trend_Brief | 5 | week, kind, item, detail, source |  |
+| Lessons | 4 | ts, lesson, evidence, applies_to |  |
+| Playbook | 13 | rule_id, department, rule, metric, source, evidence ... |  |
+| Strategy_Log | 7 | ts, dimension, action, name, replaces, mean_at_change ... |  |
+| Analytics | 23 | episode_id, yt_id, pulled, views, avg_view_pct, avg_view_sec ... |  |
+| Repairs | 5 | ts, file, error, result, pr |  |
+| Research_Brief | 9 | brief_id, brief_date, kind, ref, item, detail ... |  |
+| Hook_Candidates | 14 | episode_id, rank, line, words, type, clarity ... |  |
+| Cut_Map | 11 | episode_id, cut_id, start, end, duration, kind ... |  |
+| Reaction_Map | 7 | episode_id, t, kind, word, line, style ... |  |
+| Table_Read | 8 | episode_id, arm, mode, kind, from_role, to_role ... |  |
+| Cast | 14 | id, role, display_name, voice, gender, pitch ... |  |
+| Voice_Check | 7 | ts, voice, source, listed, synth_ok, multi_speaker_ok ... |  |
+| Premise_Scores | 16 | ts, episode_id, round, premise, headline, source ... |  |
+| Craft_Notebook | 5 | added, note, applies_to, priority, active |  |
+| Technique_Library | 15 | ts, video_id, title, channel, views, hook_device ... | the outlier-video library (techniques seen in other channels' outliers); NOT the learning core |
+| Owners_Cut | 11 | ts, episode_id, round, inside_scene, weirdness_hook, emotional_peaks ... |  |
+| Script_Previews | 11 | draft_id, created, status, premise, title, hook ... |  |
+| Dash_Acks | 5 | ts, id, verb, ok, note |  |
+| Localizations | 5 | ts, episode_id, yt_id, langs, ok |  |
+| Slop_Scores | 10 | ts, episode_id, slop, still, motion, template_sim ... |  |
+| Data_Rules | 8 | ts, key, kind, text, videos, effect ... |  |
+| Expiry_Calendar | 4 | item, expires, renew, reminded |  |
+| Backups | 3 | ts, name, file |  |
+| Pilots | 8 | ts, id, bench_id, premise, hook, yt_id ... |  |
+| Outlier_Lab | 4 | ts, video_id, title, status |  |
+| Bakeoff | 3 | ts, models, card |  |
+| Script_Fingerprints | 3 | ts, episode_id, sig |  |
+| Owner_Briefs | 10 | ts, id, target, premise, brief_json, scores_json ... |  |
+| Room_Value | 8 | ts, episode_id, winner, margin, room_score, solo_score ... |  |
+| Impact_Maps | 4 | ts, episode_id, signature, summary |  |
+| Tool_Scout | 8 | ts, endpoint_id, name, category, unit_price, unit ... |  |
+| Reach | 6 | key, date, video_id, impressions, ctr, updated |  |
+| Breakout_Scores | 8 | ts, episode_id, format, score, grade, weakest ... |  |
+| Monitor48 | 7 | yt_id, video_key, kind, published, v24, v48 ... |  |
+| Breakout_Queue | 5 | ts, video_key, status, plan, left |  |
+| Jury_Log | 7 | ts, episode_id, stage, judge, order, ranking ... |  |
+| Video_Features | 13 | ts, video_key, yt_id, format, hook, title ... |  |
+| Technique_Evidence | 19 | technique_id, format, family, level, alpha, beta ... | the learning core's evidence table (whatifs/brain.py) |
+| Brain_Log | 6 | ts, event, technique_id, from, to, evidence |  |
+| Forecasts | 11 | ts, video_key, format, metric, lo, mid ... |  |
+| Feature_Ledger | 7 | ts, episode_id, stage, feature, status, evidence ... |  |
+| Model_Changes | 5 | ts, role, from, to, why |  |
+| Viewer_Questions | 6 | ts, video_id, comment_id, author, text, used |  |
+| Carousels | 6 | ts, episode_id, files, caption, status, ig_id |  |
+| Specials | 13 | ts, id, kind, title, format, ask ... |  |
+| WA_Outbox | 5 | ts, wamid, action_id, kind, status |  |
+| WA_Chat | 4 | ts, msg_id, who, text |  |
+| Owner_Actions | 16 | id, created, tier, kind, episode_id, text ... |  |
+| Premise_Bench | 17 | bench_id, added, status, premise, headline, family ... |  |
+| Demand_Signals | 9 | ts, video_id, title, channel, views, channel_median ... |  |
+| Packaging_Tests | 15 | episode_id, yt_id, variant, title, thumb_text, thumb_file ... |  |
+| Comment_Queue | 10 | ts, episode_id, comment_id, author, kind, text ... |  |
+| Season | 8 | ts, episode_id, case, verdict, meter_final, jury_tally ... |  |
+| Experiments | 26 | episode_id, created, premise_source, packaging_variant, intensity, hook_shape ... |  |
+| Character_Sheets | 8 | ts, character, expression, hash, prompt, file ... |  |
+| Show_Log | 11 | ts, episode_id, format, intensity, witness_twist, verdict_winner ... |  |
+| Retention_Map | 10 | ts, episode_id, beat, start, end, shot_types ... |  |
+| Role_ROI | 9 | ts, episode_id, role, calls, notes, accepted ... |  |
+| Characters | 21 | id, name, speaker, role, philosophy, rhythm ... |  |
+| Cache_Stats | 17 | updated, episode_id, job, run_id, calls, cached_calls ... |  |
+
+## 9. Modules
+| module | purpose |
+|---|---|
+| whatifs/__init__.py | Reality Engine: the automated pipeline behind the YouTube channel Reality on Trial. |
+| whatifs/anim.py | Animation director: places the animated (Kling) scenes of a long video at the retention cliffs and writes their motion prompts. |
+| whatifs/art.py | Thumbnails and reel covers: premium key art, cinematic grade, bold type, phone-size readability check, brand mark. |
+| whatifs/atmosphere.py | Atmosphere pack: code-only, deterministic per-shot overlays applied under the show overlay at zero API cost. |
+| whatifs/bakeoff.py | One-time, hand-started clip-model bake-off: the same scenes animated by the current hero model and each candidate, capped by BAKEOFF_CAP_INR. |
+| whatifs/brain.py | Channel Brain, the learning core: video features, engaged-view outcomes, Technique_Evidence (Beta-binomial), Thompson sampling with a holdout, forecasts and the weekly 'what we learned'. |
+| whatifs/breakout.py | Breakout Protocol checks and tools: promise-paid, the aliveness (still-photo) detector, the Breakout Score and the 48-hour breakout monitor. |
+| whatifs/builds.py | Owner builds and repairs through Claude Code in GitHub Actions (claude-build workflow) and the Merge / Reject / auto-merge rules. |
+| whatifs/caretaker.py | Keeps the channel safe and the owner informed without noise (policy rescue and related watch duties). |
+| whatifs/carousel.py | Instagram 'Case Files' carousel per long episode: six slides from the episode's own stills and show plan. |
+| whatifs/cast.py | The Cast tab: recurring experts and rotating guests, no-repeat guest rotation, and the cast brief for the writer. |
+| whatifs/charts.py | Charts as PNG images for WhatsApp and the digests (real numbers only; no data = no chart). |
+| whatifs/checkpoint.py | Saves and restores an episode's expensive state (plan, assets) in the owner's Drive so a retry never pays twice. |
+| whatifs/cli.py | Entry point for every GitHub workflow: python -m whatifs.cli <command>. |
+| whatifs/community.py | The jury outside the video: the in-character jury comment, the keyword-parsed jury tally and viewer finds fed to the next episode. |
+| whatifs/contract.py | Feature Contract: every promised feature is a named HARD check at a stage, judged from real evidence; a FAIL holds the episode and sends the owner a decision message. |
+| whatifs/core.py | Settings, storage (Google Sheet or local rehearsal store), logging, cost log and Google sign-in. |
+| whatifs/costguard.py | Cost controls that never touch pictures: the per-stage estimator, the spend monitor and the overrun ladder. |
+| whatifs/craft.py | The owner's creative voice in the pipeline: the Creative Constitution, the Craft_Notebook tab and the outlier-video technique library. |
+| whatifs/cta.py | The three audience asks (like, subscribe, share), written as witty in-show moments and placed by rules. |
+| whatifs/cutmap.py | Reviewable cut map (edit-decision proposal) measured from the rendered video; nothing is ever cut automatically. |
+| whatifs/dash.py | The phone dashboard's data snapshot and its taps (never contains secrets, scripts or unreleased premises). |
+| whatifs/data.py | Seed data loaded into the Sheet at setup: topic grids, banned list, strategy pools, director lessons. |
+| whatifs/deeptrial.py | The monthly Deep Trial: one long slot a month becomes a ~20-minute episode. |
+| whatifs/demand.py | Search-demand score for bench premises from the YouTube search API (no scraping). |
+| whatifs/digests.py | The daily and weekly WhatsApp briefs, built only from the owner view. |
+| whatifs/enforce.py | Hard enforcement of the researched breakout rules: writer instruction, one automatic fix, then the Feature Contract check. |
+| whatifs/engage.py | Engagement engine and emotion beats: typed, in-character audience prompts and one earned emotion beat in the writer brief. |
+| whatifs/episode.py | One full episode in resumable stages: plan (writing, voice, shots), assets (paid pictures and clips) and the final render with its checks and packaging. |
+| whatifs/facts_watch.py | Platform Facts watcher: weekly fingerprint of the official change-log pages; a change sends the owner one message (no AI call). |
+| whatifs/fakes.py | Offline stand-ins for every model call (rehearsal mode WI_FAKE=1), including a fake prompt-cache server; zero cost. |
+| whatifs/fixes.py | Repairs for problems full QC finds, in a fixed order with limits: free fixes first, paid fixes only up to a rupee cap. |
+| whatifs/format_engine.py | Presentation-format controls (Settings cell PRESENTATION_FORMAT) and the code check of the script's format. |
+| whatifs/governor.py | The money governor: hard monthly cap with a pre-flight gate, per-episode estimates, the extras guard and the breakout fund. |
+| whatifs/growth.py | The click-through and retention layer of the learning loop: routed lessons, title choice, cold-open and retention rules (no model calls). |
+| whatifs/herostill.py | Hero-still reels, per-character cinematic grammar and the courtroom composition (code only). |
+| whatifs/hooks.py | Opening-line candidates per episode: written, validated by code, scored by an independent judge; the best one opens the video. |
+| whatifs/hours.py | Hours engine: more watch hours without new videos (localised titles and descriptions, and related helpers). |
+| whatifs/immersion.py | First-person immersion: the Immersion Director maps the script to a viewer-inside-the-scene vantage, sensation and camera effects. |
+| whatifs/insights.py | Flag-gated learning and community extras (retention map and others), each fail-safe and bounded. |
+| whatifs/launch.py | Launch checks: the zero-cost upload check, the private-lock detector and the uploads-open rule. |
+| whatifs/living.py | Living characters: locked expression art in every reaction cutaway, with blink, breathing and mouth movement. |
+| whatifs/manage.py | Scheduler and upkeep: tick, release, packaging rescue, hold/resume, trend scout, learning loop, guardian, setup, self-test and the one-time setting moves. |
+| whatifs/media.py | fal.ai images and clips, free NASA/Pexels footage, depth maps, motion graphics and fake assets for rehearsal. |
+| whatifs/microscope.py | Retention Microscope: second-by-second retention turns shot types into boosters or killers for the writer's brief. |
+| whatifs/models.py | Model discovery (names never typed in code), Claude and Gemini calls with prompt caching and routing, JSON repair, fallback and fake mode. |
+| whatifs/notify.py | The one owner-messaging layer with no-spam tiers; every owner message goes through notify.send(). |
+| whatifs/occasions.py | Calendar-aware special reels: the special-reel slots go first to the month's best-loved occasions. |
+| whatifs/orchestra.py | Time-window rule so heavy optional jobs never run inside a release window or a production run. |
+| whatifs/outlier_lab.py | Outlier Lab: daily, videos doing unusually well in the wider space are analysed and their techniques stored for the writers. |
+| whatifs/overlay.py | The speaker tag: a small code-drawn chip with level bars shown while a recurring role speaks. |
+| whatifs/owner_brief.py | Owner Brief: the owner proposes a topic on WhatsApp, the Showrunner refines it with him, and 'lock' makes it the forced premise. |
+| whatifs/owner_view.py | The owner view: one evidence-labelled data layer for WhatsApp, the dashboard, the digests and the chat brain. |
+| whatifs/packaging.py | Title and thumbnail pairs per video, the owner pick, rotation in the first 48 hours, hook shapes and the ad-risk check. |
+| whatifs/pilots.py | Pilot Shorts: cheap 12-15 s Shorts that test bench premises before a long video is written. |
+| whatifs/playbook.py | The research-based rulebook: weekly proposed practices, vetted by code (source, evidence label) and trialled on half the episodes. |
+| whatifs/preflight.py | Free health checks before any paid step; a red critical check stops the run before money is spent. |
+| whatifs/premise.py | Premise quality: the generated premise bank, scoring and the Premise_Bench that ships the best premise. |
+| whatifs/preprod.py | Pre-production: the writers' room for a future slot runs early through the Message Batches API and saves an approved draft. |
+| whatifs/preview.py | Script Preview: scout and writers' room only, then one email with title, hook, script, shot list and estimated cost. |
+| whatifs/prompts.py | Every role's brief (the prompt templates), packed for prompt caching; filled with fill(), never str.format. |
+| whatifs/publish.py | Publishing: YouTube upload (scheduled, verified), thumbnail, captions, playlist, AI label; Instagram and Facebook Reels; Drive archive; Gmail notices. |
+| whatifs/qc.py | Quality checks before anything goes public; any FAIL stops the upload of that file. |
+| whatifs/reach.py | Impressions and thumbnail click-through per video per day from the YouTube Reporting API. |
+| whatifs/reactions.py | Reaction moments: a short voiced reaction plus original code-drawn effects that amplify the feeling. |
+| whatifs/reels.py | 9:16 reels cut from the long video's own shots: cover first, new order, re-voiced lines, burned captions. |
+| whatifs/render.py | The renderer: segments (parallax stills, crops, clips, graphics, particles) piped into FFmpeg, frame-accurate against the narration clock, with score and effects. |
+| whatifs/replan.py | The mid-month re-planner: invests money that is truly free in breakout steps, each one a WhatsApp decision the owner can veto. |
+| whatifs/research.py | Audience and topic research before topic selection, with observed evidence kept apart from interpretation. |
+| whatifs/room.py | Writers' room v1 and the shared room steps: scout, showrunner, production bible, writer, critic and policy-safety gate, promise shot. |
+| whatifs/room2.py | Writers' room v2 (the default): diverse drafts from one strong writer, a blind cross-family jury, one checklist revision and the joke tournament. |
+| whatifs/sampler.py | The per-episode draw (runtime, counts, strategies): a bandit with exploration. |
+| whatifs/scout.py | The weekly tool scout: new models, prices and deprecations from the fal catalog and Artificial Analysis. |
+| whatifs/sheets.py | The one-time character sheets workflow: expression sheets and the courtroom set under a hard lifetime image cap. |
+| whatifs/shorts2.py | Standalone daily Shorts: each a complete mini-trial built to break out, with topic and hook chosen from the breakout queue and the Channel Brain. |
+| whatifs/shortslab.py | Shorts Lab: the weekly list of winning Shorts for the owner to link to the full episode. |
+| whatifs/shotplan.py | Shot-plan rules: where the animated clips go, shot pacing (pieces_for) and related fixes; never adds a paid shot. |
+| whatifs/show.py | Reality on Trial as code: the Show Plan contract with its validator, the character bible, the script-tag contract and the IP-similarity guard. |
+| whatifs/showfx.py | The trial's signature devices drawn by code at render time (reconstruction stack, HUD, jury meter, exhibit pins, teacup, letterbox). |
+| whatifs/similarity.py | Script similarity guard: a MinHash fingerprint of every final script, compared with the last 10. |
+| whatifs/slop.py | Slop Guard: one 0-100 'AI slop' risk score per video from existing measurements. |
+| whatifs/sound.py | Sound design: code-generated textures under the shots, per-world beds, story events and a music bed that moves. |
+| whatifs/specials.py | Specials: short cast reels that are not episode cut-downs (cast intro, occasion reels). |
+| whatifs/spinoff.py | The 'Case Files' countdown spin-off: a long video built from past episodes, with originality gates. |
+| whatifs/steward.py | Model Steward: watches picture and clip models and prices, proposes upgrades and tells the owner in advance. |
+| whatifs/tableread.py | The optional table read of writers' room v1 (off by default; room v2 does not use it) and its with/without comparison. |
+| whatifs/truth.py | Truth Registry: the single statement of what is current and what is retired, and the scanner that enforces it in docs, docstrings and prompts. |
+| whatifs/tts_gemini.py | Gemini TTS narration: chunked requests, designed voices, retries and timing (the model name is discovered live). |
+| whatifs/v91.py | Feature switchboard: on(flag) and the fail-safe guard(feature, episode) wrapper for flag-gated features. |
+| whatifs/viewers.py | 'Viewer v. Physics': weekly, viewers' what-if questions from comments are stored and handed to the scout as premise data. |
+| whatifs/visual_lab.py | Visual Lab: weekly ranking of picture treatments by how viewers held during them, proposed at the same cost. |
+| whatifs/voice.py | Narration voice and pacing: the TTS engine with its fallback, human-style timing, markers and the master chain. |
+| whatifs/voice_lab.py | Voice samples and the voice check: samples emailed, uploaded to Drive and kept as a GitHub artifact. |
+| whatifs/voiceq.py | Designed character voices (by voice ID) and voice loudness. |
+| whatifs/wa.py | The WhatsApp control room: interactive buttons inside the 24-hour window, the approved template outside it, and inbound owner messages. |
+| whatifs/ypp.py | The North-Star tracker: weekly YouTube Analytics progress toward the Partner Program thresholds. |
+| tools/atmos_bench.py | Render performance check: times one still shot through the real render path with the atmosphere layer off and on (run: python tools/atmos_bench.py [seconds]). |
+| tools/gen_docs.py | Generates docs/CURRENT/SYSTEM.md from the live code (run: python tools/gen_docs.py); the test suite fails when the committed file differs. |
+| tools/google_signin.py | One-time Google sign-in helper run on GitHub: prints the sign-in links, swaps the pasted address for a long-life key and emails it to the owner (never printed in the log). |
+| tools/perf_atmosphere.py | Render-time comparison of one rehearsal-size episode with ATMOSPHERE_ON true vs false (usage: WI_FAKE=1 WI_SMALL=1 python tools/perf_atmosphere.py). |
+| tools/plan_guard.py | Plan Guard: runs on every push; RED when code breaks a locked rule (typed model names, flagged words, duplicate definitions, retired concepts in current docs or prompts). |
+| tools/rehearsal.py | Full offline rehearsal: setup -> voices -> tick -> produce -> release -> trends -> learn -> brief with fake models, images and voice; proves every stage connects at zero cost. |
+| tools/repair.py | Repair bot: on a crashed job, sends the traceback and the failing file to the model, checks the fixed file with Plan Guard and the offline rehearsal, and opens a pull request. |

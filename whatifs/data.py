@@ -1,4 +1,4 @@
-"""whatifs/data.py v8.7 - seed data loaded into the Sheet at setup: topic grids, banned list, strategy pools, director lessons."""
+"""Seed data loaded into the Sheet at setup: topic grids, banned list, strategy pools, director lessons. See docs/CURRENT/SYSTEM.md."""
 import hashlib, itertools, random
 
 EVERYDAY = ["nail clippings","sneezes","blinks","yawns","hiccups","footsteps","toilet flushes","hair strands","tears","burps",

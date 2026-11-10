@@ -1,9 +1,4 @@
-"""v11 (K162): impressions and thumbnail click-through rate per video per day (YouTube Reporting API, report type channel_reach_basic_a1).
-
-Facts (technical reference, 9 Nov 2026): the targeted Analytics API has NO impressions/CTR; they come only from the bulk Reporting API, added 15 Jan 2026.
-A job is created ONCE; the first daily CSV arrives within about 48 h; files are kept 60 days (so we download daily and keep our own copy);
-columns are read by header name (order is not guaranteed); deleted videos have an empty video_id; a day can be re-delivered (backfill), so rows are
-keyed (date, video_id) and overwritten. CTR is a 0-1 fraction (unverified scale: values > 1 are treated as percent). Scope: yt-analytics.readonly."""
+"""Impressions and thumbnail click-through per video per day from the YouTube Reporting API. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import csv, io
 from whatifs.core import S, log, store, iso, set_setting, FAKE, scrub, gheaders

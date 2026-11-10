@@ -1,12 +1,4 @@
-"""v9.4a (WP4, K125): ONE owner-messaging layer with the no-spam tiers. Every feature that needs the owner goes through notify.send(); nothing else mails.
-
-Tiers:  now  = act now (email at once; WhatsApp later via wa.py when present); at most NOTIFY_NOW_MAX_PER_DAY a day unless urgent;
-                 outside quiet hours only (QUIET_HOURS_IST), urgent = always.
-        week = collected into the Tue/Sat/Sun digest + Mission Control (no separate message).
-        fyi  = recorded only (dashboard); never pings.
-Every message is a row in Owner_Actions with buttons (one-click issue links 'ACT <id> <verb>'), a default action and an expiry: silence = the default,
-run once by expire_defaults() from the half-hourly tick. Dedupe: the same kind + episode is never open twice.
-"""
+"""The one owner-messaging layer with no-spam tiers; every owner message goes through notify.send(). See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import datetime as dt, itertools, json, re
 from zoneinfo import ZoneInfo

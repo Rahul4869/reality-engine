@@ -1,3 +1,5 @@
+> HISTORICAL - DO NOT FOLLOW. Superseded by CLAUDE.md (how to change the code) on 10 Nov 2026 (v12 truth hygiene). Kept unedited below as history.
+
 # Making changes from your laptop with your own Claude subscription (no API money)
 
 There are three ways a change reaches the pipeline. All end the same way: a pull request, automatic Checks, then your Merge tap.

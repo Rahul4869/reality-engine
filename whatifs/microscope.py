@@ -1,9 +1,4 @@
-"""v10 G3 Retention Microscope (K138; decision 3 amends K106): data rules from second-by-second retention reach the writer's brief.
-From Retention_Map (per beat: shot types, drop per 30 s vs the channel median, views) a shot type becomes a BOOSTER or a KILLER only when
-the effect holds across >= MICRO_MIN_VIDEOS videos with >= MICRO_MIN_VIEWS views each, and its average distance from the median is larger
-than MICRO_MIN_EFFECT. Rules live in Data_Rules with the number of the video they started at; a rule expires after MICRO_RULE_LIFE videos
-unless it is re-confirmed. Rules never touch the budget, picture counts or quality gates; they only add one short line each to the writer
-and the dashboard. Rule-based: no AI call."""
+"""Retention Microscope: second-by-second retention turns shot types into boosters or killers for the writer's brief. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import statistics
 from whatifs.core import S, log, store, iso

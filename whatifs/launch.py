@@ -1,13 +1,4 @@
-"""v9.3.1 "Launch" (K118): the ₹0 upload check, the lock detector and the uploads-open rule.
-
-YouTube Data API revision history, 2 Nov 2026: videos uploaded with videos.insert from unverified API projects are no longer restricted to private.
-This module proves it on THIS project before money is spent, and keeps watching every upload afterwards:
-- upload_check(): renders a 20-second clip with ffmpeg (no paid call), uploads it UNLISTED, reads the privacy back, deletes the clip.
-  unlisted came back -> UPLOAD_LOCK = off (uploads can go public; the audit is not needed). private came back -> UPLOAD_LOCK = on.
-- lock_detected(): called by publish.verify_upload (every upload) and by the release check (a video that never went public).
-  Sets UPLOAD_LOCK = on, writes Setup_Status, sends ONE urgent email a day. The production gate then holds new episodes, so nothing is wasted.
-- uploads_open(): True when UPLOAD_LOCK = off or the old audit is approved. UPLOAD_LOCK = unknown is treated as locked until checked.
-"""
+"""Launch checks: the zero-cost upload check, the private-lock detector and the uploads-open rule. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import os, subprocess, tempfile
 from whatifs.core import S, log, set_setting, iso, now_utc, parse_iso, FAKE

@@ -1,6 +1,7 @@
 # Enforcement matrix (owner rule, 10 Nov 2026: every point HARD-enforced, nothing for namesake)
 Every row names the code that enforces it. contract references = a Feature Contract check (FAIL -> episode HELD + owner card); `fn:module.function` = code
 that does it on every run. tests/test_v111_enforce.py fails the build if any reference below is missing.
+This file lives in docs/CURRENT (the only docs to follow); the list of retired concepts is `whatifs/truth.py` RETIRED.
 
 | Requirement (owner / research) | Enforced by | Kind |
 |---|---|---|
@@ -34,4 +35,4 @@ that does it on every run. tests/test_v111_enforce.py fails the build if any ref
 | Research done before writing | `contract:research` | hard gate |
 | Blink + breathing + mouth movement on character shots; approved character art in every reaction | `contract:living_characters` `fn:whatifs.living.render` | built into render + hard gate |
 | One mandatory fix for every open retention / marker problem | `fn:whatifs.enforce.fix_all` | every episode |
-
+| One current truth: no retired concept in current docs, CLAUDE.md, module docstrings or prompts; SYSTEM.md equals the code | `contract:docs_current` `fn:whatifs.truth.issues` `fn:tools.plan_guard.main` `fn:tools.gen_docs.render` | hard gate + every push |

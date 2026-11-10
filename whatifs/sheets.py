@@ -1,9 +1,4 @@
-"""whatifs/sheets.py v9 (stage 3c) - the one-time CHARACTER SHEETS workflow (K102). Expression sheets (SHEET_EXPRESSIONS per character) + the courtroom
-set, made ONCE with a hard LIFETIME image cap (CHARACTER_SHEET_IMAGE_CAP; counted from the Character_Sheets tab, never reset by code), every image keyed
-by a content hash (a rerun never re-buys an image), LOCKED after the owner's one-click approval; a locked image is regenerated only by the owner's
-'REDO SHEET' click (which still counts toward the cap). Nothing here runs on a schedule: workflow 'sheets' (manual) only.
-Face consistency: every expression is made from the same written identity (visual + 'same person as the reference') and, when the image model accepts
-it, the approved neutral portrait as a reference image. Which fal model keeps one face across expressions was NOT verified (see the report)."""
+"""The one-time character sheets workflow: expression sheets and the courtroom set under a hard lifetime image cap. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import hashlib, os, re
 from whatifs.core import S, log, store, iso, WORK, env, set_setting

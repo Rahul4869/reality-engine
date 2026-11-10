@@ -1,8 +1,4 @@
-"""whatifs/v91.py v9.1 - the switchboard for every v9.1 feature (K103):
-- on(flag): a v9.1 feature runs only when its own flag is TRUE AND V91_SAFE_MODE is FALSE (safe mode = exactly v9, in one cell),
-- guard(feature, episode): the FAIL-SAFE wrapper. An exception disables ONLY that feature for that episode (WARN in Run_Log + a line in the episode
-  notes) and never blocks scheduling, rendering or upload. A disabled feature stays off for the rest of the episode (no retry loop).
-- the Gemini voice substitution by descriptors (risk item of the v9 report)."""
+"""Feature switchboard: on(flag) and the fail-safe guard(feature, episode) wrapper for flag-gated features. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import contextlib
 from whatifs.core import S, log, JOB

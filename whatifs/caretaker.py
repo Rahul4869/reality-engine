@@ -1,10 +1,4 @@
-"""v10-future WP13 (K140): the things that keep the channel safe and the owner informed, without noise.
-- Policy Rescue: when the Guardian finds an official AI-monetisation change, besides the 7-day pause it sends ONE urgent card with an impact note
-  and the choices [Discuss] [Build fix] [Resume now]. (One Sonnet call, about ₹2, only when it happens.)
-- Expiry calendar: Expiry_Calendar rows (keys, tokens, plans) remind 14 days before (This week) and 3 days before (Act now), once each.
-- Weekly backup: every tab of the control Sheet as CSV in one zip on Drive (private; drive.file scope), newest BACKUP_KEEP kept.
-- Advisor: one weekly money + growth card (spend vs cap, credits, cost per video, Shorts/specials performance, at most 2 suggestions).
-- Health: last run of each job for the dashboard."""
+"""Keeps the channel safe and the owner informed without noise (policy rescue and related watch duties). See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import csv, datetime as dt, io, json, os, statistics, zipfile
 from whatifs.core import S, log, store, iso, now_utc, parse_iso, TABS, FAKE, scrub, set_setting

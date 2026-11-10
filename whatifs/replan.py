@@ -1,13 +1,4 @@
-"""v11 (K164): the mid-month RE-PLANNER (owner rule: breakout first; freed money is invested, never spent for its own sake, and every change is a
-WhatsApp card the owner can veto).
-
-Weekly (Monday) it measures the money that is truly free = production room - the remaining long slots' reserved cost - the safety floor
-(REPLAN_FLOOR_INR until the last week, then REPLAN_LASTWEEK_FLOOR_INR) and proposes the next rung of the ladder that the free money covers to
-month end:
-  1. breakout follow-ups      - automatic already (breakout fund; nothing to propose)
-  2. more hook-test Shorts    - SHORTS_PER_DAY +0.5 for the rest of the month (more learning per week)
-  3. quality upgrade          - SHORTS_KLING_EVERY -1 (more Shorts get a new animated shot)
-Changes last until the month ends; the month rollover restores the owner's values."""
+"""The mid-month re-planner: invests money that is truly free in breakout steps, each one a WhatsApp decision the owner can veto. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json
 from whatifs.core import S, log, store, iso, now_utc, set_setting, scrub

@@ -1,13 +1,4 @@
-"""whatifs/shotplan.py v9.2 (K108) - shot-plan fixes found by reading the first real preview's 80-shot list. Code only; never adds a paid shot.
-
-1. KLING ON THE STAKES (KLING_STAKES_ON): one clip stays in the opening (v8.11 hook); the others go to the highest-stakes beats - the [CLIPBAIT] moment,
-   the final reveal, the biggest Jury Meter swing, the named impact - never next to another clip, never on a plain explanation line, never on a graphic.
-2. SCENE-AWARE POV ANCHORS (POV_VARIETY_ON): the foreground anchor comes from the SCENE of the line (bathroom, kitchen, hallway, window, bedroom, living
-   room, street, space, water, fire...) matched on whole words (the old rule matched 'ring' inside 'bring' and 'wave' inside 'light wave'); anchor, lens
-   and angle rotate so consecutive pictures differ, and the first-person sentence has several phrasings. prompt_variety() measures one episode.
-3. TINY LINES (REACTION_SHOTS_ON): lines of at most REACTION_MAX_WORDS words ('Fine.', 'A fifth.') become a code-made REACTION cutaway of the speaking
-   character (no image bought) instead of yet another near-identical still; the cutaway also appears at every speaker change of a Director / Skeptic
-   exchange when that line is short, so the characters are visible before the sheets are approved. Cost never goes up (fewer images are bought)."""
+"""Shot-plan rules: where the animated clips go, shot pacing (pieces_for) and related fixes; never adds a paid shot. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import re, hashlib, math
 from whatifs.core import S, log

@@ -1,8 +1,4 @@
-"""v10.1 (K149): Instagram "Case Files" carousel per long episode (saves + sends are Instagram's strongest growth signals). At production
-time 6 slides (1080x1350 JPEG, 4:5) are made from the episode's own stills + the show plan (case, exhibits, objection, no verdict spoiler,
-'full trial: link in bio' + subscribe) and kept privately on Drive. When the long video goes live, the slides are put on the dashboard Worker
-as short-lived public JPEGs (KV 'pub:<32 hex>' with a 1-day TTL; Meta fetches image_url) and published as one carousel
-(children <= 20, is_ai_generated on the PARENT only; verified 8 Nov 2026). At most CAROUSEL_PER_WEEK; ₹0 (pictures already paid)."""
+"""Instagram 'Case Files' carousel per long episode: six slides from the episode's own stills and show plan. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import glob, json, os, secrets
 from whatifs.core import S, log, store, iso, now_utc, parse_iso, env, FAKE, WORK, scrub

@@ -1,11 +1,4 @@
-"""v11.1 (K166): HARD ENFORCEMENT of the researched breakout rules (owner, 10 Nov 2026: every point enforced, nothing included for namesake).
-
-Each rule here is (a) given to the writer as an explicit instruction, (b) auto-fixed once where code can (one targeted rewrite or a timing change),
-then (c) checked by the Feature Contract as a HARD check (FAIL -> the episode is HELD with an owner card). Sources: Feel Layer + Breakout Protocol
-reports (Impact Map validators V1-V10, top-15 techniques) and the learning core.
-
-Script-stage checks:  brain_playbook, no_retired, idea_evidence, joke_density, send_and_awe
-Final-stage checks:   impact_hook (V1), impact_rehook (V3/V4), impact_punch_timing (V6), impact_sfx (V8), impact_variety (V9), impact_flash (V10)"""
+"""Hard enforcement of the researched breakout rules: writer instruction, one automatic fix, then the Feature Contract check. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, math, re, subprocess
 import numpy as np

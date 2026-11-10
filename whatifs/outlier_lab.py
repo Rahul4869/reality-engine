@@ -1,8 +1,4 @@
-"""v10 Outlier Lab (K142): every day, up to OUTLIER_LAB_DAILY videos that are doing unusually well in our wider space (YouTube search, last 14 days,
-by views; one search call = 100 quota units, inside the separate search bucket) are WATCHED by Gemini Flash (first OUTLIER_LAB_SECONDS only,
-public URL, about ₹0.5 each). Each becomes a technique card (hook device, first frame, cut rhythm, sound moment, caption style, why it works,
-how to adapt without copying) and goes through the technique intake judge (craft.intake_technique): value, fit and risk decide whether it
-becomes active, a trial, parked or rejected. Never copies titles, scenes or lines (K99). Paid from the growth allowance; never near a release."""
+"""Outlier Lab: daily, videos doing unusually well in the wider space are analysed and their techniques stored for the writers. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json
 from whatifs.core import S, log, store, iso, now_utc, FAKE, scrub

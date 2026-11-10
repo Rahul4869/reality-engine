@@ -1,6 +1,4 @@
-"""v10.1 (K145): script similarity guard. Every final script gets a 64-hash MinHash signature of its 5-word shingles, stored in
-Script_Fingerprints. If the new script is more than SCRIPT_SIMILARITY_MAX similar to any of the last 10, the owner gets one urgent card and the
-episode is marked degraded (the variety guard steers the next structure). Rule-based, ₹0. Never holds a slot by itself (K92)."""
+"""Script similarity guard: a MinHash fingerprint of every final script, compared with the last 10. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import hashlib, re
 from whatifs.core import S, log, store, iso

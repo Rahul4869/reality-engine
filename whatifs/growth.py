@@ -1,18 +1,4 @@
-"""whatifs/growth.py v8.7 - the click-through + retention layer of the learning loop. Small, free (no model calls), and read by real production code:
-1. lessons_for(role)      : each department gets the lessons meant for it (the Reel Producer gets the Shorts lessons, the Packager the packaging ones...).
-2. choose_titles()        : code-checked titles (30-60 characters, front-loaded, not shouting, not repeating the thumbnail words); best + runner-up.
-3. thumb_words()          : thumbnail text is 1-4 words (readable at phone size).
-4. dim_scores()           : every strategy dimension is scored on the metric it can actually move (titles/thumbnails on clicks, hooks on the first 30 s,
-                            stories on how much is watched, Shorts on the long-video views they bring). Missing data is never invented.
-5. diagnose()             : one plain label per analysed video (packaging / opening / holding / healthy / insufficient data) + a routed lesson.
-6. strategy changes are logged (Strategy_Log) and a replacement that does worse than the strategy it replaced is rolled back automatically, once.
-v8.7: 7. packaging-first promise (clean_promise), 8. retention gate (retention_issues: opening, re-hooks, re-engagement near 3:00 / 6:00, open loops),
-9. rhythm blueprint per episode (rhythm_plan: least-recently-used cold-open device, interrupt, music arc, reaction density), 10. watch time per impression
-for packaging (YouTube's own Test & Compare judges by watch time, not CTR), CTR unit self-check, retention vs similar-length YouTube videos for early
-diagnosis, the steepest drop mapped to its beat (dip_lesson), and the related-video link (related_episode).
-Sources for the rules (paraphrased, see REVISION_NOTES v8.6): YouTube's own creator guidance, the leaked 'How to Succeed in MrBeast Production' guide
-(title + thumbnail first, the first minute decides retention, the video must deliver the thumbnail's promise), and large title-length studies (30-60 characters).
-"""
+"""The click-through and retention layer of the learning loop: routed lessons, title choice, cold-open and retention rules (no model calls). See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, re, statistics
 from whatifs.core import store, S, iso, log

@@ -1,5 +1,4 @@
-"""whatifs/publish.py v8.5 - YouTube (resumable upload, scheduled publishAt, thumbnail, captions, playlist, AI label, title swap),
-Instagram Reels + Facebook Reels (Graph API), Google Drive archive, Gmail notices. All calls retried; failures never block the next episode."""
+"""Publishing: YouTube upload (scheduled, verified), thumbnail, captions, playlist, AI label; Instagram and Facebook Reels; Drive archive; Gmail notices. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import os, re, json, time, base64
 from email.mime.text import MIMEText            # v8.9.3: imported by name; the module-level email() function below would hide the `email` package

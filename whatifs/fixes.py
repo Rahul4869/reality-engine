@@ -1,9 +1,4 @@
-"""whatifs/fixes.py v8.2 - repairs for the problems full QC finds, in a fixed order, with limits.
-
-Free fixes first (re-mix the audio, rebuild captions, re-concatenate / re-mux, re-render the segments around a black or frozen stretch). Paid fixes (re-make a
-missing picture or a failed Kling clip) only up to a rupee cap: AUTO_FIX_PAID_INR automatically, FIX_MAX_PAID_INR when you click the fix link. Whatever is still
-wrong afterwards makes the video HOLD; nothing that fails QC is ever uploaded.
-"""
+"""Repairs for problems full QC finds, in a fixed order with limits: free fixes first, paid fixes only up to a rupee cap. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 from whatifs.core import log, scrub
 

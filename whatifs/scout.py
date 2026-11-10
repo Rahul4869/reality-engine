@@ -1,11 +1,4 @@
-"""v11 (K165): the weekly TOOL SCOUT (technical reference 9 Nov 2026 - exact endpoints).
-
-- fal model catalog: GET https://api.fal.ai/v1/models?category=image-to-video&status=active&sort=recent (auth 'Key <FAL_KEY>') and prices from
-  GET /v1/models/pricing?endpoint_id=... (unit_price, unit, currency). New models since the last run are logged to Tool_Scout.
-- DEPRECATION WATCH: every endpoint the pipeline uses is looked up by id; status 'deprecated' or a missing entry = an URGENT owner alert (the API
-  has no shutdown date; model pages do).
-- Artificial Analysis (optional key AA_API_KEY): /api/v2/media/image-to-video/models/free (header x-api-key; 100 requests/day; the legacy
-  /api/v2/data/* paths return 410 since 4 Nov 2026). Quality ranking only; attribution 'Data: Artificial Analysis' kept in the log row."""
+"""The weekly tool scout: new models, prices and deprecations from the fal catalog and Artificial Analysis. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 from whatifs.core import S, log, store, iso, now_utc, set_setting, env, FAKE, scrub
 

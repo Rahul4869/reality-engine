@@ -1,6 +1,4 @@
-"""whatifs/cast.py v8.10 - the Cast tab: 5 experts (Director role) + 15 rotating guests (the Curious One, [SKEPTIC] in scripts).
-Guests never repeat within GUEST_NO_REPEAT videos (least recently used first, weight breaks ties); each has a recurring quirk so viewers feel variety AND
-familiarity. The writer is briefed with the speaking characters' personality, habits and quirk. Settings CAST_ON = FALSE restores the v8.9 GUESTS."""
+"""The Cast tab: recurring experts and rotating guests, no-repeat guest rotation, and the cast brief for the writer. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json
 from whatifs.core import S, store, safe_rows, log, iso

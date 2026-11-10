@@ -1,16 +1,4 @@
-"""whatifs/herostill.py v9.1 (K105) - hero-still reels, per-character cinematic grammar and the courtroom composition. Code only.
-
-HERO-STILL REELS (HERO_STILL_REELS_ON, default FALSE): 15-25 s vertical reels made from ONE of the episode's own premium stills (already paid for),
-chosen as the best of N by a cheap computer-vision poster score (saliency mass, contrast, 9:16 crop safety; no AI). The reel is a SEAMLESS LOOP (the push
-is a cosine, so the last frame equals the first; the audio fades in and out with matching ends), carries the Atmosphere Pack, a beat PULSE within the hard
-caps, the aura, a hook text inside the first second, and the episode's OWN voiced clip-bait line cut from the finished mix (no new TTS request).
-One per episode (2 per week at 2 videos a week) to Drive; a YouTube Short only with HERO_STILL_SHORTS_ON; Instagram only when the Meta keys exist
-(otherwise skipped with a log line, zero cost). Templates rotate; never the same template twice in a row (the Variety Guard covers reels).
-
-CHARACTER GRAMMAR (CHAR_GRAMMAR_ON, default TRUE): the bible's lens / angle / movement / colour fields map to concrete render parameters applied to the
-character theater portraits (and the courtroom composition): Grimm = handheld jitter, dutch tilt, tight crop, underlight grade; Vale = symmetrical,
-slow push, teal-steel grade; Rosa = eye level, warm amber, gentle drift. THEATER_STYLE = portrait | courtroom (courtroom: locked set with Rosa at the
-bench, Grimm at the lectern, Vale at the defence table; deterministic cut to the speaking character)."""
+"""Hero-still reels, per-character cinematic grammar and the courtroom composition (code only). See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import hashlib, json, math, os, subprocess
 import numpy as np

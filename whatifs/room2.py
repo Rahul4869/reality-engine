@@ -1,17 +1,4 @@
-"""v11 Stage B (K157): writers' room v2 - the parts of the room that research shows actually raise quality, nothing for show.
-
-Research (9 Nov 2026 reports): role-play memos and debate add cost without quality; what works is (1) several genuinely DIFFERENT drafts from one strong
-writer, (2) selection by a BLIND jury from a different model family (both orderings, ranking only, no authorship labels), (3) ONE revision against a
-concrete checklist, (4) for jokes: many candidates per slot, ranked by STRONG judges that see EVERY candidate (cheap models never make taste calls).
-
-In the room (room.run_room) when ROOM_MODE = v2:
-- no role memos / table-read objections (the bible is still written: it is the showrunner's plan);
-- write(): ROOM_V2_DRAFTS drafts by the script model, each forced to a different cold-open archetype (the brain's sampler picks the first);
-  the jury (Gemini Pro + Gemini Flash + Claude Sonnet, labels A/B/C, each in two orders) ranks them; Borda count picks the winner; one checklist
-  revision with the jury's weakest-point notes and the code's retention issues;
-- jokes(): JOKE_SLOTS scene-ending lines; JOKE_CANDIDATES alternatives per slot (Sonnet); the ORIGINAL line is always a candidate; the strong jury
-  (Gemini Pro + Claude Sonnet) ranks ALL candidates; a line is replaced only when a candidate beats the original. Labels and tags never change.
-Every jury decision is logged (Jury_Log) so judges can be scored against real results later."""
+"""Writers' room v2 (the default): diverse drafts from one strong writer, a blind cross-family jury, one checklist revision and the joke tournament. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, re
 from whatifs.core import S, log, store, iso, scrub, FAKE

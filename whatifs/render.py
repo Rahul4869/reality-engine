@@ -1,5 +1,4 @@
-"""whatifs/render.py v8.10 (POV camera effects on every shot type, immersive mix layers; v8.9 cinematic camera library, living-still push; v8.3) - segments (depth parallax stills, detail crops, clips, stock, graphics) piped straight into FFmpeg,
-exact frame-accurate concat against the narration clock, procedural original score + SFX, ducking, loudness. Nothing written as PNG frames."""
+"""The renderer: segments (parallax stills, crops, clips, graphics, particles) piped into FFmpeg, frame-accurate against the narration clock, with score and effects. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import os, subprocess, random, hashlib, math
 import numpy as np, cv2

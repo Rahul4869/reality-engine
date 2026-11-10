@@ -1,8 +1,4 @@
-"""v10 G2 pilot Shorts (K141; decision 6): cheap 12-15 s Shorts that test the next premises BEFORE a long video is written. Two a week
-(PILOT_DAYS), from the best bench premises not yet piloted: one cheap hook call, 3 cheap stills with code motion, word cards, code sound,
-an end card asking 'Should the jury hear this case? Comment YES' (engagement + a demand signal). After PILOT_MEASURE_HOURS the engaged views
-become a bonus on that premise's bench score, so the long-form pick prefers premises the audience already wanted. Paid from the capped
-growth allowance (governor.extras_allowed), at most PILOT_MONTHLY_INR a month, inside the 14-Shorts-a-week ceiling."""
+"""Pilot Shorts: cheap 12-15 s Shorts that test bench premises before a long video is written. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, os
 from whatifs.core import S, log, store, iso, now_utc, parse_iso, FAKE, WORK, scrub, SMALL

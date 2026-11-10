@@ -1,10 +1,4 @@
-"""whatifs/showfx.py v9 (stage 2) - the trial's signature devices, drawn by code at render time (zero API cost, deterministic per episode):
-found-footage reconstruction stack (RECON exhibits + the cold open), the Survival HUD, the Jury Meter, exhibit pins with credits, Nana's teacup and
-letterbox bars on hero moments. Plus the show QC (clip-bait, meter vs verdict, jury timing, teacup timing, photosensitivity).
-
-Photosensitivity by construction: no full-frame flash is ever drawn here (exposure flicker <= 4 % luminance at <= 2 Hz, glitch bursts are horizontal slice
-shifts of 2 frames at most once every 1.5 s and never within 1 s of an impact, the REC dot is a small area, nothing flashes red). QC still measures the
-finished master (max 3 luminance flashes per second, no large-area red flashing)."""
+"""The trial's signature devices drawn by code at render time (reconstruction stack, HUD, jury meter, exhibit pins, teacup, letterbox). See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, math, random, re
 import numpy as np

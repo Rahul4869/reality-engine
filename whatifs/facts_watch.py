@@ -1,6 +1,4 @@
-"""v9.4a (F1 Platform Facts watcher, K129): weekly, the official change-log pages are fingerprinted; when one changes, the owner gets ONE 'This week'
-card with the link, so platform changes (like YouTube lifting the private lock on 2 Nov 2026) are never missed again. No AI call (₹0): the card points
-to the page; the build chat / dashboard chat reads it and proposes what to change. The first run only records the baseline (no cards)."""
+"""Platform Facts watcher: weekly fingerprint of the official change-log pages; a change sends the owner one message (no AI call). See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import hashlib, json, re
 from whatifs.core import S, log, set_setting, now_utc, FAKE

@@ -1,16 +1,4 @@
-"""v11 Stage D (K160): the 'Case Files' countdown spin-off - a long video (watch hours) built to break out AND to stay clearly original
-(research: Spin-off Breakout Protocol, 9 Nov 2026; YouTube's reused-content rule judges the WHOLE channel).
-
-Build: CASEFILES_CASES past episodes (archived masters on Drive), ranked into a countdown (#N -> #1, by real views). From each, one 60-90 s segment
-around its twist (57% of runtime, where the director placed an animated scene). NEW material written for this video: a cold open, an Archivist
-bridge before every case (each with a forward reference: an open loop), a fresh Nana Rosa verdict after every case, and a closing jury vote.
-
-Gates (every one enforced in code; a failure = not published):
-- G0 cost <= SPINOFF_CAP_INR;
-- G1 originality: new material / total runtime >= CASEFILES_MIN_NEW_SHARE;
-- G2 narrative: a stated theme + every bridge opens a loop (a forward reference) + no bridge repeats another;
-- G3 outcome variety: no two neighbouring cases share a verdict style, and Grimm-fails endings <= 40% of cases.
-Policy: the description lists the source episodes, every case is a chapter, and the video says it contains new scenes."""
+"""The 'Case Files' countdown spin-off: a long video built from past episodes, with originality gates. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, os, re, subprocess
 from whatifs.core import S, log, store, iso, now_utc, FAKE, WORK, scrub

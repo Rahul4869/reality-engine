@@ -1,8 +1,4 @@
-"""whatifs/show.py v9 (stage 1) - "REALITY ON TRIAL": the Show Plan contract, its code validator / repairer, the character bible, the script-tag contract
-and the IP-similarity guard. Pure code: NO model call lives here (the Show Plan is emitted by the existing Showrunner call; K95).
-
-Stage 1 runs the plan in SHADOW: it is requested, validated, repaired and logged (Show_Log), and stored on the spine, but the script, render and QC do not
-read it yet (stages 2-3). SHOW_MODE = off sends exactly the v8.11 Showrunner prompt."""
+"""Reality on Trial as code: the Show Plan contract with its validator, the character bible, the script-tag contract and the IP-similarity guard. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, re
 from whatifs.core import S, log, store, iso

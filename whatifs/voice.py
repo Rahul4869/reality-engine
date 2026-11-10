@@ -1,13 +1,4 @@
-"""
-whatifs/voice.py  v8.10 (Gemini TTS engine with Kokoro fallback, emotion curve; v8.9 clarity master chain without echo; v8.3)
-Original blended narrator voice + human-style pacing.
-
-- Voice: weighted mix of 2-3 Kokoro-82M (Apache-2.0) voice embeddings -> a new voice owned by nobody.
-- Pacing: per-sentence speed drift, meaning-based pauses, comic beats, soft breaths, room tone.
-- Output: narration WAV (48 kHz mono, -16 LUFS) + timeline JSON (sentence + word timings)
-  which is the MASTER CLOCK for every visual (Kernel K17 voice, K26 runtime floor).
-No watermark/detection tampering of any kind (Kernel K20).
-"""
+"""Narration voice and pacing: the TTS engine with its fallback, human-style timing, markers and the master chain. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import hashlib, json, os, re, subprocess, random
 from dataclasses import dataclass

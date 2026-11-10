@@ -1,10 +1,4 @@
-"""v11 (K163): the monthly DEEP TRIAL - one long slot a month becomes a ~20-minute episode (research: longer videos raise minutes watched per
-viewer and watch hours; TV viewing is growing). It replaces a regular slot (no extra slot), so the month's money plan stays the same apart from
-longer narration and more stills (about +Rs 60-90; the 4 animated scenes stay 4 and the particle layer keeps the extra stills alive).
-
-Structure (writer note): three acts with chapter titles; every act ends with a DIFFERENT outcome type (a win, a loss, an absurd turn) and a re-hook
-line plus a voice change; a 3-5 minute "Jury Room" segment where the cast argue the evidence on screen (the audio-led idea folded in, never a
-still image); then the verdict."""
+"""The monthly Deep Trial: one long slot a month becomes a ~20-minute episode. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 from whatifs.core import S, log, set_setting, parse_iso, now_utc
 

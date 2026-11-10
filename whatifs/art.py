@@ -1,5 +1,4 @@
-"""whatifs/art.py v8.9 (bright cinematic thumbnail style; v8.6) - thumbnails + reel covers (+ free covers for Shorts 3-4; brand clear of the timestamp): premium key art, cinematic grade, bold type with stroke + glow,
-phone-size readability check, brand mark. 3840x2160 master, 1280x720 upload (<2MB)."""
+"""Thumbnails and reel covers: premium key art, cinematic grade, bold type, phone-size readability check, brand mark. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 from whatifs.data import THUMB_STYLE      # v8.9: dark cinematic look, subject kept bright for phones
 import os, numpy as np

@@ -1,19 +1,4 @@
-"""whatifs/insights.py v9.1 (K106) - learning and community items the v9 report listed as not built. Every function is behind its own flag (whatifs.v91),
-fail-safe (a failure switches off only that feature) and bounded. Paid parts are capped per day and go through the Batch API where possible.
-
-- RETENTION MAP (RETENTION_MAP_ON): the Analytics retention curve (audienceWatchRatio by elapsedVideoTimeRatio) mapped to beats and shot types;
-  dips stored with a confidence level (no lesson below RETENTION_MIN_VIEWS views); lessons for the Director and the Monthly Brief. Report only.
-- ROLE ROI (ROLE_ROI_ON): per room role and episode: calls, notes given, notes accepted, whether the script changed, cost (Cost_Log 'role' column),
-  cost per accepted note. Reported in the Monthly Brief; nothing is ever removed automatically.
-- COMMENT MINING (COMMENT_MINING_ON): viewers' "what if..." comments (untrusted data): PII / profanity / spam filtered, deduplicated, at most
-  COMMENT_MINING_DAILY_CAP a day, one cheap classifier call (Batch API) that only keeps / cleans a premise; kept ones go to the Premise_Bench as
-  CANDIDATE src=comment and are judged by both blind judges at the next bench refill. Names only with COMMENT_CREDIT_NAMES.
-- AI DRAFTS (COMMENT_AI_DRAFTS_ON, default FALSE): in-character drafts for queued questions, ONE batch call a day, capped; into Comment_Queue and the
-  weekly digest only (never posted).
-- VARIETY REWRITE (VARIETY_REWRITE_ON): after the v9 avoid-list, if the script's variety score is still above VARIETY_MAX_SCORE: ONE surgical rewrite of
-  the opening beat through the existing format (patch) path; skipped when the overrun ladder is active.
-- AUDIO DROP POSTING (AUDIO_DROP_POST_ON, default FALSE): the clip-bait audio drop posted as an Instagram Reel (the API takes video, so it is the
-  drop over the hero still), only with Meta keys and META_ON; never twice (Episodes.drop_posted); one email on the first success."""
+"""Flag-gated learning and community extras (retention map and others), each fail-safe and bounded. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, re, statistics
 from whatifs.core import S, log, iso, now_utc, set_setting

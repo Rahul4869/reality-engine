@@ -1,12 +1,4 @@
-"""whatifs/immersion.py v8.10 - "the viewer is inside the scene" (IMMERSION_ON, POV_CAMERA_ON).
-1. The IMMERSION DIRECTOR (a writers'-room role, one Sonnet call) maps the final script: for each key moment the first-person vantage (the camera IS the object
-   or the viewer's eyes), the body sensation, the sensory stack, a free camera event and the sound event locked to it; it names the single impact moment.
-2. First-person rules on EVERY picture prompt (owner rule): stills (foreground anchors such as hands, a helmet rim, debris streaks, heat shimmer, extreme wide
-   lens, motion blur), living stills (eye-level breathing sway, particles close to the lens) and Kling clips (camera mounted on the moving object,
-   accelerating, shaking). Stock footage and code-drawn graphics cannot be re-shot, so they get the same camera EFFECTS in render instead.
-3. The Kling clips are spent on the peak and impact sequence (the run-up, the impact, the aftermath); v8.11: KLING_OPENING_CLIPS of them (default 1)
-   stay in the opening window as a first-person rush hook.
-4. Camera events (render.pov_fx: pov_rush, impact_shake, debris) are applied to every shot type and locked to sound events (sound.immersive)."""
+"""First-person immersion: the Immersion Director maps the script to a viewer-inside-the-scene vantage, sensation and camera effects. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, re
 from whatifs.core import S, log, scrub

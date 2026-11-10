@@ -1,9 +1,4 @@
-"""v10-growth G4 "Hours Engine" (K132): more watch hours without new videos.
-1. Localizations: after a long video is uploaded, its title and description are translated into LOCALIZE_LANGS and set through the YouTube API
-   (videos.update part=snippet,localizations; ~50 quota units). Viewers in those languages see a title in their own language; with YouTube's
-   auto-dubbing (Studio setting, on at setup) that turns into watch time. One Sonnet call per video (about ₹2), one video per tick.
-2. Affiliate block (G7, decision 7): when AFFILIATE_ON and the owner has added links, the description gets ONE topic-matched link with the
-   disclosure line (India ASCI / US FTC). No link is ever spoken in the video (so YouTube's paid-promotion flag is not needed)."""
+"""Hours engine: more watch hours without new videos (localised titles and descriptions, and related helpers). See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, re
 from whatifs.core import S, log, store, iso, FAKE, scrub

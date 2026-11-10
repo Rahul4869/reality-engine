@@ -1,3 +1,5 @@
+> HISTORICAL - DO NOT FOLLOW. Superseded by docs/CURRENT/SYSTEM.md and docs/CURRENT/OWNER_REQUIREMENTS_LEDGER.md on 10 Nov 2026 (v12 truth hygiene). Kept unedited below as history.
+
 > HISTORICAL (v7-v11 history) - DO NOT FOLLOW AS CURRENT. Current truth: docs/OWNER_REQUIREMENTS_LEDGER.md + the handoff 01_MASTER_SPEC (v12 build).
 
 # REALITY ENGINE — KERNEL v8.9.1 (locked rules)

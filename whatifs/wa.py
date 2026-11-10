@@ -1,13 +1,4 @@
-"""v9.4b (WhatsApp control room, K131): the owner's WhatsApp is a second remote for the same verbs as Mission Control, plus a late-night chat.
-
-Outbound: notify.send(tier='now') -> send_action(row): inside 24 h of the owner's last message = interactive reply buttons (free);
-          outside it = the approved utility template WA_TEMPLATE_NAME ('re_action': the text + numbered options, quick replies 1/2/3 whose payloads
-          are 'ACT|<id>|<n>'). Every send is logged in WA_Outbox; delivery statuses come back through the relay. The email copy always goes too
-          (notify), so a WhatsApp failure never loses a message.
-Inbound (relay Worker -> repository_dispatch 'wa_inbound', AES-GCM): button payloads are routed exactly like dashboard taps (dash.route);
-          text = 'status' | 'pause' | 'resume' | 'think hard: ...' | anything else -> the chat brain (Sonnet; Opus for 'think hard'; Haiku after
-          CHAT_MONTHLY_CAP_INR), which answers honestly and, for a concrete idea, offers [Build it] [Park] (a Claude Code build on the owner's plan).
-Never prints message text (public logs, K32). The owner's number is the only accepted sender (the Worker drops everyone else)."""
+"""The WhatsApp control room: interactive buttons inside the 24-hour window, the approved template outside it, and inbound owner messages. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import datetime as dt, json, os, re
 from whatifs.core import S, log, store, iso, now_utc, parse_iso, env, set_setting, scrub, FAKE

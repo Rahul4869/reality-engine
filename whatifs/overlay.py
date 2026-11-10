@@ -1,9 +1,4 @@
-"""whatifs/overlay.py v8.3 - the speaker tag: a small code-drawn chip (DIRECTOR / SKEPTIC) with animated level bars, shown while that role speaks.
-
-Why: the two recurring roles must be recognisable on every video, but an image model cannot keep one face identical across 50 shots (faces drift and the
-channel looks cheap). The tag gives the roles a stable identity for free: no image call, no face. Presenters are shown only as silhouettes, hands or
-console glow (see format_engine). Pure Pillow + numpy; panels are cached per (role, bar levels), so a frame costs one tiny alpha blend.
-"""
+"""The speaker tag: a small code-drawn chip with level bars shown while a recurring role speaks. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import math
 import numpy as np

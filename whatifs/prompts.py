@@ -1,4 +1,4 @@
-"""whatifs/prompts.py v8.11 (Packed system prompts for prompt caching) - every role's brief. Filled with fill(), never str.format (JSON braces are safe)."""
+"""Every role's brief (the prompt templates), packed for prompt caching; filled with fill(), never str.format. See docs/CURRENT/SYSTEM.md."""
 from whatifs.data import DIRECTORS
 
 def fill(t, **kw):
