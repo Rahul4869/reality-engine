@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 10 Nov 2026 (end of B4). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 11 Nov 2026 (B5 in progress). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -39,6 +39,51 @@ What B4 leaves ready for B5 (use it, do not rebuild it):
 - Acceptance of B5 includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
+### B5 - R&D + Review Board (11 Nov 2026) - IN PROGRESS (steps recorded as they finish)
+
+#### Step 1 RESEARCH (12 dated sources; E = measured evidence, O = opinion / practice / vendor documentation)
+Honest note: for the arXiv papers the abstract page was read, not the full paper; 6 and 11 are quoted from a search summary (not opened).
+1. E - Rao, Wong, Callison-Burch, "Detecting and Correcting Reference Hallucinations in Commercial LLMs and Deep Research Agents", arXiv 2604.03173,
+   3 Apr 2026: 3-13% of citation URLs are hallucinated (never existed), 5-18% do not resolve; deep research agents cite MORE and hallucinate MORE;
+   a liveness check given to the model cut non-resolving URLs 6-79x to under 1%. -> a source counts only if the SEARCH TOOL returned it (never a URL
+   the model typed) and it answers a liveness check; a phantom source is dropped and counted against the memo.
+2. E - Onweller et al., "Cited but Not Verified", arXiv 2605.06635, 7 May 2026: frontier deep-research agents keep link validity above 94% and
+   relevance above 80% but reach only 39-77% factual accuracy; accuracy falls about 42% as tool calls grow from 2 to 150. -> a valid link is not
+   support: the evidence a memo carries is the tool's own quoted text, the jury checks "does the finding follow from the quote", and each question
+   gets a SMALL bounded search (max_uses), never an open-ended agent loop.
+3. E - Awuni et al., "Who Judges Matters: Family-Conditioned Preference in LLM-as-Judge Panels", arXiv 2609.17857, 15 Sep 2026 (9,312 judgments,
+   4 families): every family prefers its own family by 3.4-8.4 points; 55.4% of AB/BA pairs REVERSE with the order; panel composition changes 18.5% of
+   outcomes. -> the jury is balanced by FAMILY (mean of family means, not of judges), every judge sees two orders, and the family that did not
+   write the memo must clear the bar by itself before anything is accepted.
+4. E - Verga et al. (Cohere), "Replacing Judges with Juries" (PoLL), arXiv 2404.18796, 29 Apr 2024: a panel of models from disjoint families beat a
+   single large judge, with less intra-model bias, at over 7x lower cost. -> a cross-family panel is the right shape; a single judge never decides.
+5. E - Huang & Zhou, "Comparative Evaluation of LLM-Based Review Paradigms", arXiv 2610.41391, 30 Oct 2026 (232 + 11,513 ICLR submissions): direct
+   1-10 rating "compresses most predictions above the accept threshold, flagging almost none" of the weak papers; after recalibration it beat Elo
+   with 24% of the calls. -> no free 0-10 scores from a model: judges answer concrete yes/no questions and CODE turns them into scores.
+6. E - "LLM-as-a-Reviewer" benchmark, arXiv 2605.25415, May 2026 (search summary): most of 12 models over-rate papers, some families by up to 2.43
+   points on the venue scale. -> inflation is the default; the verdict needs an independent calibration signal (design D: the planted canary).
+7. E - Lee et al., "CheckEval", arXiv 2403.18771 (EMNLP 2025): decomposed binary checklist questions raised average agreement across 12 evaluator
+   models by 0.45 and reduced score variance; RubricEval, arXiv 2603.25133, Mar 2026: rubric-level questions with explicit reasoning cut inter-judge
+   variance further. -> the rubric is a fixed checklist per dimension with a one-line reason per answer.
+8. E - Si, Hashimoto, Yang, "The Ideation-Execution Gap", arXiv 2506.20803, Jun 2025 (ICLR 2026): 43 experts executed ideas blind (100+ h each);
+   LLM ideas scored HIGHER before execution and dropped significantly more after it on every metric (p < 0.05), with rankings flipping. -> a
+   jury's praise is a hypothesis: a creative technique can at most be "test" (an experiment arm, lever C); "accept" is kept for facts (policy,
+   tools, prices) backed by official or measured sources.
+9. O - Anthropic web search tool documentation (read 11 Nov 2026): USD 10 per 1,000 searches plus tokens (results count as input); failed searches
+   not billed; usable in the Message Batches API at the same search price (batches throttle searches); citations carry url, title and up to 150
+   characters of `cited_text`; results carry `page_age`; `max_uses` caps searches per turn; tool versions 20250305 / 20260209 / 20260318.
+   -> evidence is read from the API's citation blocks (url + quoted text + page age), not from the model's prose; cost per question is computable.
+10. O - Google Gemini grounding pricing (Google Cloud pricing page via search summary, 2026): Gemini 3 family 5,000 grounded prompts a month free, then
+   USD 14 per 1,000 queries; Gemini 2.5 billed per prompt (USD 35 per 1,000 after 1,500 a day). -> Gemini grounding is the fallback researcher
+   (cheap, but no quoted text: its findings get a lower evidence ceiling).
+11. O - YouTube "inauthentic content" monetisation update, 15 Jul 2025 (TeamYouTube; 2026 enforcement reported, search summary): mass-produced or
+   repetitive uploads ("narrated stories with only superficial differences") are ineligible; AI tools are allowed. -> platform policy is a standing
+   research question every 4 weeks and a risk question every juror must answer for every proposal.
+12. E - NovGauge, arXiv 2609.11234, Sep 2026 (search summary): LLM judges over-attend to technical validity and underweight novelty. -> novelty is
+   judged against the department's OWN playbook (what we already do), given to the jury, not against the model's general sense.
+Re-read: 02 points 2 ("evaluated by another chat session objectively in its role"), 3 (cheap models never judge taste), 12, 14 ("AUTOMATIC
+RESEARCH, AUTOMATIC ASSESSMENT OF RESEARCH"), 15; 01 sections 2 (D2, D3), 5, 7 `research_cadence`, 8, 9; open issues 8, 13, 30.
+
 ### B4 - Execution Engine (10 Nov 2026) - ACCEPTED (all 7 loop steps recorded below; final code commit ad99fd2 GREEN in GitHub run 59)
 Result in one line: whatever the organisation decides can now only exist as a change that runs - a ticket is compiled into a typed change, written to a
 ledger before and after, verified by evidence somebody else wrote later, and rolled back when that fails; a decision without executed tickets fails a
