@@ -23,8 +23,21 @@ def fresh_store(tmp_path):
     yield
     core._settings_cache = None
 
+_SKIPPED = []          # v12 B0b: every skipped test of the run, for the no-skip rule (tests/skip_policy.py)
+def pytest_runtest_logreport(report):
+    if report.skipped and not hasattr(report, "wasxfail"):
+        why = report.longrepr[2] if isinstance(report.longrepr, tuple) and len(report.longrepr) == 3 else report.longrepr
+        _SKIPPED.append(f"{report.nodeid}: {why}")
+
+def _no_skip_verdict(session):
+    from tests.skip_policy import verdict
+    ok, msg = verdict(_SKIPPED)
+    if msg: print("\n" + msg, flush=True)
+    if not ok and session.exitstatus == 0: session.exitstatus = 1          # a strict run (GitHub's Checks) is RED when any test skipped; another failure code is never replaced
+
 def pytest_sessionfinish(session, exitstatus):
     shutil.rmtree(_TMP, ignore_errors=True)
+    _no_skip_verdict(session)
 
 @pytest.fixture
 def setting():

@@ -179,9 +179,7 @@ def test_claude_md_and_deployed_kernel_exist_and_match_the_package():
     t = open(os.path.join(ROOT, "CLAUDE.md"), encoding="utf-8").read()                       # v12 B1: CLAUDE.md points only at docs/CURRENT; the kernel is history
     for must in ("5,000", "integration checklist", "plan_guard", "rehearsal", "Merge", "Premium tier", "docs/CURRENT/"): assert must in t
     k = open(os.path.join(ROOT, "docs", "ARCHIVE", "KERNEL.md"), encoding="utf-8").read(); assert "K77" in k and k.startswith("> HISTORICAL - DO NOT FOLLOW")
-    k = k.split("\n\n", 1)[1]                                                                 # the archived text under its header is the old kernel, unedited
-    pk = os.path.join(os.path.dirname(ROOT), "FOR_CLAUDE", "KERNEL.md")
-    if os.path.exists(pk): assert open(pk).read() == k          # in the package the two copies are identical; on GitHub only the repo copy exists
+    assert len(k.split("\n\n", 1)[1]) > 2000                                                  # the archived text under its header is the old kernel, unedited (v12 B0b: the comparison with a copy in the old upload package ran on no machine and is gone)
 
 # ---------------- cost: unchanged by v8.9
 def test_v89_adds_no_cost(setting):

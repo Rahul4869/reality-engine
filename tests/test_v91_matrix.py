@@ -24,12 +24,11 @@ def test_every_v91_flag_is_documented_with_a_default():
 
 @pytest.mark.parametrize("mode", ["all_off", "all_on_safe_mode"])
 def test_v9_pixels_with_all_off_or_safe_mode(setting, tmp_path, mode):
-    from tests.golden_frames import render_hashes, versions
+    from tests.golden_frames import render_hashes, v9_baseline, same_as_v9
     if mode == "all_off": _all(setting, "FALSE")
     else: _all(setting, "TRUE"); setting("V91_SAFE_MODE", "TRUE")
-    h = render_hashes(str(tmp_path)); g = _golden()
-    if g["versions"] != versions(): pytest.skip("golden made with other OpenCV / NumPy versions")
-    assert h == g["frames"]
+    v9_baseline(setting)                                             # v12 B0b: layers added after v9.1 have their own switches (safe mode rolls back v9.1 only)
+    assert same_as_v9(render_hashes(str(tmp_path)))                  # v12 B0b: always compared, never skipped
 
 def test_all_on_renders_and_changes_only_the_picture(setting, tmp_path):
     from tests.golden_frames import render_hashes
@@ -39,11 +38,11 @@ def test_all_on_renders_and_changes_only_the_picture(setting, tmp_path):
 @pytest.mark.parametrize("flag", V91_FLAGS)
 def test_each_flag_alone(setting, tmp_path, flag):
     """Each flag alone: the render either stays v9 (non-render flags) or changes and still completes; no flag crashes the render path."""
-    from tests.golden_frames import render_hashes, versions
-    _all(setting, "FALSE"); setting(flag, "TRUE")
+    from tests.golden_frames import render_hashes, v9_baseline, same_as_v9
+    _all(setting, "FALSE"); v9_baseline(setting); setting(flag, "TRUE")
     h = render_hashes(str(tmp_path)); g = _golden()
     assert len(h) == len(g["frames"])
-    if flag not in RENDER_FLAGS and g["versions"] == versions(): assert h == g["frames"], flag
+    if flag not in RENDER_FLAGS: assert same_as_v9(h), flag          # v12 B0b: always compared (22 flags were silently unchecked on every machine)
 
 # ---------------------------------------------------------------- failure injection: one feature at a time
 def _boom(*a, **k): raise RuntimeError("injected")

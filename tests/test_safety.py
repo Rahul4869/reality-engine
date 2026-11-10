@@ -104,7 +104,8 @@ def test_restore_step_turns_plain_docx_back_into_code_and_leaves_other_documents
             doc.save(os.path.join(d, rel))
         sh = os.path.join(d, "s.sh")
         with open(sh, "w", encoding="utf-8") as f: f.write(_restore_script())
-        r = subprocess.run(["bash", sh], cwd=d, capture_output=True, text=True); assert r.returncode == 0, r.stderr
+        env = dict(os.environ, PATH=os.path.dirname(sys.executable) + os.pathsep + os.environ.get("PATH", ""))      # v12 B0b: the script's `python` is the interpreter running this test (a venv on a laptop), not whatever is first on PATH
+        r = subprocess.run(["bash", sh], cwd=d, capture_output=True, text=True, env=env); assert r.returncode == 0, r.stderr
         assert open(os.path.join(d, "whatifs/a.py"), newline="").read().startswith("import os\n\n    x = 1\n")
         assert os.path.exists(os.path.join(d, "tools/b.py")) and os.path.exists(os.path.join(d, "tests/__init__.py"))
         assert os.path.exists(os.path.join(d, "notes/readme.docx")) and not os.path.exists(os.path.join(d, "notes/readme.py"))

@@ -40,3 +40,24 @@ class _OV:
     def apply(self, fr, g): return fr
 
 def versions(): return {"cv2": cv2.__version__, "numpy": np.__version__}
+
+# v12 B0b: the comparison with the v9 frames ALWAYS runs. Until then it skipped wherever OpenCV / NumPy differed from the versions the file was made
+# with - and production and GitHub's Checks pin NumPy below 2.1 while the file was made with 2.4.4, so it ran NOWHERE and nobody saw that the v11
+# particle layer (on by default) had changed every frame. Measured on 10 Nov 2026: the hashes are identical on the three verified setups in the file.
+LATER_LAYERS_OFF = {"PARTICLES_ON": "FALSE", "LIFE_LAYER_ON": "FALSE"}      # render layers added AFTER v9, each with its own switch: off for every "equals v9" comparison
+
+def v9_baseline(setting):
+    """Switch off every render layer that arrived after v9. A new default-on render layer makes the v9 tests FAIL until its switch is listed here."""
+    for k, v in LATER_LAYERS_OFF.items(): setting(k, v)
+
+def golden(): return json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "golden", "v9_render_frames.json"), encoding="utf-8"))
+
+def same_as_v9(hashes):
+    """True, or an AssertionError that says how many frames differ and whether the code or an unverified library version is the suspect. Never skips."""
+    g = golden()
+    if list(hashes) == g["frames"]: return True
+    n = sum(1 for a, b in zip(hashes, g["frames"]) if a != b) + abs(len(hashes) - len(g["frames"]))
+    known = versions() in [g["versions"]] + g.get("verified", [])
+    why = ("these OpenCV / NumPy versions are verified, so the CODE changed the picture: a new render layer needs its switch in tests/golden_frames.py LATER_LAYERS_OFF, anything else is a regression"
+           if known else f"OpenCV / NumPy {versions()} are not in the verified list of tests/golden/v9_render_frames.json: run the test on a verified pair to tell a library change from a code change")
+    raise AssertionError(f"{n} of {len(g['frames'])} frames differ from the v9 golden frames; {why}")

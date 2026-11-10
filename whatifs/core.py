@@ -869,7 +869,7 @@ DEFAULTS = {
  "VISUAL_LAB_MIN_VIDEOS": ("4", "v9.4a: videos with retention data needed before the Visual Lab suggests anything"),
  "REPAIR_ENGINE": ("claude_code", "v9.4a: claude_code = the Repair Bot hands a failing run to Claude Code (₹0 API money) | api = the v9.3 paid-API repair"),
  "PKG_RESCUE_ENGAGED_ON": ("TRUE", "v9.3.1: the packaging rescue compares ENGAGED views (Analytics) instead of public views, which count autoplay since 24 Aug 2026; falls back to public views when Analytics has none [FALSE = v9.3]"),
- "V91_SAFE_MODE": ("FALSE", "TRUE = every v9.1 feature is off at once and the pipeline behaves exactly like v9 (one-cell rollback)"),
+ "V91_SAFE_MODE": ("FALSE", "TRUE = every v9.1 feature is off at once (one-cell rollback of v9.1). Layers added later keep their own switches: the picture equals v9 only with PARTICLES_ON and LIFE_LAYER_ON off as well"),
  "ATMOSPHERE_ON": ("TRUE", "v9.1 Atmosphere Pack (code only, zero cost): moving light, particles, fog, heat shimmer, lens detail, breath fog, beat pulse, aura. FALSE = exactly the v9 picture"),
  "ATMOSPHERE_LEVEL": ("auto", "auto = follows the Show Plan intensity (+1 for fire / space / impact shots), or a fixed 0-3"),
  "ATMOSPHERE_MAX_OVERHEAD_PCT": ("30", "the atmosphere may add at most this share to the render time; above it particles, then fog, then god-rays switch off by themselves (logged)"),

@@ -3,6 +3,13 @@
 "cv2": "4.13.0",
 "numpy": "2.4.4"
 },
+"verified": [
+{
+"cv2": "4.14.0",
+"numpy": "2.0.2"
+}
+],
+"verified_note": "10 Nov 2026 (v12 B0b): identical hashes on OpenCV 4.13.0 + NumPy 2.4.4 (Linux, where the file was made, and Windows 11) and on OpenCV 4.14.0 + NumPy 2.0.2 (Windows 11), with the layers of tests/golden_frames.py LATER_LAYERS_OFF switched off. The comparison never skips.",
 "frames": [
 "d5b7516d9a7297e8",
 "2abb6e6de7ee1f88",

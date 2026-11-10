@@ -308,14 +308,8 @@ def test_research_failure_never_raises_and_trend_scout_completes():
     rs = core.store().rows("Playbook"); assert any(r.get("evidence") == "official" and r.get("added") != "seed" for r in rs)
     assert not any("sub4sub" in r.get("rule", "") for r in rs)
 
-def test_mirror_files_match_the_documents():
-    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    pairs = [("FOR_CLAUDE/KERNEL.md", "FOR_CLAUDE/KERNEL.py"), ("FOR_CLAUDE/SETUP_CHECKLIST.md", "FOR_CLAUDE/SETUP_CHECKLIST.py"), ("FOR_CLAUDE/START_HERE.txt", "FOR_CLAUDE/START_HERE.py"),
-             ("READ_ME_FIRST.txt", "READ_ME_FIRST.py"), ("REVISION_NOTES.txt", "REVISION_NOTES.py")]
-    if not os.path.exists(os.path.join(root, pairs[0][0])): pytest.skip("documents are outside the uploaded repo folder")
-    for doc, mirror in pairs:
-        ns = {}; exec(open(os.path.join(root, mirror), encoding="utf-8").read(), ns)
-        assert ns["DOCUMENT"] == open(os.path.join(root, doc), encoding="utf-8").read(), mirror
+# v12 B0b: the test of the mirror files of the old upload package was removed. It looked for a documents folder NEXT TO the repo that exists neither on
+# GitHub nor in the v12 layout, so it skipped on every machine and proved nothing; that package and its kernel document are history (docs/ARCHIVE).
 
 
 # ---------------- v8.7 review fixes (found while verifying the build) ----------------

@@ -14,6 +14,10 @@ def fixed_ids(n, offset=0):
     """The same n ids on every machine and every day: EP2099MMDDHHMM."""
     return ["EP" + (START + (offset + k) * STEP).strftime("%Y%m%d%H%M") for k in range(n)]
 
+def inside(path, root):
+    try: return os.path.commonpath([os.path.abspath(path), os.path.abspath(root)]) == os.path.abspath(root)
+    except ValueError: return False          # another drive
+
 def warn_class(msg):
     """One class per kind of warning: numbers, ids and quoted detail are folded away so that 40 episodes give a short list."""
     m = re.sub(r"EP\d{6,}", "EP#", str(msg)); m = re.sub(r"'[^']{0,80}'|\"[^\"]{0,80}\"", "'..'", m); m = re.sub(r"\d+(\.\d+)?", "#", m)
@@ -132,7 +136,7 @@ def main(argv=None):
     a = p.parse_args(argv); a.repo = os.path.abspath(a.repo)
     if a.one: return 0 if one(a.one, os.path.abspath(a.work or tempfile.mkdtemp(prefix="sweep_")), a.repo, a.org == "on", a.mode, a.slot_h)["outcome"] == "ok" else 1
     base = os.path.abspath(a.work or tempfile.mkdtemp(prefix="sweep_"))
-    if os.path.commonpath([base, ROOT]) == ROOT or os.path.commonpath([base, a.repo]) == a.repo: sys.exit("the work folder must be OUTSIDE the repo")
+    if inside(base, ROOT) or inside(base, a.repo): sys.exit("the work folder must be OUTSIDE the repo")
     out = os.path.abspath(a.out or os.path.join(base, "sweep_results.txt")); a.logs = os.path.join(base, "_logs"); os.makedirs(a.logs, exist_ok=True)
     ids = [x.strip() for x in a.ids.split(",") if x.strip()] or fixed_ids(a.n, a.offset)
     results = []

@@ -12,10 +12,9 @@ SHOTS = [{"prompt": "lava and fire, a volcano" if i == 5 else "a street at night
 FR = (np.random.default_rng(3).random((180, 320, 3)) * 200).astype(np.uint8)
 
 def test_flag_off_reproduces_v9_frames_exactly(setting, tmp_path):
-    from tests.golden_frames import render_hashes, versions
-    g = json.load(open(os.path.join(os.path.dirname(__file__), "golden", "v9_render_frames.json")))
-    setting("ATMOSPHERE_ON", "FALSE"); off = render_hashes(str(tmp_path))
-    if g["versions"] == versions(): assert off == g["frames"]
+    from tests.golden_frames import render_hashes, v9_baseline, same_as_v9
+    setting("ATMOSPHERE_ON", "FALSE"); v9_baseline(setting); off = render_hashes(str(tmp_path))
+    assert same_as_v9(off)                                                                                                # v12 B0b: always compared (it ran on no machine before)
     setting("ATMOSPHERE_ON", "TRUE"); setting("V91_SAFE_MODE", "TRUE"); assert render_hashes(str(tmp_path)) == off       # safe mode = v9 as well
 
 def test_deterministic_and_every_layer_changes_something(setting):

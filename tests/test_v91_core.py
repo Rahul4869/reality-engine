@@ -29,10 +29,16 @@ def test_extra_blends_use_voice_check(setting):
     setting("V91_SAFE_MODE", "TRUE"); b2 = SHOW.extra_blends({"Charon", "Kore"}); assert b2["JUDGE"].gvoice in ("", "Gacrux")   # exactly the v9 rule
 
 def test_golden_frames_flag_off_equals_v9(tmp_path, setting):
-    from tests.golden_frames import render_hashes, versions
-    setting("ATMOSPHERE_ON", "FALSE")          # the helper makes the episode's own stack decision, so the flag must be off for the v9 comparison
-    g = json.load(open(os.path.join(os.path.dirname(__file__), "golden", "v9_render_frames.json")))
-    now = render_hashes(str(tmp_path))
-    assert len(now) == len(g["frames"])
-    if g["versions"] != versions(): pytest.skip(f"golden frames were made with {g['versions']}; this machine has {versions()} (runtime equivalence test still runs)")
-    assert now == g["frames"]
+    from tests.golden_frames import render_hashes, v9_baseline, same_as_v9
+    setting("ATMOSPHERE_ON", "FALSE"); v9_baseline(setting)          # the helper makes the episode's own stack decision, so the flag must be off for the v9 comparison; v12 B0b: so must every later layer
+    assert same_as_v9(render_hashes(str(tmp_path)))                  # v12 B0b: always compared - this skipped on every machine (see tests/golden_frames.py)
+
+def test_the_v9_comparison_is_live_and_a_default_on_layer_fails_it(tmp_path, setting):
+    """v12 B0b, the other way round: with the v11 particle layer left on (its default) the same comparison must FAIL and say why."""
+    from tests.golden_frames import render_hashes, same_as_v9, golden, versions, LATER_LAYERS_OFF
+    assert core.DEFAULTS["PARTICLES_ON"][0] == "TRUE" and set(LATER_LAYERS_OFF) <= set(core.DEFAULTS)
+    setting("ATMOSPHERE_ON", "FALSE"); h = render_hashes(str(tmp_path))
+    with pytest.raises(AssertionError) as e: same_as_v9(h)
+    assert "frames differ from the v9 golden frames" in str(e.value)
+    assert versions() in [golden()["versions"]] + golden()["verified"], f"add {versions()} to the verified list only after the v9 comparison passed on it"
+    with pytest.raises(AssertionError): same_as_v9(golden()["frames"][:-1])          # a missing frame is a difference too
