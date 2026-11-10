@@ -183,6 +183,11 @@
    "summary": "Since 15 July 2025 YouTube's monetisation policy calls it inauthentic content: uploads that are mass-produced or repetitive, such as narrated stories with only superficial differences, are not eligible. AI tools are allowed. Every proposal is asked whether it could make our videos repetitive; R&D re-checks this policy every 28 days.",
    "departments": ["D9", "D3"], "stages": ["publishing", "research"], "topic_tags": ["policy", "monetisation", "youtube", "repetitive", "slop"],
    "evidence": [{"source": "YouTube Help, YouTube channel monetization policies (inauthentic content update, via TeamYouTube)", "date": "2025-07-15", "type": "official", "finding": "content that is mass-produced or repetitive is not eligible for monetisation; the update renamed the repetitious content policy to inauthentic content", "url": "https://support.google.com/youtube/answer/1311392"}],
-   "applied_in": ["whatifs/org/board.py:QUESTIONS", "whatifs/org/rnd.py:gaps"]}
+   "applied_in": ["whatifs/org/board.py:QUESTIONS", "whatifs/org/rnd.py:gaps"]},
+  {"key": "b5.takeaway", "batch": "B5", "kind": "takeaway", "title": "B5 build takeaway: make every judgement a pure function the check can re-run, and plant a test the judge must fail",
+   "summary": "Scores, the verdict and the evidence ceiling are pure functions of stored data, so check research_cadence re-computes them and a typed or forged verdict fails. A jury is trusted only after it rejects a memo built to be rejected. And every new wiring gets a test that runs the real job: removing the research round from the learning job left both name scans green.",
+   "departments": ["D2", "D3"], "topic_tags": ["build", "research", "review board", "verification", "testing"],
+   "evidence": [{"source": "v12 build, batch B5 (R&D + Review Board)", "date": "2026-11-10", "type": "build record", "finding": "Seven faults were found by re-reading and by tests, none by the first green run: the ceiling counted a source no finding used; a re-asked question would have collided with its open memo; a question whose run died stayed 'asked' forever; a failed call waited 28 days; the recomputed ceiling could differ at midnight; a broken weekly run would have been re-paid daily; an accepted assessment would have told the owner it was 'stuck'."}],
+   "applied_in": ["whatifs/org/board.py:assessment_issues", "whatifs/org/rnd.py:ceiling_of", "whatifs/org/board.py:canary", "tests/test_v12_rnd.py", "handoff_v12/BUILD_STATE.md"]}
  ]
 }

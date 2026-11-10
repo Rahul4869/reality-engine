@@ -212,6 +212,25 @@ measurement, not built); a third (cheap) judge; letting the model choose the evi
 | Caps: R&D Rs 300, Board Rs 120; P0 continues; the unspent part is not production money | `runner.run` (budget "org"), `rnd.deep` (in-run guard), `governor.org_left_inr` | CapReached before the run; `research_cadence` FAIL on overspend without an owner question |
 Matrix: 5 rows (meta-test green). Founding items: 7.
 
+#### Step 6 PROVE
+(filled in below when the long runs finish)
+
+#### Step 7 TAKEAWAY (also Palace item `b5.takeaway`, 126 founding items)
+- WORKED: every judgement as a PURE function of stored data (the ceiling, the scores, the verdict). The check re-runs them on what is stored, so a
+  typed, edited or forged verdict fails `research_cadence` - the Board's word is not trusted, its arithmetic is re-done.
+- WORKED: a test the judge must fail. The planted canary turns "is the jury inflating?" (sources 5-6) from a worry into a measurement per session; a
+  flattering judge (yes to every good question, no to every risk) is caught by the test that simulates it.
+- WORKED: re-reading the finished code as a stranger again (B4's lesson). It found five faults no test had asked about, each about TIME: a row stuck
+  in "asked" after a killed run, a 28-day wait after a failed call, a one-day shift at midnight in the recomputed ceiling, a broken weekly run re-paid
+  every day, and a "stuck" message to the owner for a memo written a second earlier.
+- WORKED: the real-job test. Removing `research_round()` from the learning job left the registry scan AND the truth scan green (the literal calls
+  still exist inside the function); only the test that runs `python -m whatifs.cli learn` saw it.
+- WATCH: the fake judge recognises the canaries by their words - it is a stand-in. Real calibration exists only in production: read `Board_Log`
+  (verdict "void" and its reason) after the first real sessions.
+- WATCH: nothing researched changes a video until the Council (B6) turns assessments into tickets; until then every assessment waits silently at
+  the owner's level (open issue 38).
+- WATCH: the real web-search citations, Gemini grounding and the cost per question are proven with stand-ins and the documentation (open issue 40).
+
 ### B4 - Execution Engine (10 Nov 2026) - ACCEPTED (all 7 loop steps recorded below; final code commit ad99fd2 GREEN in GitHub run 59)
 Result in one line: whatever the organisation decides can now only exist as a change that runs - a ticket is compiled into a typed change, written to a
 ledger before and after, verified by evidence somebody else wrote later, and rolled back when that fails; a decision without executed tickets fails a

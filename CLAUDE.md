@@ -74,3 +74,8 @@ pipeline run uses the new code. Nothing restarts.
   `Tickets` or `Lever_Changes` directly and never close a ticket by hand (`memos.resolve` asks the ledger). A Settings cell a department may turn by
   ticket needs BOTH an entry in `registry.DEPTS[dept]["levers"]` and a rule in `levers.LEVERS` (type, range, largest step, the direction that needs the
   owner, the checks that judge it). A new hook into a job gets a test that runs the real job (the name scan cannot see a common name being unwired).
+- **R&D and the Review Board** (`whatifs/org/rnd.py`, `board.py`): a research question comes from the agenda (`rnd.gaps`, tab `Research_Agenda`), a
+  finding stands only on sources `rnd.verify` kept (the search tool returned the URL, it resolves, it is dated; type by domain; read through
+  `models.last_call`), and a research memo carries the stamp `rnd.verify`. The Board's scores and verdict are computed by `board.verdict` from the
+  judges' yes/no answers - never type or edit a verdict (check `research_cadence` re-computes every stored one). A Board judge role needs a chain
+  with strong models of ONE family only (`models.CHAINS` `board_g` / `board_c`); every session carries a planted canary (`board.canary`).
