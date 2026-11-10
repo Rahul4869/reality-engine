@@ -564,7 +564,7 @@ def test_the_full_episode_runs_under_the_contract_and_a_bypassed_department_hold
     import whatifs.voice as V
     monkeypatch.setattr(V, "KokoroBackend", lambda blend: ToneVoice()); MG.setup(); core.set_setting("VOICE", "C")
     slot = lambda h: (now() + dt.timedelta(hours=h)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    r = EP.produce(slot(10)); ep = r.get("episode"); assert r.get("ok"), r
+    r = EP.produce(slot(10), episode_id="EP209901010900"); ep = r.get("episode"); assert r.get("ok") and ep == "EP209901010900", r      # a fixed id: the fake pipeline is seeded by it
     mine = {(s["dept"], s["trigger"]): s for s in sessions() if s["episode_id"] == ep}
     want = set(REG.EPISODE_RUNS["final"]) | {("D8", "final_gate"), ("D9", "publish")}
     assert set(mine) == want and all(s["status"] == "ok" and RUN.verify(s) == [] for s in mine.values()), {k: v["status"] for k, v in mine.items()}
@@ -573,5 +573,5 @@ def test_the_full_episode_runs_under_the_contract_and_a_bypassed_department_hold
     assert json.loads(next(t for t in takeaways() if t["dept"] == "D4" and t["episode_id"] == ep)["measures"])["script_words"] > 50
     real = EP.ORG.work
     monkeypatch.setattr(EP.ORG, "work", lambda dept, trig, e, fn, **k: fn(None) if dept == "D5" else real(dept, trig, e, fn, **k))      # packaging walks around the runner
-    r2 = EP.produce(slot(34)); assert r2.get("held") and "contract:dept_contract" in r2["problems"], r2
+    r2 = EP.produce(slot(34), episode_id="EP209901020900"); assert r2.get("held") and "contract:dept_contract" in r2["problems"], r2
     assert not any(s["dept"] in ("D9",) and s["episode_id"] == r2["episode"] for s in sessions())      # held before picture money: nothing was made or uploaded

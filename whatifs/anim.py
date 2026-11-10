@@ -88,7 +88,8 @@ def apply(shots, units, plan=None):
     n = min(S("ANIM_SHOTS", int), int(plan.get("kling", S("ANIM_SHOTS", int)))) if plan is not None else None
     idx = pick_slots(shots, units, n)
     for i, s in enumerate(shots):                               # a Kling slot that moved becomes a plain still (no extra paid living clip)
-        if s.get("type") == "kling" and i not in idx: s["type"] = "still"
+        if s.get("type") == "kling" and i not in idx:
+            s["type"] = "still"; s.pop("promise", None)        # v12 fix: the promise rides on an animated scene; left on a demoted still it hid the re-aim and held finished videos
     for k, i in enumerate(idx):
         u = units[i] if i < len(units) else {}
         w = world_for(shots[i], u, k)

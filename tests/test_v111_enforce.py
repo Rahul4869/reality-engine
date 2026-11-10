@@ -132,3 +132,19 @@ def test_sub_second_lines_without_their_own_picture_continue_the_previous_shot(s
     src = open("whatifs/episode.py", encoding="utf-8").read()
     assert "MERGED_UNITS.add(i)" in src and 'S("UNIT_MERGE_SEC", float)' in src
 
+def test_a_promise_flag_does_not_stay_on_a_scene_the_animation_director_turned_into_a_still(setting, monkeypatch):
+    """v12 fix (found by a held rehearsal episode): the room put the promise on its own first animated scene at 43.7 s; the Animation Director moved
+    the animated scenes, the flag stayed on what was now a still, the re-aim was skipped and promise_paid held the finished video."""
+    from whatifs import anim as ANIM, room as ROOM, breakout as BRK
+    setting("PROMISE_SHOT_ON", "TRUE"); setting("OPENING_WINDOW_SEC", "45")
+    units = [{"start": 0, "end": 4, "text": "you wake up"}, {"start": 43.7, "end": 48, "text": "the pillow floats"}, {"start": 60, "end": 64, "text": "later"}]
+    shots = [{"type": "still", "prompt": "a"}, {"type": "kling", "prompt": "b", "promise": True, "hero": True}, {"type": "still", "prompt": "c"}]
+    assert BRK.promise_start(shots, units) == 43.7                                                  # the state the room leaves behind
+    monkeypatch.setattr(ANIM, "pick_slots", lambda sh, un, n=None: [0])
+    ANIM.apply(shots, units, {"kling": 1})
+    assert shots[1]["type"] == "still" and "promise" not in shots[1] and shots[0]["type"] == "kling" and BRK.promise_start(shots, units) is None
+    out = ROOM.promise_shot(shots, units, {"thumb_prompt": "a floating pillow"})
+    assert out[0].get("promise") and BRK.promise_start(out, units) == 0.0 and CON.p_promise_paid({"shots": out, "units": units})[0] == CON.PASS
+    kept = [{"type": "kling", "prompt": "a", "promise": True}, {"type": "still", "prompt": "b"}]; ANIM.apply(kept, units[:2], {"kling": 1})
+    assert kept[0].get("promise") and kept[0]["type"] == "kling"                                     # a scene that stays animated keeps its promise
+
