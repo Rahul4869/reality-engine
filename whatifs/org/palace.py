@@ -615,7 +615,7 @@ def _terms(text):
     return {w[:7] for w in re.findall(r"[a-z][a-z0-9]{2,}", str(text or "").lower()) if w not in _STOP}
 
 def _lane(r):
-    return 0 if is_limit(r) else 3 - _RANK[r["status"]]
+    return 0 if is_limit(r) else 3 - _RANK.get(r["status"], -1)
 
 def _relevance(r, dept, stage, q, idf):
     """Deterministic score: addressed to this department by name, stage match, weighted keyword overlap with the topic, a tag hit, computed trust."""
@@ -866,11 +866,11 @@ def stats(rs, now=None, st=None):
             "inline_bodies": sum(1 for r in rs if r["body_ref"].startswith("inline:") and r["actor"] not in ("D10", "librarian")), "version": v["version"], "palace_hash": v["palace_hash"]}
 
 def maintain(st=None, now=None):
-    """Upkeep in a fixed order: founding knowledge, the clock, self-repair, size caps, audit trail. Never raises - a step that fails is logged and
-    named in the report, and the health check then judges what is really in the index."""
+    """Upkeep in a fixed order: audit trail (first, before any step here records a change of its own), founding knowledge, the clock, self-repair,
+    size caps. Never raises - a step that fails is logged and named in the report, and the health check then judges what is really in the index."""
     if not S("PALACE_ON", bool): return {"status": "off"}
     st = st or store(); out = {}
-    for name, fn in (("seed", ensure_seed), ("expire", expire), ("tidy", tidy), ("caps", enforce_caps), ("audit", reconcile)):
+    for name, fn in (("audit", reconcile), ("seed", ensure_seed), ("expire", expire), ("tidy", tidy), ("caps", enforce_caps)):
         try: out[name] = fn(st=st, now=now)
         except Exception as e:
             log(f"palace {name} failed: {scrub(e)[:160]}", "WARN"); out[name] = None
