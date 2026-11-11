@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 11 Nov 2026 (B6a ACCEPTED; B5 re-checked; THE OWNER REJECTED THE FIRST LIVE VIDEO AND ORDERED A REDESIGN - read the next section and BREAKOUT_REDESIGN.md first). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 11 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -72,18 +72,23 @@ What only the owner can do, today: set Settings cell PAUSED = TRUE on the live S
 This turn was the DESIGN step for the whole programme (research, designs, decisions, records). Nothing of the redesign is built yet.
 
 ## NEXT
-**V1 - THE VIEWER'S SEAT** (`handoff_v12/BREAKOUT_REDESIGN.md` sections 4.3 and 6). Full seven-step MANDATORY BATCH LOOP. Effort: High.
-Scope: department D13 Audience (registry, runner entry at the script gate, the final gate and the Shorts track); the MEASURED viewer checks
-(promise visible in 3 s / 5 s, captions present, the voice breathes: pauses + loudness range + true peak, numbers budget, no black-shape
-character, an ending that is a scene, one story across title / thumbnail / opening); the JUDGED floor (one generic first-time viewer per model
-family, with sound, pairwise against references; the owner's rejected video 7RPT4rCuP6k is the planted canary - `models.ask_video` exists);
-the owner's verdict AND his input line as memos (a Sheet tab each; WhatsApp capture stays in B9; D1 answers inputs from V4); the scoreboard
-(long watch hours / 8,000, subscribers / 1,000, date at the current pace) as the first line of the daily brief; long videos 8:10-9:00; the voice
-model picked by rank.
-Done when: the rehearsal HOLDS a deliberately flop-like episode, every check is proven both ways, D13 is wired, sweep + GitHub green.
-Remember from the B5 recheck: every new contract check must be classified (`rnd.ORG_CHECKS` or raise `rnd.SHOW_CHECKS`); a memo a department
-writes to itself is closed with `memos.find`; text from outside is data.
-ORDER AFTER V1: V2 hook-first production -> V3 pilot on real services -> V4 the CEO and the ladder -> B6b -> B7 -> B8 -> B9 -> B10.
+**V1b - THE VIEWER'S SEAT, part 2: the judged floor, the owner's desk tabs, the scoreboard** (`handoff_v12/BREAKOUT_REDESIGN.md` 4.3, 4.8, 4.9).
+Full seven-step MANDATORY BATCH LOOP. Effort: High. V1 was SPLIT at its start (token discipline rule 6, as B6 was): V1a - the MEASURED seat - is
+done (record under DONE). V1b scope:
+- THE JUDGED FLOOR on the finished video: one generic first-time viewer per model family (no personas), with sound, comparing the new video
+  PAIRWISE against reference videos; the owner's rejected video (YouTube id 7RPT4rCuP6k) is the planted canary that must lose; a jury that does
+  not see that is void (pattern `whatifs/org/board.py`; `models.ask_video`; fake replies in `whatifs/fakes.py`). A floor, never a forecast.
+  D13 gets a second run at the final gate (add it to `registry.ENTRY` and `EPISODE_RUNS["final"]`) and a thinking cap (it pays judges).
+- THE OWNER'S DESK, first step: his verdict on a video and his free-text input line as memos (one Sheet tab each, append-only); the verdict is
+  D13's strongest label. WhatsApp capture stays in B9; D1 answers inputs from V4.
+- THE SCOREBOARD: long watch hours of the last 365 days against 8,000, subscribers against 1,000, the date at the current pace - the first line
+  of the daily brief (the Analytics columns exist in `brain.py` / `reach.py`).
+What V1a leaves ready: `whatifs/org/audience.py` (pure measures + repairs by code; `on()` = VIEWER_SEAT_ON), D13 in the registry with one run
+(`seat`, right before the Animation Director), the pattern "measure -> repair by code -> contract check -> lever", 3 founding items for D13.
+Remember: every new contract check must be classified (`rnd.ORG_CHECKS` or raise `rnd.SHOW_CHECKS`, now 40); a memo a department writes to itself
+is closed with `memos.find`; text from outside is data; NEVER paste code with backslashes through a shell here-document (it broke two files again
+in V1a) - write the file with the file tools, then run it.
+ORDER AFTER V1b: V2 hook-first production -> V3 pilot on real services -> V4 the CEO and the ladder -> B6b -> B7 -> B8 -> B9 -> B10.
 The notes below (what B5 / B6a leave ready for the Council) stay valid for B6b:
 **B6b - The Council (C)** (01 sections 2 (C), 4, 5, 7 `council_held`; 03 "B6", second bullet). Full seven-step MANDATORY BATCH LOOP. Effort: High.
 Gathers open research / assessment / creative / owner / performance / problem memos; diverge -> blind cross-family jury -> converge -> decision
@@ -133,6 +138,105 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
+### V1a - THE VIEWER'S SEAT, measured (11 Nov 2026) - ACCEPTED (final code commit f96b87a GREEN in GitHub Checks run 85: 1284 passed; sweep 28 of 28)
+The owner (mobile only, 11 Nov): "Pls do the changes yourself and begin building". Built in the same session as the redesign because he could not
+open a new one. V1 split at its start: this half is what code can MEASURE and REPAIR BY ITSELF; the judged floor, the owner's tabs and the
+scoreboard are V1b.
+
+#### Step 1 RESEARCH (dated sources; E = measured, O = opinion / practice; the redesign's R1-R14 of the same day are in BREAKOUT_REDESIGN.md)
+1. E - Shrestha et al., arXiv 2606.07541 (1 May 2026, abstract read): multimodal models as synthetic viewers show "limited agreement" with 673
+   human ratings, squeezed toward the middle. -> what a viewer meets is measured by code where it can be; no model's taste is a gate in V1a.
+2. E - Maiorano, arXiv 2609.25010 v2 (3 Nov 2026, abstract read): a ten-persona panel ranked worse than one generic reader (tau gap +0.22 / +0.26).
+3. E - Mayer, research-based principles for multimedia instruction (copy hosted June 2023, read through search): coherence - deleting material
+   the point does not need - positive in 18 of 19 tests, median effect 0.86; signaling 0.70; captions added to narrated graphics only 0.10.
+   Measured on learning, not on watch time. -> numbers are a budget; burned-in captions for a whole long video are NOT forced (open issue 59).
+4. E - Murphy et al., Applied Cognitive Psychology 2021 (through search): narration sits near 150 words a minute; comprehension holds until
+   about twice that. -> pace is measured and logged, not gated.
+5. O/E - YouTube Help (2026), answer 16559650 and 9314415: the initial seconds decide; the Intro metric is the share still watching at 30 s;
+   align title and thumbnail with the content. -> the promise is the first picture.
+6. E (ours) - the rejected video: 6 pauses in 793 s, 7+ full-screen number cards (2 in the first 50 s), the promise never shown in 12 s, 13:13.
+7. Not found: a controlled study of pause frequency or of number density against retention. The three budgets are STARTING VALUES (levers).
+#### Step 2 CREATIVITY (4 designs; scores 1-5: what a viewer gains / enforceable / cost / reliability / owner effort)
+A. A model "viewer" judges the script for clarity and voice: 3 / 2 / 3 / 2 / 5 = 15 (research 1-2: weak, squeezed; taste as a gate).
+B. More script checks of the old kind (must contain X): 1 / 5 / 5 / 4 / 5 = 20 - but adds devices, the disease itself.
+C. Measures only, hold on failure: 3 / 5 / 5 / 4 / 3 = 20 - every hold is an owner card.
+D. (ORIGINAL, CHOSEN) MEASURE -> REPAIR BY CODE -> CHECK -> LEVER: code measures what the viewer meets, repairs by itself what code can repair
+   (the first shot, number graphics, pauses), gives the writers' one existing fix the rest (numbers heard), and only then holds:
+   5 / 5 / 5 / 4 / 5 = 24. The budgets are levers of the new department, so the learning loop can move them.
+#### Step 3 DESIGN MEMO
+- D13 Audience = `whatifs/org/audience.py`, pure functions. One run per episode (`seat`) right before the Animation Director: `shape` makes the
+  first shot a made picture (its prompt = the thumbnail's scene), turns number graphics before GRAPHICS_FREE_SEC or above GRAPHICS_MAX_LONG into
+  stills (a reused picture, or a fresh still under Rs 1). The Animation Director's first anchor (0.0) then lands on shot 0 and `room.promise_shot` re-aims
+  it: the promise is on screen at 0 s. PROMISE_BY_SEC 30 -> 5.
+- `breathe` runs inside `voice.narrate`: a 0.7 s pause at a sentence start when the voice has run about 30 s without one (a paragraph start
+  from half the window, any sentence from 80%); the writer's own pauses count. Judged on the REAL timeline with 25% slack.
+- `count_numbers` counts QUANTITIES heard (a figure, a number word, or a run = one). Not counted: headings, a source's year, a place in the
+  story ("hour 1", "Exhibit 2") - found when the first fake production was held by its own required devices (open issue 60).
+- Three script-gate checks (before picture money): `viewer_promise`, `viewer_breath`, `viewer_numbers`; owner D13; promises about the show
+  (`rnd.SHOW_CHECKS` 40). The gate's context now carries the shot list, the voice timeline and the package.
+- Long videos 9:00 at most (RUNTIME_MAX_SEC 600 -> 540). Both changed defaults move once on a live Sheet (`manage.v12v1_upgrade`).
+- NOT in V1a, on purpose: a loudness-range gate (narration normally has a small range; the wish was pauses), burned-in captions for long videos
+  (weak evidence; V2 with the hook), the Shorts track (V2 rebuilds it), any judged test (V1b). The voice MODEL needed no change: `pick_tts`
+  already takes the newest stable Flash voice, which is the best-ranked voice inside the owner's Google account today.
+- Money: no model call is added. A number graphic that goes becomes a picture: a reused one, or a fresh still (under Rs 1) where the opening or
+  the repetition guard wants one - 2 in the fake episode, a few rupees a video at most (open issue 66).
+#### Step 4 BUILD (what changed)
+- NEW `whatifs/org/audience.py` (D13; on `tools/repair.py` PROTECTED): `on`, `spoken`, `count_numbers`, `numbers_report`, `number_issues`, `shape`,
+  `m_shape`, `breathe`, `breath_report`. `whatifs/org/__init__.py` + `registry.py`: department D13 (16 departments, 11 wired), its entry
+  (`whatifs/episode.py`, `seat`), `EPISODE_RUNS` (both gates need D13's run), the owners of the 3 checks, 4 levers. `levers.py`: 4 rules
+  (45 levers; every loosening needs the owner) and `viewer_promise` judges PROMISE_BY_SEC.
+- `whatifs/contract.py`: `p_viewer_promise`, `p_viewer_breath`, `p_viewer_numbers` (50 hard checks: 31 script + 19 final). `whatifs/episode.py`: D13's
+  run before `ANIM.apply`; the script gate sees shots, units, package. `whatifs/voice.py`: `breathe` after `parse_script`. `whatifs/enforce.py`:
+  the numbers problem joins the ONE mandatory fix. `whatifs/prompts.py`: the Director is told graphics are rare, never first, never in the
+  first minute. `whatifs/core.py`: 8 cells, 2 changed defaults. `whatifs/manage.py`: `v12v1_upgrade` at both upgrade sites.
+- Seeds: `v1.viewer_seat` (a limit for D13), `v1.numbers_are_load`, `v1.floor_not_forecast`, `v1.takeaway` (137 founding items).
+#### Step 5 ENFORCE (rule -> executing code -> fails when broken)
+| Rule | Executed by | Fails when broken |
+|---|---|---|
+| The video opens on a made picture carrying the animated promise, on screen within 5 s | `audience.shape` -> `anim.pick_slots` -> `room.promise_shot` | `viewer_promise` (script gate), `promise_paid` (final gate) |
+| The voice pauses at least every 30 s | `audience.breathe` inside `voice.narrate` | `viewer_breath` on the real timeline |
+| Few numbers heard; few number graphics, none in the first minute | `enforce.fix_all` (numbers), `audience.shape` (graphics) | `viewer_numbers` |
+| D13 ran before either gate | `runner.work("D13", "seat")` in `episode.py` | `dept_contract`; `python -m whatifs.org.runner` RED when the call is gone |
+| A long video is at most 9:00 | RUNTIME_MAX_SEC 540 in `governor.plan_for_episode` | moved once by `v12v1_upgrade` (tested) |
+#### Step 6 PROVE
+- `tests/test_v12_seat.py`: **11 tests**, each rule both ways (numbers counted as heard; the flood and the graphics budget; the writers' one fix;
+  the shot list shaped and unchanged when shaped twice; the promise first / late / lost / no animation; pauses placed at sentence starts and the
+  writer's own pauses counted; the real timeline judged; the REAL voice job; wiring and levers; the one-time move; the REAL production: a good
+  fake episode passes all three checks with D13's run proven, a number flood is HELD before any picture is paid).
+- Fails correctly (mutations on the real repo, each reverted): D13's run and the voice call removed -> **3 tests fail** and the organisation
+  check is RED ("no runner call for D13 'seat'"); shaping switched off inside the function and the gate's view of the shot list removed ->
+  **3 tests fail** (shape, promise, the real production).
+- A fault found by running, not by reading: the FIRST fake production was held by `viewer_numbers` - the counter counted "## BEAT 3" headings,
+  the years of sources and the time ladder's "hour 1". Fixed in the counter (quantities, not story marks), with a test.
+- My own mistake in this session: I pasted a patch with backslashes through a shell here-document (the known pitfall) and broke two lines in
+  two files; found at once by the syntax error, repaired with the file tools.
+- Tests changed by design: 5 count assertions before the suite (16 departments, 16 playbooks, 45 levers, 31 script checks, the runtime test) and
+  4 tests the full suite found (the promise at 12 s is late now; 5 department runs before the script gate, three assertions in two tests; the
+  two changed defaults are a documented one-time move in the v9 upgrade test). The commit message of f96b87a says "5 older tests": the exact
+  count is 4 tests by design + 2 tests showing the one real finding = the 6 failures.
+- A REAL finding of the full suite (2 tests: default flags, all flags on): the paid-call counter showed 26 images against a baseline of 24. A number graphic turned into a picture is
+  not always free - where the opening or the repetition guard wants a fresh picture it is a paid still. I had written "free" in the code, the
+  settings, the matrix and a founding item; corrected to "by code" everywhere and documented in the counter (`tests/paid_calls.py` V12V1_ADDED).
+- Fake rehearsal on the final code: GREEN on the working tree (50 checks: 45 pass, 5 not applicable; D13's run present; 2 pauses placed, 2 early number graphics turned into pictures); 4 of 4 GREEN in sweep C on the frozen copy of f96b87a; GitHub's own rehearsal GREEN (episode EP202611110803, script 31/31, final 19/19).
+- Full suite on a frozen copy of f96b87a: the whole suite ran on the laptop on b0fd0d8 (before the corrections): **1277 passed / 6 failed / 1 skipped** - all six traced (4 tests whose expectation moves by design, 2 tests showing the one real cost finding) and corrected in f96b87a. On the frozen copy of f96b87a the 9 touched or failing files were re-run: **312 passed / 0 failed** (test_v11_breakout 7, test_v12_org 99, test_v91_e2e 2, test_v91_matrix 33, test_v91_paidcalls 1, test_v12_seat 11, test_v12_palace 39, test_v12_exec 88, test_v82 32). The whole suite on f96b87a ran on GitHub (below): 1284 passed. NOT done: the whole suite a second time on the laptop on the final code.
+- Sweep on the same frozen copy: **28 of 28 ok**, no bad id, no failure class. A: 20 fixed episode ids, organisation on - 20 ok. B: 4 ids, organisation off - 4 ok. C: 4 rehearsals, organisation on - 4 ok, each 45 pass + 5 not applicable of 50 checks, 10 department runs, no memo left open.
+- GitHub Checks (standing rule 1): run **85** on f96b87a **GREEN**: 1284 passed (21:36), rehearsal GREEN (episode EP202611110803; contract script 31/31, final 19/19). Runs 83 (b0fd0d8) and 84 (6bfb02d) RED: 6 failed / 1278 passed - the same six tests the laptop found, traced (above) and corrected in f96b87a; not re-run.
+- Plan Guard GREEN, Truth GREEN, Palace GREEN (137 founding items), Organisation GREEN (11 wired, 5 pending), docs regenerated without drift.
+- Money: Rs 0 spent (fake mode). In production: no new model call; up to a few more stills in a long video (under Rs 1 each).
+#### Step 7 TAKEAWAY (also Palace item `v1.takeaway`)
+- WORKED: measure -> repair by code -> check -> lever. The viewer's rules cost almost nothing and the gate rarely has to hold, because code
+  repairs first.
+- WORKED: the old paid-call counter. It caught my "free" claim: two stills more. A cost claim is believed only when the counter agrees.
+- WORKED: running the real production in a test. It found in one run what reading had not: the show's own required devices fill a script with
+  numbers. A rule about the viewer must be tried on a whole episode before it is believed.
+- FAILED / LIMIT: nothing here proves a viewer will ENJOY the video. V1a removes three measured faults of the rejected video (the promise not
+  shown, a voice without pauses, a flood of numbers) and its length. Whether the voice is pleasant and the story clear is not measured yet (V1b's
+  floor, then real viewers). No real video has been made by this code.
+- NEW QUESTION: are 4 numbers a minute, 3 number graphics and a pause every 30 s the right values? They are levers; B8 must score them against
+  real retention (hypotheses H2-H3 of the redesign).
+- ORGANISATION: a new department needs founding knowledge before its first run (the runner refuses a department without a playbook) - seeds
+  first, then the wiring.
+
 ### B5 RECHECK (11 Nov 2026; owner: "make a recheck of the B5 done and also any of its consequent impacts and correct them, if any") - DONE (final code commit 101cf96 GREEN in GitHub run 78; laptop suite 1272 / 0 / 1 skipped; rehearsal GREEN; sweep 7 of 7 green)
 Not a batch (no new feature): the accepted B5 code was re-read line by line (`rnd.py`, `board.py`, the model doorway, the runner, the governor, the
 job dispatcher) and then every place it touches something else (the learning job, the production job and its script gate, the month's money, the
@@ -1486,6 +1590,11 @@ Rehearsal asserts `docs_current` ran and passed.
   (deterministic particle seed).
 
 ## PROTECTED-AREA FILES TOUCHED SO FAR (list them in the final PR)
+- V1a: `whatifs/contract.py` (3 checks added; no existing check changed), `whatifs/episode.py` (D13's run before the Animation Director; the script
+  gate's context carries the shot list, the timeline and the package), `whatifs/voice.py` (one call after `parse_script`), `whatifs/enforce.py`
+  (the numbers problem joins the one mandatory fix), `whatifs/prompts.py` (one sentence for the Director), `whatifs/core.py` (8 cells; defaults
+  RUNTIME_MAX_SEC 600 -> 540 and PROMISE_BY_SEC 30 -> 5), `whatifs/manage.py` (`v12v1_upgrade`), `whatifs/org/registry.py` / `levers.py` /
+  `__init__.py` / `rnd.py` (D13, 4 levers, SHOW_CHECKS 40), `tools/repair.py` (PROTECTED + audience.py), `tools/rehearsal.py` (2 assertions).
 - B5 recheck: `whatifs/models.py` (`haiku_repair` keeps the repaired call's note; `_gemini` records the role that really answered - no route, price
   or limit changed), `whatifs/org/rnd.py`, `whatifs/org/board.py` (the 16 corrections above). Also touched, not protected: `whatifs/cli.py` (one
   call at the start of the production job), `.github/workflows/learn.yml` (limit 30 -> 60 minutes).
@@ -1688,6 +1797,31 @@ Rehearsal asserts `docs_current` ran and passed.
 58. (B5 recheck) When the SECOND family (Claude) is down, the first one (Gemini) has already been paid before the session is void: it cannot be
    known beforehand. Bounded by the research memo's deadline (it climbs away from the Board) and by D3's cap.
 
+59. (V1a -> V2) Long videos carry no burned-in captions (YouTube's own caption track is uploaded; Shorts have word-by-word captions). Evidence
+   for burning them into a narrated long video is weak (Mayer: 0.10). V2 puts captions on the hook and tests the rest as a lever.
+
+60. (V1a -> V2, the device diet) The show's required devices produce numbers themselves (the time ladder's "hour 1", exhibits with years, a
+   prototype number). The counter exempts story marks and source years; when the devices become optional per format, review the exemptions.
+
+61. (V1a -> B8) NUMBERS_PER_MIN_MAX 4, GRAPHICS_MAX_LONG 3, GRAPHICS_FREE_SEC 60 and BREATH_EVERY_S 30 are starting values from the owner's
+   verdict, not from a controlled study (none was found). They are levers of D13; the learning loop must score them against real retention.
+
+62. (V1a -> V2) The Shorts track (`shorts2.py`) is not under the viewer's seat yet; V2 rebuilds Shorts as hooks and puts them under it.
+
+63. (V1a, correction of item 16's facts) The "+0.8 dBFS true peak" was measured on a re-encoded download of the video; the pipeline limits its
+   own master to -1 dBTP (`render.py`, check in `qc.py`), so it is not evidence of clipping. The loudness range (4.1 LU) is normal for narration
+   and is not a gate. The measured faults that stand: 6 pauses in 13 minutes, the number cards, the opening, the length, the black shapes.
+
+64. (V1a -> B7) A viewer's-seat failure that code cannot repair holds the video with an owner card. B7's repair loop should give the owning
+   department ONE automatic repair first (a hold for too many numbers after the writers' fix is rare, but it is an owner tap).
+
+65. (V1a -> V2) The promise rule needs an animated scene to ride on: when the money trims all animation the check says NA. V2's fully animated
+   hook removes the case.
+
+66. (V1a, money, low) A number graphic that the seat turns into a picture can cost a fresh still (under Rs 1): 2 in the fake episode; the
+   repetition guard of `episode.anchor_shots` may add up to 12 in the worst case (about Rs 7 a video). Counted in the paid-call counter
+   (`tests/paid_calls.py` V12V1_ADDED). If real videos show more than a few, give seat-converted shots their own small cap.
+
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`
 - Suite: `bash ../shim/runall.sh . <outdir outside repo>` (~35 min; run it in the background). Some files: `bash ../shim/runseq.sh . <outdir> test_a test_b`.
@@ -1736,7 +1870,8 @@ Rehearsal asserts `docs_current` ran and passed.
 | B6a | done 11 Nov 2026 | 1260 / 0 / 1 skipped | GREEN (28 + 19) | Creative departments: the Palace playbook inside the writer / packager / director prompts (end of the system prompt, cached layers untouched), citations verified by quote, canon written by code and accepted on air, continuity debt paid in the script, distinct creative memos to the Council, drafts adopted only with proof; checks `palace_injected`, `palace_cited`, `canon_in_brief` (47 hard checks); the writers' playbook holds the owner's limits again (cap 2,400); open issue 47 fixed. Sweep 40 of 40. GitHub run 75: GREEN (1261 passed, 0 skipped); #71 RED = 54 by-design tests, #72 RED = 3 pinned tests, traced and fixed |
 | B5 recheck | done 11 Nov 2026 | 1272 / 0 / 1 skipped | GREEN (28 + 19) | Owner asked for a recheck of B5 and its consequences: 16 corrections (a syntax repair hid who answered; a cheap Gemini model could sit on the Board; the void-session memo never closed; a video could be held for research a job can run; the organisation's plumbing became paid web questions; barren research was invisible; a crash after a paid call; the learning job's 30-minute limit; 8 small ones), 12 new tests. GitHub run 78 (101cf96, the final code commit): **GREEN - 1273 passed, 0 skipped, rehearsal GREEN (episode id EP202611110421, script 28 / 28, final 19 / 19)** |
 | REDESIGN | done 11 Nov 2026 | - | - | The owner rejected the first live video (made by the old code) and gave a free hand: research (14 dated sources), 4 designs, the decisions and the new batch plan in `handoff_v12/BREAKOUT_REDESIGN.md`. No code changed |
-| V1 | next | | | The viewer's seat: department D13 Audience, measured viewer checks, the judged floor with the canary |
+| V1a | done 11 Nov 2026 | GitHub 1284 passed (run 85); laptop 312 / 0 on the 9 touched files | GREEN (50 checks: 45 pass, 5 not applicable) | The viewer's seat, measured: department D13 Audience; before any picture is paid the first shot is a picture carrying the animated promise (5 s), the voice gets a pause every 30 s, numbers heard and number graphics have a budget; 3 script-gate checks (50 hard checks), 4 levers (45), long videos 9:00 at most. GitHub run 85 GREEN on f96b87a; sweep 28 of 28. |
+| V1b | next | | | The viewer's seat, part 2: the judged floor with the canary, the owner's verdict and input tabs, the scoreboard |
 | V2 | after V1 | | | Hook-first production: formats as data, the hook made first, models by value, the three-tier contract |
 | V3 | after V2 | | | Pilot on real services, then GO LIVE with the new code (the later batches are built while the channel runs) |
 | V4 | after V3 | | | The CEO and the ladder: D1 Strategy wired, the portfolio, decide-inform-implement |
