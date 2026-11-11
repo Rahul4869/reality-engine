@@ -200,7 +200,7 @@ def test_evolve_logs_its_changes_and_never_retires_a_just_restored_strategy():
 # ------------------------------------------------------------------ schema, settings, research rules
 def test_schema_only_appends_and_every_new_setting_has_a_default():
     an = core.TABS["Analytics"]; i = an.index("from_shorts")          # v8.7 appends four more columns AFTER these (append-only schema)
-    assert an[i:i + 5] == ["from_shorts", "diagnosis", "data_note", "shorts_views", "shorts_subs"] and an[-5:] == ["impressions", "wtpi", "rel30", "rel_avg", "engaged_views"]   # v11 appended engaged_views (append-only schema rule kept)
+    assert an[i:i + 5] == ["from_shorts", "diagnosis", "data_note", "shorts_views", "shorts_subs"] and an[-7:] == ["impressions", "wtpi", "rel30", "rel_avg", "engaged_views", "days", "first_json"]   # v11 appended engaged_views (append-only schema rule kept)
     assert core.TABS["Strategy_Log"][:3] == ["ts", "dimension", "action"]
     for k in ("TITLE_MIN_CHARS", "TITLE_MAX_CHARS", "THUMB_MAX_WORDS", "PROMISE_SHOT_ON", "DIAG_MIN_HISTORY", "ANALYTICS_GIVEUP_DAYS", "STRATEGY_EVAL_PLAYS", "PKG_DIP_GUARD_ON"):
         assert core.DEFAULTS[k][0] != "" and len(core.DEFAULTS[k][1]) > 20, k

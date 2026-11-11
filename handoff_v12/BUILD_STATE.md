@@ -373,6 +373,47 @@ E. (ORIGINAL, CHOSEN) THE ROLLING LADDER ON TWO CLOCKS: YouTube gives two kinds 
 | 3 a week, 12 a month, 48 hours apart; the daily plan may not come back | `shorts2.cadence` / `due`; truth rule `daily_shorts_cadence` | tests; Plan Guard, check `docs_current` |
 | A winner gets one follow-up with a clock; overdue = a memo | `breakout.monitor`, `ladder.order_followup`, `shorts2.order_due`, `ladder.watch` | tests (the order, its due time, the memo, its closing by the follow-up, the lapse) |
 | A Short's footage is kept for its long video | `ladder.keep` in `shorts2.run` | the production test (the archive holds every paid clip, every start picture, the script, the plan); the rehearsal |
+#### Step 6 PROVE
+- `tests/test_v12_ladder.py`: **30 tests**, each rule both ways (three a week is every 48 hours and then the week is full; the month's
+  ceiling, a follow-up and a held Short outside the count; an order before the cadence; the numbers by processed day - nothing at two
+  days, a fragment at four, a whole reading a day later, then weekly; the first three days as one stretch; a Short approved later aged
+  from the day it went public; a reading counted only from three processed days; the window and the deleted footage; the Wilson bound;
+  the promote rule - a winner first, rank sums, thin evidence last, public views last of all, a tie to the newer Short; the promotion
+  as D10's run with its memo, the owner's line and his "Not this one"; one long video per topic; the gate's three reasons, the override
+  by tap used once, his own locked topic as an override, a promotion before a stale override; the tick naming no slot and asking once;
+  the room keeping the premise word for word against judges that hate it; `topic_ladder` on seven wrong cases; the winner at exactly
+  three times the median of the same mark, once, never a cut-down reel, the line without history; the follow-up made first, told what
+  the winner said, closing its order; no money keeps its reason and waits; overdue = a memo only the follow-up closes; the lapse; the
+  kept archive; one id, one hook; the wiring, the re-planner, the one-time move) and TWO WHOLE PRODUCTIONS: a long video refused before
+  its first paid call, then the ladder walked end to end (Short -> numbers -> promotion -> long video, `topic_ladder` PASS, a second long
+  video refused); and a long video that slipped past the gate HELD at the script gate with no picture and no clip paid.
+- Fails correctly: **31 deliberate breaks** on the real repo, each put back by the script that made it, **each failed at least one test**
+  (1 to 3 tests): the gate ignored at the tick; in `produce`; the check unable to fail; the premise not kept; the judges dropping the
+  promoted topic; thin evidence not last; a raw share instead of the lower bound; a fragment counted as measured; the numbers read
+  weekly only; a winner judged at one mark only; the winner line ignored; an order without a clock; no memo for an overdue order; the
+  cadence without its gap; no month ceiling; a held Short tried again at once; the follow-up not first; the writers not told; a topic
+  promoted twice; a promoted topic never used up; an override that never ends; a promotion not told; the promote rule outside the
+  department contract; the footage not kept; a Short not on the ladder; the hook draw unseeded; the ladder binding without Shorts; a
+  window that never closes; the owner's own topic no override; the old re-planner rung; the one-time move run twice. No gap this time -
+  the unseeded hook draw got its test BEFORE the breaks were run, because the break list asked "what would fail if this line went?".
+- Faults found by running, not by reading: (1) THE PROMOTE RULE let a Short with 20 viewers and 2 subscribers out-rank one with 2,000
+  and 30 (the Wilson bound shrinks 10% to 2.8%, still above 1.1%): thin evidence is now also relative to the pool's best. (2) A TEST
+  LEFT FROM V2c-a failed about once in eleven runs: it demanded two different hooks across three Shorts from an unseeded random draw
+  (it failed here once, on a run that had nothing to do with hooks). Fixed at the cause - the draw is seeded by the Short's id, so an id
+  reproduces its Short - and the test now asserts what the rotation guarantees. (3) The new truth rule first matched the Review Board's
+  planted canary ("thirty near-identical Shorts a day") - narrowed to the retired plan. (4) A founding item dated by the owner's
+  calendar day was refused by the Palace's write gate: the laptop's UTC date was a day behind. (5) Two founding items addressed to the
+  Shorts Studio without a writing stage broke a V2c-a test of the writers' playbook: they belong to D10 alone. (6) My first rehearsal
+  fixture had bench rows without judge scores. (7) Five of the first 29 tests failed on their own expectations (the start hour, a
+  stored number read as text, a fixture that became a winner a day later, uploads not confirmed open) - none hid a fault of the code.
+- Tests changed by design: `test_v11_shorts` (the daily target became "a Short of the cadence is core, a follow-up obeys the guard"),
+  `test_v11_stage_e` (one rung), `test_v12_cadence` (3 Shorts a week), `test_v94b` (the dashboard's switch), `test_docs_current` (the
+  new rule's sample, the small repository's baseline strings), `test_v12_exec` (68 levers, 35 script checks, the D14 lever),
+  `test_v10_growth` (the hourly link card is retired), `test_v12_short` (the hook assertion).
+- Fake rehearsal on the working tree of a0cf174: **GREEN four times** - F1 with Shorts in S1, F2 with S2, F1 with S3, F2 with S1. Each:
+  a long video refused first (nothing spent), two Shorts made and posted (short gate 5 of 5, five department runs each), their numbers
+  read, one promoted by the rule (three times "measured" among 2, once among 1 with the other thin), the long video about it (script
+  35 of 35, final 19 of 19, `topic_ladder` PASS), the other Short feeding the pre-production draft.
 
 ### V2c-a - THE SHORT, THE PRODUCT (11 Nov 2026) - ACCEPTED (final code commit 3b34cc3 GREEN in GitHub Checks run 99: 1325 passed; sweep 58 of 58 ids)
 The owner: "continue" (a new session for this batch). V2c was SPLIT AT THE START (rule 6): V2c-a is the short video as a product a viewer meets;

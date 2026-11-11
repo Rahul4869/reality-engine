@@ -24,6 +24,7 @@ def test_same_minute_leftovers_never_leak_into_a_new_episode(monkeypatch, tmp_pa
     assert EP.produce(slot)["ok"]                                         # an earlier episode in THIS minute, then a fresh Sheet (as in the next test)
     core._store = core.LocalStore(str(tmp_path / "sheet2.json")); core._store.ensure_tabs(); _setup(monkeypatch)
     core.set_setting("CREATIVE_REVIEW_FIRST_N", "0")      # v10.2: a fresh Sheet in a test schedules directly
+    core.set_setting("LADDER_ON", "FALSE")                # v12 V2c-b: and, like every older test, makes its long video without the ladder (tests/conftest.py set this on the first Sheet only)
     real = EP._assets; boom = {"n": 0}
     def flaky(*a, **k):
         boom["n"] += 1
