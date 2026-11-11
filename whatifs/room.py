@@ -219,6 +219,7 @@ def run_room(draw, episode):
     """The writers' room for one episode, in that episode's FORMAT (v12 V2a): picked once, kept in the draw, and the format of everything the room does."""
     from whatifs import formats as FMT
     if "format" not in draw: draw["format"] = FMT.pick(episode, draw)
+    log(f"format of this episode: {draw['format'] + ' (' + FMT.name(draw['format']) + ')' if draw['format'] else 'none (made as before formats existed)'}", episode=episode)
     with FMT.using(draw["format"]): return _run_room(draw, episode)
 
 def _run_room(draw, episode):
