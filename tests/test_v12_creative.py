@@ -59,12 +59,28 @@ def test_the_playbook_enters_only_the_named_creative_calls_at_the_start_and_the_
                                                        fixed=M.ask("humanize", "EDIT RULES", "NARRATION:\nx\nReturn JSON", fake_key="humanize")), measure=WR.m_room)
     finally: M.ASK_TAPS.remove(tap)
     by = dict(spy)
-    for t in ("showrunner", "bible", "writer"): assert by[t].lstrip().startswith("KNOWLEDGE PALACE") and "PALACE CITATIONS" in by[t], t
+    for t, rules in (("showrunner", "SHOWRUNNER RULES"), ("bible", "BIBLE RULES"), ("writer", "WRITER RULES")):          # after the call's own rules, at the end of the system prompt
+        assert by[t].startswith(rules) and "KNOWLEDGE PALACE" in by[t] and by[t].rstrip().endswith(CITE.RULE if t == "writer" else CITE.PROPOSE), t
     assert "KNOWLEDGE PALACE" not in by["jury"] and "KNOWLEDGE PALACE" not in by["humanize"]          # never the blind judges, never the mechanical passes
     assert "PROPOSAL (optional" in by["showrunner"] and "PROPOSAL (optional" not in by["writer"]
     r = row("D4", "write", ep); a = act(r)
     assert r["status"] == "ok" and r["inject"] == "prompt" and a["injected_tasks"] == ["bible", "showrunner", "writer"] and a["applied"] and a["cited"] >= 3
     assert "applied_items" not in room["script"] and "proposal" not in room["spine"]                    # the caller never sees what the reply tap took
+
+def test_the_injected_block_never_changes_a_cached_layer_so_every_call_keeps_reading_the_same_cache():
+    from whatifs import prompts as PR
+    got = {}
+    def tap(task, system, prompt): got[task] = system; return system
+    brief = PR.Packed("HOUSE RULES\n", "THE WRITER'S BRIEF: bible, promise, rules\n", "")          # one brief shared by the writer, the rewrite and the mechanical passes
+    def work(b):
+        s = M.ask("writer", brief, "Write the narration.", fake_key="writer"); M.ask("rewrite", brief, "Apply the fixes.", fake_key="writer")
+        M.ask("retention", brief, "NARRATION:\nx", fake_key="retention"); M.ask("format", brief, "NARRATION:\nx", fake_key="retention")
+        return {"spine": {}, "bible": {}, "script": s}
+    M.ASK_TAPS.append(tap)
+    try: RUN.work("D4", "write", EP(), work, measure=WR.m_room)
+    finally: M.ASK_TAPS.remove(tap)
+    assert {(s.glob, s.episode) for s in got.values()} == {(brief.glob, brief.episode)}                 # byte-identical cached layers for all four calls
+    assert "KNOWLEDGE PALACE" in got["writer"].role and "KNOWLEDGE PALACE" in got["rewrite"].role and got["retention"].role == "" and got["format"].role == ""
 
 def test_the_reply_doorway_runs_on_the_real_model_path_too(monkeypatch):
     seen = []
@@ -266,6 +282,9 @@ def test_the_real_preproduction_job_writes_under_d4_and_production_can_adopt_it(
 
 # ------------------------------------------------------------------ money, settings, registry
 def test_the_palace_in_the_prompts_is_counted_in_every_estimate():
+    from whatifs import episode as EPI
+    per = EPI.est_cost_inr({"stills": 52, "living": 8, "kling": 4, "episode_id": "EPC"})
+    assert G.plan_for_episode(per, 4)["tier"] == "full" and 4 * per < 0.5 * core.S("BUDGET_CEILING_INR", float)      # at the owner's cadence (4 long videos a month) it never costs a picture
     on = G.voice_think_inr(); lines_on = CG.estimate_lines()["ai_writing"]
     core.set_setting("ORG_PROMPT_INJECT", "FALSE")
     assert G.palace_prompt_inr() == 0 and round(on - G.voice_think_inr(), 2) == core.S("PALACE_PROMPT_EST_INR", float) > 0

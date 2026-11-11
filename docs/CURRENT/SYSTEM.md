@@ -213,7 +213,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | CANON_CALLBACK_ON | TRUE | v12 B6a: TRUE = the newest aired case is a continuity debt: the script must call back to it in one spoken line, cited with that exact line (check canon_in_brief) |
 | CREATIVE_MEMO_MAX_PER_RUN | 1 | v12 B6a: proposals (new ideas, experiments, joke or hook banks, world-building) a creative run may send to the Council as creative memos (0-3) |
 | CREATIVE_MEMO_SAME_MAX | 0.5 | v12 B6a: a proposal whose words overlap an earlier creative memo this much (0-1) is dropped as the same idea - the Council sees distinct options |
-| PALACE_PROMPT_EST_INR | 10 | v12 B6a: allowance per long video for the Palace playbook inside the creative prompts and the citations (extra input tokens, mostly cached); counted in the episode estimate while ORG_PROMPT_INJECT is on |
+| PALACE_PROMPT_EST_INR | 15 | v12 B6a: allowance per long video for the Palace playbook inside the creative prompts and the citations: about 2,000 input tokens at the end of each creative call (not cached, so the cached brief is never re-written; about Rs 10) plus about 120 output tokens of citations a call (about Rs 4); counted in the episode estimate while ORG_PROMPT_INJECT is on. Reconcile with Cost_Log after 2-3 videos |
 
 **Organisation**
 

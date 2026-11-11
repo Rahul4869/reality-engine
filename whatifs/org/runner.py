@@ -99,15 +99,19 @@ _LOCK = threading.Lock()
 
 def _ask_tap(task, system, prompt):
     """Every text call passes here (models.ask). It counts the calls of the run in flight and, for a department in 'prompt' mode, puts the
-    playbook into the cached layer of the system prompt - the one doorway by which Palace knowledge enters a model."""
+    playbook at the end of the system prompt (the uncached role layer) - the one doorway by which Palace knowledge enters a model."""
     with _LOCK: r = _ACTIVE[-1] if _ACTIVE else None
     if r is None: return system
     r.calls.add(hash((task, len(str(prompt)), str(prompt)[:160])))
     if r.mode == "prompt" and r.pb_text and (not r.tasks or any(str(task).startswith(t) for t in r.tasks)):
         text = CITE.block(r.pb_text, task, r.spec, r.must)                 # v12 B6a: the playbook + the citation rule (+ the continuity debt, + the proposal invitation)
         if text not in str(system or ""):
+            # At the END of the system prompt, in the ROLE layer (never cached, never mid-brief): the cached GLOBAL and EPISODE layers stay byte-identical,
+            # so every call that shares a brief still reads the same cache. Measured in B6a: the same block inside the cached layer re-wrote the cache
+            # per task and per department (hit ratio 0.75 -> 0.53, +45% AI cost on a fake episode).
             from whatifs.prompts import Packed
-            system = Packed.of(system).with_global(text)                    # at the START, in the cached layer (never mid-brief)
+            pk = Packed.of(system); gap = "" if (not pk.role or pk.role.endswith("\n")) else "\n"
+            system = Packed(pk.glob, pk.episode, pk.role + gap + "\n" + text + "\n")
         with _LOCK: r.injected += 1; r.injected_tasks.add(str(task))
     return system
 

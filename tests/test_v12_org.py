@@ -325,10 +325,11 @@ def test_prompt_mode_puts_the_playbook_into_the_models_prompt_and_proves_it(monk
         sys_ = PR.Packed("HOUSE RULES\n", "EPISODE\n", "ROLE: write\n")
         r = RUN.run("D4", "write", lambda b: M.ask("pilot", sys_, "p", fake_key="pilot"), episode="EP1", measure=lambda o: {"lines": 3})
         pb = P.playbook("D4", record=False); got = seen[-1]
-        assert r.ok and pb["text"] in str(got) and isinstance(got, PR.Packed) and pb["text"] in got.glob and got.role == "ROLE: write\n"      # in the cached layer, layers kept
+        assert r.ok and pb["text"] in str(got) and isinstance(got, PR.Packed) and pb["text"] in got.role and got.role.startswith("ROLE: write\n")
+        assert (got.glob, got.episode) == ("HOUSE RULES\n", "EPISODE\n")          # v12 B6a: at the end, in the uncached role layer - the cached layers stay byte-identical (measured: inside the cached layer it re-wrote the cache per task)
         act = next(x for x in r.receipts if x["step"] == "ACT"); assert act["injected"] == "in 1 model prompt(s)" and act["model_calls"] == 1
         r2 = RUN.run("D4", "write", lambda b: M.ask("pilot", "plain system", "p2", fake_key="pilot"), episode="EP1", measure=lambda o: {"lines": 3})
-        assert r2.ok and str(seen[-1]).lstrip().startswith(pb["text"]) and str(seen[-1]).endswith("plain system") and pb["text"] in seen[-1].glob      # v12 B6a: a plain prompt gets the playbook as its cached first layer
+        assert r2.ok and str(seen[-1]).startswith("plain system") and pb["text"] in seen[-1].role and not seen[-1].glob      # v12 B6a: a plain prompt gets the playbook after its own text
         with pytest.raises(RUN.ContractBreach, match="no model call of this run carried the playbook"):
             RUN.run("D4", "write", lambda b: (b.take(), {"x": 1})[1], episode="EP1", measure=lambda o: {"lines": 3})          # taking it is not enough in prompt mode
         n = len(seen); M.ask("pilot", "outside any run", "p3", fake_key="pilot"); assert seen[n] == "outside any run"          # no run in flight: prompts are untouched

@@ -279,7 +279,7 @@ def voice_think_inr():
     return tts + S("THINK_EST_INR", float) + S("ROOM_EXTRA_EST_INR", float) + palace_prompt_inr()
 
 def palace_prompt_inr():
-    """v12 B6a: the Palace playbook inside the creative model prompts (about 1,900 extra input tokens on about 12 calls, mostly cached, plus the citations)."""
+    """v12 B6a: the Palace playbook inside the creative model prompts (about 2,000 input tokens at the end of about 15 creative calls, outside the cached layers, plus the citations)."""
     return S("PALACE_PROMPT_EST_INR", float) if (S("ORG_PROMPT_INJECT", bool) and S("ORG_ON", bool) and S("PALACE_ON", bool)) else 0.0
 
 def full_episode_inr(kling=None):

@@ -984,7 +984,7 @@ DEFAULTS = {
  "CANON_CALLBACK_ON": ("TRUE", "v12 B6a: TRUE = the newest aired case is a continuity debt: the script must call back to it in one spoken line, cited with that exact line (check canon_in_brief)"),
  "CREATIVE_MEMO_MAX_PER_RUN": ("1", "v12 B6a: proposals (new ideas, experiments, joke or hook banks, world-building) a creative run may send to the Council as creative memos (0-3)"),
  "CREATIVE_MEMO_SAME_MAX": ("0.5", "v12 B6a: a proposal whose words overlap an earlier creative memo this much (0-1) is dropped as the same idea - the Council sees distinct options"),
- "PALACE_PROMPT_EST_INR": ("10", "v12 B6a: allowance per long video for the Palace playbook inside the creative prompts and the citations (extra input tokens, mostly cached); counted in the episode estimate while ORG_PROMPT_INJECT is on"),
+ "PALACE_PROMPT_EST_INR": ("15", "v12 B6a: allowance per long video for the Palace playbook inside the creative prompts and the citations: about 2,000 input tokens at the end of each creative call (not cached, so the cached brief is never re-written; about Rs 10) plus about 120 output tokens of citations a call (about Rs 4); counted in the episode estimate while ORG_PROMPT_INJECT is on. Reconcile with Cost_Log after 2-3 videos"),
  "PALACE_REVIEW_DAYS": ("", "optional JSON {kind: days} that overrides how long an item stays valid before it must be re-validated (defaults: REVIEW_DAYS in whatifs/org/palace.py; 0 = never)"),
  "PALACE_KIND_CAPS": ("", "optional JSON {kind: most served items}; over the cap the lowest-value item of that kind is expired by code (defaults: KIND_CAPS in whatifs/org/palace.py)"),
  "PALACE_FOLDER_ID": ("", "auto: the Drive folder palace/ for item bodies, playbook texts and snapshots; found or created on first use"),
