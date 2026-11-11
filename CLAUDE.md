@@ -79,6 +79,10 @@ pipeline run uses the new code. Nothing restarts.
   `models.last_call`), and a research memo carries the stamp `rnd.verify`. The Board's scores and verdict are computed by `board.verdict` from the
   judges' yes/no answers - never type or edit a verdict (check `research_cadence` re-computes every stored one). A Board judge role needs a chain
   with strong models of ONE family only (`models.CHAINS` `board_g` / `board_c`); every session carries a planted canary (`board.canary`).
+  A NEW contract check must be put on one side: `rnd.ORG_CHECKS` (the organisation's own machinery - never a research topic or a prediction
+  metric) or a promise about the show (raise `rnd.SHOW_CHECKS`; a test counts). A department's report about itself that a later good run should
+  close is found with `memos.find` (not only in the inbox: the watchdog escalates a memo to itself within hours). The round is level-triggered:
+  the learning job runs it daily and a production job runs it first when it is overdue (`cli.research_catch_up`).
 - **Creative departments and the canon** (`whatifs/org/cite.py`, `canon.py`): Palace knowledge enters a creative model call only through the runner's
   ask tap and its proof leaves only through the reply tap (`models.REPLY_TAPS`) - never paste a playbook into a brief by hand and never count an id a
   model typed: only `cite.verify` (the quote is found in the final output) makes an item "applied". A new creative call gets the playbook by adding its
