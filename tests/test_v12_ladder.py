@@ -54,7 +54,7 @@ def test_the_month_has_its_own_ceiling_and_a_follow_up_or_a_held_short_does_not_
     assert SH.cadence(dt.datetime(2027, 1, 1, 6, 0, tzinfo=UTC))[0]                                # a new month
     setting("SHORTS_PER_MONTH", "12"); assert SH.cadence(now)[0]
     _made(now, 1, brk=True); assert SH.cadence(now)[0]                                             # a winner's follow-up is outside the cadence
-    _made(now, 2, held=True); ok, why = SH.cadence(now); assert not ok and "held a Short" in why   # after a held Short: one paid writing a day at most
+    _made(now, 2, held=True); ok, why = SH.cadence(now); assert not ok and "held or failed" in why   # after a held Short: one paid writing a day at most
     assert SH.cadence(now + dt.timedelta(hours=22, minutes=1))[0]                                  # 24 hours after the held one
 
 def test_due_follows_the_cadence_and_an_order_comes_first(monkeypatch, setting):
@@ -222,7 +222,8 @@ def _monitored(monkeypatch, views):
 
 def test_a_short_at_three_times_the_median_of_the_same_mark_is_a_winner_once(monkeypatch, setting):
     _quiet(monkeypatch); st = core.store()
-    st.append("Monitor48", [{"yt_id": f"old{i}", "video_key": f"O{i}", "kind": "short", "v24": 100 * (i + 1), "v48": 300 * (i + 1)} for i in range(3)])      # medians: 200 at 24 h, 600 at 48 h
+    for i in range(3): _short(f"SHO{i}", f"po{i}", 9, now=NOW, v24=100 * (i + 1), v48=300 * (i + 1))      # the channel's earlier Shorts - medians: 200 at 24 h, 600 at 48 h
+    st.append("Monitor48", [{"yt_id": "reelx", "video_key": "E9#r1", "kind": "short", "v24": 10 ** 6, "v48": 10 ** 7}])      # a cut-down reel is another product: it never moves the median
     _short("SHH", "What if the Moon left tonight?", 0, now=NOW - dt.timedelta(hours=25)); _short("SHM", "pm", 0, now=NOW - dt.timedelta(hours=25)); _short("SHY", "py", 0, now=NOW - dt.timedelta(hours=20))
     _monitored(monkeypatch, {"yt_SHH": 600, "yt_SHM": 599, "yt_SHY": 99999})
     found = BRK.monitor(NOW); assert [(f["key"], f["mark"], f["base"]) for f in found] == [("SHH", 24, 200)]          # exactly 3 times; 2.995 times is not; under 24 hours nothing is judged
@@ -327,6 +328,33 @@ def test_a_long_video_that_slipped_past_the_gate_is_held_at_the_script_gate_befo
     r = EP.produce((core.now_utc() + dt.timedelta(hours=10)).strftime("%Y-%m-%dT%H:%M:%SZ"), episode_id="EP209901010900")
     assert r.get("held") and "contract:topic_ladder" in r["problems"] and not paid, r               # written, judged, held - no picture and no clip was paid
     e = core.store().rows("Episodes")[-1]; assert e["status"] == "HOLD_QC" and "topic_ladder" in e["notes"]
+
+def test_a_short_whose_job_crashed_is_on_record_and_tried_again_a_day_later(monkeypatch, setting):
+    """Before, a crash left no row: the tick started the job again 50 minutes later, and again - each time paying the writers first."""
+    _quiet(monkeypatch); _bench("What if the Moon left tonight?"); st = core.store()
+    real = SH.make; monkeypatch.setattr(SH, "make", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("the clip model had a bad hour")))
+    r = SH.run(force=True, publish=False, now=NOW); assert r["ok"] is False and "bad hour" in r["why"]
+    row = st.rows("Specials")[-1]; assert row["status"].startswith("FAILED (") and row["kind"] == "short" and SH._failed(row) and not SH._held(row) and not LAD.rows()
+    ok, why = SH.cadence(NOW + dt.timedelta(hours=1)); assert not ok and "held or failed" in why and SH.cadence(NOW + dt.timedelta(hours=25))[0]
+    assert SH.history() == [] and SH._spent_premises() == (set(), set()) and SH.pick_topic()["premise"] == "What if the Moon left tonight?"      # a crash says nothing about the topic: it is neither used up nor counted against it
+    setting("SHORTS_REVIEW_FIRST_N", "1"); monkeypatch.setattr(SH, "make", real)
+    r2 = SH.run(force=True, now=NOW + dt.timedelta(hours=25)); assert r2["ok"] and r2["status"] == "AWAITING_APPROVAL" and r2["premise"] == "What if the Moon left tonight?", r2.get("status")      # the crash was not one of the first Shorts he must see: the first Short that IS made still waits for his Approve
+    setting("SHORTS_WEEKLY_CAP", "3"); _short("SHW", "What if the Sun went out?", 1, now=NOW); LAD.order_followup("SHW", "yt_SHW", 9000, 1000, 24, NOW)
+    assert SH.order_due(NOW + dt.timedelta(hours=26))["video_key"] == "SHW"      # two Shorts were made this week, not three: under a ceiling of three the winner's follow-up is still due
+
+def test_a_short_that_was_made_and_waits_for_its_upload_counts_as_made(monkeypatch, setting):
+    """Before, the upload path's 'HELD (uploads not confirmed open)' read like a refusal at the short gate: a Short paid in full was 'not made' - the
+    cadence started another a day later, the same topic could be made again and the Short was missing from the last ten."""
+    from whatifs import specials as SP, launch as LA
+    _bench("What if the Moon left tonight?", "What if rain fell upward?"); st = core.store()
+    monkeypatch.setattr(LA, "uploads_open", lambda: False); res = SP._publish("no.mp4", "t", "SHU1")
+    assert res["status"].startswith(SH.UPLOAD_HOLD) and "yt_id" not in res, res                    # the status the upload path really writes is the one the Shorts Studio recognises
+    st.append("Specials", [{"ts": core.iso(NOW), "id": "SHU1", "kind": "short", "format": "S1", "status": res["status"], "premise": "What if the Moon left tonight?", "hook": "you_pov", "script": "A line."}])
+    row = st.rows("Specials")[-1]; assert not SH._held(row) and not SH._unmade(row)
+    ok, why = SH.cadence(NOW + dt.timedelta(hours=25)); assert not ok and "48 hours apart" in why and SH.cadence(NOW + dt.timedelta(hours=48))[0]      # it counts as made: the next comes 48 hours after it, not a day after it
+    assert [h["id"] for h in SH.history()] == ["SHU1"] and SH._spent_premises() == ({"what if the moon left tonight?"}, set())
+    assert SH.pick_topic()["premise"] == "What if rain fell upward?"                               # its topic is used: the next Short takes the next one
+    assert SH._held({"status": "HELD (short_upload_x)"}) and SH._held({"status": "HELD (short_plain)"})      # a refusal at the short gate stays one, whatever a check is called
 
 def test_one_short_id_always_draws_the_same_hook(setting):
     """A Short's hook comes from the learning core's sampler. Seeded by the Short's id it is the same on every run (a fault can be reproduced) and still varies from Short to Short."""

@@ -12,7 +12,16 @@ FPS = 30
 
 def _rows(): return [r for r in store().rows("Specials") if r.get("kind") == "short"]
 
-def _held(r): return str(r.get("status") or "").startswith("HELD")
+UPLOAD_HOLD = "HELD (uploads"           # how the upload path marks a Short that was MADE and waits to be posted (`specials._publish`)
+
+def _held(r):
+    """Was this Short refused by the short gate (written, voiced, judged - and NOT made)? A Short that was made and whose upload is on hold is not:
+    it is recognised by the upload path's own status, never by a word that the name of a check could carry."""
+    s = str(r.get("status") or ""); return s.startswith("HELD") and not s.startswith(UPLOAD_HOLD)
+
+def _failed(r): return str(r.get("status") or "").startswith("FAILED")      # its job crashed: nothing was made
+
+def _unmade(r): return _held(r) or _failed(r)
 
 HELD_WAIT_H = 24                        # after a Short the short gate refused, the cadence tries again this many hours later (one paid writing a day at most)
 ORDER_WAIT_H = 6                        # a follow-up order that could not be made (no money, held) is tried again this many hours later
@@ -25,10 +34,10 @@ def gap_h():
 
 def cadence(now=None):
     """(due, why): is a Short of the cadence due? Fewer than SHORTS_PER_WEEK made in the last 7 days, fewer than SHORTS_PER_MONTH this calendar
-    month, the last one at least gap_h() hours old - and after a Short the gate held, HELD_WAIT_H hours (a held Short is not made, so it does not
-    count; follow-ups of a winner are outside the cadence)."""
+    month, the last one at least gap_h() hours old - and after a Short the gate held or whose job crashed, HELD_WAIT_H hours (it was not made, so
+    it does not count - but the writers were paid: at most one such try a day; follow-ups of a winner are outside the cadence)."""
     now = now or now_utc(); per_w, per_m = max(1, S("SHORTS_PER_WEEK", int)), max(1, S("SHORTS_PER_MONTH", int))
-    mine = [(parse_iso(r.get("ts")), _held(r)) for r in _rows() if not _followup(r)]; mine = [(t, h) for t, h in mine if t]
+    mine = [(parse_iso(r.get("ts")), _unmade(r)) for r in _rows() if not _followup(r)]; mine = [(t, h) for t, h in mine if t]
     made = [t for t, h in mine if not h]
     week = sum(1 for t in made if 0 <= (now - t).total_seconds() < 7 * 86400); month = sum(1 for t in made if t.strftime("%Y-%m") == now.strftime("%Y-%m"))
     if week >= per_w: return False, f"{week} of {per_w} Shorts were made in the last 7 days"
@@ -36,7 +45,7 @@ def cadence(now=None):
     if made and (now - max(made)).total_seconds() < gap_h() * 3600: return False, f"the last Short is {(now - max(made)).total_seconds() / 3600:.0f} hours old (they are made {gap_h()} hours apart)"
     held = [t for t, h in mine if h]
     if held and (now - max(held)).total_seconds() < HELD_WAIT_H * 3600 and (not made or max(held) > max(made)):
-        return False, f"the short gate held a Short {(now - max(held)).total_seconds() / 3600:.0f} hours ago (the next try comes {HELD_WAIT_H} hours after it)"
+        return False, f"a Short was held or failed {(now - max(held)).total_seconds() / 3600:.0f} hours ago (the next try comes {HELD_WAIT_H} hours after it)"
     return True, ""
 
 def _order_premise(q):
@@ -49,7 +58,7 @@ def order_due(now=None):
     last 7 days hold fewer than SHORTS_WEEKLY_CAP Shorts of any kind."""
     from whatifs import ladder as LAD
     now = now or now_utc(); made, dropped = _spent_premises()
-    if sum(1 for r in _rows() if not _held(r) and parse_iso(r.get("ts")) and 0 <= (now - parse_iso(r["ts"])).total_seconds() < 7 * 86400) >= S("SHORTS_WEEKLY_CAP", int): return None
+    if sum(1 for r in _rows() if not _unmade(r) and parse_iso(r.get("ts")) and 0 <= (now - parse_iso(r["ts"])).total_seconds() < 7 * 86400) >= S("SHORTS_WEEKLY_CAP", int): return None
     for q in LAD.open_orders():
         plan = str(q.get("plan") or ""); tried = parse_iso(plan.split("last try ", 1)[1][:20]) if "last try " in plan else None
         if tried and (now - tried).total_seconds() < ORDER_WAIT_H * 3600: continue
@@ -83,7 +92,7 @@ def history(n=10):
     """The last `n` Shorts that were MADE in a Short format, newest first: [{id, format, hook, script}] - what the next Short must not be like."""
     out = []
     for r in reversed(_rows()):
-        if r.get("format") not in FMT.SHORTS or _held(r): continue
+        if r.get("format") not in FMT.SHORTS or _unmade(r): continue
         out.append({"id": r.get("id"), "format": r.get("format"), "hook": r.get("hook"), "script": r.get("script")})
         if len(out) >= n: break
     return out
@@ -93,6 +102,7 @@ def _spent_premises():
     held = {}; made = set()
     for r in _rows():
         k = str(r.get("premise", "")).strip().lower()
+        if _failed(r): continue                                              # a crash says nothing about the topic
         if _held(r): held[k] = held.get(k, 0) + 1
         else: made.add(k)
     return made, {k for k, c in held.items() if c > max(0, S("SHORT_HOLD_RETRIES", int))}
@@ -414,7 +424,7 @@ def run(force=False, publish=True, now=None, episode_id=None):
         BR.tag(ep, "short", title=sc["title"], premise=topic["premise"], hook=arch, sec=made["seconds"], lead=fmt, origin=topic.get("origin", "ai"),
                arm=choice.get("p_draws"), holdout=choice.get("holdout"))          # lead = the Short's FORMAT (nobody is on screen): the learning core compares S1, S2, S3
         BR.forecast(ep, "short", hook=arch)
-        reviewed = sum(1 for r in _rows() if not _held(r))
+        reviewed = sum(1 for r in _rows() if not _unmade(r))
         if publish and reviewed < S("SHORTS_REVIEW_FIRST_N", int):
             rec.update(SP._await_review(out, {"title": sc["title"]}, "short", ep, [{"who": "GUIDE", "line": l} for l in FMT.short_lines(sc)]))
         elif publish: rec.update(SP._publish(out, sc["title"], ep, desc=description(sc)))
@@ -426,4 +436,6 @@ def run(force=False, publish=True, now=None, episode_id=None):
         return dict(rec, ok=True, path=out)
     except Exception as e:
         if brk: LAD.order_tried(topic["follow_of"], f"the Short failed ({scrub(e)[:100]})", now)
+        try: store().append("Specials", [dict(rec, status=("FAILED (" + scrub(e)[:90] + ")")[:120])])      # v12 V2c-b: a crashed Short is on record - the cadence waits a day before the next paid try
+        except Exception: pass
         log(f"Short failed (nothing posted): {scrub(e)[:200]}", "WARN", ep); return {"ok": False, "why": scrub(e)[:200]}

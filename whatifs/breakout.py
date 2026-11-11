@@ -150,7 +150,8 @@ def monitor(now=None):
         if kind == "short":                                       # v12 V2c-b: the fast clock of the ladder - judged at BOTH marks, against the same mark
             from whatifs import ladder as LAD
             if not LAD.row(key): continue                             # only a standalone Short has a topic to follow up (never a cut-down reel)
-            hist = [float(r[col]) for r in st.rows("Monitor48") if r.get("kind") == "short" and r.get(col) not in (None, "") and r.get("yt_id") != y]
+            own = {x.get("id") for x in LAD.rows()}                    # ... and it is compared with its own kind only: cut-down reels, pilots and cast reels are other products
+            hist = [float(r[col]) for r in st.rows("Monitor48") if r.get("kind") == "short" and r.get(col) not in (None, "") and r.get("yt_id") != y and r.get("video_key") in own]
             hit, base = short_winner(float(row[col]), hist)
             if hit:
                 found.append({"key": key, "yt_id": y, "views": float(row[col]), "base": base, "kind": kind, "mark": 24 if col == "v24" else 48})
