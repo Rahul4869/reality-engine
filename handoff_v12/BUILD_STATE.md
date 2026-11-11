@@ -85,6 +85,20 @@ ORDER OF BATCHES: live after three. The evidence R20-R38 is not in the Palace ye
 That turn was the DESIGN step for the whole programme (research, designs, decisions, records). Built since: V1a, V1b, V2a and V2c-a (the records are under DONE).
 
 ## NEXT
+**IN PROGRESS (11 Nov 2026, a new session): V2c-b1 - THE LADDER.** V2c-b was SPLIT AT ITS START (rule 6) after the whole reading order and
+the code it touches were read: five parts, three of them inside the protected long pipeline, each needing its proof both ways, the suite,
+the sweep and a GitHub run - more than one session. The two halves, by dependency:
+- **V2c-b1 THE LADDER** (this session): the cadence (3 Shorts a week, 12 a month, levers of D14; `SHORTS_PER_DAY` and its readers retire
+  together; a one-time move); Shorts first (the brain reads every Short's real numbers after 48-72 hours; D10's promote rule picks the long
+  video's topic; a long video without a promoted Short is refused, an owner override is recorded; the Short's clips and pictures are kept);
+  the winner (a Short at `SHORTS_BREAKOUT_X` times the channel's median gets a follow-up within 48 hours - a queue row with a clock, overdue
+  = a memo).
+- **V2c-b2 THE PLATFORMS AND THE OPENING** (next session): one native upload per platform under a D9 run `short_publish` (YouTube Shorts
+  with its thumbnail; Instagram with Trial Reels, the cover, the audio name, the AI flag; Facebook at 90 seconds at most), the Shorts rows of
+  the release sheet read back after upload; the long video's opening made from the kept footage of its Short; the cut-down reels of
+  `whatifs/reels.py` stop being the product.
+Loop steps of V2c-b1 done so far: none (this note is step 0). Resume: read this block + `git log -5`.
+The scope below is the whole of V2c-b as it was written at the end of V2c-a:
 **V2c-b - THE LADDER AND THE PLATFORMS** (`handoff_v12/BREAKOUT_REDESIGN.md` SECTION 11: 11.4 "every topic starts as a Short" and "every platform
 natively", 11.7, the rows "Topic ladder", "Winner" and "Platforms" of 11.9; hypothesis H11). Full seven-step MANDATORY BATCH LOOP. Effort: High.
 V2c was SPLIT AT ITS START (rule 6, 11 Nov 2026): V2c-a THE SHORT, THE PRODUCT is ACCEPTED (first record under DONE). V2c-b is the other half:
