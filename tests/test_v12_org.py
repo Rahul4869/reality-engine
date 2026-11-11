@@ -502,8 +502,8 @@ def _script_runs(ep, skip=()):
 def test_the_gate_needs_every_department_run_complete_with_a_takeaway(setting):
     assert RUN.episode_issues("EP1", "script")["na"].startswith("no department run is recorded")
     RUN.work("D8", "script_gate", "EP1", lambda b: None, measure=lambda o: {"checks": 1})
-    r = RUN.episode_issues("EP1", "script"); assert not r["na"] and len(r["problems"]) == 5 and "D4 'write' never ran under the department contract for EP1" in r["problems"][0]
-    _script_runs("EP1"); r = RUN.episode_issues("EP1", "script"); assert r["problems"] == [] and r["runs"] == 5          # v12 V1: + D13 seat
+    r = RUN.episode_issues("EP1", "script"); assert not r["na"] and len(r["problems"]) == 6 and "D4 'write' never ran under the department contract for EP1" in r["problems"][0]
+    _script_runs("EP1"); r = RUN.episode_issues("EP1", "script"); assert r["problems"] == [] and r["runs"] == 6          # v12 V1: + D13 seat; V1b: + D13 probe
     st = core.store(); s5 = next(s for s in sessions() if s["dept"] == "D5")
     st.update("Takeaways", "session_id", s5["id"], {"next_time": "n/a"}); assert "D5 'package' (" + s5["id"] + ") wrote no valid takeaway" in RUN.episode_issues("EP1", "script")["problems"]
     st.update("Takeaways", "session_id", s5["id"], {"next_time": "Compare the next package run of D5 with this baseline: n 3."}); assert RUN.episode_issues("EP1", "script")["problems"] == []
@@ -527,7 +527,7 @@ def test_the_contract_checks_pass_fail_and_step_aside(setting):
         return rows[fid]
     assert CON._org_gate({"ep": "EPZ"}, "script")[0] == CON.NA                                         # checked outside the pipeline: nothing to judge
     bad = led("EP1", "dept_contract", "script"); assert bad["status"] == CON.FAIL and "never ran under the department contract" in bad["evidence"]
-    _script_runs("EP1"); ok = led("EP1", "dept_contract", "script"); assert ok["status"] == CON.PASS and "5 department run(s) complete" in ok["evidence"]
+    _script_runs("EP1"); ok = led("EP1", "dept_contract", "script"); assert ok["status"] == CON.PASS and "6 department run(s) complete" in ok["evidence"]
     assert led("EP1", "takeaways_written", "final")["status"] == CON.FAIL
     for dept, trig in (("D6", "assets"), ("D6", "render")): RUN.work(dept, trig, "EP1", lambda b: 1, measure=lambda o: {"n": 3})
     assert led("EP1", "takeaways_written", "final")["status"] == CON.PASS

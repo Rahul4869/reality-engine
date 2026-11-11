@@ -6,11 +6,11 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 ## 1. Facts (read from the code)
 - Channel: "Reality on Trial" (brand Reality Engine). Concept: `docs/CURRENT/CONCEPT.md`. Owner requirements: `docs/CURRENT/OWNER_REQUIREMENTS_LEDGER.md`.
 - Money: hard cap Rs 5,000 a month, everything included (`BUDGET_CEILING_INR`); extras pause at 90% of the cap; breakout fund carries over at most Rs 1,000. One month can be overridden in `MONTH_CAP_OVERRIDES`.
-- Quality: 50 HARD contract checks (31 at the script stage, 19 on the final video). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway). No upload below Breakout Score 80.
+- Quality: 52 HARD contract checks (33 at the script stage, 19 on the final video). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway). No upload below Breakout Score 80.
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `fal-ai/kling-video/o3/standard/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 1.5 standalone Shorts a day; spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 119 code modules, 722 settings, 82 Sheet tabs, 24 GitHub workflows.
+- Size: 120 code modules, 728 settings, 82 Sheet tabs, 24 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -87,6 +87,8 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | viewer_promise | script | the video opens on a made picture and the thumbnail's promise is on screen within PROMISE_BY_SEC seconds (the viewer's seat) |
 | viewer_breath | script | the voice breathes: a real pause at least every BREATH_EVERY_S seconds (the viewer's seat) |
 | viewer_numbers | script | few numbers: a budget for the numbers a viewer hears and for full-screen number graphics, none in the opening (the viewer's seat) |
+| viewer_plain | script | everyday words: a budget for the expert words a layman would not know - in the narration, in the first 30 s, in one sentence (the layman test) |
+| viewer_probe | script | the promise line-up: from the first 30 s alone two first-time readers pick this video's title, and give none to a planted opening (the layman test) |
 | palace_injected | script | the Knowledge Palace playbook was inside the model prompt of every creative run's key call (the writer, the packager, the director), and the exact text is stored |
 | palace_cited | script | every creative run cited Palace knowledge it really applied: each counted citation has a quote that code found in the final output |
 | canon_in_brief | script | the writer was given the show's canon (cast and the newest aired case), called back to that case in a line of the final script, and wrote this episode's case record |
@@ -449,6 +451,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | whatifs/org/canon.py | World canon: the show's living bible as Palace items - the cast mirrored from the character bible, a case record written by code after every D4 write and accepted only when the upload is confirmed, the continuity debt the next script must pay, and the check canon_in_brief. |
 | whatifs/org/cite.py | Creative citations: the rule the creative model calls receive, quote-anchored verification of every Palace item a model says it applied, creative memos with the same-idea guard, and the episode checks palace_injected / palace_cited. |
 | whatifs/org/execute.py | Execution Engine: turns a ticket into a typed change, writes it down before and after, verifies it with evidence another component wrote later, and rolls it back when that fails. |
+| whatifs/org/layman.py | Layman test (D13): the expert words a first-time viewer would not know are counted by code, and the promise line-up asks two cheap readers whether the first 30 seconds say what the video is about. |
 | whatifs/org/levers.py | Lever registry: every Settings cell a department may change by ticket - type, range, largest step, the direction that needs the owner, the checks that judge it - and the scope of an automatic merge. |
 | whatifs/org/memos.py | Memos: the organisation's nervous system - validated on write, read only by their audience, moved only with proof, escalated by the SLA watchdog when a clock runs out. |
 | whatifs/org/palace.py | Knowledge Palace: the one repository every department reads and writes - guarded items, life cycle, versions and bounded department playbooks. |
@@ -482,8 +485,8 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Every wired department run loads its playbook (section 11); the creative runs (D4 write and draft, D5 package, D6 plan) put it INTO their model
   prompts and cite what they applied (v12 B6a). Not yet wired (later batches): the Council, the Librarian's merges, outcome scores.
 
-**Founding knowledge** (137 items in `whatifs/org/seed/`; 0 invalid): breakout.json 15, build.json 62, feel.json 15, owner.json 30, platform.json 15.
-By kind: audience_insight 4, failure_lesson 2, owner_preference 26, plan 2, policy_rule 11, strategy 22, takeaway 9, technique 47, tool_fact 14.
+**Founding knowledge** (139 items in `whatifs/org/seed/`; 0 invalid): breakout.json 15, build.json 64, feel.json 15, owner.json 30, platform.json 15.
+By kind: audience_insight 4, failure_lesson 2, owner_preference 26, plan 2, policy_rule 11, strategy 22, takeaway 9, technique 49, tool_fact 14.
 
 **Life cycle** (`palace.MOVES`; a move that is not listed is illegal for everyone)
 
@@ -588,11 +591,11 @@ By kind: audience_insight 4, failure_lesson 2, owner_preference 26, plan 2, poli
 | D10 | Growth & Learning | daily | daily (whatifs/cli.py) | brief | - | BRAIN_ON, BRAIN_HOLDOUT |
 | D11 | Finance | daily | pending (B9) | brief | - | BUDGET_GUARD_PCT, BREAKOUT_FUND_CAP_INR, AUTO_FIX_PAID_INR |
 | D12 | Operations | tick | operate (whatifs/org/execute.py) | brief | - | PREFLIGHT_ON |
-| D13 | Audience | episode | seat (whatifs/episode.py) | brief | - | NUMBERS_PER_MIN_MAX, GRAPHICS_MAX_LONG, GRAPHICS_FREE_SEC, BREATH_EVERY_S |
+| D13 | Audience | episode | seat (whatifs/episode.py), probe (whatifs/episode.py) | brief | - | NUMBERS_PER_MIN_MAX, GRAPHICS_MAX_LONG, GRAPHICS_FREE_SEC, BREATH_EVERY_S, PLAIN_HARD_PER_MIN_MAX, PLAIN_OPENING_HARD_MAX, PLAIN_HARD_PER_SENTENCE_MAX |
 | C | The Council | weekly | pending (B6) | brief | 150 | ORG_SLA_HOURS |
 | L | The Librarian | weekly | pending (B8) | brief | 40 | PALACE_PLAYBOOK_TOKENS, PALACE_PLAYBOOK_TOKENS_BY_DEPT, PALACE_LIMITS_SHARE, PALACE_REVIEW_DAYS, PALACE_KIND_CAPS |
 
-Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, D6 plan, D13 seat; final: D4 write, D7 voice, D5 package, D6 plan, D13 seat, D8 script_gate, D6 assets, D6 render.
+Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, D6 plan, D13 probe, D13 seat; final: D4 write, D7 voice, D5 package, D6 plan, D13 probe, D13 seat, D8 script_gate, D6 assets, D6 render.
 
 **Memo types** (`whatifs/org/schemas.py` TYPES; clocks in hours at urgency P1)
 
@@ -610,7 +613,7 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | build_request | D12 | D12 | ask | 24 / 72 | merged_verified, owner_answer | a code change that no lever can make: the spec, the files, the tests to add and the acceptance |
 | takeaway | any | L | record | 0 / 0 | - | one atomic learning from one department run (kept in the Takeaways tab, proposed to the Palace when it is new) |
 
-**Who owns each contract check** (a failed check becomes a problem memo to that department): D1: breakout_bar; D2: research, research_cadence; D4: audience_asks, canon_in_brief, cold_open, emotion_beat, end_tease, exhibits, grimm_prototype, hook_lab, idea_evidence, joke_density, no_retired, originality, owners_cut, palace_cited, palace_injected, retention, send_and_awe, time_ladder, verdict_line, verdict_style; D5: chapters, short_covers, thumbnails, titles; D6: aliveness, animation, impact_map, living_characters, no_frozen_frames, promise_paid, real_motion, slop_guard, visual_change; D7: designed_voices, music_bed; D8: dept_contract, self_review, takeaways_written; D9: shorts; D10: brain_playbook; D12: docs_current, lever_verified; D13: viewer_breath, viewer_numbers, viewer_promise; C: decisions_executed; L: palace_health.
+**Who owns each contract check** (a failed check becomes a problem memo to that department): D1: breakout_bar; D2: research, research_cadence; D4: audience_asks, canon_in_brief, cold_open, emotion_beat, end_tease, exhibits, grimm_prototype, hook_lab, idea_evidence, joke_density, no_retired, originality, owners_cut, palace_cited, palace_injected, retention, send_and_awe, time_ladder, verdict_line, verdict_style; D5: chapters, short_covers, thumbnails, titles; D6: aliveness, animation, impact_map, living_characters, no_frozen_frames, promise_paid, real_motion, slop_guard, visual_change; D7: designed_voices, music_bed; D8: dept_contract, self_review, takeaways_written; D9: shorts; D10: brain_playbook; D12: docs_current, lever_verified; D13: viewer_breath, viewer_numbers, viewer_plain, viewer_probe, viewer_promise; C: decisions_executed; L: palace_health.
 
 ## 12. The Execution Engine: from a decision to a change that runs (`whatifs/org/levers.py`, `execute.py`)
 - A ticket is ONE change: lever class, target, value. The engine compiles it into a typed operation with a registered way to verify and to undo it,
@@ -688,6 +691,9 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | GRAPHICS_MAX_LONG | D13 | int | 0 to 8 | 1 | up: it weakens a quality gate | viewer_numbers |
 | GRAPHICS_FREE_SEC | D13 | int | 0 to 180 | 30 | down: it weakens a quality gate | viewer_numbers |
 | BREATH_EVERY_S | D13 | int | 15 to 60 | 10 | up: it weakens a quality gate | viewer_breath |
+| PLAIN_HARD_PER_MIN_MAX | D13 | float | 1 to 5 | 1 | up: it weakens a quality gate | viewer_plain |
+| PLAIN_OPENING_HARD_MAX | D13 | int | 0 to 3 | 1 | up: it weakens a quality gate | viewer_plain |
+| PLAIN_HARD_PER_SENTENCE_MAX | D13 | int | 1 to 4 | 1 | up: it weakens a quality gate | viewer_plain |
 | ORG_SLA_HOURS | C | json | 0.25 to 720 | - | always: it changes how fast the organisation must act | the next complete run |
 | PALACE_PLAYBOOK_TOKENS | L | int | 200 to 6000 | 600 | - | palace_health |
 | PALACE_PLAYBOOK_TOKENS_BY_DEPT | L | json | 200 to 6000 | - | - | palace_health |

@@ -142,7 +142,7 @@ def test_the_real_production_runs_the_seat_before_pictures_and_holds_a_number_fl
     assert led["viewer_promise"][0] == "PASS" and led["viewer_numbers"][0] == "PASS" and led["viewer_breath"][0] == "PASS", {k: led[k] for k in led if k.startswith("viewer")}
     assert led["dept_contract"][0] == "PASS" and led["promise_paid"][0] in ("PASS", "NA")
     seat = [s for s in st.rows("Sessions") if s["episode_id"] == ep and s["dept"] == "D13"]
-    assert [s["status"] for s in seat] == ["ok"] and RUN.verify(seat[0]) == [] and [t for t in st.rows("Takeaways") if t["episode_id"] == ep and t["dept"] == "D13"]
+    assert sorted((s["trigger"], s["status"]) for s in seat) == [("probe", "ok"), ("seat", "ok")] and all(RUN.verify(s) == [] for s in seat) and [t for t in st.rows("Takeaways") if t["episode_id"] == ep and t["dept"] == "D13"]
     monkeypatch.setattr(AUD, "count_numbers", lambda text: 999)                        # every line a statistic, and the one rewrite does not cure it
     r2 = EP.produce(slot(34), episode_id="EP209901020900"); assert r2.get("held") and "contract:viewer_numbers" in r2["problems"], r2
     assert not any(s["dept"] == "D9" and s["episode_id"] == r2["episode"] for s in st.rows("Sessions"))        # held before any picture was paid: nothing made, nothing uploaded
