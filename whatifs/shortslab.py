@@ -46,24 +46,6 @@ def link_pack(now=None, views=None):
             tier="week", default="Shorts keep the description link and the comment", expires_h=24 * 6, dedupe_key=f"linkpack|{now:%G-W%V}")
     return [s[0] for s in winners]
 
-def breakouts(now=None, views=None):
-    """'Act now' card for a Short that is taking off (once per Short)."""
-    now = now or now_utc(); shorts = [s for s in _shorts(2, now)]
-    if len(shorts) < 1: return []
-    v = views if views is not None else views_many([s[0] for s in shorts])
-    rates = {s[0]: v.get(s[0], 0) / max(1.0, (now - s[1]).total_seconds() / 3600) for s in shorts if s[0] in v}
-    if len(rates) < 2: return []
-    med = statistics.median(rates.values()); out = []
-    from whatifs import notify as NT
-    for s in shorts:
-        r = rates.get(s[0], 0)
-        if med > 0 and r > S("SHORTS_BREAKOUT_X", float) * med:
-            NT.send("breakout", f"A Short is taking off ({v[s[0]]} views, {r:.0f}/hour). Link it to its full episode now: "
-                    f"<a href='https://studio.youtube.com/video/{s[0]}/edit'>open it in Studio</a> → Related video.", [("Done", "LINKED")],
-                    tier="now", default="it keeps the description link", expires_h=48, dedupe_key=f"breakout|{s[0]}")
-            out.append(s[0])
-    return out
-
 def weekly_count(now=None):
     return len(_shorts(7, now))
 

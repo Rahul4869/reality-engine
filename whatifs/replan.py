@@ -16,20 +16,19 @@ def days_left(now=None):
     import calendar
     now = now or now_utc(); return calendar.monthrange(now.year, now.month)[1] - now.day + 1
 
+def short_inr():
+    """What one more Short really costs: the Shorts Studio's own estimate, weighted by the shares of the Short formats (every second is a paid clip)."""
+    from whatifs import shorts2 as SH2, formats as FMT
+    sh = FMT.short_shares(); tot = sum(sh.values()) or 1
+    return sum(SH2.est_inr(f) * w for f, w in sh.items()) / tot
+
 def proposals(now=None):
+    """What truly free money could buy: ONE more Short a week for the rest of the month (more topics tested with real viewers), up to
+    REPLAN_MAX_SHORTS_PER_WEEK and never past SHORTS_PER_MONTH's own room. Nothing changes before the owner's tap."""
     now = now or now_utc(); free = free_inr(now); d = days_left(now); out = []
-    per_short = S("REPLAN_SHORT_INR", float)
-    cost2 = 0.5 * d * per_short
-    if S("SHORTS_PER_DAY", float) < S("REPLAN_MAX_SHORTS_PER_DAY", float) and free >= cost2:
-        out.append({"rung": 2, "key": "SHORTS_PER_DAY", "to": str(min(S("REPLAN_MAX_SHORTS_PER_DAY", float), S("SHORTS_PER_DAY", float) + 0.5)),
-                    "cost": round(cost2), "why": "more hook-style tests per week (the learning core gets data faster)"})
-        free -= cost2
-    every = S("SHORTS_KLING_EVERY", int); kling = S("PRICE_KLING_USD", float) * (S("USD_INR", float) or 92.0)
-    if every > 1:
-        shorts_left = d * S("SHORTS_PER_DAY", float)
-        cost3 = (shorts_left / (every - 1) - shorts_left / every) * kling
-        if free >= cost3:
-            out.append({"rung": 3, "key": "SHORTS_KLING_EVERY", "to": str(every - 1), "cost": round(cost3), "why": "more Shorts open on a new animated shot"})
+    cur = S("SHORTS_PER_WEEK", int); cost2 = d / 7.0 * short_inr()
+    if cur < S("REPLAN_MAX_SHORTS_PER_WEEK", int) and d >= 7 and free >= cost2:
+        out.append({"rung": 2, "key": "SHORTS_PER_WEEK", "to": str(cur + 1), "cost": round(cost2), "why": "one more Short a week: one more topic a week is tested with real viewers"})
     return out
 
 def weekly(now=None):

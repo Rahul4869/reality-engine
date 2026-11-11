@@ -9,7 +9,7 @@ OUT = os.path.join(ROOT, "docs", "CURRENT", "SYSTEM.md")
 # The settings a build or setup chat must know (group -> keys). Value and note are read from core.DEFAULTS, never typed here.
 KEY_SETTINGS = [
     ("Money", ["BUDGET_CEILING_INR", "BUDGET_FLOOR_INR", "MONTH_CAP_OVERRIDES", "BUDGET_GUARD_PCT", "BREAKOUT_FUND_CAP_INR", "BUDGET_MODE", "STANDARD_MAX_LONG_PER_MONTH"]),
-    ("Schedule and formats", ["PUBLISH_DAYS", "SHORTS_TRACK_ON", "SHORTS_PER_DAY", "CASEFILES_ON", "DEEP_TRIAL_ON", "PREPROD_ON", "PAUSED"]),
+    ("Schedule and formats", ["PUBLISH_DAYS", "SHORTS_TRACK_ON", "SHORTS_PER_WEEK", "SHORTS_PER_MONTH", "LADDER_ON", "LADDER_WINDOW_DAYS", "SHORTS_BREAKOUT_X", "FOLLOWUP_WITHIN_H", "CASEFILES_ON", "DEEP_TRIAL_ON", "PREPROD_ON", "PAUSED"]),
     ("Writers' room and show", ["ROOM_MODE", "ROOM_V2_DRAFTS", "SHOW_MODE", "CONSTITUTION", "BRAIN_ON", "BRAIN_HOLDOUT"]),
     ("Pictures, motion, voice", ["ART_STYLE", "FAL_HERO_MODEL", "FAL_STILL_MODEL", "ANIM_SHOTS", "PARTICLES_ON", "LIVING_CHARACTERS_ON", "LIFE_LAYER_ON", "TTS_ENGINE"]),
     ("Quality gates", ["CONTRACT_ON", "CONTRACT_OFF", "BREAKOUT_HARD_BAR", "REHOOK_MAX_GAP_SEC", "JOKE_EVERY_SEC_LONG", "VISUAL_CHANGE_MAX_S", "PROMISE_BY_SEC", "IDEA_MIN_MULTIPLE"]),
@@ -243,7 +243,8 @@ def render():
     A(f"- Writers' room: mode `{val('ROOM_MODE')}` ({val('ROOM_V2_DRAFTS')} drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.")
     A(f"- Animated scenes: {val('ANIM_SHOTS')} per long video on `{val('FAL_HERO_MODEL')}`; stills on `{val('FAL_STILL_MODEL')}`; look `{val('ART_STYLE')}`; voice engine `{val('TTS_ENGINE')}`.")
     A(f"- Cadence: at most {val('STANDARD_MAX_LONG_PER_MONTH')} long videos a month, on {val('PUBLISH_DAYS')} (US Eastern); "
-      f"{val('SHORTS_PER_DAY')} standalone Shorts a day; spin-offs: the Case Files countdown and the monthly Deep Trial.")
+      f"{val('SHORTS_PER_WEEK')} standalone Shorts a week, {val('SHORTS_PER_MONTH')} a month at most - every topic starts as a Short and the promote rule picks the long video's topic "
+      f"(`whatifs/ladder.py`); spin-offs: the Case Files countdown and the monthly Deep Trial.")
     A(f"- Size: {len(mods)} code modules, {len(D)} settings, {len(core.TABS)} Sheet tabs, {len(jobs)} GitHub workflows.")
     A("")
     A("## 2. How it runs")

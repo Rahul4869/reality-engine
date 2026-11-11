@@ -44,7 +44,10 @@ LEVERS = {
     "SOUND_DESIGN_ON": _b("off", GATE, ("music_bed",)), "TTS_ENGINE": _e(("gemini", "kokoro"), (), "", ("designed_voices",)),
     "CONTRACT_OFF": {"kind": "csv", "owner": "always", "why": "it switches a promised check off", "checks": ()},
     "BREAKOUT_HARD_BAR": _n("int", 50, 95, 5, "down", GATE, ("breakout_bar",)), "CRITIQUE_MIN": _n("float", 4, 9, 1, "down", GATE, ("self_review",)),
-    "SHORTS_PER_DAY": _n("float", 0.5, 3, 0.5, "up", COST), "REEL1_DELAY_MIN": _n("int", 0, 120, 30), "REEL2_DELAY_MIN": _n("int", 60, 1440, 180), "NEXT_LINK_ON": _b(),
+    "SHORTS_PER_WEEK": _n("int", 1, 5, 1, "up", COST), "SHORTS_PER_MONTH": _n("int", 4, 20, 2, "up", COST),                       # v12 V2c-b: the cadence in weeks (the Shorts Studio)
+    "SHORTS_BREAKOUT_X": _n("float", 2, 10, 1, "down", COST), "FOLLOWUP_WITHIN_H": _n("int", 24, 96, 24),                          # the double-down line and its clock
+    "LADDER_WINDOW_DAYS": _n("int", 14, 60, 7, "", "", ("topic_ladder",)), "LADDER_MIN_ENGAGED": _n("int", 0, 500, 50, "", "", ("topic_ladder",)),   # v12 V2c-b: the promote rule (Growth and Learning)
+    "REEL1_DELAY_MIN": _n("int", 0, 120, 30), "REEL2_DELAY_MIN": _n("int", 60, 1440, 180), "NEXT_LINK_ON": _b(),
     "BRAIN_ON": _b("off", "the channel stops learning from its own videos"), "BRAIN_HOLDOUT": _n("float", 0.05, 0.5, 0.1),
     "BUDGET_GUARD_PCT": _n("int", 50, 100, 10, "up", COST), "BREAKOUT_FUND_CAP_INR": _n("int", 0, 3000, 500, "up", COST), "AUTO_FIX_PAID_INR": _n("int", 0, 100, 20, "up", COST),
     "PREFLIGHT_ON": _b("off", "paid steps would start without the free health checks"),

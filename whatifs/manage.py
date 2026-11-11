@@ -209,6 +209,9 @@ def tick():
         try:                                                    # v11 (K158): the 48-hour breakout monitor (1 API unit per 50 videos)
             from whatifs import breakout as BRKM; BRKM.monitor()
         except Exception as x: log(f"breakout monitor skipped: {scrub(x)}", "WARN")
+        try:                                                    # v12 V2c-b: a winner's follow-up that is past its clock becomes a memo for the Shorts Studio
+            from whatifs import ladder as LADW; LADW.watch()
+        except Exception as x: log(f"follow-up watch skipped: {scrub(x)}", "WARN")
         try:                                                    # v11 (K164/K165): Monday money re-plan, weekly tool scout, month restore
             from whatifs import replan as RPL, scout as SCT; RPL.month_restore(); RPL.weekly(); SCT.weekly()
         except Exception as x: log(f"re-plan / tool scout skipped: {scrub(x)}", "WARN")
@@ -233,10 +236,6 @@ def tick():
         from whatifs import occasions as OC
         if now_utc().hour == 9 and now_utc().minute < 30: OC.heads_up()
     except Exception as x: log(f"occasion heads-up skipped: {scrub(x)}", "WARN")
-    try:                                                        # v10 (G2): a Short taking off = one 'act now' link card (one batched views call)
-        from whatifs import shortslab as SL
-        if now_utc().minute < 30: SL.breakouts()                   # hourly is enough
-    except Exception as x: log(f"breakout check skipped: {scrub(x)}", "WARN")
     try:                                                        # v10 G4: one video's localizations per tick (never near a release)
         from whatifs import hours as HR, orchestra as OR
         if OR.heavy_allowed(what="localizations"): HR.tick()
@@ -314,7 +313,13 @@ def _produce_slot(eps):
         if s in taken: continue
         hours = (slot - now_utc()).total_seconds() / 3600
         tries = sum(_attempts(e) for e in eps if e.get("slot_et") == s and e.get("status") == "FAILED")      # v8.2: a resumed attempt reuses its row, so attempts are counted, not rows
-        if hours <= S("PRODUCE_AHEAD_HOURS", float) and tries < 2: return s
+        if hours <= S("PRODUCE_AHEAD_HOURS", float) and tries < 2:
+            from whatifs import ladder as LAD                   # v12 V2c-b: every topic starts as a Short - no promoted Short and no override = no long video (and no money)
+            if not any(LAD.used_by(e.get("episode_id")) for e in eps if e.get("slot_et") == s and e.get("status") == "FAILED"):      # a retry keeps the topic its first attempt took
+                ok_l, why_l, _lrow = LAD.gate()
+                if not ok_l:
+                    log(f"ladder gate: no long video is started for {s} - {why_l}", "WARN"); LAD.refuse(s, why_l); return None
+            return s
         if tries >= 2: continue
         break
     return None
@@ -585,6 +590,8 @@ def learn():
     except Exception as x: log(f"v12 V1 flips skipped: {scrub(x)}", "WARN")
     try: v12v2c_upgrade(st)                                      # v12 V2c: a Short shows no character, so it no longer waits for the character masters
     except Exception as x: log(f"v12 V2c flips skipped: {scrub(x)}", "WARN")
+    try: v12v2cb_upgrade(st)                                     # v12 V2c-b: the Shorts cadence is set in weeks now (3 a week, 12 a month); the old cells are marked
+    except Exception as x: log(f"v12 V2c-b move skipped: {scrub(x)}", "WARN")
     try:
         from whatifs import craft as CRF; CRF.seed_techniques()       # v9.3.2: the owner's pre-judged technique cards, filed once
     except Exception as x: log(f"technique seeding skipped: {scrub(x)}", "WARN")
@@ -824,6 +831,30 @@ def v12v2c_upgrade(st):
         if k in done: set_setting(k, new)
     set_setting("V12V2C_FLIPS_DONE", iso() + " " + (",".join(done) or "none"))
     if done: log("v12 V2c: a Short no longer waits for the character masters (it shows no character): " + ", ".join(done))
+    return done
+
+# v12 V2c-b (the ladder): the Shorts cadence is set in weeks - 3 Shorts a week, 12 a month (SHORTS_PER_WEEK, SHORTS_PER_MONTH). The three cells
+# that carried the plan by the day are read by no code any more: on a live Sheet their rows are marked once, so nobody types into a dead cell, and a
+# re-planner proposal that still names one is dropped.
+V12V2CB_RETIRED = (("SHORTS_PER_DAY", "SHORTS_PER_WEEK and SHORTS_PER_MONTH"), ("SHORTS_KLING_EVERY", "nothing: every second of a Short is animated"),
+                   ("REPLAN_MAX_SHORTS_PER_DAY", "REPLAN_MAX_SHORTS_PER_WEEK"))
+
+def v12v2cb_upgrade(st):
+    """ONE time: the rows of the three retired cadence cells are marked RETIRED in their notes (the value is left as the owner last saw it) and the
+    re-planner's pending proposals and remembered originals lose every entry that names one. Never runs twice."""
+    if str(S("V12V2CB_FLIPS_DONE") or "").strip(): return []
+    names = {k for k, _ in V12V2CB_RETIRED}; done = []
+    have = {r.get("key"): r for r in st.rows("Settings")}
+    for k, by in V12V2CB_RETIRED:
+        if k in have and not str(have[k].get("note") or "").startswith("RETIRED"):
+            st.update("Settings", "key", k, {"note": f"RETIRED (v12 V2c-b): no code reads this cell any more; replaced by {by}"}); done.append(k)
+    try:
+        pend = [p for p in json.loads(S("REPLAN_PENDING") or "[]") if p.get("key") not in names]; orig = {k: v for k, v in json.loads(S("REPLAN_ORIGINALS") or "{}").items() if k not in names}
+        if json.dumps(pend) != json.dumps(json.loads(S("REPLAN_PENDING") or "[]")): set_setting("REPLAN_PENDING", json.dumps(pend)); done.append("REPLAN_PENDING")
+        if json.dumps(orig) != json.dumps(json.loads(S("REPLAN_ORIGINALS") or "{}")): set_setting("REPLAN_ORIGINALS", json.dumps(orig)); done.append("REPLAN_ORIGINALS")
+    except Exception as x: log(f"v12 V2c-b: the re-planner's state was not cleaned ({scrub(x)[:80]})", "WARN")
+    set_setting("V12V2CB_FLIPS_DONE", iso() + " " + (",".join(done) or "none"))
+    if done: log("v12 V2c-b: the Shorts cadence is set in weeks now (3 a week, 12 a month); marked on the Sheet: " + ", ".join(done))
     return done
 
 V12V1_FLIPS = (("RUNTIME_MAX_SEC", "600", "540"), ("PROMISE_BY_SEC", "30", "5"))
@@ -1259,6 +1290,8 @@ def setup():
     except Exception as x: log(f"v12 V1 flips skipped: {scrub(x)}", "WARN")
     try: v12v2c_upgrade(st)                                      # v12 V2c: a Short shows no character, so it no longer waits for the character masters
     except Exception as x: log(f"v12 V2c flips skipped: {scrub(x)}", "WARN")
+    try: v12v2cb_upgrade(st)                                     # v12 V2c-b: the Shorts cadence is set in weeks now (3 a week, 12 a month); the old cells are marked
+    except Exception as x: log(f"v12 V2c-b move skipped: {scrub(x)}", "WARN")
     try:                                                         # v12: the founding knowledge is in the Palace from the first run
         from whatifs.org import palace as PAL, runner as ORGR; PAL.maintain(st); ORGR.install(st)
     except Exception as x: log(f"palace seed skipped: {scrub(x)}", "WARN")

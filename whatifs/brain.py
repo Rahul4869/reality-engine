@@ -203,27 +203,71 @@ def _short_ids():
         for k in range(1, 5):
             y = e.get(f"reel{k}_yt")
             if y: out.append((f"{e.get('episode_id')}#r{k}", y, e.get("slot_et"), e.get("title", ""), e.get("premise", "")))
+    try:
+        from whatifs import ladder as LAD; went = LAD.posted_at()      # v12 V2c-b: a Short the owner approved first went public later than it was made
+    except Exception: went = {}
     for s in _rows("Specials"):
-        if s.get("yt_id"): out.append((s.get("id"), s.get("yt_id"), s.get("ts"), s.get("title", ""), s.get("format", "")))
+        if s.get("yt_id"): out.append((s.get("id"), s.get("yt_id"), went.get(s.get("id")) or s.get("ts"), s.get("title", ""), s.get("format", "")))
     for p in _rows("Pilots"):
         if p.get("yt_id"): out.append((p.get("id"), p.get("yt_id"), p.get("ts"), p.get("hook", ""), p.get("premise", "")))
     return out
 
-def _short_metrics(yt_id, since):
+LATENCY_DAYS = 3        # YouTube Analytics is 48 to 72 hours late (its Data Model page, Sep 2026): a day that ended this long ago is processed, even when it shows no row
+PACIFIC_H = 8           # the API's days are Pacific days: a Short's first day starts up to this many hours before its UTC date
+
+def first_days(days, n):
+    """The Short's numbers over its first `n` PROCESSED days (the same stretch of life for every Short): {'days','views','engaged','watched','shares','subs'}.
+    `days` = [{'i': day index from the day it went public, 'views', 'engaged', 'avp', 'shares', 'subs'}]; watched = the share watched, weighted by views."""
+    rows = [d for d in days or [] if 0 <= int(d.get("i", 0)) < n]; v = sum(_f(d.get("views")) for d in rows)
+    return {"days": n, "views": int(v), "engaged": int(sum(_f(d.get("engaged")) for d in rows)),
+            "watched": round(sum(_f(d.get("avp")) * _f(d.get("views")) for d in rows) / v, 1) if v > 0 else 0.0,
+            "shares": int(sum(_f(d.get("shares")) for d in rows)), "subs": int(sum(_f(d.get("subs")) for d in rows))}
+
+def _short_days(yt_id, t, now):
+    """ONE call: the Short's numbers per processed day since it went public, oldest first ([] = nothing processed yet, None = no answer)."""
     from whatifs.core import FAKE
+    day0 = (t - dt.timedelta(hours=PACIFIC_H)).date()
     if FAKE:
         import random
-        r = random.Random(yt_id); v = r.randint(40, 4000); return {"views": v, "engaged_views": int(v * r.uniform(0.35, 0.85)), "avg_view_pct": r.uniform(55, 110)}
+        r = random.Random(yt_id); v = r.randint(40, 4000); eng = int(v * r.uniform(0.35, 0.85)); avp = r.uniform(55, 110)
+        sh = int(eng * r.uniform(0.0, 0.02)); sb = int(eng * r.uniform(0.0, 0.01))
+        done = max(0, min(28, int((now - t).total_seconds() // 86400) - (LATENCY_DAYS - 1)))          # the offline YouTube is as late as the real one
+        w = [0.5, 0.25, 0.12] + [0.13 / 25] * 25
+        return [{"i": i, "views": v * w[i], "engaged": eng * w[i], "avp": avp, "shares": sh * w[i], "subs": sb * w[i]} for i in range(done)]
     import requests
     from whatifs.publish import gheaders
-    p = {"ids": "channel==MINE", "startDate": since[:10], "endDate": now_utc().strftime("%Y-%m-%d"), "filters": f"video=={yt_id}",
-         "metrics": "views,engagedViews,averageViewPercentage"}
+    p = {"ids": "channel==MINE", "startDate": day0.strftime("%Y-%m-%d"), "endDate": now.strftime("%Y-%m-%d"), "filters": f"video=={yt_id}", "dimensions": "day", "sort": "day",
+         "metrics": "views,engagedViews,averageViewPercentage,shares,subscribersGained"}
     a = requests.get("https://youtubeanalytics.googleapis.com/v2/reports", headers=gheaders(), params=p, timeout=30).json()
-    if a.get("error") or not a.get("rows"): return None
-    r = a["rows"][0]; return {"views": r[0], "engaged_views": r[1], "avg_view_pct": r[2]}
+    if a.get("error"): return None
+    out = []
+    for r in a.get("rows") or []:
+        try: i = (dt.date.fromisoformat(str(r[0])[:10]) - day0).days
+        except ValueError: continue
+        out.append({"i": i, "views": r[1], "engaged": r[2], "avp": r[3], "shares": r[4], "subs": r[5]})
+    return out
+
+def _short_metrics(yt_id, t, now=None):
+    """A Short's numbers as YouTube has PROCESSED them: the totals to date, how many days of its life the reading covers ('days') and the numbers of
+    its first LADDER_READ_DAYS days ('first' - what the promote rule compares). None = no answer or nothing processed yet."""
+    now = now or now_utc(); days = _short_days(yt_id, t, now)
+    if not days: return None
+    v = sum(_f(d["views"]) for d in days); need = max(1, S("LADDER_READ_DAYS", int))
+    covered = max(max(int(d["i"]) for d in days) + 1, int((now - t).total_seconds() // 86400) - LATENCY_DAYS)
+    return {"views": int(v), "engaged_views": int(sum(_f(d["engaged"]) for d in days)),
+            "avg_view_pct": round(sum(_f(d["avp"]) * _f(d["views"]) for d in days) / v, 2) if v > 0 else 0.0,
+            "shares": int(sum(_f(d["shares"]) for d in days)), "subs": int(sum(_f(d["subs"]) for d in days)), "days": covered,
+            "first_json": json.dumps(first_days(days, need) if covered >= need else {})}
+
+def reading_complete(row):
+    """Does this Analytics row of a Short cover its first LADDER_READ_DAYS processed days? (A row written before readings were counted by day has no
+    'days': it is taken as complete and refreshed weekly, as before.)"""
+    d = (row or {}).get("days")
+    return d in (None, "") or _f(d) >= max(1, S("LADDER_READ_DAYS", int))
 
 def ingest_shorts(now=None):
-    """Pull each Short once it is BRAIN_SHORT_AGE_H old (and refresh weekly for 28 days); tag Shorts that have no features yet."""
+    """Read each Short's processed numbers from BRAIN_SHORT_AGE_H on: every day until the reading covers its first LADDER_READ_DAYS days (YouTube is
+    48 to 72 hours late), then weekly to day 28; tag Shorts that have no features yet."""
     now = now or now_utc(); st = store(); n = 0
     have = {r.get("yt_id"): r for r in st.rows("Analytics")}
     tagged = {r.get("video_key") for r in st.rows("Video_Features")}
@@ -233,12 +277,14 @@ def ingest_shorts(now=None):
         if key not in tagged: tag(key, "short", title=title, premise=prem, yt_id=y, origin="ai"); tagged.add(key)
         else: link_yt(key, y)
         old = have.get(y)
-        if old and old.get("engaged_views") not in (None, "") and (parse_iso(old.get("pulled")) or now) > now - dt.timedelta(days=7): continue
+        if old and old.get("engaged_views") not in (None, ""):
+            wait = dt.timedelta(days=7) if reading_complete(old) else dt.timedelta(hours=20)
+            if (parse_iso(old.get("pulled")) or now) > now - wait: continue
         if old and (now - t).days > 28: continue
-        try: m = _short_metrics(y, t.strftime("%Y-%m-%d"))
+        try: m = _short_metrics(y, t, now)
         except Exception as e: log(f"Short analytics failed for {y}: {str(e)[:100]}", "WARN"); m = None
         if not m: continue
-        row = {"episode_id": key, "yt_id": y, "pulled": iso(now), **m, "data_note": "ok (short)"}
+        row = {"episode_id": key, "yt_id": y, "pulled": iso(now), **m, "data_note": "ok (short)" if reading_complete(m) else f"partial: {m['days']} processed day(s)"}
         if old: st.update("Analytics", "yt_id", y, row)
         else: st.append("Analytics", [row])
         n += 1

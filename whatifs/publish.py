@@ -253,7 +253,7 @@ def drive_upload(path, name, public=False, parent=None):
     h = gdrive_headers(); meta = {"name": name}
     if parent or S("DRIVE_FOLDER_ID"): meta["parents"] = [parent or S("DRIVE_FOLDER_ID")]          # v12: parent = a sub-folder (the Knowledge Palace keeps its files in palace/)
     mime = ("video/mp4" if path.endswith(".mp4") else "image/jpeg" if path.endswith(".jpg") else "audio/mpeg" if path.endswith(".mp3")
-            else "text/plain" if path.endswith((".srt", ".md")) else "application/json")
+            else "text/plain" if path.endswith((".srt", ".md")) else "application/zip" if path.endswith(".zip") else "application/json")
     h.update({"Content-Type": "application/json; charset=UTF-8", "X-Upload-Content-Type": mime})
     r = requests.post("https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable", headers=h, json=meta, timeout=60)
     r.raise_for_status()

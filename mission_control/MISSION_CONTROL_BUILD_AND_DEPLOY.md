@@ -21,7 +21,7 @@ Files in this pack:
   - `lab`: running experiments (strategy dimensions and Playbook trials with their posterior `p_best` and n), Retention Microscope boosters/killers (G3; empty list until it exists).
   - `money`: month spend by line from `Cost_Log`, cap, revenue (affiliate/ads/clients from `Revenue_Log`), the three modes with costs from Settings.
   - `health`: `Expiry_Calendar` rows, last run per workflow from `Run_Log`.
-  - `settings`: the allow-listed quick toggles (`SLEEP_SESSIONS_ON`, `LOCALIZATIONS_ON`, `AFFILIATE_BLOCK_ON`, `NATIVE_TEST_REMINDER_ON`, `SHORTS_PER_DAY`).
+  - `settings`: the allow-listed quick toggles (`SLEEP_SESSIONS_ON`, `LOCALIZATIONS_ON`, `AFFILIATE_BLOCK_ON`, `NATIVE_TEST_REMINDER_ON`, `SHORTS_PER_WEEK`).
   - `whatsapp`: the test-number link (`wa.me/<number>`) when WP5 is set up, else "".
   - Never include secrets, premises not yet released, scripts or critic notes. Titles of **scheduled** episodes are fine (the owner must see them to pick).
 - `push_snapshot()` → `PUT https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}/storage/kv/namespaces/{CF_KV_NAMESPACE_ID}/values/snapshot` with `Authorization: Bearer {CF_KV_TOKEN}`; body = JSON. Then for each open pick: `PUT .../values/thumb:<episode>:<key>` with the 640-px JPEG (≤ 60 KB each; re-encode from Drive `thumb_A/B/C`). Skip thumbs already pushed (`Dash_Pushed` tab or a hash cell).

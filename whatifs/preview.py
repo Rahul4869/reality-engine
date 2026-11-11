@@ -39,6 +39,11 @@ def run(mode="preview"):
     from whatifs import governor as G, room as ROOM, premise as PR, craft as CR
     from whatifs.episode import _apply_tier, _strip_beats, est_cost_inr
     from whatifs import publish as PUB
+    from whatifs import ladder as LAD                              # v12 V2c-b: a draft is written only about a topic that climbed the ladder (or under the owner's override)
+    ok_l, why_l, _lrow = LAD.gate()
+    if not ok_l:
+        log(f"{'pre-production' if pre else 'preview'}: no draft is written - {why_l} (nothing spent)", "WARN"); flush_log()
+        return {"ok": False, "why": why_l, "skipped": "ladder"}
     draft = "DRAFT" + now_utc().strftime("%Y%m%d%H%M"); JOB["episode"] = draft
     d = DRAW(draft, "collective")
     plan = G.plan_for_episode(est_cost_inr(d), G.episodes_left_this_month())
@@ -51,6 +56,7 @@ def run(mode="preview"):
         room = ORG.work("D4", "draft", draft, lambda b: ROOM.run_room(d, draft), measure=WR.m_room, topic=str(d.get("ptype") or ""))
         sid = ORG.last_session("D4", "draft", draft) if ORG.on() else ""
         if sid: room["org_session"] = sid                         # production adopts this draft only with this run's proof (runner.work adopt=)
+        d["ladder"] = str(room["spine"].get("ladder") or LAD.claim() or "")      # v12 V2c-b: the draft carries where its topic comes from; production uses the row up when it adopts the draft
     except (PR.SkipSlot, CR.BelowBar) as e:
         if not pre: PUB.email("Script Preview: nothing reached the bar", f"<p>No draft was saved. {html.escape(str(e))}</p><p>Every pitch and score is in the Premise_Scores tab.</p>")
         log(f"preview: {e}", "WARN"); flush_log(); return {"ok": False, "why": str(e)[:300]}

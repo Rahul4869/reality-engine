@@ -123,10 +123,14 @@ def scout_and_pick(draw, ctx, episode):
     def showrun(good, tz, below=None):
         """The Showrunner chooses among vetted pitches and sets the spine. None when it returns no premise."""
         tz_note = ("THE OWNER'S DECISION (discussed and locked with him): the FIRST pitch. Choose it and keep its premise." if tz and tz.get("owner") else
+                   "PROVEN WITH REAL VIEWERS: the FIRST pitch is the topic of our Short that real viewers stayed for. Choose it and keep its premise word for word; "
+                   "the other pitches are only candidates for the tease of the next case." if tz and tz.get("ladder") else
                    "TEASED AT THE END OF OUR LAST VIDEO (viewers were promised it): the FIRST pitch. Choose it and keep its premise unless it breaks a channel rule." if tz else "")
         spine = ask("showrunner", FE.inject(GR.insert_before_json(P.fill(P.SHOWRUNNER, pitches=_j(good[:5]), draw=_j(draw), defs=_j({k: ctx["defs"].get(v, "") for k, v in draw["strategies"].items()}),
                     trends=ctx["trends"], lessons=ctx["lessons"], research=ctx.get("research", "")[:3000]), "\n".join(x for x in (PB.text_for("showrunner", draw.get("playbook")), tz_note, CR.brief("showrunner"), _show_block(), _format_block("showrunner")) if x)), "showrunner"), "Choose and set the spine.", episode=episode, fake_key="showrunner")
         if not spine.get("premise"): return None
+        if tz and tz.get("ladder"):                                 # v12 V2c-b: the promoted Short's premise is kept word for word BY CODE (check topic_ladder compares them)
+            spine["premise"] = tz["premise"]; spine["ladder"] = tz["ladder"]; spine["headline"] = spine.get("headline") or tz.get("headline") or tz["premise"]
         from whatifs import show as SHOW
         spine = SHOW.apply_to_spine(spine, episode)                # v9: Show Plan validated + logged (shadow in stage 1); off = no-op
         from whatifs import formats as FMT
@@ -142,13 +146,22 @@ def scout_and_pick(draw, ctx, episode):
                 PR.bench_mark_used(episode, hit.get("premise", "")); spine["from_bench"] = True
                 spine["premise_source"] = hit.get("src", "original")
                 if hit.get("demand_evidence") and isinstance(spine.get("show_plan"), dict): spine["show_plan"]["demand_evidence"] = hit["demand_evidence"]
-        if tz:          # v8.9.1 (fix): NOT cleared here any more. It is consumed only once this episode's plan is safely saved (episode.consume_tease),
+        if tz and not tz.get("ladder"):          # v8.9.1 (fix): NOT cleared here any more. It is consumed only once this episode's plan is safely saved (episode.consume_tease),
             spine["teased_premise"] = tz["premise"]         # so a failure while planning keeps the promise for the retry
             spine["from_tease"] = same(spine.get("premise", ""), tz["premise"])
         if below: spine["below_bar"] = below
         spine["next_tease"] = clean_tease(spine, good)
         return spine
 
+    from whatifs import ladder as LAD                           # v12 V2c-b: every topic starts as a Short - the promoted Short's topic is THE pitch
+    lad = None if str(S("OWNER_NEXT_PREMISE") or "").strip() else LAD.pitch()      # the owner's own locked topic comes first (his override is on the ladder's record)
+    if lad:
+        if dual: PR.score([lad], ctx["recent"] + past[-20:], episode)            # the judges' score is recorded, never a bar: real viewers chose this topic
+        nxt = [p for p in LAD.runner_ups() + PR.bench_pitches(ctx["banned"], ctx["recent"], past, lambda f: _family_ok(f, recent_fams), k=3) if not same(p["premise"], lad["premise"])]
+        if dual: PR.log_scores([lad], episode, "ladder", "ladder")
+        spine = showrun([lad] + nxt[:4], lad)
+        if not spine: raise RuntimeError("the Showrunner returned no spine for the promoted topic")
+        log(f"premise taken from the ladder: the topic of Short {lad['ladder']} (promoted by its real numbers)", episode=episode); return spine
     if dual and S("PREMISE_BENCH_ON", bool):                     # v8.11: the bench first (already judged; the code rules are re-checked today)
         from whatifs import owner_brief as OB
         tz = OB.take_for_episode(episode) or teased_pitch(ctx, recent_fams)          # v10.3 (K154): the owner's locked brief comes first

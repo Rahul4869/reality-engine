@@ -33,6 +33,20 @@ def warn_class(msg):
     m = re.sub(r"EP\d{6,}", "EP#", str(msg)); m = re.sub(r"'[^']{0,80}'|\"[^\"]{0,80}\"", "'..'", m); m = re.sub(r"\d+(\.\d+)?", "#", m)
     return re.sub(r"\s+", " ", m).strip()[:90]
 
+def climb(core, ep):
+    """v12 V2c-b: walk the ladder for one id - a Short about one of the sweep's premises is made a week ago and posted, and its numbers are read (the
+    offline YouTube is as late as the real one), so that the long video of this id finds a Short to promote. False = the ladder is off."""
+    from whatifs import shorts2 as SH, brain as BR, ladder as LAD
+    if not LAD.on(): return False
+    h = int(__import__("hashlib").sha1(ep.encode()).hexdigest(), 16)
+    core.store().append("Premise_Bench", [{"bench_id": f"SW{i}", "premise": SHORT_PREMISES[(h + i * 5) % len(SHORT_PREMISES)], "headline": "", "family": "", "ptype": "collective",
+                                           "status": "READY", "claude_score": 9.6 - i / 10, "gemini_score": 9.4 - i / 10, "combined": 9.5 - i / 10, "added": core.iso()} for i in range(3)])
+    core.set_setting("SHORTS_REVIEW_FIRST_N", "0")
+    r = SH.run(force=True, publish=True, now=core.now_utc() - dt.timedelta(days=7), episode_id="SH" + ep[2:])
+    if not r.get("ok"): raise AssertionError("the Short of this id was not made: " + json.dumps({k: v for k, v in r.items() if k != "script"}, default=str)[:240])
+    BR.ingest_shorts()
+    return True
+
 # ------------------------------------------------------------------ one id (runs in its own process: module state never leaks between ids)
 def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
     os.environ.update(WI_FAKE="1", WI_SMALL="1", WI_WORK=os.path.join(work, "work"), PYTHONUTF8="1")
@@ -60,12 +74,9 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
             elif r.get("held") or r0.get("held"): res["outcome"] = "held"
             else: res["outcome"] = "odd"; res["error"] = json.dumps({k: v for k, v in dict(r0, **r).items() if k != "script"}, default=str)[:300]
         elif mode == "rehearsal":                                                   # the path GitHub's Checks run: the full rehearsal, its one time-based id replaced by the fixed one
-            real = EP.produce
-            EP.produce = lambda slot, episode_id=None, **k: real(slot, episode_id=episode_id or ep, **k)
             from tools.rehearsal import run
-            try: run(); res["outcome"] = "ok"
+            try: run(ep_id=ep); res["outcome"] = "ok"                                # v12 V2c-b: the rehearsal takes the fixed id itself (its Shorts' ids are derived from it)
             except AssertionError as e: res["outcome"] = "assert"; res["error"] = (str(e) or traceback.format_exc().strip().splitlines()[-2].strip())[:300]
-            finally: EP.produce = real
         else:                                                                       # the recipe of the end-to-end test in tests/test_v12_org.py
             core._store = core.LocalStore(os.path.join(work, "sheet.json")); core._store.ensure_tabs(); core._settings_cache = None
             for k, v in TEST_SETTINGS.items(): core.set_setting(k, v)
@@ -74,6 +85,7 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
             MG.setup(); core.set_setting("VOICE", "C")
             if not org: core.set_setting("ORG_ON", "FALSE")
             slot = (core.now_utc() + dt.timedelta(hours=slot_h)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            if climb(core, ep): res["ladder"] = "climbed"                          # v12 V2c-b: every topic starts as a Short - the long video of this id is about its promoted Short
             r = EP.produce(slot, episode_id=ep)
             res["problems"] = [str(p) for p in (r.get("problems") or [])]
             if r.get("ok") and r.get("episode") == ep and os.path.exists(str(r.get("master") or "")): res["outcome"] = "ok"

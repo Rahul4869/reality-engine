@@ -43,6 +43,8 @@ RETIRED = [
      "truth": "the plan is 4 long videos a month, one a week (STANDARD_MAX_LONG_PER_MONTH, PUBLISH_DAYS); lines for viewers say 'every week'"},
     {"id": "no_kling_statement", "pattern": r"ffmpeg[- ]only|\bno[- ]Kling\b|without Kling", "flags": I, "unless": None, "scopes": ("docs",),
      "truth": "every long video has animated Kling scenes (ANIM_SHOTS) plus the ffmpeg/OpenCV render"},
+    {"id": "daily_shorts_cadence", "pattern": r"SHORTS_PER_DAY|SHORTS_KLING_EVERY|REPLAN_MAX_SHORTS_PER_DAY|\bShorts ?(?:per|/) ?day\b|\bdaily Shorts\b|\b1\.5 (?:standalone )?Shorts\b", "flags": I, "unless": None, "scopes": ("docs", "prompts"),
+     "truth": "the Shorts cadence is set in weeks: SHORTS_PER_WEEK (3) and SHORTS_PER_MONTH (12); every topic starts as a Short (whatifs/ladder.py)"},
 ]
 
 # Ratchet baseline for the "prompts" scope: strings in code that MUST name an old value (a one-time setting move has to say what it replaces).
@@ -50,6 +52,7 @@ RETIRED = [
 BASELINE = {
     ("whatifs/manage.py", "old_month_cap"): (1, "log line of the one-time cap move that already ran on the live Sheet"),
     ("whatifs/manage.py", "kling_v3_path"): (1, "the one-time correction names the wrong model id it replaces"),
+    ("whatifs/manage.py", "daily_shorts_cadence"): (3, "the one-time move names the three retired cadence cells it marks on a live Sheet"),
 }
 
 _CACHE: dict = {}

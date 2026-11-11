@@ -2,7 +2,7 @@ Traceback (most recent call last):
   File "C:\Users\rrahu\OneDrive\Desktop\REALITY_ENGINE_HANDOFF\reality-engine\whatifs\cli.py", line 105, in main
     from tools.rehearsal import run; run()
                                      ^^^^^
-  File "C:\Users\rrahu\OneDrive\Desktop\REALITY_ENGINE_HANDOFF\reality-engine\tools\rehearsal.py", line 277, in run
-    assert 1 <= len(pk9) <= 3 and any(r["status"] in ("LIVE", "WINNER") for r in pk9) and (st9.rows("Season") or not trial9) and st9.rows("Experiments"), "packaging pairs / Season / Experiments missing"
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: packaging pairs / Season / Experiments missing
+  File "C:\Users\rrahu\OneDrive\Desktop\REALITY_ENGINE_HANDOFF\reality-engine\tools\rehearsal.py", line 258, in run
+    ps = st810.rows("Premise_Scores"); assert ps and any(str(r["chosen"]) == "True" for r in ps) and all(r["claude_score"] and r["gemini_score"] for r in ps), "premise scores"
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: premise scores

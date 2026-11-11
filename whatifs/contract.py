@@ -472,6 +472,15 @@ def p_format_kept(ctx):
                   + f"; devices: {sum(1 for k in FMT.DEVICES if dev.get(k, 'must') == 'must')} required, {sum(1 for v in dev.values() if v == 'advisory')} optional, "
                   f"{sum(1 for v in dev.values() if v == 'never')} not part of it")
 
+def p_topic_ladder(ctx):
+    """v12 V2c-b (the ladder, D10): every topic starts as a Short - this long video is about the topic of a Short the promote rule took (the same
+    premise, promoted for this video), or it was made under an override that is on record (who, when, why)."""
+    from whatifs import ladder as LAD
+    if not LAD.on(): return NA, "the ladder is switched off (LADDER_ON, or the Shorts track)"
+    d = ctx.get("d") if isinstance(ctx.get("d"), dict) else {}
+    ok, why = LAD.topic_report(d, ((ctx.get("room") or {}).get("spine") or {}).get("premise"), ctx.get("ep"))
+    return (PASS if ok else FAIL), why[:380]
+
 def p_viewer_numbers(ctx):
     """v12 V1 (the viewer's seat, D13): few numbers - what a viewer hears per minute, and the full-screen number graphics he must read."""
     from whatifs.org import audience as AUD
@@ -621,6 +630,7 @@ FEATURES = [
     ("viewer_plain", "script", p_viewer_plain, "everyday words: a budget for the expert words a layman would not know - in the narration, in the first 30 s, in one sentence (the layman test)"),
     ("viewer_probe", "script", p_viewer_probe, "the promise line-up: from the first 30 s alone two first-time readers pick this video's title, and give none to a planted opening (the layman test)"),
     ("format_kept", "script", p_format_kept, "the script is what its format says: a format that is not a trial does not sound like one, a trial has its Show Plan (formats as data)"),
+    ("topic_ladder", "script", p_topic_ladder, "every topic starts as a Short: this long video is about the topic of a Short the promote rule took, or was made under an override on record (the ladder)"),
     ("palace_injected", "script", p_palace_injected, "the Knowledge Palace playbook was inside the model prompt of every creative run's key call (the writer, the packager, the director), and the exact text is stored"),
     ("palace_cited", "script", p_palace_cited, "every creative run cited Palace knowledge it really applied: each counted citation has a quote that code found in the final output"),
     ("canon_in_brief", "script", p_canon_in_brief, "the writer was given the show's canon (cast and the newest aired case), called back to that case in a line of the final script, and wrote this episode's case record"),

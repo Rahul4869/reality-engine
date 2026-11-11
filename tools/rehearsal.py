@@ -17,7 +17,8 @@ class ToneVoice:
 
 from whatifs.core import S, TABS
 
-def run():
+def run(ep_id=None):
+    """ep_id = a fixed id for the long episode (the sweep); else the id is the minute. The Shorts' ids are derived from it, so one id reproduces the whole run."""
     assert os.environ.get("WI_FAKE") == "1", "rehearsal needs WI_FAKE=1"
     work = os.environ.get("WI_WORK", "rh"); shutil.rmtree(work, ignore_errors=True); os.makedirs(work, exist_ok=True)
     import whatifs.voice as V
@@ -36,6 +37,34 @@ def run():
         set_setting("VOICE", "C")
         a = MG.tick()["action"]; assert a in ("idle", "produce"), a
         slot = (now_utc() + dt.timedelta(hours=10)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        epid = str(ep_id or "EP" + now_utc().strftime("%Y%m%d%H%M"))
+        # v12 V2c-b: THE LADDER - every topic starts as a Short. (1) With no Short, no long video starts and nothing is spent. (2) Two topics are made as
+        # Shorts a week ago - each written in its Short format by the Shorts Studio (D14), voiced, planned by code, judged by the viewer's seat for a
+        # Short BEFORE any picture was paid, then made, posted and put on the ladder with its kept footage (WI_SHORT_FORMAT forces S1, S2 or S3).
+        # (3) The learning job reads their numbers - the offline YouTube is as late as the real one: a Short's first three days exist when it is
+        # about five days old. (4) The long video below must be about the Short the promote rule takes.
+        from whatifs import ladder as LAD12, shorts2 as SH12, formats as FMT12, brain as BR12
+        st = store(); r0 = EP.produce(slot, episode_id=epid)
+        assert r0.get("skipped") == "ladder" and not st.rows("Episodes") and not st_rows("Cost_Log") and any(x.get("kind") == "ladder" for x in st.rows("Owner_Actions")), ("a long video started without a promoted Short", r0)
+        st.append("Premise_Bench", [{"bench_id": f"BREH{i}", "premise": p, "headline": h, "family": f, "ptype": "collective", "status": "READY", "claude_score": 9.7 - i / 10, "gemini_score": 9.5 - i / 10, "combined": 9.6 - i / 10, "added": iso_now()}
+                                    for i, (p, h, f) in enumerate((("What if your shadow arrived one second late?", "Your Shadow Is Late", "F08_rules"),
+                                                                   ("What if rain fell upward for an hour?", "The Rain Goes Up", "F06_nature"),
+                                                                   ("What if every mirror showed tomorrow?", "The Mirror Shows Tomorrow", "F01_body"),
+                                                                   ("What if the wind kept every word you said?", "The Wind Remembers", "F09_space")))])
+        set_setting("SHORTS_REVIEW_FIRST_N", "0")                                   # the owner's Approve of the first Shorts has its own test; here they are posted at once
+        t12 = now_utc() - dt.timedelta(days=7)
+        rs12 = SH12.run(force=True, publish=True, now=t12, episode_id="SH" + epid[2:]); rs12b = SH12.run(force=True, publish=True, now=t12 + dt.timedelta(hours=48), episode_id="SHB" + epid[2:])
+        assert rs12.get("ok") and os.path.exists(str(rs12.get("path") or "")) and rs12b.get("ok"), ("the rehearsal's Shorts were not made", {k: v for k, v in rs12.items() if k != "script"}, {k: v for k, v in rs12b.items() if k != "script"})
+        sl12 = {r["feature"]: r["status"] for r in st_rows("Feature_Ledger") if r.get("episode_id") == rs12["id"]}
+        assert sl12 == {k: "PASS" for k in ("short_open", "short_plain", "short_shape", "short_kept", "short_contract")}, ("the short gate did not pass", sl12)
+        ss12 = [(s["dept"], s["trigger"], s["status"]) for s in st.rows("Sessions") if s.get("episode_id") == rs12["id"]]
+        assert ss12 == [("D14", "write", "ok"), ("D7", "short_voice", "ok"), ("D13", "short_seat", "ok"), ("D8", "short_gate", "ok"), ("D14", "make", "ok")], ("a department run of the Short is missing or broken", ss12)
+        lo12, hi12 = FMT12.short_len(rs12["format"]); assert lo12 <= float(rs12["sec"]) <= hi12 and SH12._loop_diff(rs12["path"]) <= SH12.LOOP_MAX, ("the Short has the wrong length or does not loop", rs12["sec"])
+        print("short:", rs12["id"], "format", rs12["format"], "(" + FMT12.short_name(rs12["format"]) + "), hook", rs12["hook"], ",", rs12["sec"], "s; short gate 5 / 5; 5 department runs")
+        lad12 = {x["id"]: x for x in LAD12.rows()}
+        assert set(lad12) == {rs12["id"], rs12b["id"]} and all(x["state"] == "POSTED" and x["yt_id"] and x["footage"] for x in lad12.values()), ("a Short is not on the ladder, not posted or its footage was not kept", lad12)
+        ok12, why12, _x12 = LAD12.gate(); assert not ok12 and "no numbers yet" in why12, ("a Short without numbers was promoted", why12)
+        assert BR12.ingest_shorts() == 2 and all(BR12.reading_complete(a) and a.get("first_json") not in ("", "{}") for a in st.rows("Analytics")), "the Shorts' numbers were not read over their first three processed days"
         from whatifs.org import memos as OMEM4, execute as EXE4          # v12 B4: one decision of the organisation is carried from ticket to ledger proof inside the rehearsal
         tk4 = OMEM4.write({"type": "ticket", "from_dept": "C", "to_depts": ["D6"], "subject": "Rehearsal: serve Visual Production one new technique",
                            "body": {"lever_class": "A", "target": "palace:rehearsal-b4-knowledge-lever", "acceptance_test": "a later shot plan of Visual Production is served the item and cites it with a quote from its shots", "rollback": "retire the item",
@@ -46,8 +75,16 @@ def run():
         OMEM4.write({"type": "decision_memo", "from_dept": "C", "to_depts": ["D6"], "subject": "Rehearsal decision: one knowledge lever for Visual Production",
                      "body": {"decision": "Serve Visual Production the rehearsal technique.", "why": "The rehearsal must prove that a decision becomes a verified change.", "memos_cited": [tk4["id"]],
                               "lever_class": "A", "tickets": [tk4["id"]], "owner_approval": False}})
-        r = EP.produce(slot); print("produce ok", json.dumps(r, default=str)[:400])
+        r = EP.produce(slot, episode_id=epid); print("produce ok", json.dumps(r, default=str)[:400])
         assert os.path.exists(r["master"]) and len(r["reels"]) >= 1, "missing outputs"
+        lad12 = {x["id"]: x for x in LAD12.rows()}; used12 = [x for x in lad12.values() if x["state"] == "USED"]; e12 = store().rows("Episodes")[-1]
+        assert len(used12) == 1 and used12[0]["episode_id"] == epid == e12["episode_id"] and e12["premise"] == used12[0]["premise"] and used12[0]["evidence"] == "measured", ("the long video is not about the promoted Short's topic", used12, e12.get("premise"))
+        assert sorted(x["state"] for x in lad12.values()) == ["READ", "USED"] and json.loads(e12["draw_json"]).get("ladder") == used12[0]["id"], ("the ladder's record is wrong", {k: v["state"] for k, v in lad12.items()})
+        tl12 = next((x for x in st_rows("Feature_Ledger") if x.get("episode_id") == epid and x.get("feature") == "topic_ladder"), {})
+        assert tl12.get("status") == "PASS" and used12[0]["id"] in str(tl12.get("evidence")), ("check topic_ladder did not pass on the promoted Short", tl12)
+        pr12 = [x for x in store().rows("Sessions") if x.get("dept") == "D10" and x.get("trigger") == "promote"]
+        assert pr12 and all(x["status"] == "ok" for x in pr12) and any(x.get("kind") == "ladder" and "Next long video" in str(x.get("text")) for x in store().rows("Owner_Actions")), "the promote rule did not run as Growth and Learning's run, or the owner was not told"
+        print("ladder:", used12[0]["id"], "promoted ->", epid, "|", str(used12[0]["score"])[:150], "| the other Short stays a candidate | topic_ladder PASS")
         # v7.2 independent checks on the real rendered files
         from whatifs import qc as QC
         from whatifs.render import probe_dur
@@ -255,11 +292,12 @@ def run():
         assert sm811 and sm811[0]["inr"] == "0" and float(sm811[0]["est_inr"]) > 0, "measured-vs-estimated AI cost row missing"
         from whatifs import premise as PR811, room as ROOM811
         np811 = S("NEXT_PREMISE"); set_setting("NEXT_PREMISE", "")          # a teased premise would (rightly) win over the bench; tested without one
+        set_setting("LADDER_ON", "FALSE")                                    # v12 V2c-b: and so would a promoted Short - the bench is what a long video draws from with the ladder off or under an override
         if not PR811.bench_rows(): PR811.refill_bench(force=True)
         assert PR811.bench_rows(), "the Premise_Bench was not filled"
         sp811 = ROOM811.scout_and_pick({"strategies": {"family": "F09_space"}, "playbook": {}}, ROOM811.context(), "EPBENCH")
         assert sp811.get("from_bench") and any(r["status"] == "USED" for r in store().rows("Premise_Bench")), "the scout did not draw from the bench"
-        set_setting("NEXT_PREMISE", np811)
+        set_setting("NEXT_PREMISE", np811); set_setting("LADDER_ON", "TRUE")
         assert not S("SKIP_IF_BELOW_BAR", bool) and S("OWNERS_CUT_JUDGE") == "gemini"
         print("v8.11 checks ok")
         # v9 checks (stages 1-2): the Show Plan was logged, the character bible seeded, the trial tags reached the voiced timeline as data (never spoken),
@@ -284,18 +322,6 @@ def run():
             a91 = json.loads(ep91.get("atmos_json") or "{}")
             assert a91 and float(ep91.get("render_min") or 0) > 0, f"atmosphere / render minutes not logged: {ep91.get('atmos_json')}"
         print("v9.1 checks ok")
-        # v12 V2c: one standalone Short - written in its Short format by the Shorts Studio (D14), voiced, planned by code, judged by the viewer's seat
-        # for a Short at the short gate BEFORE any picture was paid, then made (the env var WI_SHORT_FORMAT forces S1, S2 or S3)
-        from whatifs import shorts2 as SH12, formats as FMT12
-        st.append("Premise_Bench", [{"bench_id": "BREH12", "premise": "What if your shadow arrived one second late?", "status": "READY", "combined": 99}])
-        rs12 = SH12.run(force=True, publish=False, episode_id="SH" + e["episode_id"][2:])
-        assert rs12.get("ok") and os.path.exists(str(rs12.get("path") or "")), ("the rehearsal's Short was not made", {k: v for k, v in rs12.items() if k != "script"})
-        sl12 = {r["feature"]: r["status"] for r in st_rows("Feature_Ledger") if r.get("episode_id") == rs12["id"]}
-        assert sl12 == {k: "PASS" for k in ("short_open", "short_plain", "short_shape", "short_kept", "short_contract")}, ("the short gate did not pass", sl12)
-        ss12 = [(s["dept"], s["trigger"], s["status"]) for s in st.rows("Sessions") if s.get("episode_id") == rs12["id"]]
-        assert ss12 == [("D14", "write", "ok"), ("D7", "short_voice", "ok"), ("D13", "short_seat", "ok"), ("D8", "short_gate", "ok"), ("D14", "make", "ok")], ("a department run of the Short is missing or broken", ss12)
-        lo12, hi12 = FMT12.short_len(rs12["format"]); assert lo12 <= float(rs12["sec"]) <= hi12 and SH12._loop_diff(rs12["path"]) <= SH12.LOOP_MAX, ("the Short has the wrong length or does not loop", rs12["sec"])
-        print("short:", rs12["id"], "format", rs12["format"], "(" + FMT12.short_name(rs12["format"]) + "), hook", rs12["hook"], ",", rs12["sec"], "s; short gate 5 / 5; 5 department runs")
         MG.money_check(); MG.monthly_brief(); print("brief ok")
         # v7.3 checks: Revenue_Log months/amounts, pause hold + resume, KILL, stuck release never blocks, release is idempotent
         from whatifs.governor import month_key, money_num

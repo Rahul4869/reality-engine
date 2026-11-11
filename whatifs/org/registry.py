@@ -35,9 +35,10 @@ DEPTS = {
             "wraps": ("whatifs/contract.py", "whatifs/enforce.py", "whatifs/qc.py", "whatifs/fixes.py"), "levers": ("CONTRACT_OFF", "BREAKOUT_HARD_BAR", "CRITIQUE_MIN"), "takes": ("repair_memo",)},
     "D9":  {"mission": "uploads, Shorts, Instagram and Facebook, schedules, spin-offs", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/publish.py", "whatifs/spinoff.py", "whatifs/deeptrial.py", "whatifs/specials.py"),
-            "levers": ("SHORTS_PER_DAY", "REEL1_DELAY_MIN", "REEL2_DELAY_MIN", "NEXT_LINK_ON"), "takes": ()},
-    "D10": {"mission": "analytics, technique evidence, sampling, forecasts, the 48-hour monitor, breakout follow-ups", "cadence": "daily", "cap_inr": None, "inject": "brief",
-            "wraps": ("whatifs/brain.py", "whatifs/breakout.py", "whatifs/growth.py", "whatifs/reach.py"), "levers": ("BRAIN_ON", "BRAIN_HOLDOUT"), "takes": ()},
+            "levers": ("REEL1_DELAY_MIN", "REEL2_DELAY_MIN", "NEXT_LINK_ON"), "takes": ()},
+    "D10": {"mission": "analytics, technique evidence, sampling, forecasts, the 48-hour monitor, the ladder from a Short to its long video (the promote rule), the winner's follow-up", "cadence": "daily", "cap_inr": None, "inject": "brief",
+            "wraps": ("whatifs/brain.py", "whatifs/breakout.py", "whatifs/growth.py", "whatifs/reach.py", "whatifs/ladder.py"),
+            "levers": ("BRAIN_ON", "BRAIN_HOLDOUT", "LADDER_WINDOW_DAYS", "LADDER_MIN_ENGAGED"), "takes": ()},
     "D11": {"mission": "caps, the guard, the breakout fund, cost forecasts, spend vetoes", "cadence": "daily", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/governor.py", "whatifs/costguard.py"), "levers": ("BUDGET_GUARD_PCT", "BREAKOUT_FUND_CAP_INR", "AUTO_FIX_PAID_INR"), "takes": ()},
     "D12": {"mission": "reliability, the watchdog, model ladders, deprecations, incidents, build requests", "cadence": "tick", "cap_inr": None, "inject": "brief",
@@ -47,7 +48,9 @@ DEPTS = {
             "levers": ("NUMBERS_PER_MIN_MAX", "GRAPHICS_MAX_LONG", "GRAPHICS_FREE_SEC", "BREATH_EVERY_S", "PLAIN_HARD_PER_MIN_MAX", "PLAIN_OPENING_HARD_MAX", "PLAIN_HARD_PER_SENTENCE_MAX",
                        "SHORT_HOOK_WORDS_MAX", "SHORT_HOOK_BY_S", "SHORT_NUMBERS_MAX", "SHORT_EXPERT_MAX", "SHORT_PROMISE_WORDS_MAX"), "takes": ()},
     "D14": {"mission": "the short video as a product of its own: its formats, its brief, three scripts judged blind, every second animated, the loop - built to win alone, never a cut-down", "cadence": "episode", "cap_inr": None, "inject": "brief",
-            "wraps": ("whatifs/shorts2.py",), "levers": ("SHORT_SHARE_S1", "SHORT_SHARE_S2", "SHORT_SHARE_S3", "SHORT_MIN_S", "SHORT_MAX_S_S1", "SHORT_MAX_S_S2", "SHORT_MAX_S_S3"), "takes": ()},
+            "wraps": ("whatifs/shorts2.py",),
+            "levers": ("SHORT_SHARE_S1", "SHORT_SHARE_S2", "SHORT_SHARE_S3", "SHORT_MIN_S", "SHORT_MAX_S_S1", "SHORT_MAX_S_S2", "SHORT_MAX_S_S3",
+                       "SHORTS_PER_WEEK", "SHORTS_PER_MONTH", "SHORTS_BREAKOUT_X", "FOLLOWUP_WITHIN_H"), "takes": ()},      # v12 V2c-b: the cadence and the double-down line
     "C":   {"mission": "bring research, creative, owner, performance and problem memos together, decide, issue tickets", "cadence": "weekly", "cap_inr": 150, "inject": "brief",
             "wraps": (), "levers": ("ORG_SLA_HOURS",), "takes": ("assessment_memo", "creative_memo")},
     "L":   {"mission": "keep the Palace consolidated, free of duplicates and contradictions, versioned and bounded", "cadence": "weekly", "cap_inr": 40, "inject": "brief",
@@ -77,7 +80,7 @@ ENTRY = {
     "D7":  (("whatifs/episode.py", "voice"), ("whatifs/shorts2.py", "short_voice")),      # v12 V2c: a Short is voiced by the same voice job
     "D8":  (("whatifs/episode.py", "script_gate"), ("whatifs/episode.py", "final_gate"), ("whatifs/shorts2.py", "short_gate")),
     "D9":  (("whatifs/episode.py", "publish"),),
-    "D10": (("whatifs/cli.py", "daily"),),
+    "D10": (("whatifs/cli.py", "daily"), ("whatifs/ladder.py", "promote")),      # v12 V2c-b: the promote rule runs when a long video is about to start
     "D2":  (("whatifs/cli.py", "daily"), ("whatifs/cli.py", "weekly")),             # v12 B5: the learning job runs R&D first (daily always, weekly when due)
     "D3":  (("whatifs/cli.py", "assess"),),                                          # v12 B5: then the Review Board, whenever a research memo waits
     "D12": (("whatifs/org/execute.py", "operate"),),
@@ -105,7 +108,7 @@ CHECK_OWNER = {
     "short_covers": "D5", "shorts": "D9", "self_review": "D8", "breakout_bar": "D1", "dept_contract": "D8", "takeaways_written": "D8",
     "decisions_executed": "C", "lever_verified": "D12", "research_cadence": "D2", "palace_injected": "D4", "palace_cited": "D4", "canon_in_brief": "D4",
     "viewer_numbers": "D13", "viewer_breath": "D13", "viewer_promise": "D13", "viewer_plain": "D13", "viewer_probe": "D13", "format_kept": "D4",
-    "short_open": "D13", "short_plain": "D13", "short_shape": "D13", "short_kept": "D14", "short_contract": "D8",
+    "short_open": "D13", "short_plain": "D13", "short_shape": "D13", "short_kept": "D14", "short_contract": "D8", "topic_ladder": "D10",
 }
 
 def runnable(dept):

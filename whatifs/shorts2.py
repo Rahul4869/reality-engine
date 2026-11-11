@@ -14,13 +14,48 @@ def _rows(): return [r for r in store().rows("Specials") if r.get("kind") == "sh
 
 def _held(r): return str(r.get("status") or "").startswith("HELD")
 
-def _today_count(now):
-    return sum(1 for r in _rows() if parse_iso(r.get("ts")) and (now - parse_iso(r["ts"])).total_seconds() < 86400)
+HELD_WAIT_H = 24                        # after a Short the short gate refused, the cadence tries again this many hours later (one paid writing a day at most)
+ORDER_WAIT_H = 6                        # a follow-up order that could not be made (no money, held) is tried again this many hours later
 
-def target_today(now=None):
-    """SHORTS_PER_DAY may be fractional: 1.5 -> 2 on even days, 1 on odd days."""
-    now = now or now_utc(); x = S("SHORTS_PER_DAY", float)
-    base = int(x); return base + (1 if (x - base) >= 0.5 and now.toordinal() % 2 == 0 else 0)
+def _followup(r): return str(r.get("id") or "").startswith("BRK")
+
+def gap_h():
+    """How far apart the Shorts of the cadence are made: 24 x floor(7 / SHORTS_PER_WEEK) hours (3 a week = 48 hours: the same three weekdays)."""
+    return 24 * max(1, 7 // max(1, S("SHORTS_PER_WEEK", int)))
+
+def cadence(now=None):
+    """(due, why): is a Short of the cadence due? Fewer than SHORTS_PER_WEEK made in the last 7 days, fewer than SHORTS_PER_MONTH this calendar
+    month, the last one at least gap_h() hours old - and after a Short the gate held, HELD_WAIT_H hours (a held Short is not made, so it does not
+    count; follow-ups of a winner are outside the cadence)."""
+    now = now or now_utc(); per_w, per_m = max(1, S("SHORTS_PER_WEEK", int)), max(1, S("SHORTS_PER_MONTH", int))
+    mine = [(parse_iso(r.get("ts")), _held(r)) for r in _rows() if not _followup(r)]; mine = [(t, h) for t, h in mine if t]
+    made = [t for t, h in mine if not h]
+    week = sum(1 for t in made if 0 <= (now - t).total_seconds() < 7 * 86400); month = sum(1 for t in made if t.strftime("%Y-%m") == now.strftime("%Y-%m"))
+    if week >= per_w: return False, f"{week} of {per_w} Shorts were made in the last 7 days"
+    if month >= per_m: return False, f"{month} of {per_m} Shorts were made this month"
+    if made and (now - max(made)).total_seconds() < gap_h() * 3600: return False, f"the last Short is {(now - max(made)).total_seconds() / 3600:.0f} hours old (they are made {gap_h()} hours apart)"
+    held = [t for t, h in mine if h]
+    if held and (now - max(held)).total_seconds() < HELD_WAIT_H * 3600 and (not made or max(held) > max(made)):
+        return False, f"the short gate held a Short {(now - max(held)).total_seconds() / 3600:.0f} hours ago (the next try comes {HELD_WAIT_H} hours after it)"
+    return True, ""
+
+def _order_premise(q):
+    st = store(); key = q.get("video_key")
+    src = next((e for e in st.rows("Episodes") if e.get("episode_id") == key), None) or next((s for s in st.rows("Specials") if s.get("id") == key), {})
+    return src.get("premise") or src.get("title") or key
+
+def order_due(now=None):
+    """The winner's follow-up that is due now, or None: an open order whose topic was not given up, not tried in the last ORDER_WAIT_H hours, while the
+    last 7 days hold fewer than SHORTS_WEEKLY_CAP Shorts of any kind."""
+    from whatifs import ladder as LAD
+    now = now or now_utc(); made, dropped = _spent_premises()
+    if sum(1 for r in _rows() if not _held(r) and parse_iso(r.get("ts")) and 0 <= (now - parse_iso(r["ts"])).total_seconds() < 7 * 86400) >= S("SHORTS_WEEKLY_CAP", int): return None
+    for q in LAD.open_orders():
+        plan = str(q.get("plan") or ""); tried = parse_iso(plan.split("last try ", 1)[1][:20]) if "last try " in plan else None
+        if tried and (now - tried).total_seconds() < ORDER_WAIT_H * 3600: continue
+        if str(_order_premise(q)).strip().lower() in dropped: continue          # held twice: the follow-up is left, nothing is paid a third time
+        return q
+    return None
 
 def masters_ready():
     """Has every core character a LOCKED master (owner-approved)? Asked only when SHORTS_NEED_MASTERS is TRUE: a Short shows no character."""
@@ -34,15 +69,14 @@ def due(now=None):
     if S("SHORTS_NEED_MASTERS", bool) and not masters_ready(): return False
     from whatifs.notify import IST
     if now.astimezone(IST).hour < S("SHORTS_START_HOUR_IST", int): return False
-    return _today_count(now) < target_today(now)
+    return bool(order_due(now)) or cadence(now)[0]
 
-def _budget_ok(est, first_today):
+def _budget_ok(est):
+    """A Short of the cadence is core production (every topic starts as one): only the long slots' reserved money is protected."""
     from whatifs import governor as G
-    if first_today:                                                            # core: only the long slots' reserved money is protected
-        left = max(0, min(G.episodes_left_this_month(), G.max_long_videos() - G.long_videos_this_month()))
-        room = G.production_room_inr() - est
-        return (room >= left * G.full_episode_inr(), f"Rs {room:.0f} left after this, Rs {left * G.full_episode_inr():.0f} kept for {left} long slot(s)")
-    return G.extras_allowed(est, kind="short_extra")
+    left = max(0, min(G.episodes_left_this_month(), G.max_long_videos() - G.long_videos_this_month()))
+    room = G.production_room_inr() - est
+    return (room >= left * G.full_episode_inr(), f"Rs {room:.0f} left after this, Rs {left * G.full_episode_inr():.0f} kept for {left} long slot(s)")
 
 # ------------------------------------------------------------------ what came before, and what comes next
 def history(n=10):
@@ -63,16 +97,13 @@ def _spent_premises():
         else: made.add(k)
     return made, {k for k, c in held.items() if c > max(0, S("SHORT_HOLD_RETRIES", int))}
 
-def pick_topic():
+def pick_topic(order=None):
+    """The topic of the next Short: the winner's follow-up when one is ordered (with what the winner said, so the writers continue it), else the
+    best premise on the bench that no Short has used."""
     st = store(); made, dropped = _spent_premises()
-    done = {r.get("video_key") for r in st.rows("Breakout_Queue") if r.get("status") in ("DONE", "DECLINED")}
-    for r in st.rows("Breakout_Queue"):
-        if r.get("status") in ("APPROVED", "FOLLOWUP 1") and r.get("video_key") not in done:
-            src = next((e for e in st.rows("Episodes") if e.get("episode_id") == r["video_key"]), None) or \
-                  next((s for s in st.rows("Specials") if s.get("id") == r["video_key"]), {})
-            prem = src.get("premise") or src.get("title") or r["video_key"]
-            if str(prem).strip().lower() in dropped: continue                # held twice: the follow-up is left, nothing is paid a third time
-            return {"premise": prem, "origin": "breakout", "follow_of": r["video_key"]}
+    if order:
+        key = order.get("video_key"); said = next((str(s.get("script") or "") for s in st.rows("Specials") if s.get("id") == key), "")
+        return {"premise": _order_premise(order), "origin": "breakout", "follow_of": key, "said": said}
     from whatifs import premise as PRM                                  # READY rows only, best first (STALE / USED never come back)
     bench = [b for b in PRM.bench_rows(mark_stale=False) if b.get("premise") and b["premise"].strip().lower() not in (made | dropped)]
     if bench: return {"premise": bench[0]["premise"], "origin": "bench", "bench_id": bench[0].get("bench_id")}
@@ -121,6 +152,9 @@ def write(topic, fmt, hook, ep, hist):
     before = [f"{h.get('format')}: {FMT.opener(h.get('script'))}" for h in hist if str(h.get("script") or "").strip()]
     system = FMT.short_brief(fmt, hook, [b.split(": ", 1)[1] for b in before])
     base = f"PREMISE: {topic['premise']}\nSHORT FORMAT: {fmt} \"{FMT.short_name(fmt)}\"\n" + (f"EARLIER SHORTS (format: opener): {' | '.join(before)}\n" if before else "")
+    if topic.get("origin") == "breakout":                              # v12 V2c-b: the follow-up of a winner continues it - a repeat would be held by short_kept
+        base += ("THIS IS THE FOLLOW-UP OF A SHORT THAT REAL VIEWERS STAYED FOR. Write the NEXT Short for those viewers: the next consequence, or the question it left open - "
+                 "the same premise from a new side, never the same lines again.\n" + (f"THE WINNER SAID: {' / '.join(str(topic.get('said')).splitlines())[:600]}\n" if topic.get("said") else ""))
     n = max(1, S("SHORTS_VARIANTS", int))
     outs = ask_many([dict(role="short_writer", system=system, prompt=base + f"Variant {k + 1} of {n}: make it genuinely different from an obvious take.", episode=ep,
                           fake_key="short_script", max_tokens=1500) for k in range(n)])
@@ -331,19 +365,22 @@ def run(force=False, publish=True, now=None, episode_id=None):
     """Make (and post, or send for review) one standalone Short. Returns a record. Order: the topic and its format -> D14 writes -> D7 voices ->
     code plans every second and D13 repairs the plan -> D8's short gate (nothing is paid for a picture before it; a held Short is NOT made and
     the owner is not asked) -> D14 makes it -> review or upload. episode_id = a fixed id (the sweep and the rehearsal); else the id is the minute."""
-    from whatifs import specials as SP, brain as BR, contract as CON, governor as G
+    from whatifs import specials as SP, brain as BR, contract as CON, governor as G, ladder as LAD
     from whatifs.org import runner as ORG, wraps as WR
     now = now or now_utc()
     if not force and not due(now): return {"ok": False, "skipped": "not due"}
-    first = _today_count(now) == 0
-    topic = pick_topic()
+    order = order_due(now)                                                        # v12 V2c-b: a winner's follow-up comes before the cadence (its clock is running)
+    if not order and not force and not cadence(now)[0]: return {"ok": False, "skipped": "not due", "why": cadence(now)[1]}
+    topic = pick_topic(order)
     if not topic: log("Shorts: no unused premise on the bench (the weekly research fills it)", "WARN"); return {"ok": False, "skipped": "no topic"}
     brk = topic.get("origin") == "breakout"
     ep = str(episode_id or f"{'BRK' if brk else 'SH'}{now:%Y%m%d%H%M}")                # BRK ids: every cost of a follow-up is charged to the breakout fund
     hist = history(); fmt = FMT.short_pick(ep, [h["format"] for h in hist]); choice = hook_for(fmt, hist); arch = choice["level"]
     est = est_inr(fmt)
-    ok, why = G.extras_allowed(est, kind="breakout") if brk else _budget_ok(est, first)
-    if not ok: log(f"Shorts: paused ({why})", "WARN"); return {"ok": False, "skipped": "budget", "why": why}
+    ok, why = G.extras_allowed(est, kind="breakout") if brk else _budget_ok(est)
+    if not ok:
+        if brk: LAD.order_tried(topic["follow_of"], f"no money ({str(why)[:100]})", now)
+        log(f"Shorts: paused ({why})", "WARN"); return {"ok": False, "skipped": "budget", "why": why}
     rec = {"ts": iso(now), "id": ep, "kind": "short", "title": "", "format": fmt, "ask": "", "yt_id": "", "ig": "", "fb": "", "status": "MADE", "views_7d": "", "file": "",
            "premise": topic["premise"], "hook": arch, "script": "", "sec": ""}
     try:
@@ -360,9 +397,11 @@ def run(force=False, publish=True, now=None, episode_id=None):
                 failed = [f for f, _ in g["failed"]]
                 store().append("Specials", [dict(rec, status=("HELD (" + ", ".join(failed) + ")")[:120])])
                 log(f"Short {ep} ({fmt}) HELD at the short gate, not made, no picture paid: " + "; ".join(f"{f}: {str(e)[:90]}" for f, e in g["failed"][:4]), "WARN", ep)
+                if brk: LAD.order_tried(topic["follow_of"], "held at the short gate (" + ", ".join(failed) + ")", now)
                 return {"ok": False, "held": True, "id": ep, "kind": "short", "format": fmt, "failed": failed, "premise": topic["premise"]}
             made = ORG.work("D14", "make", ep, lambda b: make(sc, v, pl, ep, wd), measure=m_make, lesson=make_lessons)
         out = made["path"]
+        footage = LAD.keep(ep, wd, sc, pl, v["timeline"])          # v12 V2c-b: what the Short was made of is kept - the opening of the long video its topic may earn
         BR.tag(ep, "short", title=sc["title"], premise=topic["premise"], hook=arch, sec=made["seconds"], lead=fmt, origin=topic.get("origin", "ai"),
                arm=choice.get("p_draws"), holdout=choice.get("holdout"))          # lead = the Short's FORMAT (nobody is on screen): the learning core compares S1, S2, S3
         BR.forecast(ep, "short", hook=arch)
@@ -371,12 +410,11 @@ def run(force=False, publish=True, now=None, episode_id=None):
             rec.update(SP._await_review(out, {"title": sc["title"]}, "short", ep, [{"who": "GUIDE", "line": l} for l in FMT.short_lines(sc)]))
         elif publish: rec.update(SP._publish(out, sc["title"], ep, desc=description(sc)))
         store().append("Specials", [rec])
-        if brk:                                               # 2 follow-ups per approved breakout, then the item is done
-            q = next((r for r in store().rows("Breakout_Queue") if r.get("video_key") == topic["follow_of"] and r.get("status") == "APPROVED"), {})
-            left = max(0, int(float(q.get("left") or 1)) - 1)
-            store().update("Breakout_Queue", "video_key", topic["follow_of"], {"left": left, "status": "APPROVED" if left > 0 else "DONE"})
+        LAD.enter(rec, topic, footage)                         # v12 V2c-b: every Short is a step on the ladder - its numbers decide whether its topic gets the long video
+        if brk: LAD.order_done(topic["follow_of"], ep, now)     # the order is closed with the Short that paid it (an approved long-video breakout has two)
         log(f"Short {ep} ({fmt} '{FMT.short_name(fmt)}', hook {arch}{', holdout' if choice.get('holdout') else ''}; {made['seconds']:.0f} s, {made['clips']} clips, loop {made['loop_diff']}): "
             f"{sc['title']} -> {rec['status']}", episode=ep)
         return dict(rec, ok=True, path=out)
     except Exception as e:
+        if brk: LAD.order_tried(topic["follow_of"], f"the Short failed ({scrub(e)[:100]})", now)
         log(f"Short failed (nothing posted): {scrub(e)[:200]}", "WARN", ep); return {"ok": False, "why": scrub(e)[:200]}

@@ -60,7 +60,7 @@
    "departments": ["D11", "D1", "D6", "D5"], "topic_tags": ["money", "quality"],
    "evidence": [{"source": "owner-approved money rules, requirements ledger section C", "date": "2026-11-09", "type": "owner decision", "finding": "Never cut: packaging tests, accuracy pass, the opening Kling scene, the reserve."}]},
   {"key": "owner.cadence_4_a_month", "priority": 3, "title": "Launch cadence: 4 long videos a month, one a week",
-   "summary": "4 long videos a month, one a week (Saturday, US Eastern). Each long video is built to break out; daily Shorts and the two spin-offs carry the volume. Changing this needs the owner.",
+   "summary": "4 long videos a month, one a week (Saturday, US Eastern). Each long video is built to break out; the Shorts and the two spin-offs carry the volume. Changing this needs the owner.",
    "departments": ["D1", "D11", "D9", "D4"], "topic_tags": ["cadence", "plan"],
    "evidence": [{"source": "owner, build session, answer to: launch month 4 long videos or up to 8?", "date": "2026-11-10", "type": "owner decision", "finding": "4 a month"}],
    "applied_in": ["setting:STANDARD_MAX_LONG_PER_MONTH", "setting:PUBLISH_DAYS", "whatifs/manage.py:v12_upgrade", "whatifs/governor.py:can_start_episode", "truth:old_long_cadence", "tests/test_v12_cadence.py"]},

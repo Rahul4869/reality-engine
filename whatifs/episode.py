@@ -120,7 +120,7 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     took = PV.take_approved(ep) if not fix_mode() else None          # v8.10: an approved Script Preview is used as written (not paid for twice)
     if took:
         sd, room = took
-        for k in ("strategies", "rhythm_plan", "playbook", "cast", "guest", "promise", "next_tease", "owners_cut", "family", "ptype", "research_brief", "retention_check", "table_read", "hook_sec", "format"):
+        for k in ("strategies", "rhythm_plan", "playbook", "cast", "guest", "promise", "next_tease", "owners_cut", "family", "ptype", "research_brief", "retention_check", "table_read", "hook_sec", "format", "ladder"):
             if k in sd: d[k] = sd[k]
         d["from_preview"] = True; d["preview_room_ts"] = sd.get("_t_last")      # v10.2: when the approved draft was written
     log(f"draw: {json.dumps(d)} | spend plan: {plan['reason']}")
@@ -128,6 +128,8 @@ def _stage_plan(ep, out, eps_left, slot_iso):
                     adopt=(took[1] or {}).get("org_session") if took else None, legacy=(took[1] or {}).get("_legacy_draft") if took else None)      # v12: an approved Script Preview is adopted as written - with its D4 draft run's proof (B6a); an owner-approved draft from before B6a is recorded as such
     FMT.use(d.get("format") or "")                          # v12 V2a: everything after the room (voice, package, shots, reels) is made in the episode's format
     if ORG.on(): CANON.record(ep, room, ORG.last_session("D4", "write", ep))          # v12 B6a: D4's continuity takeaway - the case record (canon once it is on air)
+    from whatifs import ladder as LAD                       # v12 V2c-b: where this video's topic comes from - its promoted Short, else the override on record ('' = neither: check topic_ladder holds it)
+    d["ladder"] = str(room["spine"].get("ladder") or (d.get("ladder") if took else "") or LAD.claim() or "")
     d["ptype"] = room["spine"].get("ptype", d["ptype"])
     if room["spine"].get("family"): d["strategies"]["family"] = room["spine"]["family"]; d["family"] = room["spine"]["family"]
     st.update("Episodes", "episode_id", ep, {"premise": room["spine"]["premise"], "ptype": d["ptype"], "presentation_format": room["spine"].get("presentation_format", "classic"),
@@ -550,6 +552,13 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
     prev = None
     if fix: prev = next((e for e in st.rows("Episodes") if e["episode_id"] == episode_id), None)
     elif episode_id is None: prev = _resumable(slot_iso)
+    if not fix:                                                                # v12 V2c-b: every topic starts as a Short - asked BEFORE the first paid call
+        from whatifs import ladder as LAD
+        if not LAD.used_by(episode_id or (prev or {}).get("episode_id")):        # a retry keeps the topic its first attempt took
+            ok_l, why_l, _lrow = LAD.gate()
+            if not ok_l:
+                log(f"no long video is started: {why_l} (nothing spent; your override is one tap on the message)", "WARN"); LAD.refuse(slot_iso, why_l)
+                return {"ok": False, "skipped": "ladder", "why": why_l}
     ep = episode_id or (prev["episode_id"] if prev else "EP" + now_utc().strftime("%Y%m%d%H%M"))
     JOB["episode"] = ep; out = os.path.join(WORK, ep); os.makedirs(out, exist_ok=True)
     try: refresh_spend()           # v8.3: spend made by other jobs since this one started counts before any new paid step
@@ -573,6 +582,7 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
             S_ = _stage_plan(ep, out, eps_left, slot_iso); CK.save(out, ep, "plan", {"plan.json": S_})
             set_setting("OWNER_BRIEF_ACTIVE", "")                  # v10.3: the owner brief was used by this episode's room
             consume_tease(S_)              # v8.9.1: the teased premise is used up only now that the plan (which made it) is safely saved
+            from whatifs import ladder as LAD; LAD.use(S_["d"].get("ladder"), ep)      # v12 V2c-b: and so is the promoted Short's topic (or the override)
         d, plan, shots = S_["d"], S_["plan"], S_["shots"]
         FMT.use(d.get("format") or "")                      # v12 V2a: a resumed plan is finished in the format it was written in ('' = written before formats)
         vo = _vo_of(S_, out); tl = json.load(open(vo.timeline_path)); units = tl["units"]

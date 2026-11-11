@@ -120,8 +120,17 @@ def _recent_videos(now):
     win = (S("BREAKOUT_WINDOW_H", float) + 26) * 3600
     return [x for x in out if parse_iso(x[2]) and 0 <= (now - parse_iso(x[2])).total_seconds() <= win]
 
+def short_winner(v, hist):
+    """(is it a winner, the base it was measured against): a Short's public views at one mark against the median of the channel's EARLIER Shorts at
+    the SAME mark (SHORTS_BREAKOUT_X times it); with fewer than BREAKOUT_MIN_HISTORY earlier Shorts the line is SHORTS_WINNER_MIN_VIEWS."""
+    base = statistics.median(hist) if len(hist) >= S("BREAKOUT_MIN_HISTORY", int) else None
+    if base: return v >= S("SHORTS_BREAKOUT_X", float) * base, base
+    return v >= S("SHORTS_WINNER_MIN_VIEWS", float), None
+
 def monitor(now=None):
-    """Called by the tick. Records 24 h / 48 h views; a breakout gets ONE card with follow-ups to approve. Returns the breakouts found."""
+    """Called by the tick. Records the public views at the 24-hour and the 48-hour mark (real-time: YouTube's own numbers are 48 to 72 hours late).
+    A LONG video at BREAKOUT_MULT times the usual 48-hour views gets ONE card with follow-ups to approve. A standalone SHORT that is a winner at
+    either mark (`short_winner`) gets its follow-up ordered by code, with a clock (`ladder.order_followup`). Returns the breakouts found."""
     if not S("BREAKOUT_MONITOR_ON", bool): return []
     now = now or now_utc(); st = store()
     rows = {r.get("yt_id"): r for r in st.rows("Monitor48")}
@@ -138,6 +147,15 @@ def monitor(now=None):
         row[col] = views.get(y, 0); row["updated"] = iso(now)
         if y in rows: st.update("Monitor48", "yt_id", y, row)
         else: st.append("Monitor48", [row]); rows[y] = row
+        if kind == "short":                                       # v12 V2c-b: the fast clock of the ladder - judged at BOTH marks, against the same mark
+            from whatifs import ladder as LAD
+            if not LAD.row(key): continue                             # only a standalone Short has a topic to follow up (never a cut-down reel)
+            hist = [float(r[col]) for r in st.rows("Monitor48") if r.get("kind") == "short" and r.get(col) not in (None, "") and r.get("yt_id") != y]
+            hit, base = short_winner(float(row[col]), hist)
+            if hit:
+                found.append({"key": key, "yt_id": y, "views": float(row[col]), "base": base, "kind": kind, "mark": 24 if col == "v24" else 48})
+                LAD.order_followup(key, y, float(row[col]), base, 24 if col == "v24" else 48, now)
+            continue
         if col != "v48": continue
         hist = [float(r["v48"]) for r in st.rows("Monitor48") if r.get("kind") == kind and r.get("v48") not in (None, "") and r.get("yt_id") != y]
         base = statistics.median(hist) if len(hist) >= S("BREAKOUT_MIN_HISTORY", int) else None
@@ -151,8 +169,10 @@ def monitor(now=None):
 def _breakout_card(key, y, v, base, kind):
     from whatifs import notify as NT
     rel = f"{v / base:.1f}x the usual {int(base)}" if base else f"{int(v)} views in 48 h (no history yet)"
-    NT.send("breakout", f"BREAKOUT: your {kind} {key} is at {rel}. Strike while it's hot: 2 follow-up Shorts on the same hook + a sequel premise "
-            f"for the next long slot (about Rs 560, from the breakout fund / reserve). https://youtu.be/{y}",
+    from whatifs import ladder as LAD
+    sequel = "the best of them can earn the sequel as a long video" if LAD.on() else "a sequel premise for the next long slot"
+    NT.send("breakout", f"BREAKOUT: your {kind} {key} is at {rel}. Strike while it's hot: 2 follow-up Shorts on its topic; {sequel} "
+            f"(paid from the breakout fund / reserve). https://youtu.be/{y}",
             [("Approve follow-ups", f"BREAKOUT GO {key}"), ("Not this one", f"BREAKOUT NO {key}")],
             tier="now", urgent=True, default="not approved", expires_h=36, dedupe_key=f"breakout|{y}")
 
@@ -163,13 +183,18 @@ def _answer(row, choice):
         st.append("Breakout_Queue", [{"ts": iso(), "video_key": key, "status": "APPROVED", "plan": "2 follow-up Shorts + sequel premise", "left": 2}])
         src = next((e for e in st.rows("Episodes") if e.get("episode_id") == key), None) or next((s for s in st.rows("Specials") if s.get("id") == key), {}) or {}
         base = src.get("premise") or src.get("title") or key
+        from whatifs import ladder as LAD
+        if LAD.on(): return "approved: 2 follow-up Shorts are queued (breakout fund first); the best of them can earn the sequel as a long video"      # v12 V2c-b: every topic starts as a Short
         try:                                                   # the sequel premise goes to the top of the bench for the next long slot
             st.append("Premise_Bench", [{"bench_id": f"BRK{key}", "premise": f"Sequel to a breakout: {base} - the follow-up question viewers asked",
                                          "status": "READY", "combined": 99, "source": "breakout"}])
         except Exception as e: log(f"sequel premise not added: {scrub(e)}", "WARN")
         return "approved: 2 follow-up Shorts are queued (breakout fund first) and a sequel premise is first on the bench"
     if len(p) >= 3 and p[1].upper() == "NO":
-        store().append("Breakout_Queue", [{"ts": iso(), "video_key": p[2], "status": "DECLINED", "plan": ""}]); return "noted: no follow-ups"
+        st = store()
+        if any(q.get("video_key") == p[2] and q.get("status") in ("ORDERED", "OVERDUE") for q in st.rows("Breakout_Queue")):          # v12 V2c-b: "Stop it" on a follow-up ordered by code
+            st.update("Breakout_Queue", "video_key", p[2], {"status": "DECLINED"}); return "stopped: no follow-up is made"
+        st.append("Breakout_Queue", [{"ts": iso(), "video_key": p[2], "status": "DECLINED", "plan": ""}]); return "noted: no follow-ups"
     return "recorded"
 
 def register():

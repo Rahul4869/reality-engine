@@ -14,7 +14,7 @@ EXPIRY_SEED = [("Claude Max plan (back to Pro)", "2026-12-10", "Check the pipeli
 def cadence_words():
     """The channel's real output, read from the settings (a prompt must describe the channel as it is, not as it once was)."""
     from whatifs import governor as G
-    n = G.long_videos_per_week(); sh = int(S("SHORTS_PER_DAY", float) * 7 + 0.5) if S("SHORTS_TRACK_ON", bool) else 0
+    n = G.long_videos_per_week(); sh = max(0, S("SHORTS_PER_WEEK", int)) if S("SHORTS_TRACK_ON", bool) else 0          # v12 V2c-b: the cadence is set in weeks
     return "about " + str(n) + (" long video" if n == 1 else " long videos") + " and " + str(sh) + " Shorts a week"
 
 def policy_rescue(items):

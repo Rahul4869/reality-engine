@@ -422,13 +422,13 @@ const DEMO = {
              { label: "Sleep Session", inr: 270 } ],
     revenue: { affiliate: 1240, ads: null, clients: 0 },
     modes: [ { id: "lean", name: "Runway", cost: 2400, text: "One long case a week, Shorts every day, Sleep Session every two months." },
-             { id: "standard", name: "Standard", cost: 4000, text: "Two long cases a week, two Shorts a day, a Sleep Session every month." },
+             { id: "standard", name: "Standard", cost: 4000, text: "One long video a week, three Shorts a week: every topic starts as a Short." },
              { id: "growth", name: "Growth", cost: null, text: "Standard plus 30% of last month’s revenue, spent where the data says it pays." } ] },
   health: {
     expiring: [ { name: "GitHub merge key", date: "2027-11-02" }, { name: "Claude Code token", date: "2027-11-05" }, { name: "Cloudflare dashboard key", date: "2027-11-06" } ],
     last_runs: [ { workflow: "Pipeline", ok: true, at: new Date(now - 6 * 60e3).toISOString() }, { workflow: "Learning", ok: true, at: new Date(now - 5 * H).toISOString() },
                  { workflow: "Checks", ok: true, at: new Date(now - 26 * H).toISOString() } ] },
-  settings: { sleep_sessions: true, affiliate_block: true, native_test_reminder: true, shorts_per_day: 1.5, localizations: true },
+  settings: { sleep_sessions: true, affiliate_block: true, native_test_reminder: true, shorts_per_week: 3, localizations: true },
   acks: [],
   whatsapp: "" };
 
@@ -664,8 +664,8 @@ function renderControls() {
       ${tg("localizations", "Titles in 6 languages", "Spanish, Portuguese, Hindi, German, French, Indonesian.")}
       ${tg("affiliate_block", "Affiliate links", "Disclosed links in descriptions and the pinned comment.")}
       ${tg("native_test_reminder", "Test & Compare reminder", "A 1-minute Studio link to test covers properly.")}
-      <div class="switch-row"><p>Shorts per day<small>The Shorts Lab learns faster with more, and costs about ₹2 each.</small></p>
-        <div class="stepper"><button data-step="-0.5" aria-label="Fewer Shorts">−</button><output id="spd">${st.shorts_per_day}</output><button data-step="0.5" aria-label="More Shorts">+</button></div></div>
+      <div class="switch-row"><p>Shorts per week<small>Every topic starts as a Short. Three a week is the plan; each one is animated in every second.</small></p>
+        <div class="stepper"><button data-step="-1" aria-label="Fewer Shorts">−</button><output id="spd">${st.shorts_per_week}</output><button data-step="1" aria-label="More Shorts">+</button></div></div>
     </div>
     <div class="actions" style="margin-bottom:12px"><button class="btn ghost wide" data-undo="1">Undo the last change</button></div>
     <div class="sec-head"><h2 class="serif">Health</h2><p>Keys and runs</p></div>
@@ -755,9 +755,9 @@ document.addEventListener("click", async ev => {
     return;
   }
   if (t.dataset.step) {
-    const nv = Math.max(0, Math.min(4, S.settings.shorts_per_day + Number(t.dataset.step)));
-    if (nv === S.settings.shorts_per_day) return;
-    if (await send(`SET|shorts_per_day|${nv}`, nv + " Shorts a day")) { S.settings.shorts_per_day = nv; render(); }
+    const nv = Math.max(1, Math.min(5, S.settings.shorts_per_week + Number(t.dataset.step)));
+    if (nv === S.settings.shorts_per_week) return;
+    if (await send(`SET|shorts_per_week|${nv}`, nv + " Shorts a week")) { S.settings.shorts_per_week = nv; render(); }
     return;
   }
   if (t.dataset.undo) {

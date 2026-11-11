@@ -20,6 +20,7 @@ def fresh_store(tmp_path):
     core.set_setting("CREATIVE_REVIEW_FIRST_N", "0")
     core.set_setting("V11_FLIPS_DONE", "test")
     core.set_setting("FORMAT_FORCE", "F2")                      # v12 V2a: the older tests are the trial's tests; formats are tested on their own (test_v12_formats)
+    core.set_setting("LADDER_ON", "FALSE")                      # v12 V2c-b: the older tests make long videos straight from the premise bench; the ladder has its own tests (test_v12_ladder), the rehearsal and the sweep walk it
     from whatifs import formats as _fm; _fm.use("")
     core.set_setting("DEEP_TRIAL_ON", "FALSE")                  # v11: the monthly Deep Trial is tested on its own (test_v11_deeptrial)                  # v11: the November allowance flip is tested on its own (test_v11_stage_a)            # v10.2: older tests expect direct scheduling; the owner review gate is tested in test_v102 + the rehearsal
     yield

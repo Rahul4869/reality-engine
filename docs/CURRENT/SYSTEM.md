@@ -6,11 +6,11 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 ## 1. Facts (read from the code)
 - Channel: "Reality on Trial" (brand Reality Engine). Concept: `docs/CURRENT/CONCEPT.md`. Owner requirements: `docs/CURRENT/OWNER_REQUIREMENTS_LEDGER.md`.
 - Money: hard cap Rs 5,000 a month, everything included (`BUDGET_CEILING_INR`); extras pause at 90% of the cap; breakout fund carries over at most Rs 1,000. One month can be overridden in `MONTH_CAP_OVERRIDES`.
-- Quality: 58 HARD contract checks (34 at the script stage and 19 on the final video of an episode, 5 at the short gate of a standalone Short). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway); a held Short is simply not made. No upload below Breakout Score 80.
+- Quality: 59 HARD contract checks (35 at the script stage and 19 on the final video of an episode, 5 at the short gate of a standalone Short). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway); a held Short is simply not made. No upload below Breakout Score 80.
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `fal-ai/kling-video/o3/standard/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
-- Cadence: at most 4 long videos a month, on Sat (US Eastern); 1.5 standalone Shorts a day; spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 122 code modules, 751 settings, 82 Sheet tabs, 24 GitHub workflows.
+- Cadence: at most 4 long videos a month, on Sat (US Eastern); 3 standalone Shorts a week, 12 a month at most - every topic starts as a Short and the promote rule picks the long video's topic (`whatifs/ladder.py`); spin-offs: the Case Files countdown and the monthly Deep Trial.
+- Size: 123 code modules, 757 settings, 83 Sheet tabs, 24 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -36,7 +36,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 ## 4. Truth rules (enforced by `whatifs/truth.py`)
 - Follow only `docs/CURRENT/` and `CLAUDE.md`. `docs/ARCHIVE/` is history: never follow it.
 - Version labels and rule numbers inside code comments are history labels, not instructions.
-- Retired concepts (14 rules). Naming one in a current doc, a module docstring or a prompt fails Plan Guard, the tests and check `docs_current`:
+- Retired concepts (15 rules). Naming one in a current doc, a module docstring or a prompt fails Plan Guard, the tests and check `docs_current`:
   - `brand_what_ifs`: the brand is Reality Engine and the show is Reality on Trial.
   - `old_month_cap`: the cap is Rs 5,000 a month all-in (November 2026 only: Rs 5,226).
   - `kling_v3_path`: the hero clip model id is fal-ai/kling-video/o3/standard/image-to-video (Kling 3.0 Standard).
@@ -51,6 +51,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
   - `old_version_tag`: current docs describe what the code does now, without the history of versions 7 to 10.
   - `old_long_cadence`: the plan is 4 long videos a month, one a week (STANDARD_MAX_LONG_PER_MONTH, PUBLISH_DAYS); lines for viewers say 'every week'.
   - `no_kling_statement`: every long video has animated Kling scenes (ANIM_SHOTS) plus the ffmpeg/OpenCV render.
+  - `daily_shorts_cadence`: the Shorts cadence is set in weeks: SHORTS_PER_WEEK (3) and SHORTS_PER_MONTH (12); every topic starts as a Short (whatifs/ladder.py).
 - Every Settings cell must be read by code. 8 cells are read by NO code (their notes start with 'NOT ACTIVE'); changing one changes nothing. The list may only shrink (limit 8); a new unread cell fails Plan Guard, the tests and check `docs_current`:
   - `CACHE_ALIGN_EFFORT`: each call keeps the effort its task is routed with; two efforts on one cached prefix cost one extra cache write, logged on every run.
   - `ROOM_VALUE_ON`: the blind test of the writers' room against a single prompt was never built; tab Room_Value stays empty. Owner, 10 Nov 2026: build it (with the learning loop).
@@ -90,6 +91,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | viewer_plain | script | everyday words: a budget for the expert words a layman would not know - in the narration, in the first 30 s, in one sentence (the layman test) |
 | viewer_probe | script | the promise line-up: from the first 30 s alone two first-time readers pick this video's title, and give none to a planted opening (the layman test) |
 | format_kept | script | the script is what its format says: a format that is not a trial does not sound like one, a trial has its Show Plan (formats as data) |
+| topic_ladder | script | every topic starts as a Short: this long video is about the topic of a Short the promote rule took, or was made under an override on record (the ladder) |
 | palace_injected | script | the Knowledge Palace playbook was inside the model prompt of every creative run's key call (the writer, the packager, the director), and the exact text is stored |
 | palace_cited | script | every creative run cited Palace knowledge it really applied: each counted citation has a quote that code found in the final output |
 | canon_in_brief | script | the writer was given the show's canon (cast and the newest aired case), called back to that case in a line of the final script, and wrote this episode's case record |
@@ -142,18 +144,23 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | BUDGET_CEILING_INR | 5000 | hard monthly spending cap, everything included: pictures, clips, Claude writing incl. thinking, Gemini incl. TTS, retries and repairs (₹5,000 incl. ₹300 for special reels, owner 2026-11-08; a single month can be overridden in MONTH_CAP_OVERRIDES) |
 | BUDGET_FLOOR_INR | 5000 | monthly budget floor; paired with the ceiling for a hard cap (₹5,000 all-in incl. ₹300 for special reels, owner 2026-11-08) |
 | MONTH_CAP_OVERRIDES | (blank) | one-month caps 'YYYY-MM=INR,...' set by the owner (the v11 upgrade writes 2026-11=5226: Rs 1,226 already spent + Rs 4,000 approved on 9 Nov for the rest of November; December is back to Rs 5,000) |
-| BUDGET_GUARD_PCT | 90 | at this % of the cap, extras pause (spin-offs, tool tests, Shorts above 1 a day); long episodes keep their money; one alert per month |
+| BUDGET_GUARD_PCT | 90 | at this % of the cap, extras pause (spin-offs, tool tests, follow-up Shorts); long episodes and the Shorts of the cadence keep their money; one alert per month |
 | BREAKOUT_FUND_CAP_INR | 1000 | the most that carries over |
 | BUDGET_MODE | standard | standard / runway (owner's tap: email link 'MODE RUNWAY' / dashboard) / growth (set by itself when revenue exists, GROWTH_AUTO_ON) |
-| STANDARD_MAX_LONG_PER_MONTH | 4 | Standard makes at most this many long videos a month (owner, 10 Nov 2026: 4 - each one built to break out; daily Shorts and the spin-offs carry the volume) |
+| STANDARD_MAX_LONG_PER_MONTH | 4 | Standard makes at most this many long videos a month (owner, 10 Nov 2026: 4 - each one built to break out; the Shorts and the spin-offs carry the volume) |
 
 **Schedule and formats**
 
 | setting | default | meaning |
 |---|---|---|
 | PUBLISH_DAYS | Sat | US Eastern day(s) of the long-video slots. Owner plan (10 Nov 2026): ONE long video a week, 4 a month; the month's count is capped by STANDARD_MAX_LONG_PER_MONTH and the money governor |
-| SHORTS_TRACK_ON | TRUE | standalone daily Shorts (the month-1 launch plan) |
-| SHORTS_PER_DAY | 1.5 | standalone Shorts per day (1.5 = 2 on even days, 1 on odd days); the first of a day is core production, the rest are extras |
+| SHORTS_TRACK_ON | TRUE | standalone Shorts - every topic starts as a Short (v12 V2c-b: SHORTS_PER_WEEK and SHORTS_PER_MONTH set how many) |
+| SHORTS_PER_WEEK | 3 | v12 V2c-b (a lever of the Shorts Studio, D14): standalone Shorts in any 7 days (3 = inside the band of 2 to 4 a week in which a Short does best per post). They are spaced 24 x floor(7 / this) hours apart; a follow-up of a winner comes on top |
+| SHORTS_PER_MONTH | 12 | v12 V2c-b (a lever of the Shorts Studio, D14): standalone Shorts in a calendar month at most (a follow-up of a winner comes on top) |
+| LADDER_ON | TRUE | v12 V2c-b (the ladder, D10): TRUE = every topic starts as a Short; a long video is made only about a topic the promote rule took from the Shorts of the last LADDER_WINDOW_DAYS days, or with your recorded override (check topic_ladder) [FALSE = long videos take their topics from the premise bench as before; Shorts are still measured] |
+| LADDER_WINDOW_DAYS | 30 | v12 V2c-b (a lever of Growth and Learning, D10): a Short can be promoted to a long video for this many days after it went public; then its topic is passed over and its kept footage is deleted |
+| SHORTS_BREAKOUT_X | 3 | v12 V2c-b: a Short whose public views at the 24-hour or the 48-hour mark reach this many times the median of the channel's earlier Shorts at the same mark is a WINNER: one follow-up Short is ordered with a clock (FOLLOWUP_WITHIN_H) |
+| FOLLOWUP_WITHIN_H | 48 | v12 V2c-b (a lever of the Shorts Studio, D14): a winner's follow-up Short must be made within this many hours of the order; later the Shorts Studio gets a problem memo that climbs to the owner |
 | CASEFILES_ON | TRUE | one Case Files countdown a month once enough episodes are archived |
 | DEEP_TRIAL_ON | TRUE | one long slot a month becomes a ~20-minute Deep Trial (three acts + a Jury Room segment) |
 | PREPROD_ON | TRUE | the writers' room for the next slot runs early (when nobody waits) through Message Batches at half price; production takes the result as written [FALSE = the room runs inside production] |
@@ -283,7 +290,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Lessons | 4 | ts, lesson, evidence, applies_to |  |
 | Playbook | 13 | rule_id, department, rule, metric, source, evidence ... | the older research rulebook (whatifs/playbook.py); NOT a Palace playbook |
 | Strategy_Log | 7 | ts, dimension, action, name, replaces, mean_at_change ... |  |
-| Analytics | 23 | episode_id, yt_id, pulled, views, avg_view_pct, avg_view_sec ... |  |
+| Analytics | 25 | episode_id, yt_id, pulled, views, avg_view_pct, avg_view_sec ... |  |
 | Repairs | 5 | ts, file, error, result, pr |  |
 | Research_Brief | 9 | brief_id, brief_date, kind, ref, item, detail ... |  |
 | Hook_Candidates | 14 | episode_id, rank, line, words, type, clarity ... |  |
@@ -314,7 +321,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Reach | 6 | key, date, video_id, impressions, ctr, updated |  |
 | Breakout_Scores | 8 | ts, episode_id, format, score, grade, weakest ... |  |
 | Monitor48 | 7 | yt_id, video_key, kind, published, v24, v48 ... |  |
-| Breakout_Queue | 5 | ts, video_key, status, plan, left |  |
+| Breakout_Queue | 7 | ts, video_key, status, plan, left, due ... |  |
 | Jury_Log | 7 | ts, episode_id, stage, judge, order, ranking ... |  |
 | Video_Features | 13 | ts, video_key, yt_id, format, hook, title ... |  |
 | Technique_Evidence | 19 | technique_id, format, family, level, alpha, beta ... | the learning core's evidence table (whatifs/brain.py) |
@@ -351,6 +358,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Lever_Changes | 12 | ts, change_id, ticket_id, lever_class, dept, target ... |  |
 | Research_Agenda | 17 | id, ts, updated, source, ref, signature ... |  |
 | Board_Log | 12 | ts, session_id, memo_ref, label, canary, judge ... |  |
+| Ladder | 27 | id, topic, premise, title, format, hook ... |  |
 
 ## 9. Modules
 | module | purpose |
@@ -396,6 +404,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | whatifs/hours.py | Hours engine: more watch hours without new videos (localised titles and descriptions, and related helpers). |
 | whatifs/immersion.py | First-person immersion: the Immersion Director maps the script to a viewer-inside-the-scene vantage, sensation and camera effects. |
 | whatifs/insights.py | Flag-gated learning and community extras (retention map and others), each fail-safe and bounded. |
+| whatifs/ladder.py | The ladder (Growth and Learning, D10): every topic starts as a Short - each Short's real numbers are written onto one record, the promote rule picks the long video's topic by code, a long video without a promoted Short is refused unless the owner's override is recorded, and a winner's follow-up Short is ordered with a clock. |
 | whatifs/launch.py | Launch checks: the zero-cost upload check, the private-lock detector and the uploads-open rule. |
 | whatifs/living.py | Living characters: locked expression art in every reaction cutaway, with blink, breathing and mouth movement. |
 | whatifs/manage.py | Scheduler and upkeep: tick, release, packaging rescue, hold/resume, trend scout, learning loop, guardian, setup, self-test and the one-time setting moves. |
@@ -596,12 +605,12 @@ By kind: audience_insight 7, failure_lesson 4, owner_preference 26, plan 2, poli
 | D6 | Visual Production | episode | plan (whatifs/episode.py), assets (whatifs/episode.py), render (whatifs/episode.py) | brief | - | ANIM_SHOTS, VISUAL_CHANGE_MAX_S, PARTICLES_ON, LIVING_CHARACTERS_ON, CAMERA_MOTION |
 | D7 | Sound | episode | voice (whatifs/episode.py), short_voice (whatifs/shorts2.py) | brief | - | SOUND_DESIGN_ON, TTS_ENGINE |
 | D8 | QA & Enforcement | episode | script_gate (whatifs/episode.py), final_gate (whatifs/episode.py), short_gate (whatifs/shorts2.py) | brief | - | CONTRACT_OFF, BREAKOUT_HARD_BAR, CRITIQUE_MIN |
-| D9 | Publishing & Distribution | episode | publish (whatifs/episode.py) | brief | - | SHORTS_PER_DAY, REEL1_DELAY_MIN, REEL2_DELAY_MIN, NEXT_LINK_ON |
-| D10 | Growth & Learning | daily | daily (whatifs/cli.py) | brief | - | BRAIN_ON, BRAIN_HOLDOUT |
+| D9 | Publishing & Distribution | episode | publish (whatifs/episode.py) | brief | - | REEL1_DELAY_MIN, REEL2_DELAY_MIN, NEXT_LINK_ON |
+| D10 | Growth & Learning | daily | daily (whatifs/cli.py), promote (whatifs/ladder.py) | brief | - | BRAIN_ON, BRAIN_HOLDOUT, LADDER_WINDOW_DAYS, LADDER_MIN_ENGAGED |
 | D11 | Finance | daily | pending (B9) | brief | - | BUDGET_GUARD_PCT, BREAKOUT_FUND_CAP_INR, AUTO_FIX_PAID_INR |
 | D12 | Operations | tick | operate (whatifs/org/execute.py) | brief | - | PREFLIGHT_ON |
 | D13 | Audience | episode | seat (whatifs/episode.py), probe (whatifs/episode.py), short_seat (whatifs/shorts2.py) | brief | - | NUMBERS_PER_MIN_MAX, GRAPHICS_MAX_LONG, GRAPHICS_FREE_SEC, BREATH_EVERY_S, PLAIN_HARD_PER_MIN_MAX, PLAIN_OPENING_HARD_MAX, PLAIN_HARD_PER_SENTENCE_MAX, SHORT_HOOK_WORDS_MAX, SHORT_HOOK_BY_S, SHORT_NUMBERS_MAX, SHORT_EXPERT_MAX, SHORT_PROMISE_WORDS_MAX |
-| D14 | Shorts Studio | episode | write (whatifs/shorts2.py), make (whatifs/shorts2.py) | brief | - | SHORT_SHARE_S1, SHORT_SHARE_S2, SHORT_SHARE_S3, SHORT_MIN_S, SHORT_MAX_S_S1, SHORT_MAX_S_S2, SHORT_MAX_S_S3 |
+| D14 | Shorts Studio | episode | write (whatifs/shorts2.py), make (whatifs/shorts2.py) | brief | - | SHORT_SHARE_S1, SHORT_SHARE_S2, SHORT_SHARE_S3, SHORT_MIN_S, SHORT_MAX_S_S1, SHORT_MAX_S_S2, SHORT_MAX_S_S3, SHORTS_PER_WEEK, SHORTS_PER_MONTH, SHORTS_BREAKOUT_X, FOLLOWUP_WITHIN_H |
 | C | The Council | weekly | pending (B6) | brief | 150 | ORG_SLA_HOURS |
 | L | The Librarian | weekly | pending (B8) | brief | 40 | PALACE_PLAYBOOK_TOKENS, PALACE_PLAYBOOK_TOKENS_BY_DEPT, PALACE_LIMITS_SHARE, PALACE_REVIEW_DAYS, PALACE_KIND_CAPS |
 
@@ -623,7 +632,7 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | build_request | D12 | D12 | ask | 24 / 72 | merged_verified, owner_answer | a code change that no lever can make: the spec, the files, the tests to add and the acceptance |
 | takeaway | any | L | record | 0 / 0 | - | one atomic learning from one department run (kept in the Takeaways tab, proposed to the Palace when it is new) |
 
-**Who owns each contract check** (a failed check becomes a problem memo to that department): D1: breakout_bar; D2: research, research_cadence; D4: audience_asks, canon_in_brief, cold_open, emotion_beat, end_tease, exhibits, format_kept, grimm_prototype, hook_lab, idea_evidence, joke_density, no_retired, originality, owners_cut, palace_cited, palace_injected, retention, send_and_awe, time_ladder, verdict_line, verdict_style; D5: chapters, short_covers, thumbnails, titles; D6: aliveness, animation, impact_map, living_characters, no_frozen_frames, promise_paid, real_motion, slop_guard, visual_change; D7: designed_voices, music_bed; D8: dept_contract, self_review, short_contract, takeaways_written; D9: shorts; D10: brain_playbook; D12: docs_current, lever_verified; D13: short_open, short_plain, short_shape, viewer_breath, viewer_numbers, viewer_plain, viewer_probe, viewer_promise; D14: short_kept; C: decisions_executed; L: palace_health.
+**Who owns each contract check** (a failed check becomes a problem memo to that department): D1: breakout_bar; D2: research, research_cadence; D4: audience_asks, canon_in_brief, cold_open, emotion_beat, end_tease, exhibits, format_kept, grimm_prototype, hook_lab, idea_evidence, joke_density, no_retired, originality, owners_cut, palace_cited, palace_injected, retention, send_and_awe, time_ladder, verdict_line, verdict_style; D5: chapters, short_covers, thumbnails, titles; D6: aliveness, animation, impact_map, living_characters, no_frozen_frames, promise_paid, real_motion, slop_guard, visual_change; D7: designed_voices, music_bed; D8: dept_contract, self_review, short_contract, takeaways_written; D9: shorts; D10: brain_playbook, topic_ladder; D12: docs_current, lever_verified; D13: short_open, short_plain, short_shape, viewer_breath, viewer_numbers, viewer_plain, viewer_probe, viewer_promise; D14: short_kept; C: decisions_executed; L: palace_health.
 
 ## 12. The Execution Engine: from a decision to a change that runs (`whatifs/org/levers.py`, `execute.py`)
 - A ticket is ONE change: lever class, target, value. The engine compiles it into a typed operation with a registered way to verify and to undo it,
@@ -690,12 +699,13 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | CONTRACT_OFF | D8 | csv | - | - | always: it switches a promised check off | the next complete run |
 | BREAKOUT_HARD_BAR | D8 | int | 50 to 95 | 5 | down: it weakens a quality gate | breakout_bar |
 | CRITIQUE_MIN | D8 | float | 4 to 9 | 1 | down: it weakens a quality gate | self_review |
-| SHORTS_PER_DAY | D9 | float | 0.5 to 3 | 0.5 | up: it costs more money | the next complete run |
 | REEL1_DELAY_MIN | D9 | int | 0 to 120 | 30 | - | the next complete run |
 | REEL2_DELAY_MIN | D9 | int | 60 to 1440 | 180 | - | the next complete run |
 | NEXT_LINK_ON | D9 | bool | - | - | - | the next complete run |
 | BRAIN_ON | D10 | bool | - | - | off: the channel stops learning from its own videos | the next complete run |
 | BRAIN_HOLDOUT | D10 | float | 0.05 to 0.5 | 0.1 | - | the next complete run |
+| LADDER_WINDOW_DAYS | D10 | int | 14 to 60 | 7 | - | topic_ladder |
+| LADDER_MIN_ENGAGED | D10 | int | 0 to 500 | 50 | - | topic_ladder |
 | BUDGET_GUARD_PCT | D11 | int | 50 to 100 | 10 | up: it costs more money | the next complete run |
 | BREAKOUT_FUND_CAP_INR | D11 | int | 0 to 3000 | 500 | up: it costs more money | the next complete run |
 | AUTO_FIX_PAID_INR | D11 | int | 0 to 100 | 20 | up: it costs more money | the next complete run |
@@ -719,6 +729,10 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | SHORT_MAX_S_S1 | D14 | int | 20 to 60 | 5 | up: it weakens a quality gate | short_shape |
 | SHORT_MAX_S_S2 | D14 | int | 20 to 60 | 5 | up: it weakens a quality gate | short_shape |
 | SHORT_MAX_S_S3 | D14 | int | 20 to 60 | 5 | up: it weakens a quality gate | short_shape |
+| SHORTS_PER_WEEK | D14 | int | 1 to 5 | 1 | up: it costs more money | the next complete run |
+| SHORTS_PER_MONTH | D14 | int | 4 to 20 | 2 | up: it costs more money | the next complete run |
+| SHORTS_BREAKOUT_X | D14 | float | 2 to 10 | 1 | down: it costs more money | the next complete run |
+| FOLLOWUP_WITHIN_H | D14 | int | 24 to 96 | 24 | - | the next complete run |
 | ORG_SLA_HOURS | C | json | 0.25 to 720 | - | always: it changes how fast the organisation must act | the next complete run |
 | PALACE_PLAYBOOK_TOKENS | L | int | 200 to 6000 | 600 | - | palace_health |
 | PALACE_PLAYBOOK_TOKENS_BY_DEPT | L | json | 200 to 6000 | - | - | palace_health |

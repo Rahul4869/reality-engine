@@ -64,7 +64,8 @@ TABS = {
  "Playbook":     ["rule_id", "department", "rule", "metric", "source", "evidence", "status", "added", "plays_on", "sum_on", "plays_off", "sum_off", "note"],      # v8.7: research-graded rules (K68)
  "Strategy_Log": ["ts", "dimension", "action", "name", "replaces", "mean_at_change", "note"],      # v8.6: every automatic strategy change, its evaluation and any rollback
  "Analytics":    ["episode_id", "yt_id", "pulled", "views", "avg_view_pct", "avg_view_sec", "ret30", "ctr", "ctr_kind", "likes", "shares", "subs", "score", "from_shorts", "diagnosis", "data_note", "shorts_views", "shorts_subs",
-                  "impressions", "wtpi", "rel30", "rel_avg", "engaged_views"],      # v8.7 (appended): impressions, watch seconds per impression, retention vs similar-length YouTube videos
+                  "impressions", "wtpi", "rel30", "rel_avg", "engaged_views", "days", "first_json"],      # v12 V2c-b (appended): days = processed days a Short's reading covers, first_json = its first LADDER_READ_DAYS days
+                 #      # v8.7 (appended): impressions, watch seconds per impression, retention vs similar-length YouTube videos
  "Repairs":      ["ts", "file", "error", "result", "pr"],
  # v7.4: audience research, opening hooks, cut map (all reviewable by a person)
  "Research_Brief":  ["brief_id", "brief_date", "kind", "ref", "item", "detail", "evidence_type", "source_url", "observed_at"],
@@ -100,7 +101,7 @@ TABS = {
  "Reach":           ["key", "date", "video_id", "impressions", "ctr", "updated"],   # v11 (K162): Reporting API channel_reach_basic_a1
  "Breakout_Scores": ["ts", "episode_id", "format", "score", "grade", "weakest", "components", "missing"],   # v11 (K158)
  "Monitor48":       ["yt_id", "video_key", "kind", "published", "v24", "v48", "updated"],                        # v11 (K158)
- "Breakout_Queue":  ["ts", "video_key", "status", "plan", "left"],                                                       # v11 (K158): approved follow-ups
+ "Breakout_Queue":  ["ts", "video_key", "status", "plan", "left", "due", "done"],          # v12 V2c-b: + due (the clock of a winner's follow-up), done (the Short that paid it)
  "Jury_Log":        ["ts", "episode_id", "stage", "judge", "order", "ranking", "n"],   # v11 (K157): every blind jury decision (judges are scored later)
  "Video_Features":  ["ts", "video_key", "yt_id", "format", "hook", "title", "topic", "length", "lead", "origin", "arm", "holdout", "title_text"],   # v11 (K155)
  "Technique_Evidence": ["technique_id", "format", "family", "level", "alpha", "beta", "trials", "successes", "n_videos", "p_beats_baseline", "effect_pp",
@@ -161,6 +162,9 @@ TABS = {
  "Research_Agenda": ["id", "ts", "updated", "source", "ref", "signature", "question", "kind", "target_depts", "urgency", "priority", "status", "memo_id", "asked_at",
                      "cost_inr", "note", "palace_ref"],
  "Board_Log":       ["ts", "session_id", "memo_ref", "label", "canary", "judge", "family", "role", "model", "order", "answers", "verdict"],
+ # v12 V2c-b (the ladder, whatifs/ladder.py): one row per Short = one step of a topic toward its long video; an override is a row too
+ "Ladder":          ["id", "topic", "premise", "title", "format", "hook", "yt_id", "posted", "state", "evidence", "days", "views", "engaged", "watched", "shares", "subs", "first",
+                     "v24", "v48", "multiple", "score", "read_at", "promoted_at", "episode_id", "footage", "by", "note"],
 }
 
 class LocalStore:
@@ -623,7 +627,7 @@ DEFAULTS = {
  "GROWTH_REVENUE_SHARE": ("0.25", "v9.4a: in Growth mode this share of last month's revenue is added on top of the cap"),
  "RUNWAY_CAP_INR": ("2400", "v9.4a: the cap in Runway mode"),
  "RUNWAY_PUBLISH_DAYS": ("Sat", "v9.4a: publishing days in Runway mode (one long video a week)"),
- "STANDARD_MAX_LONG_PER_MONTH": ("4", "Standard makes at most this many long videos a month (owner, 10 Nov 2026: 4 - each one built to break out; daily Shorts and the spin-offs carry the volume)"),
+ "STANDARD_MAX_LONG_PER_MONTH": ("4", "Standard makes at most this many long videos a month (owner, 10 Nov 2026: 4 - each one built to break out; the Shorts and the spin-offs carry the volume)"),
  "RUNWAY_MAX_LONG_PER_MONTH": ("4", "v9.4a: Runway makes at most this many"),
  "GROWTH_MAX_LONG_PER_MONTH": ("13", "v9.4a: Growth may add revenue-funded videos up to this many"),
  "BUDGET_EARMARK_INR": ("200", "v9.4a: the owner's extra ₹200 for consistent faces + the dashboard: production can never use it (Standard and Growth)"),
@@ -654,7 +658,7 @@ DEFAULTS = {
  "SPECIAL_REEL_CAP_INR": ("180", "v10.2: per special reel (4 Kling 3.0 clips + pictures, about Rs 157 at Rs 92/$); was 150"),
  "SPECIALS_EARMARK_INR": ("300", "v10: the owner's +₹300 a month for specials; production can never use it; Runway mode pauses specials"),
  "SHORTS_LINK_MAX": ("4", "v10 (G2): the weekly card lists at most this many winning Shorts to link to their episodes"),
- "SHORTS_BREAKOUT_X": ("3", "v10: a Short getting more than this many times the median views per hour = one 'act now' link card"),
+ "SHORTS_BREAKOUT_X": ("3", "v12 V2c-b: a Short whose public views at the 24-hour or the 48-hour mark reach this many times the median of the channel's earlier Shorts at the same mark is a WINNER: one follow-up Short is ordered with a clock (FOLLOWUP_WITHIN_H)"),
  "SHORTS_WEEKLY_CAP": ("10", "v10.1: at most this many Shorts in any 7 days (was 14; repetitive-content safety + quality over volume)"),
  "KINETIC_CAPTIONS_ON": ("TRUE", "v10 (G2, K135): reel captions light up word by word (numbers and YOU pop 112%) and sit REEL_CAPTION_MARGIN_PCT up from the bottom, clear of the app buttons [FALSE = v9 3-word blocks at 30%]"),
  "REEL_CAPTION_MARGIN_PCT": ("0.38", "v10: reel captions' distance from the bottom (share of the height; the Shorts/Reels buttons and title cover the lowest ~35%)"),
@@ -721,9 +725,10 @@ DEFAULTS = {
  "IMPACT_FLASH_MAX": ("3", "v11.1: V10 - max luminance flips per second"),
  "IDEA_GATE_ON": ("TRUE", "v11.1: idea-first - a long episode's premise must be backed by an outlier (once outlier data exists)"),
  "IDEA_MIN_MULTIPLE": ("5", "v11.1: outlier multiple required"), "IDEA_MIN_SIGNALS": ("10", "v11.1: the gate applies once this many outliers are collected"),
- "REPLAN_ON": ("TRUE", "v11 (K164): Monday money check - truly free money is proposed for more hook tests / more animated Shorts (owner veto)"),
+ "REPLAN_ON": ("TRUE", "v11 (K164): Monday money check - truly free money is proposed for one more Short a week (owner veto)"),
  "REPLAN_FLOOR_INR": ("500", "v11: kept untouched until the last week"), "REPLAN_LASTWEEK_FLOOR_INR": ("300", "v11: kept for running jobs in the last week"),
- "REPLAN_SHORT_INR": ("36", "v11: planning cost of one Short"), "REPLAN_MAX_SHORTS_PER_DAY": ("2.5", "v11: the most the re-planner may raise Shorts to"),
+ "REPLAN_SHORT_INR": ("36", "v11: the writing and voice allowance of one Short (three scripts, the jury, one fix, the voice)"),
+ "REPLAN_MAX_SHORTS_PER_WEEK": ("4", "v12 V2c-b: the most Shorts a week the re-planner may propose (4 = the top of the band in which a Short does best per post)"),
  "REPLAN_LAST": ("", "auto"), "REPLAN_PENDING": ("[]", "auto"), "REPLAN_ORIGINALS": ("{}", "auto"), "REPLAN_MONTH": ("", "auto"),
  "SCOUT_ON": ("TRUE", "v11 (K165): weekly tool scout (fal catalog + prices, deprecation watch, Artificial Analysis ranking if AA_API_KEY is set)"),
  "SCOUT_WEEKDAY": ("2", "v11: 0=Mon"), "SCOUT_LAST": ("", "auto"),
@@ -749,11 +754,11 @@ DEFAULTS = {
  "CASEFILES_DAY": ("15", "v11: the countdown is made on or after this day of the month"),
  "CASEFILES_LAST_DISPATCH": ("", "auto"),
  "SPINOFF_CAP_INR": ("130", "v11 G0: most a spin-off may cost"),
- "SHORTS_TRACK_ON": ("TRUE", "v11 (K159): standalone daily Shorts (the month-1 launch plan)"),
- "SHORTS_PER_DAY": ("1.5", "v11: standalone Shorts per day (1.5 = 2 on even days, 1 on odd days); the first of a day is core production, the rest are extras"),
+ "SHORTS_TRACK_ON": ("TRUE", "v11 (K159): standalone Shorts - every topic starts as a Short (v12 V2c-b: SHORTS_PER_WEEK and SHORTS_PER_MONTH set how many)"),
+ "SHORTS_PER_WEEK": ("3", "v12 V2c-b (a lever of the Shorts Studio, D14): standalone Shorts in any 7 days (3 = inside the band of 2 to 4 a week in which a Short does best per post). They are spaced 24 x floor(7 / this) hours apart; a follow-up of a winner comes on top"),
+ "SHORTS_PER_MONTH": ("12", "v12 V2c-b (a lever of the Shorts Studio, D14): standalone Shorts in a calendar month at most (a follow-up of a winner comes on top)"),
  "SHORTS_START_HOUR_IST": ("7", "v11: no Short is started before this hour (IST)"),
  "SHORTS_VARIANTS": ("3", "v11: script variants per Short (judged blind by Gemini)"),
- "SHORTS_KLING_EVERY": ("3", "v11: one new Kling shot every N Shorts (breakout follow-ups always get one)"),
  "SHORTS_REVIEW_FIRST_N": ("3", "v11: the first N standalone Shorts wait for the owner's Approve"),
  "SHORTS_LAST_DISPATCH": ("", "auto"),
  "SHORTS_NEED_MASTERS": ("FALSE", "v12 V2c: a Short shows no character (one guide voice, the viewer's own eyes), so it no longer waits for the character masters [TRUE = Shorts wait until every character master is LOCKED]"),
@@ -782,7 +787,7 @@ DEFAULTS = {
  "BREAKOUT_FUND_INR": ("0", "auto"), "BREAKOUT_FUND_MONTH": ("", "auto"),
  "BREAKOUT_ITEMS": ("breakout,followup", "v11: Cost_Log role/item prefixes paid from the breakout fund"),
  "LAST_MONTH_CAP_INR": ("0", "auto"), "LAST_MONTH_SPEND_INR": ("0", "auto"),
- "BUDGET_GUARD_PCT": ("90", "v11: at this % of the cap, extras pause (spin-offs, tool tests, Shorts above 1 a day); long episodes keep their money; one alert per month"),
+ "BUDGET_GUARD_PCT": ("90", "v11: at this % of the cap, extras pause (spin-offs, tool tests, follow-up Shorts); long episodes and the Shorts of the cadence keep their money; one alert per month"),
  "BUDGET_GUARD_ALERTED": ("", "auto"),
  "BRAIN_ON": ("TRUE", "v11 (K155): the learning core: features per video, Technique_Evidence from YouTube's engaged views, Thompson sampling with a holdout, forecasts scored against the median"),
  "BRAIN_HOLDOUT": ("0.2", "v11: share of Shorts that keep the default hook (the control the sampler must beat)"),
@@ -795,7 +800,7 @@ DEFAULTS = {
  "BRAIN_MIN_VIDEOS": ("5", "v11: distinct videos before a technique can be proven or retired"),
  "BRAIN_MIN_TRIALS": ("2000", "v11: pooled views before a technique can be proven"),
  "BRAIN_RULE_DAYS": ("60", "v11: a rule expires unless re-confirmed within this many days"),
- "BRAIN_SHORT_AGE_H": ("48", "v11: a Short's numbers are first read this many hours after it goes public (then weekly to 28 days)"),
+ "BRAIN_SHORT_AGE_H": ("48", "v11: a Short's numbers are first asked for this many hours after it goes public. v12 V2c-b: YouTube's numbers arrive 48 to 72 hours late, so the reading is repeated daily until it covers LADDER_READ_DAYS processed days, then weekly to 28 days"),
  "BRAIN_SCORE_MIN_VIEWS": ("100", "v11: a forecast is scored only once its video has this many views"),
  "CONTRACT_ON": ("TRUE", "v10.2 (K151): every promised feature is a mandatory check; a failure HOLDS the video (never uploaded) with an owner card"),
  "CONTRACT_OFF": ("", "v10.2: comma-separated feature ids switched off (owner decision only; shown in the ledger as not checked)"),
@@ -1012,6 +1017,12 @@ DEFAULTS = {
  "SHORT_PROMISE_TEXT_ON": ("TRUE", "v12 V2c: TRUE = the promise is on screen as a few words from the first frame for about 2.5 seconds [FALSE = no promise text; the word-by-word captions stay]. A switch on purpose: a study of 92,654 Shorts found text on screen does not buy views, so the learning loop must be able to test it"),
  "SHORT_PROMISE_WORDS_MAX": ("6", "v12 V2c: the promise text on the first frame has at most this many words"),
  "SHORT_SIMILAR_MAX": ("0.4", "v12 V2c: a Short that shares this share of its three-word phrases with one of the last ten Shorts is 'alike' and is held (YouTube: templated storylines with minimal variation lose monetisation)"),
+ "LADDER_ON": ("TRUE", "v12 V2c-b (the ladder, D10): TRUE = every topic starts as a Short; a long video is made only about a topic the promote rule took from the Shorts of the last LADDER_WINDOW_DAYS days, or with your recorded override (check topic_ladder) [FALSE = long videos take their topics from the premise bench as before; Shorts are still measured]"),
+ "LADDER_WINDOW_DAYS": ("30", "v12 V2c-b (a lever of Growth and Learning, D10): a Short can be promoted to a long video for this many days after it went public; then its topic is passed over and its kept footage is deleted"),
+ "LADDER_READ_DAYS": ("3", "v12 V2c-b: the promote rule compares Shorts over their first this-many processed days (3 = the first 48 to 72 hours); YouTube delivers those numbers 48 to 72 hours later"),
+ "LADDER_MIN_ENGAGED": ("30", "v12 V2c-b (a lever of D10): a Short with fewer engaged views than this in its first days is ranked after every Short above it, and its promotion says 'thin evidence'"),
+ "FOLLOWUP_WITHIN_H": ("48", "v12 V2c-b (a lever of the Shorts Studio, D14): a winner's follow-up Short must be made within this many hours of the order; later the Shorts Studio gets a problem memo that climbs to the owner"),
+ "SHORTS_WINNER_MIN_VIEWS": ("10000", "v12 V2c-b: the winner line at the 48-hour mark while the channel has fewer than BREAKOUT_MIN_HISTORY earlier Shorts to compare with (about 1 Short in 5 of a new channel reaches 10,000 views in 30 days)"),
  "SHORT_HOLD_RETRIES": ("1", "v12 V2c: how many more times a topic is tried as a Short after the short gate held it (a held Short is never made and the owner is not asked)"),
  "V12V2C_FLIPS_DONE": ("", "v12 V2c: set once SHORTS_NEED_MASTERS moved from TRUE to FALSE where the cell still held the old default; never runs twice"),
  "V12V1_FLIPS_DONE": ("", "v12 V1: set once RUNTIME_MAX_SEC (600 -> 540) and PROMISE_BY_SEC (30 -> 5) moved where the cells still held the old defaults; never runs twice"),
