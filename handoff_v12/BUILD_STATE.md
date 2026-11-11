@@ -74,33 +74,51 @@ for breakout "do or die", that the machine OBSERVE widely what breaks out and in
 first-person, continuous-camera experience. Answered in the redesign's new SECTION 10: the layman test (V1b), first person / one place / one
 move and format arm F3 "The walk" (V2), the Breakout Observatory and the aspect map (new batch V5). The evidence R15-R19 of that section is
 not in the Palace yet: the batch that builds each part adds its founding items (they need real code references).
+ITEM 20 (same night, after V2a): the Shorts must be a breakout track of their own ("dont make excuses"), full motion in videos and Shorts, a
+one-time human element (his voice, his photo, or what works best), every setting on every platform strictly enforced, every department for
+the instant hit, and his Pexels key. Four research runs and four pages read by the build session; answered in the redesign's new SECTION 11:
+SHORTS FIRST (every topic starts as a Short; 12 a month; the Shorts road into the Partner Program before 1 Feb 2027), THE MOTION LADDER (a
+Short animated in every second; the paid model by value - today's costs four times the best-value one and ranks lower), THE HUMAN KIT (his
+replicated voice needs no disclosure; the maker's line; no sample stops a platform seeing AI and for stylised animation it need not), THE
+RELEASE SHEET (what code can set, what one sitting sets, what only his hand can do per video), new department D14 Shorts Studio, and a NEW
+ORDER OF BATCHES: live after three. The evidence R20-R38 is not in the Palace yet (same rule as above).
 This turn was the DESIGN step for the whole programme (research, designs, decisions, records). Nothing of the redesign is built yet.
 
 ## NEXT
-**V2b - INSIDE THE FORMAT: first person, one place, one move; a drawn cast or none** (`handoff_v12/BREAKOUT_REDESIGN.md` 4.1, 10.7; hypotheses H4, H7).
-Full seven-step MANDATORY BATCH LOOP. Effort: High. V2 was SPLIT AT THE START (rule 6) into V2a (formats as data and the three-tier contract -
-done, record under DONE), V2b (this) and V2c (the hook). V2b scope:
-- FIRST PERSON AS A MEASURED RULE for F1 (D13 measures in the V1a pattern: measure -> the writers' one fix -> check -> lever): the voice says "you"
-  in the present tense; show, then tell (nothing is explained before the viewer has seen it happen).
-- CAMERA CONTINUITY carried on the shot list: one place per act, each shot starts where the last one ended, jumps counted; the Director's prompt
-  asks for it, a D13 check judges it.
-- A CHARACTER IS DRAWN OR ABSENT: no silhouette fallback for reaction shots in any format (`shotplan.reaction_frame`), and what the speaker chip
-  says in F1 (open issue 75). Two voices at most outside the trial is already true (V2a).
-- F1's OWN ENDING: the question "would you keep it?" instead of the three asks and the tease that code still inserts (open issue 74).
-- F3 "THE WALK" as a real format (status "on", share 0 until its first test): one voice, one continuous move; its brief and its device table.
-- The layman line-up gets same-subject titles (open issue 69) if it fits.
-What V2a leaves ready: `whatifs/formats.py` (the table, `pick`, `use` / `using` / `current`, `rule`, `block`, `rubric`, `kept_report`, `format_issues`);
-`show.on()` = the trial layer for this episode, `show.leads_on()` = the show's world; the contract runner judges a DEVICE by `d["format"]`; the
-rehearsal and the sweep run one format with the env var `WI_FORMAT`; the older tests run in forced F2 (`tests/conftest.py`).
-Remember: every new contract check must be classified (`rnd.ORG_CHECKS` or raise `rnd.SHOW_CHECKS`, now 43); a new D13 measure is a DEVICE of
-no format - it is tier 2 and holds in every format; when a switch has meant two things, sort EVERY call site before splitting it; run the
-rehearsal in each format (`WI_FORMAT=F1`, `WI_FORMAT=F2`) before the suite - it found what the tests had not; a held episode stops in about 10
-seconds; NEVER paste code with backslashes through a shell here-document.
-ORDER AFTER V2b: V2c the hook (hook-first production: the first 30-40 seconds made first as one continuous first-person move, published as a
-Short and reused as the opening; models by value; the cost model with the line-up's line - open issue 72; Shorts under the viewer's seat; every
-job in the episode's format - open issue 76; the CONCEPT page rewritten) -> V1c the judged floor with the canary + the owner's verdict tab -> V3
-pilot on real services, then go live -> V4 the CEO and the ladder (+ his input tab, the scoreboard, the format shares - open issue 78) -> V5 the
-Breakout Observatory and the aspect map -> B6b -> B7 -> B8 -> B9 -> B10. Eleven batches remain.
+**V2c - THE SHORT: the short video as its own product** (`handoff_v12/BREAKOUT_REDESIGN.md` SECTION 11: 11.4, 11.7, 11.8, 11.9; hypotheses H10, H11).
+Full seven-step MANDATORY BATCH LOOP. Effort: High. The order of the batches was CHANGED on 11 Nov by the owner's item 20 (redesign 11.10): the
+Short comes first because every week before 1 Feb 2027 counts. It is large: split it at the start if it does not fit one session (rule 6) - a
+natural cut is (1) the product: department D14, Short formats, the brief, the seat's checks; (2) the ladder and the platforms. Scope:
+- NEW DEPARTMENT D14 SHORTS STUDIO (`whatifs/org/__init__.py`, `registry.py`: 17 departments; its founding Palace items FIRST - the runner
+  refuses a department without a playbook; levers: Shorts a week, length per format, format shares, the double-down line).
+- SHORT FORMATS AS DATA beside the long formats (`whatifs/formats.py`): S1 "The second it changed", S2 "What would you do?", S3 "The whole
+  thing in 30 seconds"; `whatifs/shorts2.py` is rebuilt from "mini-trials" to these (its three variants judged blind stay).
+- THE VIEWER'S SEAT FOR A SHORT (D13; the V1a pattern - measure, the writers' one fix or a repair by code, check, lever): `short_open` (the
+  first frame is the moving impossible picture; a hook of 12 words at most inside 3 s; the promise readable inside 1 s), `short_plain` (one
+  idea, one number at most, no expert word - `layman.py` and `audience.py` have the measures), `short_shape` (20-45 s by format, the last line
+  hands back to the first picture, no ask), `short_kept` (the format is kept; no two in ten alike).
+- SHORTS FIRST: every topic starts as a Short; the numbers of 48-72 hours decide which 4 a month get the long video, whose opening is the
+  Short's footage; a Short at 3 times the median gets a follow-up inside 48 hours (`SHORTS_BREAKOUT_X` and the breakout queue exist). The
+  cadence cells change (12 a month, 3 a week; the cut-down reels of `reels.py` stop being the product).
+- ONE NATIVE UPLOAD PER PLATFORM (`publish.py`): Instagram Trial Reels, cover and audio name; Facebook 90 s at most; the Shorts thumbnail; the
+  Shorts rows of the release sheet read back after upload.
+- In V2c a Short is planned as animated in every second with the hero model the code has; choosing the model by value is V2d.
+What the earlier batches leave ready: `whatifs/formats.py` (formats as data, `use` / `current`, `rule`, the three-tier contract), D13's measures
+(`audience.py`, `layman.py`) and its two runs, the pattern "measure -> repair or one fix -> contract check -> lever", the rehearsal and the
+sweep per format (`WI_FORMAT`).
+Remember: every new contract check must be classified (`rnd.ORG_CHECKS` or raise `rnd.SHOW_CHECKS`, now 43); a department run that returns
+`Out` must say what it did with EVERY inbound memo; when a switch has meant two things, sort EVERY call site before splitting it; run the
+rehearsal in each format before the suite; a held episode stops in about 10 seconds; a check that can hold a video must recognise what is
+wrong, not flag what it does not know (the V1b sweep); NEVER paste code with backslashes through a shell here-document.
+ORDER AFTER V2c (redesign 11.10): V2d THE MOTION LADDER AND THE MONEY (the hero model by value from the live listing, the living tier widened,
+a character drawn or absent - no black shape in any format, the stock rules for NASA and Pexels, the cost model with every paid second - open
+issue 72 - and the split 4 long + 12 Shorts) -> V3 PILOT ON REAL SERVICES AND GO LIVE (three Shorts and one long video; the human kit: his
+voice recording with the consent sentence, five photos, three sentences, the secrets typed by HIM; the release sheet's one-time switches; the
+one-minute release card; then the new code replaces the old) -> V2b INSIDE THE FORMAT (first person and the camera path as measured rules, F1's
+own ending instead of the asks code still inserts - open issue 74, the speaker chip - 75, F3 "The walk", same-subject line-up titles - 69) ->
+V1c THE FLOOR, HIS VERDICT AND THE MAKER'S LINE -> V4 the CEO and the ladder (+ his input tab, the scoreboard, the format and Short shares) ->
+V5 the Breakout Observatory (Shorts first) and the aspect map with the release sheet -> B6b -> B7 -> B8 (+ every run names its scoreboard
+number) -> B9 -> B10. Twelve batches remain; the channel runs the new code after the third.
 The notes below (what B5 / B6a leave ready for the Council) stay valid for B6b:
 **B6b - The Council (C)** (01 sections 2 (C), 4, 5, 7 `council_held`; 03 "B6", second bullet). Full seven-step MANDATORY BATCH LOOP. Effort: High.
 Gathers open research / assessment / creative / owner / performance / problem memos; diverge -> blind cross-family jury -> converge -> decision
@@ -2166,10 +2184,11 @@ Rehearsal asserts `docs_current` ran and passed.
 | V1a | done 11 Nov 2026 | GitHub 1284 passed (run 85); laptop 312 / 0 on the 9 touched files | GREEN (50 checks: 45 pass, 5 not applicable) | The viewer's seat, measured: department D13 Audience; before any picture is paid the first shot is a picture carrying the animated promise (5 s), the voice gets a pause every 30 s, numbers heard and number graphics have a budget; 3 script-gate checks (50 hard checks), 4 levers (45), long videos 9:00 at most. GitHub run 85 GREEN on f96b87a; sweep 28 of 28. |
 | V1b | done 11 Nov 2026 | 1292 / 0 / 1 (laptop); GitHub 1293 passed (run 89) | GREEN (52 checks: 47 pass, 5 not applicable) | The layman test: expert words a layman would not know counted by code (a budget per minute, in the first 30 s, in one sentence; the writers' one fix carries it) and the promise line-up (two cheap readers of two model families pick the video's title from the first 30 s; a planted opening must get none; verdict by code); 2 script-gate checks (52 hard checks), 3 levers (48), D13's second run. GitHub run 89 GREEN on 4c0e607; sweep 28 of 28 (the first sweep held 1 of 20 for ordinary words - fixed at the cause). |
 | V2a | done 11 Nov 2026 | 1302 / 0 / 1 (laptop); GitHub 1303 passed (run 91) | GREEN in F1 and in F2 (53 checks) | Formats as data and the three-tier contract: every episode has a format (F1 "The day it changed" 70, F2 "The trial" 30; shares are levers of D1), the trial layer, the briefs, the juries and the production follow it; a format can make a show device optional or leave it out and nothing else; new check format_kept (53 hard checks), 3 levers (51). GitHub run 91 GREEN on 75c55ea; sweep 28 of 28 (15 episodes in F1, 9 in F2, 4 rehearsals). |
-| V2b | next | | | Inside the format: first person and camera continuity as measured rules, a character drawn or absent, F1's own ending, F3 "The walk" |
-| V2c | after V2b | | | The hook: hook-first production, models by value, the cost model, Shorts under the viewer's seat, the CONCEPT page |
-| V1c | after V2c | | | The judged floor on the finished video with the canary (the owner's rejected video must lose) and his verdict tab |
-| V3 | after V1c | | | Pilot on real services, then GO LIVE with the new code (the later batches are built while the channel runs) |
-| V4 | after V3 | | | The CEO and the ladder: D1 Strategy wired, the portfolio, decide-inform-implement; the owner's input tab and the scoreboard |
+| V2c | next | | | THE SHORT (item 20): department D14 Shorts Studio, Short formats as data, the viewer's seat for a Short, Shorts first (every topic starts as a Short; the best 4 a month get the long video), one native upload per platform |
+| V2d | after V2c | | | The motion ladder and the money: the hero model by value, the living tier, a character drawn or absent, stock rules (NASA / Pexels), the cost model |
+| V3 | after V2d | | | Pilot on real services (3 Shorts + 1 long video), the human kit, the release sheet's one-time switches, then GO LIVE with the new code |
+| V2b | after V3 | | | Inside the format: first person and camera continuity as measured rules, F1's own ending, F3 "The walk" |
+| V1c | after V2b | | | The judged floor with the canary (the owner's rejected video must lose), his verdict tab, the maker's line |
+| V4 | after V1c | | | The CEO and the ladder: D1 Strategy wired, the portfolio, decide-inform-implement; the owner's input tab and the scoreboard |
 | V5 | after V4 | | | The Breakout Observatory (hits against siblings, three rings, patterns counted by code, one trial each) and the aspect map (item 19) |
 | B6b | after V5 | | | The Council |

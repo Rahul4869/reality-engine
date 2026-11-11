@@ -3,7 +3,8 @@ Authority: the owner's free hand, item 17 of `02_OWNER_VERBATIM.md` ("IF YOU HAV
 rejected the first live video (item 16). This page OVERRIDES `01` section 1 ("concept truth, do not re-open"), the order of the batches in `03` and
 the department list in `01` section 2 wherever they differ. The budget is unchanged: Rs 5,000 a month for everything.
 Status: DESIGN (research + designs + decisions). Built so far: V1a (11 Nov 2026). The batches in section 6 build the rest, one per owner
-"continue". SECTION 10 (the owner's item 19, same day) amends sections 4-7.
+"continue". SECTION 10 (the owner's item 19, same day) amends sections 4-7. SECTION 11 (his item 20, same night) amends them again -
+Shorts first, the motion ladder, the human kit, the release sheet, a new order of batches: READ SECTION 11 FIRST. Built so far: V1a, V1b, V2a.
 
 ## 0. THE HONEST FRAME
 - Nobody can make a channel a sure shot. Of 137,355 new long-video channels, 30.8% got even ONE video past 10,000 views in their first ten (R1).
@@ -99,7 +100,7 @@ it spends the expensive part only after real viewers said yes, and it aims at th
   F2 "The trial" (30%, an experiment arm): the Toybox Noir courtroom the owner designed on 9 Nov, with the same hook-first opening.
 - Two voices at most in a video (a guide and a foil), designed, warm, with room to breathe. No black shapes ever: a character is drawn or absent.
 - 8:10 to 9:00 minutes (mid-roll ads need 8). One idea. Numbers are rare. Captions always on screen.
-### 4.2 The production recipe: HOOK-FIRST
+### 4.2 The production recipe: HOOK-FIRST (generalised by 11.4: EVERY topic starts as a Short)
 1. Idea with outlier evidence -> title + thumbnail + the one-sentence promise (packaging before script, as today).
 2. THE HOOK (30-40 s, vertical and horizontal cut from the same clips): second 0-3 SHOWS the promise in motion (the best animated shot of the
    whole video), then two consequences, then an open question. Fully animated.
@@ -147,7 +148,7 @@ Nobody in the organisation sat where the viewer sits. D13 does, with a veto befo
 - TIER 2, hard: the viewer's seat (4.3). This is the new gate before picture money (script) and before upload (final).
 - TIER 3, advisory per format: the devices (time ladder, prototype beat, joke every N seconds, asks, tease ...). A device becomes a "must" for a
   format only when the learning core shows it helps THAT format; none is forced because a list says so. The trial format keeps its own devices.
-### 4.7 Money (Rs 5,000; today's fixed parts: maintenance 100, specials 300, earmark 200, the organisation's thinking 420 now and 610 later)
+### 4.7 Money (the split below is replaced by 11.10; Rs 5,000; today's fixed parts: maintenance 100, specials 300, earmark 200, the organisation's thinking 420 now and 610 later)
 - About Rs 3,790-3,980 for production, plus the Rs 300 "specials" money, which goes to the core until the channel has viewers (below).
 - WHY NOT MORE THAN 5 LONG VIDEOS: the count is set by money, not by choice. One topic = hook Short + long video sharing the same animation: about
   Rs 580-660 (a fully animated 30-35 s hook at about USD 0.045 a second with retakes is about Rs 200 - instead of today's 4 scattered clips at
@@ -203,7 +204,7 @@ H1 a hook Short's "stayed" and share viewed predict its long video's 30-second r
 where they sit. H3 the numbers budget raises the share viewed. H4 two voices hold better than one. H5 F1 beats F2. H6 the D13 floor removes videos
 the owner would reject (measured by his verdicts). A hypothesis that fails changes the plan; D1 reports it.
 
-## 6. THE NEW BATCH PLAN (one batch per owner "continue"; every batch runs the full seven-step loop; standing rules 1-4 unchanged)
+## 6. THE NEW BATCH PLAN (THE ORDER IS REPLACED BY 11.10; one batch per owner "continue"; every batch runs the full seven-step loop; standing rules 1-4 unchanged)
 | Batch | What | Done when |
 |---|---|---|
 | V1 (split: V1a done 11 Nov, V1b next) | THE VIEWER'S SEAT: department D13; the layman test (10.6, V1b); the measured viewer checks; the judged floor with the canary; the owner's verdict and his input line (a Sheet tab) as memos; the scoreboard; length 8:10-9:00; voice model by rank | a flop-like episode is HELD in the rehearsal; each check proven both ways; D13 wired; sweep + GitHub green |
@@ -220,8 +221,10 @@ the owner would reject (measured by his verdicts). A hypothesis that fails chang
 ## 7. WHAT ONLY THE OWNER CAN DO
 1. WITHDRAWN on 11 Nov by his own decision (item 19, section 10.1): the live channel is NOT paused and the rejected video stays public; the
    old code publishes until the new code goes live at V3.
-2. At V3: follow the pilot guide (about 20 minutes, step by step), then watch three videos and give each a verdict.
-3. Each week after launch: 30 seconds per release - a thumbs up or down and one line. It is the machine's best teacher.
+2. At V3: follow the pilot guide (about 20 minutes, step by step), then watch three videos and give each a verdict. The same sitting holds
+   the HUMAN KIT (a voice recording, five photos, three sentences, the secrets typed by him) and the channel switches of the release sheet (11.6, 11.7).
+3. Each week after launch: 30 seconds per release - a thumbs up or down and one line. It is the machine's best teacher. Per long video also
+   the ONE-MINUTE RELEASE CARD (11.7): four links only a hand can set, and his maker's line.
 
 ## 8. THE OWNER'S ACCOUNTS (as the files record them; live balances are only in his Sheet)
 fal (prepaid; Settings cell FAL_FUNDED_USD, default 10), Anthropic API (prepaid; ANTHROPIC_FUNDED_USD, default 25), Google Gemini API (Tier 1
@@ -357,3 +360,235 @@ videos CAUSES the virality (a trait of hits is often just as common in flops - w
   absent, F1's own ending, F3). V2c builds the hook (4.2, 4.7). Then V1c, V3 (pilot, go live), V4, V5, B6b-B10: eleven batches remain.
 - O7 No evidence yet that the walk helps on YouTube (10.2): it is in every hook because the owner's own judgment is D13's strongest label and
   it is the brand's promise; F3 and H7 let the viewers confirm or refuse it.
+## 11. AMENDMENT OF 11 NOV 2026 (night) - the owner's item 20: Shorts as a breakout track of their own, full motion, a human element, every setting on every platform, the Pexels key
+Status: DESIGN. Where this section differs from sections 4-7 and 10, this section wins. It changes the product (Shorts first), the money, the
+order of the batches (go live after three batches, not five) and adds one department. Nothing in it is built yet; 11.10 says which batch builds
+what and 11.9 gives every rule its code path and its check.
+### 11.1 The owner's desk: item 20, answered
+| His words | Verdict | How it is used |
+|---|---|---|
+| "Reels ... made for breakout virality ... reaching YPP instantly with first reel only independently" | ADOPTED as the aim, the odds said once | SHORTS FIRST (11.4): every topic starts as a Short built to win alone; 12 a month; the Shorts road into the Partner Program is the plan's first road until 31 Jan 2027 |
+| "dont make excuses for this" | TAKEN | the plan is built for the best case; the measured odds are in 11.2 and are not repeated as a reason to do less |
+| "observe each and every of their aspects ... combine" | ADOPTED | the Observatory watches Shorts first: hits against siblings, the first three seconds (10.5, 11.4) |
+| "fully motion animated videos and reels ... free repo tools ... nominal credit" | ADOPTED for Shorts (every second animated), ADOPTED as a ladder for long videos | THE MOTION LADDER (11.5): no second without motion; the paid model chosen by value - today's is neither the best nor the cheapest |
+| "free skills installed in my claude ... best highest rated repos" | USED where they help, REFUSED where they are the problem | 11.5: one open-source renderer for code-made motion; the most-starred "topic to stock-footage Short" repositories are exactly what the platforms now punish |
+| "my photo or a voice sample ... so that it doesn't get flagged as AI" | HONEST ANSWER, then ADOPTED where it truly helps | 11.6: no sample stops a platform seeing AI - and for our kind of video it does not need to; his own VOICE and his own LINE are adopted, his face as a drawn host is tested |
+| "something else ... one time ... highest impact" | ADOPTED | THE HUMAN KIT (11.6): five things, one sitting at the pilot |
+| "YT video settings and features ... Instagram and FB also same" | ADOPTED | THE RELEASE SHEET (11.7): every setting as data - by code where a field exists, by one guided sitting where it is a channel switch, by a one-minute card where only a hand can do it |
+| "all the departments working with this sole ... motive ... add or modify departments" | ADOPTED | NEW department D14 Shorts Studio; seven departments changed (11.8); every run names the scoreboard number it works for |
+| "Pexels API key" | ALREADY WIRED, now given rules | 11.7: the code already searches NASA and Pexels; real footage becomes a rare "reality anchor" in long videos and stays out of Shorts |
+### 11.2 Evidence (marks as in section 1; "read" = read by the build session itself, "run" = read by a research run of 11 Nov 2026 that named its pages)
+R20 E read. YouTube Help 72851 and (run) 12843009, YouTube Blog 10 Aug 2026: the Partner Program needs 1,000 subscribers AND 4,000 watch hours in
+   12 months OR 10 million qualified Shorts views in 90 days. From 1 Feb 2027 new applicants need 8,000 hours OR 20 million Shorts views. The
+   Shorts money pool pays only in months in which the channel holds 10 million qualified Shorts views over the last 90 days. A smaller tier
+   (500 subscribers + 3,000 hours or 3 million Shorts views) gives fan funding, no ad share. "Qualified" = engaged views, not first frames.
+R21 E/O run. What Shorts pay: median USD 0.07-0.20 per 1,000 views in most niches (AIR, 274 channels, Sep 2026). 10 million views is about USD
+   700-2,000. A Short's money is small; what a Shorts breakout buys is the DOOR: once the channel is in, its long videos earn too (R6: USD 10).
+R22 E run. Odds. New channels (vidIQ, 367,243 channels, Jul 2026): per Short 56.6% reach 1,000 views and 20.9% reach 10,000 in 30 days; the
+   median Short gets about 1,300; the best of a channel's first ten has a median of 8,832. A sample skewed to popular channels (OverseerOS,
+   32,016 Shorts, Nov 2026): 8.9% reach 1 million, 2.4% reach 10 million - its authors say it is not a platform rate. No figure exists for a
+   tiny channel at 1 million or 10 million, and none for 100 million.
+R23 E run. What separates the Shorts that travel (P. Galloway, 5,400 Shorts with 3.3 billion views, Apr 2023): "viewed vs swiped away" under 60%
+   rarely performed, the best sat at 70-90%; likes, comments and shares showed no strong relationship. Instagram (Socialinsider, 9.77 million
+   Reels, 2026): 60-65% of viewers leave within 3 seconds on average; reach is best at 30-60 seconds and falls beyond 120. YouTube (Metricool,
+   799,718 videos): a Short is watched about 16 seconds; the best results per Short come at 2-4 Shorts a week.
+R24 E run. What does NOT separate them (arXiv 2611.13002, 92,654 Shorts, Nov 2026): on-screen text, hashtags and length all correlate with views
+   at about zero. YouTube's Shorts lead (2023): posting time is not optimised for, hashtags are not required, deleting and re-posting risks a
+   spam flag. So no rule here is built on hashtags, posting hours or text tricks.
+R25 E run. How they are ranked. YouTube: every Short gets a seed audience and then grows or tapers; "every Short is given a chance to succeed no
+   matter the channel"; Shorts and long videos have separate watch histories. Instagram (Mosseri, Jan 2025): watch time, likes and SENDS decide;
+   sends matter most for reaching non-followers. Trial Reels (shown to non-followers first) are open to everyone.
+R26 E run. Originality is now policed on every platform: YouTube (1 Oct 2026) gives "less distribution" to re-uploads and "template-based
+   changes"; Instagram (30 Apr 2026) stops recommending accounts that mainly post unoriginal content - a border, a watermark or subtitles do not
+   make it original; Facebook (13 Mar 2026) can demonetise them.
+R27 E run. AI Shorts channels did break out (2 billion views and more, Kapwing Nov 2025) - and by Jan 2026 16 of the top 100 were gone, with
+   35 million subscribers and 4.72 billion views (Net Influencer, Tubefilter). What YouTube allows: a series where "each video has a distinct
+   storyline, focus, or concept". No AI-made science Shorts channel that reached the Partner Program could be verified.
+R28 E/O run. Shorts and long videos on one channel: about 5 Shorts a month doubles views per long video against none; at 35 and more the gain is
+   gone (Metricool); a vendor puts the best mix at 1-5 a month for long-video income (AIR). YouTube: channels that made Shorts "seemed to be
+   growing faster"; a separate channel only "when your viewers have totally different interests". No data on a separate Shorts channel.
+R29 E run. Instagram and Facebook pay nothing we can plan on: Instagram lists no ad share for Reels; Facebook's programme is invite-only (India
+   is on its list). They are reach and a second draw of the same Short - at no extra production cost.
+R30 E run (fal model pages and the Artificial Analysis image-to-video board, 11 Nov 2026). Animation by the second: models ranked 1108-1133 cost
+   USD 0.02-0.06 a second; the one we pay (ranked 1000) costs 0.084. A 35-second Short is about USD 0.70-2.10. A 540-second video is USD 10.80
+   at the best-value ranked model - five of them are the whole budget. An open-weight model costs USD 0.005-0.01 a second, unranked. Two fal
+   pages disagree on some prices: the tool scout must read the live listing.
+R31 E run. Motion made by code, free: HyperFrames (Apache-2.0, 82,000 stars; HTML, CSS and animation libraries rendered through a headless
+   browser and ffmpeg) and Remotion (free for an individual and for firms of up to 3 people) both render 10 seconds of 1080p in 10-30 seconds
+   on a 2-4 core machine without a graphics card. The depth model our parallax already uses is Apache-2.0. No controlled study shows that more
+   motion raises retention; YouTube's policy does list "image slideshows ... with minimal or no narrative" as not monetisable.
+R32 E read. YouTube Help 14328491: NO disclosure is needed for "cloning one's own voice to create voice overs or dubs", for voice or audio repair,
+   for beauty filters, or for unrealistic and fully animated content; for animated content a label "may appear in the expanded description";
+   "disclosing AI content alone won't limit a video's audience or impact its eligibility to earn money". (run) YouTube Blog 27 May 2026 says the
+   same of the automatic label, which is triggered by undisclosed PHOTOREALISTIC AI.
+R33 E run. What does lose a channel its money (YouTube Help 1311392): "AI-generated content made with generic or unoriginal templates giving the
+   impression of mass production without adding the creator's original, authentic insights or perspective"; monetisable: "using AI to visualize
+   a unique character and narrative you invented". A human voice or face is nowhere required; reviewers "may focus on" the About section. An AI
+   persona posing as a human expert on health, law, money or politics is not monetisable (2026).
+R34 E run. Human against AI voice: in a blind test 55% took the AI voice for human with no gap in trust (Crowd React, n = 1,326, Jul 2026); a
+   high-quality AI voice held viewers as well as a human one (TechSmith, n = 768); AI labels did not change ad results (MediaScience, n = 900,
+   May 2026). Against it: content people BELIEVE to be AI-made scored 48% lower trust (Raptive, n = 3,000, text articles). And a human voice is
+   no shield: Kurzgesagt, human-made, says YouTube's detection treated it as AI and its reach collapsed (Dexerto, 7 Aug 2026).
+R35 E run. His voice can be replicated inside the Google account he already pays for (since 23 Sep 2026): 10-30 seconds of clean REAL speech plus
+   a spoken consent sentence by the same speaker; an AI-altered sample is refused; the price is the normal voice price. The result carries an
+   invisible watermark and content credentials. Free tools clean a home recording (MIT-licensed).
+R36 E run. Faces in thumbnails: "about the same" with and without across 300,000 viral videos, differing by niche (1of10, Dec 2025).
+R37 E run (YouTube Data API reference, Help pages, Meta developer pages, read 11 Nov 2026). What code can set: title, description, tags,
+   category, languages, "not made for kids", the altered-content field, translated titles and descriptions, the publish time, the thumbnail
+   (since 3 Nov 2026 also for Shorts), captions, playlists; chapters and hashtags through the description. What only a hand in YouTube Studio
+   can set: the link from a Short to its long video (YouTube, Jul 2026: "the most effective tool"), end screens, cards, pinning a comment, the
+   title-and-thumbnail A/B test (3 variants, desktop), automatic dubbing (a channel switch; English into Hindi, Bengali, Tamil, Telugu and
+   more). "Hype" needs the Partner Program and 500 subscribers. Instagram's API sets the cover, the audio name, the AI flag and Trial Reels;
+   Facebook's sets description and AI flag; cross-posting is not an API field - each platform gets its own upload.
+R38 E read / run. Pexels licence (read): free for commercial use, no credit required, changes allowed; never people in a bad light, never
+   unaltered resale. API: 200 requests an hour; portrait search exists. YouTube's reused-content policy never names stock footage; it names
+   material "already online" without substantive change. NASA footage is free with a credit and without the NASA logo.
+NOT FOUND, so nothing is built on it: a measured effect of captions, sound, the first frame, loops or series on Shorts; any rate at which tiny
+channels reach 10 million views; any measured reach effect of Meta's AI label; any channel that kept its money through a real-voice intro.
+### 11.3 What the code already has (so that the plan changes it instead of rebuilding it)
+- Shorts: `whatifs/reels.py` cuts up to 4 Shorts from each long video; `whatifs/shorts2.py` is a standalone daily Shorts track (1.5 a day, three
+  script variants judged blind, a weekly cap of 10, "breakout follow-ups") - written as "mini-trials"; `whatifs/shortslab.py` lists the week's
+  winning Shorts for the owner to link. The live channel runs none of the standalone track.
+- Motion: every still already moves by depth parallax (`render.py`, `media.depth_map`); 8 stills per video are animated by a cheap model
+  (`FAL_LIVING_MODEL`); 4 scenes by the hero model at USD 0.084 a second; `MOTION_BOOST_ON` (code-made stretching of clips) exists, off.
+- Stock: `media.stock` already tries NASA, then Pexels (secret `PEXELS_KEY`, optional) - landscape only, 5 results, no rule on how much.
+- Publishing: `publish.py` sets title, description, tags, category, languages, kids = no, the AI field, the schedule, the thumbnail, captions,
+  the playlist and posts a comment (it cannot pin it); Instagram and Facebook Reels go out through Meta's API with the AI flag; titles and
+  descriptions can be translated (`localize`). Nothing sets Trial Reels, the audio name or portrait stock; nothing tracks the hand-only steps.
+- Voice: designed voices from the owner's Google account; no path for a replicated voice.
+### 11.4 SHORTS FIRST - the short video as its own product (new department D14; D13, D10, D9, D1)
+- THE AIM, in numbers: 1,000 subscribers + 10 million engaged Shorts views inside 90 days, applied for BEFORE 1 Feb 2027 (after that: 20
+  million). One channel: a Short that breaks out carries the whole channel through the door, and the long videos then earn (R20, R21, R28).
+- THE ODDS, said once (R22): about 1 Short in 5 of a new channel passes 10,000 views; passing 10 million is rare even among popular channels.
+  So the plan is many independent, well-aimed shots, real numbers after every one, and money that follows a winner within two days.
+- EVERY TOPIC STARTS AS A SHORT. 12 Shorts a month (3 a week - inside the measured best band, R23). Each stands alone: a complete, looping
+  micro-story - never a trailer, never a cut-down. After 48-72 hours the brain reads the Short's real numbers; the best 4 topics of the month get
+  the long video, whose opening IS that Short's footage (4.2 generalised). This replaces "8 hooks, 5 promoted".
+- SHORT FORMATS AS DATA (as long formats in V2a): S1 "The second it changed" - the impossible picture, two consequences, a question that hands
+  back to the first frame; S2 "What would you do?" - you gain or lose one power, it turns personal, it ends on your choice (the far-ring
+  hit of 10.5's first round: 445,000 views on a channel of 3,100); S3 "The whole thing in 30 seconds" - one big idea, one continuous shot. Shares
+  are levers of D14; the Observatory proposes more.
+- THE VIEWER'S SEAT FOR A SHORT (D13; measured by code before any second of animation is paid; the V1a pattern):
+  the first frame is the impossible picture, already moving - no title card, no logo, no black; the spoken hook ends inside 3 seconds and has at
+  most 12 words (R23: most viewers decide inside 3 seconds); the promise is readable on screen inside the first second; captions are always on,
+  above the platform buttons; ONE idea, at most one number, NO expert word; 20-45 seconds by format (short enough to be watched to the end -
+  the measure that counts is the share who stay, 70% and more); the last line hands back to the first picture (a loop); no ask to like or
+  subscribe, no channel intro; every second animated (11.5); no stock footage; no two Shorts in ten with the same format and structure (R26, R27).
+- AFTER PUBLISHING only real numbers judge (D10): viewed against swiped away, the share watched, engaged views, sends and shares per reach,
+  subscribers per 1,000 views. Two rules run on them: PROMOTE (the month's best 4 get long videos) and DOUBLE DOWN (a Short at 3 times the
+  channel's median views per hour gets a follow-up Short within 48 hours from the reserve - `SHORTS_BREAKOUT_X` exists).
+- EVERY PLATFORM NATIVELY (D9): the same master goes to YouTube Shorts, Instagram Reels and Facebook Reels as three own uploads - never a file
+  with another platform's mark. Instagram: Trial Reels on (non-followers first, graduating by performance), the cover, the audio named after the
+  series, the AI flag. Facebook: 90 seconds at most. Instagram and Facebook are reach and a second draw, not income (R29).
+- THE RISK that is stated and watched: 12 Shorts beside 4 long videos is more than the "1-5 a month" at which long videos did best (R28, a
+  correlation). D1 owns the split as a lever and reports the long videos' views per video against the Shorts count every week; after the window
+  (1 Feb 2027) the data decides.
+### 11.5 THE MOTION LADDER - no second without motion (D6; D13 checks it)
+| Rung | What moves | Made by | Cost | Where |
+|---|---|---|---|---|
+| L4 | a scene animated from its start picture, the next clip starting on the last frame of the one before | the hero model, chosen BY VALUE (rank per dollar on the live listing) | USD 0.02-0.06 a second today | every second of a Short; in a long video the opening and the three peaks |
+| L3 | a still brought to life (wind, water, breath, a slow push) | an open-weight model | USD 0.005-0.01 a second | the "living" shots of a long video - as many as the month's money buys (a lever of D1) |
+| L2 | the camera travels through a still: depth parallax along the format's camera path | our own code (exists) | free | every other still - a still is never static |
+| L1 | motion that explains: a diagram that draws itself, a number that grows, captions, transitions | code-rendered animation (one open-source renderer, tried in V2d against today's own drawing code) | free | the explaining beats, the few number graphics |
+- A Short is L4 from the first frame to the last: about Rs 70-210 of animation. A long video cannot be: all-L4 at a ranked model is about
+  Rs 1,070 a video (R30). It gets the opening (shared with its Short), three peaks and 100 or more living seconds - about 40% of its time at L3
+  or L4, the rest at L2 and L1. "AI-moving seconds per long video" is a lever: it rises when prices fall, never by lowering a floor.
+- A CHARACTER IS DRAWN OR ABSENT (4.1, promised since item 16): no black shape, in any format, from the first live video of the new code. A
+  reaction shot without approved art is not made - the previous picture continues. In F1 nobody is on screen: the camera is the viewer.
+- Tools that are NOT used, and why: repositories that turn a topic into a stock-footage Short (the most-starred of all) produce exactly the
+  templated, re-used video that R26 and R27 punish; an AGPL parallax tool needs a graphics card the pipeline does not have.
+- No evidence says more motion holds viewers (R31). It is done because the owner's own eye demands it, because a slideshow is a monetisation
+  risk, and it is tested (H2, H10).
+### 11.6 THE HUMAN ELEMENT - what one sitting of the owner can really do (D0, D7, D5)
+- THE PLAIN ANSWER to "so that it doesn't get flagged as AI": nothing he records makes a platform stop seeing AI, and for stylised animation
+  it does not have to - the note sits in the expanded description and "won't limit a video's audience or impact its eligibility to earn
+  money" (R32). What costs channels their money is mass-produced template video without the creator's own perspective (R33). The cure is HIS
+  PERSPECTIVE and variety - the formats of V2a and the lines below - not his vocal cords. A human voice is no shield either (R34).
+- H-A THE MAKER'S LINE (adopted): one line per video that is really his - his typed one-sentence answer to the episode's own question
+  ("would you keep it?") - spoken in his own voice at the end and written into the description. Typed in 20 seconds on the release card; never
+  invented by the machine: when he gives none, there is none. The creator's own perspective, in the creator's own voice, in every video.
+- H-B HIS VOICE (adopted for the maker's line; TESTED for the guide): his voice is replicated once inside his Google account (R35: allowed,
+  no disclosure, no extra cost). The replica copies the colour of a voice; pace, pauses and energy are directed by the pipeline, and a home
+  recording is cleaned (noise only - an altered sample is refused) before it is used. Whether his voice or the designed voice guides the videos
+  is decided by a blind comparison at the pilot, his own ear, and then real retention - not assumed in either direction.
+- H-C HIS FACE AS A DRAWN HOST (tested, small): one stylised drawing made from his photos (not photoreal: no disclosure; never presented as an
+  expert on health, law or money - R33) for the channel picture and the About page, and as one thumbnail variant in the A/B test (R36: faces
+  help in some niches and not in others).
+- H-D THE ABOUT PAGE AND THE SOURCES (adopted): reviewers look at the About section (R33). A true text - who he is, that the videos are written
+  with AI tools, checked against sources and narrated in his own replicated voice - and the sources of every video in its description, in every
+  format (the trial's exhibits already carry them; F1 gets a source list).
+- THE HUMAN KIT - one sitting at the pilot (V3), about 20 minutes, guided step by step: (1) a 60-second recording of a given text in a quiet
+  room plus the consent sentence; (2) five photos; (3) three sentences about himself and the name he wants on the channel; (4) the Pexels key
+  and the other secrets typed by HIM into the repository's secret store - the build session never sees a key; (5) the channel switches of 11.7.
+### 11.7 THE RELEASE SHEET - every setting on every platform, as data (D9; part of the aspect map of 10.8)
+- ONE table: each feature of YouTube long, YouTube Shorts, Instagram Reels and Facebook Reels with WHO sets it and HOW it is proven.
+- BY CODE at every upload (a field exists; verified after upload by reading the video back - `publish.verify_upload` grows into `release_sheet`):
+  title, description with the sources and chapters (first at 0:00, three or more), at most 3 hashtags, tags, category, languages, kids = no,
+  the altered-content field (true to what the video is), captions, the thumbnail (Shorts too), the playlist of its format, translated titles
+  and descriptions (Hindi and the languages automatic dubbing serves), the publish time; Instagram: cover, audio name, AI flag, Trial Reels;
+  Facebook: description, AI flag.
+- ONCE, BY HIS HAND at the pilot (channel switches no API reaches; re-checked by a monthly reminder): phone verification ("advanced features" -
+  the gate to custom thumbnails, the A/B test and the Short-to-video link), automatic dubbing on, comments on, remixing of Shorts on, the
+  channel page.
+- PER LONG VIDEO, BY HIS HAND - THE ONE-MINUTE RELEASE CARD: one message with four direct links - link the Short to this video, add the end
+  screen, pin the first comment, start the A/B test with the three thumbnails already made - plus the field for his maker's line. This is the
+  best use of his 1-2 minutes a day. Code cannot read these four back, so they are tracked as an owner task with a clock, never called "done"
+  by the machine.
+- NOT YET OPEN to us: "Hype" (needs the Partner Program and 500 subscribers) - switched on the day the channel qualifies.
+- STOCK FOOTAGE RULES (NASA first, then Pexels; his key as the secret `PEXELS_KEY`): a "reality anchor" - two to four seconds of the real world
+  right before it breaks - in long videos only; at most 10% of the runtime; never the first picture; never two in a row; always changed (crop,
+  grade, speed); no recognisable people; a credit line in the description; portrait search exists but Shorts carry no stock (R26, R38).
+### 11.8 Departments (17; changes only)
+| Dept | Change |
+|---|---|
+| D14 Shorts Studio | NEW: the short video as a product - its formats, its brief, the loop, the follow-up of a winner; levers: Shorts a week, length per format, format shares, the double-down line |
+| D13 Audience | + the viewer's seat for a Short (first frame, three seconds, the loop, one idea); + the share of time that really moves |
+| D6 Visuals | + the motion ladder; the paid model chosen by value from the live listing; a character drawn or absent; the stock rules |
+| D7 Sound | + the owner's replicated voice; the maker's line; the first-second sound of a Short |
+| D9 Publishing | + the release sheet; one native upload per platform; Trial Reels; translations; the one-minute release card |
+| D10 Learning | + the Shorts numbers; the promote and double-down rules |
+| D1 Strategy | + the split between long videos and Shorts ("the window sprint"); Short-format shares |
+| D2 R&D | + the Observatory watches Shorts first (the first three seconds of hits against siblings) |
+| D0 Owner Office | + the human kit; the maker's line; the release card |
+- THE MINDSET, as a rule that can fail: every department run already writes a takeaway; from B8 it must also name the scoreboard number it
+  worked for (views, share watched, watch hours, subscribers) or say why none - a run that names nothing is a broken run.
+### 11.9 No gaps: every rule, its code path, its check, its batch
+| Aspect | Rule | Executed by | Fails when broken | Batch |
+|---|---|---|---|---|
+| Short: opening | first frame is the moving impossible picture; hook of 12 words at most inside 3 s; promise readable inside 1 s | D14 brief; D13 repair of the shot list | check `short_open` (before animation money) | V2c |
+| Short: body | one idea, one number at most, no expert word, 20-45 s by format, a loop, no ask | D14 brief; the writers' one fix | checks `short_plain`, `short_shape` | V2c |
+| Short: stands alone | a complete micro-story; no two in ten alike | D14 formats as data; the variety check | check `short_kept` | V2c |
+| Short: motion | every second animated; no stock | the motion ladder L4 | check `moving_share` = 100% | V2c + V2d |
+| Topic ladder | every topic starts as a Short; the best 4 a month get the long video, opening = the Short's footage | D10 promote rule; D1 calendar | a long video without a promoted Short is refused (owner override recorded) | V2c + V4 |
+| Winner | a Short at 3 times the median gets a follow-up inside 48 h | D10 double-down rule; D14 | a ticket with a clock; overdue = memo | V2c + V4 |
+| Long: motion | no static still; about 40% of the time at L3 or L4 (a lever) | the motion ladder; the tool scout's model by value | checks `real_motion`, `no_frozen_frames`, `moving_share` | V2d |
+| Characters | drawn or absent; no black shape in any format | no silhouette fallback | check `living_characters` (hard, every format) | V2d |
+| Stock | NASA / Pexels: 10% at most, never first, never two in a row, changed, no people, credited; none in Shorts | `media.stock` rules | check `stock_share` | V2d |
+| Money | every paid second in the estimate; the split 4 long + 12 Shorts fits the cap | the cost model | the budget gate; the paid-call counter | V2d |
+| Platforms | every field of the release sheet set and read back | `publish.py` | check `release_sheet` after upload | V2c (Shorts fields) + V3 |
+| Hand-only steps | Short-to-video link, end screen, pin, A/B test | the one-minute release card | an owner task with a clock (not machine-verifiable) | V3 |
+| His voice | replicated from a real, cleaned recording; consent on file | D7 voice path | preflight refuses a voice without its consent record | V3 |
+| Maker's line | his words exactly, in his voice; none when he gave none | D0 input -> D7 | check `makers_line` (text equals his stored line) | V1c |
+| About and sources | a true About page; sources in every description | the release sheet | check `release_sheet` (sources present) | V3 |
+| Mindset | every run names its scoreboard number | the runner's takeaway rule | a run without it is a breach | B8 |
+### 11.10 Money, order and what is still open
+- A MONTH UNTIL 31 JAN 2027 ("the window sprint"): 12 Shorts (about Rs 150 each: 35 seconds at L4 with retakes, three scripts judged blind,
+  voice) = about Rs 1,800; 4 long videos (about Rs 510 each beyond their Short: three peaks at L4, 100 living seconds at L3, pictures, writing,
+  voice) = about Rs 2,040; a reserve of Rs 150-450 for follow-ups of a winner. 16 uploads, 4 a week (R2). Inside Rs 5,000 with the fixed parts
+  of 4.7. Estimates from listed prices - the pilot measures them. After the window D1 moves the split by data (long 4-8, Shorts 8-16).
+- THE NEW ORDER - live after three batches, because every week before 1 Feb 2027 counts:
+  V2c THE SHORT (D14, Short formats as data, the seat for a Short, Shorts first, native uploads) -> V2d THE MOTION LADDER AND THE MONEY (models
+  by value, the living tier, drawn or absent, stock rules, the cost model) -> V3 PILOT ON REAL SERVICES AND GO LIVE (three Shorts and one long
+  video; the human kit; the release sheet's one-time switches; then the new code replaces the old) -> V2b INSIDE THE FORMAT (first person and
+  the camera path as measured rules, F1's own ending, F3) -> V1c THE FLOOR, HIS VERDICT AND THE MAKER'S LINE -> V4 THE CEO AND THE LADDER -> V5
+  THE OBSERVATORY AND THE ASPECT MAP -> B6b -> B7 -> B8 -> B9 -> B10. Twelve batches remain; the channel runs the new code after the third.
+- H10 a Short that is animated in every second is watched to the end more often than one made of moving stills. H11 the Short's share of viewers
+  who stay predicts its long video's first 30 seconds (H1, now with a real pair every time). H12 the owner's replicated voice holds viewers at
+  least as well as the designed voice. H13 a video with the maker's line gets more comments per view. H14 a thumbnail with the drawn host
+  beats the same thumbnail without it.
+- O8 Shorts beside long videos: 12 a month is above the range where long videos did best (R28). Watched weekly by D1.
+- O9 The replicated voice carries content credentials: whether Instagram or YouTube then show a label is unknown until the pilot (R35).
+- O10 The prices of 11.5 moved while they were read (two pages disagreed; one promotion had just ended). The tool scout reads them at V2d and V3.
+- O11 Four release steps stay with the owner's hand because no API reaches them. If he cannot give that minute, the Short-to-video link is the
+  one to keep (R37).
+- O12 Claude Max ends 10 Dec 2026 with twelve batches to go. If time runs out the order above is also the order of importance.
