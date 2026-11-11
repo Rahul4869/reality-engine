@@ -1,5 +1,9 @@
 # CONCEPT - Reality on Trial (decided; do not re-open)
 
+> 11 Nov 2026: the owner RE-OPENED the concept after watching the first live video (free hand, `02_OWNER_VERBATIM.md` item 17). The redesign is decided in
+> `handoff_v12/BREAKOUT_REDESIGN.md` (formats as data: "the day it changed" by default, the trial as an experiment arm; hook-first production). This page
+> describes the code as it is until batch V2 rewrites both.
+
 Brand: **Reality Engine**. Show: **Reality on Trial**. Decided by the owner on 9 Nov 2026 after exploring alternatives.
 `tests/test_docs_current.py` checks that every name below exists in the code (`whatifs/show.py` and the prompts), so this page cannot drift from the show.
 

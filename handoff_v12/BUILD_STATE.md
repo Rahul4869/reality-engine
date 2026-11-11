@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 11 Nov 2026 (B6a ACCEPTED; B5 re-checked; THE OWNER REJECTED THE FIRST LIVE VIDEO - read the next section first). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 11 Nov 2026 (B6a ACCEPTED; B5 re-checked; THE OWNER REJECTED THE FIRST LIVE VIDEO AND ORDERED A REDESIGN - read the next section and BREAKOUT_REDESIGN.md first). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -52,27 +52,32 @@ approved cast), 10:00 at most (RUNTIME_MAX_SEC), `promise_paid`, `visual_change`
 of the first 3 long videos. WHAT v12 HAS ADDED SO FAR (B0-B6a): the organisation - memory, research, the Review Board, the creative departments
 reading the knowledge. It changes how the system learns and enforces. It does NOT yet change the voice, the clarity, the number of numbers or the
 pictures. Brutal truth: deployed today, v12 would give him a better-policed version of the same film.
-PLAN CHANGE (the owner's words override the batch order; he asked for "all the improvements, research, and everything else required"):
-**BV1 - THE VIDEO ITSELF comes before B6b.** Full seven-step loop. Scope for its design memo (not decided yet, research first):
-- A VIEWER-FIRST BAR on the finished video, not on the script: strong video-capable judges of two families play a first-time viewer who does not
-  care about science - "what is this about?" after 15 seconds, keep watching at 0:05 / 0:15 / 0:30 / 1:00, where did you get bored, would you
-  send it to a friend. Calibrated in every session like the Board: THIS video (7RPT4rCuP6k, the owner's verdict) is the planted canary that must
-  be rejected, and real breakout videos from the Outlier Lab must pass. A jury that cannot tell them apart is void. (`models.ask_video` exists.)
-- VOICE AND SOUND: the best voice the budget allows (research: current TTS models and prices), pauses and loud / quiet contrast, a peak limiter,
-  big burned-in captions.
-- CLARITY: one idea a video, explained so a 12-year-old follows; a budget for numbers (spoken and on screen) and for full-screen number cards; the
-  assumptions never before the hook.
-- THE PROMISE SHOWN IN THE FIRST 5 SECONDS as the best animated scene of the video; title, thumbnail and opening tell the same story; the
-  animated seconds go where the title's picture is (and how many more the money allows: 60 s would be about Rs 440 a video).
-- LENGTH: 8-9 minutes until retention earns more. THE ENDING is a scene, not a held still.
-- A DEVICE DIET: which of the 19 script checks force gimmicks; devices become options the data must earn, the viewer-first bar becomes the gate.
-- THE CAST: the character sheets (one owner approval) or the video is held - never a black shape again.
-What only the owner can do, today: set Settings cell PAUSED = TRUE on the live Sheet, or the old code publishes the next video like this one and
-spends this month's money on it. (No keys here: the build session cannot touch the live Sheet.)
-After BV1: B6b (the Council) and the rest, unchanged.
+THE OWNER'S FREE HAND (item 17 of `02_OWNER_VERBATIM.md`, same day): "IF YOU HAVE TO REDESIGN CHANNEL, DO IT ... SO DO IT AS PER YOU NOW ... MAKE
+SURE THE PIPELINE BRAINS IS ALSO PROACTIVELY DESIGNED TO MAKE SUCH DESCISIONS AND INFORM ME AND IMPLEMENT". The budget stays Rs 5,000.
+THE REDESIGN IS DECIDED AND WRITTEN: **`handoff_v12/BREAKOUT_REDESIGN.md`** (research with 14 dated sources, 4 designs, the decisions, the new
+batch plan). READ IT BEFORE ANY BATCH. It overrides `01` section 1, the order of `03` and the department list wherever they differ. In short:
+- Only LONG videos earn (from 1 Feb 2027: 1,000 subscribers + 8,000 long watch hours); Shorts test ideas and win subscribers, a few a month.
+- HOOK-FIRST PRODUCTION: the first 30-40 fully animated seconds of every long video are made first and published as a Short; only hooks real
+  viewers stay for get the long video, which opens with the proven hook.
+- NEW DEPARTMENT D13 AUDIENCE (the viewer's seat, a veto before publishing; measured checks + a judged floor with the owner's rejected video
+  as the planted canary). D1 STRATEGY becomes the portfolio manager that decides, informs and implements - built now, not in B9.
+- Formats are data (F1 "the day it changed" 70%, F2 "the trial" 30% as an experiment arm); the contract gets three tiers and the devices are no
+  longer forced; the voice and video models are chosen by value inside the owner's existing accounts.
+What only the owner can do, today: set Settings cell PAUSED = TRUE on the live Sheet (no keys here: the build session cannot touch it).
+This turn was the DESIGN step for the whole programme (research, designs, decisions, records). Nothing of the redesign is built yet.
 
 ## NEXT
-**FIRST: BV1 - The video itself** (section above; owner's verdict of 11 Nov 2026). Effort: High. THEN:
+**V1 - THE VIEWER'S SEAT** (`handoff_v12/BREAKOUT_REDESIGN.md` sections 4.3 and 6). Full seven-step MANDATORY BATCH LOOP. Effort: High.
+Scope: department D13 Audience (registry, runner entry at the script gate, the final gate and the Shorts track); the MEASURED viewer checks
+(promise visible in 3 s / 5 s, captions present, the voice breathes: pauses + loudness range + true peak, numbers budget, no black-shape
+character, an ending that is a scene, one story across title / thumbnail / opening); the JUDGED floor (one generic first-time viewer per model
+family, with sound, pairwise against references; the owner's rejected video 7RPT4rCuP6k is the planted canary - `models.ask_video` exists);
+the owner's verdict as a label (a tab + a memo; WhatsApp capture stays in B9); long videos 8:10-9:00; the voice model picked by rank.
+Done when: the rehearsal HOLDS a deliberately flop-like episode, every check is proven both ways, D13 is wired, sweep + GitHub green.
+Remember from the B5 recheck: every new contract check must be classified (`rnd.ORG_CHECKS` or raise `rnd.SHOW_CHECKS`); a memo a department
+writes to itself is closed with `memos.find`; text from outside is data.
+ORDER AFTER V1: V2 hook-first production -> V3 pilot on real services -> V4 the CEO and the ladder -> B6b -> B7 -> B8 -> B9 -> B10.
+The notes below (what B5 / B6a leave ready for the Council) stay valid for B6b:
 **B6b - The Council (C)** (01 sections 2 (C), 4, 5, 7 `council_held`; 03 "B6", second bullet). Full seven-step MANDATORY BATCH LOOP. Effort: High.
 Gathers open research / assessment / creative / owner / performance / problem memos; diverge -> blind cross-family jury -> converge -> decision
 memo + tickets; owner cards only above thresholds; session takeaways; check `council_held`; C moves from `registry.PENDING` to `ENTRY`.
@@ -1723,5 +1728,9 @@ Rehearsal asserts `docs_current` ran and passed.
 | B5 | done 11 Nov 2026 | 1232 / 0 / 1 skipped | GREEN (25 + 19) | R&D + Review Board: gap-driven research agenda (8 gap sources), sources verified by code (phantom / dead / undated dropped, evidence ceiling), blind two-family Board with yes/no checklist, verdict by code, family veto, planted canary per session; check `research_cadence` (44 hard checks), D2 + D3 wired, 41 levers. Sweep 58 of 58. GitHub run 67: GREEN (1233 passed, 0 skipped); #63 RED = 6 by-design tests, #64/#65 RED = rehearsal money formula, traced and fixed |
 | B6a | done 11 Nov 2026 | 1260 / 0 / 1 skipped | GREEN (28 + 19) | Creative departments: the Palace playbook inside the writer / packager / director prompts (end of the system prompt, cached layers untouched), citations verified by quote, canon written by code and accepted on air, continuity debt paid in the script, distinct creative memos to the Council, drafts adopted only with proof; checks `palace_injected`, `palace_cited`, `canon_in_brief` (47 hard checks); the writers' playbook holds the owner's limits again (cap 2,400); open issue 47 fixed. Sweep 40 of 40. GitHub run 75: GREEN (1261 passed, 0 skipped); #71 RED = 54 by-design tests, #72 RED = 3 pinned tests, traced and fixed |
 | B5 recheck | done 11 Nov 2026 | 1272 / 0 / 1 skipped | GREEN (28 + 19) | Owner asked for a recheck of B5 and its consequences: 16 corrections (a syntax repair hid who answered; a cheap Gemini model could sit on the Board; the void-session memo never closed; a video could be held for research a job can run; the organisation's plumbing became paid web questions; barren research was invisible; a crash after a paid call; the learning job's 30-minute limit; 8 small ones), 12 new tests. GitHub run 78 (101cf96, the final code commit): **GREEN - 1273 passed, 0 skipped, rehearsal GREEN (episode id EP202611110421, script 28 / 28, final 19 / 19)** |
-| BV1 | next | | | The video itself: the viewer-first bar and the owner's five complaints (his verdict on the first live video, 11 Nov 2026) |
-| B6b | after BV1 | | | The Council |
+| REDESIGN | done 11 Nov 2026 | - | - | The owner rejected the first live video (made by the old code) and gave a free hand: research (14 dated sources), 4 designs, the decisions and the new batch plan in `handoff_v12/BREAKOUT_REDESIGN.md`. No code changed |
+| V1 | next | | | The viewer's seat: department D13 Audience, measured viewer checks, the judged floor with the canary |
+| V2 | after V1 | | | Hook-first production: formats as data, the hook made first, models by value, the three-tier contract |
+| V3 | after V2 | | | Pilot on real services: the owner watches real output of the new code |
+| V4 | after V3 | | | The CEO and the ladder: D1 Strategy wired, the portfolio, decide-inform-implement |
+| B6b | after V4 | | | The Council |
