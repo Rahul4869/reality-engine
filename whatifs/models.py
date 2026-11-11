@@ -483,6 +483,7 @@ def simulate_claude(role, system, prompt, max_tokens, search, effort, episode=No
 
 def _gemini(role, system, prompt, max_tokens, temperature, search, want_json, images=None, episode=None, video=None):
     mid = model(role) or model("gem_flash")
+    answered = role if model(role) else "gem_flash"                # v12 B5: the role that REALLY answers (a missing Pro model falls to Flash here): last_call() must never call a cheap model strong
     vparts = []
     if video:                                                      # v10 (Outlier Lab): a public YouTube URL, clipped to its first seconds (fileData + videoMetadata)
         vparts = [{"fileData": {"fileUri": video[0]}, "videoMetadata": {"startOffset": "0s", "endOffset": f"{int(video[1])}s"}}]
@@ -506,7 +507,7 @@ def _gemini(role, system, prompt, max_tokens, temperature, search, want_json, im
     except Exception: pass
     if str(c.get("finishReason", "")).upper() == "MAX_TOKENS": raise Truncated(f"Gemini {role} reply was cut at {body['generationConfig']['maxOutputTokens']} tokens")
     chunks = [x.get("web") or {} for x in ((c.get("groundingMetadata") or {}).get("groundingChunks") or []) if isinstance(x, dict)]
-    _note_call("gemini", role, mid, usd, (), [{"url": str(w.get("uri") or ""), "title": str(w.get("title") or "")[:200], "page_age": ""} for w in chunks if w.get("uri")])
+    _note_call("gemini", answered, mid, usd, (), [{"url": str(w.get("uri") or ""), "title": str(w.get("title") or "")[:200], "page_age": ""} for w in chunks if w.get("uri")])
     return "".join(p.get("text", "") for p in c.get("content", {}).get("parts", []))
 
 MAINTENANCE_JOBS = ("trends", "learn", "brief", "research", "money", "setup", "voices")     # may use the small reserve above the cap (policy guard, learning)
@@ -553,6 +554,7 @@ def haiku_repair(text, episode=None):
     if not S("HAIKU_CHORES_ON", bool) or not str(text or "").strip(): return None
     from whatifs.governor import claude_allowed
     if not FAKE and not claude_allowed(): return None
+    keep = dict(getattr(_CALL, "last", None) or {}); _CALL.last = {}     # v12 B5: the repair changes syntax only - last_call() keeps naming the model that ANSWERED and its sources
     try:
         if FAKE:
             from whatifs.fakes import fake_reply
@@ -562,6 +564,9 @@ def haiku_repair(text, episode=None):
         fixed = parse_json(out)
     except Exception as e:
         log(f"JSON repair by the chore model failed: {str(e)[:120]}", "WARN", episode); return None
+    finally:
+        if keep: keep["usd"] = round(float(keep.get("usd") or 0) + float((getattr(_CALL, "last", None) or {}).get("usd") or 0), 6)      # the repair's own cost is added
+        _CALL.last = keep
     if json_same_words(text, fixed): log("reply was not valid JSON - repaired by the chore model (every word unchanged)", episode=episode); return fixed
     log("chore-model JSON repair changed the content - rejected, the normal retry runs", "WARN", episode); return None
 

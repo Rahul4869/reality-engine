@@ -26,6 +26,16 @@ def research_round():
     except ORG.CapReached as x: log(f"Review Board waits: {x}", "WARN")
     except Exception as x: log(f"Review Board session failed: {type(x).__name__}: {str(x)[:160]}", "WARN")
 
+def research_catch_up():
+    """v12 B5: the script gate judges research_cadence, but only the daily learning job ran the round - a dropped cron, or an organisation switched
+    back on after days, would HOLD a video for work any job can do. A production job that would meet a stale round runs it first (level-triggered:
+    nothing happens while the learning job keeps its schedule). Never stops the production."""
+    try:
+        from whatifs.org import rnd as RND
+        if RND.round_overdue():
+            log("R&D's round is overdue (the daily learning job missed it): this production job runs it first", "WARN"); research_round()
+    except Exception as x: log(f"R&D catch-up skipped: {type(x).__name__}: {str(x)[:160]}", "WARN")
+
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "tick"
     JOB["name"] = cmd
@@ -48,6 +58,7 @@ def main():
             open(os.environ.get("GITHUB_OUTPUT", "/dev/null"), "a").write(f"action={a['action']}\nslot={a.get('slot','')}\nepisode={a.get('episode','')}\n")
         elif cmd == "produce":
             from whatifs.episode import produce
+            research_catch_up()                                         # v12 B5: never hold a video for a research round this job can run itself
             slot = sys.argv[2]; res = produce(slot)
             print(json.dumps({k: res.get(k) for k in ("ok", "episode", "yt")}, default=str))      # no title or file names in the public log
         elif cmd in ("release1", "release2", "release3", "release4"):      # v8.5: reels 3-4 go out on the next days
