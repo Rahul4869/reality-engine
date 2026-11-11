@@ -188,6 +188,56 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
+### V2c-b1 - THE LADDER (12 Nov 2026) - IN PROGRESS, NOT ACCEPTED (the steps below are recorded as they finish)
+The owner: "continue" (a new session for V2c-b). V2c-b was SPLIT AT ITS START (rule 6; the note is at the top of NEXT): V2c-b1 is the ladder -
+the cadence, Shorts first with the promote rule and the refusal, the winner's follow-up; V2c-b2 is the platforms and the opening.
+The whole binding reading order was read first (handoff `CLAUDE.md`, `00`, `02`, `01`, `03`, `06`, `04`, `05`, all of the redesign with
+section 11 first, this file's head, NEXT, the V2c-a record, every open issue, HOW TO RUN, the repo's `CLAUDE.md`, all of `docs/CURRENT/`),
+then the code the batch touches.
+
+#### Step 1 RESEARCH (E = measured, O = practice / vendor; every page below was read by the build session itself; the redesign's R20-R38 are the base)
+1. E read - YouTube Analytics API, "Data Model", section "Data freshness and latency" (added 9 Sep 2026 per the API's revision history;
+   https://developers.google.com/youtube/analytics/data_model#data-freshness-and-latency): "the underlying analytics data is not real-time";
+   "Data processing typically introduces a latency of 48 to 72 hours"; the end date "only includes data up until the last day for which all
+   requested metrics are fully processed"; for real-time statistics of single videos it points to the Data API's `videos.list`.
+   -> THE FINDING THAT SHAPES THE DESIGN: "after 48-72 hours the brain reads the Short's real numbers" (redesign 11.4) cannot be done as
+   written. The true numbers of a Short's first 48-72 hours (engaged views, share watched, subscribers) exist 2-3 days LATER, when the Short
+   is about 5 days old; only public views are real-time. Today's code reads Analytics once at 48 hours of age and then not again for a week,
+   so its first reading covers whatever happened to be processed - a different stretch for every Short.
+2. E read - YouTube Analytics API, metrics reference and revision history (https://developers.google.com/youtube/analytics/metrics,
+   .../revision_history; entries of 26 Mar 2025, 24 Apr 2025, 27 Aug 2026): since 30 Apr 2025 a Short's `views` count every start and
+   replay, `engagedViews` keeps the old meaning and "is available alongside views in all reports"; `shares`, `subscribersGained`,
+   `averageViewPercentage` exist. There is NO metric for "stayed to watch" or "viewed against swiped away": that number lives only in
+   Studio. -> engaged views divided by views is a proxy that a Short built to loop depresses (a replay is a view, never an engaged view),
+   so it is recorded and never ranked on.
+3. E read - YouTube Analytics API, channel reports (https://developers.google.com/youtube/analytics/channel_reports): the day-by-day report
+   takes `engagedViews`, `shares`, `subscribersGained`, `likes`, `comments`, `averageViewPercentage` with ONE video as a filter. -> one
+   call a Short gives its numbers per processed day, so code knows how many days a reading really covers.
+4. E read - OverseerOS, 29 Oct 2026 (https://www.overseeros.com/blog/youtube-shorts-views-after-7-days; 4,340 short videos of 823
+   channels, a matched group of 160): views at day 7 are 80.7% of day 30 at the median (quartiles 56.3% and 91.7%); 21.3% at least doubled
+   after day 7 and 3.1% grew five times; the larger a Short is at day 7 the more it still grows (above 100,000 views: 63.6%). The authors:
+   not a random sample, over-represents high performers. -> most of a Short is in early, but one in five is a late bloomer: the ladder
+   keeps reading for 30 days and a late bloomer can still be promoted.
+5. E read - Metricool, 29 Jul 2026 (https://metricool.com/youtube-trends/; 799,718 videos, 71,177 accounts): "A video usually hits its
+   peak in the first three days"; about 83% of interactions arrive within ten days; a Short does best per post at 2 to 4 a week; channels
+   with about 5 Shorts a month average 8,789 views per long video against 4,364 with none, and at 35 and more the gain is gone. -> 3 a
+   week stays inside the measured band; a follow-up of a winner must land inside its first days.
+6. E read - E. Miller, "How Not To Sort By Average Rating", 6 Feb 2009 (https://www.evanmiller.org/how-not-to-sort-by-average-rating.html):
+   a raw share ranks an item with 2 of 2 above one with 100 of 101; rank by the LOWER bound of the Wilson score interval (95%). -> the
+   two rates of the promote rule (subscribers and shares per engaged view) are ranked by that lower bound, so a Short with 40 viewers and
+   one subscriber cannot beat one with 2,000 and thirty.
+7. O read - OverseerOS, 16 Aug 2026 (https://www.overseeros.com/blog/youtube-shorts-vs-long-form; 938 breakouts of 137 channels): a
+   breakout is 5 times the channel's OWN baseline per format, and in the first 30 days the baseline is a velocity; the study states no
+   minimum number of uploads and says it cannot estimate how likely a breakout is. Confirms the redesign's R17 (a channel-relative
+   measure at the same age); the multiple and the minimum history stay levers.
+8. E read, weak - Socialinsider, 27 Jan 2026, updated 6 Nov 2026 (https://www.socialinsider.io/blog/how-long-does-it-take-for-yt-shorts-to-get-views/;
+   Shorts of brand accounts): "Some Shorts get their biggest spike nearly a month after they go live". The page's own sample figures do not
+   add up (two different totals), so only that late spikes exist is taken from it.
+NOT FOUND, so nothing is built on it: any study that pairs one topic as a Short and as a long video (whether a Short's numbers predict
+its long video - H11 - stays a hypothesis the channel's own pairs must answer); any measured effect of a follow-up Short or of how fast it
+comes; any official YouTube advice on following up a hit; when the first processed day of a new upload appears in the API. The promote
+rule's four measures, the 3-times line and the 48-hour clock are therefore STARTING VALUES and levers.
+
 ### V2c-a - THE SHORT, THE PRODUCT (11 Nov 2026) - ACCEPTED (final code commit 3b34cc3 GREEN in GitHub Checks run 99: 1325 passed; sweep 58 of 58 ids)
 The owner: "continue" (a new session for this batch). V2c was SPLIT AT THE START (rule 6): V2c-a is the short video as a product a viewer meets;
 V2c-b is the ladder (Shorts first, the cadence) and the platforms. It answers his item 20 ("reels ... made for breakout virality ... dont make
