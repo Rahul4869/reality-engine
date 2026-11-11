@@ -50,6 +50,10 @@ MOVES = {
     ("retired", "testing"): ("D10",),
 }
 
+# v12 B6a: moves only one kind of item allows, for one more actor. A case record (world_canon) becomes canon when the platform confirmed the upload:
+# D9 holds the video id, and the record must rest on a 'show record' (what the show itself said). D9 can make no other move.
+KIND_MOVES = {("proposed", "accepted"): {"world_canon": ("D9",)}}
+
 # Trust is computed from the kind of evidence, never typed by whoever writes the item.
 EVIDENCE = {"owner decision": 1.0, "own data": 0.9, "show record": 0.9, "measured": 0.8, "official": 0.8, "build record": 0.7, "practice": 0.6,
             "research digest": 0.5, "opinion": 0.3, "model": 0.2}
@@ -120,6 +124,17 @@ def cap_for(dept):
 
 def limits_share():
     return max(0.1, min(0.9, S("PALACE_LIMITS_SHARE", float)))
+
+def canon_share():
+    """v12 B6a: share of a playbook reserved for the show's canon (cast first, then the newest aired cases), after the limits."""
+    return max(0.05, min(0.6, S("PALACE_CANON_SHARE", float)))
+
+def aired(r):
+    """When a case record went on air (its 'aired-YYYYMMDDHHMM' tag, written by whatifs/org/canon.py), as a sortable number; 0 = never / not a case."""
+    for t in r.get("topic_tags") or []:
+        m = re.match(r"^aired-(\d{12})$", str(t))
+        if m: return int(m.group(1))
+    return 0
 
 def _date_ok(d, now=None):
     d = str(d or "")
@@ -472,7 +487,10 @@ def transition(iid, to, actor, note, st=None, now=None):
     if to == "superseded": raise PalaceError(["use supersede(): an item is superseded only by naming what replaces it"])
     allowed = MOVES.get((frm, to))
     if allowed is None: raise PalaceError([f"illegal move {frm} -> {to} for {iid}"])
-    if allowed != ANY and actor not in allowed: raise PalaceError([f"'{actor}' may not move {iid} from {frm} to {to} (allowed: {', '.join(allowed)})"])
+    extra = KIND_MOVES.get((frm, to), {}).get(r["kind"], ())
+    if actor in extra and actor not in allowed and not any(e.get("type") == "show record" for e in r["evidence"]):
+        raise PalaceError([f"'{actor}' may accept {iid} only when it rests on a show record"])
+    if allowed != ANY and actor not in allowed and actor not in extra: raise PalaceError([f"'{actor}' may not move {iid} from {frm} to {to} (allowed: {', '.join(allowed)})"])
     _owner_rule(r, actor)
     if len(str(note or "").strip()) < 8: raise PalaceError([f"moving {iid} to {to} needs a reason (the evidence or the decision)"])
     ch = {"status": to, "updated": iso(now), "actor": actor, "status_note": str(note)[:300]}
@@ -615,7 +633,9 @@ def _terms(text):
     return {w[:7] for w in re.findall(r"[a-z][a-z0-9]{2,}", str(text or "").lower()) if w not in _STOP}
 
 def _lane(r):
-    return 0 if is_limit(r) else 3 - _RANK.get(r["status"], -1)
+    """0 limits, 1 the show's canon (v12 B6a), then proven 2, accepted 3, testing 4."""
+    if is_limit(r): return 0
+    return 1 if r["kind"] == "world_canon" else 4 - _RANK.get(r["status"], -1)
 
 def _relevance(r, dept, stage, q, idf):
     """Deterministic score: addressed to this department by name, stage match, weighted keyword overlap with the topic, a tag hit, computed trust."""
@@ -646,15 +666,17 @@ def playbook(dept, stage=None, topic="", rs=None, record=True, cap=None, now=Non
     idf = {t: math.log(1.0 + len(cands) / n) for t, n in df.items()}
     ranked = sorted(cands, key=lambda r: r["id"])
     ranked.sort(key=lambda r: r["updated"], reverse=True)
-    ranked.sort(key=lambda r: (_lane(r), -r["priority"], 0 if r["owner_input"] else 1, -_relevance(r, dept, stage, q, idf), -r["confidence"]))
+    ranked.sort(key=lambda r: (_lane(r), -r["priority"], -aired(r), 0 if r["owner_input"] else 1, -_relevance(r, dept, stage, q, idf), -r["confidence"]))
     head = HEADER.format(dept=dept, name=DEPARTMENTS[dept][0], stage=stage)
     lines = {r["id"]: _line(r, now) for r in ranked}; cost = {i: est_tokens(l + "\n") for i, l in lines.items()}
     base = est_tokens(head + "\n"); used = [base]; chosen = set()
     def take(pool, budget):
         for r in pool:
             if r["id"] not in chosen and used[0] + cost[r["id"]] <= budget: chosen.add(r["id"]); used[0] += cost[r["id"]]
-    lim = [r for r in ranked if _lane(r) == 0]; rest = [r for r in ranked if _lane(r) != 0]
-    take(lim, min(cap, base + int(cap * limits_share()))); take(rest, cap); take(lim, cap)
+    lim = [r for r in ranked if _lane(r) == 0]; canon = [r for r in ranked if _lane(r) == 1]; rest = [r for r in ranked if _lane(r) > 1]
+    take(lim, min(cap, base + int(cap * limits_share())))
+    take(canon, min(cap, used[0] + int(cap * canon_share())))            # v12 B6a: the cast, then the newest aired cases, inside their own share
+    take(rest, cap); take(lim, cap); take(canon, cap)
     picked = [r for r in ranked if r["id"] in chosen]
     out = {"playbook_id": "", "dept": dept, "stage": stage, "topic": str(topic or "")[:120], "text": "", "items": [], "refs": [], "tokens": 0, "cap": cap,
            "palace_hash": palace_hash(rs), "considered": len(cands), "left_out": len(cands) - len(picked),
@@ -822,15 +844,19 @@ def sync_canon(st=None, now=None):
         shows = {r.get("episode_id"): r for r in st.rows("Show_Log")}; seasons = {r.get("episode_id"): r for r in st.rows("Season")}
     except Exception:
         eps, shows, seasons = {}, {}, {}
+    have = {r["id"] for r in rows(st)}
     for ep, e in eps.items():
         sh, se = shows.get(ep) or {}, seasons.get(ep) or {}
         if not (sh or se): continue
+        if item_id(f"canon:case:{ep}") in have: continue        # v12 B6a: a case is written once - by whatifs/org/canon.py after D4 write (richer, made canon on air) or by this mirror for older episodes; never overwritten
+        t_air = parse_iso(e.get("slot_et")) or parse_iso(sh.get("ts") or se.get("ts")) or now
         charge = str(se.get("case") or "").strip() or str(e.get("premise") or "").strip()
         when = str(sh.get("ts") or se.get("ts") or today)[:10]
         items.append({"key": f"canon:case:{ep}", "kind": "world_canon", "title": f"Case {ep}: {str(e.get('title') or charge or 'untitled case')}"[:120],
                       "summary": _fit([f"Case {ep}.", f"Charge: {charge}." if charge else "", f"Verdict: {sh.get('verdict_winner') or se.get('verdict')} won (meter {sh.get('meter_final')})." if (sh.get("verdict_winner") or se.get("verdict")) else "",
                                        f"Witness twist: {sh.get('witness_twist')}." if sh.get("witness_twist") else "", "It happened on the show: later cases may refer to it and must not contradict it."]),
-                      "departments": ["D4", "D5", "D1"], "stages": ["ideation", "writing", "packaging", "planning"], "topic_tags": ["canon", "case"],
+                      "departments": ["D4", "D5", "D1"], "stages": ["ideation", "writing", "packaging", "planning"],
+                      "topic_tags": ["canon", "case", "case-record", "aired-" + min(t_air, now).strftime("%Y%m%d%H%M")],
                       "evidence": [{"source": f"Show_Log and Season records of {ep}", "date": when if _date_ok(when, now) else today, "type": "show record"}],
                       "applied_in": ["tab:Show_Log", "tab:Season"]})
     res = add_many(items, "librarian", "accepted", st, now, inline=True, skip_invalid=True) if items else []

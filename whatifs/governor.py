@@ -276,7 +276,11 @@ def voice_think_inr():
     """v8.10: the allowances the v8.9 estimate did not have: Gemini TTS (when it is the engine), model thinking tokens (billed as output) and the new
     room calls (two premise judges, Immersion Director, Owner's Cut)."""
     tts = S("TTS_EST_INR", float) if str(S("TTS_ENGINE") or "").strip().lower() == "gemini" else 0.0
-    return tts + S("THINK_EST_INR", float) + S("ROOM_EXTRA_EST_INR", float)
+    return tts + S("THINK_EST_INR", float) + S("ROOM_EXTRA_EST_INR", float) + palace_prompt_inr()
+
+def palace_prompt_inr():
+    """v12 B6a: the Palace playbook inside the creative model prompts (about 1,900 extra input tokens on about 12 calls, mostly cached, plus the citations)."""
+    return S("PALACE_PROMPT_EST_INR", float) if (S("ORG_PROMPT_INJECT", bool) and S("ORG_ON", bool) and S("PALACE_ON", bool)) else 0.0
 
 def full_episode_inr(kling=None):
     """Honest cost of one FULL-tier episode at the current settings (pictures, clips, premium art, writing, table read, TTS, thinking)."""

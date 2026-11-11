@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt, hashlib, json, re, statistics, threading, time
 from whatifs import core, models as M
 from whatifs.core import S, log, store, iso, now_utc, parse_iso, scrub, set_setting
-from whatifs.org import DEPARTMENTS, STAGES, palace as PAL, memos as MEM, registry as REG, schemas as SC
+from whatifs.org import DEPARTMENTS, STAGES, palace as PAL, memos as MEM, registry as REG, schemas as SC, cite as CITE, canon as CANON
 from whatifs.org.schemas import MemoError
 
 STEPS = ("LOAD", "ACT", "EMIT", "LEARN", "EXECUTE", "REPORT")
@@ -61,9 +61,11 @@ def _link(prev, rec):
     return hashlib.sha1((prev + "|" + body).encode("utf-8")).hexdigest()[:16]
 
 class _Run:
-    def __init__(self, sid, dept, mode, tasks=()):
-        self.sid, self.dept, self.mode, self.tasks = sid, dept, mode, tuple(tasks or ())
+    def __init__(self, sid, dept, mode, tasks=(), spec=None):
+        self.sid, self.dept, self.mode, self.spec = sid, dept, mode, dict(spec or {})
+        self.tasks = tuple(self.spec.get("tasks") or tasks or ())
         self.pb_text, self.calls, self.injected, self.cost, self.receipts, self.chain = "", set(), 0, 0.0, [], ""
+        self.must, self.injected_tasks, self.cites, self.proposals = [], set(), [], []          # v12 B6a: continuity debt, where the playbook went, what came back
     def receipt(self, step, data):
         want = STEPS[len(self.receipts)] if len(self.receipts) < len(STEPS) else None
         if step != want: raise ContractBreach(step, f"out of order: the next step must be {want or 'nothing (the run is closed)'}")
@@ -102,16 +104,31 @@ def _ask_tap(task, system, prompt):
     if r is None: return system
     r.calls.add(hash((task, len(str(prompt)), str(prompt)[:160])))
     if r.mode == "prompt" and r.pb_text and (not r.tasks or any(str(task).startswith(t) for t in r.tasks)):
-        if r.pb_text not in str(system or ""):
-            system = system.with_global(r.pb_text) if hasattr(system, "with_global") else r.pb_text + "\n\n" + str(system or "")
-        r.injected += 1
+        text = CITE.block(r.pb_text, task, r.spec, r.must)                 # v12 B6a: the playbook + the citation rule (+ the continuity debt, + the proposal invitation)
+        if text not in str(system or ""):
+            from whatifs.prompts import Packed
+            system = Packed.of(system).with_global(text)                    # at the START, in the cached layer (never mid-brief)
+        with _LOCK: r.injected += 1; r.injected_tasks.add(str(task))
     return system
+
+def _reply_tap(task, res):
+    """v12 B6a: every reply passes here (models.ask). For a call that carried the playbook it takes the model's `applied_items` and `proposal` out of
+    the reply (the caller never sees them) and keeps them for the run, which verifies each citation against its final output."""
+    with _LOCK: r = _ACTIVE[-1] if _ACTIVE else None
+    if r is None or r.mode != "prompt" or not isinstance(res, dict): return res
+    if r.tasks and not any(str(task).startswith(t) for t in r.tasks): return res
+    c = res.pop("applied_items", None); pr = res.pop("proposal", None)
+    with _LOCK:
+        if isinstance(c, list): r.cites += [dict(x, task=str(task)) for x in c[:CITE.MAX_CITES] if isinstance(x, dict)]
+        if isinstance(pr, dict) and any(str(task).startswith(t) for t in r.spec.get("propose", ())): r.proposals.append(pr)
+    return res
 
 def _cost_tap(inr, provider, item):
     with _LOCK:
         if _ACTIVE: _ACTIVE[-1].cost += float(inr or 0)
 
 if _ask_tap not in M.ASK_TAPS: M.ASK_TAPS.append(_ask_tap)
+if _reply_tap not in M.REPLY_TAPS: M.REPLY_TAPS.append(_reply_tap)
 if _cost_tap not in core.COST_TAPS: core.COST_TAPS.append(_cost_tap)
 
 # ------------------------------------------------------------------ takeaways built from what the run measured
@@ -192,7 +209,7 @@ def _apply_action(m, action, dept, st):
     else: raise MemoError(f"{m['id']}: unknown disposition '{kind}'")
 
 def run(dept, trigger, act, *, episode="", topic="", stage=None, context=None, measure=None, lesson=None, emit=None, settle=None, key="", budget="production",
-        urgency="P1", strict=True, st=None, now=None):
+        urgency="P1", strict=True, st=None, now=None, adopt=None, legacy=None):
     """One department run under the contract. `act(brief)` does the work and returns its output (or an Out). Steps always run in this order and
     every one leaves a receipt: LOAD (inbound memos + the Palace playbook) -> ACT (playbook proven to have reached the work) -> EMIT (validated
     memos out, every inbound memo dispositioned, a problem memo for a failure) -> LEARN (a Session row and at least one valid takeaway) ->
@@ -215,19 +232,24 @@ def run(dept, trigger, act, *, episode="", topic="", stage=None, context=None, m
             cap = REG.caps().get(dept)
             if cap is not None and REG.spent(dept, st, t0) >= cap:
                 _cap_message(dept, cap, t0); raise CapReached(f"{dept} has used its monthly thinking cap of Rs {cap:.0f}; P1 / P2 work waits for next month")
-        sid = _sid(dept, trigger, episode, key, len(prior) + 1); R = _Run(sid, dept, REG.inject(dept), REG.DEPTS[dept].get("inject_tasks", ()))
+        mode = REG.inject(dept, trigger) if not legacy else REG.DEPTS[dept]["inject"]       # legacy = an owner-approved draft written before B6a: judged as written then
+        sid = _sid(dept, trigger, episode, key, len(prior) + 1); R = _Run(sid, dept, mode, REG.DEPTS[dept].get("inject_tasks", ()), REG.prompt_spec(dept, trigger) if mode == "prompt" else None)
         st.append(STAB, [{"id": sid, "key": key, "dept": dept, "trigger": trigger, "episode_id": episode, "attempt": len(prior) + 1, "status": "running", "started": iso(t0),
                           "budget": budget, "inject": R.mode}])
         inbox = MEM.inbox(dept, st, t0); overdue = sum(1 for m in inbox if (parse_iso(m["sla_due"]) or t0) < t0)
         for m in inbox: MEM.ack(m["id"], dept, st, t0)                                    # loaded = acknowledged (this stops the acknowledge clock only)
         tickets = [m for m in inbox if m["type"] == "ticket"]; inbound = [m for m in inbox if m["type"] != "ticket"]
+        if R.mode == "prompt": CANON.ensure_cast(st, t0)                              # v12 B6a: the cast canon exists before a creative playbook is built
         rs = PAL.rows(st)
         if not rs: PAL.ensure_seed(st=st, now=t0); rs = PAL.rows(st)
         pb = PAL.playbook(dept, stage, topic, rs=rs, st=st, now=t0)
         if not pb["playbook_id"]: raise ContractBreach("LOAD", f"the Palace has no servable knowledge for {dept} at stage {stage}")
         R.pb_text = pb["text"]; brief = Brief(dept, trigger, episode, stage, topic, pb, inbound, sid, context)
-        R.receipt("LOAD", {"playbook_id": pb["playbook_id"], "items": len(pb["items"]), "tokens": pb["tokens"], "palace_hash": pb["palace_hash"],
-                           "inbound": [m["id"] for m in inbound], "tickets": [m["id"] for m in tickets], "overdue": overdue})
+        limits = {r["id"] for r in rs if r["id"] in set(pb["items"]) and PAL.is_limit(r)}
+        if R.mode == "prompt": R.must = CANON.must_cite(dept, pb["items"], rs, t0)                # v12 B6a: the continuity debt of this run
+        R.receipt("LOAD", dict({"playbook_id": pb["playbook_id"], "items": len(pb["items"]), "tokens": pb["tokens"], "palace_hash": pb["palace_hash"],
+                                "inbound": [m["id"] for m in inbound], "tickets": [m["id"] for m in tickets], "overdue": overdue},
+                               **({"must": R.must, "citable": len(pb["items"]) - len(limits)} if R.mode == "prompt" else {})))
     except CapReached: raise
     except Exception as e:
         why = e.why if isinstance(e, ContractBreach) else f"{type(e).__name__}: {scrub(e)[:200]}"
@@ -244,28 +266,46 @@ def run(dept, trigger, act, *, episode="", topic="", stage=None, context=None, m
     finally:
         with _LOCK:
             if R in _ACTIVE: _ACTIVE.remove(R)
-    secs = round(time.time() - tw, 2); native = isinstance(raw, Out); out = raw if native else Out(raw); proof = ""; applied = []
+    secs = round(time.time() - tw, 2); native = isinstance(raw, Out); out = raw if native else Out(raw); proof = ""; applied = []; vr = None; adopted = ""
     if err is None:
-        if R.mode == "prompt":
+        if R.mode == "prompt" and adopt:                                       # v12 B6a: a pre-production draft is adopted only with its own run's proof
+            src, why = _adoptable(st, dept, adopt)
+            if src is None: breaches.append(("ACT", f"adopted draft {adopt} has no proof that the playbook reached it: {why}"))
+            else:
+                sa = CITE._receipt(src, "ACT"); adopted = str(adopt); proof = f"adopted draft run {adopt}: {sa.get('injected')}"
+                R.injected_tasks |= set(sa.get("injected_tasks") or []); R.cites = [dict(c) for c in (sa.get("citations") or []) if isinstance(c, dict)]
+                vr = CITE.verify(R.cites, [c.get("id") for c in R.cites], set(), out.output)        # re-verified against the text production really adopted
+        elif R.mode == "prompt":
             proof = f"in {R.injected} model prompt(s)" if R.injected else ""
             if not R.injected: breaches.append(("ACT", "no playbook injection: no model call of this run carried the playbook"))
+            vr = CITE.verify(R.cites, pb["items"], limits, out.output)
         else:
             proof = "handed over with the brief" if brief.taken else ""
             if not brief.taken: breaches.append(("ACT", "no playbook injection: the department never took its playbook"))
         ghost = [i for i in out.applied_items if i not in pb["items"]]
         if ghost: breaches.append(("ACT", "cites Palace item(s) that were not in its playbook: " + ", ".join(ghost[:3])))
         else:
-            applied = list(dict.fromkeys(out.applied_items))
+            applied = list(dict.fromkeys(out.applied_items + (vr["verified"] if vr else [])))   # a model's citation counts only when its quote was found
             try:
-                if applied: PAL.mark_applied(applied, st=st)
+                if applied and not adopted: PAL.mark_applied(applied, st=st)
             except Exception as e: log(f"applied items not counted: {scrub(e)[:120]}", "WARN", episode or None)
-    R.receipt("ACT", {"ok": err is None, "seconds": secs, "cost_inr": round(R.cost, 2), "model_calls": len(R.calls), "injected": proof, "applied": applied,
-                      "error": type(err).__name__ if err is not None else ""})
+        if vr is not None:
+            out.measures.update({"citations_verified": len(vr["verified"]), "citations_unverified": len(vr["unverified"]), "citations_ghost": len(vr["ghost"])})
+    act_rec = {"ok": err is None, "seconds": secs, "cost_inr": round(R.cost, 2), "model_calls": len(R.calls), "injected": proof, "applied": applied,
+               "error": type(err).__name__ if err is not None else ""}
+    if legacy: act_rec["legacy_draft"] = str(legacy)
+    if R.mode == "prompt":
+        keep = [{"id": i, "where": (vr or {}).get("quotes", {}).get(i, "")} for i in ((vr or {}).get("verified", []) + (vr or {}).get("unverified", []))][:CITE.MAX_CITES]
+        act_rec.update(injected_tasks=sorted(R.injected_tasks), cited=len(R.cites), citable=len(pb["items"]) - len(limits), unverified=(vr or {}).get("unverified", []),
+                       ghost=(vr or {}).get("ghost", []), citations=keep, adopted=adopted)
+    R.receipt("ACT", act_rec)
     # ---- 3 EMIT
-    written, settled, handled = [], [], 0
+    written, settled, handled, pstats = [], [], 0, None
     try:
         outbound = [dict(m) for m in out.memos]
         if emit is not None and err is None: outbound += [dict(m) for m in (emit(out.output, brief) or [])]
+        if R.proposals and err is None:                                        # v12 B6a: ideas the creative calls proposed -> creative memos to the Council (same-idea guard)
+            cm, pstats = CITE.proposals_to_memos(dept, R.proposals, st, t0); outbound += cm
         told = {}
         for m in outbound:
             m.setdefault("from_dept", dept); m.setdefault("episode_id", episode); m["session_id"] = sid; t_ = m.pop("_owner_told", None)
@@ -290,7 +330,7 @@ def run(dept, trigger, act, *, episode="", topic="", stage=None, context=None, m
                     _apply_action(m, a, dept, st); handled += 1
     except MemoError as e: breaches.append(("EMIT", "; ".join(e.problems[:3])))
     except Exception as e: breaches.append(("EMIT", f"{type(e).__name__}: {scrub(e)[:160]}"))
-    R.receipt("EMIT", {"written": written, "settled": settled, "handled": handled})
+    R.receipt("EMIT", dict({"written": written, "settled": settled, "handled": handled}, **({"proposals": pstats} if pstats else {})))
     # ---- 4 LEARN
     tids, novel, proposed = [], 0, []
     try:
@@ -368,13 +408,31 @@ def run(dept, trigger, act, *, episode="", topic="", stage=None, context=None, m
     if breaches and strict: raise ContractBreach(*breaches[0])
     return Result(status, out.output, sid, R.receipts, R.chain, breaches, written, tids)
 
-def work(dept, trigger, episode, fn, **kw):
+def work(dept, trigger, episode, fn, adopt=None, legacy=None, **kw):
     """Run an existing production step as a department run: the playbook is handed over with the work order, `fn(brief)` does exactly what the
-    step always did, and its return value comes back unchanged. See run() for what is recorded and what the episode gates then judge."""
+    step always did, and its return value comes back unchanged. See run() for what is recorded and what the episode gates then judge.
+    adopt = the Sessions id of the run that already did this work (a pre-production draft): its proof is checked and carried over."""
     def act(brief):
         brief.take()
         return fn(brief)
-    return run(dept, trigger, act, episode=episode, strict=False, **kw).output
+    return run(dept, trigger, act, episode=episode, strict=False, adopt=adopt, legacy=legacy, **kw).output
+
+def last_session(dept, trigger, episode, st=None):
+    """The id of the newest run of this department step for this episode ('' when none)."""
+    r = CITE._latest((st or store()).rows(STAB), dept, trigger, str(episode or ""))
+    return r.get("id", "") if r else ""
+
+def _adoptable(st, dept, sid):
+    """(row, '') when Sessions row `sid` is a complete, ok draft run of this department whose playbook reached its model calls; else (None, why)."""
+    r = next((x for x in st.rows(STAB) if x.get("id") == sid), None)
+    if r is None: return None, "the draft's run is not recorded"
+    if r.get("dept") != dept or r.get("trigger") != "draft": return None, f"{sid} is a {r.get('dept')} '{r.get('trigger')}' run, not a {dept} draft"
+    if r.get("status") != "ok": return None, f"the draft run is '{r.get('status')}'"
+    if r.get("inject") != "prompt": return None, "the draft was written with the playbook handed over only (brief mode)"
+    bad = verify(r)
+    if bad: return None, bad[0]
+    if not CITE._receipt(r, "ACT").get("injected_tasks"): return None, "no model call of the draft carried the playbook"
+    return r, ""
 
 def _cap_message(dept, cap, now):
     try:

@@ -10,7 +10,7 @@ def estimate_lines():
     u = S("USD_INR", float)
     tr = S("TABLE_READ_EXTRA_INR", float) if str(S("TABLE_READ_MODE") or "").strip().lower() in ("on", "true", "yes", "1") else 0.0
     vis = G.full_episode_inr() - G.voice_think_inr() - S("LLM_EST_INR", float) - tr - G.v91_extra_inr()      # v9.1 lines are listed on their own
-    return {"visuals": round(vis, 1), "ai_writing": round(S("LLM_EST_INR", float) + tr + S("ROOM_EXTRA_EST_INR", float), 1),
+    return {"visuals": round(vis, 1), "ai_writing": round(S("LLM_EST_INR", float) + tr + S("ROOM_EXTRA_EST_INR", float) + G.palace_prompt_inr(), 1),
             "thinking": round(S("THINK_EST_INR", float), 1), "tts": round(S("TTS_EST_INR", float), 1),
             "show_devices": 0.0, "community": round(S("COMMENT_AGENT_EST_INR", float) / max(1, S("VIDEOS_PER_MONTH_EST", int)), 1),
             **v91_lines()}

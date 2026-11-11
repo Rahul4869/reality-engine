@@ -433,6 +433,30 @@ def p_research_cadence(ctx):
                   f"{s.get('escalated', 0)} escalated; {s.get('assessments', 0)} assessment(s) re-computed ({s.get('accept', 0)} accept, {s.get('test', 0)} test, "
                   f"{s.get('reject', 0)} reject); spent D2 Rs {s.get('D2_inr', 0)}, D3 Rs {s.get('D3_inr', 0)}")
 
+def _creative_gate(ctx, which):
+    """v12 B6a: the creative runs of this episode (D4 write or its adopted draft, D5 package, D6 plan) judged from their receipts."""
+    from whatifs.org import cite as CITE
+    r = CITE.episode_issues(ctx.get("ep"), which)
+    if r["na"]: return NA, r["na"]
+    if r["problems"]: return FAIL, f"{len(r['problems'])} problem(s): " + " | ".join(r["problems"][:3])
+    s = r["stats"]; leg = f"; {s['legacy']}" if s.get("legacy") else ""
+    if which == "injected": return PASS, f"{s['runs']} creative run(s): the playbook was inside the prompt of each key call (writer / packager / director) and its text is stored{leg}"
+    return PASS, f"{s['runs']} creative run(s): {s['verified']} citation(s) verified by quote, {s['unverified']} not found, {s['ghost']} never offered{leg}"
+
+def p_palace_injected(ctx): return _creative_gate(ctx, "injected")
+def p_palace_cited(ctx): return _creative_gate(ctx, "cited")
+
+def p_canon_in_brief(ctx):
+    """v12 B6a: the writer was given the show's canon (cast + the newest aired case), paid the continuity debt in a line of the final script, and wrote
+    this episode's case record."""
+    from whatifs.org import canon as CANON
+    r = CANON.episode_issues(ctx.get("ep"), _script_text(ctx))
+    if r["na"]: return NA, r["na"]
+    if r["problems"]: return FAIL, f"{len(r['problems'])} problem(s): " + " | ".join(r["problems"][:3])
+    s = r["stats"]
+    return PASS, (f"canon given: {s.get('cast', 0)} cast item(s) + newest case {s.get('newest_case')}; " + (f"callback in the script: '{s['callback']}'" if s.get("callback") else "no aired case to call back to yet")
+                  + "; case record written")
+
 def p_decisions_executed(ctx): return _exec_gate("decisions")
 def p_lever_verified(ctx): return _exec_gate("levers")
 def p_dept_contract(ctx): return _org_gate(ctx, "script")
@@ -448,6 +472,9 @@ FEATURES = [
     ("decisions_executed", "script", p_decisions_executed, "nothing the organisation decided stays text: every decision has tickets, every ticket is executed with proof, refused with a reason or escalated"),
     ("lever_verified", "script", p_lever_verified, "every change made by ticket is written down before and after, verified by later evidence or rolled back; none sits past its window"),
     ("research_cadence", "script", p_research_cadence, "R&D researched on schedule with sources proven by code, and the Review Board judged every research memo in time, blind, across two model families, with a rejected canary and the verdict computed by code"),
+    ("palace_injected", "script", p_palace_injected, "the Knowledge Palace playbook was inside the model prompt of every creative run's key call (the writer, the packager, the director), and the exact text is stored"),
+    ("palace_cited", "script", p_palace_cited, "every creative run cited Palace knowledge it really applied: each counted citation has a quote that code found in the final output"),
+    ("canon_in_brief", "script", p_canon_in_brief, "the writer was given the show's canon (cast and the newest aired case), called back to that case in a line of the final script, and wrote this episode's case record"),
     ("idea_evidence", "script", p_idea_evidence, "the premise is backed by an outlier at IDEA_MIN_MULTIPLE x"),
     ("joke_density",  "script", p_joke_density, "a [PUNCH] line at least every JOKE_EVERY_SEC_LONG seconds"),
     ("send_and_awe",  "script", p_send_awe,     "a [SEND] moment and an [AWE] peak (not in the last 20%)"),

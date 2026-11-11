@@ -221,6 +221,22 @@ def run():
         pv = PV.run(); assert pv["ok"]; dr = st810.rows("Script_Previews")[-1]; assert dr["status"] == "DRAFT"
         PV.decide("APPROVE " + dr["draft_id"]); assert store().rows("Script_Previews")[-1]["status"] == "APPROVED"
         print("v8.10 checks ok")
+        from whatifs.org import cite as CITE6, canon as CANON6           # v12 B6a: the Palace INSIDE the creative prompts, citations verified by quote, the show's canon
+        led6 = {r["feature"]: (r["status"], r.get("evidence")) for r in st810.rows("Feature_Ledger") if r.get("episode_id") == ep12}
+        assert all(led6.get(k, ("missing",))[0] == "PASS" for k in ("palace_injected", "palace_cited", "canon_in_brief")), ("creative checks", {k: led6.get(k) for k in ("palace_injected", "palace_cited", "canon_in_brief")})
+        cr6 = CITE6.creative_runs(ep12, st810)
+        assert all(r6 is not None and r6.get("inject") == "prompt" and CITE6._receipt(r6, "ACT").get("applied") for _d6, _t6, r6, _h6 in cr6), "a creative run did not put its playbook into the prompts or has no verified citation"
+        rec6 = PAL.get(CANON6.case_id(ep12), st=st810)
+        assert rec6 and rec6["status"] == "accepted" and PAL.aired(rec6) and rec6["derived_from"], "the episode's case record did not become canon on air"
+        cm6 = [m for m in OMEM.rows(st810) if m["type"] == "creative_memo"]
+        assert cm6 and all(m["to_depts"] == ["C"] for m in cm6) and len({m["body"]["idea"] for m in cm6}) == len(cm6), "no distinct creative memo reached the Council's queue"
+        dr6 = next(s for s in st810.rows("Sessions") if s.get("dept") == "D4" and s.get("trigger") == "draft" and s.get("episode_id") == dr["draft_id"])
+        ld6, ac6 = CITE6._receipt(dr6, "LOAD"), CITE6._receipt(dr6, "ACT"); room6 = PV._unpack(store().rows("Script_Previews")[-1]["room_json"])["room"]
+        q6 = next((c.get("where") for c in ac6.get("citations") or [] if c.get("id") == rec6["id"]), "")
+        assert dr6["status"] == "ok" and ld6.get("must") == [rec6["id"]], ("the next script was not given the continuity debt to the aired case", dr6["status"], ld6.get("must"))
+        assert room6.get("org_session") == dr6["id"] and CITE6.found(q6, CITE6.tokens(room6["script"]["script"])), ("the callback to the aired case is not in the next draft's script", q6)
+        print("creative departments:", ", ".join(f"{d6} {t6} {len(CITE6._receipt(r6, 'ACT').get('applied') or [])} verified" for d6, t6, r6, _h6 in cr6),
+              f"| case {rec6['id']} on air | {len(cm6)} creative memo(s) | next draft paid its debt: '{q6[:60]}'")
         # v8.11 checks: prompt caching recorded per episode, the opening Kling hook + the impact clips, measured-vs-estimated AI cost row,
         # the Premise_Bench refilled by the learning job and used first by the next room, below-the-bar never skips
         flush_costs(); from whatifs.core import flush_log as _fl; _fl()

@@ -50,10 +50,21 @@ DEPTS = {
 }
 TAKEAWAY_CAP_INR = 60          # monthly cap for model-written takeaways across all departments (about Rs 0.5 each; none is written by a model yet)
 
+# v12 B6a: the creative runs whose playbook goes INTO the model prompts (ORG_PROMPT_INJECT): trigger -> tasks that receive it (never the blind judges,
+# never the mechanical passes), the key call that must carry it, the calls that may add ONE proposal for the Council, the narration calls that must
+# pay the show's continuity debt (whatifs/org/canon.py). Every other run of the department stays in its base mode.
+PROMPT = {
+    "D4": {t: {"tasks": ("scout", "showrunner", "memo", "bible", "writer", "rewrite", "punchup"), "key": "writer", "propose": ("showrunner", "bible"),
+               "must": ("writer", "rewrite")} for t in ("write", "draft")},
+    "D5": {"package": {"tasks": ("packager",), "key": "packager", "propose": ("packager",), "must": ()}},
+    "D6": {"plan": {"tasks": ("director",), "key": "director", "propose": ("director",), "must": ()}},
+}
+CREATIVE_RUNS = (("D4", "write"), ("D5", "package"), ("D6", "plan"))      # judged by palace_injected / palace_cited (D4 write = the episode's script)
+
 # The call sites that run under the runner today: department -> ((file, trigger), ...). entry_issues() reads the files and fails when a call
 # named here is missing or a call found there is not named here.
 ENTRY = {
-    "D4":  (("whatifs/episode.py", "write"),),
+    "D4":  (("whatifs/episode.py", "write"), ("whatifs/preview.py", "draft")),      # v12 B6a: pre-production writing is a D4 run too
     "D5":  (("whatifs/episode.py", "package"),),
     "D6":  (("whatifs/episode.py", "plan"), ("whatifs/episode.py", "assets"), ("whatifs/episode.py", "render")),
     "D7":  (("whatifs/episode.py", "voice"),),
@@ -82,15 +93,21 @@ CHECK_OWNER = {
     "designed_voices": "D7", "music_bed": "D7", "animation": "D6", "real_motion": "D6", "no_frozen_frames": "D6", "slop_guard": "D6", "impact_map": "D6",
     "visual_change": "D6", "living_characters": "D6", "aliveness": "D6", "promise_paid": "D6", "thumbnails": "D5", "titles": "D5", "chapters": "D5",
     "short_covers": "D5", "shorts": "D9", "self_review": "D8", "breakout_bar": "D1", "dept_contract": "D8", "takeaways_written": "D8",
-    "decisions_executed": "C", "lever_verified": "D12", "research_cadence": "D2",
+    "decisions_executed": "C", "lever_verified": "D12", "research_cadence": "D2", "palace_injected": "D4", "palace_cited": "D4", "canon_in_brief": "D4",
 }
 
 def runnable(dept):
     """Can this department act today (does any call site run it under the runner)? The escalation ladder skips a holder that cannot."""
     return dept in ENTRY
 
-def inject(dept):
+def inject(dept, trigger=None):
+    """How the playbook reaches this run: 'prompt' for a creative run named in PROMPT while ORG_PROMPT_INJECT is on, else the department's base mode."""
+    if trigger is not None and trigger in PROMPT.get(dept, {}) and S("ORG_PROMPT_INJECT", bool): return "prompt"
     return DEPTS[dept]["inject"]
+
+def prompt_spec(dept, trigger):
+    """{'tasks', 'key', 'propose', 'must'} of a creative run ({} when the run has no prompt spec)."""
+    return dict(PROMPT.get(dept, {}).get(trigger) or {})
 
 def takes(dept, mtype):
     return mtype in EVERYONE or mtype in DEPTS[dept]["takes"]
@@ -178,5 +195,12 @@ def data_issues(root=None):
         p += [f"CHECK_OWNER names a check that does not exist ('{i}')" for i in sorted(set(CHECK_OWNER) - ids)]
     except Exception as e: p.append(f"the contract could not be read: {e}")
     p += [f"CHECK_OWNER sends '{i}' to an unknown department" for i, d in CHECK_OWNER.items() if d not in DEPARTMENTS]
+    wired = {(d, t) for d, sites in ENTRY.items() for _f, t in sites}
+    for d, by in PROMPT.items():                                     # v12 B6a: a prompt spec names a real run, and its key / proposing / debt calls are calls it injects
+        for t, sp in by.items():
+            if (d, t) not in wired: p.append(f"PROMPT names {d} '{t}', which is not a wired call site")
+            if sp.get("key") not in sp.get("tasks", ()): p.append(f"PROMPT {d} '{t}': key call '{sp.get('key')}' does not receive the playbook")
+            p += [f"PROMPT {d} '{t}': '{x}' is not one of its injected calls" for x in tuple(sp.get("propose", ())) + tuple(sp.get("must", ())) if x not in sp.get("tasks", ())]
+    p += [f"CREATIVE_RUNS names {d} '{t}' without a prompt spec" for d, t in CREATIVE_RUNS if t not in PROMPT.get(d, {})]
     from whatifs.org import levers as LV
     return p + LV.issues()

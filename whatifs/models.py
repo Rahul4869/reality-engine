@@ -581,6 +581,13 @@ def _tap(task, system, prompt):
         except Exception as e: log(f"ask tap failed: {type(e).__name__}", "WARN")
     return system
 
+REPLY_TAPS = []        # v12 B6a: listeners at the same doorway for what comes back; each fn(task, reply) returns the reply the caller gets (the runner takes its citations)
+def _rtap(task, res):
+    for fn in list(REPLY_TAPS):
+        try: res = fn(str(task), res)
+        except Exception as e: log(f"reply tap failed: {type(e).__name__}", "WARN")
+    return res
+
 def ask(role, system, prompt, want_json=True, max_tokens=6000, temperature=0.8, search=False, episode=None, fake_key=None, fanout=False, _direct=False):
     """Never blocks: walks the fallback chain. Claude roles move to Gemini when Claude credit runs out.
     v8.11: role may be a writers'-room task (ROUTES: model + effort chosen by capability) or a chain key as before; system may be a prompts.Packed."""
@@ -588,17 +595,17 @@ def ask(role, system, prompt, want_json=True, max_tokens=6000, temperature=0.8, 
     if ASK_TAPS: system = _tap(task, system, prompt)
     _CALL.last = {}
     if FAKE:
-        from whatifs.fakes import fake_reply, fake_search
+        from whatifs.fakes import fake_reply, fake_search, fake_cite
         if chain_key in CHAINS and CHAINS[chain_key][0][0] == "c": simulate_claude(CHAINS[chain_key][0][1], system, prompt, max_tokens, search, effort_for(task, ecls), episode, fanout)
         out = fake_reply(fake_key or role, prompt)
         p0, r0 = CHAINS[chain_key][0] if chain_key in CHAINS else ("c", _family(chain_key))
         _note_call("claude" if p0 == "c" else "gemini", r0, f"fake-{r0}", 0.0, *(fake_search(prompt) if search else ((), ())))
         if not want_json: return out
-        try: return parse_json(out)
+        try: res = parse_json(out)
         except ValueError:
-            fixed = haiku_repair(out, episode)
-            if fixed is not None: return fixed
-            raise
+            res = haiku_repair(out, episode)
+            if res is None: raise
+        return _rtap(task, fake_cite(res, system)) if REPLY_TAPS else res
     if not _direct and _preprod_batch(chain_key, search):                     # v9.4a (WP2): same request, half price, nobody waiting
         return ask_batch(role, system, prompt, want_json=want_json, max_tokens=max_tokens, episode=episode, fake_key=fake_key, temperature=temperature,
                          force=True, max_wait_min=S("ROOM_BATCH_MAX_WAIT_MIN", float))
@@ -623,7 +630,7 @@ def ask(role, system, prompt, want_json=True, max_tokens=6000, temperature=0.8, 
                         if res is None: raise
                 else: res = txt
                 if (prov, r) != first and chain_key in ("opus", "sonnet", "fable", "critic"): note_degraded(f"{task} answered by backup model {r}")
-                return res
+                return _rtap(task, res) if (REPLY_TAPS and want_json) else res
             except Declined as e:
                 last = e; log(f"{task} via {r}: {e} - trying the next model", "WARN", episode); break
             except Truncated as e:
@@ -682,7 +689,7 @@ def ask_batch(role, system, prompt, want_json=True, max_tokens=6000, episode=Non
         CACHE.record(episode, mid, toks, usd, saved, info)
         txt = "".join(b.get("text", "") for b in j.get("content", []) if b.get("type") == "text")
         if j.get("stop_reason") in ("max_tokens", "refusal"): raise RuntimeError(f"batch stop {j.get('stop_reason')}")
-        return parse_json(txt) if want_json else txt
+        return (_rtap(role, parse_json(txt)) if REPLY_TAPS else parse_json(txt)) if want_json else txt
     except Exception as e:
         log(f"batch path not used for {role} ({str(e)[:140]}) - normal call instead", "WARN", episode)
         return ask(role, system, prompt, want_json=want_json, max_tokens=max_tokens, episode=episode, fake_key=fake_key, temperature=temperature, _direct=True)

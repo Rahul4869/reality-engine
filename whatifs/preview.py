@@ -46,7 +46,11 @@ def run(mode="preview"):
     d["kling"], d["living"] = plan["kling"], plan["living"]; _apply_tier(d, plan)
     if G.production_room_inr() < S("LLM_EST_INR", float) + S("THINK_EST_INR", float):
         raise RuntimeError("not enough budget left this month for a preview (nothing spent)")
-    try: room = ROOM.run_room(d, draft)
+    from whatifs.org import runner as ORG, wraps as WR
+    try:                                                          # v12 B6a: the writing is a D4 department run (playbook in the creative prompts, citations verified)
+        room = ORG.work("D4", "draft", draft, lambda b: ROOM.run_room(d, draft), measure=WR.m_room, topic=str(d.get("ptype") or ""))
+        sid = ORG.last_session("D4", "draft", draft) if ORG.on() else ""
+        if sid: room["org_session"] = sid                         # production adopts this draft only with this run's proof (runner.work adopt=)
     except (PR.SkipSlot, CR.BelowBar) as e:
         if not pre: PUB.email("Script Preview: nothing reached the bar", f"<p>No draft was saved. {html.escape(str(e))}</p><p>Every pitch and score is in the Premise_Scores tab.</p>")
         log(f"preview: {e}", "WARN"); flush_log(); return {"ok": False, "why": str(e)[:300]}
@@ -123,6 +127,13 @@ def decide(title):
     st.update("Script_Previews", "draft_id", draft, {"status": "APPROVED" if act == "APPROVE" else "REJECTED", "approved_at": iso() if act == "APPROVE" else ""})
     log(f"preview {draft} {act.lower()}d by the owner"); flush_log(); return act
 
+def _palace_in_prompts():
+    """Do the creative runs put the Palace into the model prompts right now (organisation on, ORG_PROMPT_INJECT)?"""
+    try:
+        from whatifs.org import runner as ORG, cite as CITE
+        return ORG.on() and CITE.prompt_on()
+    except Exception: return False
+
 def take_approved(ep):
     """The oldest APPROVED draft for this production (marked USED with the episode id), or None. Returns (saved draw, room)."""
     use_owner, use_pre = S("PREVIEW_USE_APPROVED", bool), S("PREPROD_ON", bool)      # v9.4a: owner-approved previews and pre-production drafts are switched apart
@@ -135,6 +146,11 @@ def take_approved(ep):
         try: data = _unpack(r.get("room_json"))
         except Exception as e:
             log(f"approved draft {r.get('draft_id')} unreadable ({scrub(e)[:80]}) - skipped", "WARN"); st.update("Script_Previews", "draft_id", r["draft_id"], {"status": "BROKEN"}); continue
+        if not ((data.get("room") or {}).get("org_session")) and _palace_in_prompts():    # v12 B6a: written before the Palace reached the writers
+            if is_pre:                                                                  # an automatic draft is written again, with the Palace
+                log(f"pre-production draft {r.get('draft_id')} was written without the Palace in its prompts - not adopted (production writes the script under D4)", "WARN")
+                st.update("Script_Previews", "draft_id", r["draft_id"], {"status": "SUPERSEDED", "note": (str(r.get("note") or "") + "; superseded: written before the Palace reached the writers")[:300]}); continue
+            data.setdefault("room", {})["_legacy_draft"] = r["draft_id"]                # the owner's own approval stands: adopted, judged as written before B6a
         st.update("Script_Previews", "draft_id", r["draft_id"], {"status": "USED", "episode_id": ep})
         log(f"using the approved Script Preview {r['draft_id']} (its writing is not paid for again)", episode=ep)
         return data.get("d") or {}, data.get("room") or {}

@@ -39,6 +39,48 @@ def _fake_research(prompt):
                                             {"action": "Make every video's cold open differ in setting and stakes from the last three", "target_depts": ["D4"], "lever_class": "D",
                                              "metric": "originality", "direction": "up", "horizon_videos": 3}]})
 
+_PB_LINE = re.compile(r"^- \[(PI-[0-9A-F]{10})\] (PROVEN|ACCEPTED|TESTING): (.*)$", re.M)
+
+def _quote(obj):
+    """The first ten words of the longest text (six words or more) in a reply: what a compliant model copies as the place it applied an item."""
+    best = ""
+    def walk(v):
+        nonlocal best
+        if isinstance(v, str):
+            if len(v.split()) >= 6 and len(v) > len(best): best = v
+        elif isinstance(v, dict): [walk(x) for x in v.values()]
+        elif isinstance(v, list): [walk(x) for x in v]
+    walk(obj)
+    if not best: return ""
+    if "\n" in best:                                                    # a narration: a spoken line from the middle (openings are rewritten by the hook lab)
+        ls = [x for x in best.split("\n") if len(x.split()) >= 6 and not x.startswith(("## BEAT", "[pause"))]
+        if ls: best = ls[len(ls) // 2]
+    return " ".join(re.sub(r"\[[^\]]*\]", " ", best).split()[:10])
+
+def fake_cite(res, system):
+    """v12 B6a: a compliant offline model. When the system prompt carries the Palace citation rule, the reply cites one playbook line with a quote copied
+    from itself, pays every MUST CITE continuity debt with a line in the narration, and (when asked) adds one proposal for the Council."""
+    s = str(system or "")
+    if not isinstance(res, dict) or "PALACE CITATIONS" not in s: return res
+    out = dict(res); lines = _PB_LINE.findall(s); cites = []
+    must = re.findall(r"MUST CITE \(continuity\): \[(PI-[0-9A-F]{10})\]", s)
+    for iid in must:
+        if not isinstance(out.get("script"), str): continue
+        summ = next((t for i, _st, t in lines if i == iid), "the case before this one")
+        line = "Remember the last case: " + " ".join(re.findall(r"[A-Za-z']+", summ)[2:9]) + "."
+        parts = out["script"].split("\n"); k = max(1, len(parts) // 2)
+        while k < len(parts) and parts[k].startswith(("## BEAT", "[pause")): k += 1
+        parts.insert(k, "[DIRECTOR] [calm] " + line); out["script"] = "\n".join(parts); cites.append({"id": iid, "where": line})
+    q = _quote(out)
+    if q:
+        first = next((i for i, _st, _t in lines if i not in must), None)
+        if first: cites.append({"id": first, "where": q})
+    if cites: out["applied_items"] = cites
+    if "PROPOSAL (optional" in s:
+        out["proposal"] = {"kind": "world_building", "idea": "Dr. Grimm keeps a jar of every failed prototype's last spark on his desk; each case, one more jar lights up.",
+                           "rationale": "A visible running tally gives returning viewers a reward for watching every case and a callback that changes a little each time."}
+    return out
+
 def _fake_board(prompt):
     """A fake strong judge: every memo with dated sources gets yes on the good questions and no on the risk questions; a memo with no source fails."""
     out = {}

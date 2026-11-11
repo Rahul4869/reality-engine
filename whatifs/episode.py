@@ -10,7 +10,7 @@ from whatifs.sampler import draw as DRAW
 from whatifs.governor import plan_for_episode, fal_allowed, episodes_left_this_month
 from whatifs import governor as G
 from whatifs import growth as GR
-from whatifs.org import runner as ORG, wraps as WR          # v12: every step below that names a department runs under the department contract
+from whatifs.org import runner as ORG, wraps as WR, canon as CANON          # v12: every step below that names a department runs under the department contract
 from whatifs import format_engine as FE, cta as CTA
 from whatifs import sound as SD
 
@@ -124,7 +124,9 @@ def _stage_plan(ep, out, eps_left, slot_iso):
             if k in sd: d[k] = sd[k]
         d["from_preview"] = True; d["preview_room_ts"] = sd.get("_t_last")      # v10.2: when the approved draft was written
     log(f"draw: {json.dumps(d)} | spend plan: {plan['reason']}")
-    room = ORG.work("D4", "write", ep, (lambda b: took[1]) if took else (lambda b: ROOM.run_room(d, ep)), measure=WR.m_room, topic=str(d.get("ptype") or ""))      # v12: an approved Script Preview is adopted as written
+    room = ORG.work("D4", "write", ep, (lambda b: took[1]) if took else (lambda b: ROOM.run_room(d, ep)), measure=WR.m_room, topic=str(d.get("ptype") or ""),
+                    adopt=(took[1] or {}).get("org_session") if took else None, legacy=(took[1] or {}).get("_legacy_draft") if took else None)      # v12: an approved Script Preview is adopted as written - with its D4 draft run's proof (B6a); an owner-approved draft from before B6a is recorded as such
+    if ORG.on(): CANON.record(ep, room, ORG.last_session("D4", "write", ep))          # v12 B6a: D4's continuity takeaway - the case record (canon once it is on air)
     d["ptype"] = room["spine"].get("ptype", d["ptype"])
     if room["spine"].get("family"): d["strategies"]["family"] = room["spine"]["family"]; d["family"] = room["spine"]["family"]
     st.update("Episodes", "episode_id", ep, {"premise": room["spine"]["premise"], "ptype": d["ptype"], "presentation_format": room["spine"].get("presentation_format", "classic"),
@@ -707,6 +709,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         return _hold(st, ep, out, {"problems": [{"code": "contract:" + f, "detail": str(ev)} for f, ev in g["failed"]]}, notes, fix)
     vid = ORG.work("D9", "publish", ep, lambda b: PUB.yt_upload(master, title, desc, pkg.get("tags", []), publish_at=slot_iso, ai_label=S("AI_LABEL_DEFAULT", bool)), measure=WR.m_upload)
     st.update("Episodes", "episode_id", ep, {"title": title, "yt_id": vid, "slot_et": slot_iso, "status": "UPLOADED", "updated": iso()})   # recorded at once: no double upload
+    if vid and ORG.on(): CANON.on_air(ep, vid)                    # v12 B6a: the platform confirmed the upload - this case is now the show's canon
     try:                                                         # v11 (K155): the brain's features + a logged forecast for this video
         from whatifs import brain as BRN
         hk = (hook_rec or {}).get("archetype") or (pkg.get("hook_shape") if isinstance(pkg, dict) else "") or "unknown"
