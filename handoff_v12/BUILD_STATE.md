@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 11 Nov 2026 (B5 ACCEPTED). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 11 Nov 2026 (B6a ACCEPTED). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -18,13 +18,11 @@ Updated: 11 Nov 2026 (B5 ACCEPTED). Branch: `v12-organisation` (never main). Res
    version of a library, change `requirements.txt` AND the workflows in one commit and re-verify the reference frames (`tests/golden_frames.py`).
 
 ## NEXT
-**B6 is SPLIT (token discipline rule 6, decided 11 Nov 2026 at the start of B6): B6 has two large halves that each need the full seven-step loop,
-the 40-minute suite, the sweep and a GitHub run - one window cannot hold both.**
-- **B6a - Creative departments (D4/D5/D6/D7)** - IN PROGRESS (this session): the Palace playbook goes INTO the creative model prompts and is proven
-  there (`palace_injected`), the models cite the items they used and code verifies each citation (`palace_cited`), world canon (the show's living
-  bible) is written after every episode and reaches the next writer brief (`canon_in_brief`), creative runs emit creative memos to the Council.
-- **B6b - The Council (C)** - next: gathers open research / assessment / creative / owner / performance / problem memos; diverge -> blind
-  cross-family jury -> converge -> decision memo + tickets; owner cards only above thresholds; check `council_held`. Effort: High.
+**B6b - The Council (C)** (01 sections 2 (C), 4, 5, 7 `council_held`; 03 "B6", second bullet). Full seven-step MANDATORY BATCH LOOP. Effort: High.
+Gathers open research / assessment / creative / owner / performance / problem memos; diverge -> blind cross-family jury -> converge -> decision
+memo + tickets; owner cards only above thresholds; session takeaways; check `council_held`; C moves from `registry.PENDING` to `ENTRY`.
+B6 was SPLIT at its start (token discipline rule 6, 11 Nov 2026: two halves that each need the full loop, the 40-minute suite, the sweep and a
+GitHub run). B6a - Creative departments (D4/D5/D6/D7) - is ACCEPTED (record under DONE).
 Original B6 scope: 01 sections 2 (D4-D7, C), 3, 5, 7 `council_held`, `canon_in_brief`, `palace_injected`, `palace_cited`; 03 "B6".
 What B5 leaves ready for B6b (use it, do not rebuild it):
 - Assessment memos (D3 -> C) already carry everything a decision needs: the verdict (accept / test / reject, computed by code), six scores, the
@@ -56,7 +54,7 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
-### B6a - Creative departments D4/D5/D6/D7 (11 Nov 2026) - IN PROGRESS
+### B6a - Creative departments D4/D5/D6/D7 (11 Nov 2026) - ACCEPTED (final code commit 45ca227 GREEN in GitHub run 75; sweep 40 of 40 green)
 #### Step 1 RESEARCH (13 sources, 12 of them dated; E = measured evidence, O = opinion / practice / vendor documentation)
 1. E - Wallat, Heuss, de Rijke, Anand, "Correctness is not Faithfulness in RAG Attributions", arXiv 2412.18004 (Dec 2024; ICTIR 2025),
    https://arxiv.org/abs/2412.18004 : a citation can be CORRECT (the source supports the claim) while the model never used it ("post-rationalised");
@@ -257,6 +255,15 @@ items; Palace GREEN; no limit crowded out of a playbook by them: D1 3, D2 1, D12
 - GitHub runs of this batch: #69, #70 GREEN (research, design); #71 RED = 54 existing tests that were code-only creative runs or pinned totals
   (fixed in 3459c44); #72 RED = 3 pinned tests (two money goldens + the pre-production draft; fixed in aba1b6f, the same 3 the laptop suite
   found); #73 GREEN (1260 passed, 0 skipped, rehearsal GREEN EP202611110156, script 28 / 28, final 19 / 19). Both RED runs traced, none re-run.
+  #74 GREEN (f608e5b: 1260 passed, rehearsal GREEN EP202611110203). **#75 GREEN on the FINAL code commit 45ca227: 1261 passed, 0 skipped,
+  rehearsal GREEN (episode id EP202611110234, script 28 / 28, final 19 / 19).** The one warning is GitHub's own (open issue 37).
+- Laptop, final code (45ca227): full suite 1260 passed / 0 failed / 1 skipped (the known laptop-only skip); rehearsal GREEN (script 28 / 28, final 19 / 19;
+  `creative departments: D4 write 3 verified, D5 package 2 verified, D6 plan 2 verified | case on air | 1 creative memo | next draft
+  paid its debt`); Plan Guard GREEN; truth registry GREEN; Palace GREEN (133 items). The first laptop suite (3459c44) was 1255 / 3 / 1: the 3
+  were the pinned tests of run #72.
+- Sweep (standing rule 2) on a frozen copy of 45ca227: 40 of 40 fixed episode ids green, every id script 28 / 28 and final 19 / 19 (41 PASS +
+  6 N/A of 47), no fail class, no degraded class, no owner message, no prompt-cache warning. An earlier sweep on aba1b6f was stopped at 15 of
+  15 green when the cache fault was found (the code under test was about to change).
 
 #### Step 7 TAKEAWAY (also Palace item `b6a.takeaway`, 133 founding items)
 - What worked: one doorway in (the ask tap) and one doorway out (the reply tap) meant 9 creative calls in 3 departments got knowledge and proof
@@ -1555,4 +1562,5 @@ Rehearsal asserts `docs_current` ran and passed.
 | B0b | done 10 Nov 2026 | 1113 / 0 / 1 skipped | GREEN (22 + 19) | Baseline re-check: sweep 58 of 58 fixed ids green; reference frames always compared; no-skip rule; Checks pinned to production's library versions (they ran OpenCV 5.0.0); red runs name their cause in public; 8 cells / 2 tabs / 10 functions that were never wired are listed and may only shrink; owner: build the room value test in B8. GitHub run 52: GREEN (1114 passed, 0 skipped); runs 46-48 RED = OpenCV 5.0.0 before the pin |
 | B4 | done 10 Nov 2026 | 1201 / 0 / 1 skipped | GREEN (24 + 19) | Execution Engine: lever table (39 levers), 5 lever classes from ticket to ledger proof or rollback, owner approval by direction, between-videos rule, D12 wired, checks `decisions_executed` + `lever_verified` (43 hard checks now), build workflow hardened. GitHub run 59: GREEN (1202 passed, 0 skipped); run 57 RED = one test, a one-second ordering rule of the verifier, traced and fixed (runs 54-56 and 58 GREEN) |
 | B5 | done 11 Nov 2026 | 1232 / 0 / 1 skipped | GREEN (25 + 19) | R&D + Review Board: gap-driven research agenda (8 gap sources), sources verified by code (phantom / dead / undated dropped, evidence ceiling), blind two-family Board with yes/no checklist, verdict by code, family veto, planted canary per session; check `research_cadence` (44 hard checks), D2 + D3 wired, 41 levers. Sweep 58 of 58. GitHub run 67: GREEN (1233 passed, 0 skipped); #63 RED = 6 by-design tests, #64/#65 RED = rehearsal money formula, traced and fixed |
-| B6 | next | | | Creative departments + Council |
+| B6a | done 11 Nov 2026 | 1260 / 0 / 1 skipped | GREEN (28 + 19) | Creative departments: the Palace playbook inside the writer / packager / director prompts (end of the system prompt, cached layers untouched), citations verified by quote, canon written by code and accepted on air, continuity debt paid in the script, distinct creative memos to the Council, drafts adopted only with proof; checks `palace_injected`, `palace_cited`, `canon_in_brief` (47 hard checks); the writers' playbook holds the owner's limits again (cap 2,400); open issue 47 fixed. Sweep 40 of 40. GitHub run 75: GREEN (1261 passed, 0 skipped); #71 RED = 54 by-design tests, #72 RED = 3 pinned tests, traced and fixed |
+| B6b | next | | | The Council |
