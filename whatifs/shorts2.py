@@ -6,6 +6,8 @@ from whatifs import formats as FMT
 from whatifs.org import shortseat as SEAT
 
 VOICE_STYLE = "conversational"          # the guide's delivery in a Short (the voice job's own style table)
+LOOP_MAX = 0.01                         # the most the last frame may differ from the first (in the band of the picture that never carries words) for the Short to loop without a jump
+LOOP_BAND = (0.30, 0.52)                # that band, as shares of the height: under the promise text, above the captions
 FPS = 30
 
 def _rows(): return [r for r in store().rows("Specials") if r.get("kind") == "short"]
@@ -241,7 +243,8 @@ def _ass(tl, path, promise, W, H, margin):
     return path
 
 def _loop_diff(path):
-    """0..1: how different the last frame is from the first (0 = the same picture: the Short loops without a jump). Measured on the finished file."""
+    """0..1: how different the last frame is from the first (0 = the same picture: the Short loops without a jump). Measured on the finished file, in
+    the band of the picture that never carries words (LOOP_BAND): the promise text and the captions differ between the two frames by design."""
     import cv2, numpy as np
     cap = cv2.VideoCapture(path); n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0); ok0, a = cap.read(); b = None
     for back in range(1, 6):
@@ -249,7 +252,7 @@ def _loop_diff(path):
         if ok1: break
     cap.release()
     if not ok0 or b is None: return 1.0
-    a, b = (cv2.resize(cv2.cvtColor(x, cv2.COLOR_BGR2GRAY), (90, 160)).astype(np.float32) for x in (a, b))
+    a, b = (cv2.resize(cv2.cvtColor(x, cv2.COLOR_BGR2GRAY), (90, 160)).astype(np.float32)[int(160 * LOOP_BAND[0]):int(160 * LOOP_BAND[1])] for x in (a, b))
     return round(float(np.mean(np.abs(a - b))) / 255.0, 3)
 
 def make(sc, v, pl, ep, wd):
@@ -292,6 +295,11 @@ def make(sc, v, pl, ep, wd):
 
 def m_make(r):
     return {k: (r or {}).get(k, 0) for k in ("seconds", "clips", "pictures", "loop_diff")}
+
+def make_lessons(r):
+    """What the Shorts Studio must learn from a finished Short: a loop that did not close is reported as a failure of its own (the plan asked for it)."""
+    d = float((r or {}).get("loop_diff") or 0)
+    return [("loop_open", f"the last frame differs from the first by {d:.3f} (limit {LOOP_MAX}): the Short does not loop into its first picture")] if d > LOOP_MAX else []
 
 def description(sc):
     """What stands under a Short: its title, its hook and how it was made - never an ask."""
@@ -353,7 +361,7 @@ def run(force=False, publish=True, now=None, episode_id=None):
                 store().append("Specials", [dict(rec, status=("HELD (" + ", ".join(failed) + ")")[:120])])
                 log(f"Short {ep} ({fmt}) HELD at the short gate, not made, no picture paid: " + "; ".join(f"{f}: {str(e)[:90]}" for f, e in g["failed"][:4]), "WARN", ep)
                 return {"ok": False, "held": True, "id": ep, "kind": "short", "format": fmt, "failed": failed, "premise": topic["premise"]}
-            made = ORG.work("D14", "make", ep, lambda b: make(sc, v, pl, ep, wd), measure=m_make)
+            made = ORG.work("D14", "make", ep, lambda b: make(sc, v, pl, ep, wd), measure=m_make, lesson=make_lessons)
         out = made["path"]
         BR.tag(ep, "short", title=sc["title"], premise=topic["premise"], hook=arch, sec=made["seconds"], lead=fmt, origin=topic.get("origin", "ai"),
                arm=choice.get("p_draws"), holdout=choice.get("holdout"))          # lead = the Short's FORMAT (nobody is on screen): the learning core compares S1, S2, S3

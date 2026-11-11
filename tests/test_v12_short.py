@@ -317,10 +317,31 @@ def test_the_real_production_makes_a_short_in_every_format(monkeypatch, setting)
         paid = calls["hero"] - before["hero"]
         assert paid == mk["clips"] >= 2 and calls["other"] == 0 and calls["still"] - before["still"] == mk["pictures"] == (3 if FMT.SHORTS[fmt]["camera"] == "cut" else 1)
         assert SH.est_inr(fmt) >= paid * core.S("PRICE_KLING_USD", float) * core.S("USD_INR", float)          # the estimate said before anything was paid covers the clips really made
-        assert mk["loop_diff"] <= 0.12 and SH._loop_diff(r["path"]) == mk["loop_diff"]                          # the last frame is the first frame again
+        assert mk["loop_diff"] <= SH.LOOP_MAX and SH._loop_diff(r["path"]) == mk["loop_diff"]                   # the last frame is the first frame again
     assert {x["stage"] for x in st.rows("Jury_Log")} == {"short"} and len({x["hook"] for x in st.rows("Specials")}) >= 2
     assert not [m for m in MEM.find(type="problem_memo")] and sent.count("special_review") == 3 and "contract_hold" not in sent
     assert [(x["format"], x["status"]) for x in st.rows("Specials")] == [("S1", "AWAITING_APPROVAL"), ("S2", "AWAITING_APPROVAL"), ("S3", "AWAITING_APPROVAL")]
+
+def test_the_loop_is_closed_on_the_finished_file_and_an_open_loop_is_seen(monkeypatch, tmp_path):
+    """The offline clips barely move, so they cannot tell a closed loop from an open one (a deliberate break showed it): here every clip scrolls."""
+    import shutil
+    n = [0]
+    def moving(image_url, image_path, prompt, path, episode, hero=False, **k):
+        n[0] += 1
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc2=size=360x640:rate=30:duration=5", "-vf", f"hue=h={47 * n[0]},scroll=vertical=0.004",
+                        "-pix_fmt", "yuv420p", path], check=True)
+        return path
+    monkeypatch.setattr(MD, "animate", moving); out = {}; rev = []; real = SH._reverse
+    for fmt in ("S1", "S3"):
+        sc = good(fmt)
+        for name, fn in (("closed", lambda src, o, sec: (rev.append((os.path.basename(src), round(sec, 2))), real(src, o, sec))[1]), ("open", lambda src, o, sec: shutil.copy(src, o))):
+            wd = str(tmp_path / (fmt + name)); os.makedirs(wd); monkeypatch.setattr(SH, "_reverse", fn)
+            v = SH.voice(sc, "SHL1", wd); pl = SEAT.shape(SH.plan(sc, v["timeline"], fmt), sc, fmt); m = SH.make(sc, v, pl, "SHL1", wd)
+            out[(fmt, name)] = m; assert m["clips"] == len(pl["shots"]) - 1                                   # the loop shot is no paid clip
+            if name == "closed": assert rev[-1] == ("c0.mp4", round(pl["shots"][-1]["end"] - pl["shots"][-1]["start"], 2))          # it IS the first clip, played backwards
+    for fmt in ("S1", "S3"):
+        assert out[(fmt, "closed")]["loop_diff"] <= SH.LOOP_MAX < out[(fmt, "open")]["loop_diff"], {k: v["loop_diff"] for k, v in out.items()}
+        assert SH.make_lessons(out[(fmt, "closed")]) == [] and SH.make_lessons(out[(fmt, "open")])[0][0] == "loop_open"          # an open loop is reported to the organisation
 
 def test_a_short_the_seat_refuses_is_held_not_made_and_the_owner_is_not_asked(monkeypatch, setting):
     _quiet(monkeypatch); _bench(MOON, "What if gravity doubled for one hour?"); st = core.store(); setting("SHORT_FORMAT_FORCE", "S1")

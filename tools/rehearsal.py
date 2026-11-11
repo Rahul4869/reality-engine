@@ -294,7 +294,7 @@ def run():
         assert sl12 == {k: "PASS" for k in ("short_open", "short_plain", "short_shape", "short_kept", "short_contract")}, ("the short gate did not pass", sl12)
         ss12 = [(s["dept"], s["trigger"], s["status"]) for s in st.rows("Sessions") if s.get("episode_id") == rs12["id"]]
         assert ss12 == [("D14", "write", "ok"), ("D7", "short_voice", "ok"), ("D13", "short_seat", "ok"), ("D8", "short_gate", "ok"), ("D14", "make", "ok")], ("a department run of the Short is missing or broken", ss12)
-        lo12, hi12 = FMT12.short_len(rs12["format"]); assert lo12 <= float(rs12["sec"]) <= hi12 and SH12._loop_diff(rs12["path"]) <= 0.12, ("the Short has the wrong length or does not loop", rs12["sec"])
+        lo12, hi12 = FMT12.short_len(rs12["format"]); assert lo12 <= float(rs12["sec"]) <= hi12 and SH12._loop_diff(rs12["path"]) <= SH12.LOOP_MAX, ("the Short has the wrong length or does not loop", rs12["sec"])
         print("short:", rs12["id"], "format", rs12["format"], "(" + FMT12.short_name(rs12["format"]) + "), hook", rs12["hook"], ",", rs12["sec"], "s; short gate 5 / 5; 5 department runs")
         MG.money_check(); MG.monthly_brief(); print("brief ok")
         # v7.3 checks: Revenue_Log months/amounts, pause hold + resume, KILL, stuck release never blocks, release is idempotent
