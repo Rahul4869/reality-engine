@@ -38,11 +38,22 @@ What B5 leaves ready for B6b (use it, do not rebuild it):
 - The Board can judge creative memos too: `board.assess` takes research memos today; a creative memo has no sources, so B6 decides whether D3 also
   judges creative memos (schemas: creative_memo is resolved by decision_memo OR assessment_memo) or the Council's own blind jury does.
 - `board.JUDGES`, `board._parse`, `scores_from` are reusable for the Council's blind cross-family jury (strong chains `board_g` / `board_c`).
-- Totals other tests and the rehearsal print: 44 hard checks (25 script + 19 final), 125 founding Palace items (126 with `b5.takeaway`), 10 of 15
+What B6a leaves ready for B6b:
+- Creative memos (D4 showrunner / bible, D5 packager, D6 director) wait SILENTLY at the owner's level (owner_visible False) like the assessment
+  memos: body {idea, kind (idea / experiment / bank / world_building), rationale}, already distinct (same-idea guard). A creative memo has no
+  sources, so the Board cannot score its evidence: decide in B6b whether the Council's own blind jury judges ideas (recommended: ideas need taste,
+  the Board's checklist is built for evidence) - and remember b5.facts_accept_ideas_test: an idea is at most a TEST (lever C), never "accepted".
+- World-building decisions become canon through a ticket of lever A (kind world_canon, accepted by the Council); case records stay code-written
+  and are accepted only on air (D9) - the Council never edits what aired.
+- The Council's playbook (C) leaves 5 limits out at 1,800 tokens: give C its own cap (as D4 got 2,400) or narrow the audience of items, before it
+  runs. C's runs that call a model should be a B6a-style prompt spec (registry.PROMPT) so its decisions cite what they used.
+- D7 Sound has NO model call in its run (voice = TTS, sound = code), so it cannot cite or propose; its creative input comes through the bible.
+  Open question for later batches, not a gap of B6a.
+- Totals other tests and the rehearsal print: 47 hard checks (28 script + 19 final), 132 founding Palace items (133 with `b6a.takeaway`), 10 of 15
   departments wired (pending: D0, D1, D11, C, L), 41 levers.
-- New org modules go on `tools/repair.py` PROTECTED first. Every function B6 adds must be called by production code (Plan Guard); a hook with a
+- New org modules go on `tools/repair.py` PROTECTED first. Every function B6b adds must be called by production code (Plan Guard); a hook with a
   common name gets a test that runs the real job.
-- Acceptance of B6 includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
+- Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
 ### B6a - Creative departments D4/D5/D6/D7 (11 Nov 2026) - IN PROGRESS
@@ -153,6 +164,58 @@ accepted only on air, and the newest case is a debt the next script must pay in 
   (PALACE_PROMPT_EST_INR = 8 in the estimate). Off switch: ORG_PROMPT_INJECT = FALSE (the creative runs go back to brief mode; the three checks say NA).
 - Rejected: A, C, D (reasons above); G parked for B8. Risks to watch: a rewrite pass may edit away a cited line (only verified citations count; a
   run with none fails); a draft written before the previous episode aired cannot cite it (canon_in_brief judges what was aired at writing time).
+
+#### Step 4 BUILD (what changed; commits 52d9fd4 + 3459c44)
+- `whatifs/models.py`: a second doorway, REPLY_TAPS / `_rtap`, on every JSON reply (fake path, real path, batch path); the fake path runs
+  `fakes.fake_cite` (a compliant offline model: cites the first playbook line and the one closest to what it wrote, pays every MUST CITE debt with
+  a line in the narration, proposes once when invited).
+- `whatifs/org/cite.py` (new, PROTECTED): RULE / MUST / PROPOSE texts, `block`, `tokens`, `flat`, `found` (exact, or 80% of the quote's words in
+  order inside a short window), `verify` (verified / unverified / ghost / limits), `proposals_to_memos` (schema, kinds, same-idea guard, cap, silent
+  to the owner), `creative_runs` (an adopted draft is judged by its D4 draft run), `episode_issues` for palace_injected / palace_cited.
+- `whatifs/org/canon.py` (new, PROTECTED): `facts` / `summary` / `record` (D4's case record, PROPOSED), `on_air` (D9: aired tag + accepted),
+  `newest_case`, `required`, `must_cite`, `topic_words` / `names_case` (a callback line must name its case), `ensure_cast`, `episode_issues`.
+- `whatifs/org/runner.py`: mode per trigger (`registry.inject(dept, trigger)`), B6a spec only for the creative runs, the tap puts block text at the
+  START of the cached global layer (`Packed.of(...).with_global`), `_reply_tap`, ACT verification + receipt fields (`injected_tasks`, `cited`,
+  `citable`, `unverified`, `ghost`, `citations`, `adopted`, `legacy_draft`), citation measures in the takeaway, proposals -> creative memos in
+  EMIT, `work(adopt=, legacy=)`, `_adoptable`, `last_session`, `ensure_cast` before a creative playbook is built.
+- `whatifs/org/registry.py`: PROMPT (D4 write + draft, D5 package, D6 plan: tasks, key, propose, must), CREATIVE_RUNS, `prompt_spec`,
+  `prompted(dept)`, D4 call site `whatifs/preview.py` "draft", data_issues refuses a prompt spec that points nowhere, owners of the 3 checks.
+- `whatifs/org/palace.py`: lanes 0 limits / 1 canon / 2-4 knowledge, canon spends `canon_tokens()` ON TOP of the cap, `aired(r)`, KIND_MOVES
+  (D9: world_canon proposed -> accepted, only on a show record), `sync_canon` never rewrites a case and tags older cases with their air time.
+- `whatifs/org/execute.py`: a knowledge lever of D4/D5/D6 needs a CITED use (`registry.prompted`); code-only runs neither prove nor use the window.
+- `whatifs/episode.py`: D4 write adopts with `adopt=` / `legacy=`, `canon.record` after D4 write, `canon.on_air` after the upload.
+- `whatifs/preview.py`: the writing is a D4 "draft" run (room carries `org_session`); `take_approved` supersedes an automatic draft written
+  without the Palace, keeps an owner-approved one (`_legacy_draft`, judged as written before B6a).
+- `whatifs/contract.py`: checks palace_injected, palace_cited, canon_in_brief (script gate; 47 hard checks: 28 script + 19 final).
+- `whatifs/governor.py` + `costguard.py`: `palace_prompt_inr()` in every estimate. `whatifs/manage.py`: `v12b6a_upgrade` (one-time move).
+- `whatifs/core.py`: 7 cells - ORG_PROMPT_INJECT TRUE, PALACE_CANON_TOKENS 700, CANON_CALLBACK_ON TRUE, CREATIVE_MEMO_MAX_PER_RUN 1,
+  CREATIVE_MEMO_SAME_MAX 0.5, PALACE_PROMPT_EST_INR 10, V12B6A_FLIPS_DONE; default of PALACE_PLAYBOOK_TOKENS_BY_DEPT = {"D4": 2400}.
+- `tools/rehearsal.py`: B6a block (3 checks PASS, every creative run prompt-mode with a verified citation, the case on air, a distinct creative
+  memo, the next draft's must-cite paid in its own script) + a next shot plan that proves the B4 knowledge lever by a cited use.
+- Changed against the design memo while building, and why:
+  (1) cast canon: B2 already mirrors the character bible daily (`palace.sync_canon`, from the Characters tab the owner can edit) - reused, no seed
+  file (it would have doubled 4 items in every creative playbook); case key = the mirror's `canon:case:<ep>`.
+  (2) canon budget instead of a share: with a share the canon pushed 2 more of the owner's limits out of the writer's playbook (measured 4 -> 6).
+  (3) the writer's cap: at 1,800 tokens 4 limits ALREADY did not fit before B6a (his Soft Respawn / Zuni HR inspiration, "cheap long videos are
+  built to break out too", the hard gates, the parked concept) - now that the playbook really reaches the writer, the cap moves to 2,400 once
+  (measured: 0 left out). C still leaves 5 out: B6b.
+  (4) the callback must NAME its case (found by a test: a model could cite the case id with any line). (5) creative memos silent to the owner
+  (found by a test). (6) the engine needs a cited use for D4/D5/D6 knowledge levers (the spec's lever A rule, now possible).
+
+#### Step 5 ENFORCE (rule -> executing code -> fails when broken; each proven both ways in tests/test_v12_creative.py, 26 tests)
+| Rule | Executing code | Fails when broken |
+|---|---|---|
+| The playbook is inside the key creative calls (never judges / mechanical passes) | `runner._ask_tap`, `cite.block`, `registry.prompt_spec` | `palace_injected` (script gate); runner breach "no model call carried the playbook" |
+| Knowledge counts only with a quote found in the output | `runner._reply_tap`, `models._rtap`, `cite.verify`, `cite.found` | `palace_cited`; the REAL reply path of models.ask is run in a test |
+| A draft is adopted only with proof | `runner._adoptable`, `preview.take_approved` | runner breach; `palace_injected` judges the draft run; the REAL pre-production job is run in a test |
+| Canon written by code, canon only on air | `canon.record`, `canon.on_air`, `palace.KIND_MOVES` | `canon_in_brief` "no case record"; PalaceError for any other D9 move |
+| Continuity debt paid in the final script, naming the case | `canon.must_cite`, `canon.names_case`, `cite.MUST` | `canon_in_brief` (not cited / not in the final script / does not name the case / playbook lacked canon) |
+| Canon never pushes out a limit; the owner's limits fit the writer | `palace.canon_tokens`, `manage.v12b6a_upgrade` | `palace_health` notes; canon-budget and one-time-move tests |
+| Distinct creative memos to the Council | `cite.proposals_to_memos` | memo tests; the rehearsal asserts distinct ideas |
+| A knowledge lever of a creative department is verified by a cited use | `execute._verify_knowledge`, `registry.prompted` | `lever_verified`; engine test; the rehearsal |
+| Paid inside the Rs 5,000 | `governor.palace_prompt_inr`, `costguard.estimate_lines` | estimate test |
+Matrix: 7 rows in docs/CURRENT/ENFORCEMENT_MATRIX.md (meta-test `tests/test_v111_enforce.py`). Founding items: b6a.quote_anchored_citations,
+b6a.knowledge_at_the_start, b6a.restate_every_call, b6a.canon_by_code, b6a.continuity_debt, b6a.distinct_ideas (132 founding items; Palace GREEN).
 
 ### B5 - R&D + Review Board (11 Nov 2026) - ACCEPTED (final code commit a1c5204 GREEN in GitHub run 67; sweep 58 of 58 green)
 
@@ -1373,6 +1436,18 @@ Rehearsal asserts `docs_current` ran and passed.
    a production re-run does it) is reported 'N% similar to itself': a degraded step and a false `similar_script` owner message. Fix: skip rows whose `episode_id` equals the
    episode (replace that episode's fingerprint instead of appending a second); test both ways (a twin of ITSELF is not similar, a different
    episode at the same score still is). Not a weakened check - the comparison with other episodes stays.
+   FIXED in B6a: `whatifs/similarity.py:check` compares with the last 10 fingerprints of OTHER episodes and keeps one fingerprint per episode
+   (a re-scripted episode replaces its own); test_a_script_is_never_similar_to_its_own_earlier_draft_and_a_copy_of_another_episode_still_is.
+48. (B6a -> B8) A verified citation proves the quoted line EXISTS in the output, not that the knowledge CAUSED it (a model can still quote a line
+   it would have written anyway). The callback to the last case must name the case (code), but a general technique has no such topical test.
+   The causal measure is design G (parked): D10 re-runs one creative call without the playbook as an experiment arm and compares; and D10's
+   outcome attribution per applied item (applied_count, outcome_score). B8.
+49. (B6a, one-time cost, tell the owner in the PR) On the first production after the merge, an AUTOMATIC pre-production draft written before
+   B6a is superseded (it never saw the Palace) and production writes the script again under D4 at the normal price instead of using the
+   half-price draft, once (the draft already paid is lost: the writing is paid again, about Rs 150-180 by the LLM_EST_INR allowance). An owner-approved draft is kept (his decision) and judged as written before B6a.
+50. (B6a -> B6b) The Council's playbook leaves 5 limits out at 1,800 tokens: give C its own cap or narrow audiences before the Council runs.
+51. (B6a, low) D7 Sound has no model call inside its run (TTS + code), so it can neither cite Palace knowledge nor propose; sound ideas reach the
+   show only through the bible (D4). Revisit if a D7 model step is ever added.
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`

@@ -308,3 +308,14 @@ def test_a_knowledge_lever_for_a_creative_department_is_verified_only_by_a_later
     RUN.work("D6", "plan", EP(1), director, measure=WR.m_shots); EXE.reconcile()
     row = EXE._get(t["id"], st()); assert row["state"] == "verified" and row["proof"].endswith("and cited it"), (row["state"], row["proof"])
     core.set_setting("ORG_PROMPT_INJECT", "FALSE"); assert not REG.prompted("D6") and REG.prompted("D6") is False
+
+# ------------------------------------------------------------------ open issue 47 (the Script Room's similarity guard)
+def test_a_script_is_never_similar_to_its_own_earlier_draft_and_a_copy_of_another_episode_still_is(monkeypatch):
+    from whatifs import similarity as SIM, notify as NT
+    sent = []; monkeypatch.setattr(NT, "send", lambda *a, **k: sent.append(a) or "x")
+    text = " ".join(f"line {i} the pillows rose over the city at noon and nobody could explain the number {i * 7}" for i in range(40))
+    assert SIM.check(text, "EP1") == (0.0, "")
+    assert SIM.check(text, "EP1") == (0.0, "") and not sent                                          # scripted twice: not 'similar to itself', no owner message
+    assert [r["episode_id"] for r in st().rows("Script_Fingerprints")] == ["EP1"]                     # one fingerprint per episode
+    best, who = SIM.check(text, "EP2")
+    assert who == "EP1" and best > core.S("SCRIPT_SIMILARITY_MAX", float) and sent and sent[0][0] == "similar_script"      # a copy of ANOTHER episode is still caught

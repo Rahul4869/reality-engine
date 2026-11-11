@@ -69,7 +69,7 @@ def test_settings_and_workflow():
 def test_owner_previews_and_preprod_drafts_are_switched_apart(setting):
     st = core.store()
     st.append("Script_Previews", [{"draft_id": "DRAFT202611010000", "status": "APPROVED", "note": "premise score 8", "room_json": PV._pack({"d": {}, "room": {"spine": {}}})},
-                                  {"draft_id": "DRAFT202611020000", "status": "APPROVED", "note": "pre-production (auto, half-price batch); x", "room_json": PV._pack({"d": {}, "room": {"spine": {}}})}])
+                                  {"draft_id": "DRAFT202611020000", "status": "APPROVED", "note": "pre-production (auto, half-price batch); x", "room_json": PV._pack({"d": {}, "room": {"spine": {}, "org_session": "S-DRAFTRUN"}})}])      # v12 B6a: a pre-production draft is written by a D4 run
     setting("PREVIEW_USE_APPROVED", "FALSE")
     assert PV.take_approved("E1") is not None
     assert {r["draft_id"]: r["status"] for r in st.rows("Script_Previews")} == {"DRAFT202611010000": "APPROVED", "DRAFT202611020000": "USED"}

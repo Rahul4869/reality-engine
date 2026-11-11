@@ -25,11 +25,12 @@ def test_a_full_nine_video_month_fits_under_the_production_line(setting):
     setting("PRICE_KLING_USD", "0.25")      # v10.1: this cost golden keeps the Kling 2.1 price; the new $0.35 is tested in test_v101
     d = {"stills": 52, "living": 8, "kling": 3, "episode_id": "EPC"}
     per = EP.est_cost_inr(d)
-    assert 455 < per < 475 and core.S("LLM_EST_INR", float) == 176      # v9: AI_SAVER_ON by default (v8.11: 200; Opus script, thinking 40)
+    pal = G.palace_prompt_inr(); assert pal == 10                                  # v12 B6a: the Palace in the creative prompts is in every estimate
+    assert 455 + pal < per < 475 + pal and core.S("LLM_EST_INR", float) == 176      # v9: AI_SAVER_ON by default (v8.11: 200; Opus script, thinking 40)
     assert 8 * per <= core.S("BUDGET_CEILING_INR", float)                 # v8.11: 8 videos fit the cap on padded estimates; 9 do not (see the v8.11 report:
     plan = G.plan_for_episode(per, 9)                                      # AI-side savings, never visual cuts) - and the planner keeps every picture and clip
     assert plan["tier"] == "full" and plan["kling"] == 3
-    assert G.min_episode_cost_inr() * core.S("BUDGET_SAFETY_MARGIN", float) < 530      # v8.11: + the higher AI allowance
+    assert G.min_episode_cost_inr() * core.S("BUDGET_SAFETY_MARGIN", float) < 530 + pal * core.S("BUDGET_SAFETY_MARGIN", float)      # v8.11: + the higher AI allowance
 
 def test_plan_for_episode_uses_the_production_room(setting):
     _legacy_budget(setting)

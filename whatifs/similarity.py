@@ -23,13 +23,16 @@ def check(script_text, episode=""):
     try:
         sig = signature(script_text)
         if not sig: return 0.0, ""
-        best, who = 0.0, ""
-        for r in store().rows("Script_Fingerprints")[-10:]:
+        best, who = 0.0, ""; rows = store().rows("Script_Fingerprints")
+        mine = [r for r in rows if episode and str(r.get("episode_id") or "") == str(episode)]
+        for r in [r for r in rows if not (episode and str(r.get("episode_id") or "") == str(episode))][-10:]:      # v12 B6a: never compared with its OWN earlier draft
             try: other = [int(x) for x in str(r.get("sig") or "").split(",") if x]
             except ValueError: continue
             s = similarity(sig, other)
             if s > best: best, who = s, r.get("episode_id", "")
-        store().append("Script_Fingerprints", [{"ts": iso(), "episode_id": episode, "sig": ",".join(str(x) for x in sig)}])
+        row = {"ts": iso(), "episode_id": episode, "sig": ",".join(str(x) for x in sig)}
+        if mine: store().update("Script_Fingerprints", "episode_id", episode, row)          # a re-scripted episode replaces its fingerprint (one per episode)
+        else: store().append("Script_Fingerprints", [row])
         if best > S("SCRIPT_SIMILARITY_MAX", float):
             from whatifs.core import note_degraded
             note_degraded(f"script {best:.0%} similar to {who}")
