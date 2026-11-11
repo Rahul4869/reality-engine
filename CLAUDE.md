@@ -83,6 +83,12 @@ pipeline run uses the new code. Nothing restarts.
   metric) or a promise about the show (raise `rnd.SHOW_CHECKS`; a test counts). A department's report about itself that a later good run should
   close is found with `memos.find` (not only in the inbox: the watchdog escalates a memo to itself within hours). The round is level-triggered:
   the learning job runs it daily and a production job runs it first when it is overdue (`cli.research_catch_up`).
+- **The viewer's seat** (`whatifs/org/audience.py`, department D13): what a first-time viewer meets is MEASURED by code, never left to a model's
+  taste. `audience.shape` (the first shot a picture, number graphics inside the budget) is D13's own run right before the Animation Director,
+  `audience.breathe` runs inside the voice job, and the script gate judges `viewer_promise` / `viewer_breath` / `viewer_numbers` on the shot list and the
+  REAL voice timeline. A new viewer rule = a pure measure in `audience.py` + a free repair where code can repair + a contract check; its numbers are
+  levers of D13. A heading, a source's year and a place in the story ("hour 1") are not numbers (`audience.count_numbers`). The redesign that
+  ordered this is `handoff_v12/BREAKOUT_REDESIGN.md`.
 - **Creative departments and the canon** (`whatifs/org/cite.py`, `canon.py`): Palace knowledge enters a creative model call only through the runner's
   ask tap and its proof leaves only through the reply tap (`models.REPLY_TAPS`) - never paste a playbook into a brief by hand and never count an id a
   model typed: only `cite.verify` (the quote is found in the final output) makes an item "applied". A new creative call gets the playbook by adding its

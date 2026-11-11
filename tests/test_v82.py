@@ -25,8 +25,8 @@ def test_tiers_never_cut_the_floor_and_hold_instead_of_overshooting(setting):
     core._cost_buf.clear(); core._session.clear(); core._base["v"] = None; _spend(3800)
     assert G.plan_for_episode(330.0, 1)["hold"]
 
-def test_default_runtime_range_is_eight_to_ten_minutes():
-    assert core.S("RUNTIME_MIN_SEC", int) == 490 and core.S("RUNTIME_MAX_SEC", int) == 600 == core.S("RUNTIME_HARD_MAX_SEC", int)
+def test_default_runtime_range_is_eight_to_nine_minutes():
+    assert core.S("RUNTIME_MIN_SEC", int) == 490 and core.S("RUNTIME_MAX_SEC", int) == 540 and core.S("RUNTIME_HARD_MAX_SEC", int) == 600          # v12 V1: 9:00 at most (the first live video ran 13 minutes)
 
 def test_apply_tier_sets_runtime_words_and_stills_inside_the_tier():
     from whatifs import episode as EP

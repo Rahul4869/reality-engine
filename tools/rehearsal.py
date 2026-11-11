@@ -82,6 +82,8 @@ def run():
         assert need12 <= set(ses12) and all(s["status"] == "ok" and not ORGR.verify(s) for s in ses12.values()), ("a department run is missing, broken or unproven", {k: v["status"] for k, v in ses12.items()})
         led12 = {r["feature"]: r["status"] for r in st.rows("Feature_Ledger") if r.get("episode_id") == ep12}
         assert led12.get("dept_contract") == "PASS" and led12.get("takeaways_written") == "PASS", ("the organisation's checks did not pass", led12.get("dept_contract"), led12.get("takeaways_written"))
+        seat12 = [led12.get(k) for k in ("viewer_promise", "viewer_breath", "viewer_numbers")]     # v12 V1: the viewer's seat judged this episode before pictures were paid
+        assert ("D13", "seat") in ses12 and seat12 == ["PASS"] * 3, ("the viewer's seat did not run or did not pass", seat12)
         tk12 = [t for t in st.rows("Takeaways") if t.get("episode_id") == ep12]
         assert len(tk12) >= len(need12) and not any(ORGR._takeaway_problems(t) for t in tk12), "a department run wrote no valid takeaway"
         wd12 = OMEM.watchdog(st); oh12 = ORGR.health(st); assert oh12["ok"] and _S12("ORG_WATCHDOG_AT") and _S12("ORG_SINCE"), oh12["problems"]
