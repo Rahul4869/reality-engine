@@ -19,6 +19,8 @@ def fresh_store(tmp_path):
     import shutil as _sh; _sh.rmtree(os.path.join(core.WORK, "_tts_cache"), ignore_errors=True)      # v9: the audio cache never leaks between tests
     core.set_setting("CREATIVE_REVIEW_FIRST_N", "0")
     core.set_setting("V11_FLIPS_DONE", "test")
+    core.set_setting("FORMAT_FORCE", "F2")                      # v12 V2a: the older tests are the trial's tests; formats are tested on their own (test_v12_formats)
+    from whatifs import formats as _fm; _fm.use("")
     core.set_setting("DEEP_TRIAL_ON", "FALSE")                  # v11: the monthly Deep Trial is tested on its own (test_v11_deeptrial)                  # v11: the November allowance flip is tested on its own (test_v11_stage_a)            # v10.2: older tests expect direct scheduling; the owner review gate is tested in test_v102 + the rehearsal
     yield
     core._settings_cache = None

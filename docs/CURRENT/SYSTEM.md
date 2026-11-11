@@ -6,11 +6,11 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 ## 1. Facts (read from the code)
 - Channel: "Reality on Trial" (brand Reality Engine). Concept: `docs/CURRENT/CONCEPT.md`. Owner requirements: `docs/CURRENT/OWNER_REQUIREMENTS_LEDGER.md`.
 - Money: hard cap Rs 5,000 a month, everything included (`BUDGET_CEILING_INR`); extras pause at 90% of the cap; breakout fund carries over at most Rs 1,000. One month can be overridden in `MONTH_CAP_OVERRIDES`.
-- Quality: 52 HARD contract checks (33 at the script stage, 19 on the final video). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway). No upload below Breakout Score 80.
+- Quality: 53 HARD contract checks (34 at the script stage, 19 on the final video). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway). No upload below Breakout Score 80.
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `fal-ai/kling-video/o3/standard/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 1.5 standalone Shorts a day; spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 120 code modules, 728 settings, 82 Sheet tabs, 24 GitHub workflows.
+- Size: 121 code modules, 733 settings, 82 Sheet tabs, 24 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -89,6 +89,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | viewer_numbers | script | few numbers: a budget for the numbers a viewer hears and for full-screen number graphics, none in the opening (the viewer's seat) |
 | viewer_plain | script | everyday words: a budget for the expert words a layman would not know - in the narration, in the first 30 s, in one sentence (the layman test) |
 | viewer_probe | script | the promise line-up: from the first 30 s alone two first-time readers pick this video's title, and give none to a planted opening (the layman test) |
+| format_kept | script | the script is what its format says: a format that is not a trial does not sound like one, a trial has its Show Plan (formats as data) |
 | palace_injected | script | the Knowledge Palace playbook was inside the model prompt of every creative run's key call (the writer, the packager, the director), and the exact text is stored |
 | palace_cited | script | every creative run cited Palace knowledge it really applied: each counted citation has a quote that code found in the final output |
 | canon_in_brief | script | the writer was given the show's canon (cast and the newest aired case), called back to that case in a line of the final script, and wrote this episode's case record |
@@ -382,6 +383,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | whatifs/fakes.py | Offline stand-ins for every model call (rehearsal mode WI_FAKE=1), including a fake prompt-cache server; zero cost. |
 | whatifs/fixes.py | Repairs for problems full QC finds, in a fixed order with limits: free fixes first, paid fixes only up to a rupee cap. |
 | whatifs/format_engine.py | Presentation-format controls (Settings cell PRESENTATION_FORMAT) and the code check of the script's format. |
+| whatifs/formats.py | Formats: the show's formats as data - which one an episode is, what it tells the writers, and which devices it requires, allows or leaves out (the three-tier contract). |
 | whatifs/governor.py | The money governor: hard monthly cap with a pre-flight gate, per-episode estimates, the extras guard and the breakout fund. |
 | whatifs/growth.py | The click-through and retention layer of the learning loop: routed lessons, title choice, cold-open and retention rules (no model calls). |
 | whatifs/herostill.py | Hero-still reels, per-character cinematic grammar and the courtroom composition (code only). |
@@ -579,7 +581,7 @@ By kind: audience_insight 4, failure_lesson 2, owner_preference 26, plan 2, poli
 | id | department | rhythm | runs under the runner | playbook | thinking cap (Rs / month) | levers (Settings cells) |
 |---|---|---|---|---|---|---|
 | D0 | Owner Office | tick | pending (B9) | brief | - | WA_ON, DASH_ON |
-| D1 | Strategy & Planning | weekly | pending (B9) | brief | - | STANDARD_MAX_LONG_PER_MONTH, PUBLISH_DAYS, VIDEOS_PER_MONTH_EST |
+| D1 | Strategy & Planning | weekly | pending (B9) | brief | - | STANDARD_MAX_LONG_PER_MONTH, PUBLISH_DAYS, VIDEOS_PER_MONTH_EST, FORMAT_SHARE_F1, FORMAT_SHARE_F2, FORMAT_SHARE_F3 |
 | D2 | R&D - Research | daily | daily (whatifs/cli.py), weekly (whatifs/cli.py) | brief | 300 | RESEARCH_ON, IDEA_MIN_MULTIPLE, RESEARCH_PER_WEEK |
 | D3 | Review Board | weekly | assess (whatifs/cli.py) | brief | 120 | BOARD_MIN_EVIDENCE |
 | D4 | Creative - Ideation & Writers' Room | episode | write (whatifs/episode.py), draft (whatifs/preview.py) | brief | - | ROOM_MODE, ROOM_V2_DRAFTS, REHOOK_MAX_GAP_SEC, JOKE_EVERY_SEC_LONG, COLD_OPEN_LORE_FREE_SEC |
@@ -613,7 +615,7 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | build_request | D12 | D12 | ask | 24 / 72 | merged_verified, owner_answer | a code change that no lever can make: the spec, the files, the tests to add and the acceptance |
 | takeaway | any | L | record | 0 / 0 | - | one atomic learning from one department run (kept in the Takeaways tab, proposed to the Palace when it is new) |
 
-**Who owns each contract check** (a failed check becomes a problem memo to that department): D1: breakout_bar; D2: research, research_cadence; D4: audience_asks, canon_in_brief, cold_open, emotion_beat, end_tease, exhibits, grimm_prototype, hook_lab, idea_evidence, joke_density, no_retired, originality, owners_cut, palace_cited, palace_injected, retention, send_and_awe, time_ladder, verdict_line, verdict_style; D5: chapters, short_covers, thumbnails, titles; D6: aliveness, animation, impact_map, living_characters, no_frozen_frames, promise_paid, real_motion, slop_guard, visual_change; D7: designed_voices, music_bed; D8: dept_contract, self_review, takeaways_written; D9: shorts; D10: brain_playbook; D12: docs_current, lever_verified; D13: viewer_breath, viewer_numbers, viewer_plain, viewer_probe, viewer_promise; C: decisions_executed; L: palace_health.
+**Who owns each contract check** (a failed check becomes a problem memo to that department): D1: breakout_bar; D2: research, research_cadence; D4: audience_asks, canon_in_brief, cold_open, emotion_beat, end_tease, exhibits, format_kept, grimm_prototype, hook_lab, idea_evidence, joke_density, no_retired, originality, owners_cut, palace_cited, palace_injected, retention, send_and_awe, time_ladder, verdict_line, verdict_style; D5: chapters, short_covers, thumbnails, titles; D6: aliveness, animation, impact_map, living_characters, no_frozen_frames, promise_paid, real_motion, slop_guard, visual_change; D7: designed_voices, music_bed; D8: dept_contract, self_review, takeaways_written; D9: shorts; D10: brain_playbook; D12: docs_current, lever_verified; D13: viewer_breath, viewer_numbers, viewer_plain, viewer_probe, viewer_promise; C: decisions_executed; L: palace_health.
 
 ## 12. The Execution Engine: from a decision to a change that runs (`whatifs/org/levers.py`, `execute.py`)
 - A ticket is ONE change: lever class, target, value. The engine compiles it into a typed operation with a registered way to verify and to undo it,
@@ -657,6 +659,9 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | STANDARD_MAX_LONG_PER_MONTH | D1 | int | 1 to 8 | 1 | always: it changes the plan you set | the next complete run |
 | PUBLISH_DAYS | D1 | days | - | - | always: it changes the plan you set | the next complete run |
 | VIDEOS_PER_MONTH_EST | D1 | int | 1 to 8 | 1 | always: it changes the plan you set | the next complete run |
+| FORMAT_SHARE_F1 | D1 | int | 0 to 100 | 20 | - | the next complete run |
+| FORMAT_SHARE_F2 | D1 | int | 0 to 100 | 20 | - | the next complete run |
+| FORMAT_SHARE_F3 | D1 | int | 0 to 100 | 20 | - | the next complete run |
 | RESEARCH_ON | D2 | bool | - | - | off: it switches off something you rely on | research |
 | IDEA_MIN_MULTIPLE | D2 | float | 2 to 20 | 2 | down: it weakens a quality gate | idea_evidence |
 | RESEARCH_PER_WEEK | D2 | int | 1 to 8 | 2 | up: it costs more money | research_cadence |

@@ -9,6 +9,10 @@ SEND_RE = re.compile(r"\[\s*SEND\s*\]", re.I)
 AWE_RE = re.compile(r"\[\s*AWE\s*\]", re.I)
 
 def writer_rules(fmt="long"):
+    from whatifs import formats as FMT
+    if FMT.rule("joke_density") != "must" and FMT.rule("send_and_awe") != "must":        # v12 V2a: a format whose devices are optional does not demand them
+        return ("MARKERS (optional in this format; never spoken): start a line with [PUNCH] only where a real laugh line is - never add a joke to fill a "
+                "gap. You may mark the one moment a viewer would send to a friend with [SEND] and the biggest reveal with [AWE].")
     sec = S("JOKE_EVERY_SEC_LONG" if fmt == "long" else "JOKE_EVERY_SEC_SHORT", float)
     return (f"MANDATORY MARKERS (code checks them; a missing one sends the script back): start every punchline line with [PUNCH] - at least one "
             f"punchline every {sec:.0f} seconds of narration, spread evenly, each one a real laugh line (surprise, the punch word last). Mark the one moment "
@@ -74,6 +78,8 @@ def biggest_gap_lines(text):
 
 def fix_markers(script, wbrief, episode, fmt="long"):
     """ONE targeted rewrite when punchline density or the [SEND]/[AWE] markers fall short (before the contract checks them)."""
+    from whatifs import formats as FMT
+    if FMT.rule("joke_density") != "must" and FMT.rule("send_and_awe") != "must": return script, []      # v12 V2a: optional devices are never forced by a rewrite
     text = script.get("script", ""); need = joke_need(text, fmt); have = len(punch_lines(text))
     miss = []
     if have < need or biggest_gap_lines(text) > 2.2 * S("JOKE_EVERY_SEC_LONG" if fmt == "long" else "JOKE_EVERY_SEC_SHORT", float):
@@ -165,6 +171,8 @@ def fix_retention(script, wbrief, spine, episode):
     return script, r["issues"]
 
 def marker_issues(text, fmt="long"):
+    from whatifs import formats as FMT
+    if FMT.rule("joke_density") != "must" and FMT.rule("send_and_awe") != "must": return []              # v12 V2a: optional devices are never forced by a rewrite
     need, have, gap = joke_need(text, fmt), len(punch_lines(text)), biggest_gap_lines(text)
     out = []
     if have < need or gap > 2.2 * S("JOKE_EVERY_SEC_LONG" if fmt == "long" else "JOKE_EVERY_SEC_SHORT", float):
@@ -183,10 +191,12 @@ def fix_all(script, wbrief, spine, episode, fmt="long"):
     nm = AUD.number_issues(text) if fmt == "long" else []
     from whatifs.org import layman as LAY                   # v12 V1b (D13): too many expert words is fixed by the same single rewrite
     pl = LAY.plain_issues(text, spine.get("promise")) if fmt == "long" else []
-    issues = ret + mk + nm + pl
+    from whatifs import formats as FMT                      # v12 V2a: a script that sounds like a trial in a format that is not one is fixed by the same single rewrite
+    fo = FMT.format_issues(text) if fmt == "long" else []
+    issues = ret + mk + nm + pl + fo
     if not issues: return script, []
     from whatifs.models import ask
-    tags = (["RETENTION FIX"] if ret else []) + (["MARKER FIX"] if mk else []) + (["NUMBERS FIX"] if nm else []) + (["PLAIN WORDS FIX"] if pl else [])
+    tags = (["RETENTION FIX"] if ret else []) + (["MARKER FIX"] if mk else []) + (["NUMBERS FIX"] if nm else []) + (["PLAIN WORDS FIX"] if pl else []) + (["FORMAT FIX"] if fo else [])
     rev = ask("rewrite", wbrief, f"MANDATORY FIX ({' + '.join(tags)}; keep every label, tag, [PUNCH]/[SEND]/[AWE] marker and fact; change only what fixes these): "
               + " | ".join(issues) + "\nNARRATION:\n" + text + "\nRewrite the full narration.", episode=episode, fake_key="writer", max_tokens=16000)
     if str(rev.get("script", "")).strip(): script = rev

@@ -11,7 +11,7 @@ from whatifs.governor import plan_for_episode, fal_allowed, episodes_left_this_m
 from whatifs import governor as G
 from whatifs import growth as GR
 from whatifs.org import runner as ORG, wraps as WR, canon as CANON          # v12: every step below that names a department runs under the department contract
-from whatifs import format_engine as FE, cta as CTA
+from whatifs import format_engine as FE, cta as CTA, formats as FMT
 from whatifs import sound as SD
 
 BLENDS = {        # v8.9 clarity: two voices at most, one dominant, only Kokoro's best-graded voices (am_onyx, graded D, and bm_george removed: they made the mix dense)
@@ -45,7 +45,7 @@ def speaker_blends(guest=None, cast=None):
                    "SKEPTIC": Blend("guest_" + str(cast.get("guest")), fb, gvoice=cv["SKEPTIC"][0], gstyle=cv["SKEPTIC"][1])}
     from whatifs import show as SHOW
     from whatifs import v91 as V91
-    if SHOW.on() and V91.on("DESIGNED_VOICES_ON"):                  # v9.2: Vale and Grimm in their DESIGNED voices (closest prebuilt if unusable)
+    if SHOW.leads_on() and V91.on("DESIGNED_VOICES_ON"):                  # v9.2: Vale and Grimm in their DESIGNED voices (closest prebuilt if unusable)
       with V91.guard("DESIGNED_VOICES_ON"):                         # fail-safe: a failure keeps the v9.1 voices, never blocks the video
         from whatifs.voiceq import voice_for
         for c_ in SHOW.characters():
@@ -120,12 +120,13 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     took = PV.take_approved(ep) if not fix_mode() else None          # v8.10: an approved Script Preview is used as written (not paid for twice)
     if took:
         sd, room = took
-        for k in ("strategies", "rhythm_plan", "playbook", "cast", "guest", "promise", "next_tease", "owners_cut", "family", "ptype", "research_brief", "retention_check", "table_read", "hook_sec"):
+        for k in ("strategies", "rhythm_plan", "playbook", "cast", "guest", "promise", "next_tease", "owners_cut", "family", "ptype", "research_brief", "retention_check", "table_read", "hook_sec", "format"):
             if k in sd: d[k] = sd[k]
         d["from_preview"] = True; d["preview_room_ts"] = sd.get("_t_last")      # v10.2: when the approved draft was written
     log(f"draw: {json.dumps(d)} | spend plan: {plan['reason']}")
     room = ORG.work("D4", "write", ep, (lambda b: took[1]) if took else (lambda b: ROOM.run_room(d, ep)), measure=WR.m_room, topic=str(d.get("ptype") or ""),
                     adopt=(took[1] or {}).get("org_session") if took else None, legacy=(took[1] or {}).get("_legacy_draft") if took else None)      # v12: an approved Script Preview is adopted as written - with its D4 draft run's proof (B6a); an owner-approved draft from before B6a is recorded as such
+    FMT.use(d.get("format") or "")                          # v12 V2a: everything after the room (voice, package, shots, reels) is made in the episode's format
     if ORG.on(): CANON.record(ep, room, ORG.last_session("D4", "write", ep))          # v12 B6a: D4's continuity takeaway - the case record (canon once it is on air)
     d["ptype"] = room["spine"].get("ptype", d["ptype"])
     if room["spine"].get("family"): d["strategies"]["family"] = room["spine"]["family"]; d["family"] = room["spine"]["family"]
@@ -573,6 +574,7 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
             set_setting("OWNER_BRIEF_ACTIVE", "")                  # v10.3: the owner brief was used by this episode's room
             consume_tease(S_)              # v8.9.1: the teased premise is used up only now that the plan (which made it) is safely saved
         d, plan, shots = S_["d"], S_["plan"], S_["shots"]
+        FMT.use(d.get("format") or "")                      # v12 V2a: a resumed plan is finished in the format it was written in ('' = written before formats)
         vo = _vo_of(S_, out); tl = json.load(open(vo.timeline_path)); units = tl["units"]
         S_ = plan_check(S_, units); shots = S_["shots"]          # v8.9: the last free check before any picture money is spent
         from whatifs.org import audience as AUD                 # v12 V1 (D13): the viewer's seat - free repairs BEFORE the Animation Director places its scenes
@@ -611,7 +613,7 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
             return PR.skip_slot(str(e), ep, slot_iso)
         log(f"episode failed: {e}", "ERROR"); st.update("Episodes", "episode_id", ep, {"status": "FAILED", "notes": CK.set_attempts(str(e)[:360], CK.attempts(next((r for r in st.rows("Episodes") if r["episode_id"] == ep), {}))), "updated": iso()})
         raise
-    finally: flush_log()
+    finally: FMT.use(""); flush_log()
 
 def atmosphere_layer(ep, units, shots, plan, fps, show_overlay=None):
     """v9.1 Atmosphere Pack as the FIRST overlay of the stack (HUD / pins / meter / chips are drawn on top). None when ATMOSPHERE_ON is off, in safe mode,

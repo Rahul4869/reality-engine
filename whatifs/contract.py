@@ -458,6 +458,20 @@ def p_viewer_probe(ctx):
     if st == "fail": return FAIL, why
     return NA, (f"the line-up was void and is not counted ({why})" if st == "void" else why or st)
 
+def p_format_kept(ctx):
+    """v12 V2a: the script is what its FORMAT says - a format that is not a trial does not sound like one (no name of the court's cast, no courtroom
+    furniture, only its own voices); a trial has its Show Plan."""
+    from whatifs import formats as FMT
+    d = ctx.get("d") if isinstance(ctx.get("d"), dict) else {}
+    fmt = str(d.get("format") or "")
+    if fmt not in FMT.FORMATS: return NA, "no format on this episode (written before formats existed, or FORMATS_ON is off)"
+    r = FMT.kept_report(_script_text(ctx), fmt, d)
+    if r["problems"]: return FAIL, "; ".join(r["problems"])[:380]
+    dev = FMT.FORMATS[fmt]["devices"]
+    return PASS, (f"format {fmt} ({FMT.name(fmt)}): " + ("the Show Plan is there" if FMT.FORMATS[fmt]["show"] else "no courtroom word, only its own voices")
+                  + f"; devices: {sum(1 for k in FMT.DEVICES if dev.get(k, 'must') == 'must')} required, {sum(1 for v in dev.values() if v == 'advisory')} optional, "
+                  f"{sum(1 for v in dev.values() if v == 'never')} not part of it")
+
 def p_viewer_numbers(ctx):
     """v12 V1 (the viewer's seat, D13): few numbers - what a viewer hears per minute, and the full-screen number graphics he must read."""
     from whatifs.org import audience as AUD
@@ -544,6 +558,7 @@ FEATURES = [
     ("viewer_numbers", "script", p_viewer_numbers, "few numbers: a budget for the numbers a viewer hears and for full-screen number graphics, none in the opening (the viewer's seat)"),
     ("viewer_plain", "script", p_viewer_plain, "everyday words: a budget for the expert words a layman would not know - in the narration, in the first 30 s, in one sentence (the layman test)"),
     ("viewer_probe", "script", p_viewer_probe, "the promise line-up: from the first 30 s alone two first-time readers pick this video's title, and give none to a planted opening (the layman test)"),
+    ("format_kept", "script", p_format_kept, "the script is what its format says: a format that is not a trial does not sound like one, a trial has its Show Plan (formats as data)"),
     ("palace_injected", "script", p_palace_injected, "the Knowledge Palace playbook was inside the model prompt of every creative run's key call (the writer, the packager, the director), and the exact text is stored"),
     ("palace_cited", "script", p_palace_cited, "every creative run cited Palace knowledge it really applied: each counted citation has a quote that code found in the final output"),
     ("canon_in_brief", "script", p_canon_in_brief, "the writer was given the show's canon (cast and the newest aired case), called back to that case in a line of the final script, and wrote this episode's case record"),
@@ -593,11 +608,17 @@ def enabled(fid):
 # ------------------------------------------------------------------ the gate
 def run(stage, ctx, ep, write=True):
     """Evaluate every feature of a stage. Returns {'ok', 'failed': [(id, evidence)], 'rows'}. Writes Feature_Ledger. Never raises."""
+    from whatifs import formats as FMT
     rows, failed = [], []
+    fmt = str((ctx.get("d") or {}).get("format") or "") if isinstance(ctx.get("d"), dict) else ""      # v12 V2a: the three-tier contract - a DEVICE is judged by the episode's format
     for fid, stg, probe, what in FEATURES:
         if stg != stage or not enabled(fid): continue
-        try: status, ev = probe(ctx)
-        except Exception as e: status, ev = FAIL, f"check crashed: {scrub(e)[:120]}"
+        rule = FMT.rule(fid, fmt)
+        if rule == "never": status, ev = NA, f"not part of format {fmt} ({FMT.name(fmt)})"
+        else:
+            try: status, ev = probe(ctx)
+            except Exception as e: status, ev = FAIL, f"check crashed: {scrub(e)[:120]}"
+            if rule == "advisory" and status == FAIL: status, ev = NA, f"optional in format {fmt}, not held: {ev}"
         if status == FAIL and _waived(ep, fid): status, ev = WAIVED, f"waived by the owner ({ev})"
         rows.append({"ts": iso(), "episode_id": ep, "stage": stage, "feature": fid, "status": status, "evidence": str(ev)[:300], "promise": what})
         if status == FAIL: failed.append((fid, ev))

@@ -87,6 +87,11 @@ def _reel_extra(room):
             "reel 3 = a character rant (Dr. Grimm's best objection, theatrical, never cruel); reel 4 = the clip-bait moment (its lines are inserted by code). "
             "Plain words that auto-translate well.")
 
+def _format_block(role):
+    """v12 V2a: the format's own text for a room role ('' for the trial, whose brief is the Show Plan's, and when no format is set)."""
+    from whatifs import formats as FMT
+    return FMT.block(role)
+
 def _show_block():
     """v9: the Show Plan request inside the existing Showrunner call ('' when SHOW_MODE = off, so the prompt is exactly v8.11's)."""
     from whatifs import show as SHOW
@@ -120,10 +125,12 @@ def scout_and_pick(draw, ctx, episode):
         tz_note = ("THE OWNER'S DECISION (discussed and locked with him): the FIRST pitch. Choose it and keep its premise." if tz and tz.get("owner") else
                    "TEASED AT THE END OF OUR LAST VIDEO (viewers were promised it): the FIRST pitch. Choose it and keep its premise unless it breaks a channel rule." if tz else "")
         spine = ask("showrunner", FE.inject(GR.insert_before_json(P.fill(P.SHOWRUNNER, pitches=_j(good[:5]), draw=_j(draw), defs=_j({k: ctx["defs"].get(v, "") for k, v in draw["strategies"].items()}),
-                    trends=ctx["trends"], lessons=ctx["lessons"], research=ctx.get("research", "")[:3000]), "\n".join(x for x in (PB.text_for("showrunner", draw.get("playbook")), tz_note, CR.brief("showrunner"), _show_block()) if x)), "showrunner"), "Choose and set the spine.", episode=episode, fake_key="showrunner")
+                    trends=ctx["trends"], lessons=ctx["lessons"], research=ctx.get("research", "")[:3000]), "\n".join(x for x in (PB.text_for("showrunner", draw.get("playbook")), tz_note, CR.brief("showrunner"), _show_block(), _format_block("showrunner")) if x)), "showrunner"), "Choose and set the spine.", episode=episode, fake_key="showrunner")
         if not spine.get("premise"): return None
         from whatifs import show as SHOW
         spine = SHOW.apply_to_spine(spine, episode)                # v9: Show Plan validated + logged (shadow in stage 1); off = no-op
+        from whatifs import formats as FMT
+        if not FMT.show_allowed(): spine.pop("show_plan", None)      # v12 V2a: a format that is not a trial carries no Show Plan, whatever the model returned
         if dual and not tz and not any(same(spine["premise"], p.get("premise", "")) for p in good):
             log("the Showrunner's premise was not one of the scored pitches - the top scored pitch is used instead", "WARN", episode)
             spine["premise"] = good[0]["premise"]; spine["headline"] = good[0].get("headline", good[0]["premise"]); spine["family"] = good[0].get("family", "")
@@ -209,6 +216,12 @@ def _mark(d, stage):
     st[stage] = round(st.get(stage, 0) + now - last, 1); d["_t_last"] = now
 
 def run_room(draw, episode):
+    """The writers' room for one episode, in that episode's FORMAT (v12 V2a): picked once, kept in the draw, and the format of everything the room does."""
+    from whatifs import formats as FMT
+    if "format" not in draw: draw["format"] = FMT.pick(episode, draw)
+    with FMT.using(draw["format"]): return _run_room(draw, episode)
+
+def _run_room(draw, episode):
     import time as _t
     ctx = context(); d = draw; stg = d["strategies"]; defs = ctx["defs"]; d["_t_last"] = _t.time(); d["stage_times"] = {}
     ctx["research"], d["research_brief"] = RS.room_research(episode, allow_run=S("BACKGROUND_IN_ROOM", bool))       # v9.2: the room only READS the brief
@@ -239,7 +252,7 @@ def run_room(draw, episode):
         INS.roi_note(episode, "objections", notes=len(tr["objections"]), accepted=len(tr["objections"]))      # v9.1 role ROI: all objections reach the bible
         log(f"table read: {len(tr['objections'])} objection(s) raised", episode=episode)
     _mark(d, "memos + table read")
-    bible = ask("bible", FE.inject(GR.insert_before_json(P.fill(P.BIBLE, spine=_j(spine), memos=_j(memo_by_role, 8000), draw=_j(d), objections=objections), _craft_extra()), "bible"),
+    bible = ask("bible", FE.inject(GR.insert_before_json(P.fill(P.BIBLE, spine=_j(spine), memos=_j(memo_by_role, 8000), draw=_j(d), objections=objections), "\n".join(x for x in (_craft_extra(), _format_block("bible")) if x)), "bible"),
                 "Write the bible.", episode=episode, fake_key="bible")
     wmin, wmax = int(d["words"] * 0.93), int(d["words"] * 1.07)
     wbrief = P.fill(P.WRITER, words=d["words"], wmin=wmin, wmax=wmax, story=stg["story"], storydef=defs.get(stg["story"], ""),
@@ -259,7 +272,7 @@ def run_room(draw, episode):
     wbrief = GR.insert_before_json(wbrief, "\n".join(x for x in (                      # v8.7: the promise, this episode's rhythm and the research-graded rules
         "THE PROMISE (packaging first: the title and thumbnail were decided before you write; pay them off ON SCREEN and IN WORDS within the first 30 s): " + GR.promise_text(spine.get("promise")),
         GR.rhythm_brief(d.get("rhythm_plan"), defs), PB.text_for("writer", d.get("playbook")), guest_brief(d), tease_brief(spine), _writer_extra(episode),
-        _show_writer(spine)) if x))
+        _show_writer(spine), _format_block("writer")) if x))
     if S("EFFORT_AB_ON", bool):                           # v9: medium vs high effort for the script, alternating by episode (the A/B machinery records the arm)
         from whatifs import models as _M
         arm = "medium" if int(hashlib.md5(episode.encode()).hexdigest(), 16) % 2 else "high"

@@ -14,6 +14,11 @@ DRAFT_RUBRIC = ("Rank these narrations for an animated courtroom-comedy science 
 JOKE_RUBRIC = ("Rank these alternative lines for ONE moment of an animated courtroom-comedy science show, funniest first. A great line is surprising, "
                "clear on one listen, true to the speaking character, and lands its punch word last. Lines are anonymous.")
 
+def _rubric(kind):
+    """v12 V2a: the jury ranks by the episode's format ('drafts' | 'jokes'); the trial keeps the rubrics above."""
+    from whatifs import formats as FMT
+    return FMT.rubric(kind) or (DRAFT_RUBRIC if kind == "drafts" else JOKE_RUBRIC)
+
 def _jury_ask(role, rubric, items, context, episode):
     """One judge, one order -> ranking of letters (best first)."""
     from whatifs.models import ask
@@ -72,7 +77,7 @@ def write(spine, wbrief, d, episode):
     if not ok: raise RuntimeError("room v2: no draft came back")
     texts = [x["script"] for _, x in ok]
     ctx = f"Premise: {spine.get('premise', '')}. Promise to the viewer: {GR.promise_text(spine.get('promise'))}"
-    win, info = jury(texts, DRAFT_RUBRIC, ctx, episode, "drafts")
+    win, info = jury(texts, _rubric("drafts"), ctx, episode, "drafts")
     chosen_arch, script = ok[win]
     d["room_v2"] = {"drafts": [a for a, _ in ok], "winner": chosen_arch, "scores": [round(s, 1) for s in info["scores"]]}
     d["hook_archetype"] = chosen_arch
@@ -121,7 +126,7 @@ def jokes(script, wbrief, episode):
         alts = [str(x).strip() for x in (cand.get(a["slot"]) or []) if str(x).strip()][:S("JOKE_CANDIDATES", int)]
         if not alts: continue
         items = [a["line"]] + alts                                             # the original is always in the running
-        win, info = jury(items, JOKE_RUBRIC, "Moment: " + a["before"], episode, "jokes", judges=JOKE_JURY, orders=1)
+        win, info = jury(items, _rubric("jokes"), "Moment: " + a["before"], episode, "jokes", judges=JOKE_JURY, orders=1)
         if win != 0 and info["scores"][win] > info["scores"][0]:
             i = int(a["slot"]); pre, _ = _spoken(lines[i]); lines[i] = pre + items[win]; changed += 1
         detail.append({"slot": a["slot"], "won": win, "n": len(items)})

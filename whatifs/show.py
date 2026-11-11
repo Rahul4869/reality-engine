@@ -110,8 +110,14 @@ PLAN_KEYS = ("charge", "defendant", "intensity", "exhibits", "witness_twist", "j
              "teacup_scenes", "stinger", "demand_evidence")
 WPS = 2.5                                                    # spoken words per second (planning estimate; the timeline decides in QC)
 
-def on():
+def leads_on():
+    """Is the show's world switched on at all (SHOW_MODE = auto)? The two leads keep their designed voices in every format."""
     return str(S("SHOW_MODE") or "off").strip().lower() == "auto"
+
+def on():
+    """Does the TRIAL layer run for the episode in the making? SHOW_MODE = auto, and the episode's format is a trial (or no format is set: v12 V2a)."""
+    from whatifs import formats as FMT
+    return leads_on() and FMT.show_allowed()
 
 def _words(t): return len(re.findall(r"\S+", str(t or "")))
 

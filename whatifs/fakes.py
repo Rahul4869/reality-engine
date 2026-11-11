@@ -180,17 +180,19 @@ def fake_reply(key, prompt):
         n = max(10, words // 11) if not SMALL else 12
         body = []
         k = 0
+        from whatifs import formats as _FMT
+        f1 = not _FMT.show_allowed()          # v12 V2a: a format that is not a trial is answered like a compliant writer - without the trial's devices
         for b, chunk in enumerate([_lines(n)[i:i + 4] for i in range(0, n, 4)], 1):
             body.append(f"## BEAT {b}")
             for ln in chunk:          # v8.1: Reality Engine dialogue; three label styles are mixed on purpose to exercise the tolerant parser
                 if ln.startswith("[pause"): body.append(ln); continue
                 who = "DIRECTOR" if k % 2 == 0 else "SKEPTIC"; tag = ln[:ln.index("]") + 1]; rest = ln[len(tag):].strip()
-                every = 1 if "MARKER FIX" in prompt else 2                      # a marker-fix request gets a punchline on every line
-                mk = ("[SEND] " if k == 2 else "[AWE] " if k == 5 else "") + ("[PUNCH] " if k % every == 0 else "")   # v11.1: markers like the real writer
+                every = 1 if "MARKER FIX" in prompt else (6 if f1 else 2)                      # a marker-fix request gets a punchline on every line
+                mk = ("" if f1 else "[SEND] " if k == 2 else "[AWE] " if k == 5 else "") + ("[PUNCH] " if k % every == 0 else "")   # v11.1: markers like the real writer
                 body.append(mk + [f"[{who}] {tag} {rest}", f"{tag} [{who}] {rest}", f"{who}: {rest}"][k % 3]); k += 1
         mt = re.search(r"Title: ([^|]+?)\s*\|", prompt)                    # v11.1: a RETENTION FIX request is answered like a compliant writer:
         L = [i for i, x in enumerate(body) if not x.startswith(("## BEAT", "[pause"))]      # v9: the trial tags (never spoken; ignored when SHOW_MODE = off)
-        if len(L) >= 8:
+        if len(L) >= 8 and not f1:
             h = len(L) // 2
             body[L[1]] = "[EXHIBIT A] [METER -1 grimm] " + body[L[1]]; body[L[h]] = "[JURY] [EXHIBIT B] [METER +2 vale] " + body[L[h]]
             body[L[h + 1]] = "[CLIPBAIT] " + body[L[h + 1]] + " [/CLIPBAIT]"; body[L[-3]] = "[JURY] " + body[L[-3]]; body[L[-2]] = "[JURY] [EXHIBIT C] " + body[L[-2]]
@@ -200,7 +202,7 @@ def fake_reply(key, prompt):
             body[L[3]] += " Behold, Prototype No. 41!"; body[L[-1]] += " Here's what's true: in a million years the tilt still wobbles."
         if "RETENTION FIX" in prompt:                                            # answered like a compliant writer: a <=14-word YOU line with the
             promise = (mt.group(1).strip().rstrip("?") + "?") if mt else "Something is wrong."     # promise first, and no exhibit/lore in the first 20 s
-            body.insert(1, f"[WITNESS] [tension] YOU wake up. Your pillow floats. {promise}")
+            body.insert(1, f"[{'DIRECTOR' if f1 else 'WITNESS'}] [tension] YOU wake up. Your pillow floats. {promise}")
             moved = []
             for j in range(2, min(len(body), 7)):                                # exhibits MOVE later (never deleted: the episode still needs them)
                 moved += re.findall(r"\[EXHIBIT[^\]]*\]", body[j]) + re.findall(r"Exhibit [A-H][^.]*\.", body[j])
