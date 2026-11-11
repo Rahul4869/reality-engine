@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 11 Nov 2026 (B6a ACCEPTED; B5 re-checked on the owner's request, 16 corrections - record under DONE). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 11 Nov 2026 (B6a ACCEPTED; B5 re-checked; THE OWNER REJECTED THE FIRST LIVE VIDEO - read the next section first). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -17,7 +17,62 @@ Updated: 11 Nov 2026 (B6a ACCEPTED; B5 re-checked on the owner's request, 16 cor
 4. (B0b) Every workflow installs a package that `requirements.txt` pins with exactly those bounds (a test fails otherwise). To move to a new major
    version of a library, change `requirements.txt` AND the workflows in one commit and re-verify the reference frames (`tests/golden_frames.py`).
 
+## THE OWNER'S VERDICT ON THE FIRST LIVE VIDEO (11 Nov 2026) - READ BEFORE ANY BATCH
+His exact words are item 16 of `02_OWNER_VERBATIM.md` (handoff folder). In one line: "absolutely looks like just a cheap pipeline made video",
+"ashamed to share", "not even 5% chance this is watch worthy for 1 minute" - voice, clarity, too many numbers on screen, weak visuals, no
+audience thinking; he wants the absolute best breakout videos and Shorts in every aspect.
+WHAT THE BUILD SESSION MEASURED (the facts are next to his words in 02):
+- The video: https://www.youtube.com/watch?v=7RPT4rCuP6k - title on YouTube "When you Walk FASTER than Light!!", 13:13, 10 views and 4 subscribers
+  when read (11 Nov 2026). Made by the OLD live code (v10.x), not by v11.1 or v12.
+- Measured from the file he uploaded (ffmpeg, 640x360 copy): 793 s; 155 hard cuts (one every 5.1 s; only 16 in the first minute); speech is
+  wall-to-wall - 6 pauses of 0.7 s or more in 13 minutes (6 s of silence in total); loudness -14.1 LUFS with a range of only 4.1 LU (flat, no
+  quiet / loud contrast) and a true peak of +0.8 dBFS (clips); no captions on screen.
+- Seen in 92 sampled frames: about one frame in four is a flat black shape with two ovals for eyes and a name label (INSPECTOR VALE, DR. GRIMM) -
+  no face, no body, no courtroom, no puppet look, no Nana Rosa; at least 7 full-screen number cards (two inside the first 50 seconds: "1.0 meters /
+  2.0 meters", "SPEED OF LIGHT IN THIS APARTMENT 1.4 m/s"); the rest are dark, soft AI stills with a slow zoom (hands, toothbrush, hallway).
+- First 12 seconds: a hand with a toothbrush (2 s), a blurred hand with a melted toothbrush (4 s), the black shape (4 s), a hand, the black shape.
+  The promise - YOUR REFLECTION LAGS BEHIND YOU - is never SHOWN. The last 20 seconds are one still of a phone.
+- The title promises walking faster than light; the film opens on a toothbrush; the description names "the Director and the Curious One"; the
+  screen names Inspector Vale and Dr. Grimm. Three different shows in one upload.
+- Animated (Kling) scenes: 4 a video, about 20 seconds of 793 (2.5%) - that is why he could not find them.
+- A second AI he asked (two phone screenshots) said: 13 minutes is too long (8-9); a niche ceiling without an emotional hook; the shapes are less
+  clickable than a face or polished animation; assumptions front-loaded; reduce the trial framing; obsess over the first 20-30 seconds and the
+  thumbnail; the pipeline is a production tool, a human taste filter must decide what is good enough to publish.
+WHY IT HAPPENED (causes, from the code and the file):
+1. It was made by the OLD live code (v10.x). v11.1 and v12 have never been deployed - and have NEVER rendered one real video (fake mode only).
+2. The cast was never drawn: the black shapes are the old format engine's rule ("presenters are never shown as realistic faces ... only as
+   silhouettes"). The Toybox Noir cast needs the character sheets, an owner setup step that is still pending (04, "Owner setup steps pending").
+3. The checks reward DEVICES, not a viewer: the script gate demands a time ladder, exhibits, a prototype, re-hooks, a punch line every N seconds,
+   asks, a tease ... - 19 script checks that each ADD something. Nothing asks "can a normal person follow this?", "is the voice pleasant?", "are
+   there too many numbers?", "did the picture show the promise?". A video can pass everything and bore its owner. That is what he saw.
+4. Money: animation costs about USD 0.084 a second; 10 animated minutes would be about Rs 4,400 A VIDEO. The show is stills + motion design by
+   budget; the 4 animated scenes were spent on ordinary shots instead of the one impossible picture the title sells.
+WHAT THE NEW CODE ALREADY CHANGES (v11.1, in the repo, never run for real): no black shapes (check `living_characters` holds the video without the
+approved cast), 10:00 at most (RUNTIME_MAX_SEC), `promise_paid`, `visual_change`, `aliveness`, `slop_guard`, `breakout_bar`, the owner's approval
+of the first 3 long videos. WHAT v12 HAS ADDED SO FAR (B0-B6a): the organisation - memory, research, the Review Board, the creative departments
+reading the knowledge. It changes how the system learns and enforces. It does NOT yet change the voice, the clarity, the number of numbers or the
+pictures. Brutal truth: deployed today, v12 would give him a better-policed version of the same film.
+PLAN CHANGE (the owner's words override the batch order; he asked for "all the improvements, research, and everything else required"):
+**BV1 - THE VIDEO ITSELF comes before B6b.** Full seven-step loop. Scope for its design memo (not decided yet, research first):
+- A VIEWER-FIRST BAR on the finished video, not on the script: strong video-capable judges of two families play a first-time viewer who does not
+  care about science - "what is this about?" after 15 seconds, keep watching at 0:05 / 0:15 / 0:30 / 1:00, where did you get bored, would you
+  send it to a friend. Calibrated in every session like the Board: THIS video (7RPT4rCuP6k, the owner's verdict) is the planted canary that must
+  be rejected, and real breakout videos from the Outlier Lab must pass. A jury that cannot tell them apart is void. (`models.ask_video` exists.)
+- VOICE AND SOUND: the best voice the budget allows (research: current TTS models and prices), pauses and loud / quiet contrast, a peak limiter,
+  big burned-in captions.
+- CLARITY: one idea a video, explained so a 12-year-old follows; a budget for numbers (spoken and on screen) and for full-screen number cards; the
+  assumptions never before the hook.
+- THE PROMISE SHOWN IN THE FIRST 5 SECONDS as the best animated scene of the video; title, thumbnail and opening tell the same story; the
+  animated seconds go where the title's picture is (and how many more the money allows: 60 s would be about Rs 440 a video).
+- LENGTH: 8-9 minutes until retention earns more. THE ENDING is a scene, not a held still.
+- A DEVICE DIET: which of the 19 script checks force gimmicks; devices become options the data must earn, the viewer-first bar becomes the gate.
+- THE CAST: the character sheets (one owner approval) or the video is held - never a black shape again.
+What only the owner can do, today: set Settings cell PAUSED = TRUE on the live Sheet, or the old code publishes the next video like this one and
+spends this month's money on it. (No keys here: the build session cannot touch the live Sheet.)
+After BV1: B6b (the Council) and the rest, unchanged.
+
 ## NEXT
+**FIRST: BV1 - The video itself** (section above; owner's verdict of 11 Nov 2026). Effort: High. THEN:
 **B6b - The Council (C)** (01 sections 2 (C), 4, 5, 7 `council_held`; 03 "B6", second bullet). Full seven-step MANDATORY BATCH LOOP. Effort: High.
 Gathers open research / assessment / creative / owner / performance / problem memos; diverge -> blind cross-family jury -> converge -> decision
 memo + tickets; owner cards only above thresholds; session takeaways; check `council_held`; C moves from `registry.PENDING` to `ENTRY`.
@@ -1668,4 +1723,5 @@ Rehearsal asserts `docs_current` ran and passed.
 | B5 | done 11 Nov 2026 | 1232 / 0 / 1 skipped | GREEN (25 + 19) | R&D + Review Board: gap-driven research agenda (8 gap sources), sources verified by code (phantom / dead / undated dropped, evidence ceiling), blind two-family Board with yes/no checklist, verdict by code, family veto, planted canary per session; check `research_cadence` (44 hard checks), D2 + D3 wired, 41 levers. Sweep 58 of 58. GitHub run 67: GREEN (1233 passed, 0 skipped); #63 RED = 6 by-design tests, #64/#65 RED = rehearsal money formula, traced and fixed |
 | B6a | done 11 Nov 2026 | 1260 / 0 / 1 skipped | GREEN (28 + 19) | Creative departments: the Palace playbook inside the writer / packager / director prompts (end of the system prompt, cached layers untouched), citations verified by quote, canon written by code and accepted on air, continuity debt paid in the script, distinct creative memos to the Council, drafts adopted only with proof; checks `palace_injected`, `palace_cited`, `canon_in_brief` (47 hard checks); the writers' playbook holds the owner's limits again (cap 2,400); open issue 47 fixed. Sweep 40 of 40. GitHub run 75: GREEN (1261 passed, 0 skipped); #71 RED = 54 by-design tests, #72 RED = 3 pinned tests, traced and fixed |
 | B5 recheck | done 11 Nov 2026 | 1272 / 0 / 1 skipped | GREEN (28 + 19) | Owner asked for a recheck of B5 and its consequences: 16 corrections (a syntax repair hid who answered; a cheap Gemini model could sit on the Board; the void-session memo never closed; a video could be held for research a job can run; the organisation's plumbing became paid web questions; barren research was invisible; a crash after a paid call; the learning job's 30-minute limit; 8 small ones), 12 new tests. GitHub run 78 (101cf96, the final code commit): **GREEN - 1273 passed, 0 skipped, rehearsal GREEN (episode id EP202611110421, script 28 / 28, final 19 / 19)** |
-| B6b | next | | | The Council |
+| BV1 | next | | | The video itself: the viewer-first bar and the owner's five complaints (his verdict on the first live video, 11 Nov 2026) |
+| B6b | after BV1 | | | The Council |
