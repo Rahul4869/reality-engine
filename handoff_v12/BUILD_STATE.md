@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 11 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 11 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -76,73 +76,31 @@ move and format arm F3 "The walk" (V2), the Breakout Observatory and the aspect 
 not in the Palace yet: the batch that builds each part adds its founding items (they need real code references).
 This turn was the DESIGN step for the whole programme (research, designs, decisions, records). Nothing of the redesign is built yet.
 
-## IN PROGRESS - V2a (started 11 Nov 2026 on the owner's "Continue"; step 1 done)
-#### Step 1 RESEARCH (E = measured, O = practice / vendor; "read" = read by the build session, else reported by a search run)
-1. E read - Tubefilter, 13 Jul 2026: https://www.tubefilter.com/2026/07/13/youtube-inauthentic-content-monetization-policy-update/ - YouTube's
-   clarified examples of "generic or repetitive content": content that "looks like it's made with a template" or "may feel repetitive to viewers
-   after watching several videos in a row from the same channel"; "videos where characters are put in the same situation over and over again with
-   the same outcome"; storylines that follow a fixed formula. The whole channel is demonetised. -> a weekly trial with the same characters, the
-   same room and the same shape of verdict is the textbook case. Formats and their devices must VARY, by data, not by hope.
-2. O read - THE FIRST HAND-MADE ROUND OF THE BREAKOUT OBSERVATORY (redesign 10.5): three channels, one per ring, from a vendor's public pages
-   (outlierkit.com/channel/..., read 11 Nov 2026; the vendor's baseline is the median of the 6-14 newest uploads and its line is 1.5 times, not
-   our 5; ages differ; TITLES ONLY - nobody watched a video). 12 hits, 14 siblings:
-   - Far ring, "What If Levels" (3,100 subscribers, 41 videos, data of 8 Nov 2026): hits "What If You Had 10,000 IQ?" (445,000 views, 159 times
-     the median), "What If You Could Read Minds... and Heard Your Wife's First?" (30,000; 10.7), "What If You Went Back to 2000 With Everything You
-     Know Today?" (2.7), "What If You Could See How Long Everyone Has Left to Live?" (2.5). Siblings at 0.4-1.2: "...See Who Has a Crush on You?",
-     "...Everyone Had the Same Death Countdown?", "Could 2 People Really Restart Humanity?", "What If Hitler Died in 1918...", "...All Men
-     Disappeared Except You?", "...the Only One Who Never Needed Sleep?".
-   - Our ring, "Science eXplore" (34,700 subscribers, 48 videos, 6 Nov 2026; its newest videos get about 180 views): hits "The Psychology Of
-     Being Lazy But Ambitious" (11.5), "What If Light Moved at Only 60 MPH?" (8.2 after 5 days - 1,500 views; nearly the premise of the owner's
-     rejected video), "The Entire History Of The Atomic Bomb" (4.8), "Brainrot Cure: 10 Scientific Signs..." (4.7), "The Land Of Magic" (3.5),
-     "What If You Fell Into Jupiter?" (2.1). Siblings at 0.8-1.0: four health warnings about the brain and the body.
-   - Near ring, "Wacky Science" (825,000 subscribers): hits "ALL OF PHYSICS explained in 14 Minutes" (11 million; 2.8), "GENERAL CHEMISTRY
-     explained in 19 Minutes" (1.6); siblings: smaller subjects in the same form (QR codes 0.2, Braille 0.1).
-   WHAT THE SIBLINGS SHOW (the reason they are there): "you" in the title does NOT separate hits from normal videos - 4 of 4 hits and 4 of 6
-   siblings of the far channel carry it. Numbers in the title do not separate either. Two differences are visible, each inside one channel:
-   (a) scenarios that happen to YOU sit at the top and the two world / history scenarios without "you" at or below the median; (b) in the science
-   channel the two impossible-scenario titles beat every health warning (0 of 4 siblings is a scenario). The size of the promise decides in the
-   near ring (a whole subject against one small thing). NO hit in the sample is framed as a trial, a court or a case - absent, which is not
-   evidence against it. 26 titles are a method test, not a finding: nothing here becomes a rule; (a) and (b) agree with making "it happens to
-   you" the default format and leave the trial an arm.
-3. O - the vendor's own readings of the same pages (11 Nov 2026): the far channel's formula is "a second-person power-fantasy thought experiment"
-   where the story "turns personal"; the science channel "breaks out when it turns science into either a highly relatable identity problem or a
-   cinematic impossible scenario"; a narrator-led explainer with a strong premise and escalating consequences. A vendor's opinion.
-4. E - Metricool 2026 through Tubefilter (3 Aug 2026) and Net Influencer: the average long video is watched 2.51 minutes (3.98 a year before);
-   Retention Rabbit (10,000+ videos): more than 55% of viewers leave within the first minute. -> the opening and one idea, not more devices.
-5. O - Virlo trend report (Oct 2026): hypothetical "what if" science scenarios are one of four themes standing out in science; small animated
-   first-person what-if accounts reach very large averages on short video (another platform).
-6. E - narrative perspective (a review citing Chen and others 2024, Kim and others 2017; text, not video): second-person narration draws
-   stronger emotional responses than third person under high involvement. No study of "you" narration against YouTube retention was found.
-
 ## NEXT
-**V2 - HOOK-FIRST PRODUCTION** (`handoff_v12/BREAKOUT_REDESIGN.md` 4.1, 4.2, 4.5-4.7 and 10.7; hypotheses H1, H2, H7). Full seven-step MANDATORY BATCH
-LOOP. Effort: High. V2 is the batch that changes what a viewer SEES and HEARS. It is large: split it at the start if it does not fit one session
-(rule 6). A natural cut:
-- V2a THE SCRIPT AND THE CONTRACT: formats as data (F1 "the day it changed", F2 "the trial", F3 "the walk" - one table; the Showrunner's plan names
-  its format, never a new AI role); the three-tier contract (redesign 4.6: the show's devices become advisory per format - open issue 60); first
-  person as a MEASURED rule (10.7: the voice says "you" in the present tense; show, then tell) and camera continuity carried on the shot list (one
-  place per act, each shot starts where the last one ended, jumps counted) - both as D13 measures in the V1a pattern; two voices at most; a drawn
-  cast or none (no black shapes).
-- V2b THE HOOK: the first 30-40 seconds made FIRST, fully animated, as ONE continuous first-person move (clips chained from the last frame of the
-  one before), cut vertical and horizontal from the same clips, published as a Short and reused as the long video's opening; the hero video model
-  and the voice chosen by value (the tool scout reads what fal and the owner's Google account really offer - redesign O2); the cost model (a hook
-  about Rs 200, a topic Rs 580-660; the layman line-up's Rs 0.2 as its own line - open issue 72); the Shorts track under the viewer's seat and the
-  layman test (open issue 62); the CONCEPT page rewritten.
-RESEARCH STEP = the first hand-made round of the Breakout Observatory (redesign 10.5): hits against siblings of the same channel, three rings,
-countable facts only.
-What V1a and V1b leave ready: `whatifs/org/audience.py` (measures + repairs by code), `whatifs/org/layman.py` (everyday words + the promise line-up;
-its decoys are a built-in list - give it same-subject decoys once formats and past titles exist, open issue 69), D13 with two runs (`probe` inside
-the plan stage, `seat` right before the Animation Director), the pattern "measure -> repair by code -> contract check -> lever", 6 founding items.
-Remember: every new contract check must be classified (`rnd.ORG_CHECKS` or raise `rnd.SHOW_CHECKS`, now 42); a department run that returns `Out`
-must say what it did with EVERY inbound memo (`memo_actions`) - a memo it wrote to itself comes back in its own inbox (found in V1b); a memo a
-department writes to itself is closed with `memos.find`; text from outside is data; a held episode stops in about 10 seconds, a full fake
-production takes over 2 minutes - a fast "failure" is a hold; NEVER paste code with backslashes through a shell here-document.
-ORDER AFTER V2: V1c the judged floor on the finished video with the canary (the owner's rejected video, YouTube id 7RPT4rCuP6k, must lose) + his
-verdict tab - right before the pilot, where his verdict first needs a place and the floor gets real videos -> V3 pilot on real services, then go
-live -> V4 the CEO and the ladder (+ his input tab and the scoreboard: D1 consumes both) -> V5 the Breakout Observatory and the aspect map -> B6b
--> B7 -> B8 -> B9 -> B10. Ten batches remain.
-WHY THIS ORDER (decided at the end of V1b): the floor judges a FINISHED video - built before V2 it would be tuned on the old look, and V2 is what
-changes the look. Until the floor exists the first three releases need the owner's own Approve anyway (redesign 4.10).
+**V2b - INSIDE THE FORMAT: first person, one place, one move; a drawn cast or none** (`handoff_v12/BREAKOUT_REDESIGN.md` 4.1, 10.7; hypotheses H4, H7).
+Full seven-step MANDATORY BATCH LOOP. Effort: High. V2 was SPLIT AT THE START (rule 6) into V2a (formats as data and the three-tier contract -
+done, record under DONE), V2b (this) and V2c (the hook). V2b scope:
+- FIRST PERSON AS A MEASURED RULE for F1 (D13 measures in the V1a pattern: measure -> the writers' one fix -> check -> lever): the voice says "you"
+  in the present tense; show, then tell (nothing is explained before the viewer has seen it happen).
+- CAMERA CONTINUITY carried on the shot list: one place per act, each shot starts where the last one ended, jumps counted; the Director's prompt
+  asks for it, a D13 check judges it.
+- A CHARACTER IS DRAWN OR ABSENT: no silhouette fallback for reaction shots in any format (`shotplan.reaction_frame`), and what the speaker chip
+  says in F1 (open issue 75). Two voices at most outside the trial is already true (V2a).
+- F1's OWN ENDING: the question "would you keep it?" instead of the three asks and the tease that code still inserts (open issue 74).
+- F3 "THE WALK" as a real format (status "on", share 0 until its first test): one voice, one continuous move; its brief and its device table.
+- The layman line-up gets same-subject titles (open issue 69) if it fits.
+What V2a leaves ready: `whatifs/formats.py` (the table, `pick`, `use` / `using` / `current`, `rule`, `block`, `rubric`, `kept_report`, `format_issues`);
+`show.on()` = the trial layer for this episode, `show.leads_on()` = the show's world; the contract runner judges a DEVICE by `d["format"]`; the
+rehearsal and the sweep run one format with the env var `WI_FORMAT`; the older tests run in forced F2 (`tests/conftest.py`).
+Remember: every new contract check must be classified (`rnd.ORG_CHECKS` or raise `rnd.SHOW_CHECKS`, now 43); a new D13 measure is a DEVICE of
+no format - it is tier 2 and holds in every format; when a switch has meant two things, sort EVERY call site before splitting it; run the
+rehearsal in each format (`WI_FORMAT=F1`, `WI_FORMAT=F2`) before the suite - it found what the tests had not; a held episode stops in about 10
+seconds; NEVER paste code with backslashes through a shell here-document.
+ORDER AFTER V2b: V2c the hook (hook-first production: the first 30-40 seconds made first as one continuous first-person move, published as a
+Short and reused as the opening; models by value; the cost model with the line-up's line - open issue 72; Shorts under the viewer's seat; every
+job in the episode's format - open issue 76; the CONCEPT page rewritten) -> V1c the judged floor with the canary + the owner's verdict tab -> V3
+pilot on real services, then go live -> V4 the CEO and the ladder (+ his input tab, the scoreboard, the format shares - open issue 78) -> V5 the
+Breakout Observatory and the aspect map -> B6b -> B7 -> B8 -> B9 -> B10. Eleven batches remain.
 The notes below (what B5 / B6a leave ready for the Council) stay valid for B6b:
 **B6b - The Council (C)** (01 sections 2 (C), 4, 5, 7 `council_held`; 03 "B6", second bullet). Full seven-step MANDATORY BATCH LOOP. Effort: High.
 Gathers open research / assessment / creative / owner / performance / problem memos; diverge -> blind cross-family jury -> converge -> decision
@@ -192,6 +150,127 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
+### V2a - FORMATS AS DATA AND THE THREE-TIER CONTRACT (11 Nov 2026) - ACCEPTED (final code commit 75c55ea GREEN in GitHub Checks run 91: 1303 passed; sweep 28 of 28, both formats)
+The owner (mobile only): "Continue". V2 was SPLIT AT THE START (rule 6): V2a is the foundation - an episode has a format, and a format decides
+which of the show's devices are required. It answers "the whole video looked a lot gimmicky" (item 16), "IF YOU HAVE TO REDESIGN CHANNEL, DO IT"
+(item 17) and "WE AND PIPELINE BRAIN SHOULD BE SMART TO CHANGE THE TYPE OF VIDEO MAKING OR FORMATTING" (item 19).
+
+#### Step 1 RESEARCH (E = measured, O = practice / vendor; "read" = read by the build session, else reported by a search run)
+1. E read - Tubefilter, 13 Jul 2026: https://www.tubefilter.com/2026/07/13/youtube-inauthentic-content-monetization-policy-update/ - YouTube's
+   clarified examples of "generic or repetitive content": content that "looks like it's made with a template" or "may feel repetitive to viewers
+   after watching several videos in a row from the same channel"; "videos where characters are put in the same situation over and over again with
+   the same outcome"; storylines that follow a fixed formula. The whole channel is demonetised. -> a weekly trial with the same characters, the
+   same room and the same shape of verdict is the textbook case. Formats and their devices must VARY, by data, not by hope.
+2. O read - THE FIRST HAND-MADE ROUND OF THE BREAKOUT OBSERVATORY (redesign 10.5): three channels, one per ring, from a vendor's public pages
+   (outlierkit.com/channel/..., read 11 Nov 2026; the vendor's baseline is the median of the 6-14 newest uploads and its line is 1.5 times, not
+   our 5; ages differ; TITLES ONLY - nobody watched a video). 12 hits, 14 siblings:
+   - Far ring, "What If Levels" (3,100 subscribers, 41 videos, data of 8 Nov 2026): hits "What If You Had 10,000 IQ?" (445,000 views, 159 times
+     the median), "What If You Could Read Minds... and Heard Your Wife's First?" (30,000; 10.7), "What If You Went Back to 2000 With Everything You
+     Know Today?" (2.7), "What If You Could See How Long Everyone Has Left to Live?" (2.5). Siblings at 0.4-1.2: "...See Who Has a Crush on You?",
+     "...Everyone Had the Same Death Countdown?", "Could 2 People Really Restart Humanity?", "What If Hitler Died in 1918...", "...All Men
+     Disappeared Except You?", "...the Only One Who Never Needed Sleep?".
+   - Our ring, "Science eXplore" (34,700 subscribers, 48 videos, 6 Nov 2026; its newest videos get about 180 views): hits "The Psychology Of
+     Being Lazy But Ambitious" (11.5), "What If Light Moved at Only 60 MPH?" (8.2 after 5 days - 1,500 views; nearly the premise of the owner's
+     rejected video), "The Entire History Of The Atomic Bomb" (4.8), "Brainrot Cure: 10 Scientific Signs..." (4.7), "The Land Of Magic" (3.5),
+     "What If You Fell Into Jupiter?" (2.1). Siblings at 0.8-1.0: four health warnings about the brain and the body.
+   - Near ring, "Wacky Science" (825,000 subscribers): hits "ALL OF PHYSICS explained in 14 Minutes" (11 million; 2.8), "GENERAL CHEMISTRY
+     explained in 19 Minutes" (1.6); siblings: smaller subjects in the same form (QR codes 0.2, Braille 0.1).
+   WHAT THE SIBLINGS SHOW (the reason they are there): "you" in the title does NOT separate hits from normal videos - 4 of 4 hits and 4 of 6
+   siblings of the far channel carry it. Numbers in the title do not separate either. Two differences are visible, each inside one channel:
+   (a) scenarios that happen to YOU sit at the top and the two world / history scenarios without "you" at or below the median; (b) in the science
+   channel the two impossible-scenario titles beat every health warning (0 of 4 siblings is a scenario). The size of the promise decides in the
+   near ring (a whole subject against one small thing). NO hit in the sample is framed as a trial, a court or a case - absent, which is not
+   evidence against it. 26 titles are a method test, not a finding: nothing here becomes a rule; (a) and (b) agree with making "it happens to
+   you" the default format and leave the trial an arm.
+3. O - the vendor's own readings of the same pages (11 Nov 2026): the far channel's formula is "a second-person power-fantasy thought experiment"
+   where the story "turns personal"; the science channel "breaks out when it turns science into either a highly relatable identity problem or a
+   cinematic impossible scenario"; a narrator-led explainer with a strong premise and escalating consequences. A vendor's opinion.
+4. E - Metricool 2026 through Tubefilter (3 Aug 2026) and Net Influencer: the average long video is watched 2.51 minutes (3.98 a year before);
+   Retention Rabbit (10,000+ videos): more than 55% of viewers leave within the first minute. -> the opening and one idea, not more devices.
+5. O - Virlo trend report (Oct 2026): hypothetical "what if" science scenarios are one of four themes standing out in science; small animated
+   first-person what-if accounts reach very large averages on short video (another platform).
+6. E - narrative perspective (a review citing Chen and others 2024, Kim and others 2017; text, not video): second-person narration draws
+   stronger emotional responses than third person under high involvement. No study of "you" narration against YouTube retention was found.
+#### Step 2 CREATIVITY (scores 1-5: what a viewer gains / enforceable / cost / reliability / owner effort)
+A. Rewrite the show as "The day it changed" only and delete the trial: 4 / 3 / 2 / 2 / 5 = 16 - one template again (research 1), and the owner's
+   own format with its tested code thrown away.
+B. A "format" paragraph added to the prompts, the checks unchanged: 2 / 1 / 5 / 2 / 5 = 15 - the devices stay forced; the first script without
+   them is held by six checks (a deliberate break showed exactly that).
+C. A second pipeline for the new format (its own room, its own contract): 4 / 4 / 1 / 2 / 5 = 16 - two of everything to keep in step.
+D. (ORIGINAL, CHOSEN) FORMATS AS DATA ON THE SWITCHES THE CODE ALREADY HAS + A THREE-TIER CONTRACT: a format is a row (does the trial layer run,
+   its voices, its device table, its brief); the episode's format travels in the draw and is "the format in the making" for everything the
+   production does; the contract runner judges a DEVICE by it and nothing else: 4 / 5 / 5 / 4 / 5 = 23.
+#### Step 3 DESIGN MEMO
+- An experiment first: with the trial layer switched off, a whole fake episode was held by exactly ONE check (`verdict_style`) - the code already
+  had a show without a courtroom (two voices, no Show Plan). Formats are built on that, not beside it.
+- NEW `whatifs/formats.py`: `FORMATS` - F1 "The day it changed" (the trial layer off; DIRECTOR + SKEPTIC; the trial's five devices not part of
+  it, the other five optional), F2 "The trial" (today's show; every device required), F3 "The walk" (reserved, cannot be drawn yet).
+  `pick`: FORMATS_ON off = as before formats; a Deep Trial is a trial; FORMAT_FORCE (or the env var WI_FORMAT) wins; an episode keeps its
+  format; else the format furthest below its share among the last ten episodes (70 / 30 = 7 and 3 of ten, not a coin; the very first episode
+  of a Sheet is drawn by its id). The format is picked once in `room.run_room`, kept in the draw, and `episode.produce` makes everything after
+  the room in it (reset in its `finally`).
+- THE THREE TIERS: `formats.DEVICES` are the ten device checks. A format says "must", "advisory" or "never" for each. `contract.run` writes N/A
+  "not part of format F1" without judging, or judges and turns a failure into N/A "optional in format F1, not held: ...". Any other check is
+  always "must" - a test proves that no viewer, organisation or core check can enter a format's table.
+- THE WRITERS: the format's own brief reaches the Showrunner, the bible and the writer (`formats.block`), the blind juries rank by the format
+  (`formats.rubric`), an optional device is not demanded (`enforce.writer_rules`) and never forced by a rewrite (`marker_issues`, `fix_markers`).
+- A NEW HARD CHECK `format_kept` (script gate; owner D4; a promise about the show): a format that is not a trial does not sound like one - no
+  name of the court's cast, no courtroom furniture, only its own voices; a trial has its Show Plan. The writers' one fix carries it.
+- `show.on()` now means "the TRIAL layer runs for this episode"; `show.leads_on()` means "the show's world is on": the two leads keep their
+  designed voices in every format, and packaging tests, the experiment row, the provenance record and the fixed cast belong to every format.
+- Settings: FORMATS_ON, FORMAT_FORCE, FORMAT_SHARE_F1 70 / F2 30 / F3 0 (levers of D1, steps of 20). Money: no new call; an F1 episode makes
+  fewer (no judge and witness voices, no tag fix).
+#### Step 4 BUILD (what changed)
+- NEW `whatifs/formats.py` (on `tools/repair.py` PROTECTED). `whatifs/show.py`: `leads_on`, `on`. `whatifs/room.py`: `run_room` picks and sets the
+  format around `_run_room`; `_format_block` in three briefs; a non-trial format carries no Show Plan; `_pkg_extra` and the guest brief ask
+  `leads_on`. `whatifs/room2.py`: `_rubric`. `whatifs/enforce.py`: optional devices; the format problem joins the one mandatory fix.
+  `whatifs/contract.py`: the tiers in `run`; `p_format_kept` (53 hard checks: 34 script + 19 final). `whatifs/episode.py`: the format after the
+  room and on a resume, reset at the end; designed voices, provenance, packaging pairs and the experiment row in every format. `whatifs/cast.py`.
+  `whatifs/fakes.py`: the offline writer answers a non-trial format without the trial's devices. `whatifs/core.py`: 5 cells. `registry.py` /
+  `levers.py` / `rnd.py`: the check's owner, 3 levers of D1 (51), SHOW_CHECKS 43. `tools/rehearsal.py`: the trial's own artefacts are asserted
+  for a trial only, `format_kept` for every episode. `tests/conftest.py`: the older tests run in forced F2.
+- Seeds: `v2a.formats_are_data`, `v2a.device_diet`, `v2a.hits_and_siblings`, `v2a.takeaway` (144 founding items).
+#### Step 5 ENFORCE (rule -> executing code -> fails when broken)
+| Rule | Executed by | Fails when broken |
+|---|---|---|
+| An episode is made in ONE format from the room to the upload | `formats.pick` + `formats.using` in `room.run_room`; `formats.use` in `episode.py` | the room test (every call in F1), the production test (package, shot plan, Shorts plan in F1) |
+| A device is judged by the format; nothing else is loosened | `formats.rule` in `contract.run` | the tier test; the production is held by six devices when the runner ignores the format |
+| An optional device is not demanded and never forced | `enforce.writer_rules`, `marker_issues`, `fix_markers` | the writers' test (no rewrite call, no "MANDATORY" in the brief) |
+| A script is what its format says | `formats.format_issues` in `enforce.fix_all` | `format_kept` (script gate) |
+#### Step 6 PROVE
+- `tests/test_v12_formats.py`: **10 tests** - the table (a format can touch devices only); the pick (forced, by id, by the shares over the last
+  ten, an episode keeps its format, failed episodes do not count, no trial without the show's world, the env var); the trial layer follows the
+  format and the context is always restored; optional devices and the format fix; the REAL room in F1 and in F2 (every call made in the
+  episode's format, the three briefs handed over, no trial brief in F1); the tiers; `format_kept` both ways; wiring and levers; the REAL
+  production in F1 (a missing device holds nothing, the trial's devices are not judged, every viewer check passes, packaging tests and the
+  experiment row are written, no season row) and an F1 episode that sounds like a trial HELD before pictures.
+- Fails correctly (five deliberate breaks, each reverted): the contract ignoring the format -> the tier test fails and the F1 production is
+  held by `joke_density`, `send_and_awe`, `verdict_style`, `time_ladder`, `exhibits`, `grimm_prototype` ...; the trial layer ignoring the format
+  -> 2 tests fail; the room not working in its format -> 2 tests fail; optional devices forced by a rewrite -> 1 test fails; production
+  forgetting the format after the room -> NO test failed at first (found by the break itself) - the production test now watches the package,
+  the shot plan and the Shorts plan, and fails.
+- Faults found by running, not by reading: (1) THE REHEARSAL IN F1 failed while 10 tests and a whole F1 episode had passed: title and
+  thumbnail tests, the experiment row, the provenance record and the fixed cast lived behind the trial switch and would have been silently lost
+  in F1. Five call sites now ask `show.leads_on()`. (2) The offline Showrunner's Show Plan stayed in an F1 spine - a non-trial format now drops
+  it. (3) My own test expected the wrong next format after failed episodes; the arithmetic was right, the test was corrected so that it tells
+  the two cases apart.
+- Tests changed by design: 51 levers, 34 script checks; the older tests are the trial's tests (forced F2 in the test setup).
+- Fake rehearsal on the final code: GREEN in each format on the working tree (`WI_FORMAT=F1` and `WI_FORMAT=F2`); 4 of 4 GREEN in sweep C on the frozen copy (2 drew F1: 41 pass + 12 not applicable of 53 checks; 2 drew F2: 48 pass + 5 not applicable; no memo left open); GitHub's own rehearsal GREEN (episode EP202611111407, script 34/34, final 19/19).
+- Full suite on a frozen copy of 75c55ea: **1302 passed / 0 failed / 1 skipped** (70 test files; the older tests in forced F2, the new file in F1 and F2).
+- Sweep on the same frozen copy: **28 of 28 ok**, no bad id, no failure class. A: 20 ids, organisation on - 13 drew F1 (each 40 pass + 13 not applicable) and 7 drew F2 (47 pass + 6 not applicable). B: 4 ids, organisation off - 2 F1, 2 F2. C: 4 rehearsals - 2 F1, 2 F2.
+- GitHub Checks (standing rule 1): run **91** on 75c55ea **GREEN**: 1303 passed (41:40), rehearsal GREEN (episode EP202611111407; contract script 34/34, final 19/19). Run 90 (the V1b record commit) GREEN.
+- Plan Guard GREEN, Truth GREEN, Palace GREEN (144 founding items), Organisation GREEN (11 wired, 5 pending), docs regenerated without drift.
+- Money: Rs 0 spent (fake mode). In production: no new call.
+#### Step 7 TAKEAWAY (also Palace item `v2a.takeaway`)
+- WORKED: an experiment before the design (the trial layer off -> one check holds) sized the batch in ten seconds.
+- WORKED: a full rehearsal per format, and breaking the code on purpose: the rehearsal found the lost packaging tests, the break found a step
+  no test watched.
+- FAILED / LIMIT: F1 has only been written by the offline test writers. Whether a real model keeps the courtroom out, uses two voices and
+  builds the day from the bathroom to the planet is unknown until the pilot. The asks, the tease and the emotion beat are still inserted by
+  code in F1 (they can no longer hold a video - open issue 74). The canon still hands the trial's cast to an F1 writer (77).
+- NEW QUESTION: does F1 hold viewers better than F2 (H5)? The shares are data now, so the answer can move them (V4, B8).
+- ORGANISATION: when one switch has meant two things, list every place that asks it and sort them before splitting it.
+
 ### V1b - THE LAYMAN TEST (11 Nov 2026) - ACCEPTED (final code commit 4c0e607 GREEN in GitHub Checks run 89: 1293 passed; sweep 28 of 28)
 The owner (mobile only): "Continue". V1b as planned had four parts; it was SPLIT AT THE START (rule 6): this batch is THE LAYMAN TEST - it guards
 the script before any picture is paid and answers his first complaint ("I was myself unable to understand the topic of video") and his item 19
@@ -1748,6 +1827,11 @@ Rehearsal asserts `docs_current` ran and passed.
   (deterministic particle seed).
 
 ## PROTECTED-AREA FILES TOUCHED SO FAR (list them in the final PR)
+- V2a: `whatifs/contract.py` (`run` judges a device by the episode's format - no check is weakened for the trial or for an episode without a
+  format; 1 check added), `whatifs/episode.py` (the format after the room, on a resume and reset at the end; designed voices, provenance,
+  packaging pairs and the experiment row in every format), `whatifs/room.py` / `room2.py` (the format around the room, three briefs, the
+  rubrics), `whatifs/enforce.py` (optional devices; the format fix), `whatifs/show.py` (`leads_on` / `on`), `whatifs/cast.py`, `whatifs/core.py`
+  (5 cells), `whatifs/org/registry.py` / `levers.py` / `rnd.py`, `tools/repair.py` (PROTECTED + formats.py), `tools/rehearsal.py` (format-aware).
 - V1b: `whatifs/contract.py` (2 checks added; no existing check changed), `whatifs/episode.py` (`_probe`: D13's line-up run in the plan stage; the
   script gate's context carries it), `whatifs/enforce.py` (the expert words join the one mandatory fix), `whatifs/prompts.py` (three lines in the
   house rules), `whatifs/models.py` (two reader roles), `whatifs/core.py` (6 cells), `whatifs/org/registry.py` / `levers.py` / `rnd.py` (the second
@@ -2006,6 +2090,31 @@ Rehearsal asserts `docs_current` ran and passed.
    counter but are not a line of their own in `costguard.estimate_lines` / `governor.min_episode_cost_inr` (they sit inside the Rs 40 thinking
    lump). CLAUDE.md hard rule 2 asks for every new paid call in the estimates: V2's cost model adds the line.
 
+73. (V2a -> V3) F1's brief ("The day it changed") has only met the offline test writers. The first real F1 script is the pilot's first
+   evidence: read it against the brief (courtroom words, two voices, the day from the bathroom to the planet, the question at the end).
+
+74. (V2a -> V2b) In F1 the three asks, the tease and the emotion beat are still asked for by the writer's base prompt and inserted by code
+   (`CTA.ensure`, `room.ensure_tease`). They can no longer hold a video, but they are still in it. V2b: F1's own ending replaces them.
+
+75. (V2a -> V2b) In F1 the speaker chip says "THE DIRECTOR" / "THE CURIOUS ONE" (`overlay.name_of`), and the silhouette fallback for reaction
+   shots exists in every format. "A character is drawn or absent" is V2b.
+
+76. (V2a -> V2c) Shorts or special reels made by OTHER jobs after the episode (no format in the making) follow the global switches, so they
+   treat every episode as a trial. V2c rebuilds Shorts as hooks and gives every job the episode's format (it is in the draw).
+
+77. (V2a, the canon) The canon (B6a) is the trial's world: an F1 writer still receives the cast items and the callback duty; the F1 brief
+   tells him to use only the two leads' temperaments and one plain callback line. A real model may leak courtroom words - `format_kept` then
+   holds the video (an owner tap). Watch at the pilot; the real fix is a playbook that knows the format.
+
+78. (V2a -> V4) The format shares are levers of D1, which is not wired yet: until V4 nobody moves them. FORMAT_FORCE is the manual override
+   (the pilot uses it).
+
+79. (V2a) The first episode of a Sheet is drawn by its id (70 / 30 by chance); from the second on the shares hold over the last ten.
+
+80. (V2a, tests) The older tests run in forced F2 (`tests/conftest.py`). F1 is covered by `tests/test_v12_formats.py`, the rehearsal with
+   `WI_FORMAT=F1` and the sweep's mix - not by the whole suite. GitHub's own rehearsal draws its format by a time-based id (about 7 of 10
+   runs F1): a fault in one format can show on some runs only; the laptop proof runs both.
+
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`
 - Suite: `bash ../shim/runall.sh . <outdir outside repo>` (~35 min; run it in the background). Some files: `bash ../shim/runseq.sh . <outdir> test_a test_b`.
@@ -2056,8 +2165,10 @@ Rehearsal asserts `docs_current` ran and passed.
 | REDESIGN | done 11 Nov 2026 | - | - | The owner rejected the first live video (made by the old code) and gave a free hand: research (14 dated sources), 4 designs, the decisions and the new batch plan in `handoff_v12/BREAKOUT_REDESIGN.md`. No code changed |
 | V1a | done 11 Nov 2026 | GitHub 1284 passed (run 85); laptop 312 / 0 on the 9 touched files | GREEN (50 checks: 45 pass, 5 not applicable) | The viewer's seat, measured: department D13 Audience; before any picture is paid the first shot is a picture carrying the animated promise (5 s), the voice gets a pause every 30 s, numbers heard and number graphics have a budget; 3 script-gate checks (50 hard checks), 4 levers (45), long videos 9:00 at most. GitHub run 85 GREEN on f96b87a; sweep 28 of 28. |
 | V1b | done 11 Nov 2026 | 1292 / 0 / 1 (laptop); GitHub 1293 passed (run 89) | GREEN (52 checks: 47 pass, 5 not applicable) | The layman test: expert words a layman would not know counted by code (a budget per minute, in the first 30 s, in one sentence; the writers' one fix carries it) and the promise line-up (two cheap readers of two model families pick the video's title from the first 30 s; a planted opening must get none; verdict by code); 2 script-gate checks (52 hard checks), 3 levers (48), D13's second run. GitHub run 89 GREEN on 4c0e607; sweep 28 of 28 (the first sweep held 1 of 20 for ordinary words - fixed at the cause). |
-| V2 | next | | | Hook-first production: formats as data (F1, F2, F3), the hook made first as one first-person move, camera continuity, models by value, the three-tier contract |
-| V1c | after V2 | | | The judged floor on the finished video with the canary (the owner's rejected video must lose) and his verdict tab |
+| V2a | done 11 Nov 2026 | 1302 / 0 / 1 (laptop); GitHub 1303 passed (run 91) | GREEN in F1 and in F2 (53 checks) | Formats as data and the three-tier contract: every episode has a format (F1 "The day it changed" 70, F2 "The trial" 30; shares are levers of D1), the trial layer, the briefs, the juries and the production follow it; a format can make a show device optional or leave it out and nothing else; new check format_kept (53 hard checks), 3 levers (51). GitHub run 91 GREEN on 75c55ea; sweep 28 of 28 (15 episodes in F1, 9 in F2, 4 rehearsals). |
+| V2b | next | | | Inside the format: first person and camera continuity as measured rules, a character drawn or absent, F1's own ending, F3 "The walk" |
+| V2c | after V2b | | | The hook: hook-first production, models by value, the cost model, Shorts under the viewer's seat, the CONCEPT page |
+| V1c | after V2c | | | The judged floor on the finished video with the canary (the owner's rejected video must lose) and his verdict tab |
 | V3 | after V1c | | | Pilot on real services, then GO LIVE with the new code (the later batches are built while the channel runs) |
 | V4 | after V3 | | | The CEO and the ladder: D1 Strategy wired, the portfolio, decide-inform-implement; the owner's input tab and the scoreboard |
 | V5 | after V4 | | | The Breakout Observatory (hits against siblings, three rings, patterns counted by code, one trial each) and the aspect map (item 19) |

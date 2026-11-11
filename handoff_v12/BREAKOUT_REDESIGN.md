@@ -352,5 +352,8 @@ videos CAUSES the virality (a trait of hits is often just as common in flops - w
 - ORDER UPDATE (end of V1b, 11 Nov 2026): V1b built THE LAYMAN TEST only (10.6; its canary is a planted FOREIGN opening - a model reads expert
   words easily, so the canary first designed could never have failed). The judged floor (4.3) and the owner's verdict tab are V1c, built AFTER V2
   and before the pilot: the floor judges a finished video and V2 is what changes the look. His input tab and the scoreboard move into V4.
+- ORDER UPDATE (end of V2a, 11 Nov 2026): V2 was split in three. V2a built FORMATS AS DATA and THE THREE-TIER CONTRACT (4.1, 4.6): F1 and F2
+  run, F3 is reserved. V2b builds the inside of a format (10.7: first person and camera continuity as measured rules, a character drawn or
+  absent, F1's own ending, F3). V2c builds the hook (4.2, 4.7). Then V1c, V3 (pilot, go live), V4, V5, B6b-B10: eleven batches remain.
 - O7 No evidence yet that the walk helps on YouTube (10.2): it is in every hook because the owner's own judgment is D13's strongest label and
   it is the brand's promise; F3 and H7 let the viewers confirm or refuse it.
