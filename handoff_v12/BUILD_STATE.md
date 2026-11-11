@@ -68,7 +68,12 @@ keep learning and auto implementing and keep me informed". Answered in the redes
 count is set by money, D1 raises it when cost falls) and a monthly compilation; no money is possible before the Partner Program, so GOING LIVE
 moves to the end of V3; the scoreboard (hours / 8,000, subscribers / 1,000) is the one goal (4.8); the owner's desk answers every input with
 adopted / tested / parked and his earlier ideas each got a verdict (4.9); launch readiness covers the channel page too (4.10).
-What only the owner can do, today: set Settings cell PAUSED = TRUE on the live Sheet (no keys here: the build session cannot touch it).
+ITEM 19 (same day, after V1a): asked whether to pause the live channel and hide the rejected video he said NO - "Let the videos get posted till
+we get the corrected pipeline to implement". The old code keeps publishing until V3; never ask again. He also asked that EVERY aspect be built
+for breakout "do or die", that the machine OBSERVE widely what breaks out and integrate the best, a hard check that a LAYMAN understands, and a
+first-person, continuous-camera experience. Answered in the redesign's new SECTION 10: the layman test (V1b), first person / one place / one
+move and format arm F3 "The walk" (V2), the Breakout Observatory and the aspect map (new batch V5). The evidence R15-R19 of that section is
+not in the Palace yet: the batch that builds each part adds its founding items (they need real code references).
 This turn was the DESIGN step for the whole programme (research, designs, decisions, records). Nothing of the redesign is built yet.
 
 ## NEXT
@@ -83,12 +88,19 @@ done (record under DONE). V1b scope:
   D13's strongest label. WhatsApp capture stays in B9; D1 answers inputs from V4.
 - THE SCOREBOARD: long watch hours of the last 365 days against 8,000, subscribers against 1,000, the date at the current pace - the first line
   of the daily brief (the Analytics columns exist in `brain.py` / `reach.py`).
+- THE LAYMAN TEST (item 19; redesign 10.6): measured by code - a budget for unfamiliar words (none in the first 30 s), sentence length for
+  the ear, one new term at a time (a failure rides on the writers' one fix, like the numbers); and a PROBE with a checkable answer - a reader
+  with no context gets only the first 30 seconds and must say what the video will show and why to care (compared with the promise), with a
+  planted canary (the same opening flooded with expert words must fail, else the session is void).
+- If the four parts do not fit one session, split again at the start (rule 6): the judged floor and the layman test first (they guard the
+  video), the owner's desk tabs and the scoreboard second.
 What V1a leaves ready: `whatifs/org/audience.py` (pure measures + repairs by code; `on()` = VIEWER_SEAT_ON), D13 in the registry with one run
 (`seat`, right before the Animation Director), the pattern "measure -> repair by code -> contract check -> lever", 3 founding items for D13.
 Remember: every new contract check must be classified (`rnd.ORG_CHECKS` or raise `rnd.SHOW_CHECKS`, now 40); a memo a department writes to itself
 is closed with `memos.find`; text from outside is data; NEVER paste code with backslashes through a shell here-document (it broke two files again
 in V1a) - write the file with the file tools, then run it.
-ORDER AFTER V1b: V2 hook-first production -> V3 pilot on real services -> V4 the CEO and the ladder -> B6b -> B7 -> B8 -> B9 -> B10.
+ORDER AFTER V1b: V2 hook-first production (+ first person, one place, one move; format arm F3 - redesign 10.7) -> V3 pilot on real services,
+then go live -> V4 the CEO and the ladder -> V5 the Breakout Observatory and the aspect map (redesign 10.5, 10.8) -> B6b -> B7 -> B8 -> B9 -> B10.
 The notes below (what B5 / B6a leave ready for the Council) stay valid for B6b:
 **B6b - The Council (C)** (01 sections 2 (C), 4, 5, 7 `council_held`; 03 "B6", second bullet). Full seven-step MANDATORY BATCH LOOP. Effort: High.
 Gathers open research / assessment / creative / owner / performance / problem memos; diverge -> blind cross-family jury -> converge -> decision
@@ -1871,8 +1883,9 @@ Rehearsal asserts `docs_current` ran and passed.
 | B5 recheck | done 11 Nov 2026 | 1272 / 0 / 1 skipped | GREEN (28 + 19) | Owner asked for a recheck of B5 and its consequences: 16 corrections (a syntax repair hid who answered; a cheap Gemini model could sit on the Board; the void-session memo never closed; a video could be held for research a job can run; the organisation's plumbing became paid web questions; barren research was invisible; a crash after a paid call; the learning job's 30-minute limit; 8 small ones), 12 new tests. GitHub run 78 (101cf96, the final code commit): **GREEN - 1273 passed, 0 skipped, rehearsal GREEN (episode id EP202611110421, script 28 / 28, final 19 / 19)** |
 | REDESIGN | done 11 Nov 2026 | - | - | The owner rejected the first live video (made by the old code) and gave a free hand: research (14 dated sources), 4 designs, the decisions and the new batch plan in `handoff_v12/BREAKOUT_REDESIGN.md`. No code changed |
 | V1a | done 11 Nov 2026 | GitHub 1284 passed (run 85); laptop 312 / 0 on the 9 touched files | GREEN (50 checks: 45 pass, 5 not applicable) | The viewer's seat, measured: department D13 Audience; before any picture is paid the first shot is a picture carrying the animated promise (5 s), the voice gets a pause every 30 s, numbers heard and number graphics have a budget; 3 script-gate checks (50 hard checks), 4 levers (45), long videos 9:00 at most. GitHub run 85 GREEN on f96b87a; sweep 28 of 28. |
-| V1b | next | | | The viewer's seat, part 2: the judged floor with the canary, the owner's verdict and input tabs, the scoreboard |
-| V2 | after V1 | | | Hook-first production: formats as data, the hook made first, models by value, the three-tier contract |
+| V1b | next | | | The viewer's seat, part 2: the judged floor with the canary, the layman test (item 19), the owner's verdict and input tabs, the scoreboard |
+| V2 | after V1b | | | Hook-first production: formats as data (F1, F2, F3), the hook made first as one first-person move, camera continuity, models by value, the three-tier contract |
 | V3 | after V2 | | | Pilot on real services, then GO LIVE with the new code (the later batches are built while the channel runs) |
 | V4 | after V3 | | | The CEO and the ladder: D1 Strategy wired, the portfolio, decide-inform-implement |
-| B6b | after V4 | | | The Council |
+| V5 | after V4 | | | The Breakout Observatory (hits against siblings, three rings, patterns counted by code, one trial each) and the aspect map (item 19) |
+| B6b | after V5 | | | The Council |

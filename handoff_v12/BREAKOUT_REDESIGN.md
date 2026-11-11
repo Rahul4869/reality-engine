@@ -2,7 +2,8 @@
 Authority: the owner's free hand, item 17 of `02_OWNER_VERBATIM.md` ("IF YOU HAVE TO REDESIGN CHANNEL, DO IT ... SO DO IT AS PER YOU NOW"), given after he
 rejected the first live video (item 16). This page OVERRIDES `01` section 1 ("concept truth, do not re-open"), the order of the batches in `03` and
 the department list in `01` section 2 wherever they differ. The budget is unchanged: Rs 5,000 a month for everything.
-Status: DESIGN (research + designs + decisions). Nothing on this page is built yet; the batches in section 6 build it, one per owner "continue".
+Status: DESIGN (research + designs + decisions). Built so far: V1a (11 Nov 2026). The batches in section 6 build the rest, one per owner
+"continue". SECTION 10 (the owner's item 19, same day) amends sections 4-7.
 
 ## 0. THE HONEST FRAME
 - Nobody can make a channel a sure shot. Of 137,355 new long-video channels, 30.8% got even ONE video past 10,000 views in their first ten (R1).
@@ -91,7 +92,8 @@ it spends the expensive part only after real viewers said yes, and it aims at th
 ### 4.1 The product (what a viewer gets)
 - Brand stays Reality Engine. The promise stays the owner's own: IT HAPPENS TO YOU - first person, inside the scene, your body. One changed law of
   nature per video, in the Science and Education lane.
-- A FORMAT is data, not code. Two formats start; the data decides their share (never one template):
+- A FORMAT is data, not code. Two formats start (a third, F3 "The walk", joins as an arm from the second month - 10.7); the data decides
+  their share (never one template):
   F1 "The day it changed" (default, 70%): you live one day in the changed world - the impossible picture first, then consequences that escalate
      from your bathroom to your street to the planet, one beautiful or terrible last consequence, a verdict ("would you keep it?").
   F2 "The trial" (30%, an experiment arm): the Toybox Noir courtroom the owner designed on 9 Nov, with the same hook-first opening.
@@ -170,7 +172,7 @@ Nobody in the organisation sat where the viewer sits. D13 does, with a veto befo
   ADOPTED (how and where), TESTED (as which experiment, until when) or PARKED (why, and what would change it). He can override with one tap
   ("do it anyway" = it is done as the top priority) - and he hears the result afterwards. Until the WhatsApp desk exists (B9) the input line is a
   tab of his Sheet (V1).
-- His inputs so far (02 items 1-8, 16-18) are inputs, not orders ("I am still a newbie"). What the redesign does with each:
+- His inputs so far (02 items 1-8, 16-18; item 19 is answered in 10.4) are inputs, not orders ("I am still a newbie"). What the redesign does with each:
 | His idea | Verdict | How it is used |
 |---|---|---|
 | "It happens to YOU ... people want to relate and feel" (7) | ADOPTED | the default format F1 and every hook |
@@ -188,7 +190,7 @@ Nobody in the organisation sat where the viewer sits. D13 does, with a veto befo
 | Shorter, the first 20-30 seconds, a human taste filter (16) | ADOPTED | 8:10-9:00, hook-first, his verdict as the strongest label |
 ### 4.10 Launch readiness - every aspect, the channel too
 - THE CHANNEL PAGE (one guided sitting at V3, free): a brand handle instead of his personal name, banner, picture, an About text with the
-  promise, a trailer (the best hook), playlists per format. The rejected video is set to Private (his tap, recommended now).
+  promise, a trailer (the best hook), playlists per format. The rejected video stays public (his decision, item 19 - see 10.1).
 - THE FIRST THREE releases of the new code go public only with his Approve (exists in v11.1).
 - EVERY RELEASE: title + thumbnail tested against runners-up, the hook, the voice, captions, sound, chapters, description with sources and the
   AI note, the pinned comment, the link from the Short to its long video, the next-video pull at the end.
@@ -204,10 +206,11 @@ the owner would reject (measured by his verdicts). A hypothesis that fails chang
 ## 6. THE NEW BATCH PLAN (one batch per owner "continue"; every batch runs the full seven-step loop; standing rules 1-4 unchanged)
 | Batch | What | Done when |
 |---|---|---|
-| V1 | THE VIEWER'S SEAT: department D13; the measured viewer checks; the judged floor with the canary; the owner's verdict and his input line (a Sheet tab) as memos; the scoreboard; length 8:10-9:00; voice model by rank | a flop-like episode is HELD in the rehearsal; each check proven both ways; D13 wired; sweep + GitHub green |
-| V2 | HOOK-FIRST PRODUCTION: formats as data (F1, F2); the hook made first and reused as the opening; hero video model by value; the three-tier contract; cast drawn or absent; cost model; CONCEPT page rewritten | a fake hook Short and its long video share clips; devices no longer force a hold; costs inside the cap |
+| V1 (split: V1a done 11 Nov, V1b next) | THE VIEWER'S SEAT: department D13; the layman test (10.6, V1b); the measured viewer checks; the judged floor with the canary; the owner's verdict and his input line (a Sheet tab) as memos; the scoreboard; length 8:10-9:00; voice model by rank | a flop-like episode is HELD in the rehearsal; each check proven both ways; D13 wired; sweep + GitHub green |
+| V2 | HOOK-FIRST PRODUCTION: formats as data (F1, F2, F3); first person, one place, one move (10.7); the hook made first and reused as the opening; hero video model by value; the three-tier contract; cast drawn or absent; cost model; CONCEPT page rewritten | a fake hook Short and its long video share clips; devices no longer force a hold; costs inside the cap |
 | V3 | PILOT ON REAL SERVICES, THEN GO LIVE: a test Sheet, private uploads, 2 hook Shorts + 1 long video, a step-by-step guide, the channel page; when his verdicts are good the new code replaces the old on the live channel - the remaining batches are built while it runs and learns | the owner has WATCHED real output of the new code and approved it; what reality broke is fixed; the live channel runs the new code |
 | V4 | THE CEO AND THE LADDER: D1 wired (portfolio levers, promotion, decide-inform-implement, format rules, weekly review), the owner's desk verdicts (4.9), D11's split, the calendar, the compilation | a rehearsal month: hooks tested, 4 promoted, one decision taken, the owner informed, one undo |
+| V5 | THE BREAKOUT OBSERVATORY AND THE ASPECT MAP (10.5, 10.8; added for item 19) | see 10.9 |
 | B6b | The Council (as planned; it now also hears D13 and D1) | as in 03 |
 | B7 | The repair loop (as planned; a viewer-seat failure gets ONE automatic repair before a hold) | as in 03 |
 | B8 | The learning loop (as planned; plus the hypotheses of section 5 and D13's score) | as in 03 |
@@ -215,8 +218,8 @@ the owner would reject (measured by his verdicts). A hypothesis that fails chang
 | B10 | Integration, full rehearsal, docs, the hand-over package | as in 03 |
 
 ## 7. WHAT ONLY THE OWNER CAN DO
-1. TODAY: Settings cell PAUSED = TRUE on the live Sheet - the old code will otherwise publish the next video like the first and spend the month.
-   Recommended too: set the rejected video to Private in YouTube Studio (it is the first thing a visitor sees).
+1. WITHDRAWN on 11 Nov by his own decision (item 19, section 10.1): the live channel is NOT paused and the rejected video stays public; the
+   old code publishes until the new code goes live at V3.
 2. At V3: follow the pilot guide (about 20 minutes, step by step), then watch three videos and give each a verdict.
 3. Each week after launch: 30 seconds per release - a thumbs up or down and one line. It is the machine's best teacher.
 
@@ -231,5 +234,120 @@ O1 The numbers in 4.3 and 4.2 (0.6 s pauses, 3 number cards, 30-40 s hooks) are 
 O2 Which better-value video models are really on fal with vertical output and a start image must be read by the tool scout at V2 (prices seen on
    two fal pages disagreed with each other).
 O3 The Partner Program bar: the 1,000-subscriber rule after 1 Feb 2027 was not restated by the source.
-O4 9 batches remain; Claude Max ends 10 Dec 2026. Going live is after the THIRD of them (V3), not the last.
+O4 Ten batches remain after V1a (see O6 in 10.9); Claude Max ends 10 Dec 2026. Going live is after V3, not after the last.
 O5 Whether 8 Shorts a month is on the helpful or the harmful side is not known (R2 knows "about 5" and "35+"): a lever, watched by D1.
+
+## 10. AMENDMENT OF 11 NOV 2026 (evening) - the owner's item 19: "every single aspect, do or die", "observe everything that breaks out"
+Status: DESIGN. Built by V1b, V2 and the new batch V5 (10.9). Where this section differs from sections 4-7, this section wins.
+### 10.1 His decision on the live channel
+Asked whether to pause the live channel and hide the rejected video, he answered: "No dont change or set video to Pvt. Let the videos get posted
+till we get the corrected pipeline to implement". So the OLD code keeps publishing and the rejected video stays public until the new code goes
+live at the end of V3. Section 7 item 1 and the "Private" line of 4.10 are withdrawn. Never ask him this again. The one cost he was told: every
+old-code video is paid from the same Rs 5,000 and the same prepaid accounts the V3 pilot will use - the pilot guide must show the month's money
+before the pilot spends anything.
+### 10.2 More evidence (marks as in section 1; all five were reported by a search run on 11 Nov 2026, none was read in full by the build session)
+R15 E. Expert words: Bullock, Colon Amill, Shulman and Dixon, Public Understanding of Science 2019, and Shulman and others, Journal of Language
+   and Social Psychology 2020 (N = 650; https://news.osu.edu/the-use-of-jargon-kills-peoples-interest-in-science-politics/): expert words made
+   lay readers less interested and less sure they had understood - EVEN WHEN every word was defined. Against it: Cruz and Lombrozo, Nature Human
+   Behaviour 2025 (9 experiments, 6,698 people): expert words can make an explanation FEEL more satisfying while it is understood less.
+   -> a budget for unfamiliar words, not a glossary.
+R16 E. First person: Cannavo and others, AI & Society 2023 (https://link.springer.com/article/10.1007/s00146-022-01622-9): a first-person
+   viewpoint raised narrative engagement through presence (360-degree films). Peng, Sun and Gong, EMAC 2025 working paper
+   (https://proceedings.emac-online.org/pdfs/A2025-126236.pdf): first-person short videos gave more immersion and more engagement. Roth and
+   others: a voice that says "you" gave the strongest presence (cinematic VR, small samples). All lab or VR work; none measured YouTube retention.
+R17 O. Finding breakouts (vendor posts of 2026: overseeros.com, outlierkit.com): the usual measure is a video's views divided by the MEDIAN of
+   the same channel's comparable uploads; 5 times is the usual "breakout" line; the tools disagree on the baseline; a channel with few uploads
+   gives inflated scores; compare videos at the same age. One vendor study: small channels did not produce stronger relative outliers.
+R18 O. The cost of watching (ppc.land on Google's change of 1 Sep 2026; Google's video-understanding page): a public YouTube link can be handed
+   to the video-understanding model; about 300 tokens a second of picture (about 100 at low resolution) plus 32 for sound; a newer mode bills
+   only what it loads. The real price must be read by the tool scout.
+R19 O. One continuous shot (fal model pages, 11 Nov 2026): a clip can start from the last frame of the clip before it with any model that takes
+   a start image; models that also fix the LAST frame cost USD 0.033 to 0.47 a second. No source shows how smooth the joins look.
+NOT FOUND: any measurement that a continuous camera or a first-person picture raises retention on YouTube; any proof that a trait seen in viral
+videos CAUSES the virality (a trait of hits is often just as common in flops - which is why 10.5 compares every hit with a sibling).
+### 10.3 What the pipeline already does, and why that is not what he asks
+- An Outlier Lab exists (`whatifs/outlier_lab.py`): daily, ONE search phrase in our own lane, the most-viewed videos of the fortnight; a model
+  describes their "techniques" for the writers and R&D turns outliers into research questions (B5). It is narrow (one lane), it ranks by raw
+  views (so big channels win), it has no comparison (what a hit does that a normal video does not) and what it stores is a model's opinion.
+- "It happens to YOU" is the default format's law (4.1) - as a sentence in a prompt. Nothing measures it and nothing binds the camera.
+- D13 measures the promise, the pauses and the numbers (V1a). Nothing yet asks whether a layman UNDERSTANDS.
+### 10.4 The owner's desk: item 19, answered
+| His words | Verdict | How it is used |
+|---|---|---|
+| "Dont change or set video to Pvt ... let the videos get posted" | DONE AS SAID | 10.1 |
+| "Each and every aspect ... do or die every time ... strict enforcement" | ADOPTED | THE ASPECT MAP (10.8): every aspect has an owner, a measure and a check, or the build fails |
+| "Observe all types of things which make impact ... integrate the best" | ADOPTED | THE BREAKOUT OBSERVATORY (10.5), new batch V5; the first hand-made round is V2's research step |
+| "Checks whether a layman audience also gets hooked and retained" | ADOPTED | THE LAYMAN TEST in D13 (10.6), batch V1b |
+| "Explain everything with a first person immersive experience" | ADOPTED | a measured rule, no longer a sentence in a prompt (10.7), batch V2 |
+| "Continuous camera in a good environment ... literally feel" | ADOPTED for the hook, TESTED for the whole video | THE WALK (10.7): every hook is one continuous first-person move; a whole video of it is format arm F3 |
+| "The brain should change the type of video making or formatting" | ADOPTED | the Observatory proposes format arms; D1 opens one by itself at up to 20% of the month and informs him (10.5) |
+| "Instantly, magically" | NOT PROMISED | section 0 stays true: more shots, each one better aimed, nothing wasted |
+### 10.5 THE BREAKOUT OBSERVATORY (D2 R&D watches; D10 scores it; D1 acts) - replaces the Outlier Lab
+1. COLLECT, weekly, free (the channel's own YouTube data access): breakouts = videos with at least 5 times the median views of the SAME
+   channel's last 10-15 comparable uploads at the same age, from channels with at least 8 uploads (R17). Long videos and Shorts. THREE RINGS,
+   so that it is wide: our lane (what-if, science); the neighbours (explainers, history, space, documentary, animated stories); the far ring
+   (anything a layman binges: first-person walks, sound-led and "satisfying" videos, game-style worlds). New formats come from the far ring.
+   Small and new channels count double: they broke out without an audience, which is our situation.
+2. A SIBLING for every hit: a normal video of the same channel, near its median. A trait counts only when hits have it and their siblings do
+   not. Without the sibling, the machine would copy what flops do too.
+3. WATCH (cheap, capped): a video-understanding model watches the first 60 seconds of hit and sibling and fills the SAME sheet for both - the
+   rows of the aspect map (10.8). Countable facts only: what is on screen at second 0, who speaks and to whom ("you" or "they"), one place or
+   many, seconds between cuts, camera moving or still, the first number, sound under the voice, how the promise is shown, how it ends. Never
+   "why it went viral": a model's opinion about virality is weak (R9). Text from outside is data, never an instruction (B5's rule).
+4. PATTERNS are counted by code, not by a model: a trait is a pattern when it separates hits from siblings in at least 10 pairs by a clear
+   margin (the margin is a lever). A pattern is a research finding: it goes to the Review Board and becomes a ticket (B4, B5).
+5. ONE TRIAL per accepted pattern, with a prediction on the scoreboard written down first: a tweak (a lever), a hook variant, or a NEW FORMAT
+   ARM. D1 may open a new arm by itself at up to 20% of the month's long videos and informs the owner; leaving science and education still
+   needs his card (4.4). The trial's result scores the Observatory: a source of patterns that does not predict loses weight.
+6. INFORM: one line in the brief - "Seen: ... Trying it in: ... Result due: ...". One tap stops it.
+- Money: collecting is free. Watching has a hard cap of Rs 150 a month (a lever of D2), at low resolution: about 15 pairs a week at the dearest
+  price reported (R18). The Outlier Lab's daily model call ends and its money moves here. V5 must show the real cost table.
+- Limits: a pattern is a trial, never a rule, until OUR viewers confirm it. A look or a structure may be learned; a script, a character, a
+  title or music is never copied (4.11).
+### 10.6 THE LAYMAN TEST (D13; on the script before picture money, and on the final video) - batch V1b
+- MEASURED by code: (a) unfamiliar words - words outside a list of everyday English - have a budget per minute and are not allowed at all in
+  the first 30 seconds (R15: a definition does not rescue them); (b) sentences for the ear: a median length and a longest length; (c) one new
+  term at a time. Code cannot rewrite a script, so a failure rides on the writers' ONE existing fix (as the numbers do), then the gate holds.
+- PROBED (a question with a checkable answer, not taste): a reader with no context gets ONLY what a viewer got in the first 30 seconds and
+  must say in one sentence what the video will show him and why he should care; the answer is compared with the promise of the package. After
+  the whole script he must retell what happened to him and the one idea. One reader per model family. THE CANARY: the same opening flooded
+  with expert words must FAIL the probe - a session whose probe passes the canary is void (the Review Board's pattern).
+- What it proves and what it does not: it removes "I could not understand what the video is about" (his first complaint in item 16). Whether
+  a layman is HOOKED and STAYS only real viewers can say (R9) - that is what the hook Short measures in 48-72 hours (4.2).
+- The budgets are starting values and levers of D13 (hypothesis H8).
+### 10.7 FIRST PERSON, ONE PLACE, ONE MOVE - "THE WALK" (D4, D6, D13) - batch V2
+- THE SCRIPT (measured by code): the voice speaks to "you" in the present tense; a share of sentences must do so (a lever); SHOW, THEN TELL -
+  nothing is explained before the viewer has seen it happen to him (no explanation paragraph ahead of its picture).
+- THE PICTURE (carried on the shot list, measured by code): eye level; the viewer's own hands or body where natural; ONE place per act, with the
+  light, weather and sound that belong to it (his "good environment"); CAMERA CONTINUITY - each shot begins where the last one ended, moving
+  the same way. A jump to another place is an act break, and they are counted.
+- THE HOOK (30-40 s) is ONE continuous first-person move: animated clips chained, each starting from the last frame of the one before (R19),
+  under the place's own sound. This is the animated money 4.7 already plans; the tool scout must rank models that take a start image (O2).
+- BETWEEN the animated parts, stills continue the same camera path (the same direction of travel). No extra money.
+- F3 "THE WALK", a new experiment arm from the second month: the whole video is one walk through the changed world, one guide's voice in your
+  ear. Shares to start: F1 60%, F2 20%, F3 20% (of 5 long videos: 3, 1, 1). The data decides (4.4's rules).
+- NOT AFFORDABLE NOW: a fully animated, continuous 9-minute video costs about Rs 2,200 at USD 0.045 a second before retakes - two videos a
+  month. "Animated seconds per video" is D1's lever: it rises when prices fall, never by lowering the floor.
+### 10.8 THE ASPECT MAP - "every single aspect" as a rule that can fail - batch V5
+- ONE list, as data, of every aspect of a release and of the channel: idea, title, thumbnail, the first 3 seconds, the first 30 seconds, the
+  promise kept, plain words, story shape, pace and pauses, voice, sound and music, pictures and place, camera, animation, captions, numbers,
+  the ending and the pull to the next video, length, description and chapters, the pinned comment, the Short and its link, upload day and
+  cadence, the channel page, variety across uploads (24 rows to start).
+- Each row names its owner department, its measure, its check (or "advisory", with the reason) and the date of its newest evidence.
+- ENFORCED: an organisation check fails when a row has no owner or neither a check nor a reason. A row whose newest evidence is older than 45
+  days (a lever) becomes a research question by itself (B5's agenda is driven by gaps). The Observatory's sheet (10.5) is this same list.
+- Every release's line in the brief names its WEAKEST aspect against our own last ten and the ticket opened for it.
+### 10.9 Batches, hypotheses, open points
+- V1b gains the layman test. Its four parts (the judged floor, the layman test, the owner's desk tabs, the scoreboard) may be split again at
+  the start (rule 6): then the two that guard the video go first.
+- V2 gains 10.7 (the script rule, camera continuity, the walk hook, F3 as data). Its research step is the first hand-made round of 10.5: hits
+  against siblings, three rings.
+- V3 unchanged: pilot, then go live. Until then the old code publishes (10.1).
+- NEW V5, after V4: THE BREAKOUT OBSERVATORY AND THE ASPECT MAP (10.5, 10.8). Done when, in a rehearsal week: fake hits and siblings are
+  collected, both sheets filled, one pattern found by code and one refused for too few pairs, one trial opened with a prediction, one line sent
+  to the owner; a row without an owner or a check fails the build; a stale row becomes a research question.
+- H7 a one-move first-person hook keeps more viewers to 30 seconds than a cut hook. H8 scripts inside the unfamiliar-word budget have a higher
+  share viewed. H9 trials born from Observatory patterns succeed more often than trials born from web research.
+- O6 Ten batches remain (V1b, V2, V3, V4, V5, B6b-B10); Claude Max ends 10 Dec 2026. Going live is still after V3.
+- O7 No evidence yet that the walk helps on YouTube (10.2): it is in every hook because the owner's own judgment is D13's strongest label and
+  it is the brand's promise; F3 and H7 let the viewers confirm or refuse it.
