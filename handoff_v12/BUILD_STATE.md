@@ -189,7 +189,8 @@ accepted only on air, and the newest case is a debt the next script must pay in 
 - `whatifs/contract.py`: checks palace_injected, palace_cited, canon_in_brief (script gate; 47 hard checks: 28 script + 19 final).
 - `whatifs/governor.py` + `costguard.py`: `palace_prompt_inr()` in every estimate. `whatifs/manage.py`: `v12b6a_upgrade` (one-time move).
 - `whatifs/core.py`: 7 cells - ORG_PROMPT_INJECT TRUE, PALACE_CANON_TOKENS 700, CANON_CALLBACK_ON TRUE, CREATIVE_MEMO_MAX_PER_RUN 1,
-  CREATIVE_MEMO_SAME_MAX 0.5, PALACE_PROMPT_EST_INR 10, V12B6A_FLIPS_DONE; default of PALACE_PLAYBOOK_TOKENS_BY_DEPT = {"D4": 2400}.
+  CREATIVE_MEMO_SAME_MAX 0.5, PALACE_PROMPT_EST_INR 15, V12B6A_FLIPS_DONE; default of PALACE_PLAYBOOK_TOKENS_BY_DEPT = {"D4": 2400}.
+- `whatifs/similarity.py`: open issue 47 fixed (an episode is never compared with its own earlier draft; one fingerprint per episode).
 - `tools/rehearsal.py`: B6a block (3 checks PASS, every creative run prompt-mode with a verified citation, the case on air, a distinct creative
   memo, the next draft's must-cite paid in its own script) + a next shot plan that proves the B4 knowledge lever by a cited use.
 - Changed against the design memo while building, and why:
@@ -201,8 +202,17 @@ accepted only on air, and the newest case is a debt the next script must pay in 
   (measured: 0 left out). C still leaves 5 out: B6b.
   (4) the callback must NAME its case (found by a test: a model could cite the case id with any line). (5) creative memos silent to the owner
   (found by a test). (6) the engine needs a cited use for D4/D5/D6 knowledge levers (the spec's lever A rule, now possible).
+  (7) WHERE the block sits - the design memo's "start of the cached layer" was WRONG ON COST and was replaced after measuring (commit 45ca227):
+  inside the cached GLOBAL layer the block differs per task (continuity debt, proposal invitation) and per department, and the mechanical passes
+  that share the writer's brief do not carry it, so one cached brief became several. Measured on one fake episode (the fake cache server applies
+  the real caching rules and the Settings' prices), switch OFF vs ON: hit ratio 0.752 -> 0.532, cache writes 14.5k -> 37.6k tokens, AI cost
+  Rs 24.79 -> Rs 35.88 (+Rs 11.09, growing with the size of the real brief). Now the block is the LAST part of the system prompt (the uncached
+  ROLE layer): cache reads and writes are byte-identical to OFF (hit ratio 0.752), +21.7k uncached input tokens, Rs 32.34 (+Rs 7.55, flat).
+  Research 4 holds either way (an edge of the prompt, never the middle). Real-size estimate from the Settings' prices: about 15 creative calls x
+  about 2,000 tokens = about Rs 10 input + about Rs 4 of citations = about Rs 14 a long video, about Rs 60 a month at 4 videos (the design
+  memo's "Rs 4-8" was too low): PALACE_PROMPT_EST_INR = 15. At 4 or 5 long videos a month the plan stays 'full' (tested).
 
-#### Step 5 ENFORCE (rule -> executing code -> fails when broken; each proven both ways in tests/test_v12_creative.py, 26 tests)
+#### Step 5 ENFORCE (rule -> executing code -> fails when broken; each proven both ways in tests/test_v12_creative.py, 28 tests)
 | Rule | Executing code | Fails when broken |
 |---|---|---|
 | The playbook is inside the key creative calls (never judges / mechanical passes) | `runner._ask_tap`, `cite.block`, `registry.prompt_spec` | `palace_injected` (script gate); runner breach "no model call carried the playbook" |
@@ -213,9 +223,53 @@ accepted only on air, and the newest case is a debt the next script must pay in 
 | Canon never pushes out a limit; the owner's limits fit the writer | `palace.canon_tokens`, `manage.v12b6a_upgrade` | `palace_health` notes; canon-budget and one-time-move tests |
 | Distinct creative memos to the Council | `cite.proposals_to_memos` | memo tests; the rehearsal asserts distinct ideas |
 | A knowledge lever of a creative department is verified by a cited use | `execute._verify_knowledge`, `registry.prompted` | `lever_verified`; engine test; the rehearsal |
-| Paid inside the Rs 5,000 | `governor.palace_prompt_inr`, `costguard.estimate_lines` | estimate test |
+| Paid inside the Rs 5,000; never costs a picture at the owner's cadence | `governor.palace_prompt_inr`, `costguard.estimate_lines` | estimate test |
+| The block never changes a cached layer (no cached brief is re-written) | `runner._ask_tap` (ROLE layer only) | cache-layer test; the contract test of prompt mode in tests/test_v12_org.py |
 Matrix: 7 rows in docs/CURRENT/ENFORCEMENT_MATRIX.md (meta-test `tests/test_v111_enforce.py`). Founding items: b6a.quote_anchored_citations,
-b6a.knowledge_at_the_start, b6a.restate_every_call, b6a.canon_by_code, b6a.continuity_debt, b6a.distinct_ideas (132 founding items; Palace GREEN).
+b6a.knowledge_at_the_start, b6a.restate_every_call, b6a.canon_by_code, b6a.continuity_debt, b6a.distinct_ideas, b6a.takeaway (133 founding
+items; Palace GREEN; no limit crowded out of a playbook by them: D1 3, D2 1, D12 1, C 5 left out as before, D4 0 instead of 4).
+
+#### Step 6 PROVE
+- Both ways, 28 tests in tests/test_v12_creative.py: quotes (exact / small edits / too short / absent / out of order); a citation offered-and-
+  quoted vs unverified vs ghost vs limit; the playbook only in the named calls and the caller never sees the citation fields; cached layers
+  byte-identical; the REAL reply path of `models.ask`; a lying packager fails `palace_cited`; a ghost id is recorded, never counted; a creative
+  run in brief mode / a key call without the playbook fails `palace_injected`, and the switch OFF says N/A (never a fake PASS); a creative run
+  with no model call breaks the contract; the case record (written by code, proposed, canon only on air, never rewritten after); D9's one move;
+  the continuity debt (given, paid, PASS; edited away -> FAIL; not cited -> FAIL; cited with an unrelated line -> FAIL; canon missing from the
+  playbook -> FAIL; no case record -> FAIL); the canon budget never pushes a limit out; the mirror never overwrites a case; proposals -> distinct
+  memos (same idea dropped, invalid dropped, non-creative department refused, an uninvited call's proposal ignored); drafts adopted only with
+  proof (missing run, brief-mode draft -> breach); an automatic draft without the Palace is superseded, the owner's own approval stands; the REAL
+  pre-production job writes under D4; the engine verifies a creative knowledge lever only by a later CITED use; estimates; the one-time cap move
+  (once, never over the owner's value); the registry refuses a prompt spec that points nowhere; the similarity guard (issue 47) both ways.
+- Mutations (each restored): citations never verified -> 6 tests fail; reply doorway removed on the real path -> 1; any line counts as a
+  callback -> 1; pre-production writing outside D4 -> 1; the tap no longer injects -> 9; `canon.record` removed from the real episode job ->
+  the rehearsal HOLDS the episode at `canon_in_brief` ("no case record ... D4 did not write its continuity takeaway").
+- Faults found by tests / by measuring, fixed before acceptance (none by a first green run): (a) creative memos were owner-visible - the
+  watchdog would have pinged the owner about every idea; (b) any script line passed as the callback; (c) a department in base prompt mode was
+  limited to the B6a call list; (d) the block inside the cached layer re-wrote the prompt cache (+45% AI cost on a fake episode, see step 4
+  (7)); (e) the canon share pushed 2 more owner limits out of the writer's playbook; (f) the engine's knowledge lever for D6 could never be
+  verified once D6 had to cite (the rehearsal went RED: code-only runs used up the window) - code-only runs are skipped, a later shot plan proves it.
+- Existing tests changed BY DESIGN (each with the reason in a comment): 28 script checks (was 25); `sync_canon` re-compares 4 characters (a
+  case is written once); engine and contract test files run with ORG_PROMPT_INJECT off (their departments are code, no model call); the
+  writers' own cap in two playbook tests; the canon budget on top of the cap; the registry test copies the new call-site file; the prompt-mode
+  contract test (the playbook in the ROLE layer); two money goldens (+ the Palace allowance; the nine-video-month golden keeps its own cost
+  profile, as it does for its Kling price); a pre-production test draft carries its D4 run.
+- GitHub runs of this batch: #69, #70 GREEN (research, design); #71 RED = 54 existing tests that were code-only creative runs or pinned totals
+  (fixed in 3459c44); #72 RED = 3 pinned tests (two money goldens + the pre-production draft; fixed in aba1b6f, the same 3 the laptop suite
+  found); #73 GREEN (1260 passed, 0 skipped, rehearsal GREEN EP202611110156, script 28 / 28, final 19 / 19). Both RED runs traced, none re-run.
+
+#### Step 7 TAKEAWAY (also Palace item `b6a.takeaway`, 133 founding items)
+- What worked: one doorway in (the ask tap) and one doorway out (the reply tap) meant 9 creative calls in 3 departments got knowledge and proof
+  without touching a single prompt template; playing a LYING model in tests (a quote it never wrote, an id never offered, an unrelated line as
+  the callback, an uninvited proposal) found what every green run hid; reusing B2's canon mirror and B5's silent-memo pattern kept the batch small.
+- What the batch found that nobody had asked about: since B3 every department "took" its playbook and NO model call had ever seen one; with
+  pre-production on, the script was written outside any department run; 4 of the owner's own limits had never fitted the writer's block.
+  "Handed over" was a receipt, not a fact. Rule for every later batch: trace each rule to the call that uses it, and make the receipt name that call.
+- What to watch: (1) a verified quote proves the line exists, not that the knowledge caused it (open issue 48, D10 in B8); (2) the real cost
+  of the block must be reconciled with Cost_Log after 2-3 real videos (allowance Rs 15; measured only on the fake cache server); (3) real
+  models may cite sloppily at first - `palace_cited` then HOLDS the episode before picture money: read the `unverified` / `ghost` lists in
+  the D4/D5/D6 Sessions rows before touching the check; ORG_PROMPT_INJECT = FALSE is the off switch, never a lower bar; (4) measure money
+  claims before writing them down: the design memo's cost line was an estimate and it was wrong twice (placement and amount).
 
 ### B5 - R&D + Review Board (11 Nov 2026) - ACCEPTED (final code commit a1c5204 GREEN in GitHub run 67; sweep 58 of 58 green)
 
@@ -1448,6 +1502,13 @@ Rehearsal asserts `docs_current` ran and passed.
 50. (B6a -> B6b) The Council's playbook leaves 5 limits out at 1,800 tokens: give C its own cap or narrow audiences before the Council runs.
 51. (B6a, low) D7 Sound has no model call inside its run (TTS + code), so it can neither cite Palace knowledge nor propose; sound ideas reach the
    show only through the bible (D4). Revisit if a D7 model step is ever added.
+52. (B6a -> B7, medium) `palace_cited` and `canon_in_brief` are hard gates before picture money. In fake mode the offline model cites
+   perfectly; a REAL model may cite sloppily (no `applied_items`, a quote from a line a later pass rewrote). D4 is robust (the showrunner's and
+   the bible's quotes sit in the room output untouched), D5 and D6 quote from one call each. A miss HOLDS the episode with an owner card - the
+   enforcement the owner asked for, but a hold for citation mechanics is not a quality problem. B7's repair loop (problem memo -> at most 2
+   automatic repairs -> Council -> owner) should give the department ONE automatic re-ask ('cite again, quoting your final answer') before the
+   hold. Until then: read `unverified` / `ghost` in the Sessions row; the off switch is ORG_PROMPT_INJECT, never a lower bar. Note: the two
+   losing drafts of the writers' room are always listed as `unverified` (their text is not in the final script) - that is expected, not a fault.
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`
