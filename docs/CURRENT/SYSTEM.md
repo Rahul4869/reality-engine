@@ -502,8 +502,8 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Every wired department run loads its playbook (section 11); the creative runs (D4 write and draft, D5 package, D6 plan) put it INTO their model
   prompts and cite what they applied (v12 B6a). Not yet wired (later batches): the Council, the Librarian's merges, outcome scores.
 
-**Founding knowledge** (158 items in `whatifs/org/seed/`; 0 invalid): breakout.json 15, build.json 83, feel.json 15, owner.json 30, platform.json 15.
-By kind: audience_insight 8, failure_lesson 4, owner_preference 26, plan 2, policy_rule 12, strategy 26, takeaway 12, technique 53, tool_fact 15.
+**Founding knowledge** (159 items in `whatifs/org/seed/`; 0 invalid): breakout.json 15, build.json 84, feel.json 15, owner.json 30, platform.json 15.
+By kind: audience_insight 8, failure_lesson 4, owner_preference 26, plan 2, policy_rule 12, strategy 26, takeaway 13, technique 53, tool_fact 15.
 
 **Life cycle** (`palace.MOVES`; a move that is not listed is illegal for everyone)
 
