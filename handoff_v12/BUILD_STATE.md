@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 11 Nov 2026 (B6a ACCEPTED). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 11 Nov 2026 (B6a ACCEPTED; B5 re-checked on the owner's request, 16 corrections - record under DONE). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -36,6 +36,18 @@ What B5 leaves ready for B6b (use it, do not rebuild it):
 - The Board can judge creative memos too: `board.assess` takes research memos today; a creative memo has no sources, so B6 decides whether D3 also
   judges creative memos (schemas: creative_memo is resolved by decision_memo OR assessment_memo) or the Council's own blind jury does.
 - `board.JUDGES`, `board._parse`, `scores_from` are reusable for the Council's blind cross-family jury (strong chains `board_g` / `board_c`).
+What the B5 recheck (11 Nov) adds for B6b:
+- EVERY new contract check must be classified or a test fails: `council_held` goes into `rnd.ORG_CHECKS` (the organisation's machinery: never a
+  research question, never a prediction metric). A promise about the show raises `rnd.SHOW_CHECKS` instead.
+- The Council's jury should prove who judged the way the Board does: `models.last_call()` now names the model that REALLY answered (a syntax repair
+  by the chore model no longer hides it; a missing strong Gemini model answered by the cheap one is recorded as cheap).
+- A memo a department writes to ITSELF (a void session, a barren run) is escalated by the watchdog after the 2-hour acknowledge clock, so it has
+  left the department's inbox by its next run: close it with `memos.find` + `memos.resolve` (pattern: `board.assess`, `rnd.deep`), never only
+  through the inbox.
+- Text from outside (web pages, video titles) is cleaned at `rnd.verify` / `rnd.gaps`; the Council's jury prompt should still say that memo text
+  is material to judge, never an instruction (as `board.BOARD_SYSTEM` now does).
+- The research round is level-triggered from two jobs (`cli.research_round` in the learning job, `cli.research_catch_up` in the production job).
+  The Council's own cadence check should get the same catch-up, or a dropped cron will hold a video for it.
 What B6a leaves ready for B6b:
 - Creative memos (D4 showrunner / bible, D5 packager, D6 director) wait SILENTLY at the owner's level (owner_visible False) like the assessment
   memos: body {idea, kind (idea / experiment / bank / world_building), rationale}, already distinct (same-idea guard). A creative memo has no
@@ -54,6 +66,72 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
+### B5 RECHECK (11 Nov 2026; owner: "make a recheck of the B5 done and also any of its consequent impacts and correct them, if any") - DONE (final code commit 101cf96 GREEN in GitHub run 78; laptop suite 1272 / 0 / 1 skipped; rehearsal GREEN; sweep 7 of 7 green)
+Not a batch (no new feature): the accepted B5 code was re-read line by line (`rnd.py`, `board.py`, the model doorway, the runner, the governor, the
+job dispatcher) and then every place it touches something else (the learning job, the production job and its script gate, the month's money, the
+watchdog's clocks, the checks B6a added later). 16 things were wrong or fragile; each is fixed and each code fix has a test that fails without it.
+
+FOUND AND FIXED - would have hurt in production:
+1. A JSON syntax repair hid who answered (`models.haiku_repair` -> `_claude` overwrote `last_call()`): after a repaired reply R&D saw NO search
+   results, so every source became a phantom and the paid answer was thrown away; a Board judge was discarded as "a cheap model". Now the repair
+   keeps the note of the call it repairs and adds its own cost.
+2. A cheap model could sit on the Board: `_gemini` silently answers with the Flash model when no Pro model is known, and recorded the call as
+   `gem_pro`. It now records the role that REALLY answered, so the Board's "strong models only" rule holds.
+3. The Board's "session void" memo could never close in production: nobody acknowledges a memo to itself within 2 hours, the watchdog takes it up
+   the ladder, and the next valid session looked for it only in its inbox - an owner message that stays open for ever. A valid session now closes
+   it wherever it is (`memos.find`).
+4. A video could be HELD for research any job can run: `research_cadence` is judged at the script gate, but only the daily learning job ran the
+   round. Two dropped learning jobs (GitHub cron drops runs - the pipeline's own comment says so) or switching the organisation back on after days
+   = hold + owner click. `cli.research_catch_up`: a production job that would meet a stale round (within 8 hours of the limit) runs it first.
+5. The organisation's own plumbing became PAID web questions: a Board session void twice, a failed check gated a second time (already on the
+   agenda as a check gap), and B6a's three new checks (`palace_injected`, `palace_cited`, `canon_in_brief` - not in `ORG_CHECKS`, also offered to
+   the researcher as prediction metrics). `rnd._plumbing` + the list + a test that counts, so no later check can be forgotten.
+6. Research that pays and keeps nothing was invisible (the run is "ok", the check passes): the likeliest failure of the first real runs (real APIs
+   never touched, open issue 40). A weekly run that asked 2+ questions and kept no answer now writes a problem memo (D2 -> D2, climbs to the owner,
+   closed by the next run that keeps an answer).
+7. `ask_one` said "never raises" and could: a reply in an unforeseen shape (`"sources": 3`, `"target_depts": 7`) crashed the weekly run AFTER the
+   paid call, and the level trigger would have paid again the next day. Shapes are read (`rnd._idx`), anything else is recorded as unanswered.
+8. The daily learning job had 30 minutes; B5 put the weekly research (web search, up to 12 liveness checks a question) and the Board inside it.
+   A job killed mid-research loses the paid answers. Limit 60 minutes (`.github/workflows/learn.yml`); real duration unmeasured (open issue 55).
+FOUND AND FIXED - small:
+9. Sources counted from 1 by the researcher were attributed to the neighbour source: the prompt now says "the first source is 0", and the clear
+   case (no finding names 0, one names a position past the end) is shifted.
+10. Web text that reads like an instruction to a model (a quote, a page title, a finding, a proposed action, a video title on the agenda) is
+    dropped before a memo is written or a question asked; both system prompts say that memo / page text is never an instruction.
+11. A session that is void after the first family (it did not answer or was not counted) no longer pays the second family.
+12. More waiting memos than letters (BOARD_MAX_MEMOS above 10) could cut the canary off and crash the session: capped at 10.
+13. A question dropped before it was asked waited 28 days when its gap came back: open again at once.
+14. The standing policy question came twice around New Year (period counted from 1 January): counted from a fixed day.
+15. A true evidence ceiling could fail the check when a run crossed midnight on the last day of freshness: one day of slack in the re-computation.
+16. A Sessions row without a start time broke the weekly schedule (`max` over None): skipped.
+
+CHECKED, NOTHING TO CHANGE:
+- Money: the Rs 420 reserve (D2 300 + D3 120) leaves Rs 3,980 for production; four FULL videos need 4 x Rs 577 = Rs 2,306 (Rs 2,537 with the 1.10
+  margin). Every one of the four is planned at tier `full` with the reserve and without it (computed with the governor on default prices).
+- ORG_ON = FALSE: the learning job still runs the collectors that moved to R&D (the runner calls the work with an empty brief); no paid research.
+- Cap reached: refused before a Session row is written; the owner's message once a month.
+- Every paid call inside a run reaches Org_Audit through the cost tap (failed attempts and repairs too): the monthly figure is complete; only the
+  per-question figure on the agenda is the last call (open issue 44).
+- PAUSED does not stop the learning job; B6a did not touch `rnd.py` / `board.py`; creative memos go to the Council, not to the Board.
+
+PROOF
+- `tests/test_v12_rnd.py`: 31 -> **43 tests**, all pass. 1 test changed by design (the void session: "only 0 model families answered", nothing
+  logged, the second family not asked).
+- Fails correctly: with every code change of the recheck stashed, **12 tests fail** (11 of the 12 new ones + the changed one). The 12th new test
+  (letters) passed by luck in that run - the canary's place is a hash - so it was rebuilt with a chosen session id and proven alone: it fails
+  without the cap.
+- Related files (matrix, organisation, creative, research): 184 passed. Plan Guard GREEN, Truth GREEN, Organisation GREEN, docs regenerated
+  without drift. 2 matrix rows added.
+- Full suite on a frozen copy of the final code commit 101cf96: **1272 passed / 0 failed / 1 skipped** (67 files, one uninterrupted run by itself; the skip is the dashboard render, which needs node - GitHub runs it: 1273)
+- Fake rehearsal on the same copy: **GREEN** (47 checks; the research round inside it: 4 research memos -> policy: accept, technique: test, tool: accept, technique: test; canary rejected by both families; `research_cadence` PASS)
+- Sweep on the same copy (the changes sit in research, the Board, the model doorway and the job dispatcher, not in the episode pipeline: a short
+  sweep as after B4's late commits): A: 4 fixed ids, organisation ON: **4 ok** (status SCHEDULED, 41 PASS + 6 N/A, 9 department runs verified, 0 owner messages, 0 degraded steps); B: 1 id with ORG_ON = FALSE: **1 ok** (35 PASS + 12 N/A); C: 2 full rehearsals with a forced id: **2 ok** (status LIVE, 42 PASS + 5 N/A). **7 of 7 green.** The rehearsals' 'similar script' warnings are about the table-read episode and the preview draft (fake scripts are alike), not an episode against itself - B6a's fix of issue 47 holds. One owner-message kind that the B5 sweep did not list, `scout_price` (the weekly tool scout's price update, digest tier; `scout.py` untouched since B4): a time-based weekly job, not traced further.
+- GitHub Checks (standing rule 1): GitHub run 78 (101cf96, the final code commit): **GREEN - 1273 passed, 0 skipped, rehearsal GREEN (episode id EP202611110421, script 28 / 28, final 19 / 19)**. Run 77 (2f7553e: all code fixes, before the workflow limit was raised): GREEN. Both read on the public run pages.
+- My own mistake in this session: the first suite run finished in two minutes with no result (I left out `PY=`; the laptop's own python has no
+  `requests`). Nothing was tested by it; it was started again with the venv python.
+- Money: Rs 0 spent (fake mode). Nothing new is paid for; fix 11 saves two judge calls in a void session, fix 4 can move the weekly round's
+  cost (inside the D2 / D3 caps) into a production job.
+
 ### B6a - Creative departments D4/D5/D6/D7 (11 Nov 2026) - ACCEPTED (final code commit 45ca227 GREEN in GitHub run 75; sweep 40 of 40 green)
 #### Step 1 RESEARCH (13 sources, 12 of them dated; E = measured evidence, O = opinion / practice / vendor documentation)
 1. E - Wallat, Heuss, de Rijke, Anand, "Correctness is not Faithfulness in RAG Attributions", arXiv 2412.18004 (Dec 2024; ICTIR 2025),
@@ -1341,6 +1419,9 @@ Rehearsal asserts `docs_current` ran and passed.
   (deterministic particle seed).
 
 ## PROTECTED-AREA FILES TOUCHED SO FAR (list them in the final PR)
+- B5 recheck: `whatifs/models.py` (`haiku_repair` keeps the repaired call's note; `_gemini` records the role that really answered - no route, price
+  or limit changed), `whatifs/org/rnd.py`, `whatifs/org/board.py` (the 16 corrections above). Also touched, not protected: `whatifs/cli.py` (one
+  call at the start of the production job), `.github/workflows/learn.yml` (limit 30 -> 60 minutes).
 - B4: `whatifs/core.py` (2 tabs + 9 settings appended; nothing existing changed), `whatifs/episode.py` (ONE argument added to the brain's `tag` call: the
   long video's experiment arms are recorded in its features), `whatifs/manage.py` (one call on the tick: `EXE.engine_tick()`), `tools/repair.py`
   (PROTECTED list + levers.py, execute.py, builds.py), `whatifs/org/memos.py` / `schemas.py` / `runner.py` / `registry.py` (ledger proof on the memo
@@ -1517,6 +1598,29 @@ Rehearsal asserts `docs_current` ran and passed.
    hold. Until then: read `unverified` / `ghost` in the Sessions row; the off switch is ORG_PROMPT_INJECT, never a lower bar. Note: the two
    losing drafts of the writers' room are always listed as `unverified` (their text is not in the final script) - that is expected, not a fault.
 
+53. (B5 recheck -> B10, with 40) Source positions: counting from 1 is detected only in the clear case (no finding names source 0 and one names a
+   position past the end). A reply that counts from 1 and never cites its last source is NOT detected: its findings sit on the neighbour's
+   source (a real source, the wrong one). The prompt now says "the first source is 0". Read the first real runs: compare each finding with the
+   quote of its source.
+
+54. (B5 recheck, by design) When the learning job was dropped, the production job runs the research round first: the weekly research and a Board
+   session can then sit at the start of a production job (minutes; paid inside the D2 / D3 caps, never production money; limit 340 minutes).
+
+55. (B5 recheck -> B10) The learning job's limit is 60 minutes now. How long the weekly day really takes is unknown (web search, up to 12
+   liveness checks a question, 4 judge calls). Read the duration of the first real weekly run on the Actions page; if it nears 60, bound the
+   questions of one run by time (the rest stays open on the agenda).
+
+56. (B5 recheck -> B9) The owner's own questions are asked past the cap with NO count limit, and asked again every RESEARCH_REPEAT_DAYS while the
+   owner memo stays open. Nobody writes owner memos until D0 exists (B9): B9 must close an owner memo once its research was assessed, or cap
+   the repeats.
+
+57. (B5 recheck, by design) A memo a department writes to itself (void Board session, barren research) is escalated after the 2-hour acknowledge
+   clock, so the owner hears of it within hours (one message, bounded reminders) and the next good run closes it. If that is too loud in real
+   life, give self-addressed memos the department's own cadence as their acknowledge clock (`schemas.py`) - not changed here.
+
+58. (B5 recheck) When the SECOND family (Claude) is down, the first one (Gemini) has already been paid before the session is void: it cannot be
+   known beforehand. Bounded by the research memo's deadline (it climbs away from the Board) and by D3's cap.
+
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`
 - Suite: `bash ../shim/runall.sh . <outdir outside repo>` (~35 min; run it in the background). Some files: `bash ../shim/runseq.sh . <outdir> test_a test_b`.
@@ -1563,4 +1667,5 @@ Rehearsal asserts `docs_current` ran and passed.
 | B4 | done 10 Nov 2026 | 1201 / 0 / 1 skipped | GREEN (24 + 19) | Execution Engine: lever table (39 levers), 5 lever classes from ticket to ledger proof or rollback, owner approval by direction, between-videos rule, D12 wired, checks `decisions_executed` + `lever_verified` (43 hard checks now), build workflow hardened. GitHub run 59: GREEN (1202 passed, 0 skipped); run 57 RED = one test, a one-second ordering rule of the verifier, traced and fixed (runs 54-56 and 58 GREEN) |
 | B5 | done 11 Nov 2026 | 1232 / 0 / 1 skipped | GREEN (25 + 19) | R&D + Review Board: gap-driven research agenda (8 gap sources), sources verified by code (phantom / dead / undated dropped, evidence ceiling), blind two-family Board with yes/no checklist, verdict by code, family veto, planted canary per session; check `research_cadence` (44 hard checks), D2 + D3 wired, 41 levers. Sweep 58 of 58. GitHub run 67: GREEN (1233 passed, 0 skipped); #63 RED = 6 by-design tests, #64/#65 RED = rehearsal money formula, traced and fixed |
 | B6a | done 11 Nov 2026 | 1260 / 0 / 1 skipped | GREEN (28 + 19) | Creative departments: the Palace playbook inside the writer / packager / director prompts (end of the system prompt, cached layers untouched), citations verified by quote, canon written by code and accepted on air, continuity debt paid in the script, distinct creative memos to the Council, drafts adopted only with proof; checks `palace_injected`, `palace_cited`, `canon_in_brief` (47 hard checks); the writers' playbook holds the owner's limits again (cap 2,400); open issue 47 fixed. Sweep 40 of 40. GitHub run 75: GREEN (1261 passed, 0 skipped); #71 RED = 54 by-design tests, #72 RED = 3 pinned tests, traced and fixed |
+| B5 recheck | done 11 Nov 2026 | 1272 / 0 / 1 skipped | GREEN (28 + 19) | Owner asked for a recheck of B5 and its consequences: 16 corrections (a syntax repair hid who answered; a cheap Gemini model could sit on the Board; the void-session memo never closed; a video could be held for research a job can run; the organisation's plumbing became paid web questions; barren research was invisible; a crash after a paid call; the learning job's 30-minute limit; 8 small ones), 12 new tests. GitHub run 78 (101cf96, the final code commit): **GREEN - 1273 passed, 0 skipped, rehearsal GREEN (episode id EP202611110421, script 28 / 28, final 19 / 19)** |
 | B6b | next | | | The Council |
