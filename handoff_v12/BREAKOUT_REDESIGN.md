@@ -4,7 +4,7 @@ rejected the first live video (item 16). This page OVERRIDES `01` section 1 ("co
 the department list in `01` section 2 wherever they differ. The budget is unchanged: Rs 5,000 a month for everything.
 Status: DESIGN (research + designs + decisions). Built so far: V1a (11 Nov 2026). The batches in section 6 build the rest, one per owner
 "continue". SECTION 10 (the owner's item 19, same day) amends sections 4-7. SECTION 11 (his item 20, same night) amends them again -
-Shorts first, the motion ladder, the human kit, the release sheet, a new order of batches: READ SECTION 11 FIRST. Built so far: V1a, V1b, V2a, V2c-a (the Short as a product; its end note is the last entry of 11.10).
+Shorts first, the motion ladder, the human kit, the release sheet, a new order of batches: READ SECTION 11 FIRST. Built so far: V1a, V1b, V2a, V2c-a (the Short as a product), V2c-b1 (the ladder); their end notes are the last entries of 11.10.
 
 ## 0. THE HONEST FRAME
 - Nobody can make a channel a sure shot. Of 137,355 new long-video channels, 30.8% got even ONE video past 10,000 views in their first ten (R1).
@@ -607,3 +607,24 @@ channels reach 10 million views; any measured reach effect of Meta's AI label; a
   exact: text on screen correlates with views at -0.08 (weak, not positive). New H15 (promise text), H16 (the loop), H17 (which Short
   format holds best). The estimate of a Short is about Rs 290 at today's clip price against the Rs 150 planned here: V2d's model by value
   must close that gap before twelve a month fit.
+- ORDER UPDATE (end of V2c-b1, 12 Nov 2026): V2c-b was split at its start. V2c-b1 built THE LADDER (the cadence of 3 a week and 12 a month,
+  every topic starts as a Short with the promote rule and the refusal, the winner's follow-up with its clock); V2c-b2 builds the
+  platforms and the opening (one native upload per platform, the Shorts rows of the release sheet, the long video's opening made from the
+  kept footage of its Short, the cut-down reels). Then V2d, V3 (go live), V2b, V1c, V4, V5, B6b-B10: twelve batches remain.
+  WHAT THE BUILD CHANGED IN THIS SECTION, with reasons (the record is in `BUILD_STATE.md`): (1) "After 48-72 hours the brain reads the
+  Short's real numbers" cannot be done as written: YouTube's Analytics data is 48 to 72 hours late (its own Data Model page, Sep 2026)
+  and only public views are real-time. The ladder runs TWO CLOCKS: public views at the 24-hour and 48-hour mark find a winner; the true
+  numbers of a Short's first three processed days - there when it is about five days old - feed the promote rule. So a topic's long video
+  follows its Short by one to two weeks, not by the "5-7 days" of 4.2. (2) "The best 4 topics of the month" is a rolling rule: every time
+  a long video is about to start, the best Short of the last 30 days whose topic has no long video is promoted - the same four a month
+  without a six-week wait and without a first month empty of long videos. (3) The promote rule ranks on four measures with equal votes
+  (engaged views, share watched, subscribers and shares per engaged view - the two rates by their Wilson lower bound, thin evidence
+  last); "viewed against swiped away" is not in the API at all, and engaged views divided by views is not ranked on (a replay of a
+  looping Short is a view). (4) A winner gets ONE follow-up, ordered by code and told to the owner with a "Stop it" button (before: his
+  approval, then two). (5) Until V2c-b2 a promoted topic's long video still opens with its own pictures; the Short's footage is kept.
+  NEW EVIDENCE (read by the build session): R39 E - YouTube Analytics API Data Model, "Data freshness and latency", Sep 2026: "a latency of
+  48 to 72 hours". R40 E - OverseerOS, 29 Oct 2026 (4,340 short videos): day 7 is 80.7% of day 30 at the median; 21.3% at least double
+  afterwards. R41 E - Metricool, 29 Jul 2026: "A video usually hits its peak in the first three days". R42 O - E. Miller, 2009: rank a
+  share from a small sample by the Wilson lower bound. NOT FOUND: any study that pairs one topic as a Short and as a long video; any
+  measured effect of a follow-up Short. New H18 (a Short's rank in its pool predicts its long video's views against the channel's
+  median) and H19 (a follow-up inside 48 hours gets more views than the channel's median Short).

@@ -316,6 +316,63 @@ E. (ORIGINAL, CHOSEN) THE ROLLING LADDER ON TWO CLOCKS: YouTube gives two kinds 
   its three days exist, then weekly; one `videos.list` call per 50 videos a tick). The promote run is D10's own run without a model call.
   The kept footage is Drive space (about 20 MB a Short, deleted when a topic leaves the window unused). A follow-up Short costs what a
   Short costs (about Rs 290 at today's clip price, issue 83) and is paid only from the breakout fund or the reserve.
+- CORRECTED BY THE BUILD (found by running, not by reading): (1) the promote rule ranks on a Short's numbers TO DATE (its first three
+  processed days are recorded beside them, for the pairs that will test H11 and H18): ranking on the first three days alone would have shut
+  out exactly the late bloomers research 4 names. A reading still counts only from three processed days on. (2) The Wilson bound is not
+  enough by itself: 2 subscribers of 20 viewers (a lower bound of 2.8%) out-ranked 30 of 2,000 (1.1%) on both rates. Thin evidence is now
+  also relative - under a tenth of the pool's best engaged views (`ladder.THIN_OF_BEST`) - and ranked after every other Short. (3) Under
+  the ladder the long video's end tease cannot come from the scout's pitches (no scout runs): it names what can truthfully come next - the
+  ladder's runner-up, else the best premise on the bench, which is the next Short's topic. (4) A promotion is not tied to a slot: a
+  pre-production draft is not tied to one either, so "the promoted Short that waits" is one row, used up by the production whose plan is saved.
+#### Step 4 BUILD (what changed)
+- NEW `whatifs/ladder.py` (D10; on `tools/repair.py` PROTECTED) and NEW tab `Ladder`: `on`, `keep`, `enter`, `read`, `wilson`, `measures`,
+  `rank`, `candidates`, `waiting`, `promote` (D10's run `promote`, with its performance memo and the owner's line), `why_not`, `override`,
+  `gate`, `refuse`, `pitch`, `claim`, `use`, `used_by`, `runner_ups`, `topic_report`, `skip`, `order_followup`, `open_orders`,
+  `order_tried`, `order_done`, `watch`.
+- `whatifs/brain.py`: `_short_days` (one call a Short, by processed day; the offline YouTube is as late as the real one), `first_days`,
+  `_short_metrics` (totals to date, the days covered, the first three days), `reading_complete`, `ingest_shorts` (daily until the reading
+  covers three processed days, then weekly to day 28); `_short_ids` ages a Short the owner approved later from the day it went public.
+- `whatifs/shorts2.py`: `cadence`, `gap_h`, `order_due`, `due`, `_budget_ok` (a Short of the cadence is core production), `pick_topic`
+  (the order first, with what the winner said), the follow-up block of the writers' prompt, `run` (the order before the cadence; the
+  footage kept; the Short enters the ladder; the order closed or its failed try recorded), `hook_for` seeded by the Short's id. Gone:
+  `target_today`, the daily count, "the first Short of a day is core, the rest are extras".
+- `whatifs/breakout.py`: `short_winner`; `monitor` judges a standalone Short at the 24-hour and the 48-hour mark against the same mark and
+  orders the follow-up; a long video's breakout keeps its card (under the ladder its follow-up Shorts carry the topic, no sequel premise
+  is put on the bench); "Stop it" closes an order. `whatifs/shortslab.py`: the hourly link card `breakouts` is gone.
+- The long video: `whatifs/room.py` `scout_and_pick` (the promoted topic is the forced first pitch, kept word for word by code, never
+  dropped by the judges' bar; the tease from the ladder's runner-ups and the bench), `whatifs/episode.py` (`produce` asks the gate before
+  its first paid call and a retry keeps its topic; the draw carries `ladder`; `ladder.use` once the plan is saved; an adopted draft brings
+  its row), `whatifs/preview.py` (no draft without the gate; the draft's draw carries its row), `whatifs/manage.py` (`_produce_slot` asks
+  the gate and sends the one refusal message; the tick runs `ladder.watch` and no longer the hourly link card; `v12v2cb_upgrade` at both
+  setup sites), `whatifs/contract.py` (`p_topic_ladder`, check `topic_ladder` at the script gate: 59 hard checks - 35 script, 19 final, 5 short).
+- `whatifs/core.py`: 9 new cells (`SHORTS_PER_WEEK`, `SHORTS_PER_MONTH`, `LADDER_ON`, `LADDER_WINDOW_DAYS`, `LADDER_READ_DAYS`,
+  `LADDER_MIN_ENGAGED`, `FOLLOWUP_WITHIN_H`, `SHORTS_WINNER_MIN_VIEWS`, `REPLAN_MAX_SHORTS_PER_WEEK`), 3 cells gone (`SHORTS_PER_DAY`,
+  `SHORTS_KLING_EVERY`, `REPLAN_MAX_SHORTS_PER_DAY`), tab `Ladder`, 2 columns on `Breakout_Queue` (due, done), 2 on `Analytics` (days,
+  first_json). `whatifs/org/levers.py`, `registry.py`: 6 levers in, 1 out (68 levers): D14 gets the cadence, the double-down line and its
+  clock, D10 the window and the floor of the promote rule; D10 wraps `ladder.py` and has the entry `promote`; the check's owner is D10.
+  `whatifs/org/rnd.py`: SHOW_CHECKS 48. `whatifs/truth.py`: retired rule `daily_shorts_cadence` (15 rules) with its baseline for the
+  one-time move. `whatifs/replan.py`: one rung (one more Short a week, at the Shorts Studio's own estimate). `whatifs/caretaker.py`,
+  `whatifs/dash.py`, `mission_control/mission_control.html` (the phone dashboard's stepper is "Shorts per week", 1 to 5),
+  `whatifs/notify.py` (the ladder's answers), `whatifs/publish.py` (an archive is uploaded as an archive), `tools/gen_docs.py`.
+- `tools/rehearsal.py`: the rehearsal WALKS THE LADDER - a long video is refused first (nothing spent), two Shorts are made a week ago and
+  posted, their numbers are read, the long video is about the promoted one, the other stays a candidate and feeds the pre-production
+  draft; it takes a fixed id (`run(ep_id=...)`), so one id reproduces the Shorts too. `tools/sweep.py`: `climb` gives every long-video id
+  its own Short first.
+- Seeds: `v2cb.numbers_arrive_late`, `v2cb.every_topic_starts_as_a_short`, `v2cb.rank_small_samples_by_the_lower_bound`,
+  `v2cb.winner_gets_one_follow_up`, `v2cb.three_a_week`, `v2cb.late_bloomers` (158 founding items; the owner's cadence item lost the word
+  "daily" - his decision "4 long videos a month" is unchanged).
+- Docs: 6 matrix rows (one old row reworded), the ledger (the cadence, the money lines, the V2c-b1 paragraph), `CONCEPT.md`, 2 dated
+  platform facts, the builders' recipe "The ladder" in `CLAUDE.md`, `SYSTEM.md` regenerated.
+#### Step 5 ENFORCE (rule -> executing code -> fails when broken)
+| Rule | Executed by | Fails when broken |
+|---|---|---|
+| No long video without a promoted Short or an override on record | `ladder.gate` in `manage._produce_slot`, `preview.run`, `episode.produce` | refused before any money (tests); `topic_ladder` at the script gate holds what slipped past |
+| The long video is about the promoted Short's topic, word for word | `room.scout_and_pick` (forced pitch, premise set by code), `ladder.use` | `topic_ladder` (the draw's row is this video's and carries the same premise) |
+| The promote rule is code on real numbers; thin evidence last | `ladder.rank`, `wilson`, `read`, `promote` (D10's run) | the rule's tests; the run's receipts (`python -m whatifs.org.runner` RED when the call site is gone) |
+| A reading counts from three processed days on | `brain.ingest_shorts`, `reading_complete`, `ladder.read` | tests (a fragment is not a candidate; it is read again the next day) |
+| 3 a week, 12 a month, 48 hours apart; the daily plan may not come back | `shorts2.cadence` / `due`; truth rule `daily_shorts_cadence` | tests; Plan Guard, check `docs_current` |
+| A winner gets one follow-up with a clock; overdue = a memo | `breakout.monitor`, `ladder.order_followup`, `shorts2.order_due`, `ladder.watch` | tests (the order, its due time, the memo, its closing by the follow-up, the lapse) |
+| A Short's footage is kept for its long video | `ladder.keep` in `shorts2.run` | the production test (the archive holds every paid clip, every start picture, the script, the plan); the rehearsal |
 
 ### V2c-a - THE SHORT, THE PRODUCT (11 Nov 2026) - ACCEPTED (final code commit 3b34cc3 GREEN in GitHub Checks run 99: 1325 passed; sweep 58 of 58 ids)
 The owner: "continue" (a new session for this batch). V2c was SPLIT AT THE START (rule 6): V2c-a is the short video as a product a viewer meets;
@@ -2526,6 +2583,40 @@ Rehearsal asserts `docs_current` ran and passed.
 95. (V2c-a, the Palace note) `python -m whatifs.org.palace` reports limits that do not fit a playbook cap as "D1 3, D2 1, D12 1, C 5"
    (open issue 6 recorded D1 3, D4 4, D12 1, Council 6 before the writers got their own cap). None of this batch's items is addressed to
    those departments; D2's one limit was not traced here. The Librarian's batch (B8) owns it.
+96. (V2c-b1 -> V2c-b2) A promoted topic's long video still opens with its OWN pictures: the Short's footage is kept (tab `Ladder`,
+   column footage) and not used yet. The footage is vertical (9:16); how it opens a 16:9 video - a crop that travels down the frame, or a
+   framed layout - is V2c-b2's design decision and can only be judged on real clips (the pilot).
+97. (V2c-b1 -> V3, TELL THE OWNER AT THE PILOT) A Short's true numbers exist when it is about five days old (YouTube is 48 to 72 hours
+   late), and the first three Shorts wait for his Approve first. So the first long video of the new code needs a Short that has been
+   public for five days - or his override ("Make it anyway" on the refusal message). The pilot's one long video will need the override;
+   the pilot guide must say so before he is surprised by a long video that "waits".
+98. (V2c-b1 -> V3 / B10) Real APIs never touched (no keys here, by rule): the day-by-day Analytics report with one video as a filter
+   (`brain._short_days`: views, engagedViews, averageViewPercentage, shares, subscribersGained), the Pacific-day start (8 hours; 7 in
+   summer), a day without activity returning no row (the coverage then follows the documented latency, `brain.LATENCY_DAYS`). First-run
+   verification must read tab `Analytics` (days, first_json, data_note) and tab `Ladder` after the first week of Shorts.
+99. (V2c-b1 -> B8) Starting values without a study behind them: the four measures with equal votes, the floor of thin evidence (30
+   engaged views; a tenth of the pool's best), the 3-times line at the 24-hour and 48-hour mark, the 10,000-view line without history,
+   the 48-hour clock, the 30-day window. All are levers or constants in one place; H11, H18 and H19 need the learning loop to score them -
+   the pairs are on record (a `Ladder` row with its numbers and the episode it earned).
+100. (V2c-b1) A Short whose upload is held ("uploads not confirmed open") or that the owner never approves stays MADE on the ladder: it
+   has no numbers and can never be promoted. Harmless, but nothing reminds him beyond the review message itself.
+101. (V2c-b1 -> V2b / V4) Under the ladder a long video's end tease names the ladder's runner-up or the next bench topic. The promise
+   breaks when a newer Short wins the next promotion (the rule decides by numbers, never by the tease). The cell NEXT_PREMISE is still
+   written at scheduling and is no longer taken up while a promoted Short exists. V2b (F1's own ending) should decide what an ending
+   promises. D1 "owns the split" in the redesign; the cadence levers went to D14 (the task's wording) and D1 is not wired until V4.
+102. (V2c-b1, FOUND, not this batch's) `whatifs/dash.py` SETTINGS_MAP: the entries "localizations" and "affiliate_block" sit inside a
+   comment on the same line since the standalone Shorts track was added, so those two dashboard switches answer "not allowed". And the
+   sample data inside `mission_control/mission_control.html` still shows an old monthly cost. Fix with the next dashboard change.
+103. (V2c-b1 -> V4) A LONG video's 48-hour breakout still asks the owner to approve two follow-up Shorts (the old card); only a Short's
+   own breakout is decided by code. One rule for both belongs to V4.
+104. (V2c-b1, tests) The older tests run with LADDER_ON FALSE (`tests/conftest.py`), as they run in forced F2: the ladder is covered by
+   `tests/test_v12_ladder.py` (two whole productions among them), the rehearsal (it walks the ladder) and the sweep (`climb`), not by
+   the whole suite.
+105. (V2c-b1, FOUND AND FIXED; the family is wider) A Short's hook came from an unseeded random draw, so a sweep id did not reproduce its
+   Short and one test of V2c-a failed about once in eleven runs. The draw is seeded by the Short's id now. NOT checked here: whether
+   the long video's sampler draws (`brain.choose` from the writers' room) are seeded by the episode id.
+106. CLOSED / narrowed in V2c-b1: issue 84 (the cadence: closed); issue 85 stays for V2c-b2 (a Short is still uploaded by
+   `specials._publish`; nothing is read back); the redesign's O5 and O8 (how many Shorts) stay watched by D1 (V4).
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`

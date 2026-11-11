@@ -326,6 +326,11 @@ def test_a_long_video_that_slipped_past_the_gate_is_held_at_the_script_gate_befo
     assert r.get("held") and "contract:topic_ladder" in r["problems"] and not paid, r               # written, judged, held - no picture and no clip was paid
     e = core.store().rows("Episodes")[-1]; assert e["status"] == "HOLD_QC" and "topic_ladder" in e["notes"]
 
+def test_one_short_id_always_draws_the_same_hook(setting):
+    """A Short's hook comes from the learning core's sampler. Seeded by the Short's id it is the same on every run (a fault can be reproduced) and still varies from Short to Short."""
+    got = {i: {SH.hook_for("S1", [], f"SH20261216{i:04d}")["level"] for _ in range(6)} for i in range(40)}
+    assert all(len(v) == 1 for v in got.values()) and len({next(iter(v)) for v in got.values()}) >= 2, got
+
 # ------------------------------------------------------------------ 8. wiring, levers, the one-time move
 def test_the_daily_cells_are_gone_everywhere_and_the_new_levers_are_registered(setting):
     from whatifs.org import registry as REG, levers as LV
