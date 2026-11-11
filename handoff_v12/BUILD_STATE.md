@@ -175,7 +175,7 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
-### V2c-a - THE SHORT, THE PRODUCT (11 Nov 2026) - IN PROGRESS (step 1 recorded; not accepted)
+### V2c-a - THE SHORT, THE PRODUCT (11 Nov 2026) - IN PROGRESS (steps 1-3 recorded; not accepted)
 The owner: "continue" (a new session for this batch). V2c was SPLIT AT THE START (rule 6): V2c-a is the short video as a product a viewer meets;
 V2c-b is the ladder (Shorts first, the cadence) and the platforms. It answers his item 20 ("reels ... made for breakout virality ... dont make
 excuses"), closes open issues 13 (standalone Shorts outside the department contract) and 62 (Shorts outside the viewer's seat).
@@ -224,6 +224,53 @@ AN EXPERIMENT BEFORE THE DESIGN (the V2a lesson; fake mode, 7.6 seconds): today'
 plate and ENDS on a 2.5 s plate "The full trial is on the channel" (an ask, and the end of any loop); 1 of its 6 clips is made by the hero model
 and only in every third Short - the other five are "subtle living motion"; four courtroom voices speak ("Objection!", "Exhibit A"); every beat
 carries a name plate. A cut-down courtroom, not a product.
+#### Step 2 CREATIVITY (scores 1-5: what a viewer gains / enforceable / cost / reliability / owner effort)
+A. New words in the old prompt (the mini-trial pipeline stays): 2 / 1 / 5 / 3 / 5 = 16 - the title plate, the name plates, the end plate and
+   "one hero clip in six" stay; nothing is measured.
+B. The Short is the first 30-40 seconds of the long video (the redesign's 4.2 as first written): 3 / 3 / 4 / 3 / 5 = 18 - a by-product, which
+   item 20 forbids; it needs the long script first and ends on an open question instead of a complete story.
+C. A model scores every finished Short for "virality" and code publishes above a line: 2 / 2 / 3 / 2 / 5 = 14 - taste as a gate (R9: weak).
+D. (ORIGINAL, CHOSEN) THE SHORT AS DATA, PLANNED BY CODE, CLOSED BY CODE: a Short format is a row (its beats, its ending, its length, its
+   camera); three scripts are written in it and judged blind; code - not a model - plans the pictures: the first frame is the moving
+   impossible picture, every second is an animated clip, each clip starts on the last frame of the one before, and THE LOOP IS CLOSED BY CODE
+   (the first clip played backwards is the last clip, so the last frame IS the first frame). D13 measures script, real voice and plan before
+   any picture is paid; the writers' one fix carries what code cannot repair; then four checks hold: 5 / 5 / 3 / 3 / 5 = 21.
+#### Step 3 DESIGN MEMO
+- SHORT FORMATS AS DATA (`formats.SHORTS`, beside the long formats): S1 "The second it changed" (beats: picture, consequence, consequence,
+  question; ends on a question; 20-35 s; a cut per beat), S2 "What would you do?" (power, personal, turn, choice; ends on the viewer's choice;
+  20-45 s; a cut per beat), S3 "The whole thing in 30 seconds" (idea, why, scale, return; 20-35 s; ONE continuous shot). Shares 40 / 40 / 20 over
+  the last ten Shorts (levers of D14, as the long shares are levers of D1). One guide voice speaking to "you"; nobody on screen.
+- THE WRITERS (D14 `write`, the playbook inside the writer's prompt): the format's brief, the hook archetype the learning core picked (a
+  trial-only archetype is not offered), the openers of the last ten Shorts to stay away from; SHORTS_VARIANTS scripts; a script the seat finds
+  clean goes to the blind jury (the room's own cross-family jury); the winner gets ONE fix with every measured problem named.
+- THE VOICE (D7 `short_voice`): the long video's voice job, so the timeline is real and the breathing rule applies.
+- THE PLAN (code, no model): shots cover every second from 0.0; each is a 5-second hero clip; a beat's first clip starts on its own picture
+  (S1, S2) or on the last frame of the clip before (inside a beat; everywhere in S3); the last seconds are the FIRST clip played backwards.
+  No title plate, no name plate, no end plate, no stock. Captions word by word above the platform buttons; the promise in at most 6 words at
+  the top from the first frame (a switch: research 6 gives it no credit for views).
+- THE VIEWER'S SEAT FOR A SHORT (D13 `short_seat`, NEW `whatifs/org/shortseat.py`; measure -> repair by code -> the one fix -> check -> lever):
+  `short_open` - the plan starts at 0.0 on an animated made picture, the first spoken sentence has at most 12 words and ENDS inside 3.0 s of
+  the real voice, the promise text is on screen inside the first second; `short_plain` - at most one number heard, no expert word (the
+  layman measure); `short_shape` - the real length inside the format's band, the last line hands back to the first (a content word of the
+  opening returns), no ask and no greeting, every second planned as animation, no stock, the loop shot last, captions above the buttons;
+  `short_kept` (owner D14) - the beats are the format's, the ending is the format's, it does not sound like a trial, and it is not like the
+  last ten (script likeness, the first three words, and the pair format + hook differs from the last two). A fifth check `short_contract`
+  is the organisation's: the four department runs of this Short finished under the department contract.
+- A HELD SHORT IS NOT MADE: no picture is paid, the owner is not asked (a Short is cheap and he has two minutes a day), the owning department
+  gets the problem memo, the topic is tried once more and then left.
+- CHANGED FROM THE REDESIGN, with reasons: (1) "no two in ten with the same format and structure" is measured as likeness of script and
+  opener plus rotation of format and hook - three formats times four hooks are twelve structures, which cannot fill ten slots under any
+  shares without taking the hook choice away from the learning core. (2) "12 words inside 3 seconds": at a normal pace 3 seconds hold about
+  7 words; the 3 seconds are the rule that binds and they are judged on the real voice. (3) The promise text is a switch, not a belief.
+  (4) The loop is for the viewer who stayed; nothing claims it counts toward the Partner Program (research 1).
+- NOT IN V2c-a, on purpose: the cadence (3 a week) and Shorts first (V2c-b), the uploads per platform (V2c-b), the hero model by value and
+  the measured `moving_share` on the finished file (V2d). The Short is PLANNED as animated in every second here; V2d measures it.
+- MONEY, said before the build: a 30-second Short is 5-6 hero clips at today's price (USD 0.42 each) = about Rs 210-250, plus up to 4
+  pictures, the voice and the writing (three scripts, the jury, one fix: about Rs 40). About Rs 250-300 a Short - twice the redesign's
+  Rs 150. Twelve would not fit beside four long videos until V2d chooses the hero model by value. The budget gate counts every clip, so
+  today's code would simply make fewer. Nothing is spent before the pilot.
+- HYPOTHESES added: H15 the promise text on screen raises "stayed to watch"; H16 a Short that loops by picture is watched past 100% more
+  often; H17 which Short format holds best (the shares follow).
 
 ### V2a - FORMATS AS DATA AND THE THREE-TIER CONTRACT (11 Nov 2026) - ACCEPTED (final code commit 75c55ea GREEN in GitHub Checks run 91: 1303 passed; sweep 28 of 28, both formats)
 The owner (mobile only): "Continue". V2 was SPLIT AT THE START (rule 6): V2a is the foundation - an episode has a format, and a format decides
