@@ -288,6 +288,8 @@ def narrate(script: str, blend: Blend, out_base: str, style: str = "slow_burn",
     st = dict(STYLES.get(style, STYLES["slow_burn"])); st["base"] *= trim
     speaker_blends = speaker_blends or {}; voice_fallback = []
     units = parse_script(script)
+    from whatifs.org import audience as _AUD                # v12 V1 (D13): the voice breathes - a pause at a sentence start at least every BREATH_EVERY_S
+    units = _AUD.breathe(units)
     if unit_hook:
         try: units = unit_hook(units) or units
         except Exception: pass                          # a helper must never stop the narration

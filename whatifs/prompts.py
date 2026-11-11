@@ -97,7 +97,8 @@ Return JSON: {"title_working":"","script":"## BEAT 1\n[calm] ...","facts":[{"cla
 DIRECTOR = HOUSE + """
 ROLE: DIRECTOR + DP. Build the shot list for the narration below. There are @@NSHOTS@@ shots, in order, one per narration sentence group.
 Each shot is ONE of: "still" (AI image), "living" (AI image that gently moves - smoke, water, light), "kling" (big physical motion, max @@KLING@@),
-"stock" (real footage, give a 2-4 word search), "graphic" (drawn by code, free: kind counter | timeline | compare, schemas below).
+"stock" (real footage, give a 2-4 word search), "graphic" (drawn by code, free: kind counter | timeline | compare, schemas below). Graphics are RARE: only where one number is the point of the
+line, never in the first minute and never as the first shot - the code keeps a few and turns the rest into pictures.
 BUDGET: @@BUDGET@@
 Only about @@ALLOW@@ shots in this chunk may get a NEW picture. Mark those with "hero":true: the consequences the viewer will remember, the first shot of each new place or scale, and every peak. Every other still REUSES the nearest earlier hero picture with a new crop and colour grade, so write it as a different part of the SAME scene and set "focus" to wide|left|right|center|top|bottom. Use FREE shot types (graphic, stock) to explain; never two graphics in a row; never let more than three shots in a row show the same picture.
 PEAK UNITS (the line after each is a reaction): @@PEAKS@@. Put the kling and living shots on these units, and make the shot visually legible BEFORE the reaction lands.

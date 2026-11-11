@@ -42,6 +42,8 @@ DEPTS = {
             "wraps": ("whatifs/governor.py", "whatifs/costguard.py"), "levers": ("BUDGET_GUARD_PCT", "BREAKOUT_FUND_CAP_INR", "AUTO_FIX_PAID_INR"), "takes": ()},
     "D12": {"mission": "reliability, the watchdog, model ladders, deprecations, incidents, build requests", "cadence": "tick", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/steward.py", "whatifs/builds.py", "tools/repair.py"), "levers": ("PREFLIGHT_ON",), "takes": ("build_request",)},
+    "D13": {"mission": "the viewer's seat: what a first-time viewer meets is measured and repaired before any picture is paid - the promise first, a voice that breathes, few numbers", "cadence": "episode", "cap_inr": None, "inject": "brief",
+            "wraps": ("whatifs/org/audience.py",), "levers": ("NUMBERS_PER_MIN_MAX", "GRAPHICS_MAX_LONG", "GRAPHICS_FREE_SEC", "BREATH_EVERY_S"), "takes": ()},
     "C":   {"mission": "bring research, creative, owner, performance and problem memos together, decide, issue tickets", "cadence": "weekly", "cap_inr": 150, "inject": "brief",
             "wraps": (), "levers": ("ORG_SLA_HOURS",), "takes": ("assessment_memo", "creative_memo")},
     "L":   {"mission": "keep the Palace consolidated, free of duplicates and contradictions, versioned and bounded", "cadence": "weekly", "cap_inr": 40, "inject": "brief",
@@ -74,14 +76,15 @@ ENTRY = {
     "D2":  (("whatifs/cli.py", "daily"), ("whatifs/cli.py", "weekly")),             # v12 B5: the learning job runs R&D first (daily always, weekly when due)
     "D3":  (("whatifs/cli.py", "assess"),),                                          # v12 B5: then the Review Board, whenever a research memo waits
     "D12": (("whatifs/org/execute.py", "operate"),),
+    "D13": (("whatifs/episode.py", "seat"),),                                        # v12 V1: the viewer's seat, right before the Animation Director
 }
 # Departments with no run of their own yet -> the build batch that wires them. A RATCHET: this list may only shrink (tests/test_v12_org.py).
 PENDING = {"D0": "B9", "D1": "B9", "D11": "B9", "C": "B6", "L": "B8"}
 
 # The runs an episode must have finished before each gate (the gate itself is the run in flight).
 EPISODE_RUNS = {
-    "script": (("D4", "write"), ("D7", "voice"), ("D5", "package"), ("D6", "plan")),
-    "final":  (("D4", "write"), ("D7", "voice"), ("D5", "package"), ("D6", "plan"), ("D8", "script_gate"), ("D6", "assets"), ("D6", "render")),
+    "script": (("D4", "write"), ("D7", "voice"), ("D5", "package"), ("D6", "plan"), ("D13", "seat")),
+    "final":  (("D4", "write"), ("D7", "voice"), ("D5", "package"), ("D6", "plan"), ("D13", "seat"), ("D8", "script_gate"), ("D6", "assets"), ("D6", "render")),
 }
 GATE_RUNS = {"script": ("D8", "script_gate"), "final": ("D8", "final_gate")}
 
@@ -94,6 +97,7 @@ CHECK_OWNER = {
     "visual_change": "D6", "living_characters": "D6", "aliveness": "D6", "promise_paid": "D6", "thumbnails": "D5", "titles": "D5", "chapters": "D5",
     "short_covers": "D5", "shorts": "D9", "self_review": "D8", "breakout_bar": "D1", "dept_contract": "D8", "takeaways_written": "D8",
     "decisions_executed": "C", "lever_verified": "D12", "research_cadence": "D2", "palace_injected": "D4", "palace_cited": "D4", "canon_in_brief": "D4",
+    "viewer_numbers": "D13", "viewer_breath": "D13", "viewer_promise": "D13",
 }
 
 def runnable(dept):

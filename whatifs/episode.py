@@ -567,12 +567,14 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
         d, plan, shots = S_["d"], S_["plan"], S_["shots"]
         vo = _vo_of(S_, out); tl = json.load(open(vo.timeline_path)); units = tl["units"]
         S_ = plan_check(S_, units); shots = S_["shots"]          # v8.9: the last free check before any picture money is spent
+        from whatifs.org import audience as AUD                 # v12 V1 (D13): the viewer's seat - free repairs BEFORE the Animation Director places its scenes
+        shots = ORG.work("D13", "seat", ep, lambda b: AUD.shape(S_["shots"], units, S_.get("pkg") or {}), measure=AUD.m_shape); S_["shots"] = shots
         from whatifs import anim as ANIM                        # v10.2 (K152): exactly ANIM_SHOTS animated scenes, at the retention cliffs
         ANIM.apply(shots, units, plan); S_["shots"] = shots
         if not any(s_.get("promise") for s_ in shots):                 # v11.1 fix: the Animation Director re-places the scenes and can drop the promise
             shots = ROOM.promise_shot(shots, units, S_.get("pkg") or {}); S_["shots"] = shots       # flag (v8.6) - re-aim the opening scene again
         from whatifs import contract as CON                     # v10.2 (K151): every script-stage promise checked BEFORE any picture is paid for
-        g = ORG.work("D8", "script_gate", ep, lambda b: CON.run("script", {"d": d, "room": S_["room"], "hook_rec": S_.get("hook_rec"), "ep": ep}, ep),
+        g = ORG.work("D8", "script_gate", ep, lambda b: CON.run("script", {"d": d, "room": S_["room"], "hook_rec": S_.get("hook_rec"), "ep": ep, "shots": shots, "units": units, "pkg": S_.get("pkg") or {}}, ep),
                      measure=WR.m_gate, lesson=WR.gate_lessons, emit=WR.gate_memos(ep, "script"), settle=WR.gate_settle(ep, "script"))
         if not g["ok"]:
             st.update("Episodes", "episode_id", ep, {"status": "HOLD_QC", "notes": CK.set_attempts("contract hold (script): " + ", ".join(f for f, _ in g["failed"]), 1), "updated": iso()})
