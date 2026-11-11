@@ -22,8 +22,11 @@ def U(opening): return [{"start": 0.0, "end": 9.0, "text": opening}, {"start": 4
 
 # ------------------------------------------------------------------ the measure
 def test_expert_words_are_counted_the_way_a_layman_hears_them():
-    assert hw(PLAIN) == [] and hw(JARGON) == ["integration", "reduction"]
+    assert hw(PLAIN) == [] and hw(JARGON) == []          # a LIMIT, stated: the study's sentence uses engineering words ("integration", "reduction") that code cannot recognise as expert
     assert hw("The photon leaves the mirror. Its wavelength stretches and the refraction bends it.") == ["photon", "wavelength", "refraction"]
+    assert hw("Electromagnetism, thermodynamics and a spectrometer walk into your kitchen.") == ["electromagnetism", "thermodynamics", "spectrometer"]     # built like expert words
+    assert hw("You take a photograph of the thermometer and the television with your telephone.") == []             # built like them, but everyday
+    assert hw("You observe the coastline for one precious session.") == []                                           # the four ordinary words that held a test episode in the V1b sweep
     assert hw("You walk to the bathroom mirror and your reflection is impossibly, beautifully late.") == []          # everyday long words and their plain endings
     assert hw("Then Inspector Vale and Doctor Grimmsworth arrive from Massachusetts.") == []                         # names are not vocabulary
     assert hw("## BEAT 2 - THE ELECTROMAGNETISM\n[tension] DIRECTOR: You hear it.") == []                             # headings and speaker labels are never spoken

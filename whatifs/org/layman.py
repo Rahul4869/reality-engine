@@ -6,12 +6,28 @@ from whatifs.org import audience as AUD
 
 READERS = (("probe_gemini", "gemini"), ("probe_claude", "claude"))     # one cheap reader per family: the right answer is known to code, so this is no taste call
 LETTERS = "ABCD"; NONE = "E"                                           # four titles in the line-up; E = "I cannot tell from these words alone"
-MIN_LEN = 7                                                            # shorter words are everyday words unless they are on the expert list
-# short expert words (the length rule cannot see them); long ones are caught by not being on the everyday list
-EXPERT = frozenset("""quark boson photon proton neutron qubit quanta quantum flux joule kelvin lumen torque vector scalar tensor entropy enzyme genome neuron
-synapse axon cortex lipid mitosis meiosis isomer ligand cation anion baryon hadron lepton muon gluon meson pulsar quasar nebula parsec albedo apogee fission
-plasmid codon allele zygote taxon phylum cosine vertex modulo radian inertia osmosis solute solvent redox molar moiety ohm farad hertz pascal newton dyne
-diode anode cathode helix vortex torus isotope ion ions qubits lumens joules hertz photons nuclei nucleus genomes""".split())
+MIN_LEN = 7                                                            # the affix rule looks only at words this long; the expert list has no such limit
+# A word counts only when code can RECOGNISE it as expert vocabulary: it is on this list, or it is built with the affixes of scientific coinage
+# (_AFFIX) and is not an everyday word. A long word that is merely unknown to us is NOT counted: the first version counted those and held 1 of 20
+# test episodes for "observe, session, coastline, precious" (V1b sweep) - a gate that holds a video must recognise what is wrong.
+EXPERT = frozenset("""quark boson photon proton neutron electron positron neutrino qubit quanta quantum flux joule kelvin lumen torque vector scalar tensor
+entropy enthalpy inertia momentum velocity acceleration trajectory wavelength amplitude frequency oscillation resonance harmonic refraction diffraction
+polarization superposition entanglement decoherence wavefunction eigenvalue eigenstate relativity spacetime singularity redshift blueshift doppler parallax
+luminosity albedo apogee perigee perihelion aphelion eccentricity precession fission isotope ion ionize ionization cation anion baryon hadron lepton muon
+gluon meson fermion pulsar quasar nebula parsec exoplanet magnetar supernova accretion viscosity turbulence laminar buoyancy convection conduction
+sublimation capacitance inductance impedance conductance resistivity conductivity permittivity permeability superconductor semiconductor transistor
+capacitor resistor inductor diode anode cathode photovoltaic piezoelectric adiabatic isothermal centripetal centrifugal tangential kinetic coulomb ohm
+farad hertz pascal newton dyne tesla candela radian molecule molecular covalent ionic valence isomer ligand polymer monomer catalyst catalysis oxidation
+redox solute solvent molar moiety reagent substrate titration stoichiometry alkali hydroxide chloride sulfate nitrate peroxide hydrocarbon benzene
+exothermic endothermic electrolyte enzyme genome genomic neuron neuronal synapse synaptic axon dendrite cortex cortical lipid mitosis meiosis plasmid
+codon allele zygote taxon phylum chromosome mitochondria mitochondrion mitochondrial ribosome cytoplasm organelle nucleotide peptide dopamine serotonin
+cortisol melatonin oxytocin neurotransmitter hippocampus amygdala cerebellum thalamus hypothalamus prefrontal vestibular proprioception circadian
+homeostasis chlorophyll epigenetic phenotype genotype pathogen antigen cytokine lymphocyte keratin osmosis diffusion tectonic subduction seismic coriolis
+geostationary cosine vertex modulo logarithm logarithmic asymptote derivative polynomial coefficient hypotenuse topology manifold fractal stochastic
+heuristic helix vortex torus nucleus nuclei""".split())
+_AFFIX = re.compile(r"^(?:electro|magneto|photo|thermo|hydro|geo|bio|neuro|cardio|micro|nano|pico|femto|giga|tera|quasi|hetero|cyto|ha?emo|chromo|spectro|astro|"
+                    r"cosmo|quant|relativ|gravitat|aero|radio|ultra|infra|pseudo|proto)[a-z]{3,}$|(?:ology|ologist|ological|ometer|ometry|osis|osphere|scopic|"
+                    r"scopy|genesis|genic|plasm|morphic|morphism|kinesis|tron|lysis|lytic|synthesis|voltaic|zoic|phyll|cyte|itis)s?$")
 # titles of our kind that are NOT ours: the line-up a first-time reader picks from (none shares a word with a planted opening - a test proves it)
 DECOYS = ("What If Your Shadow Arrived One Second Late?", "What If Every Door Opened Into Yesterday?", "What If Rain Fell Upward For One Hour?",
           "What If Your Echo Answered Before You Spoke?", "What If Stairs Got Longer Each Time You Climbed?", "What If Clocks Ran Backward After Midnight?",
@@ -40,7 +56,7 @@ def on():
     return AUD.on() and S("LAYMAN_ON", bool)
 
 def everyday():
-    """The everyday words of 7+ letters (whatifs/org/seed/everyday.txt), read once."""
+    """The everyday words of 7+ letters (whatifs/org/seed/everyday.txt), read once: a word on it is never counted, whatever it is built from."""
     global _EVERY
     if _EVERY is None:
         p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "seed", "everyday.txt")
@@ -79,16 +95,16 @@ def _bases(w):
     return out
 
 def unfamiliar(word):
-    """Would a layman NOT know this word? Yes when it is on the expert list, or has 7+ letters and neither it nor what is left without its plain endings
-    is an everyday word. A floor, not a dictionary: it misses some expert words and the budget allows for the ordinary ones it flags."""
+    """Is this a word code can RECOGNISE as expert vocabulary a layman would not know? Yes when it (or what is left without its plain endings) is on
+    the expert list, or when it has 7+ letters, is built with an affix of scientific coinage ("electro-", "-ometer", "-osis" ...) and is not an
+    everyday word. A floor, not a dictionary: an expert word it cannot recognise is missed; an ordinary word is never counted for being long."""
     w = str(word or "").lower().strip("'")
     if w.endswith("'s"): w = w[:-2]
     c = set()
     for b in _bases(w): c |= _bases(b)
     if c & EXPERT: return True
-    if len(w) < MIN_LEN: return False
-    ev = everyday()
-    return not any(b in ev or len(b) < MIN_LEN for b in c)
+    if len(w) < MIN_LEN or c & everyday(): return False
+    return bool(_AFFIX.search(w))
 
 def _key(w): return min(_bases(w), key=lambda b: (len(b), b))
 

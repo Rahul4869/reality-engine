@@ -89,9 +89,10 @@ pipeline run uses the new code. Nothing restarts.
   REAL voice timeline. A new viewer rule = a pure measure in `audience.py` + a repair by code where code can repair + a contract check; its numbers are
   levers of D13. A heading, a source's year and a place in the story ("hour 1") are not numbers (`audience.count_numbers`). The redesign that
   ordered this is `handoff_v12/BREAKOUT_REDESIGN.md`.
-- **The layman test** (`whatifs/org/layman.py`, department D13): the expert words a layman would not know are COUNTED by code (`layman.unfamiliar`: the
-  expert list, or 7+ letters and not in `whatifs/org/seed/everyday.txt`); the budget is judged by check `viewer_plain` and carried by the writers' one fix.
-  When a real script is held for an ordinary word, add the word to `everyday.txt` - never loosen the rule and never add an expert word. The promise
+- **The layman test** (`whatifs/org/layman.py`, department D13): the expert words a layman would not know are COUNTED by code - only words
+  code can RECOGNISE as expert (`layman.unfamiliar`: the list `layman.EXPERT`, or a scientific affix; a word in `whatifs/org/seed/everyday.txt` is never
+  counted). Never count a word for being long or unknown to us: that held 1 of 20 test episodes for four ordinary words. The budget is judged by check
+  `viewer_plain` and carried by the writers' one fix. A missed expert word goes into `layman.EXPERT`, a wrongly counted ordinary one into `everyday.txt`. The promise
   line-up (`layman.probe`, D13's `probe` run inside the plan stage) is an identification with an answer code knows, so its readers are cheap by design;
   its verdict is computed by code and a session whose readers name a title for the planted opening is void (check `viewer_probe` then steps aside and
   D13 reports itself). Never use a readability formula or a model's "clarity score" as a gate: they agree poorly with people.

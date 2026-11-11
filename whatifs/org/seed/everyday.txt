@@ -1,5 +1,7 @@
-# Everyday English words of 7 or more letters (base forms) that a layman knows. Used by whatifs/org/layman.py: a word of 7+ letters that is NOT
-# here (after plain endings are removed) counts as unfamiliar. Add a word when a real script is held for an ordinary word; never add an expert word.
+# Everyday English words of 7 or more letters (base forms) that a layman knows. Used by whatifs/org/layman.py: a word on this list is NEVER counted
+# as an expert word, even when it is built like one ("photograph", "thermometer", "biology"). A word that is not here is counted only when the code
+# recognises it as expert vocabulary (the expert list or a scientific affix). Add a word when a real script is held for an ordinary word; never add
+# an expert word.
 ability absence absolute accident account achieve activity addition address advance advantage adventure afternoon against airplane airport alcohol
 already although altogether ambulance american ancient anniversary announce another anybody anymore anything anywhere apartment apology apologize
 apparent appearance application appoint appreciate approach approve arrange arrival article assistant atmosphere attempt attention attitude attract
@@ -99,3 +101,8 @@ swallow breathe breathing shivering trembling whistle whisper giggle chuckle mum
 freeze frozen melting boiling burning floating falling flying spinning rolling sliding slipping dripping pouring soaking drowning sinking
 stronger weaker heavier lighter thicker thinner shorter taller longer wider narrower deeper louder quieter brighter darker warmer colder hotter
 faster slower earlier later closer nearer smaller larger bigger tinier
+# third block (11 Nov 2026): everyday words that are built like expert words (the affix rule must not count them)
+biology biological psychology mythology geography geometry biography microwave microscope microscopic photocopy thermos thermostat thermometer
+speedometer radioactive astronomy astronomer astrology aeroplane aerobic protocol cosmopolitan diagnosis analysis paralysis asteroid gigabyte
+centimeter centimetre millimeter millimetre observe session coastline precious
+psychological technological mythological
