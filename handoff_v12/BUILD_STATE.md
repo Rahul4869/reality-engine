@@ -85,6 +85,13 @@ ORDER OF BATCHES: live after three. The evidence R20-R38 is not in the Palace ye
 This turn was the DESIGN step for the whole programme (research, designs, decisions, records). Nothing of the redesign is built yet.
 
 ## NEXT
+**V2c WAS SPLIT AT ITS START (token discipline rule 6, 11 Nov 2026)** along the cut named below: **V2c-a THE SHORT, THE PRODUCT** (department D14,
+Short formats as data, `shorts2.py` rebuilt, the viewer's seat for a Short with its four checks) is IN PROGRESS - its record is the first entry
+under DONE. **V2c-b THE LADDER AND THE PLATFORMS** follows it: Shorts first (every topic starts as a Short, the numbers of 48-72 hours pick the 4
+long videos a month, the long video opens with the Short's footage, a winner at 3 times the median gets a follow-up inside 48 hours), the cadence
+cells (3 a week, 12 a month; SHORTS_PER_DAY and its readers in `caretaker.py`, `dash.py`, `replan.py`, `levers.py` retire together), one native
+upload per platform, and the Shorts rows of the release sheet. Why split: each half needs the full loop with deliberate breaks, and the ladder
+reaches into the long video's room and production (`episode.py`, `premise.py`, `brain.py`) while the product does not.
 **V2c - THE SHORT: the short video as its own product** (`handoff_v12/BREAKOUT_REDESIGN.md` SECTION 11: 11.4, 11.7, 11.8, 11.9; hypotheses H10, H11).
 Full seven-step MANDATORY BATCH LOOP. Effort: High. The order of the batches was CHANGED on 11 Nov by the owner's item 20 (redesign 11.10): the
 Short comes first because every week before 1 Feb 2027 counts. It is large: split it at the start if it does not fit one session (rule 6) - a
@@ -168,6 +175,56 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
+### V2c-a - THE SHORT, THE PRODUCT (11 Nov 2026) - IN PROGRESS (step 1 recorded; not accepted)
+The owner: "continue" (a new session for this batch). V2c was SPLIT AT THE START (rule 6): V2c-a is the short video as a product a viewer meets;
+V2c-b is the ladder (Shorts first, the cadence) and the platforms. It answers his item 20 ("reels ... made for breakout virality ... dont make
+excuses"), closes open issues 13 (standalone Shorts outside the department contract) and 62 (Shorts outside the viewer's seat).
+A fault of this session, said plainly: the first start skipped part of the binding reading order (`01`, `03`, sections 0-9 of the redesign, the
+V1a / V1b / V2a records and the open issues). The owner stopped it; the batch was started again from the first step. Nothing had been built.
+
+#### Step 1 RESEARCH (E = measured, O = practice / vendor; "read" = the page was read by the build session; the redesign's R20-R38 are the base)
+1. E read - YouTube Help 12220281 "Understand your YouTube content performance" (states the view change of 24 Aug 2026): engaged views = "How
+   many times viewers stayed to watch past the initial seconds, not including any loops"; "Stayed to watch" = "The percentage of times viewers
+   stayed to watch past the initial seconds of a Short". -> the number the Partner Program counts is decided in the initial seconds, once per
+   viewer. A LOOP ADDS NO ENGAGED VIEW: the loop is built for the viewer who stays, never claimed as a way to the 10 million.
+2. E read - TechCrunch, 26 Mar 2025 (https://techcrunch.com/2025/03/26/youtube-is-changing-how-youtube-shorts-views-are-counted): public views
+   count every start and replay; earnings and Partner Program eligibility "will continue to be based on engaged views".
+3. E read - P. Galloway's own thread, 14 Apr 2023 (https://threadreaderapp.com/thread/1646898356419981315.html; 5,400 Shorts of 33 channels,
+   3.3 billion views): "shorts with under 60% VVSA rarely performed well"; likes, shares, comments: "We didn't observe any strong relationships";
+   "Longer shorts in the study performed much better on average"; "This is still early research". CORRECTION of the redesign's R23: the sample
+   is 33 channels, and the same study found LONGER Shorts did better.
+4. E read - OverseerOS, 29 Oct 2026 (https://www.overseeros.com/blog/best-youtube-shorts-length; 16,537 Shorts, 1,137 channels, views at 7-30
+   days): median views 36,970 at 16-30 s, 22,947 at 31-45 s, 20,938 at 46-60 s, 21,913 at 1-15 s; inside one channel 16-30 s beat 31-60 s on
+   105 of 183 channels (57.4%); "should not be interpreted as the causal effect of adding or removing seconds". -> 3 and 4 DISAGREE on length:
+   the length of a Short is a lever per format with a starting band, never a belief.
+5. E read - Socialinsider, 24 Jun 2026, updated 6 Nov 2026 (https://socialinsider.io/blog/instagram-reels-statistics/; 9,771,822 Reels of
+   brand accounts): the skip rate - plays swiped away inside the first 3 seconds - is 65.5% for small accounts and 60.5% for large ones; reach
+   is best at 30-60 s (5.60%) and 3.50% beyond 120 s. Brands, not creators. Confirms R23's Instagram line.
+6. E read - arXiv 2611.13002, 8 Nov 2026, full text (https://arxiv.org/html/2611.13002; 92,654 Shorts, 345 creators, published Jan 2025 -
+   Apr 2026): correlation with views: share of frames with text r = -0.08, hashtags -0.06, length -0.05, has text -0.05; "generally weak";
+   hooks and first seconds were NOT analysed. R24 confirmed and made exact: text on screen does not buy views (if anything slightly fewer).
+   -> the promise words on screen are kept small and short-lived, behind a switch the learning loop can test - not sold as a booster.
+7. E read - YouTube Help 1311392, monetisation policies (the rule renamed on 15 Jul 2025; applies to Shorts): not monetisable - "Image
+   slideshows, templated storylines, or scrolling text with minimal or no narrative, commentary, or educational value", "AI-generated content
+   made with generic or unoriginal templates giving the impression of mass production"; monetisable - "Same intro and outro for your videos, but
+   the bulk of your content is different", a series where "each video has a distinct storyline, focus, or concept". -> three Short formats, a
+   variety check over the last ten, every second animated (no slideshow), no fixed end plate.
+8. E read - TechCrunch, 25 Aug 2023, YouTube's Shorts lead (https://techcrunch.com/2023/08/25/youtube-demystifies-the-shorts-algorithm-views-and-answers-other-creator-questions/):
+   a seed audience, then "a lot more traffic or it may taper off"; viewers "are swiping through content not knowing what comes next"; for Shorts
+   "most thumbnails are never seen"; time of day is "not a factor to optimize for"; deleting and re-posting is treated as spam. -> the first
+   frame IS the packaging of a Short; the Shorts thumbnail (V2c-b) is a small thing.
+Reported by a search run only (not read): vendor benchmarks for "stayed to watch" disagree (60% to 80%) and none is official; the platform
+buttons cover roughly the lowest 15-25% and the right 15% of the frame (vendors; no official figure) - the captions' 38% lift (existing cell) is
+on the safe side.
+NOT FOUND, so nothing is claimed on it: a measured effect of a loop, of the number of words in a spoken hook, or of promise text on screen on
+the share who stay; a reliable figure for how many watch short video without sound (the 85% and 92% figures are old and about other formats).
+The hook budget (12 words, 3 seconds), the promise text and the loop are STARTING VALUES from the redesign and the owner's own judgment; each is
+a lever or a switch, and hypothesis H15 below asks the viewers.
+AN EXPERIMENT BEFORE THE DESIGN (the V2a lesson; fake mode, 7.6 seconds): today's standalone Short is 30.5 s; it OPENS on a 0.5 s still title
+plate and ENDS on a 2.5 s plate "The full trial is on the channel" (an ask, and the end of any loop); 1 of its 6 clips is made by the hero model
+and only in every third Short - the other five are "subtle living motion"; four courtroom voices speak ("Objection!", "Exhibit A"); every beat
+carries a name plate. A cut-down courtroom, not a product.
+
 ### V2a - FORMATS AS DATA AND THE THREE-TIER CONTRACT (11 Nov 2026) - ACCEPTED (final code commit 75c55ea GREEN in GitHub Checks run 91: 1303 passed; sweep 28 of 28, both formats)
 The owner (mobile only): "Continue". V2 was SPLIT AT THE START (rule 6): V2a is the foundation - an episode has a format, and a format decides
 which of the show's devices are required. It answers "the whole video looked a lot gimmicky" (item 16), "IF YOU HAVE TO REDESIGN CHANNEL, DO IT"
