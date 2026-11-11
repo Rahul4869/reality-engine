@@ -76,6 +76,50 @@ move and format arm F3 "The walk" (V2), the Breakout Observatory and the aspect 
 not in the Palace yet: the batch that builds each part adds its founding items (they need real code references).
 This turn was the DESIGN step for the whole programme (research, designs, decisions, records). Nothing of the redesign is built yet.
 
+## IN PROGRESS - V1b THE LAYMAN TEST (started 11 Nov 2026 on the owner's "Continue"; steps 1-3 done, build running)
+SPLIT AT THE START (rule 6): V1b as planned had four parts. This batch builds THE LAYMAN TEST only (it guards the script before any picture is
+paid and it answers the owner's first complaint, "I was myself unable to understand the topic of video"). The judged floor on the finished
+video and his verdict tab become V1c; his input tab and the scoreboard go to V4 (D1 answers inputs from V4 anyway). Order decided at the end.
+#### Step 1 RESEARCH (E = measured, O = practice; "read" = read by the build session)
+1. E read - Ohio State news, 12 Feb 2020 (Shulman and others, Journal of Language and Social Psychology; 650 adults; three topics):
+   https://news.osu.edu/the-use-of-jargon-kills-peoples-interest-in-science-politics/ - expert words made readers less interested and feel
+   less able; a definition on hover "didn't matter at all". Its own example pair is now a test.
+2. E - Cruz and Lombrozo, Nature Human Behaviour 2025 (9 experiments, 6,698 people): expert words can FEEL satisfying while understood less.
+3. E - van Zeeland and Schmitt, Applied Linguistics 2012/2013; Nation 2006; replication in Language Teaching (Cambridge): a listener needs to
+   know about 95% of the running words for adequate and 98% for good comprehension. 2% of 150 words a minute = 3 unknown words a minute.
+4. E - arXiv 2604.04583 (Apr 2026; 1,239 TED talks): explanatory CLARITY predicts likes and views and beats readability formulas.
+5. E - arXiv 2508.19221 (Aug 2025): 6 of 8 readability formulas agree with human judgments below r = 0.3; the best language model 0.56.
+   arXiv 2502.11150 (2025): formulas, systems and models are all poor predictors of reading ease. -> no formula and no model's "clarity
+   score" is a gate here.
+6. O - the five-second test of usability work (Center Centre / UIE; UXPA Journal, Nov 2016): show a page for five seconds, ask what it is for.
+   -> the same question for the first 30 seconds of a video, with an answer code can check.
+7. E - listening research (review, through search): sentence length has a weak, inconsistent effect on listening. -> logged, never a gate.
+Not found: a study of expert words against YouTube retention. The budgets are starting values and levers.
+#### Step 2 CREATIVITY (scores 1-5: what a viewer gains / enforceable / cost / reliability / owner effort)
+A. A readability formula as a gate: 1 / 5 / 5 / 1 / 5 = 17 (research 5: formulas do not agree with people).
+B. A model plays "a 12-year-old" and scores clarity 1-10: 3 / 2 / 4 / 2 / 5 = 16 (taste as a gate; research 5 and R9).
+C. A glossary rule - every expert word defined at first use: 2 / 4 / 5 / 3 / 5 = 19 (research 1: a definition does not rescue it).
+D. (ORIGINAL, CHOSEN) A BUDGET + A LINE-UP: code counts the expert words a layman would not know (per minute, in the opening, piled into one
+   sentence) and the writers' one fix carries the problem; then THE PROMISE LINE-UP - two cheap readers of two model families see only the
+   first 30 seconds and must pick this video's title out of a line-up of our kind of titles, or say "cannot tell"; a second, foreign opening
+   is planted in the same call and must get "cannot tell", else the session is void: 4 / 5 / 5 / 4 / 5 = 23.
+#### Step 3 DESIGN MEMO
+- NEW `whatifs/org/layman.py` (D13). MEASURE: an unfamiliar word = a word on the expert list, or a word of 7+ letters that is not on the
+  everyday list (`whatifs/org/seed/everyday.txt`) after plain endings are removed; names, numbers and the words of the title (the viewer chose
+  them) are not counted. Budgets: distinct unfamiliar words per minute (2), in the first 30 seconds (1), in one sentence (2). Sentence length
+  is reported, not judged.
+- REPAIR: the problem, with the words named, joins the writers' ONE mandatory fix (`enforce.fix_all`), as the numbers do.
+- THE LINE-UP is D13's second run (`probe`), inside the plan stage right after the package, so its result is saved with the plan and never
+  paid twice. The readers are cheap on purpose: the right answer is known to code, so this is no taste call, and a weak reader is the harder
+  test. The correct letter and the planted opening sit at places chosen by the session id. Verdict by code: void when fewer than two families
+  answered or a reader named a title for the planted opening; else PASS only when every reader picked our title.
+- CHECKS at the script gate (before picture money): `viewer_plain`, `viewer_probe` (owner D13; promises about the show). A void line-up never
+  holds a video: the check steps aside and D13 reports its own machinery (closed by the next valid session).
+- CHANGED FROM THE REDESIGN'S 10.6, with reasons: the planted canary is a FOREIGN opening, not "the same opening flooded with expert words" -
+  a model reads expert words easily, so that canary would never fail and every session would be void; the vocabulary is judged by code
+  instead. "None in the first 30 seconds" starts as "at most 1": the everyday list is ours and imperfect, and a false hold costs an owner tap.
+- Money: two small calls a video (about Rs 0.2), counted in the paid-call counter and the estimate.
+
 ## NEXT
 **V1b - THE VIEWER'S SEAT, part 2: the judged floor, the owner's desk tabs, the scoreboard** (`handoff_v12/BREAKOUT_REDESIGN.md` 4.3, 4.8, 4.9).
 Full seven-step MANDATORY BATCH LOOP. Effort: High. V1 was SPLIT at its start (token discipline rule 6, as B6 was): V1a - the MEASURED seat - is
