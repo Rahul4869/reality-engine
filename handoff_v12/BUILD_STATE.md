@@ -175,7 +175,21 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
-### V2c-a - THE SHORT, THE PRODUCT (11 Nov 2026) - IN PROGRESS (steps 1-3 recorded; not accepted)
+### V2c-a - THE SHORT, THE PRODUCT (11 Nov 2026) - IN PROGRESS (steps 1-5 recorded below, steps 6-7 done but NOT yet recorded; NOT ACCEPTED)
+**WHERE THE SESSION STOPPED (usage limit, 11 Nov 2026) - resume here, do not redo the build:**
+- DONE and pushed: research, designs, memo, build, enforce, 22 + 6 tests green, eleven deliberate breaks (all caught now; the open loop was
+  caught only after the loop measure was fixed), rehearsal GREEN in F1 + S1, F2 + S2, F1 + S3, takeaway `v2c.takeaway` (152 founding items).
+- NOT DONE: (1) the full laptop suite on a frozen copy - it was started on commit 486eb41 (worktree `<scratchpad>/wt`, results in
+  `<scratchpad>/suite`) and its result was never read: run it again; (2) the sweep on a frozen copy (20 ids org on + 4 org off + 4
+  rehearsals, and `--mode short` 20 ids); (3) GitHub Checks GREEN on the final commit; (4) steps 6-7, the open issues 81-93, the protected
+  list, the batch log and NEXT = V2c-b in this file (the text is drafted in the session's scratchpad, `finish_state.py`; the facts are in the
+  commit messages of 9b61ba2 and 486eb41 and in the notes folder file `V2c_handover_note.md`).
+- GITHUB CHECKS ARE RED FOR A CAUSE OUTSIDE THE CODE: runs 92, 93, 94 and 95 (two of them before this batch, one a text-only commit) each
+  hung about an hour in the step that installs ffmpeg and failed with apt's exit code 100 before any test ran (step 4, line 107 on the public
+  run page). Other public repositories report the same on 11 Nov 2026: GitHub's regional Ubuntu mirror did not answer. FIXED AT OUR END in
+  `.github/workflows/checks.yml` (the step is bounded at 30 minutes, falls back to archive.ubuntu.com and names its cause on the run page) -
+  a WORKFLOW change that could not be run here: read the first run after this commit. The 12 other workflows still have the unbounded line
+  (a production job would hang the same way): open issue for the batch that touches the workflows, before go-live.
 The owner: "continue" (a new session for this batch). V2c was SPLIT AT THE START (rule 6): V2c-a is the short video as a product a viewer meets;
 V2c-b is the ladder (Shorts first, the cadence) and the platforms. It answers his item 20 ("reels ... made for breakout virality ... dont make
 excuses"), closes open issues 13 (standalone Shorts outside the department contract) and 62 (Shorts outside the viewer's seat).
