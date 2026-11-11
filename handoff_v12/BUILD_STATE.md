@@ -76,6 +76,44 @@ move and format arm F3 "The walk" (V2), the Breakout Observatory and the aspect 
 not in the Palace yet: the batch that builds each part adds its founding items (they need real code references).
 This turn was the DESIGN step for the whole programme (research, designs, decisions, records). Nothing of the redesign is built yet.
 
+## IN PROGRESS - V2a (started 11 Nov 2026 on the owner's "Continue"; step 1 done)
+#### Step 1 RESEARCH (E = measured, O = practice / vendor; "read" = read by the build session, else reported by a search run)
+1. E read - Tubefilter, 13 Jul 2026: https://www.tubefilter.com/2026/07/13/youtube-inauthentic-content-monetization-policy-update/ - YouTube's
+   clarified examples of "generic or repetitive content": content that "looks like it's made with a template" or "may feel repetitive to viewers
+   after watching several videos in a row from the same channel"; "videos where characters are put in the same situation over and over again with
+   the same outcome"; storylines that follow a fixed formula. The whole channel is demonetised. -> a weekly trial with the same characters, the
+   same room and the same shape of verdict is the textbook case. Formats and their devices must VARY, by data, not by hope.
+2. O read - THE FIRST HAND-MADE ROUND OF THE BREAKOUT OBSERVATORY (redesign 10.5): three channels, one per ring, from a vendor's public pages
+   (outlierkit.com/channel/..., read 11 Nov 2026; the vendor's baseline is the median of the 6-14 newest uploads and its line is 1.5 times, not
+   our 5; ages differ; TITLES ONLY - nobody watched a video). 12 hits, 14 siblings:
+   - Far ring, "What If Levels" (3,100 subscribers, 41 videos, data of 8 Nov 2026): hits "What If You Had 10,000 IQ?" (445,000 views, 159 times
+     the median), "What If You Could Read Minds... and Heard Your Wife's First?" (30,000; 10.7), "What If You Went Back to 2000 With Everything You
+     Know Today?" (2.7), "What If You Could See How Long Everyone Has Left to Live?" (2.5). Siblings at 0.4-1.2: "...See Who Has a Crush on You?",
+     "...Everyone Had the Same Death Countdown?", "Could 2 People Really Restart Humanity?", "What If Hitler Died in 1918...", "...All Men
+     Disappeared Except You?", "...the Only One Who Never Needed Sleep?".
+   - Our ring, "Science eXplore" (34,700 subscribers, 48 videos, 6 Nov 2026; its newest videos get about 180 views): hits "The Psychology Of
+     Being Lazy But Ambitious" (11.5), "What If Light Moved at Only 60 MPH?" (8.2 after 5 days - 1,500 views; nearly the premise of the owner's
+     rejected video), "The Entire History Of The Atomic Bomb" (4.8), "Brainrot Cure: 10 Scientific Signs..." (4.7), "The Land Of Magic" (3.5),
+     "What If You Fell Into Jupiter?" (2.1). Siblings at 0.8-1.0: four health warnings about the brain and the body.
+   - Near ring, "Wacky Science" (825,000 subscribers): hits "ALL OF PHYSICS explained in 14 Minutes" (11 million; 2.8), "GENERAL CHEMISTRY
+     explained in 19 Minutes" (1.6); siblings: smaller subjects in the same form (QR codes 0.2, Braille 0.1).
+   WHAT THE SIBLINGS SHOW (the reason they are there): "you" in the title does NOT separate hits from normal videos - 4 of 4 hits and 4 of 6
+   siblings of the far channel carry it. Numbers in the title do not separate either. Two differences are visible, each inside one channel:
+   (a) scenarios that happen to YOU sit at the top and the two world / history scenarios without "you" at or below the median; (b) in the science
+   channel the two impossible-scenario titles beat every health warning (0 of 4 siblings is a scenario). The size of the promise decides in the
+   near ring (a whole subject against one small thing). NO hit in the sample is framed as a trial, a court or a case - absent, which is not
+   evidence against it. 26 titles are a method test, not a finding: nothing here becomes a rule; (a) and (b) agree with making "it happens to
+   you" the default format and leave the trial an arm.
+3. O - the vendor's own readings of the same pages (11 Nov 2026): the far channel's formula is "a second-person power-fantasy thought experiment"
+   where the story "turns personal"; the science channel "breaks out when it turns science into either a highly relatable identity problem or a
+   cinematic impossible scenario"; a narrator-led explainer with a strong premise and escalating consequences. A vendor's opinion.
+4. E - Metricool 2026 through Tubefilter (3 Aug 2026) and Net Influencer: the average long video is watched 2.51 minutes (3.98 a year before);
+   Retention Rabbit (10,000+ videos): more than 55% of viewers leave within the first minute. -> the opening and one idea, not more devices.
+5. O - Virlo trend report (Oct 2026): hypothetical "what if" science scenarios are one of four themes standing out in science; small animated
+   first-person what-if accounts reach very large averages on short video (another platform).
+6. E - narrative perspective (a review citing Chen and others 2024, Kim and others 2017; text, not video): second-person narration draws
+   stronger emotional responses than third person under high involvement. No study of "you" narration against YouTube retention was found.
+
 ## NEXT
 **V2 - HOOK-FIRST PRODUCTION** (`handoff_v12/BREAKOUT_REDESIGN.md` 4.1, 4.2, 4.5-4.7 and 10.7; hypotheses H1, H2, H7). Full seven-step MANDATORY BATCH
 LOOP. Effort: High. V2 is the batch that changes what a viewer SEES and HEARS. It is large: split it at the start if it does not fit one session
