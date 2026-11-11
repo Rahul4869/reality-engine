@@ -142,6 +142,8 @@ def test_the_real_production_makes_an_episode_that_is_not_a_trial_and_holds_one_
     for hard in ("viewer_promise", "viewer_numbers", "viewer_breath", "viewer_plain", "viewer_probe", "originality", "retention"): assert led[hard][0] == "PASS", (hard, led[hard])
     row = next(e for e in st.rows("Episodes") if e["episode_id"] == ep); dj = row["draw_json"]; dj = json.loads(dj) if isinstance(dj, str) else dj
     assert dj["format"] == "F1" and not dj.get("show_plan")
+    mine = lambda tab: [x for x in st.rows(tab) if x.get("episode_id") == ep]
+    assert mine("Packaging_Tests") and mine("Experiments") and not mine("Season")        # what every format needs is kept (title and thumbnail tests, the experiment row); the trial's season row is not written
     monkeypatch.setattr(FMT, "_OTHER_VOICE", re.compile(r"\[(DIRECTOR)\]"))            # the writer keeps a voice the format does not have, and the one rewrite does not cure it
     r2 = EP.produce(slot(34), episode_id="EP209901020900")
     assert r2.get("held") and "contract:format_kept" in r2["problems"] and FMT.current() == "", r2      # (the offline writer repeats itself, so a second episode in one Sheet can also trip the originality check)

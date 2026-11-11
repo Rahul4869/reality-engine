@@ -61,6 +61,13 @@ pipeline run uses the new code. Nothing restarts.
 - **Future slots** are written in pre-production (`whatifs/preprod.py`); production must still work when no draft exists.
 - **Owner messages** go only through `whatifs/notify.py`; builds go through `whatifs/builds.py` and the `claude-build` workflow.
 - **Premium tier (future)**: each draw records `tier` ("public"). Discuss with the owner before building anything members-only.
+- **Formats** (`whatifs/formats.py`): an episode's format is DATA - picked once in `room.run_room` (`formats.pick`), kept in the draw (`d["format"]`) and made the
+  format of everything `episode.produce` does (`formats.use`; always reset in its `finally`). A new format = a row in `formats.FORMATS` (does the trial layer run,
+  its voices, its devices) + its brief texts + a `FORMAT_SHARE_*` cell (a lever of D1). A format may make a DEVICE (`formats.DEVICES`) optional or leave it out - never
+  any other check (a test proves it), and an optional device is neither demanded in a brief nor forced by a rewrite. `show.on()` = the TRIAL layer for this episode;
+  `show.leads_on()` = the show's world at all: a feature every format needs (packaging tests, the experiment row, provenance, the fixed cast, designed voices) asks
+  `leads_on()`, a trial-only one asks `on()`. A fake reply that must differ by format reads `formats.show_allowed()`. The older tests are the trial's tests
+  (`tests/conftest.py` forces F2); run a rehearsal or a sweep of one format with the env var `WI_FORMAT`.
 - **New format or series idea**: enter it as an experiment arm or a Playbook trial so the data decides; never replace the whole format at once.
 - **Knowledge Palace** (`whatifs/org/palace.py`): knowledge enters only through `palace.add` / `add_many` (dated evidence, real `applied_in` code references)
   and leaves only through `palace.playbook` (the guard runs first). Never write the `Palace_Items` tab directly, never filter statuses yourself.

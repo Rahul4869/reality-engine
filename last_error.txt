@@ -1,8 +1,8 @@
 Traceback (most recent call last):
-  File "C:\Users\rrahu\OneDrive\Desktop\REALITY_ENGINE_HANDOFF\reality-engine\whatifs\cli.py", line 94, in main
+  File "C:\Users\rrahu\OneDrive\Desktop\REALITY_ENGINE_HANDOFF\reality-engine\whatifs\cli.py", line 105, in main
     from tools.rehearsal import run; run()
                                      ^^^^^
-  File "C:\Users\rrahu\OneDrive\Desktop\REALITY_ENGINE_HANDOFF\reality-engine\tools\rehearsal.py", line 92, in run
-    assert row4.get("state") == "verified" and log4 == ["intent", "applied", "verified"], ("the rehearsal's decision did not become a verified change", row4.get("state"), row4.get("note"), log4)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: ("the rehearsal's decision did not become a verified change", 'applied', '', ['intent', 'applied'])
+  File "C:\Users\rrahu\OneDrive\Desktop\REALITY_ENGINE_HANDOFF\reality-engine\tools\rehearsal.py", line 277, in run
+    assert 1 <= len(pk9) <= 3 and any(r["status"] in ("LIVE", "WINNER") for r in pk9) and (st9.rows("Season") or not trial9) and st9.rows("Experiments"), "packaging pairs / Season / Experiments missing"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: packaging pairs / Season / Experiments missing

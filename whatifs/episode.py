@@ -748,7 +748,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
                     st0 = next((p_ for p_ in (files.get("img") or {}).values() if isinstance(p_, str)), None)
                     if st0: INS.post_drop(ep, dp, st0, str(title)[:200])
             except Exception as e: log(f"audio drop skipped: {e}", "WARN", ep)
-        if SHOW.on() and S("PROVENANCE_ON", bool):                # v9: provenance record for policy appeals (no personal data)
+        if SHOW.leads_on() and S("PROVENANCE_ON", bool):          # v9: provenance record (every format: v12 V2a) for policy appeals (no personal data)
             try:
                 from whatifs import craft as _CR
                 prov = {"episode_id": ep, "made": iso(), "show_plan": d.get("show_plan"), "premise_source": (room.get("spine") or {}).get("premise_source") if isinstance(room, dict) else "",
@@ -763,7 +763,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
             HS.make_for_episode(ep, out, [p_ for p_ in (files.get("img") or {}).values() if isinstance(p_, str)], master, units, str(pkg.get("thumb_text") or title)[:40],
                                 slot_iso=slot_iso, long_id=vid, title=title)      # v9.3: scheduled after the long video and linked to it
         except Exception as e: log(f"hero-still reel skipped: {e}", "WARN", ep)
-        if SHOW.on():                                            # v9: 3 packaging pairs (owner pick + rotation), Season + Experiments rows
+        if SHOW.leads_on():                                      # v9: 3 packaging pairs (owner pick + rotation) + the Experiments row - in EVERY format (v12 V2a); the Season row and the Case Files slides are the trial's
             try:
                 from whatifs import packaging as PK, community as CM
                 vs = PK.variants(dict(pkg, title=title, title_b=rel["title_b"]), room.get("spine") if isinstance(room, dict) else {})
@@ -775,11 +775,12 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
                 PK.record(ep, vid, vs, thumbs)
                 if len(vs) > 1 and S("PKG_ROTATE_ON", bool): st.update("Episodes", "episode_id", ep, {"pkg_check": "v9 rotation test"})      # the v8.5 rescue stands aside
                 sp_ = room.get("spine", {}) if isinstance(room, dict) else {}
-                CM.season_row(ep, d.get("show_plan") or {}); CM.experiment_row(ep, dict(d, hook_shape=pkg.get("hook_shape", "")), sp_, "A", slot_iso)
+                if SHOW.on(): CM.season_row(ep, d.get("show_plan") or {})
+                CM.experiment_row(ep, dict(d, hook_shape=pkg.get("hook_shape", "")), sp_, "A", slot_iso)
             except Exception as e: log(f"packaging / season rows skipped: {e}", "WARN", ep)
             try:                                                   # v10.1 (K149): Instagram 'Case Files' slides, posted when the long video goes live
                 from whatifs import carousel as CAR
-                CAR.prepare(ep, d.get("show_plan") or {}, title)
+                if SHOW.on(): CAR.prepare(ep, d.get("show_plan") or {}, title)
             except Exception as e: log(f"carousel prepare skipped: {e}", "WARN", ep)
         assets = _persist(out, ep); assets.update(_archive(out, ep, master, srt)); assets.update(_review_files(out, ep))
         cur = next((r for r in st.rows("Episodes") if r["episode_id"] == ep), {}); old = CK._assets_of(cur)

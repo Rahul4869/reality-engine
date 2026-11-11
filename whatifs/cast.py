@@ -35,7 +35,7 @@ def pick(rng, recent=None):
     ex = [r for r in rs if r["role"] == "expert"]; gu = [r for r in rs if r["role"] == "guest"]
     if not ex or not gu: return {}
     from whatifs import show as SHOW
-    if SHOW.on():                                                   # v9: core cast only - Vale and Grimm keep ONE voice every episode (no guest rotation)
+    if SHOW.leads_on():                                             # v9: core cast only (in every format: v12 V2a) - Vale and Grimm keep ONE voice every episode (no guest rotation)
         ch = {c.get("speaker"): str(c.get("cast_id") or "").strip() for c in SHOW.characters()}
         e = next((r for r in ex if r["id"] == ch.get("DIRECTOR")), ex[0]); g = next((r for r in gu if r["id"] == ch.get("SKEPTIC")), gu[0])
         return {"expert": e["id"], "guest": g["id"]}

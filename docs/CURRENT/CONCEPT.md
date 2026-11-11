@@ -3,6 +3,9 @@
 > 11 Nov 2026: the owner RE-OPENED the concept after watching the first live video (free hand, `02_OWNER_VERBATIM.md` item 17). The redesign is decided in
 > `handoff_v12/BREAKOUT_REDESIGN.md` (formats as data: "the day it changed" by default, the trial as an experiment arm; hook-first production). This page
 > describes the code as it is until batch V2 rewrites both.
+> Since batch V2a the show below is format F2 "The trial" (30 of 100 long videos). Format F1 "The day it changed" (70 of 100) has no courtroom: one law of nature is
+> different today and it happens to you - the impossible picture, your morning, your street, the world, the last consequence, the question "would you keep it?" -
+> told by two voices, a guide and a foil (`whatifs/formats.py`). This page is rewritten in batch V2c.
 
 Brand: **Reality Engine**. Show: **Reality on Trial**. Decided by the owner on 9 Nov 2026 after exploring alternatives.
 `tests/test_docs_current.py` checks that every name below exists in the code (`whatifs/show.py` and the prompts), so this page cannot drift from the show.

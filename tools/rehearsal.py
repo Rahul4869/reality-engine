@@ -264,16 +264,20 @@ def run():
         print("v8.11 checks ok")
         # v9 checks (stages 1-2): the Show Plan was logged, the character bible seeded, the trial tags reached the voiced timeline as data (never spoken),
         # the render devices ran (teacup placements logged, not before 30 s), no tag text reached the captions
-        st9 = store(); assert st9.rows("Show_Log") and len(st9.rows("Characters")) == 4, "Show_Log / Characters missing"
+        st9 = store(); ep9 = next(x for x in st9.rows("Episodes") if x["episode_id"] == e["episode_id"]); cups9 = json.loads(ep9.get("teacup_json") or "[]")
+        dj9 = ep9.get("draw_json"); dj9 = json.loads(dj9) if isinstance(dj9, str) and dj9.strip() else (dj9 or {}); fmt9 = str(dj9.get("format") or "")
+        trial9 = fmt9 in ("", "F2")                                    # v12 V2a: the trial's own artefacts are asserted for a trial only (formats as data)
+        assert (st9.rows("Show_Log") or not trial9) and len(st9.rows("Characters")) == 4, "Show_Log / Characters missing"
         u9 = tl81["units"]
-        assert any(u.get("show") for u in u9) and not any("[" in u.get("text", "") for u in u9), "show tags not carried as data / spoken"
-        ep9 = next(x for x in st9.rows("Episodes") if x["episode_id"] == e["episode_id"]); cups9 = json.loads(ep9.get("teacup_json") or "[]")
+        assert (any(u.get("show") for u in u9) or not trial9) and not any("[" in u.get("text", "") for u in u9), "show tags not carried as data / spoken"
         assert all(c["t"] >= 30 for c in cups9), f"teacup placements: {cups9}"
         srt9 = [os.path.join(dp, f) for dp, _, fs in os.walk(d74) for f in fs if f.endswith(".srt")]
         assert srt9 and not any(re.search(r"\[(METER|EXHIBIT|JURY|/?CLIPBAIT)", open(x).read()) for x in srt9), "a show tag reached the captions"
         pk9 = [r for r in st9.rows("Packaging_Tests") if r["episode_id"] == e["episode_id"]]
-        assert 1 <= len(pk9) <= 3 and any(r["status"] in ("LIVE", "WINNER") for r in pk9) and st9.rows("Season") and st9.rows("Experiments"), "packaging pairs / Season / Experiments missing"
-        print("v9 checks ok")
+        assert 1 <= len(pk9) <= 3 and any(r["status"] in ("LIVE", "WINNER") for r in pk9) and (st9.rows("Season") or not trial9) and st9.rows("Experiments"), "packaging pairs / Season / Experiments missing"
+        led9 = {r["feature"]: r["status"] for r in st9.rows("Feature_Ledger") if r.get("episode_id") == e["episode_id"]}
+        assert led9.get("format_kept") == "PASS" and (trial9 or (led9.get("exhibits") == "N/A" and not dj9.get("show_plan"))), ("the episode is not what its format says", fmt9, led9.get("format_kept"))
+        print("v9 checks ok (format " + (fmt9 or "none") + ")")
         # v9.1 checks: the Atmosphere Pack ran inside its time budget with the pulse caps intact, render minutes were logged
         ep91 = next(x for x in store().rows("Episodes") if x["episode_id"] == e["episode_id"])
         if S("ATMOSPHERE_ON", bool) and not S("V91_SAFE_MODE", bool):

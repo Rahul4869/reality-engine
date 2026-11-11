@@ -63,9 +63,9 @@ def V91_on(flag):
     return V91.on(flag)
 
 def _pkg_extra():
-    """v9: hook shapes + three title/thumbnail pairs for the packager ('' when SHOW_MODE = off)."""
+    """v9: hook shapes + three title/thumbnail pairs for the packager ('' when SHOW_MODE = off). Packaging tests belong to every format (v12 V2a)."""
     from whatifs import show as SHOW
-    if not SHOW.on(): return ""
+    if not SHOW.leads_on(): return ""
     from whatifs import packaging as PK
     recent = []
     for r in store().rows("Experiments")[-2:]: recent.append(r.get("hook_shape"))
@@ -417,7 +417,7 @@ def _writer_extra(episode=""):
 def guest_brief(d):
     from whatifs.data import GUESTS
     from whatifs import show as SHOW
-    if SHOW.on(): return ""                             # v9: the trial cast replaces the rotating guest (core cast only)
+    if SHOW.leads_on(): return ""                       # v9: the core cast replaces the rotating guest - in every format (v12 V2a)
     if d.get("cast"):                                   # v8.10: the Cast tab's characters (personality, habits, quirk) replace the v8.9 guest line
         from whatifs import cast as CAST
         b = CAST.brief(d["cast"])
