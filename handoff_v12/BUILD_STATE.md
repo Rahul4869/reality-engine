@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 11 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 11 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -76,75 +76,35 @@ move and format arm F3 "The walk" (V2), the Breakout Observatory and the aspect 
 not in the Palace yet: the batch that builds each part adds its founding items (they need real code references).
 This turn was the DESIGN step for the whole programme (research, designs, decisions, records). Nothing of the redesign is built yet.
 
-## IN PROGRESS - V1b THE LAYMAN TEST (started 11 Nov 2026 on the owner's "Continue"; steps 1-3 done, build running)
-SPLIT AT THE START (rule 6): V1b as planned had four parts. This batch builds THE LAYMAN TEST only (it guards the script before any picture is
-paid and it answers the owner's first complaint, "I was myself unable to understand the topic of video"). The judged floor on the finished
-video and his verdict tab become V1c; his input tab and the scoreboard go to V4 (D1 answers inputs from V4 anyway). Order decided at the end.
-#### Step 1 RESEARCH (E = measured, O = practice; "read" = read by the build session)
-1. E read - Ohio State news, 12 Feb 2020 (Shulman and others, Journal of Language and Social Psychology; 650 adults; three topics):
-   https://news.osu.edu/the-use-of-jargon-kills-peoples-interest-in-science-politics/ - expert words made readers less interested and feel
-   less able; a definition on hover "didn't matter at all". Its own example pair is now a test.
-2. E - Cruz and Lombrozo, Nature Human Behaviour 2025 (9 experiments, 6,698 people): expert words can FEEL satisfying while understood less.
-3. E - van Zeeland and Schmitt, Applied Linguistics 2012/2013; Nation 2006; replication in Language Teaching (Cambridge): a listener needs to
-   know about 95% of the running words for adequate and 98% for good comprehension. 2% of 150 words a minute = 3 unknown words a minute.
-4. E - arXiv 2604.04583 (Apr 2026; 1,239 TED talks): explanatory CLARITY predicts likes and views and beats readability formulas.
-5. E - arXiv 2508.19221 (Aug 2025): 6 of 8 readability formulas agree with human judgments below r = 0.3; the best language model 0.56.
-   arXiv 2502.11150 (2025): formulas, systems and models are all poor predictors of reading ease. -> no formula and no model's "clarity
-   score" is a gate here.
-6. O - the five-second test of usability work (Center Centre / UIE; UXPA Journal, Nov 2016): show a page for five seconds, ask what it is for.
-   -> the same question for the first 30 seconds of a video, with an answer code can check.
-7. E - listening research (review, through search): sentence length has a weak, inconsistent effect on listening. -> logged, never a gate.
-Not found: a study of expert words against YouTube retention. The budgets are starting values and levers.
-#### Step 2 CREATIVITY (scores 1-5: what a viewer gains / enforceable / cost / reliability / owner effort)
-A. A readability formula as a gate: 1 / 5 / 5 / 1 / 5 = 17 (research 5: formulas do not agree with people).
-B. A model plays "a 12-year-old" and scores clarity 1-10: 3 / 2 / 4 / 2 / 5 = 16 (taste as a gate; research 5 and R9).
-C. A glossary rule - every expert word defined at first use: 2 / 4 / 5 / 3 / 5 = 19 (research 1: a definition does not rescue it).
-D. (ORIGINAL, CHOSEN) A BUDGET + A LINE-UP: code counts the expert words a layman would not know (per minute, in the opening, piled into one
-   sentence) and the writers' one fix carries the problem; then THE PROMISE LINE-UP - two cheap readers of two model families see only the
-   first 30 seconds and must pick this video's title out of a line-up of our kind of titles, or say "cannot tell"; a second, foreign opening
-   is planted in the same call and must get "cannot tell", else the session is void: 4 / 5 / 5 / 4 / 5 = 23.
-#### Step 3 DESIGN MEMO
-- NEW `whatifs/org/layman.py` (D13). MEASURE: an unfamiliar word = a word on the expert list, or a word of 7+ letters that is not on the
-  everyday list (`whatifs/org/seed/everyday.txt`) after plain endings are removed; names, numbers and the words of the title (the viewer chose
-  them) are not counted. Budgets: distinct unfamiliar words per minute (2), in the first 30 seconds (1), in one sentence (2). Sentence length
-  is reported, not judged.
-- REPAIR: the problem, with the words named, joins the writers' ONE mandatory fix (`enforce.fix_all`), as the numbers do.
-- THE LINE-UP is D13's second run (`probe`), inside the plan stage right after the package, so its result is saved with the plan and never
-  paid twice. The readers are cheap on purpose: the right answer is known to code, so this is no taste call, and a weak reader is the harder
-  test. The correct letter and the planted opening sit at places chosen by the session id. Verdict by code: void when fewer than two families
-  answered or a reader named a title for the planted opening; else PASS only when every reader picked our title.
-- CHECKS at the script gate (before picture money): `viewer_plain`, `viewer_probe` (owner D13; promises about the show). A void line-up never
-  holds a video: the check steps aside and D13 reports its own machinery (closed by the next valid session).
-- CHANGED FROM THE REDESIGN'S 10.6, with reasons: the planted canary is a FOREIGN opening, not "the same opening flooded with expert words" -
-  a model reads expert words easily, so that canary would never fail and every session would be void; the vocabulary is judged by code
-  instead. "None in the first 30 seconds" starts as "at most 1": the everyday list is ours and imperfect, and a false hold costs an owner tap.
-- Money: two small calls a video (about Rs 0.2), counted in the paid-call counter and the estimate.
-
 ## NEXT
-**V1b - THE VIEWER'S SEAT, part 2: the judged floor, the owner's desk tabs, the scoreboard** (`handoff_v12/BREAKOUT_REDESIGN.md` 4.3, 4.8, 4.9).
-Full seven-step MANDATORY BATCH LOOP. Effort: High. V1 was SPLIT at its start (token discipline rule 6, as B6 was): V1a - the MEASURED seat - is
-done (record under DONE). V1b scope:
-- THE JUDGED FLOOR on the finished video: one generic first-time viewer per model family (no personas), with sound, comparing the new video
-  PAIRWISE against reference videos; the owner's rejected video (YouTube id 7RPT4rCuP6k) is the planted canary that must lose; a jury that does
-  not see that is void (pattern `whatifs/org/board.py`; `models.ask_video`; fake replies in `whatifs/fakes.py`). A floor, never a forecast.
-  D13 gets a second run at the final gate (add it to `registry.ENTRY` and `EPISODE_RUNS["final"]`) and a thinking cap (it pays judges).
-- THE OWNER'S DESK, first step: his verdict on a video and his free-text input line as memos (one Sheet tab each, append-only); the verdict is
-  D13's strongest label. WhatsApp capture stays in B9; D1 answers inputs from V4.
-- THE SCOREBOARD: long watch hours of the last 365 days against 8,000, subscribers against 1,000, the date at the current pace - the first line
-  of the daily brief (the Analytics columns exist in `brain.py` / `reach.py`).
-- THE LAYMAN TEST (item 19; redesign 10.6): measured by code - a budget for unfamiliar words (none in the first 30 s), sentence length for
-  the ear, one new term at a time (a failure rides on the writers' one fix, like the numbers); and a PROBE with a checkable answer - a reader
-  with no context gets only the first 30 seconds and must say what the video will show and why to care (compared with the promise), with a
-  planted canary (the same opening flooded with expert words must fail, else the session is void).
-- If the four parts do not fit one session, split again at the start (rule 6): the judged floor and the layman test first (they guard the
-  video), the owner's desk tabs and the scoreboard second.
-What V1a leaves ready: `whatifs/org/audience.py` (pure measures + repairs by code; `on()` = VIEWER_SEAT_ON), D13 in the registry with one run
-(`seat`, right before the Animation Director), the pattern "measure -> repair by code -> contract check -> lever", 3 founding items for D13.
-Remember: every new contract check must be classified (`rnd.ORG_CHECKS` or raise `rnd.SHOW_CHECKS`, now 40); a memo a department writes to itself
-is closed with `memos.find`; text from outside is data; NEVER paste code with backslashes through a shell here-document (it broke two files again
-in V1a) - write the file with the file tools, then run it.
-ORDER AFTER V1b: V2 hook-first production (+ first person, one place, one move; format arm F3 - redesign 10.7) -> V3 pilot on real services,
-then go live -> V4 the CEO and the ladder -> V5 the Breakout Observatory and the aspect map (redesign 10.5, 10.8) -> B6b -> B7 -> B8 -> B9 -> B10.
+**V2 - HOOK-FIRST PRODUCTION** (`handoff_v12/BREAKOUT_REDESIGN.md` 4.1, 4.2, 4.5-4.7 and 10.7; hypotheses H1, H2, H7). Full seven-step MANDATORY BATCH
+LOOP. Effort: High. V2 is the batch that changes what a viewer SEES and HEARS. It is large: split it at the start if it does not fit one session
+(rule 6). A natural cut:
+- V2a THE SCRIPT AND THE CONTRACT: formats as data (F1 "the day it changed", F2 "the trial", F3 "the walk" - one table; the Showrunner's plan names
+  its format, never a new AI role); the three-tier contract (redesign 4.6: the show's devices become advisory per format - open issue 60); first
+  person as a MEASURED rule (10.7: the voice says "you" in the present tense; show, then tell) and camera continuity carried on the shot list (one
+  place per act, each shot starts where the last one ended, jumps counted) - both as D13 measures in the V1a pattern; two voices at most; a drawn
+  cast or none (no black shapes).
+- V2b THE HOOK: the first 30-40 seconds made FIRST, fully animated, as ONE continuous first-person move (clips chained from the last frame of the
+  one before), cut vertical and horizontal from the same clips, published as a Short and reused as the long video's opening; the hero video model
+  and the voice chosen by value (the tool scout reads what fal and the owner's Google account really offer - redesign O2); the cost model (a hook
+  about Rs 200, a topic Rs 580-660; the layman line-up's Rs 0.2 as its own line - open issue 72); the Shorts track under the viewer's seat and the
+  layman test (open issue 62); the CONCEPT page rewritten.
+RESEARCH STEP = the first hand-made round of the Breakout Observatory (redesign 10.5): hits against siblings of the same channel, three rings,
+countable facts only.
+What V1a and V1b leave ready: `whatifs/org/audience.py` (measures + repairs by code), `whatifs/org/layman.py` (everyday words + the promise line-up;
+its decoys are a built-in list - give it same-subject decoys once formats and past titles exist, open issue 69), D13 with two runs (`probe` inside
+the plan stage, `seat` right before the Animation Director), the pattern "measure -> repair by code -> contract check -> lever", 6 founding items.
+Remember: every new contract check must be classified (`rnd.ORG_CHECKS` or raise `rnd.SHOW_CHECKS`, now 42); a department run that returns `Out`
+must say what it did with EVERY inbound memo (`memo_actions`) - a memo it wrote to itself comes back in its own inbox (found in V1b); a memo a
+department writes to itself is closed with `memos.find`; text from outside is data; a held episode stops in about 10 seconds, a full fake
+production takes over 2 minutes - a fast "failure" is a hold; NEVER paste code with backslashes through a shell here-document.
+ORDER AFTER V2: V1c the judged floor on the finished video with the canary (the owner's rejected video, YouTube id 7RPT4rCuP6k, must lose) + his
+verdict tab - right before the pilot, where his verdict first needs a place and the floor gets real videos -> V3 pilot on real services, then go
+live -> V4 the CEO and the ladder (+ his input tab and the scoreboard: D1 consumes both) -> V5 the Breakout Observatory and the aspect map -> B6b
+-> B7 -> B8 -> B9 -> B10. Ten batches remain.
+WHY THIS ORDER (decided at the end of V1b): the floor judges a FINISHED video - built before V2 it would be tuned on the old look, and V2 is what
+changes the look. Until the floor exists the first three releases need the owner's own Approve anyway (redesign 4.10).
 The notes below (what B5 / B6a leave ready for the Council) stay valid for B6b:
 **B6b - The Council (C)** (01 sections 2 (C), 4, 5, 7 `council_held`; 03 "B6", second bullet). Full seven-step MANDATORY BATCH LOOP. Effort: High.
 Gathers open research / assessment / creative / owner / performance / problem memos; diverge -> blind cross-family jury -> converge -> decision
@@ -194,6 +154,110 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
+### V1b - THE LAYMAN TEST (11 Nov 2026) - ACCEPTED (final code commit 4c0e607 GREEN in GitHub Checks run 89: 1293 passed; sweep 28 of 28)
+The owner (mobile only): "Continue". V1b as planned had four parts; it was SPLIT AT THE START (rule 6): this batch is THE LAYMAN TEST - it guards
+the script before any picture is paid and answers his first complaint ("I was myself unable to understand the topic of video") and his item 19
+("strict enforcement and checks for whether a layman audience also gets hooked and retained"). The judged floor and his verdict tab are V1c; his
+input tab and the scoreboard go to V4.
+
+#### Step 1 RESEARCH (E = measured, O = practice; "read" = read by the build session, else reported by a search run)
+1. E read - Ohio State News, 12 Feb 2020 (Shulman and others, Journal of Language and Social Psychology; 650 adults; three topics):
+   https://news.osu.edu/the-use-of-jargon-kills-peoples-interest-in-science-politics/ - expert words made readers less interested and feel
+   less able; a definition on hover "didn't matter at all". Its own example pair is now a test.
+2. E - Cruz and Lombrozo, Nature Human Behaviour 2025 (9 experiments, 6,698 people): expert words can FEEL satisfying while understood less.
+3. E - van Zeeland and Schmitt, Applied Linguistics 2013; Nation 2006; a replication in Language Teaching (Cambridge): a listener needs to know
+   about 95% of the running words for adequate and 98% for good comprehension. 2% of 150 words a minute = 3 unknown words a minute.
+4. E - arXiv 2604.04583 (Apr 2026; 1,239 TED talks): explanatory CLARITY predicts likes and views and beats readability formulas.
+5. E - arXiv 2508.19221 (Aug 2025): 6 of 8 readability formulas agree with human judgments below r = 0.3; the best language model 0.56.
+   arXiv 2502.11150 (2025): formulas, systems and models are all poor predictors of reading ease. -> no formula and no model's "clarity
+   score" is a gate here.
+6. O - the five-second test of usability work (Center Centre / UIE; UXPA Journal, Nov 2016): show a page for five seconds, ask what it is for.
+   -> the same question for the first 30 seconds of a video, with an answer code can check.
+7. E - listening research (a review, through search): sentence length has a weak, inconsistent effect on listening. -> reported, never a gate.
+Not found: a study of expert words against YouTube retention. The budgets are starting values and levers.
+#### Step 2 CREATIVITY (scores 1-5: what a viewer gains / enforceable / cost / reliability / owner effort)
+A. A readability formula as a gate: 1 / 5 / 5 / 1 / 5 = 17 (research 5: formulas do not agree with people).
+B. A model plays "a 12-year-old" and scores clarity 1-10: 3 / 2 / 4 / 2 / 5 = 16 (taste as a gate; research 5 and the redesign's R9).
+C. A glossary rule - every expert word defined at first use: 2 / 4 / 5 / 3 / 5 = 19 (research 1: a definition does not rescue it).
+D. (ORIGINAL, CHOSEN) A BUDGET + A LINE-UP: code counts the expert words a layman would not know (per minute, in the opening, piled into one
+   sentence) and the writers' one fix carries the problem; then THE PROMISE LINE-UP - two cheap readers of two model families see only the
+   first 30 seconds and must pick this video's title out of four titles of our kind, or say "cannot tell"; a second, foreign opening is planted
+   in the same call and must get "cannot tell", else the session is void: 4 / 5 / 5 / 4 / 5 = 23.
+#### Step 3 DESIGN MEMO
+- NEW `whatifs/org/layman.py` (D13). MEASURE: an expert word = a word code can RECOGNISE as expert vocabulary - on the expert list
+  (`layman.EXPERT`, about 230 science terms) or built with an affix of scientific coinage ("electro-", "-ometer", "-osis" ...). A word on the
+  everyday list (`whatifs/org/seed/everyday.txt`, about 1,400 words) is never counted; neither are names and the words of the title (the viewer
+  chose them). The FIRST version counted every word of 7+ letters that was missing from the everyday list - wrong, see step 6. Budgets: DISTINCT unfamiliar words per minute (2; never fewer than 2 allowed in a video), in the first
+  30 seconds (1), in one sentence (2). Sentence length is reported, not judged.
+- REPAIR: the problem, with the words named, joins the writers' ONE mandatory fix (`enforce.fix_all`), as the numbers do; the house prompt of the
+  writers' room now asks for everyday words.
+- THE LINE-UP is D13's second run (`probe`), inside the plan stage right after the package, so its result is saved with the plan and a resume
+  never pays it twice (a plan saved before V1b gets it at the next run). The readers are cheap on purpose: the right answer is known to code, so
+  this is no taste call, and a weak reader is the harder test. The correct letter, the three other titles, the planted opening and the order of the
+  two openings are chosen by the session id. Verdict by code: void when fewer than two families answered (a reader answered by another family is
+  not counted) or a reader named a title for the planted opening; else PASS only when every reader picked our title.
+- CHECKS at the script gate (before picture money): `viewer_plain`, `viewer_probe` (owner D13; promises about the show, `rnd.SHOW_CHECKS` 42).
+  A void line-up never holds a video: the check steps aside and D13 reports its own machinery (closed by the next valid session).
+- CHANGED FROM THE REDESIGN'S 10.6, with reasons: the planted canary is a FOREIGN opening, not "the same opening flooded with expert words" - a
+  model reads expert words easily, so that canary would never fail and every session would be void; the vocabulary is judged by code instead.
+  "None in the first 30 seconds" starts as "at most 1": the recognition is ours and imperfect, and a false hold costs an owner tap.
+- Money: two small calls a video (about Rs 0.2).
+#### Step 4 BUILD (what changed)
+- NEW `whatifs/org/layman.py` (on `tools/repair.py` PROTECTED): `on`, `everyday`, `unfamiliar`, `hard_words`, `plain_report`, `promise_words`,
+  `plain_issues`, `lineup`, `probe`, `probe_run`. NEW `whatifs/org/seed/everyday.txt`.
+- `whatifs/contract.py`: `p_viewer_plain`, `p_viewer_probe` (52 hard checks: 33 script + 19 final). `whatifs/episode.py`: `_probe` (D13's `probe`
+  run) at the end of the plan stage and, for an older plan, right after the seat; the script gate's context carries the line-up.
+  `whatifs/enforce.py`: the expert words join the one mandatory fix. `whatifs/prompts.py`: three lines in the house rules. `whatifs/models.py`:
+  two reader roles. `whatifs/fakes.py`: the offline reader. `whatifs/org/registry.py` / `levers.py` / `rnd.py`: D13's second run in both gates'
+  run lists, 2 check owners, 3 levers (48), SHOW_CHECKS 42. `whatifs/core.py`: 6 cells.
+- Seeds: `v1b.expert_words`, `v1b.promise_lineup`, `v1b.takeaway` (140 founding items).
+#### Step 5 ENFORCE (rule -> executing code -> fails when broken)
+| Rule | Executed by | Fails when broken |
+|---|---|---|
+| Few expert words: per minute, in the first 30 s, in one sentence | `layman.plain_issues` in `enforce.fix_all` (the one fix) | `viewer_plain` (script gate) |
+| The first 30 s say what the video is about | `layman.probe` in D13's `probe` run (`episode._probe`) | `viewer_probe` (script gate) |
+| D13's line-up ran before either gate | `runner.work("D13", "probe")` in `episode.py` | `dept_contract` holds the video; `python -m whatifs.org.runner` RED |
+| A line-up whose readers guess is not believed | the planted opening + the family check in `layman.probe` | status void -> the check steps aside, D13's problem memo |
+#### Step 6 PROVE
+- `tests/test_v12_layman.py`: **9 tests**, each rule both ways (expert words by list and by affix; everyday words that are built like expert words; the four ordinary words of the sweep; the study's own
+  sentence pinned as a stated limit; names, headings and the title's words not counted;
+  the flood, the opening, the pile in one sentence, each lever; the writers' one fix; the line-up deterministic per session with the place of our
+  title and the order of the openings moving, no planted opening sharing a word with any title; pass / fail / off; a reader that always names a
+  title, a reader answered by the wrong family, unreadable letters -> void; the void report written and closed by the next valid session through
+  the real runner; wiring and levers; the REAL production: a good fake episode passes both checks with both D13 runs proven, and an episode a
+  layman cannot follow is HELD on both checks before any picture is paid).
+- Fails correctly (mutations on the real repo, each reverted): D13's line-up run removed -> the organisation check is RED ("no runner call for
+  D13 'probe'"), the wiring test fails and the production is held at the script gate by `dept_contract`; the gate made blind to the line-up ->
+  the production test fails on `viewer_probe`; the expert words taken out of the writers' fix -> its test fails.
+- Faults found by running, not by reading: (1) the department contract refused D13's second line-up - its own void report was in its inbox and
+  the run had said nothing about it; a run that returns `Out` must act on every inbound memo (fixed: `memo_actions`). (2) THE SWEEP FOUND WHAT THE SUITE DID NOT. On the first frozen copy (ebceee5) the full suite passed (1292 passed / 0 failed / 1 skipped) and
+  the sweep held 1 of 20 episodes (EP209901220428) at `viewer_plain` for "observe, session, coastline, precious" - four ORDINARY words. Traced, not
+  re-run: the measure counted every long word missing from a hand-made list. A first sign had been "collide" in a unit test; I answered it by
+  widening the list - the wrong repair. Fixed at the cause (4c0e607): only words code can recognise as expert count; the four words are a
+  regression test; every word the offline writers can produce was scanned with the new measure (one everyday word found and exempted).
+- Tests changed by design: 48 levers, 33 script checks, 6 department runs before the script gate (three assertions), D13's two runs in the seat
+  test; the paid-call counter allows the two reader calls (`tests/paid_calls.py` V12V1B_ADDED).
+- Fake rehearsal on the final code: 4 of 4 GREEN in sweep C on the frozen copy of 4c0e607 (each 47 pass + 5 not applicable of 52 checks, 11 department runs, no memo left open); GitHub's own rehearsal GREEN (episode EP202611111159, script 33/33, final 19/19).
+- Full suite on a frozen copy of 4c0e607: **1292 passed / 0 failed / 1 skipped** (69 test files). The first frozen copy (ebceee5, before the correction) had the same total - the suite did not see the fault the sweep found.
+- Sweep on the same frozen copy: on 4c0e607 **28 of 28 ok**, no bad id, no failure class (A: 20 ids, organisation on, each 46 pass + 6 not applicable; B: 4 ids, organisation off; C: 4 rehearsals). On the first frozen copy (ebceee5): 27 of 28 - EP209901220428 held at `viewer_plain` for four ordinary words; traced and fixed at the cause (above), never re-run on the old code.
+- GitHub Checks (standing rule 1): run **89** on 4c0e607 **GREEN**: 1293 passed (42:04), rehearsal GREEN (episode EP202611111159; contract script 33/33, final 19/19). Run 88 on ebceee5 was GREEN too - GitHub runs no sweep, so the fault was found only on the laptop. Runs 86 and 87 (the V1a record and the item-19 design commit) GREEN.
+- Plan Guard GREEN, Truth GREEN, Palace GREEN (140 founding items), Organisation GREEN (11 wired, 5 pending), docs regenerated without drift.
+- Money: Rs 0 spent (fake mode). In production: two small calls a video, about Rs 0.2 (logged by `models.ask`, counted by the paid-call
+  counter; not yet its own line in the estimate - open issue 72).
+#### Step 7 TAKEAWAY (also Palace item `v1b.takeaway`)
+- WORKED: the V1a pattern again (measure -> the writers' one fix -> check -> lever) and a verdict computed by code from letters.
+- WORKED: asking what the planted canary would do against the reader we really have. The designed canary could never have failed; found at the
+  design step, not after a week of void sessions.
+- WORKED: the sweep (standing rule 2). Nine new tests, a full fake production and a green full suite did not show that one episode in twenty
+  would be held for ordinary words. A check that can hold a video is believed only after many different episodes ran under it.
+- FAILED: my first measure flagged what it did not KNOW instead of what it could recognise as wrong, and my first repair of the first sign was
+  to widen a list. A gate that holds a video must be built for precision; what it misses is the price.
+- LIMIT: the readers are models, not laymen. The line-up proves that the first 30 seconds NAME what the video is about among unrelated titles;
+  it does not prove a person is hooked, and it cannot yet tell "names the subject" from "makes the promise" (open issue 69). The recognition
+  misses engineering and business words - the study's own example sentence passes it (68). No real script has been through it.
+- NEW QUESTION: do scripts inside the budget hold viewers longer (H8)? Only real retention can say (B8).
+- ORGANISATION: a department's report about itself returns to its own inbox - every run that returns `Out` needs `memo_actions` for all of it.
+
 ### V1a - THE VIEWER'S SEAT, measured (11 Nov 2026) - ACCEPTED (final code commit f96b87a GREEN in GitHub Checks run 85: 1284 passed; sweep 28 of 28)
 The owner (mobile only, 11 Nov): "Pls do the changes yourself and begin building". Built in the same session as the redesign because he could not
 open a new one. V1 split at its start: this half is what code can MEASURE and REPAIR BY ITSELF; the judged floor, the owner's tabs and the
@@ -1646,6 +1710,10 @@ Rehearsal asserts `docs_current` ran and passed.
   (deterministic particle seed).
 
 ## PROTECTED-AREA FILES TOUCHED SO FAR (list them in the final PR)
+- V1b: `whatifs/contract.py` (2 checks added; no existing check changed), `whatifs/episode.py` (`_probe`: D13's line-up run in the plan stage; the
+  script gate's context carries it), `whatifs/enforce.py` (the expert words join the one mandatory fix), `whatifs/prompts.py` (three lines in the
+  house rules), `whatifs/models.py` (two reader roles), `whatifs/core.py` (6 cells), `whatifs/org/registry.py` / `levers.py` / `rnd.py` (the second
+  run, 3 levers, SHOW_CHECKS 42), `tools/repair.py` (PROTECTED + layman.py), `tools/rehearsal.py` (2 assertions).
 - V1a: `whatifs/contract.py` (3 checks added; no existing check changed), `whatifs/episode.py` (D13's run before the Animation Director; the script
   gate's context carries the shot list, the timeline and the package), `whatifs/voice.py` (one call after `parse_script`), `whatifs/enforce.py`
   (the numbers problem joins the one mandatory fix), `whatifs/prompts.py` (one sentence for the Director), `whatifs/core.py` (8 cells; defaults
@@ -1878,6 +1946,28 @@ Rehearsal asserts `docs_current` ran and passed.
    repetition guard of `episode.anchor_shots` may add up to 12 in the worst case (about Rs 7 a video). Counted in the paid-call counter
    (`tests/paid_calls.py` V12V1_ADDED). If real videos show more than a few, give seat-converted shots their own small cap.
 
+67. (V1b, recognition by affix) An everyday word that is built like an expert word and is not on `whatifs/org/seed/everyday.txt` is counted
+   ("psychological" was found by scanning the offline writers and exempted). At the pilot (V3) read the counted words of every real script in
+   the `viewer_plain` evidence and exempt the ordinary ones - never an expert word, never a looser rule.
+
+68. (V1b, the measure is a floor) It misses every expert word that is not on `layman.EXPERT` and carries no scientific affix: engineering and
+   business words ("integration", "reduction" - the Ohio State study's own example passes), and new coinages. Add to the list when one is seen.
+   The real measure of "a layman knows this word" is a frequency list of spoken English (a data file whose licence allows it): a question for
+   the tool scout (V5).
+
+69. (V1b -> V2 / V5) The line-up's other titles are a built-in list of 10 about other subjects, so it catches an opening that does not NAME its
+   subject, not one that names the subject without making the promise. Same-subject titles (the runner-up titles of the package, our own past
+   titles, the Observatory's finds) would make it harder; needs care that a runner-up title is not also true of the video.
+
+70. (V1b -> B7) A `viewer_plain` or `viewer_probe` failure after the writers' one fix holds the video with an owner card (as issue 64): B7 gives
+   the owning department one automatic repair first.
+
+71. (V1b -> B8) Whether scripts inside the expert-word budget hold viewers longer is unproven (H8); the three budgets are starting values.
+
+72. (V1b, money, low) The line-up's two reader calls (about Rs 0.2 a video, Rs 1 a month) are logged in Cost_Log and counted by the paid-call
+   counter but are not a line of their own in `costguard.estimate_lines` / `governor.min_episode_cost_inr` (they sit inside the Rs 40 thinking
+   lump). CLAUDE.md hard rule 2 asks for every new paid call in the estimates: V2's cost model adds the line.
+
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`
 - Suite: `bash ../shim/runall.sh . <outdir outside repo>` (~35 min; run it in the background). Some files: `bash ../shim/runseq.sh . <outdir> test_a test_b`.
@@ -1927,9 +2017,10 @@ Rehearsal asserts `docs_current` ran and passed.
 | B5 recheck | done 11 Nov 2026 | 1272 / 0 / 1 skipped | GREEN (28 + 19) | Owner asked for a recheck of B5 and its consequences: 16 corrections (a syntax repair hid who answered; a cheap Gemini model could sit on the Board; the void-session memo never closed; a video could be held for research a job can run; the organisation's plumbing became paid web questions; barren research was invisible; a crash after a paid call; the learning job's 30-minute limit; 8 small ones), 12 new tests. GitHub run 78 (101cf96, the final code commit): **GREEN - 1273 passed, 0 skipped, rehearsal GREEN (episode id EP202611110421, script 28 / 28, final 19 / 19)** |
 | REDESIGN | done 11 Nov 2026 | - | - | The owner rejected the first live video (made by the old code) and gave a free hand: research (14 dated sources), 4 designs, the decisions and the new batch plan in `handoff_v12/BREAKOUT_REDESIGN.md`. No code changed |
 | V1a | done 11 Nov 2026 | GitHub 1284 passed (run 85); laptop 312 / 0 on the 9 touched files | GREEN (50 checks: 45 pass, 5 not applicable) | The viewer's seat, measured: department D13 Audience; before any picture is paid the first shot is a picture carrying the animated promise (5 s), the voice gets a pause every 30 s, numbers heard and number graphics have a budget; 3 script-gate checks (50 hard checks), 4 levers (45), long videos 9:00 at most. GitHub run 85 GREEN on f96b87a; sweep 28 of 28. |
-| V1b | next | | | The viewer's seat, part 2: the judged floor with the canary, the layman test (item 19), the owner's verdict and input tabs, the scoreboard |
-| V2 | after V1b | | | Hook-first production: formats as data (F1, F2, F3), the hook made first as one first-person move, camera continuity, models by value, the three-tier contract |
-| V3 | after V2 | | | Pilot on real services, then GO LIVE with the new code (the later batches are built while the channel runs) |
-| V4 | after V3 | | | The CEO and the ladder: D1 Strategy wired, the portfolio, decide-inform-implement |
+| V1b | done 11 Nov 2026 | 1292 / 0 / 1 (laptop); GitHub 1293 passed (run 89) | GREEN (52 checks: 47 pass, 5 not applicable) | The layman test: expert words a layman would not know counted by code (a budget per minute, in the first 30 s, in one sentence; the writers' one fix carries it) and the promise line-up (two cheap readers of two model families pick the video's title from the first 30 s; a planted opening must get none; verdict by code); 2 script-gate checks (52 hard checks), 3 levers (48), D13's second run. GitHub run 89 GREEN on 4c0e607; sweep 28 of 28 (the first sweep held 1 of 20 for ordinary words - fixed at the cause). |
+| V2 | next | | | Hook-first production: formats as data (F1, F2, F3), the hook made first as one first-person move, camera continuity, models by value, the three-tier contract |
+| V1c | after V2 | | | The judged floor on the finished video with the canary (the owner's rejected video must lose) and his verdict tab |
+| V3 | after V1c | | | Pilot on real services, then GO LIVE with the new code (the later batches are built while the channel runs) |
+| V4 | after V3 | | | The CEO and the ladder: D1 Strategy wired, the portfolio, decide-inform-implement; the owner's input tab and the scoreboard |
 | V5 | after V4 | | | The Breakout Observatory (hits against siblings, three rings, patterns counted by code, one trial each) and the aspect map (item 19) |
 | B6b | after V5 | | | The Council |

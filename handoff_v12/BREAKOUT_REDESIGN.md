@@ -348,6 +348,9 @@ videos CAUSES the virality (a trait of hits is often just as common in flops - w
   to the owner; a row without an owner or a check fails the build; a stale row becomes a research question.
 - H7 a one-move first-person hook keeps more viewers to 30 seconds than a cut hook. H8 scripts inside the unfamiliar-word budget have a higher
   share viewed. H9 trials born from Observatory patterns succeed more often than trials born from web research.
-- O6 Ten batches remain (V1b, V2, V3, V4, V5, B6b-B10); Claude Max ends 10 Dec 2026. Going live is still after V3.
+- O6 Ten batches remain after V1b (V2, V1c, V3, V4, V5, B6b-B10); Claude Max ends 10 Dec 2026. Going live is still after V3.
+- ORDER UPDATE (end of V1b, 11 Nov 2026): V1b built THE LAYMAN TEST only (10.6; its canary is a planted FOREIGN opening - a model reads expert
+  words easily, so the canary first designed could never have failed). The judged floor (4.3) and the owner's verdict tab are V1c, built AFTER V2
+  and before the pilot: the floor judges a finished video and V2 is what changes the look. His input tab and the scoreboard move into V4.
 - O7 No evidence yet that the walk helps on YouTube (10.2): it is in every hook because the owner's own judgment is D13's strongest label and
   it is the brand's promise; F3 and H7 let the viewers confirm or refuse it.
