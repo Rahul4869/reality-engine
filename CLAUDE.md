@@ -76,6 +76,18 @@ pipeline run uses the new code. Nothing restarts.
   a picture before the gate; a held Short is not made and the owner is not asked. A new rule for a Short = a pure measure in `shortseat.py` (or `formats.short_kept_report`) + a line
   in `shortseat.script_issues` for the one fix + a repair in `shortseat.shape` where code can repair + the check; a rule must RECOGNISE what is wrong (an ask, a greeting, an expert
   word), never flag what it does not know. The offline writer (`fakes._fake_short`) must pass the seat for every premise: run `tools/sweep.py --mode short` after touching either.
+- **The ladder** (`whatifs/ladder.py`, department D10; tab `Ladder`): every topic starts as a Short, and a long video is made only about a Short the promote rule took. A Short
+  enters when it is made (`ladder.enter`, with its kept footage); `ladder.read` writes both clocks onto its row - the SLOW one from tab `Analytics` (`brain.ingest_shorts` reads by
+  processed day: YouTube is 48 to 72 hours late, a reading counts from `LADDER_READ_DAYS` days on) and the FAST one from tab `Monitor48` (real-time public views). `ladder.rank` is the
+  promote rule and is pure code (a winner, else rank sums with Wilson lower bounds, else public views); `ladder.promote` is D10's run and is called only through `ladder.gate`, which
+  the tick (`manage._produce_slot`), pre-production (`preview.run`) and `episode.produce` ask BEFORE any paid call. The room takes `ladder.pitch()` as its forced first pitch and code
+  keeps the premise word for word; the draw carries `d["ladder"]` (the Short's id or an override's id) and `ladder.use` marks it only once the plan is saved; check `topic_ladder`
+  judges it at the script gate. Never start a long video around the gate, never rank on a model's opinion or on engaged views divided by views (a looping Short's replays are views),
+  never promote from a reading that covers fewer than three processed days. The winner: `breakout.monitor` judges a standalone Short at the 24-hour and 48-hour mark against the same
+  mark of the channel's earlier Shorts (`breakout.short_winner`) and `ladder.order_followup` writes ONE order with a clock on tab `Breakout_Queue`; `shorts2.order_due` takes it before
+  the cadence, `ladder.watch` (every tick) turns an overdue order into a problem memo. The cadence is `shorts2.cadence` (`SHORTS_PER_WEEK`, `SHORTS_PER_MONTH`): a rule about WHEN a
+  Short is due goes there, never back into a daily cell. The older tests run with `LADDER_ON` FALSE (`tests/conftest.py`); the ladder's tests are `tests/test_v12_ladder.py`, the
+  rehearsal and the sweep walk it (`tools/sweep.py:climb` makes the Short a week ago, because the offline YouTube is as late as the real one).
 - **New format or series idea**: enter it as an experiment arm or a Playbook trial so the data decides; never replace the whole format at once.
 - **Knowledge Palace** (`whatifs/org/palace.py`): knowledge enters only through `palace.add` / `add_many` (dated evidence, real `applied_in` code references)
   and leaves only through `palace.playbook` (the guard runs first). Never write the `Palace_Items` tab directly, never filter statuses yourself.

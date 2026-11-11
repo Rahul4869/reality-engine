@@ -10,16 +10,15 @@ def _quiet(monkeypatch):
 
 def test_free_money_is_proposed_on_monday_and_needs_the_owner(monkeypatch, setting):
     _quiet(monkeypatch)
-    monkeypatch.setattr(RPL, "free_inr", lambda now=None: 2000.0)
-    setting("SHORTS_PER_DAY", "1.5"); setting("SHORTS_KLING_EVERY", "3")
-    props = RPL.weekly(MON)
-    assert [p["rung"] for p in props] == [2, 3] and core.S("SHORTS_PER_DAY") == "1.5"          # nothing changes before the tap
+    monkeypatch.setattr(RPL, "free_inr", lambda now=None: 20000.0)
+    props = RPL.weekly(MON)                                                                     # v12 V2c-b: ONE rung - one more Short a week (the cadence is set in weeks)
+    assert [(p["rung"], p["key"], p["to"]) for p in props] == [(2, "SHORTS_PER_WEEK", "4")] and core.S("SHORTS_PER_WEEK") == "3"          # nothing changes before the tap
     assert RPL.weekly(MON) == []                                                                # once per Monday
     row = next(r for r in core.store().rows("Owner_Actions") if r["kind"] == "replan")
     assert "done" in NT.answer(row["id"], "REPLAN GO")
-    assert core.S("SHORTS_PER_DAY") == "2.0" and core.S("SHORTS_KLING_EVERY") == "2"
+    assert core.S("SHORTS_PER_WEEK") == "4"
     assert RPL.month_restore(dt.datetime(2027, 1, 2, tzinfo=dt.timezone.utc))                 # next month: the owner's values come back
-    assert core.S("SHORTS_PER_DAY") == "1.5" and core.S("SHORTS_KLING_EVERY") == "3"
+    assert core.S("SHORTS_PER_WEEK") == "3"
 
 def test_no_proposal_when_the_money_is_not_free(monkeypatch, setting):
     _quiet(monkeypatch); monkeypatch.setattr(RPL, "free_inr", lambda now=None: 10.0)

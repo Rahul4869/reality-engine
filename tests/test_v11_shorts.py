@@ -40,21 +40,25 @@ def test_breakout_follow_ups_come_first_are_charged_to_the_fund_and_differ(monke
     assert st.rows("Breakout_Queue")[-1]["status"] == "DONE"
     a, b = st.rows("Specials")[-2:]; assert (a["format"], a["hook"]) != (b["format"], b["hook"]) and FMT.likeness(a["script"], b["script"]) < 0.4      # two follow-ups on one topic are two different Shorts
 
-def test_daily_target_and_budget_rules(monkeypatch, setting):
-    setting("SHORTS_PER_DAY", "1.5")
-    even = dt.datetime(2026, 12, 2, 6, 0, tzinfo=dt.timezone.utc); odd = even + dt.timedelta(days=1)
-    assert {SH.target_today(even), SH.target_today(odd)} == {1, 2}
+def test_a_short_of_the_cadence_is_core_production_and_a_follow_up_obeys_the_guard(monkeypatch, setting):
+    """v12 V2c-b: the cadence is set in weeks (tests/test_v12_ladder.py); every Short of it is core - only the long slots' money is protected."""
     from whatifs import governor as G
     monkeypatch.setattr(G, "extras_allowed", lambda est, kind="extra": (False, "guard"))
-    assert SH._budget_ok(30, first_today=False) == (False, "guard")                  # extra Shorts obey the guard
-    assert SH._budget_ok(30, first_today=True)[0] is True                              # the first Short of a day is core
+    assert SH._budget_ok(30)[0] is True                                                # core: the extras guard is not asked
+    monkeypatch.setattr(G, "production_room_inr", lambda: 100.0); monkeypatch.setattr(G, "full_episode_inr", lambda: 600.0)
+    monkeypatch.setattr(G, "episodes_left_this_month", lambda: 1); monkeypatch.setattr(G, "max_long_videos", lambda: 4); monkeypatch.setattr(G, "long_videos_this_month", lambda: 0)
+    ok, why = SH._budget_ok(30); assert ok is False and "kept for 1 long slot" in why   # but never the money a long video needs
+    _quiet(monkeypatch); st = core.store()
+    st.append("Episodes", [{"episode_id": "E7", "premise": "What if the Sun went out?", "title": "The Sun On Trial"}])
+    st.append("Breakout_Queue", [{"ts": core.iso(), "video_key": "E7", "status": "APPROVED", "left": 2}])
+    r = SH.run(force=True); assert r == {"ok": False, "skipped": "budget", "why": "guard"}          # a follow-up is an extra: the guard decides
 
 def test_the_estimate_counts_every_paid_clip_and_a_refusal_makes_nothing(monkeypatch, setting):
     fx = core.S("USD_INR", float); clip = core.S("PRICE_KLING_USD", float) * fx
     for fmt in FMT.SHORTS: assert SH.est_inr(fmt) >= 3 * clip + core.S("REPLAN_SHORT_INR", float), fmt          # at least three hero clips, the writing and the voice
     assert SH.est_inr("S2") >= SH.est_inr("S1")                                        # the longer band never costs less
     _quiet(monkeypatch); _bench("What if the Moon left tonight?")
-    monkeypatch.setattr(SH, "_budget_ok", lambda est, first: (False, f"no room for Rs {est:.0f}"))
+    monkeypatch.setattr(SH, "_budget_ok", lambda est: (False, f"no room for Rs {est:.0f}"))
     r = SH.run(force=True); assert r == {"ok": False, "skipped": "budget", "why": r["why"]} and "no room for Rs" in r["why"]
     assert not core.store().rows("Specials") and not core.store().rows("Sessions")          # nothing was written, voiced or paid
 

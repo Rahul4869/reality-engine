@@ -318,7 +318,7 @@ def test_the_real_production_makes_a_short_in_every_format(monkeypatch, setting)
         assert paid == mk["clips"] >= 2 and calls["other"] == 0 and calls["still"] - before["still"] == mk["pictures"] == (3 if FMT.SHORTS[fmt]["camera"] == "cut" else 1)
         assert SH.est_inr(fmt) >= paid * core.S("PRICE_KLING_USD", float) * core.S("USD_INR", float)          # the estimate said before anything was paid covers the clips really made
         assert mk["loop_diff"] <= SH.LOOP_MAX and SH._loop_diff(r["path"]) == mk["loop_diff"]                   # the last frame is the first frame again
-    assert {x["stage"] for x in st.rows("Jury_Log")} == {"short"} and len({x["hook"] for x in st.rows("Specials")}) >= 2
+    assert {x["stage"] for x in st.rows("Jury_Log")} == {"short"} and len({(x["format"], x["hook"]) for x in st.rows("Specials")}) == 3      # what the rotation guarantees: no pair of format and hook twice (the hook alone may repeat across formats - v12 V2c-b: the draw is seeded by the Short's id, so this no longer depends on chance)
     assert not [m for m in MEM.find(type="problem_memo")] and sent.count("special_review") == 3 and "contract_hold" not in sent
     assert [(x["format"], x["status"]) for x in st.rows("Specials")] == [("S1", "AWAITING_APPROVAL"), ("S2", "AWAITING_APPROVAL"), ("S3", "AWAITING_APPROVAL")]
 

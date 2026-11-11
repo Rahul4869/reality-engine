@@ -109,13 +109,16 @@ def pick_topic(order=None):
     if bench: return {"premise": bench[0]["premise"], "origin": "bench", "bench_id": bench[0].get("bench_id")}
     return None
 
-def hook_for(fmt, hist):
+def hook_for(fmt, hist, ep=None):
     """The hook archetype of the next Short: the learning core picks among the archetypes a Short may open on, never one that made the same pair
-    (format, hook) as either of the last two Shorts - so formats and hooks rotate by code, whatever the learning core prefers."""
+    (format, hook) as either of the last two Shorts - so formats and hooks rotate by code, whatever the learning core prefers. The draw is seeded
+    by the Short's id (ep): one id always gives the same Short, so a fault seen once can be reproduced (the rule of the whole offline pipeline)."""
     from whatifs import brain as BR
+    import hashlib
     taken = {(str(h.get("format")), str(h.get("hook"))) for h in hist[:2]}
     opts = [h for h in FMT.SHORT_HOOKS if (fmt, h) not in taken] or list(FMT.SHORT_HOOKS)
-    c = BR.choose("hook", "short", options=opts) if S("BRAIN_ON", bool) else {"level": S("BRAIN_DEFAULT_HOOK"), "holdout": False}
+    seed = int(hashlib.sha1(str(ep).encode()).hexdigest()[:8], 16) if ep else None
+    c = BR.choose("hook", "short", options=opts, seed=seed) if S("BRAIN_ON", bool) else {"level": S("BRAIN_DEFAULT_HOOK"), "holdout": False}
     if c.get("level") not in opts: c = dict(c, level=opts[0], holdout=False)          # the control hook was taken (or is the trial's own): the first free one
     return c
 
@@ -375,7 +378,7 @@ def run(force=False, publish=True, now=None, episode_id=None):
     if not topic: log("Shorts: no unused premise on the bench (the weekly research fills it)", "WARN"); return {"ok": False, "skipped": "no topic"}
     brk = topic.get("origin") == "breakout"
     ep = str(episode_id or f"{'BRK' if brk else 'SH'}{now:%Y%m%d%H%M}")                # BRK ids: every cost of a follow-up is charged to the breakout fund
-    hist = history(); fmt = FMT.short_pick(ep, [h["format"] for h in hist]); choice = hook_for(fmt, hist); arch = choice["level"]
+    hist = history(); fmt = FMT.short_pick(ep, [h["format"] for h in hist]); choice = hook_for(fmt, hist, ep); arch = choice["level"]
     est = est_inr(fmt)
     ok, why = G.extras_allowed(est, kind="breakout") if brk else _budget_ok(est)
     if not ok:

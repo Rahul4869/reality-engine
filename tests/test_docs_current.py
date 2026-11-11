@@ -23,6 +23,7 @@ SAMPLES = {
     "old_version_tag":        ("Since v9.4a the room runs early.", None),
     "old_long_cadence":       ("Standard mode makes 8 long videos a month, twice a week.", None),
     "no_kling_statement":     ("The render is ffmpeg-only.", None),
+    "daily_shorts_cadence":   ("Cadence: 1.5 standalone Shorts per day (SHORTS_PER_DAY).", "Cadence: 3 standalone Shorts a week (SHORTS_PER_WEEK); thirty near-identical Shorts a day would be spam."),
 }
 
 def _mini(tmp_path):
@@ -37,7 +38,8 @@ def _mini(tmp_path):
         if not os.path.exists(p): open(p, "w").close()
     ok = '"""A module. See docs/CURRENT/SYSTEM.md."""\n'
     _w(r, "whatifs/prompts.py", ok + 'WRITER = "Open inside the story. It happens to YOU."\n')
-    _w(r, "whatifs/manage.py", ok + 'A = "budget cap moved to Rs 4,700"\nB = "fal-ai/kling-video/v3/standard/image-to-video"\n')
+    _w(r, "whatifs/manage.py", ok + 'A = "budget cap moved to Rs 4,700"\nB = "fal-ai/kling-video/v3/standard/image-to-video"\n'
+                                    'C = ("SHORTS_PER_DAY", "SHORTS_KLING_EVERY", "REPLAN_MAX_SHORTS_PER_DAY")\n')      # v12 V2c-b: the one-time move names the three retired cadence cells
     return r
 
 def _w(root, rel, text, mode="w"):

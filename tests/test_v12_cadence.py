@@ -52,10 +52,10 @@ def test_the_retired_cadence_is_refused_everywhere():
     TRU.reset(); assert TRU.issues() == []
 
 def test_the_policy_prompt_describes_the_channel_from_the_settings(setting, monkeypatch):
-    assert CT.cadence_words() == "about 1 long video and 11 Shorts a week"
-    setting("PUBLISH_DAYS", "Tue,Sat"); setting("SHORTS_PER_DAY", "2"); assert CT.cadence_words() == "about 2 long videos and 14 Shorts a week"
+    assert CT.cadence_words() == "about 1 long video and 3 Shorts a week"                   # v12 V2c-b: the cadence is set in weeks
+    setting("PUBLISH_DAYS", "Tue,Sat"); setting("SHORTS_PER_WEEK", "4"); assert CT.cadence_words() == "about 2 long videos and 4 Shorts a week"
     setting("SHORTS_TRACK_ON", "FALSE"); assert CT.cadence_words() == "about 2 long videos and 0 Shorts a week"
-    setting("PUBLISH_DAYS", "Sat"); setting("SHORTS_TRACK_ON", "TRUE"); setting("SHORTS_PER_DAY", "1.5")
+    setting("PUBLISH_DAYS", "Sat"); setting("SHORTS_TRACK_ON", "TRUE"); setting("SHORTS_PER_WEEK", "3")
     seen = {}
     import whatifs.models as M
     monkeypatch.setattr(M, "ask", lambda role, system, user, **k: seen.setdefault("system", system) and "A calm note.")
@@ -63,4 +63,4 @@ def test_the_policy_prompt_describes_the_channel_from_the_settings(setting, monk
     monkeypatch.setattr(NT, "send", lambda *a, **k: None)
     try: CT.policy_rescue([{"change": "x"}])
     except Exception: pass                                                                   # only the prompt matters here
-    assert "about 1 long video and 11 Shorts a week" in seen.get("system", "") and "2 long videos" not in seen.get("system", "")
+    assert "about 1 long video and 3 Shorts a week" in seen.get("system", "") and "2 long videos" not in seen.get("system", "")

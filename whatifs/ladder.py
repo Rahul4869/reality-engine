@@ -8,6 +8,7 @@ CANDIDATE = ("POSTED", "READ")          # a Short that can still be promoted (RE
 TAKEN = ("PROMOTED", "USED")            # its topic has a long video, or is the next one
 LAPSE_X = 2                             # a follow-up order this many times its clock old is given up (the wave has passed)
 MEASURES = ("engaged", "watched", "subs_rate", "shares_rate")      # what the promote rule ranks a measured Short on
+THIN_OF_BEST = 0.10                     # a measured Short with under this share of the pool's best engaged views is thin evidence too (a rate from few viewers must not outvote reach)
 QUEUE = "Breakout_Queue"
 
 def on():
@@ -132,20 +133,21 @@ def _borda(group):
 def rank(cands, min_engaged=None):
     """The promote rule: (class, [(row, why)]) - the best non-empty class of evidence, best first. (1) 'winner': a Short the fast clock declared, by
     its multiple of the channel's median. (2) 'measured': the lowest sum of ranks over engaged views, share watched, subscribers per engaged view and
-    shares per engaged view (the two rates by their Wilson lower bound); a Short under LADDER_MIN_ENGAGED engaged views comes after every Short above
-    it and says 'thin evidence'. (3) 'public': public views at the 48-hour mark. Engaged views divided by views is never ranked on: a replay of a
-    looping Short is a view and never an engaged view."""
+    shares per engaged view (the two rates by their Wilson lower bound). THIN EVIDENCE - a Short under LADDER_MIN_ENGAGED engaged views, or under
+    THIN_OF_BEST of the pool's best - comes after every other Short and says so: the Wilson bound shrinks a rate from few viewers, it cannot make
+    2 of 20 lose to 30 of 2,000 by itself. (3) 'public': public views at the 48-hour mark. Engaged views divided by views is never ranked on: a
+    replay of a looping Short is a view and never an engaged view."""
     lo = S("LADDER_MIN_ENGAGED", int) if min_engaged is None else min_engaged
     win = sorted((r for r in cands if _n(r.get("multiple")) > 0), key=lambda r: -_n(r.get("multiple")))
     if win: return "winner", [(r, f"a winner: {_n(r.get('multiple')):.1f} times the channel's usual views at the same age") for r in win]
     meas = [r for r in cands if r.get("evidence") == "measured"]
     if meas:
-        out = []
+        out = []; lo = max(lo, THIN_OF_BEST * max(_n(r.get("engaged")) for r in meas))
         for thin, group in ((False, [r for r in meas if _n(r.get("engaged")) >= lo]), (True, [r for r in meas if _n(r.get("engaged")) < lo])):
             for r, tot in _borda(group):
                 out.append((r, f"rank sum {tot} over {len(MEASURES)} measures among {len(group)}: {int(_n(r.get('engaged')))} engaged views, {_n(r.get('watched')):.0f}% watched, "
                                f"{int(_n(r.get('subs')))} subscribers, {int(_n(r.get('shares')))} shares in {int(_n(r.get('days')))} processed days"
-                               + (f"; THIN EVIDENCE (under {lo} engaged views)" if thin else "")))
+                               + (f"; THIN EVIDENCE (under {lo:.0f} engaged views)" if thin else "")))
         return "measured", out
     pub = sorted((r for r in cands if r.get("evidence") == "public"), key=lambda r: -_n(r.get("v48")))
     if pub: return "public", [(r, f"public views only (the true numbers are not processed yet): {int(_n(r.get('v48')))} at the 48-hour mark") for r in pub]

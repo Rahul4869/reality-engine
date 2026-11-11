@@ -172,12 +172,11 @@ def test_link_pack_lists_only_winners_once_a_week(monkeypatch):
     assert ids == ["s2a", "s0b", "s1b"] and SL.link_pack(views=views) == ids                      # above the median (65), best first
     cards = [r for r in core.store().rows("Owner_Actions") if r["kind"] == "linkpack"]; assert len(cards) == 1 and cards[0]["tier"] == "week" and "studio.youtube.com/video/s2a/edit" in cards[0]["text"]
 
-def test_breakout_card_once_per_short(monkeypatch):
-    monkeypatch.setattr(PUB, "email", lambda *a, **k: True); monkeypatch.setattr(NT2, "in_quiet_hours", lambda now=None: False)
-    _eps_with_reels(2, 10)
-    v = {"s0a": 100, "s0b": 120, "s1a": 5000, "s1b": 110}
-    assert SL.breakouts(views=v) == ["s1a"] and SL.breakouts(views=v) == ["s1a"]
-    assert len([r for r in core.store().rows("Owner_Actions") if r["kind"] == "breakout"]) == 1
+def test_the_hourly_link_card_is_retired_the_winner_rule_spots_a_short_that_takes_off():
+    """v12 V2c-b: at three Shorts a week the hourly card could never fire (it needed two Shorts inside two days). A Short that takes off is found by
+    the monitor at the 24-hour and 48-hour mark and gets its follow-up ordered by code (tests/test_v12_ladder.py)."""
+    from whatifs import breakout as BRK
+    assert not hasattr(SL, "breakouts") and callable(BRK.short_winner) and "SL.breakouts" not in open(__import__("whatifs.manage", fromlist=["x"]).__file__, encoding="utf-8").read()
 
 def test_weekly_cap_blocks_specials(setting):
     _eps_with_reels(7, 20); setting("SHORTS_WEEKLY_CAP", "14")

@@ -37,8 +37,14 @@ Brand: **Reality Engine**. The promise is the owner's own: it happens to YOU - f
 - Before any picture is paid the viewer's seat for a Short measures it: a hook that ends inside 3 seconds of the real voice, one number at most, no expert word,
   no ask, unlike the last ten Shorts (checks `short_open`, `short_plain`, `short_shape`, `short_kept`). A Short that fails is not made.
 
+## Every topic starts as a Short (`whatifs/ladder.py`, Growth and Learning D10)
+- Three Shorts a week, twelve a month. Each Short's real numbers are read (YouTube delivers them 48 to 72 hours late); when a long video is about to start,
+  code promotes the best Short of the last 30 days whose topic has no long video yet, and the long video is about that topic (check `topic_ladder`).
+- No promoted Short and no override on record = no long video. A Short at three times the channel's usual views gets one follow-up Short within 48 hours.
+- Until batch V2c-b2 the long video is about the proven topic but opens with its own pictures; the Short's footage is kept for that opening.
+
 ## Also made today
-- Bridge Shorts and Reels cut from the long video (they stop being the product in batch V2c-b, when every topic starts as a Short).
+- Bridge Shorts and Reels cut from the long video (they stop being the product in batch V2c-b2).
 - Spin-offs: the Case Files countdown and the monthly Deep Trial. Sound: per-world beds and story-tied events; ASMR only as touches.
 
 ## Explored and not current
