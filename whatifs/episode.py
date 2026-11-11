@@ -171,8 +171,16 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     if not pkg.get("thumb_prompt") and (d.get("promise") or {}).get("thumb_scene"): pkg["thumb_prompt"] = d["promise"]["thumb_scene"]
     st.update("Episodes", "episode_id", ep, {"draw_json": d, "updated": iso()})          # v8.7: promise, rhythm plan, retention check, beat map, playbook flags
     rplans = ROOM.reels(room, shots, d, ep)
-    return {"ep": ep, "slot": slot_iso, "d": d, "plan": plan, "room": room, "hook_rec": hook_rec, "shots": shots, "pkg": pkg, "rplans": rplans, "chs": chs,
-            "vo": {"wav": os.path.basename(vo.wav_path), "timeline": os.path.basename(vo.timeline_path), "duration": vo.duration, "voiceprint": vo.voiceprint, "style": vo.style}}
+    S0 = {"ep": ep, "slot": slot_iso, "d": d, "plan": plan, "room": room, "hook_rec": hook_rec, "shots": shots, "pkg": pkg, "rplans": rplans, "chs": chs,
+          "vo": {"wav": os.path.basename(vo.wav_path), "timeline": os.path.basename(vo.timeline_path), "duration": vo.duration, "voiceprint": vo.voiceprint, "style": vo.style}}
+    S0["probe"] = _probe(S0, ep, units)        # v12 V1b (D13): the promise line-up, saved with the plan so that a resume never pays it twice
+    return S0
+
+def _probe(S_, ep, units):
+    """v12 V1b (the layman test, D13): do the first 30 seconds say what the video is about? Two cheap readers, a planted opening, a verdict by code."""
+    from whatifs.org import layman as LAY
+    title, words = LAY.promise_words(S_.get("pkg") or {}, S_.get("d") or {})
+    return ORG.work("D13", "probe", ep, lambda b: LAY.probe_run(b, title, units, S_["room"]["script"]["script"], ep, words))
 
 def fix_mode(): return False      # the plan stage never runs in a one-click fix (the fix always restores a checkpoint)
 
@@ -569,12 +577,13 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
         S_ = plan_check(S_, units); shots = S_["shots"]          # v8.9: the last free check before any picture money is spent
         from whatifs.org import audience as AUD                 # v12 V1 (D13): the viewer's seat - free repairs BEFORE the Animation Director places its scenes
         shots = ORG.work("D13", "seat", ep, lambda b: AUD.shape(S_["shots"], units, S_.get("pkg") or {}), measure=AUD.m_shape); S_["shots"] = shots
+        if S_.get("probe") is None: S_["probe"] = _probe(S_, ep, units)          # v12 V1b: a plan saved before the layman test carries no line-up yet
         from whatifs import anim as ANIM                        # v10.2 (K152): exactly ANIM_SHOTS animated scenes, at the retention cliffs
         ANIM.apply(shots, units, plan); S_["shots"] = shots
         if not any(s_.get("promise") for s_ in shots):                 # v11.1 fix: the Animation Director re-places the scenes and can drop the promise
             shots = ROOM.promise_shot(shots, units, S_.get("pkg") or {}); S_["shots"] = shots       # flag (v8.6) - re-aim the opening scene again
         from whatifs import contract as CON                     # v10.2 (K151): every script-stage promise checked BEFORE any picture is paid for
-        g = ORG.work("D8", "script_gate", ep, lambda b: CON.run("script", {"d": d, "room": S_["room"], "hook_rec": S_.get("hook_rec"), "ep": ep, "shots": shots, "units": units, "pkg": S_.get("pkg") or {}}, ep),
+        g = ORG.work("D8", "script_gate", ep, lambda b: CON.run("script", {"d": d, "room": S_["room"], "hook_rec": S_.get("hook_rec"), "ep": ep, "shots": shots, "units": units, "pkg": S_.get("pkg") or {}, "probe": S_.get("probe")}, ep),
                      measure=WR.m_gate, lesson=WR.gate_lessons, emit=WR.gate_memos(ep, "script"), settle=WR.gate_settle(ep, "script"))
         if not g["ok"]:
             st.update("Episodes", "episode_id", ep, {"status": "HOLD_QC", "notes": CK.set_attempts("contract hold (script): " + ", ".join(f for f, _ in g["failed"]), 1), "updated": iso()})

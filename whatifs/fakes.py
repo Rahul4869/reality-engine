@@ -93,10 +93,21 @@ def _fake_board(prompt):
         out[lab].update({q: (["yes", "it breaks a rule"] if bad else ["no", "no rule is touched"]) for q in ("R1", "R2", "R3")})
     return json.dumps({"answers": out})
 
+def _fake_probe(prompt):
+    """v12 V1b: the offline reader of the promise line-up - it names a title only when the opening shares more words with it than with any other."""
+    from whatifs.growth import _stems
+    titles = dict(re.findall(r"(?m)^([A-D])\. (.+)$", prompt))
+    def pick(op):
+        s = _stems(op); sc = sorted(((len(_stems(t) & s), l) for l, t in titles.items()), reverse=True)
+        return sc[0][1] if sc and sc[0][0] > 0 and (len(sc) < 2 or sc[0][0] > sc[1][0]) else "E"
+    x = prompt.split("OPENING X:")[-1].split("OPENING Y:")[0]; y = prompt.split("OPENING Y:")[-1]
+    return json.dumps({"X": pick(x), "Y": pick(y), "X_says": "Something strange is about to happen to you.", "Y_says": "Something strange is about to happen to you."})
+
 def fake_reply(key, prompt):
     r = random.Random(len(prompt))
     if key == "rnd_research": return _fake_research(prompt)
     if key == "board": return _fake_board(prompt)
+    if key == "probe": return _fake_probe(prompt)
     if key == "outlier_video":
         return json.dumps({"hook_device": "a number on frame 0", "first_frame": "close-up of a hand", "cut_rhythm": "a cut every 1.5 s", "sound_moment": "a hit at 0:02",
                            "caption_style": "word-by-word", "why_it_works": "instant stakes", "how_to_adapt": "open on YOU + a number in the cold open"})

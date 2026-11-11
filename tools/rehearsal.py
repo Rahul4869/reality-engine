@@ -84,6 +84,8 @@ def run():
         assert led12.get("dept_contract") == "PASS" and led12.get("takeaways_written") == "PASS", ("the organisation's checks did not pass", led12.get("dept_contract"), led12.get("takeaways_written"))
         seat12 = [led12.get(k) for k in ("viewer_promise", "viewer_breath", "viewer_numbers")]     # v12 V1: the viewer's seat judged this episode before pictures were paid
         assert ("D13", "seat") in ses12 and seat12 == ["PASS"] * 3, ("the viewer's seat did not run or did not pass", seat12)
+        lay12 = [led12.get(k) for k in ("viewer_plain", "viewer_probe")]                           # v12 V1b: the layman test - everyday words, and the promise line-up
+        assert ("D13", "probe") in ses12 and lay12 == ["PASS"] * 2, ("the layman test did not run or did not pass", lay12)
         tk12 = [t for t in st.rows("Takeaways") if t.get("episode_id") == ep12]
         assert len(tk12) >= len(need12) and not any(ORGR._takeaway_problems(t) for t in tk12), "a department run wrote no valid takeaway"
         wd12 = OMEM.watchdog(st); oh12 = ORGR.health(st); assert oh12["ok"] and _S12("ORG_WATCHDOG_AT") and _S12("ORG_SINCE"), oh12["problems"]

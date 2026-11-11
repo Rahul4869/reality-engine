@@ -53,11 +53,15 @@ V111_ADDED = {"text:rewrite": 1}
 # a paid still (under Rs 1): 2 in the fake episode. No text call is added (the numbers problem rides on the ONE mandatory rewrite that already exists).
 V12V1_ADDED = {"image": 2}
 
+# v12 V1b (the layman test): the promise line-up - one small call to a cheap reader of each model family, once per video (saved with the plan).
+V12V1B_ADDED = {"text:probe_gemini": 1, "text:probe_claude": 1}
+
 def allowed_base(base):
     out = dict(base)
     for k, v in V102_ADDED.items(): out[k] = out.get(k, 0) + v
     for k, v in V11_ADDED().items(): out[k] = out.get(k, 0) + v
     for k, v in V111_ADDED.items(): out[k] = out.get(k, 0) + v
     for k, v in V12V1_ADDED.items(): out[k] = out.get(k, 0) + v
+    for k, v in V12V1B_ADDED.items(): out[k] = out.get(k, 0) + v
     return out
 

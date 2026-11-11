@@ -25,6 +25,8 @@ LEVERS = {
     "RESEARCH_PER_WEEK": _n("int", 1, 8, 2, "up", COST, ("research_cadence",)), "BOARD_MIN_EVIDENCE": _n("int", 3, 9, 1, "down", GATE, ("research_cadence",)),
     "NUMBERS_PER_MIN_MAX": _n("float", 1, 8, 1, "up", GATE, ("viewer_numbers",)), "GRAPHICS_MAX_LONG": _n("int", 0, 8, 1, "up", GATE, ("viewer_numbers",)),
     "GRAPHICS_FREE_SEC": _n("int", 0, 180, 30, "down", GATE, ("viewer_numbers",)), "BREATH_EVERY_S": _n("int", 15, 60, 10, "up", GATE, ("viewer_breath",)),
+    "PLAIN_HARD_PER_MIN_MAX": _n("float", 1, 5, 1, "up", GATE, ("viewer_plain",)), "PLAIN_OPENING_HARD_MAX": _n("int", 0, 3, 1, "up", GATE, ("viewer_plain",)),
+    "PLAIN_HARD_PER_SENTENCE_MAX": _n("int", 1, 4, 1, "up", GATE, ("viewer_plain",)),
     "ROOM_MODE": _e(("v2", "v1"), ("v1",), "v1 is the older writers' room without the blind jury", ("owners_cut",)),
     "ROOM_V2_DRAFTS": _n("int", 2, 5, 1, "up", COST, ("owners_cut",)), "REHOOK_MAX_GAP_SEC": _n("int", 30, 120, 15, "up", GATE, ("retention",)),
     "JOKE_EVERY_SEC_LONG": _n("int", 8, 60, 10, "up", GATE, ("joke_density",)), "COLD_OPEN_LORE_FREE_SEC": _n("int", 10, 45, 10, "down", GATE, ("cold_open",)),

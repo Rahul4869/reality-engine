@@ -1,0 +1,101 @@
+# Everyday English words of 7 or more letters (base forms) that a layman knows. Used by whatifs/org/layman.py: a word of 7+ letters that is NOT
+# here (after plain endings are removed) counts as unfamiliar. Add a word when a real script is held for an ordinary word; never add an expert word.
+ability absence absolute accident account achieve activity addition address advance advantage adventure afternoon against airplane airport alcohol
+already although altogether ambulance american ancient anniversary announce another anybody anymore anything anywhere apartment apology apologize
+apparent appearance application appoint appreciate approach approve arrange arrival article assistant atmosphere attempt attention attitude attract
+attractive audience automatic available average awesome awkward
+backward backyard balance balloon bandage bargain barrier baseball basement basketball bathroom battery beautiful because bedroom bedtime behavior
+behaviour believe belong beneath benefit besides between bicycle biggest billion birthday blanket blossom boundary bracelet breakfast breathe
+brightness brilliant brother building burning business butterfly
+cabinet calendar camera campaign candidate capable capital captain capture careful carpenter carriage cartoon ceiling celebrate central century
+ceremony certain chairman challenge champion chapter character charity cheerful chemical chicken childhood chimney chocolate christmas cigarette
+circuit citizen classic classroom cleaner climate clothes clothing collapse collect collection college colorful colourful combine comfort
+comfortable command comment commercial committee common communicate community company compare competition complain complaint complete complex
+computer concentrate concept concern concert conclusion condition conference confidence confident confirm conflict confuse confusion connect
+connection consider constant contact contain container content contest continue contract control convenient conversation convince cooking
+correct costume cottage counter country countryside courage courtroom cousin covering creative creature criminal critical crossing crowded
+crystal culture cupboard curious curtain cushion customer cutting
+damage dancing dangerous darkness daughter daylight deadline december decision declare decorate decrease deepest definitely degree delicious
+deliver delivery demand dentist department departure depend describe description deserve design desperate dessert destroy destruction detail
+detective determine develop diamond dictionary difference different difficult difficulty digital dinosaur direction director disagree disappear
+disappoint disaster discover discovery discuss discussion disease distance distant disturb divorce doctor document doorbell doorway downstairs
+downtown drawing dressing drinking driving
+earlier earthquake eastern economy education effective electric electricity electronic elephant elevator emergency emotion emotional employee
+employer encourage ending endless enemies engine engineer english enormous entertain entertainment entire entrance envelope environment equally
+equipment especially essential evening everybody everyday everyone everything everywhere evidence exactly examine example excellent except
+exchange excited exciting exercise exhausted exhibit existence expand expect expensive experience experiment expert explain explanation explode
+explore explosion express expression extreme eyebrow
+factory failure familiar family famous fantastic farmer farther fashion fastest favorite favourite feather feature february feeling festival
+fiction fifteen fighting finally finance financial finding finger fingertip finish fireplace firework fishing fitness flashlight flavor flavour
+floating flooding flower follow football footprint footstep forehead foreign forest forever forget forgive forgotten fortune forward fountain
+fourteen freedom freezer freezing frequent friction friendly friendship frighten frozen function funeral furniture further
+gallery garbage garden gasoline gathering general generation generous gentle gentleman genuine getting giant glasses goodbye government gradual
+grandfather grandmother grandparent grateful gravity greatest grocery growing guarantee guardian guitar
+habitat hallway hammer handful handle handsome handwriting happen happiness harmful harvest headache heading headline healthy hearing heartbeat
+heating heaven heavier heavily height helicopter helpful herself highway himself history holiday hollywood homework honest hopeful horizon
+horrible hospital however hundred hungry hurricane husband
+illness imagine imagination immediate importance important impossible impress impression improve include including income increase incredible
+indeed independent indicate individual industry infection influence information ingredient injury innocent insect inside insist inspector
+instance instant instead instruction instrument insurance intelligent intend interest interesting internet interrupt interview introduce
+invention invisible invitation involve island
+jacket january jealous jewelry journey judgment junction justice
+keyboard kilometer kilometre kindness kingdom kitchen knowing knowledge
+landing landscape language laptop largest laughter laundry lawyer leader leading leather lecture length lesson letter liberty library license
+lifetime lighter lightning limited listen literally little living location lonely longer looking lottery loudest lovely luggage
+machine machinery magazine magical magnetic magnet mailbox maintain majority making manager mankind manner marriage married material mathematics
+matter maximum meaning meanwhile measure measurement medical medicine meeting melting member memory mention message midnight military million
+mineral minimum minister minute miracle mirror missing mistake mixture moment monster morning mother motion mountain mouthful movement musical
+musician mystery
+national natural nature nearby nearly necessary necklace negative neighbor neighbour neighborhood neighbourhood neither nervous network
+newspaper nineteen nobody nonsense normal northern nothing notice november nowhere nuclear number numerous
+obvious occasion october offering officer official operate operation opinion opportunity opposite orange orchestra ordinary organize original
+otherwise ourselves outcome outdoor outline outside overall overcome overnight
+package painful painting pancake paragraph parents parking particular partner passage passenger passion passport patient pattern pavement payment
+peaceful penalty pencil people pepper perfect perform performance perfume perhaps period permanent permission person personal personality
+physical picture pillow plastic platform playground pleasant pleasure plenty pocket pointing poison police policeman policy polite political
+pollution popular population position positive possible possibly possibility postcard potato poverty powerful practical practice prayer precise
+predict prefer pregnant prepare presence present president pressure pretend pretty prevent previous princess principal printer prison prisoner
+private probably problem process produce product production profession professional professor program programme programming progress project
+promise proper property protect protection provide public pudding pumpkin punish purchase purpose pushing
+quality quantity quarter question quickly quietly
+railway rainbow raincoat reaction reading reality realize really reason reasonable receipt receive recent recently reception recipe recognize
+recommend record recover rectangle reduce reflect reflection refrigerator refuse regular relationship relative relax release religion remain
+remember remind remote remove repair repeat replace reply report represent request require rescue research respect respond response
+responsible restaurant result return reveal reverse reward ribbon rocket romantic rubbish running
+sadness safety sailing sandwich satellite satisfy saturday sausage scared schedule science scientist scissors scratch scream screen search
+season second secret secretary section security selfish sentence separate september serious servant service setting seventeen seventy several
+shadow shallow shampoo sharing shelter shining shivering shopping shortly shoulder shouting shower sickness sidewalk signal silence silent
+silver similar simple simply singer singing sister situation sixteen skeleton slightly slipper slowly smaller smartphone smiling smoking
+society soldier somebody someday somehow someone something sometimes somewhere southern speaker special species specific speech spelling
+spending spirit splash squeeze stadium staircase standard standing station stomach storage straight strange stranger strawberry stream street
+strength stretch strong structure student studying stupid subject succeed success successful sudden suddenly suffer suggest suggestion suitcase
+summer sunlight sunrise sunset sunshine supermarket support suppose surface surgery surprise surround survive suspect swallow sweater swimming
+system
+talking teacher teaching teaspoon technology teenager telephone telescope television temperature terrible territory thanksgiving theater
+theatre themselves therefore thickness thinking thirsty thirteen thought thousand through throughout thunder thursday ticket tightly tobacco
+together toilet tomorrow tongue tonight toothbrush toothpaste tornado totally touching tourist toward towards towel traffic training translate
+transport travel treasure treatment trembling triangle trouble trousers tuesday tunnel turning twelve twenty typical
+umbrella uncle uncomfortable underneath understand underwater underwear unfortunately unhappy uniform universe university unknown unless
+unlikely until unusual upstairs useful usually
+vacation valley valuable variety various vegetable vehicle version victory village violence violent visible vision visitor volcano volume
+waiting walking wallet warning washing watching waterfall weakness wealthy weapon weather wedding wednesday weekend weight welcome western
+whatever whenever wherever whether whisper whistle window winter wisdom within without witness wonder wonderful wooden working workshop worried
+worrying writing written
+yellow yesterday yourself younger youngest
+# second block (11 Nov 2026): ordinary words found missing while testing
+collide collision shatter crumble tremble glimmer flicker shimmer sparkle scatter shudder stumble eyelash fingernail doorknob mattress pillowcase
+bathtub driveway rooftop skyline escalator stairway streetlight headlight tsunami avalanche glacier iceberg continent hydrogen bacteria vaccine
+eyeball eardrum nostril charger website password download notification monitor headphone earphone microphone photograph photography recording
+channel episode subscribe percent percentage halfway sideways upwards downward outward overhead afterward afterwards eventually technical
+hesitate calculate estimate multiply flutter glitter sprinkle crackle shuffle scramble struggle stagger astronaut electrician mechanic reporter
+announcer verdict testimony objection attorney prototype laboratory solution gigantic massive artificial mysterious ridiculous tremendous
+remarkable miserable flexible sensible particle radiation trillion whispering stretching brushing mirrors seconds minutes thousands millions
+billions hundreds anybody everyone nothing because between without through another against forward backward farther further together
+teenager grownup grandchild grandson granddaughter boyfriend girlfriend roommate classmate teammate coworker neighbor passenger pedestrian
+bedroom kitchen bathroom doorstep fireplace backpack suitcase umbrella raincoat sweater t-shirt sneakers slippers sunglasses toothbrush
+blanket pillows curtains carpets windows ceiling rooftops sidewalks highways airports stations elevators buildings apartments neighborhoods
+sunrise sunset moonlight starlight daylight twilight nightfall midnight weekday weekend lifetime heartbeat footsteps fingerprints handwriting
+swallow breathe breathing shivering trembling whistle whisper giggle chuckle mumble mutter stutter wander wobble dangle bounce rattle rumble
+freeze frozen melting boiling burning floating falling flying spinning rolling sliding slipping dripping pouring soaking drowning sinking
+stronger weaker heavier lighter thicker thinner shorter taller longer wider narrower deeper louder quieter brighter darker warmer colder hotter
+faster slower earlier later closer nearer smaller larger bigger tinier

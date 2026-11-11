@@ -433,6 +433,31 @@ def p_research_cadence(ctx):
                   f"{s.get('escalated', 0)} escalated; {s.get('assessments', 0)} assessment(s) re-computed ({s.get('accept', 0)} accept, {s.get('test', 0)} test, "
                   f"{s.get('reject', 0)} reject); spent D2 Rs {s.get('D2_inr', 0)}, D3 Rs {s.get('D3_inr', 0)}")
 
+def p_viewer_plain(ctx):
+    """v12 V1b (the layman test, D13): few expert words - the distinct words a layman would not know, in the whole narration, in the first 30 s and
+    piled into one sentence. Counted by code (whatifs/org/layman.py); names and the title's own words are not counted."""
+    from whatifs.org import layman as LAY
+    if not LAY.on(): return NA, "the layman test is switched off (LAYMAN_ON / VIEWER_SEAT_ON)"
+    text = _script_text(ctx)
+    if not str(text or "").strip(): return FAIL, "empty script"
+    r = LAY.plain_report(text, ctx.get("units"), LAY.promise_words(ctx.get("pkg"), ctx.get("d"))[1])
+    if r["problems"]: return FAIL, "; ".join(r["problems"])[:400]
+    return PASS, (f"{len(r['hard'])} expert word(s) a layman would not know (limit {r['allowed']})" + (f": {', '.join(r['hard'][:6])}" if r["hard"] else "")
+                  + f"; {len(r['opening'])} in the first 30 s (limit {r['opening_max']}); sentences: median {r['median_words']} words, longest {r['longest_words']}")
+
+def p_viewer_probe(ctx):
+    """v12 V1b (the layman test, D13): the promise line-up - from the first 30 s alone, two first-time readers of two model families picked this
+    video's title out of a line-up, and gave no title to the planted opening. The verdict is computed by code (layman.probe); a void session is
+    D13's own problem and never holds a video."""
+    from whatifs.org import layman as LAY
+    if not LAY.on() or not S("LAYMAN_PROBE_ON", bool): return NA, "the promise line-up is switched off (LAYMAN_PROBE_ON / LAYMAN_ON)"
+    p = ctx.get("probe")
+    if not isinstance(p, dict) or not p.get("status"): return NA, "no promise line-up in this run (it is made in the plan stage, right after the package)"
+    st = str(p.get("status")); why = str(p.get("why") or "")[:380]
+    if st == "pass": return PASS, why
+    if st == "fail": return FAIL, why
+    return NA, (f"the line-up was void and is not counted ({why})" if st == "void" else why or st)
+
 def p_viewer_numbers(ctx):
     """v12 V1 (the viewer's seat, D13): few numbers - what a viewer hears per minute, and the full-screen number graphics he must read."""
     from whatifs.org import audience as AUD
@@ -517,6 +542,8 @@ FEATURES = [
     ("viewer_promise", "script", p_viewer_promise, "the video opens on a made picture and the thumbnail's promise is on screen within PROMISE_BY_SEC seconds (the viewer's seat)"),
     ("viewer_breath", "script", p_viewer_breath, "the voice breathes: a real pause at least every BREATH_EVERY_S seconds (the viewer's seat)"),
     ("viewer_numbers", "script", p_viewer_numbers, "few numbers: a budget for the numbers a viewer hears and for full-screen number graphics, none in the opening (the viewer's seat)"),
+    ("viewer_plain", "script", p_viewer_plain, "everyday words: a budget for the expert words a layman would not know - in the narration, in the first 30 s, in one sentence (the layman test)"),
+    ("viewer_probe", "script", p_viewer_probe, "the promise line-up: from the first 30 s alone two first-time readers pick this video's title, and give none to a planted opening (the layman test)"),
     ("palace_injected", "script", p_palace_injected, "the Knowledge Palace playbook was inside the model prompt of every creative run's key call (the writer, the packager, the director), and the exact text is stored"),
     ("palace_cited", "script", p_palace_cited, "every creative run cited Palace knowledge it really applied: each counted citation has a quote that code found in the final output"),
     ("canon_in_brief", "script", p_canon_in_brief, "the writer was given the show's canon (cast and the newest aired case), called back to that case in a line of the final script, and wrote this episode's case record"),
