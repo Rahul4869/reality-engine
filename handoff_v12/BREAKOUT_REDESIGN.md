@@ -622,6 +622,10 @@ channels reach 10 million views; any measured reach effect of Meta's AI label; a
   last); "viewed against swiped away" is not in the API at all, and engaged views divided by views is not ranked on (a replay of a
   looping Short is a view). (4) A winner gets ONE follow-up, ordered by code and told to the owner with a "Stop it" button (before: his
   approval, then two). (5) Until V2c-b2 a promoted topic's long video still opens with its own pictures; the Short's footage is kept.
+  (6) Found by the sweep, not by the plan: under "every topic starts as a Short" a Short is the FIRST thing a new channel sheet makes,
+  so the Short's own job proves that an upload can go public before its first paid call (before, only the long-video job did, and that
+  job now waits for a posted Short - no video would ever have been made). (7) What counts as one of the "3 a week": a Short that was MADE - also when its upload still waits; a Short the gate
+  refused or whose job crashed does not count and is tried again a day later.
   NEW EVIDENCE (read by the build session): R39 E - YouTube Analytics API Data Model, "Data freshness and latency", Sep 2026: "a latency of
   48 to 72 hours". R40 E - OverseerOS, 29 Oct 2026 (4,340 short videos): day 7 is 80.7% of day 30 at the median; 21.3% at least double
   afterwards. R41 E - Metricool, 29 Jul 2026: "A video usually hits its peak in the first three days". R42 O - E. Miller, 2009: rank a

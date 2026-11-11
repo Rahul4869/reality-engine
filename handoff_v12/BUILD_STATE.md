@@ -184,9 +184,9 @@ What B6a leaves ready for B6b:
 ## DONE
 ### V2c-b1 - THE LADDER (12 Nov 2026) - IN PROGRESS, NOT ACCEPTED (the steps below are recorded as they finish)
 WHERE IT STANDS (12 Nov 2026, a second session after the first ran into the weekly usage limit): research, designs, memo, build, enforce,
-42 deliberate breaks and the takeaway are done and pushed. STILL OWED on the final code commit, in this order: the rehearsal in F1 / F2
-with a Short in S1 / S2 / S3, the full suite on a frozen copy, then the sweep on the same copy, then the commit green in GitHub's own
-Checks. The block NEXT above is already written for the batch after this one: it is true only once this header says ACCEPTED.
+42 deliberate breaks and the takeaway are done and pushed; on the final code commit 3ab0e16 the rehearsal is GREEN in every format
+and the full suite is 1358 / 0 / 1. STILL OWED on 3ab0e16: the sweep on the frozen copy (started, not read) and GitHub's own Checks
+(run 110, in progress). The block NEXT above is already written for the batch after this one: it is true only once this header says ACCEPTED.
 The owner: "continue" (a new session for V2c-b). V2c-b was SPLIT AT ITS START (rule 6; the note is at the top of NEXT): V2c-b1 is the ladder -
 the cadence, Shorts first with the promote rule and the refusal, the winner's follow-up; V2c-b2 is the platforms and the opening.
 The whole binding reading order was read first (handoff `CLAUDE.md`, `00`, `02`, `01`, `03`, `06`, `04`, `05`, all of the redesign with
@@ -372,7 +372,7 @@ E. (ORIGINAL, CHOSEN) THE ROLLING LADDER ON TWO CLOCKS: YouTube gives two kinds 
 | A winner gets one follow-up with a clock; overdue = a memo | `breakout.monitor`, `ladder.order_followup`, `shorts2.order_due`, `ladder.watch` | tests (the order, its due time, the memo, its closing by the follow-up, the lapse) |
 | A Short's footage is kept for its long video | `ladder.keep` in `shorts2.run` | the production test (the archive holds every paid clip, every start picture, the script, the plan); the rehearsal |
 #### Step 6 PROVE
-- `tests/test_v12_ladder.py`: **30 tests**, each rule both ways (three a week is every 48 hours and then the week is full; the month's
+- `tests/test_v12_ladder.py`: **33 tests** (30 at this step; three more came with what the sweep found, below), each rule both ways (three a week is every 48 hours and then the week is full; the month's
   ceiling, a follow-up and a held Short outside the count; an order before the cadence; the numbers by processed day - nothing at two
   days, a fragment at four, a whole reading a day later, then weekly; the first three days as one stretch; a Short approved later aged
   from the day it went public; a reading counted only from three processed days; the window and the deleted footage; the Wilson bound;
@@ -417,8 +417,7 @@ E. (ORIGINAL, CHOSEN) THE ROLLING LADDER ON TWO CLOCKS: YouTube gives two kinds 
   traced, none a fault of the code: `test_v12_org` (the registry honesty test's little copy of the repo lacked `ladder.py`), `test_v86`
   (it pinned the last columns of tab `Analytics`; two were appended) and `test_v91_flaky_root` (it builds its own fresh Sheet in mid-test
   and so lost the "ladder off" default of the older tests: its long video was refused instead of failing where the test wanted). Corrected
-  in 3d2139f; the three files and the ladder's file re-run: 155 passed. NOT done: the whole suite a second time on the laptop on the final
-  commit - the files every later change touched were re-run (78, 69 and 44 passed) and GitHub ran the whole suite on it.
+  in 3d2139f; the three files and the ladder's file re-run: 155 passed. The whole suite ran a second time on the final code commit (below).
 - **THE SWEEP FOUND A DEADLOCK** (the first sweep, on a frozen copy of 3d2139f): **24 of 24 long-video ids were refused** - "1 Short(s)
   have no numbers yet ... none is public yet". Cause: on a new Sheet a Short is posted only when uploads are known to be open, the
   zero-cost upload check that proves it ran ONLY inside the long-video job, and under the ladder that job waits for a posted Short. On a
@@ -449,6 +448,34 @@ E. (ORIGINAL, CHOSEN) THE ROLLING LADDER ON TWO CLOCKS: YouTube gives two kinds 
   three faults - the session that found them left no note. They are proven by test and by break, not by an id. The ten test files
   around the change (the ladder, the Short, the older Shorts and breakout tests, growth, the docs, the Palace, the matrix, the upload
   lock) on the working tree: **230 passed**.
+- Fake rehearsal on the FINAL code (the working tree of 3ab0e16): **GREEN three times** - F1 with Shorts in S1 (EP202611112251), F2
+  with S2 (EP202611112255), F1 with S3 (EP202611112300): every long format and every Short format. Each: a long video refused first
+  ("no Short has been made yet: every topic starts as a Short", nothing spent), two Shorts made and posted (short gate 5 of 5), their
+  numbers read, one promoted by the rule ("measured": among 2 Shorts twice, among 1 once), the long video about it (script 35 of 35,
+  final 19 of 19), the other Short promoted next, for the pre-production draft.
+- Full suite on a frozen copy of the FINAL code commit 3ab0e16: **1358 passed / 0 failed / 1 skipped** (72 test files; the skip is the
+  dashboard test that needs node - GitHub runs it).
+#### Step 7 TAKEAWAY (also Palace item `v2cb.takeaway`)
+- WORKED: reading the platform's own page BEFORE the design. One page (YouTube's numbers are 48 to 72 hours late) turned "read the
+  numbers after 48-72 hours" into two clocks; built as first written, the promote rule would have ranked fragments.
+- WORKED: the break list written as "what would fail if this line went?" before it was run - 42 breaks, each failed a test, and three
+  times the LIST found a missing test before any break ran (the unseeded hook draw; the first Shorts that need his Approve; the week's
+  ceiling). And the case built to defeat a guard: 2 subscribers of 20 viewers beat 30 of 2,000 through the Wilson bound.
+- WORKED: the sweep after a green suite. It is the only proof that starts from an empty Sheet with nothing run before.
+- FAILED: the suite and four rehearsals were green while on a new Sheet NO VIDEO COULD EVER HAVE BEEN MADE. Both proofs began with a
+  refused long video, and that refused job ran the upload check by the way - the very thing the first Short needed. A proof that starts
+  with a helpful accident says nothing about the first run. When a rule makes one job wait for another, list everything the waiting
+  job used to do "by the way".
+- FAILED: the session ran into the weekly usage limit with a fix applied and no note: four changed files, one red test, a sweep nobody
+  read. The checkpoint rule exists for exactly this. Write the finding into this file BEFORE the edit that fixes it.
+- LIMIT: nothing real has met the ladder. No real Short has been measured; the day-by-day Analytics report has never been called; "five
+  days" rests on YouTube's own latency page. No study pairs a topic's Short with its long video and none measures a follow-up: the four
+  equal votes of the promote rule, the 3-times line and the 48-hour clock are starting values (H11, H18, H19). Until V2c-b2 a promoted
+  topic's long video opens with its own pictures and a Short is uploaded the old way (one text for every platform).
+- NEW QUESTION: does a Short's rank in its pool predict its long video (H18)? Every promoted topic is a pair on record; the redesign's
+  own rule (4.4) drops a rule that does not predict after 12 pairs - at four long videos a month that is three months of real data.
+- ORGANISATION: a status text is data that other code reads. "HELD" meant two different things on one tab and the cadence believed the
+  wrong one: whether a Short was MADE needs its own field (V2c-b2, open issue 107).
 
 ### V2c-a - THE SHORT, THE PRODUCT (11 Nov 2026) - ACCEPTED (final code commit 3b34cc3 GREEN in GitHub Checks run 99: 1325 passed; sweep 58 of 58 ids)
 The owner: "continue" (a new session for this batch). V2c was SPLIT AT THE START (rule 6): V2c-a is the short video as a product a viewer meets;
@@ -2321,6 +2348,20 @@ Rehearsal asserts `docs_current` ran and passed.
   (deterministic particle seed).
 
 ## PROTECTED-AREA FILES TOUCHED SO FAR (list them in the final PR)
+- V2c-b1: `whatifs/ladder.py` (NEW; on the protected list from its first commit), `whatifs/contract.py` (1 check added at the script
+  gate, `topic_ladder`; no existing check changed), `whatifs/episode.py` (`produce` asks the ladder gate before its first paid call; the
+  draw carries `ladder`; `ladder.use` once the plan is saved), `whatifs/preview.py` (no draft without the gate), `whatifs/room.py`
+  (`scout_and_pick`: the promoted topic is the forced first pitch, its premise kept by code; the end tease), `whatifs/manage.py`
+  (`_produce_slot` asks the gate and sends the one refusal message; `ladder.watch` on the tick, the hourly link card gone;
+  `v12v2cb_upgrade` at both setup sites), `whatifs/core.py` (9 cells in; 3 cells OUT - SHORTS_PER_DAY, SHORTS_KLING_EVERY,
+  REPLAN_MAX_SHORTS_PER_DAY, with a one-time move; tab `Ladder`; 2 columns appended to `Breakout_Queue`, 2 to `Analytics`),
+  `whatifs/publish.py` (an archive is uploaded as an archive), `whatifs/shorts2.py` (the cadence in weeks, a winner's order before the
+  cadence, the footage kept, the upload check before the first paid call, a crashed Short on record), `whatifs/truth.py` (retired rule
+  `daily_shorts_cadence`), `whatifs/org/registry.py` / `levers.py` / `rnd.py` (D10 wraps the ladder and has the run `promote`; 6 levers
+  in, 1 out: 68; SHOW_CHECKS 48), `tools/repair.py` (PROTECTED + ladder.py). Also touched, not protected: `whatifs/brain.py` (a Short's
+  numbers by processed day), `whatifs/breakout.py` (the winner rule), `whatifs/replan.py` (one rung), `whatifs/shortslab.py` (the hourly
+  link card removed), `whatifs/caretaker.py`, `whatifs/dash.py`, `whatifs/notify.py`, `mission_control/mission_control.html` (the phone
+  dashboard's switch is "Shorts per week"), `tools/rehearsal.py`, `tools/sweep.py`, `tools/gen_docs.py`. No workflow file changed.
 - V2c-a: `whatifs/contract.py` (5 checks added at the new stage "short"; no existing check changed), `whatifs/org/runner.py` (LOAD: an empty
   Sheet is seeded before the cast is mirrored - nothing else in the six steps changed), `whatifs/models.py` (one role, `short_writer`, on the
   long script's chain - no price or limit changed), `whatifs/formats.py` (the Short formats beside the long ones; the long formats untouched),
@@ -2693,6 +2734,20 @@ Rehearsal asserts `docs_current` ran and passed.
    the long video's sampler draws (`brain.choose` from the writers' room) are seeded by the episode id.
 106. CLOSED / narrowed in V2c-b1: issue 84 (the cadence: closed); issue 85 stays for V2c-b2 (a Short is still uploaded by
    `specials._publish`; nothing is read back); the redesign's O5 and O8 (how many Shorts) stay watched by D1 (V4).
+107. (V2c-b1 -> V2c-b2) Whether a Short was MADE hangs on a status text: `shorts2.UPLOAD_HOLD` is the beginning of the sentence
+   `specials._publish` writes when uploads are not confirmed open (a test ties the two; a refusal at the short gate also begins with
+   "HELD"). V2c-b2 rebuilds the upload under D9: give a Short its own field for "made" apart from where its upload stands, and retire
+   the text match. Issue 100 (such a Short stays MADE on the ladder with no numbers) stays open with it.
+108. (V2c-b1 -> B7) A Short whose job crashes is tried again once a day with no end: a try whose crash comes after the writing has paid the writers (the old
+   allowance of about Rs 36), nothing counts the tries, and the owner hears of it only through the department run's
+   own problem memo and its clocks. B7's repair loop should own it: one memo per class of crash and a stop after a few tries.
+109. (V2c-b1, the proof) The crash row and the upload hold are proven by unit tests and deliberate breaks only: the sweep's Shorts
+   never crash and its uploads are always open. Which sweep id, if any, showed the three faults of step 6d is not known (the session
+   that found them was cut off without a note).
+110. (V2c-b1, FOUND, not this batch's) `last_error.txt` in the repository's root is a TRACKED file: a red rehearsal on the laptop
+   rewrites it, and four commits carry it with a laptop traceback (a local folder path in a public repository; no key, no
+   address). The workflows only upload it from their own runner. Untrack it and add it to `.gitignore` with the next change that
+   touches the workflows; until then never `git add` it.
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`
