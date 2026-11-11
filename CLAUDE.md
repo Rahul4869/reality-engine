@@ -79,3 +79,9 @@ pipeline run uses the new code. Nothing restarts.
   `models.last_call`), and a research memo carries the stamp `rnd.verify`. The Board's scores and verdict are computed by `board.verdict` from the
   judges' yes/no answers - never type or edit a verdict (check `research_cadence` re-computes every stored one). A Board judge role needs a chain
   with strong models of ONE family only (`models.CHAINS` `board_g` / `board_c`); every session carries a planted canary (`board.canary`).
+- **Creative departments and the canon** (`whatifs/org/cite.py`, `canon.py`): Palace knowledge enters a creative model call only through the runner's
+  ask tap and its proof leaves only through the reply tap (`models.REPLY_TAPS`) - never paste a playbook into a brief by hand and never count an id a
+  model typed: only `cite.verify` (the quote is found in the final output) makes an item "applied". A new creative call gets the playbook by adding its
+  task name to `registry.PROMPT` (tasks / key / propose / must); judges and mechanical passes are never added. A pre-production draft is adopted only
+  through `runner.work(adopt=<its D4 draft run>)`. Case records are written by `canon.record` and become canon only through `canon.on_air`; never
+  write a `world_canon` case by hand and never edit one that aired. A new fake reply that should cite needs nothing: `fakes.fake_cite` does it.

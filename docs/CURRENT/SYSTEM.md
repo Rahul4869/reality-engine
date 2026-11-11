@@ -28,9 +28,10 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Truth hygiene: one current truth (this file, the registry of retired concepts, check `docs_current`): **built**
 - Knowledge Palace core (`whatifs/org/palace.py`: guarded items, life cycle, versions, bounded playbooks, founding knowledge, check `palace_health`; section 10): **built**
 - Memos and the department contract (`whatifs/org/schemas.py`, `memos.py`, `registry.py`, `runner.py`; the long-video pipeline and the daily learning job run under it; checks `dept_contract`, `takeaways_written`; section 11): **built**
-- Playbooks inside the creative departments' model prompts and cited back (checks `palace_injected`, `palace_cited`), the Librarian's merges, outcome scores: **not built yet**
+- Playbooks inside the creative departments' model prompts, cited back with quotes code verifies, the show's canon written by code and paid back in every script, creative memos (`whatifs/org/cite.py`, `canon.py`; checks `palace_injected`, `palace_cited`, `canon_in_brief`): **built (B6a)**
 - Execution Engine (`whatifs/org/levers.py`, `execute.py`: a ticket becomes a typed change that is written down before and after, verified by later evidence or rolled back; checks `decisions_executed`, `lever_verified`; section 12): **built**
-- R&D and Review Board, creative departments and Council, QA repair loop, learning loop, Owner Office: **not built yet**
+- R&D and the Review Board (`whatifs/org/rnd.py`, `board.py`; check `research_cadence`): **built (B5)**
+- The Council, QA repair loop, learning loop with the Librarian's merges and outcome scores, Owner Office: **not built yet**
 
 ## 4. Truth rules (enforced by `whatifs/truth.py`)
 - Follow only `docs/CURRENT/` and `CLAUDE.md`. `docs/ARCHIVE/` is history: never follow it.
@@ -200,8 +201,19 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | PALACE_PLAYBOOK_TOKENS | 1800 | hard cap, in estimated tokens, of the knowledge block one department receives from the Palace before it acts (200-6000) |
 | PALACE_PLAYBOOK_TOKENS_BY_DEPT | {"D4": 2400} | optional JSON {department id: cap} that overrides PALACE_PLAYBOOK_TOKENS for single departments, e.g. {"D4": 2400} |
 | PALACE_LIMITS_SHARE | 0.4 | share of every department playbook reserved for limits (the owner's words, policy rules, failure lessons); limits are always served first (0.1-0.9) |
+| PALACE_CANON_TOKENS | 700 | v12 B6a: estimated tokens a playbook may spend on the show's canon (the cast, then the newest aired cases), ON TOP of the department's cap, so canon never pushes out a limit or knowledge (100-2000) |
 | PALACE_REVIEW_DAYS | (blank) | optional JSON {kind: days} that overrides how long an item stays valid before it must be re-validated (defaults: REVIEW_DAYS in whatifs/org/palace.py; 0 = never) |
 | PALACE_KIND_CAPS | (blank) | optional JSON {kind: most served items}; over the cap the lowest-value item of that kind is expired by code (defaults: KIND_CAPS in whatifs/org/palace.py) |
+
+**Creative departments**
+
+| setting | default | meaning |
+|---|---|---|
+| ORG_PROMPT_INJECT | TRUE | v12 B6a: TRUE = the creative runs (D4 write and draft, D5 package, D6 plan) put their Palace playbook INTO the model prompts of their creative calls, the models cite what they applied with a quote and code verifies it (checks palace_injected, palace_cited, canon_in_brief) [FALSE = the playbook is handed over with the brief only; the three checks say NA] |
+| CANON_CALLBACK_ON | TRUE | v12 B6a: TRUE = the newest aired case is a continuity debt: the script must call back to it in one spoken line, cited with that exact line (check canon_in_brief) |
+| CREATIVE_MEMO_MAX_PER_RUN | 1 | v12 B6a: proposals (new ideas, experiments, joke or hook banks, world-building) a creative run may send to the Council as creative memos (0-3) |
+| CREATIVE_MEMO_SAME_MAX | 0.5 | v12 B6a: a proposal whose words overlap an earlier creative memo this much (0-1) is dropped as the same idea - the Council sees distinct options |
+| PALACE_PROMPT_EST_INR | 10 | v12 B6a: allowance per long video for the Palace playbook inside the creative prompts and the citations (extra input tokens, mostly cached); counted in the episode estimate while ORG_PROMPT_INJECT is on |
 
 **Organisation**
 
@@ -463,11 +475,11 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Expiry: past `review_by` an item leaves every playbook until re-validated; a limit stays served, marked review due, and is reported.
 - Playbook (`palace.playbook(dept, stage, topic)`): guard, then lanes (limits, proven, accepted, testing), then relevance, filled under a hard cap of 1800 estimated tokens; limits hold a reserved share of 0.4. Same Palace state = byte-identical text; `playbook_id` is the hash of the text.
 - Runs in production: `palace.daily` in the learning job, `palace.maintain` in Setup, contract check `palace_health` on every episode.
-- Every wired department run loads its playbook (section 11). Not yet wired (later batches): the playbook inside the creative departments' model
-  prompts with items cited back, the Council, the Librarian's merges, outcome scores.
+- Every wired department run loads its playbook (section 11); the creative runs (D4 write and draft, D5 package, D6 plan) put it INTO their model
+  prompts and cite what they applied (v12 B6a). Not yet wired (later batches): the Council, the Librarian's merges, outcome scores.
 
-**Founding knowledge** (132 items in `whatifs/org/seed/`; 0 invalid): breakout.json 15, build.json 57, feel.json 15, owner.json 30, platform.json 15.
-By kind: audience_insight 4, failure_lesson 1, owner_preference 26, plan 2, policy_rule 11, strategy 21, takeaway 7, technique 46, tool_fact 14.
+**Founding knowledge** (133 items in `whatifs/org/seed/`; 0 invalid): breakout.json 15, build.json 58, feel.json 15, owner.json 30, platform.json 15.
+By kind: audience_insight 4, failure_lesson 1, owner_preference 26, plan 2, policy_rule 11, strategy 21, takeaway 8, technique 46, tool_fact 14.
 
 **Life cycle** (`palace.MOVES`; a move that is not listed is illegal for everyone)
 

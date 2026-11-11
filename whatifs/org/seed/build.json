@@ -218,6 +218,11 @@
    "summary": "AI help makes each single idea better but makes the set of ideas more alike. A creative run may send at most one proposal to the Council, inside the call it already makes; code drops one whose words overlap an earlier creative memo by half or more, so the Council chooses between real alternatives.",
    "departments": ["C", "L"], "stages": ["planning", "ops"], "topic_tags": ["ideas", "diversity", "creative memo", "council", "slop"],
    "evidence": [{"source": "Doshi and Hauser, Generative AI enhances individual creativity but reduces the collective diversity of novel content, Science Advances 10(28)", "date": "2024-07-12", "type": "research digest", "finding": "AI-assisted stories rated more creative but more similar to each other", "url": "https://doi.org/10.1126/sciadv.adn5290"}],
-   "applied_in": ["whatifs/org/cite.py:proposals_to_memos", "whatifs/org/cite.py:same", "setting:CREATIVE_MEMO_SAME_MAX"]}
+   "applied_in": ["whatifs/org/cite.py:proposals_to_memos", "whatifs/org/cite.py:same", "setting:CREATIVE_MEMO_SAME_MAX"]},
+  {"key": "b6a.takeaway", "batch": "B6a", "kind": "takeaway", "title": "B6a build takeaway: knowledge that was 'handed over' never reached a model - trace every rule to the call that uses it",
+   "summary": "Before B6a every department 'took' its playbook and no model call ever saw it; 4 of the owner's own limits did not even fit the writer's block. Proof must sit where the work is made: the receipt names the calls that carried the knowledge, and a claim of use counts only with a quote code finds. Tests that play a lying model found what green runs hid.",
+   "departments": ["D8", "L"], "stages": ["qa", "ops"], "topic_tags": ["build", "enforcement", "injection", "citations", "testing"],
+   "evidence": [{"source": "v12 build, batch B6a (creative departments)", "date": "2026-11-11", "type": "build record", "finding": "All 15 departments ran in brief mode: take() was called and nothing read it. With PREPROD_ON the script was written outside any department run. Tests with a lying fake model found: any script line passed as the callback; every creative idea would have pinged the owner; the engine verified creative knowledge levers without a cited use. Mutations: removing verification fails 6 tests, removing the injection 9."}],
+   "applied_in": ["whatifs/org/runner.py:_ask_tap", "whatifs/org/cite.py:verify", "whatifs/org/canon.py:names_case", "tests/test_v12_creative.py", "handoff_v12/BUILD_STATE.md"]}
  ]
 }

@@ -14,7 +14,8 @@ KEY_SETTINGS = [
     ("Pictures, motion, voice", ["ART_STYLE", "FAL_HERO_MODEL", "FAL_STILL_MODEL", "ANIM_SHOTS", "PARTICLES_ON", "LIVING_CHARACTERS_ON", "LIFE_LAYER_ON", "TTS_ENGINE"]),
     ("Quality gates", ["CONTRACT_ON", "CONTRACT_OFF", "BREAKOUT_HARD_BAR", "REHOOK_MAX_GAP_SEC", "JOKE_EVERY_SEC_LONG", "VISUAL_CHANGE_MAX_S", "PROMISE_BY_SEC", "IDEA_MIN_MULTIPLE"]),
     ("Owner", ["WA_ON", "BUILDS_ON", "DASH_ON"]),
-    ("Knowledge Palace", ["PALACE_ON", "PALACE_PLAYBOOK_TOKENS", "PALACE_PLAYBOOK_TOKENS_BY_DEPT", "PALACE_LIMITS_SHARE", "PALACE_REVIEW_DAYS", "PALACE_KIND_CAPS"]),
+    ("Knowledge Palace", ["PALACE_ON", "PALACE_PLAYBOOK_TOKENS", "PALACE_PLAYBOOK_TOKENS_BY_DEPT", "PALACE_LIMITS_SHARE", "PALACE_CANON_TOKENS", "PALACE_REVIEW_DAYS", "PALACE_KIND_CAPS"]),
+    ("Creative departments", ["ORG_PROMPT_INJECT", "CANON_CALLBACK_ON", "CREATIVE_MEMO_MAX_PER_RUN", "CREATIVE_MEMO_SAME_MAX", "PALACE_PROMPT_EST_INR"]),
     ("Organisation", ["ORG_ON", "ORG_SLA_HOURS", "ORG_ESCALATE_HOURS", "ORG_OWNER_REMINDS_MAX", "ORG_DEVIATION_PCT", "ORG_CAPS_INR", "ORG_RUN_STALE_H"]),
 ]
 
@@ -23,9 +24,10 @@ ORG_STATUS = [
     ("Truth hygiene: one current truth (this file, the registry of retired concepts, check `docs_current`)", "built"),
     ("Knowledge Palace core (`whatifs/org/palace.py`: guarded items, life cycle, versions, bounded playbooks, founding knowledge, check `palace_health`; section 10)", "built"),
     ("Memos and the department contract (`whatifs/org/schemas.py`, `memos.py`, `registry.py`, `runner.py`; the long-video pipeline and the daily learning job run under it; checks `dept_contract`, `takeaways_written`; section 11)", "built"),
-    ("Playbooks inside the creative departments' model prompts and cited back (checks `palace_injected`, `palace_cited`), the Librarian's merges, outcome scores", "not built yet"),
+    ("Playbooks inside the creative departments' model prompts, cited back with quotes code verifies, the show's canon written by code and paid back in every script, creative memos (`whatifs/org/cite.py`, `canon.py`; checks `palace_injected`, `palace_cited`, `canon_in_brief`)", "built (B6a)"),
     ("Execution Engine (`whatifs/org/levers.py`, `execute.py`: a ticket becomes a typed change that is written down before and after, verified by later evidence or rolled back; checks `decisions_executed`, `lever_verified`; section 12)", "built"),
-    ("R&D and Review Board, creative departments and Council, QA repair loop, learning loop, Owner Office", "not built yet"),
+    ("R&D and the Review Board (`whatifs/org/rnd.py`, `board.py`; check `research_cadence`)", "built (B5)"),
+    ("The Council, QA repair loop, learning loop with the Librarian's merges and outcome scores, Owner Office", "not built yet"),
 ]
 
 # Tabs whose name invites a wrong reading.
@@ -83,8 +85,8 @@ def _palace(A):
       f"{PAL.core.DEFAULTS['PALACE_PLAYBOOK_TOKENS'][0]} estimated tokens; limits hold a reserved share of {PAL.core.DEFAULTS['PALACE_LIMITS_SHARE'][0]}. "
       "Same Palace state = byte-identical text; `playbook_id` is the hash of the text.")
     A("- Runs in production: `palace.daily` in the learning job, `palace.maintain` in Setup, contract check `palace_health` on every episode.")
-    A("- Every wired department run loads its playbook (section 11). Not yet wired (later batches): the playbook inside the creative departments' model")
-    A("  prompts with items cited back, the Council, the Librarian's merges, outcome scores.")
+    A("- Every wired department run loads its playbook (section 11); the creative runs (D4 write and draft, D5 package, D6 plan) put it INTO their model")
+    A("  prompts and cite what they applied (v12 B6a). Not yet wired (later batches): the Council, the Librarian's merges, outcome scores.")
     A("")
     A(f"**Founding knowledge** ({len(items)} items in `whatifs/org/seed/`; {len(bad)} invalid): " + ", ".join(f"{k} {v}" for k, v in sorted(by_file.items())) + ".")
     A("By kind: " + ", ".join(f"{k} {v}" for k, v in sorted(by_kind.items())) + ".")
