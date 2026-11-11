@@ -12,6 +12,11 @@ Status: DESIGN (research + designs + decisions). Nothing on this page is built y
   140,000 views of a long video watched 3.5 minutes on average. So: LONG VIDEOS ARE THE MONEY PRODUCT; Shorts win subscribers and test ideas.
 - Science and education is the right lane for money: median long-video RPM USD 10.22 against 2.43 for entertainment (R6).
 - Realistic time: a year or more. The first real video from the new code is the first real evidence (the new code has only ever run in fake mode).
+- "Money from the first video" (item 18) is not possible on YouTube: nothing is paid before the Partner Program accepts the channel. There is no
+  shortcut - services that sell views, subscribers or "enrolment" get a channel removed. The honest answer is to reach the bar fastest.
+- THE WINDOW: a channel that reaches 1,000 subscribers + 4,000 hours and applies BEFORE 1 Feb 2027 still gets in at the old, half-size bar (R5).
+  From 4 subscribers that needs one long video breaking out within weeks: a few percent at best. The plan does not count on it, but it LAUNCHES
+  EARLY (section 6) so that the chance exists.
 
 ## 1. EVIDENCE (E = measured, O = opinion / practice / vendor; "read" = the build session read the page itself, else reported by a research run)
 R1 E read. vidIQ, "First 10 Videos Study", 28 Jul 2026 (448,413 channels created Jan-Jun 2025; views at 30 days):
@@ -99,7 +104,7 @@ it spends the expensive part only after real viewers said yes, and it aims at th
 3. Published as a Short. After 48-72 hours the brain reads: engaged views / views ("stayed"), average share viewed, shares, subscribers gained -
    against the channel's own last ten Shorts and against the Audience department's prediction.
 4. PROMOTED hooks get the long video (its first 30-40 seconds ARE the hook; 30+ more animated seconds at the later peaks). A weak hook gets one
-   rewrite or the idea is dropped - the saved money goes to the next idea. In the first month, with no baseline: the best 4 of 6.
+   rewrite or the idea is dropped - the saved money goes to the next idea. In the first month, with no baseline: the best 5 of 8.
 5. The long video goes out 5-7 days after its Short, linked from it; one more Short is cut from its best moment.
 ### 4.3 The viewer's seat - NEW DEPARTMENT D13 AUDIENCE
 Nobody in the organisation sat where the viewer sits. D13 does, with a veto before anything is published.
@@ -113,7 +118,8 @@ Nobody in the organisation sat where the viewer sits. D13 does, with a veto befo
   prediction for every video and is scored against what really happened (B5's pre-registered predictions) - a D13 that cannot predict loses weight.
 ### 4.4 The CEO - D1 STRATEGY, built now, not in B9
 "The brain must make such decisions proactively, inform me and implement" (item 17). D1 owns the PORTFOLIO as levers (through the Execution Engine):
-- long videos a month (start 4, bounds 2-6); hook Shorts a month (start 6, bounds 4-8); uploads a week (2-4, R2); share of each format;
+- long videos a month (start 5 - the most the money buys without making them worse - bounds 4-8); hook Shorts a month (start 8, bounds 5-10);
+  uploads a week (2-4, R2; the start is 3); the monthly compilation (4.7); share of each format;
   the promotion bar; animated seconds per video; the split of the month's money.
 - DECIDES ALONE, INFORMS, IMPLEMENTS (one line in the daily brief, one tap to undo): anything inside those bounds and inside Rs 5,000.
 - ASKS THE OWNER FIRST (one card): the channel's name, leaving science and education, money above the cap, deleting a published video.
@@ -140,11 +146,53 @@ Nobody in the organisation sat where the viewer sits. D13 does, with a veto befo
 - TIER 3, advisory per format: the devices (time ladder, prototype beat, joke every N seconds, asks, tease ...). A device becomes a "must" for a
   format only when the learning core shows it helps THAT format; none is forced because a list says so. The trial format keeps its own devices.
 ### 4.7 Money (Rs 5,000; today's fixed parts: maintenance 100, specials 300, earmark 200, the organisation's thinking 420 now and 610 later)
-- About Rs 3,790-3,980 for production. One topic = hook Short + long video sharing the same animation: about Rs 650-700 (60-70 animated seconds
-  at about USD 0.04 a second is about Rs 260; stills, writing, voice as today minus the forced devices). 4 topics = about Rs 2,800.
-- 2 hooks that are not promoted: about Rs 170 each. A "double down" reserve of about Rs 500 for a winner (a second long video, more Shorts).
+- About Rs 3,790-3,980 for production, plus the Rs 300 "specials" money, which goes to the core until the channel has viewers (below).
+- WHY NOT MORE THAN 5 LONG VIDEOS: the count is set by money, not by choice. One topic = hook Short + long video sharing the same animation: about
+  Rs 580-660 (a fully animated 30-35 s hook at about USD 0.045 a second with retakes is about Rs 200 - instead of today's 4 scattered clips at
+  Rs 166; writing, stills and voice as today minus the forced devices). 5 topics = about Rs 3,100. A cheaper long video is the first video again.
+- 3 hooks that are not promoted: about Rs 220 each. What is left (Rs 300-500) is the "double down" reserve for a winner. D1 raises the count of
+  long videos (up to 8) only when the cost of one falls (better-value models, batch pricing for the writing) - never by lowering the floor.
+- So a month is about 5 long videos + 8 Shorts = 13 uploads, 3 a week (R2). From the second month one COMPILATION of the month's cases (30+ minutes,
+  35%+ new material so that it is not "reused content") is added: long watch hours for almost no money (the owner's item 6 and the Case Files idea).
+- FOCUS: until a long video of the new code reaches 1,000 views, everything that is not the core is paused and its money moved to hooks: paid
+  spin-offs (Deep Trial), comment agents, extra daily Shorts. Free distribution stays on (the same Shorts to Instagram and Facebook).
 - Voice: about Rs 30 a video even at the 2027 price. No new subscription.
-### 4.8 Staying payable (R7, R8)
+### 4.8 The one goal - breakout and money as the brain of everything (item 18)
+- THE SCOREBOARD is real, never a model's opinion: long watch hours in the last 365 days against 8,000, subscribers against 1,000, and the date
+  both are reached at the current pace. It is the first line of every daily brief and the measure of every department.
+- Every decision, experiment and lever change carries a prediction of what it does to the scoreboard (hours per rupee, subscribers per upload)
+  and is scored against what happened. The "Breakout Score" a model gives stays a floor; it is never called success.
+- THE LOOP that never stops (built in B5, B6b, B8 and V4): gaps -> research -> the Review Board -> the Council -> Strategy decides -> the Execution
+  Engine changes the pipeline -> the result is measured -> kept or rolled back -> the Palace remembers. In the first three months Strategy
+  reviews the plan every week, not every month.
+### 4.9 The owner's desk - his inputs, answered and used the best way (item 18)
+- ANY input from him (an idea, a complaint, a wish) is stored word for word and answered within a day with a verdict and the reason:
+  ADOPTED (how and where), TESTED (as which experiment, until when) or PARKED (why, and what would change it). He can override with one tap
+  ("do it anyway" = it is done as the top priority) - and he hears the result afterwards. Until the WhatsApp desk exists (B9) the input line is a
+  tab of his Sheet (V1).
+- His inputs so far (02 items 1-8, 16-18) are inputs, not orders ("I am still a newbie"). What the redesign does with each:
+| His idea | Verdict | How it is used |
+|---|---|---|
+| "It happens to YOU ... people want to relate and feel" (7) | ADOPTED | the default format F1 and every hook |
+| The trial of science (10) - which he doubted himself (7) | TESTED | format F2, 30% of long videos; the data decides its share |
+| Personify the channel, characters to come back for (8) | ADOPTED, lean | one guide and one foil, drawn, the same voices in every format |
+| First-person nostalgia, "ASMR for eyes and ears" (8) | TESTED | the sensory style of the hook (close, tactile, real sound); a nostalgia opening as an experiment arm of F1 |
+| Sound that matches and changes with the scene (6) | ADOPTED | D7's rule for every scene; ASMR textures as touches, tested for hooks |
+| More videos for the watch hours (1, 18) | ADOPTED | 5 long videos (the money's maximum), a monthly compilation, D1 raises the count when cost falls |
+| Cheap long videos / spin-offs for hours (6) | ADOPTED LATER | the compilation from month 2; paid spin-offs when the channel has viewers |
+| Change the plan mid-month, proactively (1) | ADOPTED | D1's portfolio, weekly at first |
+| Savings must be used for breakout (5) | ADOPTED | the "double down" reserve; unspent money goes to the next hook |
+| Departments that send memos and judge each other (2) | BUILT | B3-B5 |
+| Cheap models never judge taste (3) | BUILT | every jury |
+| Weird, mind-piercing titles; never repetitive, never AI slop (7) | ADOPTED | packaging; the variety check of 4.10 |
+| Shorter, the first 20-30 seconds, a human taste filter (16) | ADOPTED | 8:10-9:00, hook-first, his verdict as the strongest label |
+### 4.10 Launch readiness - every aspect, the channel too
+- THE CHANNEL PAGE (one guided sitting at V3, free): a brand handle instead of his personal name, banner, picture, an About text with the
+  promise, a trailer (the best hook), playlists per format. The rejected video is set to Private (his tap, recommended now).
+- THE FIRST THREE releases of the new code go public only with his Approve (exists in v11.1).
+- EVERY RELEASE: title + thumbnail tested against runners-up, the hook, the voice, captions, sound, chapters, description with sources and the
+  AI note, the pinned comment, the link from the Short to its long video, the next-video pull at the end.
+### 4.11 Staying payable (R7, R8)
 Every video differs in substance and in structure (formats, verdicts, openings rotate; a check compares each upload with the last ten); the
 script is original writing with real sources; the look is stylised, never photoreal people; the description says how the video was made.
 
@@ -156,10 +204,10 @@ the owner would reject (measured by his verdicts). A hypothesis that fails chang
 ## 6. THE NEW BATCH PLAN (one batch per owner "continue"; every batch runs the full seven-step loop; standing rules 1-4 unchanged)
 | Batch | What | Done when |
 |---|---|---|
-| V1 | THE VIEWER'S SEAT: department D13; the measured viewer checks; the judged floor with the canary; the owner's verdict as a label; length 8:10-9:00; voice model by rank | a flop-like episode is HELD in the rehearsal; each check proven both ways; D13 wired; sweep + GitHub green |
+| V1 | THE VIEWER'S SEAT: department D13; the measured viewer checks; the judged floor with the canary; the owner's verdict and his input line (a Sheet tab) as memos; the scoreboard; length 8:10-9:00; voice model by rank | a flop-like episode is HELD in the rehearsal; each check proven both ways; D13 wired; sweep + GitHub green |
 | V2 | HOOK-FIRST PRODUCTION: formats as data (F1, F2); the hook made first and reused as the opening; hero video model by value; the three-tier contract; cast drawn or absent; cost model; CONCEPT page rewritten | a fake hook Short and its long video share clips; devices no longer force a hold; costs inside the cap |
-| V3 | PILOT ON REAL SERVICES: a test Sheet, private uploads, 2 hook Shorts + 1 long video, a step-by-step guide for the owner | the owner has WATCHED real output of the new code and given his verdicts; what reality broke is fixed |
-| V4 | THE CEO AND THE LADDER: D1 wired (portfolio levers, promotion, decide-inform-implement, format rules, monthly review), D11's split, the calendar | a rehearsal month: hooks tested, 4 promoted, one decision taken, the owner informed, one undo |
+| V3 | PILOT ON REAL SERVICES, THEN GO LIVE: a test Sheet, private uploads, 2 hook Shorts + 1 long video, a step-by-step guide, the channel page; when his verdicts are good the new code replaces the old on the live channel - the remaining batches are built while it runs and learns | the owner has WATCHED real output of the new code and approved it; what reality broke is fixed; the live channel runs the new code |
+| V4 | THE CEO AND THE LADDER: D1 wired (portfolio levers, promotion, decide-inform-implement, format rules, weekly review), the owner's desk verdicts (4.9), D11's split, the calendar, the compilation | a rehearsal month: hooks tested, 4 promoted, one decision taken, the owner informed, one undo |
 | B6b | The Council (as planned; it now also hears D13 and D1) | as in 03 |
 | B7 | The repair loop (as planned; a viewer-seat failure gets ONE automatic repair before a hold) | as in 03 |
 | B8 | The learning loop (as planned; plus the hypotheses of section 5 and D13's score) | as in 03 |
@@ -168,6 +216,7 @@ the owner would reject (measured by his verdicts). A hypothesis that fails chang
 
 ## 7. WHAT ONLY THE OWNER CAN DO
 1. TODAY: Settings cell PAUSED = TRUE on the live Sheet - the old code will otherwise publish the next video like the first and spend the month.
+   Recommended too: set the rejected video to Private in YouTube Studio (it is the first thing a visitor sees).
 2. At V3: follow the pilot guide (about 20 minutes, step by step), then watch three videos and give each a verdict.
 3. Each week after launch: 30 seconds per release - a thumbs up or down and one line. It is the machine's best teacher.
 
@@ -182,4 +231,5 @@ O1 The numbers in 4.3 and 4.2 (0.6 s pauses, 3 number cards, 30-40 s hooks) are 
 O2 Which better-value video models are really on fal with vertical output and a start image must be read by the tool scout at V2 (prices seen on
    two fal pages disagreed with each other).
 O3 The Partner Program bar: the 1,000-subscriber rule after 1 Feb 2027 was not restated by the source.
-O4 9 batches remain; Claude Max ends 10 Dec 2026.
+O4 9 batches remain; Claude Max ends 10 Dec 2026. Going live is after the THIRD of them (V3), not the last.
+O5 Whether 8 Shorts a month is on the helpful or the harmful side is not known (R2 knows "about 5" and "35+"): a lever, watched by D1.

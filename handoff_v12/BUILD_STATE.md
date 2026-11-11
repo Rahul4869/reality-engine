@@ -63,6 +63,11 @@ batch plan). READ IT BEFORE ANY BATCH. It overrides `01` section 1, the order of
   as the planted canary). D1 STRATEGY becomes the portfolio manager that decides, informs and implements - built now, not in B9.
 - Formats are data (F1 "the day it changed" 70%, F2 "the trial" 30% as an experiment arm); the contract gets three tiers and the devices are no
   longer forced; the voice and video models are chosen by value inside the owner's existing accounts.
+ITEM 18 (same day, more inputs): "only 4 videos a month? ... earn money from the first video itself ... a system where I can also give inputs ...
+keep learning and auto implementing and keep me informed". Answered in the redesign page: 5 long videos + 8 Shorts a month (13 uploads - the
+count is set by money, D1 raises it when cost falls) and a monthly compilation; no money is possible before the Partner Program, so GOING LIVE
+moves to the end of V3; the scoreboard (hours / 8,000, subscribers / 1,000) is the one goal (4.8); the owner's desk answers every input with
+adopted / tested / parked and his earlier ideas each got a verdict (4.9); launch readiness covers the channel page too (4.10).
 What only the owner can do, today: set Settings cell PAUSED = TRUE on the live Sheet (no keys here: the build session cannot touch it).
 This turn was the DESIGN step for the whole programme (research, designs, decisions, records). Nothing of the redesign is built yet.
 
@@ -72,7 +77,9 @@ Scope: department D13 Audience (registry, runner entry at the script gate, the f
 (promise visible in 3 s / 5 s, captions present, the voice breathes: pauses + loudness range + true peak, numbers budget, no black-shape
 character, an ending that is a scene, one story across title / thumbnail / opening); the JUDGED floor (one generic first-time viewer per model
 family, with sound, pairwise against references; the owner's rejected video 7RPT4rCuP6k is the planted canary - `models.ask_video` exists);
-the owner's verdict as a label (a tab + a memo; WhatsApp capture stays in B9); long videos 8:10-9:00; the voice model picked by rank.
+the owner's verdict AND his input line as memos (a Sheet tab each; WhatsApp capture stays in B9; D1 answers inputs from V4); the scoreboard
+(long watch hours / 8,000, subscribers / 1,000, date at the current pace) as the first line of the daily brief; long videos 8:10-9:00; the voice
+model picked by rank.
 Done when: the rehearsal HOLDS a deliberately flop-like episode, every check is proven both ways, D13 is wired, sweep + GitHub green.
 Remember from the B5 recheck: every new contract check must be classified (`rnd.ORG_CHECKS` or raise `rnd.SHOW_CHECKS`); a memo a department
 writes to itself is closed with `memos.find`; text from outside is data.
@@ -1731,6 +1738,6 @@ Rehearsal asserts `docs_current` ran and passed.
 | REDESIGN | done 11 Nov 2026 | - | - | The owner rejected the first live video (made by the old code) and gave a free hand: research (14 dated sources), 4 designs, the decisions and the new batch plan in `handoff_v12/BREAKOUT_REDESIGN.md`. No code changed |
 | V1 | next | | | The viewer's seat: department D13 Audience, measured viewer checks, the judged floor with the canary |
 | V2 | after V1 | | | Hook-first production: formats as data, the hook made first, models by value, the three-tier contract |
-| V3 | after V2 | | | Pilot on real services: the owner watches real output of the new code |
+| V3 | after V2 | | | Pilot on real services, then GO LIVE with the new code (the later batches are built while the channel runs) |
 | V4 | after V3 | | | The CEO and the ladder: D1 Strategy wired, the portfolio, decide-inform-implement |
 | B6b | after V4 | | | The Council |
