@@ -285,8 +285,10 @@ def test_an_order_twice_its_clock_old_lapses_and_the_memo_stays_open(monkeypatch
 
 # ------------------------------------------------------------------ 7. the real productions
 def test_a_short_that_is_made_takes_its_step_and_its_footage_is_kept(monkeypatch, setting):
-    _quiet(monkeypatch); _bench("What if the Moon left tonight?"); setting("SHORTS_REVIEW_FIRST_N", "0"); setting("UPLOAD_LOCK", "off")
-    r = SH.run(force=True, now=NOW); assert r["ok"] and r["status"] == "POSTED"
+    _quiet(monkeypatch); _bench("What if the Moon left tonight?"); setting("SHORTS_REVIEW_FIRST_N", "0")
+    from whatifs import launch as LA
+    assert LA.lock_state() == "unknown" and not LA.uploads_open()                                  # a fresh Sheet: nobody has proven yet that an upload can go public
+    r = SH.run(force=True, now=NOW); assert r["ok"] and r["status"] == "POSTED" and LA.lock_state() == "off"      # the Short's own job ran the zero-cost upload check first (before, only the long-video job did - and under the ladder that job waits for a posted Short)
     lr = _row(r["id"]); assert lr["state"] == "POSTED" and lr["yt_id"] == r["yt_id"] and lr["topic"] == r["id"] and lr["premise"] == "What if the Moon left tonight?" and lr["posted"] == core.iso(NOW)
     z = os.path.join(PUB._fake_drive(), lr["footage"]); names = zipfile.ZipFile(z).namelist()
     assert "short.json" in names and "c0.mp4" in names and "f0.png" in names and not any(n.startswith("c") and n.endswith(".mp4") and int(n[1:-4]) >= len(names) for n in names)
@@ -330,6 +332,17 @@ def test_one_short_id_always_draws_the_same_hook(setting):
     """A Short's hook comes from the learning core's sampler. Seeded by the Short's id it is the same on every run (a fault can be reproduced) and still varies from Short to Short."""
     got = {i: {SH.hook_for("S1", [], f"SH20261216{i:04d}")["level"] for _ in range(6)} for i in range(40)}
     assert all(len(v) == 1 for v in got.values()) and len({next(iter(v)) for v in got.values()}) >= 2, got
+
+def test_no_short_is_started_while_youtube_keeps_uploads_private(monkeypatch, setting):
+    from whatifs import launch as LA
+    _quiet(monkeypatch); _bench("What if the Moon left tonight?"); setting("SHORTS_REVIEW_FIRST_N", "0")
+    LA._FAKE_RESULT[0] = "private"                                                                 # the test upload comes back private: the project is locked
+    try: r = SH.run(force=True, now=NOW)
+    finally: LA._FAKE_RESULT[0] = "unlisted"
+    assert r == {"ok": False, "skipped": "upload_lock"} and LA.lock_state() == "on"
+    assert not core.store().rows("Specials") and not core.store().rows("Sessions") and not LAD.rows()      # nothing was written, voiced or paid
+    setting("UPLOAD_LOCK", "unknown"); setting("UPLOAD_CHECK_AT", "")
+    r = SH.run(force=True, publish=False, now=NOW); assert r["ok"] and LA.lock_state() == "unknown"      # a Short that is not posted asks nothing of YouTube
 
 # ------------------------------------------------------------------ 8. wiring, levers, the one-time move
 def test_the_daily_cells_are_gone_everywhere_and_the_new_levers_are_registered(setting):

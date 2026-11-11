@@ -372,6 +372,12 @@ def run(force=False, publish=True, now=None, episode_id=None):
     from whatifs.org import runner as ORG, wraps as WR
     now = now or now_utc()
     if not force and not due(now): return {"ok": False, "skipped": "not due"}
+    if publish:                                                                   # v12 V2c-b: the zero-cost upload check BEFORE the first paid call. Under "every topic starts as a Short" a Short is
+        try:                                                                      # the first thing a new Sheet makes; before, only the long-video job ran the check, and no Short could be posted
+            from whatifs import launch as LA
+            if LA.due_check(): LA.upload_check()
+            if LA.lock_state() == "on": log("upload lock is on: no Short is started (nothing spent)", "WARN"); return {"ok": False, "skipped": "upload_lock"}
+        except Exception as e: log(f"upload check skipped: {scrub(e)[:100]}", "WARN")
     order = order_due(now)                                                        # v12 V2c-b: a winner's follow-up comes before the cadence (its clock is running)
     if not order and not force and not cadence(now)[0]: return {"ok": False, "skipped": "not due", "why": cadence(now)[1]}
     topic = pick_topic(order)
