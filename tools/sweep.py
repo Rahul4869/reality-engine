@@ -18,6 +18,16 @@ def inside(path, root):
     try: return os.path.commonpath([os.path.abspath(path), os.path.abspath(root)]) == os.path.abspath(root)
     except ValueError: return False          # another drive
 
+# v12 V2c: what the Shorts of the sweep are about (mode "short"): everyday things, names, numbers and expert words, so that many different Shorts meet the seat
+SHORT_PREMISES = ("What if the Moon left tonight?", "What if gravity doubled for one hour?", "What if your shadow arrived one second late?", "What if the Sun went out?",
+                  "What if photosynthesis stopped at noon?", "What if two million bees moved into your street?", "What if every mirror showed tomorrow?",
+                  "What if you could hear electromagnetic waves?", "What if rain fell upward for an hour?", "What if your heartbeat set the speed of time?",
+                  "What if the oceans turned to glass?", "What if nobody could lie on Tuesdays?", "What if the neutrino in your coffee had weight?",
+                  "What if Mars swapped places with the Moon?", "What if you forgot the colour blue?", "What if sound travelled slower than you walk?",
+                  "What if your house grew one room every night?", "What if 99 percent of your atoms took a day off?", "What if the wind kept every word you said?",
+                  "What if you could only move when nobody watched?", "What if the thermodynamics of your kitchen ran backwards?", "What if stars were close enough to touch?",
+                  "What if you woke up with a third arm?", "What if ice was warmer than fire?")
+
 def warn_class(msg):
     """One class per kind of warning: numbers, ids and quoted detail are folded away so that 40 episodes give a short list."""
     m = re.sub(r"EP\d{6,}", "EP#", str(msg)); m = re.sub(r"'[^']{0,80}'|\"[^\"]{0,80}\"", "'..'", m); m = re.sub(r"\d+(\.\d+)?", "#", m)
@@ -35,7 +45,21 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
         import whatifs.voice as V
         from tools.rehearsal import ToneVoice
         from whatifs import manage as MG, episode as EP
-        if mode == "rehearsal":                                                     # the path GitHub's Checks run: the full rehearsal, its one time-based id replaced by the fixed one
+        if mode == "short":                                                         # v12 V2c: standalone Shorts - a first one, then the one under test (so the variety rules meet a history)
+            from whatifs import shorts2 as SH
+            core._store = core.LocalStore(os.path.join(work, "sheet.json")); core._store.ensure_tabs(); core._settings_cache = None
+            for k, v in TEST_SETTINGS.items(): core.set_setting(k, v)
+            if not org: core.set_setting("ORG_ON", "FALSE")
+            MG.setup()
+            if not org: core.set_setting("ORG_ON", "FALSE")
+            h = int(__import__("hashlib").sha1(ep.encode()).hexdigest(), 16); prem = [SHORT_PREMISES[(h + i * 7) % len(SHORT_PREMISES)] for i in range(2)]
+            core.store().append("Premise_Bench", [{"bench_id": f"SW{i}", "premise": p, "status": "READY", "combined": 99 - i} for i, p in enumerate(prem)])
+            r0 = SH.run(force=True, publish=False, episode_id="SHW" + ep[2:]); r = SH.run(force=True, publish=False, episode_id=ep)
+            res["problems"] = [f"the first Short: {x}" for x in (r0.get("failed") or ([r0.get("why")] if not r0.get("ok") else []))] + [str(x) for x in (r.get("failed") or [])]
+            if r0.get("ok") and r.get("ok") and os.path.exists(str(r.get("path") or "")): res["outcome"] = "ok"; res["short"] = f"{r0.get('format')}>{r.get('format')}"
+            elif r.get("held") or r0.get("held"): res["outcome"] = "held"
+            else: res["outcome"] = "odd"; res["error"] = json.dumps({k: v for k, v in dict(r0, **r).items() if k != "script"}, default=str)[:300]
+        elif mode == "rehearsal":                                                   # the path GitHub's Checks run: the full rehearsal, its one time-based id replaced by the fixed one
             real = EP.produce
             EP.produce = lambda slot, episode_id=None, **k: real(slot, episode_id=episode_id or ep, **k)
             from tools.rehearsal import run
@@ -130,7 +154,7 @@ def summary(results):
 def main(argv=None):
     p = argparse.ArgumentParser(description="Sweep the fake pipeline over fixed episode ids.")
     p.add_argument("--n", type=int, default=40); p.add_argument("--offset", type=int, default=0); p.add_argument("--ids", default="")
-    p.add_argument("--org", choices=("on", "off"), default="on"); p.add_argument("--mode", choices=("produce", "rehearsal"), default="produce")
+    p.add_argument("--org", choices=("on", "off"), default="on"); p.add_argument("--mode", choices=("produce", "rehearsal", "short"), default="produce")
     p.add_argument("--jobs", type=int, default=3); p.add_argument("--out", default=""); p.add_argument("--work", default=""); p.add_argument("--repo", default=ROOT)
     p.add_argument("--slot-h", type=int, default=10); p.add_argument("--timeout", type=int, default=TIMEOUT_S); p.add_argument("--keep", action="store_true"); p.add_argument("--one", default="")
     a = p.parse_args(argv); a.repo = os.path.abspath(a.repo)

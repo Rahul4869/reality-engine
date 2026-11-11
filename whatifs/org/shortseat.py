@@ -15,6 +15,8 @@ SOURCES = ("picture", "chain", "loop")      # a clip starts on its own picture, 
 ASK_RX = re.compile(r"\b(subscrib\w*|follow (?:us|me|for more|the channel|this channel)|like (?:and|this video|the video|this short)|hit (?:the|that) (?:like|bell|button)\w*|"
                     r"smash\w* (?:the|that)|comment (?:below|down|your)|in the comments|link in (?:the |my |our )?(?:bio|description)|(?:the )?full (?:video|episode|trial|story)|"
                     r"on (?:our|my|this) channel|share this|turn on notifications|for part (?:two|2)|watch (?:the )?next)\b", re.I)
+# three-letter words that carry no picture (a hand-back needs a CONTENT word: "sun", "sky", "sea", "ice", "cat" count; these do not)
+_STOP3 = frozenset("the and you for are but not its was has had all can her his him she out now who how why too any our off own yet did got get let may nor one two if".split())
 GREET_RX = re.compile(r"^\W*(?:hi|hey|hello|welcome|what'?s up|good (?:morning|evening))\b|\b(?:welcome (?:back )?to|in this (?:video|short)|today we|my name is)\b", re.I)
 
 def on():
@@ -23,6 +25,12 @@ def on():
 
 def sentences(text):
     return [s.strip() for s in LAY._SENT.split(" ".join(AUD.spoken(text).split())) if s.strip()]
+
+def content_words(text):
+    """The words of a line that can carry a picture, as stems: every word of four letters and more that is no filler, and every three-letter word that is
+    not on the short list of fillers - so "sun", "sky", "sea" and "ice" count (they did not at first: a Short about the Sun was held)."""
+    from whatifs.growth import _STOP
+    return {w[:5] for w in re.findall(r"[a-z]{3,}", AUD.spoken(text).lower()) if (len(w) >= 4 and w not in _STOP) or (len(w) == 3 and w not in _STOP3)}
 
 def hook(sc):
     """The hook: the first spoken sentence of the Short."""
@@ -97,7 +105,7 @@ def shape_report(sc, fmt, units=None, plan=None):
     if sec is not None and sec > hi + 0.05: p.append(f"the Short is {sec:.0f} s long (format {fmt}: {lo:g} to {hi:g} s)")
     asks = list(dict.fromkeys(m.group(0).lower() for l in lines for m in ASK_RX.finditer(AUD.spoken(l))))
     if asks: p.append(f"an ask in a Short: {', '.join(repr(a) for a in asks[:4])}")
-    back = sorted(LAY._stems(lines[0]) & LAY._stems(lines[-1])) if len(lines) >= 2 else []
+    back = sorted(content_words(lines[0]) & content_words(lines[-1])) if len(lines) >= 2 else []
     if len(lines) >= 2 and not back: p.append("the last line does not hand back to the first picture: no word of the opening line returns in it")
     if plan is not None:
         shots = plan.get("shots") or []; at = 0.0

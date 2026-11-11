@@ -68,6 +68,14 @@ pipeline run uses the new code. Nothing restarts.
   `show.leads_on()` = the show's world at all: a feature every format needs (packaging tests, the experiment row, provenance, the fixed cast, designed voices) asks
   `leads_on()`, a trial-only one asks `on()`. A fake reply that must differ by format reads `formats.show_allowed()`. The older tests are the trial's tests
   (`tests/conftest.py` forces F2); run a rehearsal or a sweep of one format with the env var `WI_FORMAT`.
+- **Shorts** (`whatifs/shorts2.py`, department D14; `whatifs/org/shortseat.py`, D13): a standalone Short is a product of its own, never a cut-down and never a trial. Its format is
+  DATA (`formats.SHORTS`: beats, ending, length cell, camera; picked by `formats.short_pick` over the last ten Shorts); a new Short format = a row + its brief + a `SHORT_SHARE_*`
+  and a `SHORT_MAX_S_*` cell (levers of D14). Order in `shorts2.run`: D14 `write` (the playbook in the writer's prompt, variants, the seat before the blind jury, ONE fix) -> D7
+  `short_voice` (the long video's voice job: the timeline is real) -> `shorts2.plan` (code: every second a hero clip, the loop shot last) -> D13 `short_seat` (`shortseat.shape`
+  repairs the plan) -> D8 `short_gate` (`contract.run("short", ...)`: `short_open`, `short_plain`, `short_shape`, `short_kept`, `short_contract`) -> D14 `make`. Nothing is paid for
+  a picture before the gate; a held Short is not made and the owner is not asked. A new rule for a Short = a pure measure in `shortseat.py` (or `formats.short_kept_report`) + a line
+  in `shortseat.script_issues` for the one fix + a repair in `shortseat.shape` where code can repair + the check; a rule must RECOGNISE what is wrong (an ask, a greeting, an expert
+  word), never flag what it does not know. The offline writer (`fakes._fake_short`) must pass the seat for every premise: run `tools/sweep.py --mode short` after touching either.
 - **New format or series idea**: enter it as an experiment arm or a Playbook trial so the data decides; never replace the whole format at once.
 - **Knowledge Palace** (`whatifs/org/palace.py`): knowledge enters only through `palace.add` / `add_many` (dated evidence, real `applied_in` code references)
   and leaves only through `palace.playbook` (the guard runs first). Never write the `Palace_Items` tab directly, never filter statuses yourself.

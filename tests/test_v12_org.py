@@ -464,7 +464,7 @@ def test_the_registry_is_honest_about_what_runs_under_the_runner(tmp_path):
     assert set(REG.ENTRY) | set(REG.PENDING) == set(DEPARTMENTS) and not set(REG.ENTRY) & set(REG.PENDING)
     assert set(REG.PENDING) <= {"D0", "D1", "D2", "D3", "D11", "C", "L"}, "the pending list may only shrink: wire the department, never add one back"      # v12 B4: D12 is wired
     os.makedirs(tmp_path / "whatifs" / "org"); src = open(os.path.join(ROOT, "whatifs", "episode.py"), encoding="utf-8").read()
-    shutil.copy(os.path.join(ROOT, "whatifs", "cli.py"), tmp_path / "whatifs" / "cli.py"); shutil.copy(os.path.join(ROOT, "whatifs", "org", "execute.py"), tmp_path / "whatifs" / "org" / "execute.py"); shutil.copy(os.path.join(ROOT, "whatifs", "preview.py"), tmp_path / "whatifs" / "preview.py")      # v12 B6a: pre-production writing is a D4 call site
+    shutil.copy(os.path.join(ROOT, "whatifs", "cli.py"), tmp_path / "whatifs" / "cli.py"); shutil.copy(os.path.join(ROOT, "whatifs", "org", "execute.py"), tmp_path / "whatifs" / "org" / "execute.py"); shutil.copy(os.path.join(ROOT, "whatifs", "preview.py"), tmp_path / "whatifs" / "preview.py"); shutil.copy(os.path.join(ROOT, "whatifs", "shorts2.py"), tmp_path / "whatifs" / "shorts2.py")      # v12 B6a: pre-production writing is a D4 call site
     cut = src.replace('ORG.work("D5", "package", ep, lambda b: ROOM.package(room, chs, d, ep), measure=WR.m_pkg, topic=str(room["spine"].get("premise") or ""))', 'ROOM.package(room, chs, d, ep)')
     assert cut != src; open(tmp_path / "whatifs" / "episode.py", "w", encoding="utf-8").write(cut + '\ndef extra(): ORG.work("D7", "remix", "", None)\n')
     bad = REG.entry_issues(str(tmp_path))

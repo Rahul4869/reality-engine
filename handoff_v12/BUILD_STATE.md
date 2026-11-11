@@ -271,6 +271,47 @@ D. (ORIGINAL, CHOSEN) THE SHORT AS DATA, PLANNED BY CODE, CLOSED BY CODE: a Shor
   today's code would simply make fewer. Nothing is spent before the pilot.
 - HYPOTHESES added: H15 the promise text on screen raises "stayed to watch"; H16 a Short that loops by picture is watched past 100% more
   often; H17 which Short format holds best (the shares follow).
+- CORRECTED BY THE BUILD (the first fake Shorts were counted): the first plan cut every beat into 5-second clips and paid 7 clips for a
+  24-second Short. A clip may now cover a shot up to 30% longer than itself by being played that much slower (`shortseat.STRETCH_MAX`), so a
+  beat of 5 to 6.5 seconds is ONE paid clip: 3 clips for S1 and 4 for S2 and S3 in the fake Shorts (about Rs 125-165 of animation). The
+  estimate follows the plan (`shorts2.est_inr`) and a test proves it covers the clips really made. Whether a clip slowed by a quarter looks
+  right is unknown until the pilot; V2d's choice of a model with longer clips removes the need.
+#### Step 4 BUILD (what changed)
+- NEW `whatifs/org/shortseat.py` (D13; on `tools/repair.py` PROTECTED): `on`, `hook`, `open_report`, `plain_report`, `shape_report`,
+  `script_issues` (the one fix), `shape` (the repair of the plan), `m_shape`.
+- `whatifs/formats.py`: `SHORTS` (S1, S2, S3), `SHORT_HOOKS`, the house brief and the three format briefs, `short_pick`, `short_len`,
+  `short_shares`, `short_brief`, `short_rubric`, `short_using`, `opener`, `likeness`, `short_kept_report`, `short_kept_issues`.
+- `whatifs/shorts2.py` REBUILT (now on PROTECTED): `history`, `pick_topic` (a held topic is tried once more, then left), `hook_for` (format
+  and hook rotate by code), `est_inr`, `valid`, `write`, `voice`, `plan`, `make` (pictures, clips chained on the frame before, the loop, the
+  captions, the sound), `_loop_diff`, `description`, the short gate's memo hooks, `run`. Gone: the cast, the name plates, the 0.5 s title
+  plate, the end plate with its ask, "one hero clip in every third Short", the courtroom brief and its punchline rule.
+- `whatifs/contract.py`: five probes and five rows at the NEW stage "short" (58 hard checks: 34 script + 19 final + 5 short).
+- `whatifs/org/__init__.py`, `registry.py`: department D14 Shorts Studio (17 departments, 12 wired, 5 pending); `shorts2.py` moves from D9
+  to D14; D13 also wraps `layman.py` and `shortseat.py`; entries D14 `write` / `make`, D7 `short_voice`, D13 `short_seat`, D8 `short_gate`;
+  the runs a Short needs before its gate (`EPISODE_RUNS["short"]`); D14's writers get their playbook in the prompt (`PROMPT`); five check
+  owners. `levers.py`: 12 rules (63 levers: 7 of D14, 5 more of D13; every loosening needs the owner). `rnd.py`: SHOW_CHECKS 47,
+  `short_contract` among the organisation's own.
+- `whatifs/org/runner.py` (LOAD): an empty Sheet gets its founding knowledge BEFORE the cast is mirrored (a fault found by the first fake
+  Short, step 6). `whatifs/models.py`: role `short_writer` on the long script's chain. `whatifs/specials.py`: `_publish` takes a text.
+  `whatifs/manage.py`: `v12v2c_upgrade` at both upgrade sites. `whatifs/core.py`: 18 cells, 3 columns on tab `Specials` (hook, script,
+  sec), SHORTS_NEED_MASTERS default FALSE. `whatifs/fakes.py`: the offline writer of a Short (two scripts per format, about the premise it
+  is given). `tools/rehearsal.py`: one Short is made and asserted. `tools/sweep.py`: mode `short`. `tools/gen_docs.py`: the short gate is
+  counted.
+- Seeds FIRST (the runner refuses a department without a playbook - it did, step 6): `v2c.short_is_a_product`, `v2c.first_seconds_decide`,
+  `v2c.short_seat`, `v2c.length_is_a_lever`, `v2c.no_two_alike`, `v2c.text_earns_no_views`, `v2c.loop_by_code` (151 founding items).
+- Docs: 7 matrix rows (one old row lost its dead reference), the ledger line, `CONCEPT.md` rewritten (the trial is format F2; the Short has
+  its own formats), the builders' recipe in `CLAUDE.md`, one dated platform fact, `SYSTEM.md` regenerated.
+#### Step 5 ENFORCE (rule -> executing code -> fails when broken)
+| Rule | Executed by | Fails when broken |
+|---|---|---|
+| A Short is made in ONE Short format, one guide voice, no courtroom | `formats.short_pick`, `short_brief` in `shorts2.write` | `short_kept` (short gate) |
+| The first frame moves; the hook ends inside 3 s of the real voice | `shorts2.plan`, `shortseat.shape`; the one fix | `short_open` |
+| One number at most, no expert word | `shortseat.script_issues` in the one fix | `short_plain` |
+| The format's length, the hand-back, no ask, every second a clip, the loop, captions | `shorts2.plan` / `make`, `shortseat.shape` | `short_shape`; `_loop_diff` on the file (a test) |
+| No two alike; format and hook rotate | `shorts2.hook_for`, `history`; the one fix | `short_kept` |
+| The Shorts Studio, Sound and Audience ran before the gate | `runner.work` in `shorts2.run` | `short_contract`; `python -m whatifs.org.runner` RED |
+| A held Short is not made and nobody is asked | `shorts2.run` (the gate before `make`) | the production test (no clip, no picture, no message) |
+| Every paid clip is in the estimate | `shorts2.est_inr` before the budget rule | the production test (estimate >= clips made) |
 
 ### V2a - FORMATS AS DATA AND THE THREE-TIER CONTRACT (11 Nov 2026) - ACCEPTED (final code commit 75c55ea GREEN in GitHub Checks run 91: 1303 passed; sweep 28 of 28, both formats)
 The owner (mobile only): "Continue". V2 was SPLIT AT THE START (rule 6): V2a is the foundation - an episode has a format, and a format decides

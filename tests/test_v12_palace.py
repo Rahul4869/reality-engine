@@ -26,7 +26,7 @@ def test_tabs_columns_and_settings_exist():
     assert "palace_hash" in core.TABS["Palace_Versions"] and "playbook_id" in core.TABS["Palace_Playbooks"]
     assert core.DEFAULTS["PALACE_ON"][0] == "TRUE" and core.DEFAULTS["PALACE_PLAYBOOK_TOKENS"][0] == "1800"
     assert set(P.REVIEW_DAYS) == set(P.KIND_CAPS) == set(P.KINDS) and set(P.LIMIT_KINDS) < set(P.KINDS)
-    assert all(st in STAGES for _n, st in DEPARTMENTS.values()) and len(DEPARTMENTS) == 16          # v12 V1: + D13 Audience
+    assert all(st in STAGES for _n, st in DEPARTMENTS.values()) and len(DEPARTMENTS) == 17          # v12 V1: + D13 Audience; V2c: + D14 Shorts Studio
 
 # ------------------------------------------------------------------ the write gate
 def test_a_valid_item_enters_and_is_stored_whole():
@@ -439,7 +439,7 @@ def test_snapshot_once_per_palace_state():
 def test_the_contract_check_passes_on_a_fresh_sheet_and_is_a_hard_script_check(setting):
     row = [f for f in CON.FEATURES if f[0] == "palace_health"]; assert len(row) == 1 and row[0][1] == "script" and row[0][2] is CON.p_palace_health
     status_, evd = CON.p_palace_health({}); n = len(P.seed_items()[0])
-    assert status_ == CON.PASS and f"{n} items ({n} served" in evd and "16 playbooks inside their caps" in evd and len(P.rows()) == n      # upkeep seeded the empty Sheet
+    assert status_ == CON.PASS and f"{n} items ({n} served" in evd and "17 playbooks inside their caps" in evd and len(P.rows()) == n      # upkeep seeded the empty Sheet
     h = P.health(); assert h["ok"] and h["stats"]["owner"] >= 25 and h["stats"]["by_status"] == {"accepted": n} and h["stats"]["version"] == n
     g = CON.run("script", {"d": {}, "room": {"script": "x"}}, "EPPAL1")
     led = [r for r in core.store().rows("Feature_Ledger") if r["feature"] == "palace_health"]; assert len(led) == 1 and led[0]["status"] == "PASS" and "palace_health" not in [f for f, _ in g["failed"]]

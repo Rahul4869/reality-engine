@@ -144,7 +144,8 @@ def voice(sc, ep, wd):
     """The guide speaks the Short through the long video's voice job: a real timeline (a unit per sentence, a time per word) and the breathing rule."""
     from whatifs import episode as EPI
     from whatifs.voice import narrate, Blend
-    d = (EPI.speaker_blends() or {}).get(FMT.SHORT_VOICE) or EPI.blend()
+    with FMT.using("F1"):                                                # a Short is never a trial: only the guide's voice is prepared, not the court's
+        d = (EPI.speaker_blends() or {}).get(FMT.SHORT_VOICE) or EPI.blend()
     gv = getattr(d, "gvoice", "") or ("Gacrux" if FAKE else "")              # the rehearsal has no designed voices; live it must be the owner's designed voice
     if not gv and str(S("TTS_ENGINE") or "gemini").strip().lower() == "gemini": raise RuntimeError("no designed voice for the guide of a Short")
     d = Blend(d.name, d.parts, gvoice=gv, gstyle=getattr(d, "gstyle", ""))
@@ -318,10 +319,10 @@ def _gate_settle(ep):
     return settle
 
 # ------------------------------------------------------------------ one Short, from the topic to the review or the upload
-def run(force=False, publish=True, now=None):
+def run(force=False, publish=True, now=None, episode_id=None):
     """Make (and post, or send for review) one standalone Short. Returns a record. Order: the topic and its format -> D14 writes -> D7 voices ->
     code plans every second and D13 repairs the plan -> D8's short gate (nothing is paid for a picture before it; a held Short is NOT made and
-    the owner is not asked) -> D14 makes it -> review or upload."""
+    the owner is not asked) -> D14 makes it -> review or upload. episode_id = a fixed id (the sweep and the rehearsal); else the id is the minute."""
     from whatifs import specials as SP, brain as BR, contract as CON, governor as G
     from whatifs.org import runner as ORG, wraps as WR
     now = now or now_utc()
@@ -330,7 +331,7 @@ def run(force=False, publish=True, now=None):
     topic = pick_topic()
     if not topic: log("Shorts: no unused premise on the bench (the weekly research fills it)", "WARN"); return {"ok": False, "skipped": "no topic"}
     brk = topic.get("origin") == "breakout"
-    ep = f"{'BRK' if brk else 'SH'}{now:%Y%m%d%H%M}"                # BRK ids: every cost of a follow-up is charged to the breakout fund
+    ep = str(episode_id or f"{'BRK' if brk else 'SH'}{now:%Y%m%d%H%M}")                # BRK ids: every cost of a follow-up is charged to the breakout fund
     hist = history(); fmt = FMT.short_pick(ep, [h["format"] for h in hist]); choice = hook_for(fmt, hist); arch = choice["level"]
     est = est_inr(fmt)
     ok, why = G.extras_allowed(est, kind="breakout") if brk else _budget_ok(est, first)

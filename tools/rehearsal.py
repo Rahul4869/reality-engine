@@ -284,6 +284,18 @@ def run():
             a91 = json.loads(ep91.get("atmos_json") or "{}")
             assert a91 and float(ep91.get("render_min") or 0) > 0, f"atmosphere / render minutes not logged: {ep91.get('atmos_json')}"
         print("v9.1 checks ok")
+        # v12 V2c: one standalone Short - written in its Short format by the Shorts Studio (D14), voiced, planned by code, judged by the viewer's seat
+        # for a Short at the short gate BEFORE any picture was paid, then made (the env var WI_SHORT_FORMAT forces S1, S2 or S3)
+        from whatifs import shorts2 as SH12, formats as FMT12
+        st.append("Premise_Bench", [{"bench_id": "BREH12", "premise": "What if your shadow arrived one second late?", "status": "READY", "combined": 99}])
+        rs12 = SH12.run(force=True, publish=False, episode_id="SH" + e["episode_id"][2:])
+        assert rs12.get("ok") and os.path.exists(str(rs12.get("path") or "")), ("the rehearsal's Short was not made", {k: v for k, v in rs12.items() if k != "script"})
+        sl12 = {r["feature"]: r["status"] for r in st_rows("Feature_Ledger") if r.get("episode_id") == rs12["id"]}
+        assert sl12 == {k: "PASS" for k in ("short_open", "short_plain", "short_shape", "short_kept", "short_contract")}, ("the short gate did not pass", sl12)
+        ss12 = [(s["dept"], s["trigger"], s["status"]) for s in st.rows("Sessions") if s.get("episode_id") == rs12["id"]]
+        assert ss12 == [("D14", "write", "ok"), ("D7", "short_voice", "ok"), ("D13", "short_seat", "ok"), ("D8", "short_gate", "ok"), ("D14", "make", "ok")], ("a department run of the Short is missing or broken", ss12)
+        lo12, hi12 = FMT12.short_len(rs12["format"]); assert lo12 <= float(rs12["sec"]) <= hi12 and SH12._loop_diff(rs12["path"]) <= 0.12, ("the Short has the wrong length or does not loop", rs12["sec"])
+        print("short:", rs12["id"], "format", rs12["format"], "(" + FMT12.short_name(rs12["format"]) + "), hook", rs12["hook"], ",", rs12["sec"], "s; short gate 5 / 5; 5 department runs")
         MG.money_check(); MG.monthly_brief(); print("brief ok")
         # v7.3 checks: Revenue_Log months/amounts, pause hold + resume, KILL, stuck release never blocks, release is idempotent
         from whatifs.governor import month_key, money_num
