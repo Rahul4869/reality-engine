@@ -394,11 +394,12 @@ def run(kind="special", force=False, publish=True):
     except Exception as e:
         log(f"special reel failed (nothing posted): {scrub(e)[:200]}", "WARN", episode); return {"ok": False, "why": str(e)[:200]}
 
-def _publish(path, title, episode):
+def _publish(path, title, episode, desc=None):
+    """desc = the text under the upload (a standalone Short brings its own: no courtroom, no ask); None = the special reels' own text."""
     from whatifs import publish as PUB, launch as LA
     res = {"status": "MADE"}
     if not LA.uploads_open(): res["status"] = "HELD (uploads not confirmed open)"; return res
-    desc = (f"{title}\nNew trials every Tuesday and Saturday: Reality on Trial on the Reality Engine channel. Take your seat on the jury: subscribe.\n"
+    desc = desc or (f"{title}\nNew trials every Tuesday and Saturday: Reality on Trial on the Reality Engine channel. Take your seat on the jury: subscribe.\n"
             "AI-assisted visuals; original characters and story.")
     try: res["yt_id"] = PUB.yt_upload(path, title[:90], desc, ["reality on trial", "what if"], short=True, ai_label=True)
     except Exception as e: log(f"special: YouTube upload failed: {scrub(e)[:120]}", "WARN", episode)

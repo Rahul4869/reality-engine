@@ -16,6 +16,7 @@ DEPARTMENTS = {
     "D11": ("Finance", "finance"),
     "D12": ("Operations", "ops"),
     "D13": ("Audience", "qa"),
+    "D14": ("Shorts Studio", "writing"),
     "C":   ("The Council", "planning"),
     "L":   ("The Librarian", "ops"),
 }

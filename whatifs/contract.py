@@ -538,6 +538,68 @@ def p_canon_in_brief(ctx):
     return PASS, (f"canon given: {s.get('cast', 0)} cast item(s) + newest case {s.get('newest_case')}; " + (f"callback in the script: '{s['callback']}'" if s.get("callback") else "no aired case to call back to yet")
                   + "; case record written")
 
+# ------------------------------------------------------------------ v12 V2c: the short gate (stage "short": a standalone Short, before any picture is paid)
+def _short(ctx):
+    s = ctx.get("short"); return s if isinstance(s, dict) and isinstance(s.get("script"), dict) else None
+
+def _short_seat(ctx):
+    """(the Short at the gate, None) or (None, the (status, evidence) to return): the seat switched off = NA, nothing at the gate = FAIL."""
+    from whatifs.org import shortseat as SEAT
+    if not SEAT.on(): return None, (NA, "the viewer's seat for a Short is switched off (SHORT_SEAT_ON / VIEWER_SEAT_ON)")
+    s = _short(ctx)
+    if s is None: return None, (FAIL, "no Short script reached the short gate")
+    if not s.get("units") or not isinstance(s.get("plan"), dict): return None, (FAIL, "the Short reached the gate without its real voice timeline or its picture plan")
+    return s, None
+
+def p_short_open(ctx):
+    """v12 V2c (the viewer's seat for a Short, D13): the first frame is the moving promise picture, the hook has at most SHORT_HOOK_WORDS_MAX words
+    and ENDS inside SHORT_HOOK_BY_S seconds of the real voice, the promise text is on screen inside the first second."""
+    from whatifs.org import shortseat as SEAT
+    s, out = _short_seat(ctx)
+    if s is None: return out
+    r = SEAT.open_report(s["script"], s["units"], s["plan"])
+    if r["problems"]: return FAIL, "; ".join(r["problems"])[:380]
+    pr = str((s["plan"].get("promise") or {}).get("text") or "")
+    return PASS, (f"the hook '{r['hook'][:60]}' has {r['hook_words']} words (limit {r['hook_max']}) and ends at {r['hook_end_s']} s of the voice (limit {r['hook_by_s']:g} s); "
+                  "the first frame is the moving promise picture" + (f"; promise text '{pr}' from the first frame" if pr else "; no promise text (switched off)"))
+
+def p_short_plain(ctx):
+    """v12 V2c (D13): a Short a layman follows on one listen - at most SHORT_NUMBERS_MAX number heard and SHORT_EXPERT_MAX expert words."""
+    from whatifs.org import shortseat as SEAT
+    s, out = _short_seat(ctx)
+    if s is None: return out
+    r = SEAT.plain_report(s["script"])
+    if r["problems"]: return FAIL, "; ".join(r["problems"])[:380]
+    return PASS, f"{r['numbers']} number(s) heard (limit {r['numbers_max']}); {len(r['hard'])} expert word(s) a layman would not know (limit {r['hard_max']})"
+
+def p_short_shape(ctx):
+    """v12 V2c (D13): the shape of a Short - its real length inside the format's band, the last line hands back to the first, no ask, every second
+    planned as an animated clip with no gap and no stock, the last shot is the first clip returning (the loop), captions above the buttons."""
+    from whatifs.org import shortseat as SEAT
+    s, out = _short_seat(ctx)
+    if s is None: return out
+    r = SEAT.shape_report(s["script"], s.get("format"), s["units"], s["plan"])
+    if r["problems"]: return FAIL, "; ".join(r["problems"])[:380]
+    m = SEAT.m_shape(s["plan"])
+    return PASS, (f"{r['seconds']} s (format {s.get('format')}: {r['band'][0]:g} to {r['band'][1]:g} s); the last line hands back ('{', '.join(r['handback'][:3])}'); no ask; "
+                  f"{m['shots']} clips cover every second ({m['paid_clips']} made, the last is the first clip returning); captions on")
+
+def p_short_kept(ctx):
+    """v12 V2c (the Shorts Studio, D14): the Short is what its FORMAT says (its beats, its ending, one guide voice, no courtroom) and is not like the
+    last ten Shorts (likeness of script and opener; the pair format + hook differs from the last two)."""
+    from whatifs import formats as FMT
+    from whatifs.org import shortseat as SEAT
+    s, out = _short_seat(ctx)
+    if s is None: return out
+    fmt = str(s.get("format") or "")
+    if fmt not in FMT.SHORTS: return FAIL, f"the Short has no Short format ('{fmt}')"
+    r = FMT.short_kept_report(s["script"], fmt, s.get("hook") or "", s.get("last") or ())
+    if r["problems"]: return FAIL, "; ".join(r["problems"])[:380]
+    return PASS, (f"format {fmt} ({FMT.short_name(fmt)}): beats {', '.join(r['roles'])}; one guide voice, no courtroom word; unlike the last "
+                  f"{len([x for x in (s.get('last') or ()) if isinstance(x, dict)][:10])} Short(s); hook '{s.get('hook')}'")
+
+def p_short_contract(ctx): return _org_gate(ctx, "short")
+
 def p_decisions_executed(ctx): return _exec_gate("decisions")
 def p_lever_verified(ctx): return _exec_gate("levers")
 def p_dept_contract(ctx): return _org_gate(ctx, "script")
@@ -598,6 +660,12 @@ FEATURES = [
     ("breakout_bar",  "final",  p_breakout_bar, "Breakout Score >= BREAKOUT_HARD_BAR (no upload below it)"),
     ("aliveness",     "final",  p_alive,        "no stretch of the video looks like a still photo"),
     ("takeaways_written", "final", p_takeaways_written, "every department run of this episode finished its six steps and wrote a valid takeaway"),
+    # v12 V2c: stage "short" = the short gate of a standalone Short (whatifs/shorts2.py), judged before any picture is paid; a held Short is not made
+    ("short_open",    "short",  p_short_open,   "a Short opens on the moving promise picture, its hook has at most SHORT_HOOK_WORDS_MAX words and ends inside SHORT_HOOK_BY_S seconds of the real voice, the promise text is on screen in the first second (the viewer's seat for a Short)"),
+    ("short_plain",   "short",  p_short_plain,  "a Short a layman follows on one listen: one number at most, no expert word (the viewer's seat for a Short)"),
+    ("short_shape",   "short",  p_short_shape,  "a Short has its format's length, hands its last line back to the first, asks for nothing, is an animated clip in every second and loops into its first frame, captions above the buttons (the viewer's seat for a Short)"),
+    ("short_kept",    "short",  p_short_kept,   "a Short is what its Short format says and is not like the last ten Shorts (Short formats as data)"),
+    ("short_contract", "short", p_short_contract, "every department that worked on a Short (the Shorts Studio, Sound, Audience) ran under the department contract before the short gate"),
 ]
 CRIT_KEYS = ("hook", "clarity", "humour", "visual_variety", "audio", "accuracy")
 

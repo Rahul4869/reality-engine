@@ -244,9 +244,9 @@ def run(dept, trigger, act, *, episode="", topic="", stage=None, context=None, m
         inbox = MEM.inbox(dept, st, t0); overdue = sum(1 for m in inbox if (parse_iso(m["sla_due"]) or t0) < t0)
         for m in inbox: MEM.ack(m["id"], dept, st, t0)                                    # loaded = acknowledged (this stops the acknowledge clock only)
         tickets = [m for m in inbox if m["type"] == "ticket"]; inbound = [m for m in inbox if m["type"] != "ticket"]
-        if R.mode == "prompt": CANON.ensure_cast(st, t0)                              # v12 B6a: the cast canon exists before a creative playbook is built
+        if not PAL.rows(st): PAL.ensure_seed(st=st, now=t0)                           # an empty Sheet gets its founding knowledge FIRST (v12 V2c: the cast used to be mirrored
+        if R.mode == "prompt": CANON.ensure_cast(st, t0)                              # before this test, so a creative run that went first was handed the cast and nothing else)
         rs = PAL.rows(st)
-        if not rs: PAL.ensure_seed(st=st, now=t0); rs = PAL.rows(st)
         pb = PAL.playbook(dept, stage, topic, rs=rs, st=st, now=t0)
         if not pb["playbook_id"]: raise ContractBreach("LOAD", f"the Palace has no servable knowledge for {dept} at stage {stage}")
         R.pb_text = pb["text"]; brief = Brief(dept, trigger, episode, stage, topic, pb, inbound, sid, context)

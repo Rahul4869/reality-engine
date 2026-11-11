@@ -28,6 +28,12 @@ LEVERS = {
     "PLAIN_HARD_PER_MIN_MAX": _n("float", 1, 5, 1, "up", GATE, ("viewer_plain",)), "PLAIN_OPENING_HARD_MAX": _n("int", 0, 3, 1, "up", GATE, ("viewer_plain",)),
     "PLAIN_HARD_PER_SENTENCE_MAX": _n("int", 1, 4, 1, "up", GATE, ("viewer_plain",)),
     "FORMAT_SHARE_F1": _n("int", 0, 100, 20), "FORMAT_SHARE_F2": _n("int", 0, 100, 20), "FORMAT_SHARE_F3": _n("int", 0, 100, 20),      # v12 V2a: Strategy moves the mix by small steps
+    "SHORT_SHARE_S1": _n("int", 0, 100, 20), "SHORT_SHARE_S2": _n("int", 0, 100, 20), "SHORT_SHARE_S3": _n("int", 0, 100, 20),         # v12 V2c: the Shorts Studio moves its own mix by small steps
+    "SHORT_MIN_S": _n("int", 10, 40, 5, "down", GATE, ("short_shape",)), "SHORT_MAX_S_S1": _n("int", 20, 60, 5, "up", GATE, ("short_shape",)),
+    "SHORT_MAX_S_S2": _n("int", 20, 60, 5, "up", GATE, ("short_shape",)), "SHORT_MAX_S_S3": _n("int", 20, 60, 5, "up", GATE, ("short_shape",)),
+    "SHORT_HOOK_WORDS_MAX": _n("int", 4, 20, 2, "up", GATE, ("short_open",)), "SHORT_HOOK_BY_S": _n("float", 1.5, 6, 1, "up", GATE, ("short_open",)),
+    "SHORT_NUMBERS_MAX": _n("int", 0, 4, 1, "up", GATE, ("short_plain",)), "SHORT_EXPERT_MAX": _n("int", 0, 3, 1, "up", GATE, ("short_plain",)),
+    "SHORT_PROMISE_WORDS_MAX": _n("int", 2, 10, 2, "up", GATE, ("short_open",)),
     "ROOM_MODE": _e(("v2", "v1"), ("v1",), "v1 is the older writers' room without the blind jury", ("owners_cut",)),
     "ROOM_V2_DRAFTS": _n("int", 2, 5, 1, "up", COST, ("owners_cut",)), "REHOOK_MAX_GAP_SEC": _n("int", 30, 120, 15, "up", GATE, ("retention",)),
     "JOKE_EVERY_SEC_LONG": _n("int", 8, 60, 10, "up", GATE, ("joke_density",)), "COLD_OPEN_LORE_FREE_SEC": _n("int", 10, 45, 10, "down", GATE, ("cold_open",)),

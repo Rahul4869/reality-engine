@@ -103,6 +103,62 @@ def _fake_probe(prompt):
     x = prompt.split("OPENING X:")[-1].split("OPENING Y:")[0]; y = prompt.split("OPENING Y:")[-1]
     return json.dumps({"X": pick(x), "Y": pick(y), "X_says": "Something strange is about to happen to you.", "Y_says": "Something strange is about to happen to you."})
 
+# v12 V2c: what the offline writer of a Short can write - two scripts per Short format ({w} = one plain word of the premise). Each is written to pass the
+# viewer's seat for a Short (a hook of at most 6 words, no number, no expert word, no ask, the last line picks up a word of the first).
+_SHORT_FAKE = {
+    "S1": [("The Second Your {W} Changed", "Your {w} changed its mind",
+            [("picture", "Your {w} just changed its mind. You reach out, and it answers a moment late.", "your own hand reaching toward the {w} in your bedroom at dawn, and the {w} moving a moment after your hand"),
+             ("consequence", "By breakfast nothing in the kitchen keeps time with your hands, and the cat has stopped trusting you.", "your kitchen table, a cup sliding after your fingers have already left it"),
+             ("consequence", "By evening the whole street walks beside its own echo, and nobody remembers who moved first.", "your street at dusk, every neighbour followed by a faint copy of himself"),
+             ("question", "So tonight, when the {w} reaches for you before you reach for it, do you take its hand?", "the {w} leaning toward your open hand in the dark bedroom")]),
+           ("The Morning the {W} Let Go", "The {w} let go",
+            [("picture", "Something is wrong with the {w}. It lets go of you while you are still holding on.", "your fingers closing on the {w} above your bed as it slips away from them"),
+             ("consequence", "Inside a minute your cup, your keys and your own shadow drift a little out of reach.", "your hallway, keys and a cup hanging a hand's width above the shelf"),
+             ("consequence", "Outside, the neighbours stand very still in their gardens, afraid that walking will make it worse.", "your front garden at noon, people frozen on their lawns"),
+             ("question", "And if the {w} never holds you again, would you still step through your front door?", "your own hand on the front door, the {w} far behind you")])],
+    "S2": [("Would You Keep the {W}?", "Keep it or lose it",
+            [("power", "The {w} is yours now. One thought, and it does whatever you ask.", "your open palm in your living room, the {w} turning above it as you look at it"),
+             ("personal", "Your mother calls, and before she speaks you already know it has changed her morning too.", "your phone lighting up on the sofa beside your hand"),
+             ("turn", "Then you notice the price: every time you use it, something small you love goes quiet.", "the birdcage by your window, the bird's beak opening without a sound"),
+             ("choice", "So would you keep the {w} and the silence, or give it back and hear them again?", "your two hands, the {w} in one and the silent phone in the other")]),
+           ("The Day You Lost the {W}", "Would you want it back?",
+            [("power", "Today you lose the {w}. It is simply gone, like a word on the tip of your tongue.", "your bathroom mirror in the morning, an empty place where the {w} used to be"),
+             ("personal", "Your best friend laughs at first, then holds your arm, because she can see what it took with it.", "a hand closing around your sleeve at a bus stop"),
+             ("turn", "Nobody tells you the strange part: without it you sleep deeply, and wake up lighter.", "your own feet leaving the bedroom floor a little as you get up"),
+             ("choice", "So would you take the {w} back and carry its weight, or stay light and never look for it?", "your hand hovering over the {w} on the pavement")])],
+    "S3": [("The Whole {W} Story in One Breath", "The whole {w} story",
+            [("idea", "The {w} runs your whole day. Follow it once across your own room.", "your bedroom window at sunrise, the camera starting to move forward from the glass"),
+             ("why", "It starts at your window, where the light arrives and decides what you can see.", "the same move continuing along the windowsill, light spilling over your hand"),
+             ("scale", "It keeps going past your street, your city and the dark side of the planet without ever slowing down.", "the same move rising over your roof, your street, the curve of the Earth"),
+             ("return", "And then it is back at your window, and the {w} never looks ordinary to you again.", "the same move coming down to the bedroom window it started from")]),
+           ("One Breath: The {W}", "One breath, one {w}",
+            [("idea", "You carry the {w} everywhere. Walk with it once around your kitchen.", "your kitchen table in the morning, the camera starting to move forward from your coffee cup"),
+             ("why", "At the table it is the reason your coffee cools and your bread goes hard.", "the same move passing over the cup and the bread on the table"),
+             ("scale", "Out of the door it is the same reason rivers bend, cities glow and the sea keeps breathing.", "the same move leaving through the kitchen door, over a river and a city at night"),
+             ("return", "Back at your table, the {w} is still there, and now you can feel it working.", "the same move arriving back at the coffee cup on the table")])],
+}
+
+def _short_word(premise):
+    """One plain word of the premise for the offline Short: a name inside the sentence first, else its first plain word - never a number word and never a
+    word the layman test would count as expert."""
+    from whatifs.org import audience as AUD, layman as LAY
+    from whatifs.growth import _STOP
+    toks = re.findall(r"[A-Za-z]+", str(premise or ""))
+    ok = lambda w: w.lower() not in _STOP and w.lower() not in AUD._SMALL and w.lower() not in AUD._BIG and not LAY.unfamiliar(w.lower())
+    names = [t for i, t in enumerate(toks) if i and t[0].isupper() and len(t) >= 3 and ok(t) and t.lower() not in ("what", "if")]
+    plain = [t for t in toks if len(t) >= 4 and ok(t)]
+    return (names or plain or ["world"])[0].lower()
+
+def _fake_short(prompt):
+    """The offline writer of a standalone Short: the script of the Short format named in the prompt, about the premise named in the prompt; the second
+    script of a format when a Short of that format was made before (so that two Shorts in a row are not alike)."""
+    m = re.search(r"SHORT FORMAT: (S\d)", str(prompt)); fmt = m.group(1) if m and m.group(1) in _SHORT_FAKE else "S1"
+    pm = re.search(r"PREMISE: (.*)", str(prompt)); w = _short_word(pm.group(1) if pm else "")
+    em = re.search(r"EARLIER SHORTS \(format: opener\): (.*)", str(prompt)); before = [x for x in (em.group(1).split(" | ") if em else []) if x.startswith(fmt + ":")]
+    title, promise, beats = _SHORT_FAKE[fmt][len(before) % len(_SHORT_FAKE[fmt])]
+    f = lambda t: t.replace("{W}", w.title()).replace("{w}", w)
+    return json.dumps({"title": f(title), "promise": f(promise), "beats": [{"role": r, "line": f(l), "picture": f(pc)} for r, l, pc in beats]})
+
 def fake_reply(key, prompt):
     r = random.Random(len(prompt))
     if key == "rnd_research": return _fake_research(prompt)
@@ -162,14 +218,7 @@ def fake_reply(key, prompt):
                                        for i in range(n)],
                            "verdicts": [["Guilty, with sprinkles.", "Acquitted. Reluctantly.", "Mistrial. Grimm ate the evidence.", "Guilty of being correct.", "Case reopened."][i % 5] for i in range(n)],
                            "vote": "Which verdict was wrong? You are the jury. Vote in the pinned comment."})
-    if key == "short_script":                                         # v11 (K159): a valid standalone Short (4 beats, ~80 words, loops)
-        return json.dumps({"title": "The Moon Is On Trial (You're The Jury)", "loop_line": "and that is why the Moon",
-                           "beats": [{"who": "ROSA", "line": "[PUNCH] The Moon is charged with leaving you alone tonight.", "style": "deadpan"},
-                                     {"who": "GRIMM", "line": "[PUNCH] Objection! Without it your day shrinks, which I can fix with this lever.", "style": "manic"},
-                                     {"who": "ARCHIVIST", "line": "[PUNCH] [SEND] Exhibit A: the Moon slows Earth's spin, NASA 2023.", "style": "calm"},
-                                     {"who": "VALE", "line": "[PUNCH] The lever is glued to a teacup. Nana glued it.", "style": "noir"},
-                                     {"who": "ROSA", "line": "[PUNCH] Tides go quiet first, and the fish file a complaint.", "style": "deadpan"},
-                                     {"who": "VALE", "line": "[PUNCH] So if it walks out, the oceans notice first, and that is why the Moon", "style": "noir"}]})
+    if key in ("short_script", "short_fix"): return _fake_short(prompt)          # v12 V2c: a standalone Short in its Short format (the fix returns a clean one)
     if key == "punchup":
         import re as _re
         m = _re.search(r"SLOTS: (\[.*\])\s*$", prompt, _re.S)

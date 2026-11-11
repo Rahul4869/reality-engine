@@ -1,17 +1,19 @@
-"""Standalone daily Shorts: each a complete mini-trial built to break out, with topic and hook chosen from the breakout queue and the Channel Brain. See docs/CURRENT/SYSTEM.md."""
+"""Shorts Studio (D14): the standalone Short as a product of its own - a Short format as data, three scripts judged blind, every second an animated clip planned by code, the loop closed by code, and the viewer's seat for a Short before any picture is paid. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
-import json, os
+import json, math, os, subprocess
 from whatifs.core import S, log, store, iso, now_utc, parse_iso, FAKE, WORK, scrub
+from whatifs import formats as FMT
+from whatifs.org import shortseat as SEAT
 
-CAST = ("VALE", "GRIMM", "ROSA", "ARCHIVIST")
-NAMES = {"VALE": "INSPECTOR VALE", "GRIMM": "DR. GRIMM", "ROSA": "NANA ROSA", "ARCHIVIST": "THE ARCHIVIST"}
-WORLD_OF = {"VALE": "office", "GRIMM": "lab", "ROSA": "court", "ARCHIVIST": "case"}
-RUBRIC = ("Rank these 30-second Short scripts for an animated courtroom-comedy science show, best first, as a viewer scrolling a feed: (1) would you "
-          "stop scrolling in the first second; (2) is the stakes line about YOU; (3) a surprise or laugh every few seconds; (4) the last line flows back "
-          "into the first (it loops); (5) accurate science. Scripts are anonymous.")
+VOICE_STYLE = "conversational"          # the guide's delivery in a Short (the voice job's own style table)
+FPS = 30
+
+def _rows(): return [r for r in store().rows("Specials") if r.get("kind") == "short"]
+
+def _held(r): return str(r.get("status") or "").startswith("HELD")
 
 def _today_count(now):
-    return sum(1 for r in store().rows("Specials") if r.get("kind") == "short" and parse_iso(r.get("ts")) and (now - parse_iso(r["ts"])).total_seconds() < 86400)
+    return sum(1 for r in _rows() if parse_iso(r.get("ts")) and (now - parse_iso(r["ts"])).total_seconds() < 86400)
 
 def target_today(now=None):
     """SHORTS_PER_DAY may be fractional: 1.5 -> 2 on even days, 1 on odd days."""
@@ -19,7 +21,7 @@ def target_today(now=None):
     base = int(x); return base + (1 if (x - base) >= 0.5 and now.toordinal() % 2 == 0 else 0)
 
 def masters_ready():
-    """v11 audit: Shorts start from reference-locked faces, so they wait until every core character has a LOCKED master (owner-approved)."""
+    """Has every core character a LOCKED master (owner-approved)? Asked only when SHORTS_NEED_MASTERS is TRUE: a Short shows no character."""
     from whatifs import show as SHOW
     locked = {r.get("character") for r in store().rows("Character_Sheets") if r.get("expression") == "master" and r.get("status") == "LOCKED"}
     return all(c["id"] in locked for c in SHOW.characters() if c.get("speaker") != "WITNESS")
@@ -40,56 +42,288 @@ def _budget_ok(est, first_today):
         return (room >= left * G.full_episode_inr(), f"Rs {room:.0f} left after this, Rs {left * G.full_episode_inr():.0f} kept for {left} long slot(s)")
     return G.extras_allowed(est, kind="short_extra")
 
+# ------------------------------------------------------------------ what came before, and what comes next
+def history(n=10):
+    """The last `n` Shorts that were MADE in a Short format, newest first: [{id, format, hook, script}] - what the next Short must not be like."""
+    out = []
+    for r in reversed(_rows()):
+        if r.get("format") not in FMT.SHORTS or _held(r): continue
+        out.append({"id": r.get("id"), "format": r.get("format"), "hook": r.get("hook"), "script": r.get("script")})
+        if len(out) >= n: break
+    return out
+
+def _spent_premises():
+    """Premises that are used up as a Short: one that was made, or one the short gate held more than SHORT_HOLD_RETRIES times."""
+    held = {}; made = set()
+    for r in _rows():
+        k = str(r.get("premise", "")).strip().lower()
+        if _held(r): held[k] = held.get(k, 0) + 1
+        else: made.add(k)
+    return made, {k for k, c in held.items() if c > max(0, S("SHORT_HOLD_RETRIES", int))}
+
 def pick_topic():
-    st = store()
+    st = store(); made, dropped = _spent_premises()
     done = {r.get("video_key") for r in st.rows("Breakout_Queue") if r.get("status") in ("DONE", "DECLINED")}
     for r in st.rows("Breakout_Queue"):
         if r.get("status") in ("APPROVED", "FOLLOWUP 1") and r.get("video_key") not in done:
             src = next((e for e in st.rows("Episodes") if e.get("episode_id") == r["video_key"]), None) or \
                   next((s for s in st.rows("Specials") if s.get("id") == r["video_key"]), {})
-            return {"premise": src.get("premise") or src.get("title") or r["video_key"], "origin": "breakout", "follow_of": r["video_key"]}
-    used = {str(r.get("premise", "")).strip().lower() for r in st.rows("Specials") if r.get("kind") == "short"}
+            prem = src.get("premise") or src.get("title") or r["video_key"]
+            if str(prem).strip().lower() in dropped: continue                # held twice: the follow-up is left, nothing is paid a third time
+            return {"premise": prem, "origin": "breakout", "follow_of": r["video_key"]}
     from whatifs import premise as PRM                                  # READY rows only, best first (STALE / USED never come back)
-    bench = [b for b in PRM.bench_rows(mark_stale=False) if b.get("premise") and b["premise"].strip().lower() not in used]
+    bench = [b for b in PRM.bench_rows(mark_stale=False) if b.get("premise") and b["premise"].strip().lower() not in (made | dropped)]
     if bench: return {"premise": bench[0]["premise"], "origin": "bench", "bench_id": bench[0].get("bench_id")}
     return None
 
-def _valid(s):
-    beats = s.get("beats") or []; words = sum(len(str(b.get("line", "")).split()) for b in beats)
-    probs = []
-    if not 3 <= len(beats) <= 6: probs.append(f"{len(beats)} beats")
-    if not 60 <= words <= 120: probs.append(f"{words} words")
-    if beats and len(str(beats[0].get("line", "")).split()) > 14: probs.append("first line too long")
-    if any(str(b.get("who", "")).upper() not in CAST for b in beats): probs.append("unknown character")
-    if not str(s.get("loop_line") or "").strip(): probs.append("no loop line")
-    from whatifs import enforce as EN                                # v11.1 (K166): the same hard rules as long videos, at Shorts tempo
-    secs = words / max(1.0, S("WPM_ESTIMATE", float)) * 60.0
-    punches = sum(1 for b in beats if EN.PUNCH_RE.search(str(b.get("line", ""))))
-    if punches < max(1, int(secs // S("JOKE_EVERY_SEC_SHORT", float))): probs.append(f"{punches} punchlines (need one per {S('JOKE_EVERY_SEC_SHORT', float):.0f} s)")
-    if not any(EN.SEND_RE.search(str(b.get("line", ""))) for b in beats): probs.append("no [SEND] moment")
-    return probs
+def hook_for(fmt, hist):
+    """The hook archetype of the next Short: the learning core picks among the archetypes a Short may open on, never one that made the same pair
+    (format, hook) as either of the last two Shorts - so formats and hooks rotate by code, whatever the learning core prefers."""
+    from whatifs import brain as BR
+    taken = {(str(h.get("format")), str(h.get("hook"))) for h in hist[:2]}
+    opts = [h for h in FMT.SHORT_HOOKS if (fmt, h) not in taken] or list(FMT.SHORT_HOOKS)
+    c = BR.choose("hook", "short", options=opts) if S("BRAIN_ON", bool) else {"level": S("BRAIN_DEFAULT_HOOK"), "holdout": False}
+    if c.get("level") not in opts: c = dict(c, level=opts[0], holdout=False)          # the control hook was taken (or is the trial's own): the first free one
+    return c
 
-def write(topic, arch, ep):
-    from whatifs.models import ask_many
-    from whatifs import brain as BR, room2 as R2
-    spec = (f"Write ONE standalone 25-40 second Short for 'Reality on Trial' (cast: Inspector Vale, Dr. Grimm, Nana Rosa, the Archivist). PREMISE: {topic['premise']}. "
-            f"HOOK ARCHETYPE (mandatory for the first line, under 1 second): {arch} - {BR.HOOK_ARCHETYPES.get(arch, '')}. Rules: 3-6 beats, 60-120 words in "
-            "total, a different speaker each beat, no greeting, one real number with its source if you state a fact, a joke or surprise every few seconds, "
-            "and a final line that grammatically flows back into the first line. Start every punchline with [PUNCH] (at least one every 6 seconds) and "
-            "mark the one line a viewer would send to a friend with [SEND]; markers are never spoken. JSON only: {\"title\": \"<= 60 chars\", \"beats\": [{\"who\": \"VALE|GRIMM|ROSA|"
-            "ARCHIVIST\", \"line\": \"...\", \"style\": \"delivery note\"}], \"loop_line\": \"the last words that lead back to the first line\"}")
-    outs = ask_many([dict(role="punchup", system=spec, prompt=f"Variant {k + 1}: make it genuinely different from an obvious take.", episode=ep,
-                          fake_key="short_script", max_tokens=1500) for k in range(max(1, S("SHORTS_VARIANTS", int)))])
-    good = [o for o in outs if isinstance(o, dict) and not _valid(o)]
-    if not good: raise RuntimeError("no Short script passed the checks: " + "; ".join(", ".join(_valid(o)) for o in outs if isinstance(o, dict))[:200])
-    texts = ["\n".join(f"{b['who']}: {b['line']}" for b in g["beats"]) for g in good]
-    win, info = R2.jury(texts, RUBRIC, f"Premise: {topic['premise']}", ep, "short", judges=(("jury", "Gemini Pro"), ("jury_flash", "Gemini Flash")))
-    return good[win], info
+def _still_size():
+    """A vertical 9:16 picture as large as the long side of the long video's stills (multiples of 16)."""
+    h = S("STILL_W", int) // 16 * 16; return int(h * 9 / 16) // 16 * 16, h
 
+def est_inr(fmt):
+    """What one Short of this format costs, said BEFORE anything is paid: every second but the loop's is a paid clip of the hero model."""
+    from whatifs import media as MD
+    fx = S("USD_INR", float) or 92.0; lo, hi = FMT.short_len(fmt); sec = (lo + hi) / 2; nb = max(1, len(FMT.SHORTS[fmt]["beats"]) - 1)
+    clips = nb * max(1, math.ceil(max(0.0, sec - SEAT.CLIP_S) / nb / (SEAT.CLIP_S * SEAT.STRETCH_MAX) - 1e-6))          # the last beat is the loop: the first clip again, free
+    pictures = nb if FMT.SHORTS[fmt]["camera"] == "cut" else 1
+    return round(clips * S("PRICE_KLING_USD", float) * fx + pictures * MD.still_usd(*_still_size()) * fx + S("REPLAN_SHORT_INR", float), 1)
+
+# ------------------------------------------------------------------ D14 write: three scripts in the format, judged blind, one fix
+def valid(sc):
+    """Has the reply the SHAPE that was asked for (code needs it to measure anything)? [] = yes."""
+    if not isinstance(sc, dict): return ["not an object"]
+    beats = sc.get("beats"); p = []
+    if not str(sc.get("title") or "").strip(): p.append("no title")
+    if not isinstance(beats, list) or not 3 <= len(beats) <= 6: return p + [f"{len(beats) if isinstance(beats, list) else 0} beats"]
+    for i, b in enumerate(beats):
+        if not isinstance(b, dict) or len(str(b.get("line") or "").split()) < 3: p.append(f"beat {i + 1} has no spoken line")
+        elif not str(b.get("picture") or "").strip(): p.append(f"beat {i + 1} names no picture")
+        elif not str(b.get("role") or "").strip(): p.append(f"beat {i + 1} has no role")
+    return p
+
+def write(topic, fmt, hook, ep, hist):
+    """SHORTS_VARIANTS scripts in the Short's format (one call each, nobody sees another's answer). A script the viewer's seat finds clean goes to the
+    blind jury (strong judges of two model families see every candidate); the winner gets ONE fix with every measured problem named."""
+    from whatifs.models import ask_many, ask
+    from whatifs import room2 as R2
+    before = [f"{h.get('format')}: {FMT.opener(h.get('script'))}" for h in hist if str(h.get("script") or "").strip()]
+    system = FMT.short_brief(fmt, hook, [b.split(": ", 1)[1] for b in before])
+    base = f"PREMISE: {topic['premise']}\nSHORT FORMAT: {fmt} \"{FMT.short_name(fmt)}\"\n" + (f"EARLIER SHORTS (format: opener): {' | '.join(before)}\n" if before else "")
+    n = max(1, S("SHORTS_VARIANTS", int))
+    outs = ask_many([dict(role="short_writer", system=system, prompt=base + f"Variant {k + 1} of {n}: make it genuinely different from an obvious take.", episode=ep,
+                          fake_key="short_script", max_tokens=1500) for k in range(n)])
+    good = [o for o in outs if not valid(o)]
+    if not good: raise RuntimeError("no Short script had the shape asked for: " + "; ".join(", ".join(valid(o)) for o in outs)[:200])
+    clean = [g for g in good if not SEAT.script_issues(g, fmt, hist)]; pool = clean or good
+    win, _info = R2.jury(["\n".join(FMT.short_lines(g)) for g in pool], FMT.short_rubric(fmt), f"Premise: {topic['premise']}", ep, "short")
+    sc = dict(pool[win]); fixed = 0; left = SEAT.script_issues(sc, fmt, hist)
+    if left:
+        fx = ask("short_writer", system, base + "REWRITE this Short once. Keep the idea and what works; repair EXACTLY these measured problems:\n- " + "\n- ".join(left)
+                 + "\nThe Short:\n" + json.dumps({k: sc.get(k) for k in ("title", "promise", "beats")}, ensure_ascii=False), episode=ep, fake_key="short_fix", max_tokens=1500)
+        if not valid(fx): sc = dict(fx); fixed = 1
+        left = SEAT.script_issues(sc, fmt, hist)
+    sc["_write"] = {"variants": len(outs), "valid": len(good), "clean": len(clean), "fixed": fixed, "left": len(left)}
+    return sc
+
+def m_write(sc):
+    w = dict((sc or {}).get("_write") or {}); hk = SEAT.hook(sc)
+    return dict(w, words=len(" ".join(FMT.short_lines(sc)).split()), hook_words=len(hk.split()))
+
+# ------------------------------------------------------------------ D7 short_voice: the long video's voice job, so the timeline is real
+def voice(sc, ep, wd):
+    """The guide speaks the Short through the long video's voice job: a real timeline (a unit per sentence, a time per word) and the breathing rule."""
+    from whatifs import episode as EPI
+    from whatifs.voice import narrate, Blend
+    d = (EPI.speaker_blends() or {}).get(FMT.SHORT_VOICE) or EPI.blend()
+    gv = getattr(d, "gvoice", "") or ("Gacrux" if FAKE else "")              # the rehearsal has no designed voices; live it must be the owner's designed voice
+    if not gv and str(S("TTS_ENGINE") or "gemini").strip().lower() == "gemini": raise RuntimeError("no designed voice for the guide of a Short")
+    d = Blend(d.name, d.parts, gvoice=gv, gstyle=getattr(d, "gstyle", ""))
+    vo = narrate(FMT.short_text(sc), d, os.path.join(wd, "voice"), style=VOICE_STYLE, seed=f"{ep}|short", speaker_blends={FMT.SHORT_VOICE: d})
+    with open(vo.timeline_path, encoding="utf-8") as f: tl = json.load(f)
+    return {"wav": vo.wav_path, "timeline": tl, "seconds": float(vo.duration)}
+
+def m_voice(v):
+    tl = (v or {}).get("timeline") or {}; units = tl.get("units") or []
+    words = sum(len(str(u.get("text") or "").split()) for u in units); speech = sum(float(u["end"]) - float(u["start"]) for u in units)
+    return {"seconds": round(float((v or {}).get("seconds") or 0), 1), "sentences": len(units), "wpm": round(words / speech * 60) if speech > 0 else 0,
+            "hook_end_s": round(float(units[0]["end"]), 2) if units else 0}
+
+# ------------------------------------------------------------------ the plan: every second a clip, by code
+def plan(sc, tl, fmt):
+    """The pictures of a Short, planned by code from the script and the REAL voice timeline (no model is called): shots cover every second from 0.0;
+    each is one clip of the hero model (CLIP_S seconds, played up to STRETCH_MAX slower when its shot is a little longer); the first clip of a beat
+    starts on the beat's own picture (camera 'cut') or on the last frame of the clip before (inside a beat, and everywhere in a 'one_shot' format);
+    the last beat - or its last seconds when it is long - is the FIRST clip played backwards, so the last frame is the first frame (the loop, free).
+    No plate, no stock."""
+    from whatifs.voice import parse_script
+    units = tl.get("units") or []; lines = FMT.short_lines(sc); beats = [b for b in sc.get("beats") or [] if isinstance(b, dict)]
+    total = round(float(tl.get("duration") or (float(units[-1]["end"]) + 0.6 if units else 0)), 2)
+    starts, k = [], 0
+    for i, l in enumerate(lines):                                            # where each beat begins on the real timeline (the voice job makes one unit per sentence)
+        starts.append(0.0 if i == 0 else float(units[min(k, len(units) - 1)]["start"]) if units else 0.0)
+        k += len(parse_script(f"[{FMT.SHORT_VOICE}] {l}"))
+    cam = FMT.SHORTS[fmt]["camera"] if fmt in FMT.SHORTS else "cut"; C = SEAT.CLIP_S * SEAT.STRETCH_MAX          # the longest shot one clip can cover
+    loop_at = round(min(max(starts[-1] if len(starts) > 1 else 0.0, total - C), max(0.0, total - 1.5)), 2)      # the loop shot: the last beat, or its last seconds when it is long
+    bounds = starts + [total]; shots = []
+    def pic(i): return str(beats[i].get("picture") or lines[i]).strip() if i < len(beats) else ""
+    for bi in range(len(lines)):
+        a = bounds[bi]; b = min(bounds[bi + 1], loop_at)
+        if b - a < 0.05: continue
+        n = max(1, math.ceil((b - a) / C - 1e-6)); step = (b - a) / n
+        for j in range(n):
+            src = "picture" if (not shots or (j == 0 and cam == "cut")) else "chain"
+            shots.append({"i": len(shots), "beat": bi, "type": "kling", "src": src, "start": round(a + j * step, 2), "end": round(a + (j + 1) * step, 2), "picture": pic(bi)})
+    if shots: shots.append({"i": len(shots), "beat": len(lines) - 1, "type": "kling", "src": "loop", "loop": True, "start": shots[-1]["end"], "end": total, "picture": pic(0)})
+    return {"format": fmt, "seconds": total, "shots": shots, "captions": {"on": True, "margin": S("REEL_CAPTION_MARGIN_PCT", float)},
+            "promise": {"text": " ".join(str(sc.get("promise") or "").split()), "at": 0.0}}
+
+# ------------------------------------------------------------------ D14 make: the pictures, the clips, the loop, the captions, the sound
+def _picture_prompt(text): return f"{text}. First person, eye level, vertical 9:16 frame, one place, real light. No text, no logo, no faces of people."
+
+def _motion_prompt(text, src):
+    from whatifs import anim as ANIM
+    how = "The camera keeps moving forward from this exact frame, without a cut" if src == "chain" else "The impossible thing is already happening in the first frame; a slow first-person move forward"
+    return f"{how}. {text}. {ANIM.AVOID}."
+
+def _frame_at(clip, t, out):
+    """The frame of a clip at second `t` (the picture the next clip starts on, so that the move continues)."""
+    import cv2
+    cap = cv2.VideoCapture(clip); fps = cap.get(cv2.CAP_PROP_FPS) or FPS; n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+    cap.set(cv2.CAP_PROP_POS_FRAMES, max(0, min(n - 1, int(t * fps) - 1))); ok, fr = cap.read()
+    if not ok: cap.set(cv2.CAP_PROP_POS_FRAMES, 0); ok, fr = cap.read()
+    cap.release()
+    if not ok: raise RuntimeError("the clip before has no readable frame to continue from")
+    cv2.imwrite(out, fr); return out
+
+def _slow(sec):
+    """How much slower a clip is played to cover a shot of `sec` seconds (1.0 = as made)."""
+    return max(1.0, float(sec) / SEAT.CLIP_S)
+
+def _reverse(src, out, sec):
+    """The first seconds of the first clip, played backwards (as many as the loop shot needs): it ENDS on the Short's first frame."""
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-t", f"{min(sec, SEAT.CLIP_S):.3f}", "-i", src, "-vf", f"fps={FPS},reverse", "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", out],
+                   check=True, timeout=300)
+    return out
+
+def _ass(tl, path, promise, W, H, margin):
+    """Captions word by word (the spoken word lights up) `margin` of the height above the bottom edge, and the promise text at the top from the first frame."""
+    fs = int(H * 0.042); hs = int(H * 0.05)
+    head = ("[Script Info]\nScriptType: v4.00+\nPlayResX: %d\nPlayResY: %d\n\n[V4+ Styles]\n"
+            "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n"
+            "Style: Cap,Anton,%d,&H00FFFFFF,&H0000D7FF,&H00000000,&H64000000,1,0,0,0,100,100,1,0,1,%d,2,2,60,60,%d,1\n"
+            "Style: Hook,Anton,%d,&H0000D7FF,&H00FFFFFF,&H00000000,&H64000000,1,0,0,0,100,100,1,0,1,%d,3,8,60,60,%d,1\n\n[Events]\n"
+            "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n") % (W, H, fs, max(2, fs // 9), int(H * margin), hs, max(3, hs // 8), int(H * 0.12))
+    def ts(t): h, m = int(t // 3600), int(t % 3600 // 60); return f"{h}:{m:02d}:{t % 60:05.2f}"
+    ev = [f"Dialogue: 1,{ts(0)},{ts(2.6)},Hook,,0,0,0,,{promise.upper()}"] if promise else []
+    for u in tl.get("units") or []:
+        ws = u.get("words") or []
+        if not ws:
+            parts = str(u.get("text") or "").split(); d = (u["end"] - u["start"]) / max(1, len(parts))
+            ws = [{"w": p, "s": u["start"] + i * d, "e": u["start"] + (i + 1) * d} for i, p in enumerate(parts)]
+        for i in range(0, len(ws), 3):
+            g = ws[i:i + 3]
+            for j, cur in enumerate(g):
+                end = g[j + 1]["s"] if j + 1 < len(g) else cur["e"]
+                parts = [("{\\c&H0000D7FF&}" + str(x["w"]).upper() + "{\\r}") if k == j else str(x["w"]).upper() for k, x in enumerate(g)]
+                ev.append(f"Dialogue: 0,{ts(cur['s'])},{ts(max(end, cur['s'] + 0.05))},Cap,,0,0,0,," + " ".join(parts))
+    with open(path, "w", encoding="utf-8") as f: f.write(head + "\n".join(ev) + "\n")
+    return path
+
+def _loop_diff(path):
+    """0..1: how different the last frame is from the first (0 = the same picture: the Short loops without a jump). Measured on the finished file."""
+    import cv2, numpy as np
+    cap = cv2.VideoCapture(path); n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0); ok0, a = cap.read(); b = None
+    for back in range(1, 6):
+        cap.set(cv2.CAP_PROP_POS_FRAMES, max(0, n - back)); ok1, b = cap.read()
+        if ok1: break
+    cap.release()
+    if not ok0 or b is None: return 1.0
+    a, b = (cv2.resize(cv2.cvtColor(x, cv2.COLOR_BGR2GRAY), (90, 160)).astype(np.float32) for x in (a, b))
+    return round(float(np.mean(np.abs(a - b))) / 255.0, 3)
+
+def make(sc, v, pl, ep, wd):
+    """The Short itself: each planned shot is one clip of the hero model, started on its own picture or on the frame the clip before ended on; the
+    loop shot is the first clip played backwards (free); captions and the promise text are burned in; no plate at either end. Returns
+    {path, seconds, clips, pictures, loop_diff}."""
+    from whatifs import specials as SP, media as MD
+    W, H = SP._vsize(); sw, sh = _still_size(); shots = pl["shots"]; clips = []; paid = pics = 0
+    for s in shots:
+        clip = os.path.join(wd, f"c{s['i']}.mp4"); sec = float(s["end"]) - float(s["start"])
+        if s.get("src") == "loop": _reverse(clips[0], clip, sec)
+        else:
+            img = os.path.join(wd, f"f{s['i']}.png")
+            if s.get("src") == "picture" or not clips: MD.still(_picture_prompt(s.get("picture") or ""), img, ep, seed=f"{ep}|{s['i']}", w=sw, h=sh); pics += 1
+            else: _frame_at(clips[-1], min(SEAT.CLIP_S, float(shots[s["i"] - 1]["end"]) - float(shots[s["i"] - 1]["start"])), img)
+            MD.animate(None, img, _motion_prompt(s.get("picture") or "", s.get("src")), clip, ep, hero=True); paid += 1
+        clips.append(clip)
+    tl = v["timeline"]; total = float(pl["seconds"])
+    ass = _ass(tl, os.path.join(wd, "captions.ass"), str((pl.get("promise") or {}).get("text") or ""), W, H, float((pl.get("captions") or {}).get("margin") or SEAT.CAPTION_MIN))
+    beat_secs = []
+    for s in shots:
+        if beat_secs and s["beat"] == last_beat: beat_secs[-1] += float(s["end"]) - float(s["start"])
+        else: beat_secs.append(float(s["end"]) - float(s["start"]))
+        last_beat = s["beat"]
+    snd = SP._mix(SP._sound(total, beat_secs, os.path.join(wd, "bed.wav")), [(v["wav"], 0.0)], os.path.join(wd, "mix.wav"))
+    fd = os.path.abspath("fonts") if os.path.isdir("fonts") else "/usr/share/fonts"
+    if os.name == "nt": ass, fd = ("'" + p.replace("\\", "/").replace(":", "\\:") + "'" for p in (ass, fd))      # Windows dev laptops only: a drive colon breaks ffmpeg filter arguments
+    inputs, filt = [], []
+    for k, (s, c) in enumerate(zip(shots, clips)):
+        inputs += ["-i", c]
+        sec = float(s["end"]) - float(s["start"])
+        filt.append(f"[{k}:v]setpts={_slow(sec):.4f}*PTS,scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1,fps={FPS},tpad=stop_mode=clone:stop_duration=6,"
+                    f"trim=0:{sec:.3f},setpts=PTS-STARTPTS,format=yuv420p[v{k}]")
+    filt.append("".join(f"[v{k}]" for k in range(len(clips))) + f"concat=n={len(clips)}:v=1:a=0[body]")
+    filt.append(f"[body]ass={ass}:fontsdir={fd}[vout]")
+    out = os.path.join(wd, f"{ep}.mp4")
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error"] + inputs + ["-i", snd, "-filter_complex", ";".join(filt), "-map", "[vout]", "-map", f"{len(clips)}:a", "-t", f"{total:.2f}",
+                    "-c:v", "libx264", "-preset", "veryfast", "-crf", "19", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", out], check=True, timeout=900)
+    return {"path": out, "seconds": round(total, 2), "clips": paid, "pictures": pics, "loop_diff": _loop_diff(out)}
+
+def m_make(r):
+    return {k: (r or {}).get(k, 0) for k in ("seconds", "clips", "pictures", "loop_diff")}
+
+def description(sc):
+    """What stands under a Short: its title, its hook and how it was made - never an ask."""
+    return f"{sc.get('title')}\n{SEAT.hook(sc)}\nOne law of nature is different today, and it happens to you. Reality Engine.\nAI-assisted pictures and voice; an original script."
+
+# ------------------------------------------------------------------ the short gate: problems go to the department that owns the check, never to the owner
+def _gate_memos(ep):
+    """emit hook of the short gate: one problem memo per CLASS of failed check (no episode on it: a held Short is never made again under its id), to
+    the department that owns the check. The next Short that passes the same check closes it."""
+    from whatifs.org import registry as REG
+    def emit(g, brief):
+        return [{"type": "problem_memo", "from_dept": "D8", "to_depts": [REG.check_owner(fid)], "subject": f"{fid} held a Short at the short gate"[:140],
+                 "body": {"what_failed": f"contract check {fid}: {str(ev)[:300]}", "where": f"{ep} short gate", "attempt": 1, "check": fid, "stage": "short"},
+                 "done_when": f"a Short passes check {fid} at the short gate", "episode_id": "", "dedupe_key": f"gate|short|{fid}",
+                 "evidence": [{"source": f"Feature_Ledger:{ep}:short:{fid}", "date": iso()[:10], "type": "own data", "finding": str(ev)[:300]}]}
+                for fid, ev in ((g or {}).get("failed") or [])]
+    return emit
+
+def _gate_settle(ep):
+    from whatifs.org import memos as MEM
+    def settle(g, brief):
+        rows = {r.get("feature"): r.get("status") for r in ((g or {}).get("rows") or [])}
+        return [(m["id"], "repair_verified", f"Feature_Ledger:{ep}:short:{m['body'].get('check')}:PASS")
+                for m in MEM.find(type="problem_memo", from_dept="D8", stage="short") if rows.get(m["body"].get("check")) == "PASS"]
+    return settle
+
+# ------------------------------------------------------------------ one Short, from the topic to the review or the upload
 def run(force=False, publish=True, now=None):
-    """Make (and post, or send for review) one standalone Short. Returns a record."""
-    from whatifs import specials as SP, anim as ANIM, media as MD, brain as BR
-    import subprocess
+    """Make (and post, or send for review) one standalone Short. Returns a record. Order: the topic and its format -> D14 writes -> D7 voices ->
+    code plans every second and D13 repairs the plan -> D8's short gate (nothing is paid for a picture before it; a held Short is NOT made and
+    the owner is not asked) -> D14 makes it -> review or upload."""
+    from whatifs import specials as SP, brain as BR, contract as CON, governor as G
+    from whatifs.org import runner as ORG, wraps as WR
     now = now or now_utc()
     if not force and not due(now): return {"ok": False, "skipped": "not due"}
     first = _today_count(now) == 0
@@ -97,60 +331,43 @@ def run(force=False, publish=True, now=None):
     if not topic: log("Shorts: no unused premise on the bench (the weekly research fills it)", "WARN"); return {"ok": False, "skipped": "no topic"}
     brk = topic.get("origin") == "breakout"
     ep = f"{'BRK' if brk else 'SH'}{now:%Y%m%d%H%M}"                # BRK ids: every cost of a follow-up is charged to the breakout fund
-    n_kling = sum(1 for r in store().rows("Specials") if r.get("kind") == "short")
-    use_kling = topic.get("origin") == "breakout" or (n_kling % max(1, S("SHORTS_KLING_EVERY", int)) == 0)
-    fx = S("USD_INR", float) or 92.0
-    est = (S("PRICE_KLING_USD", float) if use_kling else 0.0) * fx + 6 * 0.006 * fx + S("PRICE_GEM_IMAGE_USD", float) * fx + 6.0
-    from whatifs import governor as G
+    hist = history(); fmt = FMT.short_pick(ep, [h["format"] for h in hist]); choice = hook_for(fmt, hist); arch = choice["level"]
+    est = est_inr(fmt)
     ok, why = G.extras_allowed(est, kind="breakout") if brk else _budget_ok(est, first)
     if not ok: log(f"Shorts: paused ({why})", "WARN"); return {"ok": False, "skipped": "budget", "why": why}
-    choice = BR.choose("hook", "short") if S("BRAIN_ON", bool) else {"level": S("BRAIN_DEFAULT_HOOK"), "holdout": False}
-    arch = choice["level"] or S("BRAIN_DEFAULT_HOOK")
+    rec = {"ts": iso(now), "id": ep, "kind": "short", "title": "", "format": fmt, "ask": "", "yt_id": "", "ig": "", "fb": "", "status": "MADE", "views_7d": "", "file": "",
+           "premise": topic["premise"], "hook": arch, "script": "", "sec": ""}
     try:
-        sc, jinfo = write(topic, arch, ep)
-        W, H = SP._vsize(); wd = os.path.join(WORK, ep); os.makedirs(wd, exist_ok=True)
-        from whatifs import show as SHOWM, enforce as EN
-        beats = [{"who": str(b["who"]).upper(), "line": SHOWM.SHOW_TAG_RE.sub("", str(b["line"])).strip(), "punch": bool(EN.PUNCH_RE.search(str(b["line"]))),
-                  "style": b.get("style", ""), "world": WORLD_OF.get(str(b["who"]).upper(), "case")} for b in sc["beats"]]      # markers never spoken / captioned
-        voices, at = [], 0.6
-        for i, b in enumerate(beats):
-            vp, vs = SP._voice_line(b["who"], b["line"], b["style"], os.path.join(wd, f"v{i}.wav"), ep)
-            lead = S("PUNCH_PAUSE_S", float) if b.get("punch") else 0.1            # v11.1: pause-then-punch
-            b["sec"] = max(2.2, vs + 0.25 + lead); voices.append((vp, at + lead)); at += b["sec"]
-        clips, cards = [], []
-        for i, b in enumerate(beats):
-            shot = {"anim": {"world": b["world"], "line": b["line"], "slot": i}}
-            img = os.path.join(wd, f"f{i}.png")
-            if i == 0: img, _how = ANIM.start_frame(shot, img, ep, wd, aspect="9:16"); first_frame = img
-            else: MD.still(ANIM.frame_prompt(shot["anim"], "9:16"), img, ep, seed=f"{ep}{i}")
-            clip = os.path.join(wd, f"c{i}.mp4")
-            if i == 0 and use_kling: MD.animate(None, img, ANIM.acting_prompt(shot), clip, ep, hero=True)
-            else: MD.animate(None, img, f"subtle living motion, {ANIM.style_words()}", clip, ep, hero=False)
-            clips.append(clip); cards.append(SP._card_png(NAMES.get(b["who"], ""), b["line"], os.path.join(wd, f"k{i}.png"), W, H))
-        cov = SP._cover(first_frame, sc["title"], os.path.join(wd, "cover.png"), W, H)
-        covclip = os.path.join(wd, "cover.mp4")
-        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-t", "0.5", "-i", cov, "-vf", f"scale={W}:{H},fps=30,format=yuv420p", "-c:v", "libx264", covclip],
-                       check=True, timeout=120)
-        clips.insert(0, covclip); cards.insert(0, SP._card_png("", "", os.path.join(wd, "blank.png"), W, H))
-        secs = [0.5] + [b["sec"] for b in beats]
-        end = SP._card_png("The full trial is on the channel", "Reality on Trial", os.path.join(wd, "end.png"), W, H, end=True)
-        snd = SP._mix(SP._sound(sum(secs) + 2.5, secs, os.path.join(wd, "bed.wav")), [(p, t + 0.5) for p, t in voices], os.path.join(wd, "mix.wav"))
-        out = SP._assemble(clips, secs, cards, end, snd, os.path.join(wd, f"{ep}.mp4"), W, H)
-        rec = {"ts": iso(now), "id": ep, "kind": "short", "title": sc["title"], "format": arch, "ask": "", "yt_id": "", "ig": "", "fb": "", "status": "MADE",
-               "views_7d": "", "file": "", "premise": topic["premise"]}
-        BR.tag(ep, "short", title=sc["title"], premise=topic["premise"], hook=arch, sec=sum(secs), lead=beats[0]["who"],
-               origin=topic.get("origin", "ai"), arm=choice.get("p_draws"), holdout=choice.get("holdout"))
+        wd = os.path.join(WORK, ep); os.makedirs(wd, exist_ok=True)
+        with FMT.short_using(fmt):
+            sc = ORG.work("D14", "write", ep, lambda b: write(topic, fmt, arch, ep, hist), measure=m_write, topic=fmt)
+            rec.update(title=sc["title"], script="\n".join(FMT.short_lines(sc)))
+            v = ORG.work("D7", "short_voice", ep, lambda b: voice(sc, ep, wd), measure=m_voice)
+            pl = ORG.work("D13", "short_seat", ep, lambda b: SEAT.shape(plan(sc, v["timeline"], fmt), sc, fmt), measure=SEAT.m_shape)
+            ctx = {"ep": ep, "short": {"script": sc, "format": fmt, "hook": arch, "units": v["timeline"].get("units") or [], "plan": pl, "last": hist}}
+            g = ORG.work("D8", "short_gate", ep, lambda b: CON.run("short", ctx, ep), measure=WR.m_gate, lesson=WR.gate_lessons, emit=_gate_memos(ep), settle=_gate_settle(ep))
+            rec["sec"] = pl.get("seconds")
+            if not g["ok"]:
+                failed = [f for f, _ in g["failed"]]
+                store().append("Specials", [dict(rec, status=("HELD (" + ", ".join(failed) + ")")[:120])])
+                log(f"Short {ep} ({fmt}) HELD at the short gate, not made, no picture paid: " + "; ".join(f"{f}: {str(e)[:90]}" for f, e in g["failed"][:4]), "WARN", ep)
+                return {"ok": False, "held": True, "id": ep, "kind": "short", "format": fmt, "failed": failed, "premise": topic["premise"]}
+            made = ORG.work("D14", "make", ep, lambda b: make(sc, v, pl, ep, wd), measure=m_make)
+        out = made["path"]
+        BR.tag(ep, "short", title=sc["title"], premise=topic["premise"], hook=arch, sec=made["seconds"], lead=fmt, origin=topic.get("origin", "ai"),
+               arm=choice.get("p_draws"), holdout=choice.get("holdout"))          # lead = the Short's FORMAT (nobody is on screen): the learning core compares S1, S2, S3
         BR.forecast(ep, "short", hook=arch)
-        reviewed = sum(1 for r in store().rows("Specials") if r.get("kind") == "short")
+        reviewed = sum(1 for r in _rows() if not _held(r))
         if publish and reviewed < S("SHORTS_REVIEW_FIRST_N", int):
-            rec.update(SP._await_review(out, {"title": sc["title"]}, "short", ep, beats))
-        elif publish: rec.update(SP._publish(out, sc["title"], ep))
+            rec.update(SP._await_review(out, {"title": sc["title"]}, "short", ep, [{"who": "GUIDE", "line": l} for l in FMT.short_lines(sc)]))
+        elif publish: rec.update(SP._publish(out, sc["title"], ep, desc=description(sc)))
         store().append("Specials", [rec])
-        if topic.get("origin") == "breakout":                 # 2 follow-ups per approved breakout, then the item is done
+        if brk:                                               # 2 follow-ups per approved breakout, then the item is done
             q = next((r for r in store().rows("Breakout_Queue") if r.get("video_key") == topic["follow_of"] and r.get("status") == "APPROVED"), {})
             left = max(0, int(float(q.get("left") or 1)) - 1)
             store().update("Breakout_Queue", "video_key", topic["follow_of"], {"left": left, "status": "APPROVED" if left > 0 else "DONE"})
-        log(f"Short {ep} ({arch}{', holdout' if choice.get('holdout') else ''}{', Kling' if use_kling else ''}): {sc['title']} -> {rec['status']}", episode=ep)
+        log(f"Short {ep} ({fmt} '{FMT.short_name(fmt)}', hook {arch}{', holdout' if choice.get('holdout') else ''}; {made['seconds']:.0f} s, {made['clips']} clips, loop {made['loop_diff']}): "
+            f"{sc['title']} -> {rec['status']}", episode=ep)
         return dict(rec, ok=True, path=out)
     except Exception as e:
         log(f"Short failed (nothing posted): {scrub(e)[:200]}", "WARN", ep); return {"ok": False, "why": scrub(e)[:200]}

@@ -34,7 +34,7 @@ DEPTS = {
     "D8":  {"mission": "the Feature Contract, the Impact Map, the enforcement matrix, problem memos, the repair loop", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/contract.py", "whatifs/enforce.py", "whatifs/qc.py", "whatifs/fixes.py"), "levers": ("CONTRACT_OFF", "BREAKOUT_HARD_BAR", "CRITIQUE_MIN"), "takes": ("repair_memo",)},
     "D9":  {"mission": "uploads, Shorts, Instagram and Facebook, schedules, spin-offs", "cadence": "episode", "cap_inr": None, "inject": "brief",
-            "wraps": ("whatifs/publish.py", "whatifs/shorts2.py", "whatifs/spinoff.py", "whatifs/deeptrial.py", "whatifs/specials.py"),
+            "wraps": ("whatifs/publish.py", "whatifs/spinoff.py", "whatifs/deeptrial.py", "whatifs/specials.py"),
             "levers": ("SHORTS_PER_DAY", "REEL1_DELAY_MIN", "REEL2_DELAY_MIN", "NEXT_LINK_ON"), "takes": ()},
     "D10": {"mission": "analytics, technique evidence, sampling, forecasts, the 48-hour monitor, breakout follow-ups", "cadence": "daily", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/brain.py", "whatifs/breakout.py", "whatifs/growth.py", "whatifs/reach.py"), "levers": ("BRAIN_ON", "BRAIN_HOLDOUT"), "takes": ()},
@@ -43,7 +43,11 @@ DEPTS = {
     "D12": {"mission": "reliability, the watchdog, model ladders, deprecations, incidents, build requests", "cadence": "tick", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/steward.py", "whatifs/builds.py", "tools/repair.py"), "levers": ("PREFLIGHT_ON",), "takes": ("build_request",)},
     "D13": {"mission": "the viewer's seat: what a first-time viewer meets is measured and repaired before any picture is paid - the promise first, a voice that breathes, few numbers", "cadence": "episode", "cap_inr": None, "inject": "brief",
-            "wraps": ("whatifs/org/audience.py",), "levers": ("NUMBERS_PER_MIN_MAX", "GRAPHICS_MAX_LONG", "GRAPHICS_FREE_SEC", "BREATH_EVERY_S", "PLAIN_HARD_PER_MIN_MAX", "PLAIN_OPENING_HARD_MAX", "PLAIN_HARD_PER_SENTENCE_MAX"), "takes": ()},
+            "wraps": ("whatifs/org/audience.py", "whatifs/org/layman.py", "whatifs/org/shortseat.py"),
+            "levers": ("NUMBERS_PER_MIN_MAX", "GRAPHICS_MAX_LONG", "GRAPHICS_FREE_SEC", "BREATH_EVERY_S", "PLAIN_HARD_PER_MIN_MAX", "PLAIN_OPENING_HARD_MAX", "PLAIN_HARD_PER_SENTENCE_MAX",
+                       "SHORT_HOOK_WORDS_MAX", "SHORT_HOOK_BY_S", "SHORT_NUMBERS_MAX", "SHORT_EXPERT_MAX", "SHORT_PROMISE_WORDS_MAX"), "takes": ()},
+    "D14": {"mission": "the short video as a product of its own: its formats, its brief, three scripts judged blind, every second animated, the loop - built to win alone, never a cut-down", "cadence": "episode", "cap_inr": None, "inject": "brief",
+            "wraps": ("whatifs/shorts2.py",), "levers": ("SHORT_SHARE_S1", "SHORT_SHARE_S2", "SHORT_SHARE_S3", "SHORT_MIN_S", "SHORT_MAX_S_S1", "SHORT_MAX_S_S2", "SHORT_MAX_S_S3"), "takes": ()},
     "C":   {"mission": "bring research, creative, owner, performance and problem memos together, decide, issue tickets", "cadence": "weekly", "cap_inr": 150, "inject": "brief",
             "wraps": (), "levers": ("ORG_SLA_HOURS",), "takes": ("assessment_memo", "creative_memo")},
     "L":   {"mission": "keep the Palace consolidated, free of duplicates and contradictions, versioned and bounded", "cadence": "weekly", "cap_inr": 40, "inject": "brief",
@@ -60,6 +64,7 @@ PROMPT = {
                "must": ("writer", "rewrite")} for t in ("write", "draft")},
     "D5": {"package": {"tasks": ("packager",), "key": "packager", "propose": ("packager",), "must": ()}},
     "D6": {"plan": {"tasks": ("director",), "key": "director", "propose": ("director",), "must": ()}},
+    "D14": {"write": {"tasks": ("short_writer",), "key": "short_writer", "propose": (), "must": ()}},      # v12 V2c: the Short's writers get the Shorts Studio's playbook in their prompt
 }
 CREATIVE_RUNS = (("D4", "write"), ("D5", "package"), ("D6", "plan"))      # judged by palace_injected / palace_cited (D4 write = the episode's script)
 
@@ -69,14 +74,15 @@ ENTRY = {
     "D4":  (("whatifs/episode.py", "write"), ("whatifs/preview.py", "draft")),      # v12 B6a: pre-production writing is a D4 run too
     "D5":  (("whatifs/episode.py", "package"),),
     "D6":  (("whatifs/episode.py", "plan"), ("whatifs/episode.py", "assets"), ("whatifs/episode.py", "render")),
-    "D7":  (("whatifs/episode.py", "voice"),),
-    "D8":  (("whatifs/episode.py", "script_gate"), ("whatifs/episode.py", "final_gate")),
+    "D7":  (("whatifs/episode.py", "voice"), ("whatifs/shorts2.py", "short_voice")),      # v12 V2c: a Short is voiced by the same voice job
+    "D8":  (("whatifs/episode.py", "script_gate"), ("whatifs/episode.py", "final_gate"), ("whatifs/shorts2.py", "short_gate")),
     "D9":  (("whatifs/episode.py", "publish"),),
     "D10": (("whatifs/cli.py", "daily"),),
     "D2":  (("whatifs/cli.py", "daily"), ("whatifs/cli.py", "weekly")),             # v12 B5: the learning job runs R&D first (daily always, weekly when due)
     "D3":  (("whatifs/cli.py", "assess"),),                                          # v12 B5: then the Review Board, whenever a research memo waits
     "D12": (("whatifs/org/execute.py", "operate"),),
-    "D13": (("whatifs/episode.py", "seat"), ("whatifs/episode.py", "probe")),                                        # v12 V1: the viewer's seat, right before the Animation Director
+    "D13": (("whatifs/episode.py", "seat"), ("whatifs/episode.py", "probe"), ("whatifs/shorts2.py", "short_seat")),      # v12 V1: the viewer's seat, right before the Animation Director; V2c: the seat for a Short
+    "D14": (("whatifs/shorts2.py", "write"), ("whatifs/shorts2.py", "make")),                                        # v12 V2c: the Shorts Studio writes and makes every standalone Short
 }
 # Departments with no run of their own yet -> the build batch that wires them. A RATCHET: this list may only shrink (tests/test_v12_org.py).
 PENDING = {"D0": "B9", "D1": "B9", "D11": "B9", "C": "B6", "L": "B8"}
@@ -85,8 +91,9 @@ PENDING = {"D0": "B9", "D1": "B9", "D11": "B9", "C": "B6", "L": "B8"}
 EPISODE_RUNS = {
     "script": (("D4", "write"), ("D7", "voice"), ("D5", "package"), ("D6", "plan"), ("D13", "probe"), ("D13", "seat")),
     "final":  (("D4", "write"), ("D7", "voice"), ("D5", "package"), ("D6", "plan"), ("D13", "probe"), ("D13", "seat"), ("D8", "script_gate"), ("D6", "assets"), ("D6", "render")),
+    "short":  (("D14", "write"), ("D7", "short_voice"), ("D13", "short_seat")),          # v12 V2c: a standalone Short before its own gate
 }
-GATE_RUNS = {"script": ("D8", "script_gate"), "final": ("D8", "final_gate")}
+GATE_RUNS = {"script": ("D8", "script_gate"), "final": ("D8", "final_gate"), "short": ("D8", "short_gate")}
 
 # Which department owns each contract check (a failed check becomes a problem memo to that department).
 CHECK_OWNER = {
@@ -98,6 +105,7 @@ CHECK_OWNER = {
     "short_covers": "D5", "shorts": "D9", "self_review": "D8", "breakout_bar": "D1", "dept_contract": "D8", "takeaways_written": "D8",
     "decisions_executed": "C", "lever_verified": "D12", "research_cadence": "D2", "palace_injected": "D4", "palace_cited": "D4", "canon_in_brief": "D4",
     "viewer_numbers": "D13", "viewer_breath": "D13", "viewer_promise": "D13", "viewer_plain": "D13", "viewer_probe": "D13", "format_kept": "D4",
+    "short_open": "D13", "short_plain": "D13", "short_shape": "D13", "short_kept": "D14", "short_contract": "D8",
 }
 
 def runnable(dept):

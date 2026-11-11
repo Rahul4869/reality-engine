@@ -583,6 +583,8 @@ def learn():
     except Exception as x: log(f"v12 B6a flips skipped: {scrub(x)}", "WARN")
     try: v12v1_upgrade(st)                                       # v12 V1: the viewer's seat defaults (9:00 at most, the promise first)
     except Exception as x: log(f"v12 V1 flips skipped: {scrub(x)}", "WARN")
+    try: v12v2c_upgrade(st)                                      # v12 V2c: a Short shows no character, so it no longer waits for the character masters
+    except Exception as x: log(f"v12 V2c flips skipped: {scrub(x)}", "WARN")
     try:
         from whatifs import craft as CRF; CRF.seed_techniques()       # v9.3.2: the owner's pre-judged technique cards, filed once
     except Exception as x: log(f"technique seeding skipped: {scrub(x)}", "WARN")
@@ -809,6 +811,21 @@ def v12b6a_upgrade(st):
 
 # v12 V1 (the viewer's seat): two defaults changed - a long video is at most 9:00 and the promise is the first picture. Moved once, only where the
 # cell still holds the old default (a value the owner typed is never touched).
+# v12 V2c (the Short as a product): a Short shows no character any more (one guide voice, the viewer's own eyes), so it must not wait for the
+# character masters. Moved once, only where the cell still holds the old default (a value the owner typed is never touched).
+V12V2C_FLIPS = (("SHORTS_NEED_MASTERS", "TRUE", "FALSE"),)
+
+def v12v2c_upgrade(st):
+    """ONE time: SHORTS_NEED_MASTERS TRUE -> FALSE where the cell still holds the old default. Never runs twice."""
+    if str(S("V12V2C_FLIPS_DONE") or "").strip(): return []
+    have = {r.get("key"): str(r.get("value", "")).strip() for r in st.rows("Settings")}
+    done = [k for k, old, new in V12V2C_FLIPS if have.get(k) == old]
+    for k, old, new in V12V2C_FLIPS:
+        if k in done: set_setting(k, new)
+    set_setting("V12V2C_FLIPS_DONE", iso() + " " + (",".join(done) or "none"))
+    if done: log("v12 V2c: a Short no longer waits for the character masters (it shows no character): " + ", ".join(done))
+    return done
+
 V12V1_FLIPS = (("RUNTIME_MAX_SEC", "600", "540"), ("PROMISE_BY_SEC", "30", "5"))
 
 def v12v1_upgrade(st):
@@ -1240,6 +1257,8 @@ def setup():
     except Exception as x: log(f"v12 B6a flips skipped: {scrub(x)}", "WARN")
     try: v12v1_upgrade(st)                                       # v12 V1: the viewer's seat defaults (9:00 at most, the promise first)
     except Exception as x: log(f"v12 V1 flips skipped: {scrub(x)}", "WARN")
+    try: v12v2c_upgrade(st)                                      # v12 V2c: a Short shows no character, so it no longer waits for the character masters
+    except Exception as x: log(f"v12 V2c flips skipped: {scrub(x)}", "WARN")
     try:                                                         # v12: the founding knowledge is in the Palace from the first run
         from whatifs.org import palace as PAL, runner as ORGR; PAL.maintain(st); ORGR.install(st)
     except Exception as x: log(f"palace seed skipped: {scrub(x)}", "WARN")

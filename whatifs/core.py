@@ -111,7 +111,7 @@ TABS = {
  "Model_Changes":   ["ts", "role", "from", "to", "why"],                     # v10.1 (K150): every automatic model switch
  "Viewer_Questions": ["ts", "video_id", "comment_id", "author", "text", "used"],   # v10.1 (K147)
  "Carousels":       ["ts", "episode_id", "files", "caption", "status", "ig_id"],     # v10.1 (K149)
- "Specials":        ["ts", "id", "kind", "title", "format", "ask", "yt_id", "ig", "fb", "status", "views_7d", "file", "premise"],      # v11: + file (Drive id for approval; was dropped), premise     # v10 (K134): cast intro + twice-monthly special reels (format learning)           # v10 G4: localized titles/descriptions set
+ "Specials":        ["ts", "id", "kind", "title", "format", "ask", "yt_id", "ig", "fb", "status", "views_7d", "file", "premise", "hook", "script", "sec"],      # v11: + file (Drive id for approval; was dropped), premise     # v10 (K134): cast intro + twice-monthly special reels (format learning)           # v10 G4: localized titles/descriptions set
  "WA_Outbox":       ["ts", "wamid", "action_id", "kind", "status"],          # v9.4b: WhatsApp messages sent and their delivery status
  "WA_Chat":         ["ts", "msg_id", "who", "text"],                         # v9.4b: the owner chat (private Sheet; never in logs)                      # v9.4b: dashboard taps handled (the page clears "Queued" from these)
  "Owner_Actions":   ["id", "created", "tier", "kind", "episode_id", "text", "buttons", "default_action", "expires_at", "status", "answered_at", "answer", "channel", "delivered_at", "dedupe_key", "urgent"],      # v9.4a (WP4): every owner message, button, default and answer
@@ -756,7 +756,7 @@ DEFAULTS = {
  "SHORTS_KLING_EVERY": ("3", "v11: one new Kling shot every N Shorts (breakout follow-ups always get one)"),
  "SHORTS_REVIEW_FIRST_N": ("3", "v11: the first N standalone Shorts wait for the owner's Approve"),
  "SHORTS_LAST_DISPATCH": ("", "auto"),
- "SHORTS_NEED_MASTERS": ("TRUE", "v11: standalone Shorts wait until every character master is LOCKED (owner-approved) - no money spent on unlocked faces"),
+ "SHORTS_NEED_MASTERS": ("FALSE", "v12 V2c: a Short shows no character (one guide voice, the viewer's own eyes), so it no longer waits for the character masters [TRUE = Shorts wait until every character master is LOCKED]"),
  "FAIL_MAIL_AT": ("", "auto: last failure email time (one per day)"),
  "PROMISE_BY_SEC": ("5", "v12 V1: 5 (was 30) - the promise is the FIRST picture of the video. v11 (K158): the thumbnail/title promise must be on screen by this second of a long video"),
  "ALIVE_DETECT_WIDTH": ("480", "v11: width the still detector analyses at (2 fps); 480 px keeps dust-sized motion visible"),
@@ -996,6 +996,24 @@ DEFAULTS = {
  "FORMAT_SHARE_F1": ("70", "v12 V2a: share of long videos in format F1 'The day it changed' (of the last ten episodes; a lever of Strategy, D1)"),
  "FORMAT_SHARE_F2": ("30", "v12 V2a: share of long videos in format F2 'The trial' (an experiment arm; needs SHOW_MODE = auto)"),
  "FORMAT_SHARE_F3": ("0", "v12 V2a: share of long videos in format F3 'The walk' (reserved: the format is not built yet, so this share is ignored)"),
+ "SHORT_SEAT_ON": ("TRUE", "v12 V2c (Audience, D13): TRUE = a standalone Short is measured by the viewer's seat for a Short before any picture is paid (the first frame, the hook, plain words, the shape, the loop) and checks short_open / short_plain / short_shape / short_kept hold it [FALSE = nothing is measured or repaired and the four checks say not applicable]. Needs VIEWER_SEAT_ON"),
+ "SHORT_FORMAT_FORCE": ("", "v12 V2c: S1, S2 or S3 = every new Short is made in that Short format (a test, the pilot); empty = the shares below decide"),
+ "SHORT_SHARE_S1": ("40", "v12 V2c: share of Shorts in format S1 'The second it changed' (of the last ten Shorts; a lever of the Shorts Studio, D14)"),
+ "SHORT_SHARE_S2": ("40", "v12 V2c: share of Shorts in format S2 'What would you do?'"),
+ "SHORT_SHARE_S3": ("20", "v12 V2c: share of Shorts in format S3 'The whole thing in 30 seconds' (one continuous shot)"),
+ "SHORT_MIN_S": ("20", "v12 V2c: a Short is at least this many seconds long (every format)"),
+ "SHORT_MAX_S_S1": ("35", "v12 V2c: the longest a Short of format S1 may be, in seconds (a starting value: two studies disagree on length, so it is a lever)"),
+ "SHORT_MAX_S_S2": ("45", "v12 V2c: the longest a Short of format S2 may be, in seconds"),
+ "SHORT_MAX_S_S3": ("35", "v12 V2c: the longest a Short of format S3 may be, in seconds"),
+ "SHORT_HOOK_WORDS_MAX": ("12", "v12 V2c: the first spoken sentence of a Short (the hook) has at most this many words"),
+ "SHORT_HOOK_BY_S": ("3", "v12 V2c: the hook must END inside this many seconds of the real voice (about 6 in 10 viewers swipe away inside 3 seconds)"),
+ "SHORT_NUMBERS_MAX": ("1", "v12 V2c: the most numbers a viewer may hear in one Short"),
+ "SHORT_EXPERT_MAX": ("0", "v12 V2c: the most expert words a layman would not know in one Short (counted by the layman test; a swiping viewer chose nothing, so the title's own words are counted too)"),
+ "SHORT_PROMISE_TEXT_ON": ("TRUE", "v12 V2c: TRUE = the promise is on screen as a few words from the first frame for about 2.5 seconds [FALSE = no promise text; the word-by-word captions stay]. A switch on purpose: a study of 92,654 Shorts found text on screen does not buy views, so the learning loop must be able to test it"),
+ "SHORT_PROMISE_WORDS_MAX": ("6", "v12 V2c: the promise text on the first frame has at most this many words"),
+ "SHORT_SIMILAR_MAX": ("0.4", "v12 V2c: a Short that shares this share of its three-word phrases with one of the last ten Shorts is 'alike' and is held (YouTube: templated storylines with minimal variation lose monetisation)"),
+ "SHORT_HOLD_RETRIES": ("1", "v12 V2c: how many more times a topic is tried as a Short after the short gate held it (a held Short is never made and the owner is not asked)"),
+ "V12V2C_FLIPS_DONE": ("", "v12 V2c: set once SHORTS_NEED_MASTERS moved from TRUE to FALSE where the cell still held the old default; never runs twice"),
  "V12V1_FLIPS_DONE": ("", "v12 V1: set once RUNTIME_MAX_SEC (600 -> 540) and PROMISE_BY_SEC (30 -> 5) moved where the cells still held the old defaults; never runs twice"),
  "V12B6A_FLIPS_DONE": ("", "v12 B6a: set once the writers' playbook cap moved to 2,400 tokens (only where PALACE_PLAYBOOK_TOKENS_BY_DEPT was still empty); never runs twice"),
  "ORG_PROMPT_INJECT": ("TRUE", "v12 B6a: TRUE = the creative runs (D4 write and draft, D5 package, D6 plan) put their Palace playbook INTO the model prompts of their creative calls, the models cite what they applied with a quote and code verifies it (checks palace_injected, palace_cited, canon_in_brief) [FALSE = the playbook is handed over with the brief only; the three checks say NA]"),

@@ -152,6 +152,7 @@ ROUTES = {
     "owner_chat": ("sonnet", "edit"), "owner_chat_deep": ("opus", "creative"), "owner_chat_cheap": ("haiku", "chore"),
     "jury": ("critic", "judge"), "jury_flash": ("flash", "judge"), "jury_claude": ("sonnet", "judge"), "punchup": ("sonnet", "edit"),      # v11 (K157) room v2      # v9.4b: WhatsApp / dashboard chat
     "rnd_research": ("sonnet", "edit"), "board_gemini": ("board_g", "judge"), "board_claude": ("board_c", "judge"),       # v12 B5: R&D research with web search; the Review Board's two families
+    "short_writer": ("script", "creative"),          # v12 V2c: a Short is written (and fixed once) by the model that writes the long script
     "probe_gemini": ("flash", "judge"), "probe_claude": ("haiku", "chore"),          # v12 V1b: the promise line-up's two cheap readers (the right answer is known to code: no taste call)
 }
 SAVER_MEDIUM = ("scout", "showrunner", "bible", "premise_judge", "memo", "objections", "director", "director_read", "hooks", "packager", "reels", "immersion")
