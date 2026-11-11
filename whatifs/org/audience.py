@@ -1,4 +1,4 @@
-"""Audience (D13): the viewer's seat - what a first-time viewer would meet is measured by code and repaired for free before any picture is paid: the promise as the first picture, a voice that breathes, few numbers. See docs/CURRENT/SYSTEM.md."""
+"""Audience (D13): the viewer's seat - what a first-time viewer would meet is measured by code and repaired by code before any picture is paid: the promise as the first picture, a voice that breathes, few numbers. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import re
 from whatifs.core import S, log
@@ -76,9 +76,10 @@ def number_issues(text):
 
 # ------------------------------------------------------------------ the shot list: the promise is the first picture, numbers on screen are rare
 def shape(shots, units, pkg=None):
-    """FREE repairs before any picture is paid (D13's run, right before the Animation Director): the first shot is a made picture (so that the
+    """Repairs by code before any picture is paid (D13's run, right before the Animation Director): the first shot is a made picture (so that the
     animated promise scene can open the video), no number graphic inside the first GRAPHICS_FREE_SEC seconds, at most GRAPHICS_MAX_LONG in the video.
-    A graphic that goes becomes a still of its own line that reuses an earlier picture (no new cost). Returns the new shot list; each repaired shot
+    A graphic that goes becomes a still of its own line. No model is called; the still usually reuses an earlier picture, and where the opening or
+    the repetition guard wants a fresh one it costs a still (under Rs 1; 2 in the fake episode). Returns the new shot list; each repaired shot
     carries 'seat' = why."""
     out = [dict(s) for s in shots or []]
     if not on() or not out: return out
@@ -96,7 +97,7 @@ def shape(shots, units, pkg=None):
         elif kept >= gmax: still(i, "number graphic over the budget")
         else: kept += 1
     fixed = [s["seat"] for s in out if s.get("seat")]
-    if fixed: log(f"viewer's seat: {len(fixed)} free repair(s) before any picture is paid: " + ", ".join(f"{fixed.count(w)} x {w}" for w in dict.fromkeys(fixed)))
+    if fixed: log(f"viewer's seat: {len(fixed)} repair(s) by code before any picture is paid: " + ", ".join(f"{fixed.count(w)} x {w}" for w in dict.fromkeys(fixed)))
     return out
 
 def m_shape(shots):
@@ -111,7 +112,7 @@ def _ends_sentence(u):
 
 def breathe(units):
     """Voice units (before the voice is made): a pause of BREATH_PAUSE_S is placed at a sentence start whenever the voice has run about BREATH_EVERY_S
-    without one - at a paragraph start when one comes in time, else at the next sentence. Pauses the writer already asked for count. Free."""
+    without one - at a paragraph start when one comes in time, else at the next sentence. Pauses the writer already asked for count. Costs nothing."""
     if not on() or not units: return units
     every = max(5.0, S("BREATH_EVERY_S", float)); pause = S("BREATH_PAUSE_S", float); mn = S("BREATH_PAUSE_MIN_S", float); wpm = max(60.0, S("WPM_ESTIMATE", float))
     since = 0.0; added = 0

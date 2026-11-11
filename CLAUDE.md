@@ -86,7 +86,7 @@ pipeline run uses the new code. Nothing restarts.
 - **The viewer's seat** (`whatifs/org/audience.py`, department D13): what a first-time viewer meets is MEASURED by code, never left to a model's
   taste. `audience.shape` (the first shot a picture, number graphics inside the budget) is D13's own run right before the Animation Director,
   `audience.breathe` runs inside the voice job, and the script gate judges `viewer_promise` / `viewer_breath` / `viewer_numbers` on the shot list and the
-  REAL voice timeline. A new viewer rule = a pure measure in `audience.py` + a free repair where code can repair + a contract check; its numbers are
+  REAL voice timeline. A new viewer rule = a pure measure in `audience.py` + a repair by code where code can repair + a contract check; its numbers are
   levers of D13. A heading, a source's year and a place in the story ("hour 1") are not numbers (`audience.count_numbers`). The redesign that
   ordered this is `handoff_v12/BREAKOUT_REDESIGN.md`.
 - **Creative departments and the canon** (`whatifs/org/cite.py`, `canon.py`): Palace knowledge enters a creative model call only through the runner's

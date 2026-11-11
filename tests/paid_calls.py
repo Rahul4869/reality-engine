@@ -49,10 +49,15 @@ def V11_ADDED():
 # v11.1 (hard enforcement): ONE mandatory rewrite when retention / marker problems remain after the last rewrite (enforce.fix_all, ~Rs 2).
 V111_ADDED = {"text:rewrite": 1}
 
+# v12 V1 (the viewer's seat): number graphics that leave the opening become pictures. Where the opening or the repetition guard wants a fresh one it is
+# a paid still (under Rs 1): 2 in the fake episode. No text call is added (the numbers problem rides on the ONE mandatory rewrite that already exists).
+V12V1_ADDED = {"image": 2}
+
 def allowed_base(base):
     out = dict(base)
     for k, v in V102_ADDED.items(): out[k] = out.get(k, 0) + v
     for k, v in V11_ADDED().items(): out[k] = out.get(k, 0) + v
     for k, v in V111_ADDED.items(): out[k] = out.get(k, 0) + v
+    for k, v in V12V1_ADDED.items(): out[k] = out.get(k, 0) + v
     return out
 

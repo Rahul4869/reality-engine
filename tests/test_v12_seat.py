@@ -51,7 +51,7 @@ def test_the_writers_one_mandatory_fix_carries_the_numbers_problem(monkeypatch, 
     setting("VIEWER_SEAT_ON", "FALSE"); assert AUD.number_issues(FLOOD) == []
 
 # ------------------------------------------------------------------ the shot list: the promise is the first picture
-def test_the_shot_list_is_shaped_for_free_first_a_picture_then_few_number_graphics(setting):
+def test_the_shot_list_is_shaped_by_code_first_a_picture_then_few_number_graphics(setting):
     u = U(40); raw = shots(*(["graphic", "still", "graphic"] + ["still"] * 17 + ["graphic"] * 5 + ["stock"] + ["still"] * 14))
     out = AUD.shape(raw, u, THUMB)
     assert out[0]["type"] == "still" and out[0]["hero"] and THUMB["thumb_prompt"] in out[0]["prompt"] and out[0]["seat"] == "first picture"

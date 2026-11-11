@@ -5,10 +5,13 @@ from whatifs import core, breakout as BRK, contract as CON, notify as NT, publis
 
 def test_promise_must_be_on_screen_early(setting):
     units = [{"start": i * 6.0} for i in range(10)]
-    early = [{"type": "still"}] * 2 + [{"type": "kling", "promise": True}] + [{"type": "still"}] * 7
+    early = [{"type": "kling", "promise": True}] + [{"type": "still"}] * 9                      # v12 V1: the promise is the FIRST picture (PROMISE_BY_SEC 30 -> 5)
+    third = [{"type": "still"}] * 2 + [{"type": "kling", "promise": True}] + [{"type": "still"}] * 7
     late = [{"type": "still"}] * 8 + [{"type": "kling", "promise": True}] + [{"type": "still"}]
     setting("PROMISE_SHOT_ON", "TRUE")
     assert CON.p_promise_paid({"shots": early, "units": units})[0] == "PASS"
+    assert CON.p_promise_paid({"shots": third, "units": units})[0] == "FAIL"                     # at 12 s: late since v12 V1
+    setting("PROMISE_BY_SEC", "30"); assert CON.p_promise_paid({"shots": third, "units": units})[0] == "PASS"; setting("PROMISE_BY_SEC", "5")
     assert CON.p_promise_paid({"shots": late, "units": units})[0] == "FAIL"
     assert CON.p_promise_paid({"shots": [{"type": "kling"}] + [{"type": "still"}] * 9, "units": units, "d": {"promise": {"title": "x"}}})[0] == "FAIL"
     assert CON.p_promise_paid({"shots": [{"type": "still"}] * 10, "units": units})[0] == CON.NA          # v11 audit: no animated scene -> not held

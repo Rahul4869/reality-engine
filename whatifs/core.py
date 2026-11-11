@@ -981,7 +981,7 @@ DEFAULTS = {
  "PALACE_CANON_TOKENS": ("700", "v12 B6a: estimated tokens a playbook may spend on the show's canon (the cast, then the newest aired cases), ON TOP of the department's cap, so canon never pushes out a limit or knowledge (100-2000)"),
  "VIEWER_SEAT_ON": ("TRUE", "v12 V1 (Audience, D13): TRUE = before any picture is paid the first shot is made a picture (the animated promise scene opens the video), number graphics are kept to the budget, the voice gets breathing pauses, and checks viewer_promise / viewer_breath / viewer_numbers judge the result [FALSE = nothing is repaired, the three checks say NA]"),
  "NUMBERS_PER_MIN_MAX": ("4", "v12 V1: the most numbers a viewer may HEAR per minute of narration (a figure, a number word or a run of them counts once); above it the writers get one mandatory fix and the script gate holds the video"),
- "GRAPHICS_MAX_LONG": ("3", "v12 V1: the most full-screen number graphics (counter / timeline / compare) in one long video; extra ones become pictures, free"),
+ "GRAPHICS_MAX_LONG": ("3", "v12 V1: the most full-screen number graphics (counter / timeline / compare) in one long video; extra ones become pictures (a reused picture, or a fresh still under Rs 1)"),
  "GRAPHICS_FREE_SEC": ("60", "v12 V1: no full-screen number graphic before this second (the opening shows, it does not count)"),
  "BREATH_EVERY_S": ("30", "v12 V1: the voice pauses at least this often (a pause of BREATH_PAUSE_S is placed at a sentence start; judged on the real voice timeline with 25% slack)"),
  "BREATH_PAUSE_S": ("0.7", "v12 V1: length of a placed breathing pause"), "BREATH_PAUSE_MIN_S": ("0.6", "v12 V1: what counts as a pause when the voice is judged"),
