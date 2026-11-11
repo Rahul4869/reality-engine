@@ -237,6 +237,85 @@ NOT FOUND, so nothing is built on it: any study that pairs one topic as a Short 
 its long video - H11 - stays a hypothesis the channel's own pairs must answer); any measured effect of a follow-up Short or of how fast it
 comes; any official YouTube advice on following up a hit; when the first processed day of a new upload appears in the API. The promote
 rule's four measures, the 3-times line and the 48-hour clock are therefore STARTING VALUES and levers.
+#### Step 2 CREATIVITY (scores 1-5: breakout odds / enforceable / cost / reliability / owner effort)
+A. The calendar ladder (the redesign as first written): at the end of a month rank its twelve Shorts, the top four get next month's long
+   videos: 2 / 4 / 5 / 2 / 5 = 18 - a topic waits up to six weeks, the first month has no long video, and it ignores that the numbers come late.
+B. A fixed bar: a Short is promoted when it passes a line (say 70% stayed, 1,000 engaged views): 2 / 4 / 5 / 2 / 4 = 17 - nobody knows
+   where the line is for a channel of 4 subscribers (the vendor benchmarks disagree), so either nothing passes or everything does.
+C. A strong model reads the numbers and the scripts and picks: 2 / 1 / 4 / 2 / 5 = 14 - taste as a gate; not reproducible (R9).
+D. A bandit over topics (sampling with exploration): 3 / 3 / 5 / 2 / 5 = 18 - every topic is observed once; with twelve single
+   observations a bandit adds nothing to a ranking, and the exploration already exists: every topic gets its Short.
+E. (ORIGINAL, CHOSEN) THE ROLLING LADDER ON TWO CLOCKS: YouTube gives two kinds of numbers, so the ladder runs two rules. The FAST clock
+   (public views, real-time) finds a WINNER at the 24-hour and the 48-hour mark against the channel's own median at the same mark and
+   orders its follow-up with a 48-hour clock - decided by code, the owner is told and can stop it with one tap. The SLOW clock (engaged
+   views, share watched, subscribers, shares - 48 to 72 hours late) feeds the PROMOTE rule: when a long video is about to start, it takes
+   the best Short of the last 30 days that no long video has used, from the best kind of evidence there is (a declared winner, else true
+   numbers over the same first three days, else public views at the 48-hour mark). No candidate = no long video, before any money; the
+   owner gets one message with the button that overrides, and an override is a row on the record. A check at the script gate proves the
+   topic's origin again, so no other path can start a long video around the ladder: 4 / 5 / 5 / 4 / 4 = 22.
+#### Step 3 DESIGN MEMO
+- THE CADENCE (D14; `whatifs/shorts2.py` `due`): cells `SHORTS_PER_WEEK` 3 and `SHORTS_PER_MONTH` 12, both levers of D14 (more =
+  the owner's tap: it costs money). A Short of the cadence is due when fewer than `SHORTS_PER_WEEK` were made in the last 7 days, fewer
+  than `SHORTS_PER_MONTH` this calendar month, and the last one is at least 24 x floor(7 / per week) hours old (3 a week = 48 hours:
+  Monday, Wednesday, Friday at one hour of day; R24 - the hour is not a factor). A follow-up of a winner is due at once, outside the
+  cadence, inside the ceiling `SHORTS_WEEKLY_CAP`. A Short of the cadence is CORE production now (it only leaves the long slots' money
+  alone); a follow-up is paid from the breakout fund or the reserve. `SHORTS_PER_DAY`, `SHORTS_KLING_EVERY` and
+  `REPLAN_MAX_SHORTS_PER_DAY` leave the code together with everything that read them: the fractional daily target, the re-planner's rung 3
+  (every Short is animated in every second, so "a new animated shot every N Shorts" means nothing), the dashboard's daily switch, D9's
+  lever. The re-planner keeps ONE rung: one more Short a week up to `REPLAN_MAX_SHORTS_PER_WEEK` (4, the top of the measured band), at
+  the real estimate of a Short. A live Sheet is moved once (`manage.v12v2cb_upgrade`): the three dead rows are marked RETIRED in their
+  notes and a pending re-planner proposal that names one is dropped.
+- THE LADDER (NEW `whatifs/ladder.py`, wrapped by D10; NEW tab `Ladder`, one row per Short = one step of a topic): a Short enters when
+  it is made (`shorts2.run`), with the Drive id of its KEPT FOOTAGE (every paid clip as made, every start picture, the script, the plan and
+  the voice timeline in one archive - what V2c-b2 opens the long video with; the archive of a topic that leaves the window unused is
+  deleted). THE READING (`brain.ingest_shorts`, the daily learning job): one call a Short, by processed day; the ladder's numbers are the
+  FIRST THREE processed days (the Short's first 48-72 hours - the same stretch for every Short, R17), re-pulled daily until those three
+  days exist, then weekly to day 28 for the late bloomers (research 4); public views at the 24-hour and 48-hour mark come from the
+  real-time monitor that already runs. THE PROMOTE RULE (`ladder.rank`, pure code): candidates = Shorts of the last `LADDER_WINDOW_DAYS`
+  (30) whose topic no long video has used and that have a reading; the best non-empty class wins - (1) a declared winner, by its
+  multiple; (2) "measured": the lowest sum of ranks over four measures - engaged views, share watched, subscribers per engaged view and
+  shares per engaged view, the two rates by their Wilson lower bound (research 6) - ties to the more engaged views; (3) "public": views
+  at the 48-hour mark. A candidate under `LADDER_MIN_ENGAGED` engaged views is ranked after every one above it and its promotion says
+  "thin evidence". Engaged views divided by views is recorded, never ranked on (research 2). WHEN: at the last moment that still costs
+  nothing - the tick's production gate, pre-production and `episode.produce` all call `ladder.gate`, which promotes on the spot through
+  D10's own run `promote` when nothing is waiting (level-triggered: no video waits for a cron that was dropped - the B5 lesson). The
+  promotion is announced by a performance memo to D4, D14, D9 and D1 and one line to the owner.
+- THE REFUSAL: with nothing promoted and no override, no long video starts: the tick names no slot, pre-production writes no draft,
+  `produce` returns before its first paid call, and the owner gets ONE message per slot: why, and the button "Make it anyway". His tap -
+  or his own locked topic (the Owner Brief) - is an OVERRIDE row on tab `Ladder` (who, when, why), used up by the next long video.
+  THE ROOM (`room.scout_and_pick`): the promoted premise is the forced first pitch (as the owner's own topic is); the Showrunner sets the
+  spine around it; code keeps the premise word for word and the judges' bar cannot drop it - real viewers outrank a jury (R9). The topic
+  is marked USED only when the episode's plan is safely saved (a failed planning keeps the promotion for the retry). NEW CHECK
+  `topic_ladder` (script gate, owner D10, a promise about the show): the episode's draw names its ladder row, the row is this episode's
+  and carries the same premise - or an override row; anything else holds the video before picture money.
+- THE WINNER (the fast clock; `breakout.monitor`, tab `Breakout_Queue` + two columns `due`, `done`): a Short whose public views at the
+  24-hour or the 48-hour mark reach `SHORTS_BREAKOUT_X` (3) times the median of the channel's earlier Shorts at the same mark (with fewer
+  than `BREAKOUT_MIN_HISTORY` earlier Shorts: `SHORTS_WINNER_MIN_VIEWS`) is a winner: its ladder row says so, ONE follow-up Short is
+  ordered with `due` = now + `FOLLOWUP_WITHIN_H` (48), a performance memo goes out, the owner gets one line with "Stop it". The Shorts
+  Studio takes the order before anything else; the writers are told what the winner said and that a repeat is refused (`short_kept`).
+  OVERDUE = A MEMO: the tick's `ladder.watch` writes a problem memo from D10 to D14 for an order past its clock, with the reason (no
+  money, held at the short gate, the job did not run); it climbs to the Council and the owner by the memo clocks and is closed by the
+  follow-up being made; an order twice its clock old lapses and stays on the owner's list until he waives it. A long video's 48-hour
+  breakout keeps today's card. The hourly "link it in Studio" card of `shortslab.breakouts` is retired: at three Shorts a week it could
+  never fire (it needed two Shorts inside two days), and spotting a Short that takes off is the winner rule's job now.
+- NOT IN V2c-b1, on purpose (V2c-b2): how a Short is uploaded (still `specials._publish`), the long video's opening made from the kept
+  footage, the cut-down reels. A long video promoted from a Short is, until V2c-b2, a long video ABOUT the proven topic that still opens
+  with its own pictures.
+- WHAT THE OWNER MUST HEAR (a consequence of research 1): the true numbers of a Short's first three days exist when it is about five
+  days old. A topic's long video therefore follows its Short by one to two weeks, not by "5-7 days" (redesign 4.2); the first long video
+  of the new code needs a Short that is five days old - or his override. The pilot (V3) will use the override for its one long video.
+- CHANGED FROM THE REDESIGN, with reasons: (1) "the best 4 of the month" becomes "the best unused Short of the last 30 days, every time
+  a long video starts" - the same four a month without a six-week wait and without a first month empty of long videos. (2) "After 48-72
+  hours the brain reads" becomes two clocks, because the true numbers are 48 to 72 hours late (research 1). (3) A winner gets ONE
+  follow-up decided by code and told to the owner (today: his approval, then two) - item 17: decide, inform, implement; R28: more Shorts
+  is not better. (4) "Viewed against swiped away" cannot be read by code at all (research 2).
+- HYPOTHESES: H11 stays open and gets its measure - every promoted topic is a pair (the Short's numbers, later the long video's first 30
+  seconds). New H18: a Short's rank in its pool predicts its long video's views against the channel's median; H19: a follow-up inside 48
+  hours gets more views than the channel's median Short.
+- MONEY, said before the build: reading numbers and public views costs no rupee (API quota only: one Analytics call a Short a day until
+  its three days exist, then weekly; one `videos.list` call per 50 videos a tick). The promote run is D10's own run without a model call.
+  The kept footage is Drive space (about 20 MB a Short, deleted when a topic leaves the window unused). A follow-up Short costs what a
+  Short costs (about Rs 290 at today's clip price, issue 83) and is paid only from the breakout fund or the reserve.
 
 ### V2c-a - THE SHORT, THE PRODUCT (11 Nov 2026) - ACCEPTED (final code commit 3b34cc3 GREEN in GitHub Checks run 99: 1325 passed; sweep 58 of 58 ids)
 The owner: "continue" (a new session for this batch). V2c was SPLIT AT THE START (rule 6): V2c-a is the short video as a product a viewer meets;
