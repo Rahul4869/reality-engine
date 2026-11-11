@@ -11,7 +11,7 @@ jobs:
     concurrency:
       group: sheet-heavy          # v9.4a (ORCHESTRA): one Sheet-heavy job at a time (queue, never cancel)
       cancel-in-progress: false
-    timeout-minutes: 30
+    timeout-minutes: 60          # v12 B5: the weekly deep research (web search + source checks) and the Review Board run inside this job on one day a week
     env:
       SHEET_ID: ${{ secrets.SHEET_ID }}
       G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
