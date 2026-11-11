@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 11 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 11 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -82,50 +82,49 @@ Short animated in every second; the paid model by value - today's costs four tim
 replicated voice needs no disclosure; the maker's line; no sample stops a platform seeing AI and for stylised animation it need not), THE
 RELEASE SHEET (what code can set, what one sitting sets, what only his hand can do per video), new department D14 Shorts Studio, and a NEW
 ORDER OF BATCHES: live after three. The evidence R20-R38 is not in the Palace yet (same rule as above).
-This turn was the DESIGN step for the whole programme (research, designs, decisions, records). Nothing of the redesign is built yet.
+That turn was the DESIGN step for the whole programme (research, designs, decisions, records). Built since: V1a, V1b, V2a and V2c-a (the records are under DONE).
 
 ## NEXT
-**V2c WAS SPLIT AT ITS START (token discipline rule 6, 11 Nov 2026)** along the cut named below: **V2c-a THE SHORT, THE PRODUCT** (department D14,
-Short formats as data, `shorts2.py` rebuilt, the viewer's seat for a Short with its four checks) is IN PROGRESS - its record is the first entry
-under DONE. **V2c-b THE LADDER AND THE PLATFORMS** follows it: Shorts first (every topic starts as a Short, the numbers of 48-72 hours pick the 4
-long videos a month, the long video opens with the Short's footage, a winner at 3 times the median gets a follow-up inside 48 hours), the cadence
-cells (3 a week, 12 a month; SHORTS_PER_DAY and its readers in `caretaker.py`, `dash.py`, `replan.py`, `levers.py` retire together), one native
-upload per platform, and the Shorts rows of the release sheet. Why split: each half needs the full loop with deliberate breaks, and the ladder
-reaches into the long video's room and production (`episode.py`, `premise.py`, `brain.py`) while the product does not.
-**V2c - THE SHORT: the short video as its own product** (`handoff_v12/BREAKOUT_REDESIGN.md` SECTION 11: 11.4, 11.7, 11.8, 11.9; hypotheses H10, H11).
-Full seven-step MANDATORY BATCH LOOP. Effort: High. The order of the batches was CHANGED on 11 Nov by the owner's item 20 (redesign 11.10): the
-Short comes first because every week before 1 Feb 2027 counts. It is large: split it at the start if it does not fit one session (rule 6) - a
-natural cut is (1) the product: department D14, Short formats, the brief, the seat's checks; (2) the ladder and the platforms. Scope:
-- NEW DEPARTMENT D14 SHORTS STUDIO (`whatifs/org/__init__.py`, `registry.py`: 17 departments; its founding Palace items FIRST - the runner
-  refuses a department without a playbook; levers: Shorts a week, length per format, format shares, the double-down line).
-- SHORT FORMATS AS DATA beside the long formats (`whatifs/formats.py`): S1 "The second it changed", S2 "What would you do?", S3 "The whole
-  thing in 30 seconds"; `whatifs/shorts2.py` is rebuilt from "mini-trials" to these (its three variants judged blind stay).
-- THE VIEWER'S SEAT FOR A SHORT (D13; the V1a pattern - measure, the writers' one fix or a repair by code, check, lever): `short_open` (the
-  first frame is the moving impossible picture; a hook of 12 words at most inside 3 s; the promise readable inside 1 s), `short_plain` (one
-  idea, one number at most, no expert word - `layman.py` and `audience.py` have the measures), `short_shape` (20-45 s by format, the last line
-  hands back to the first picture, no ask), `short_kept` (the format is kept; no two in ten alike).
-- SHORTS FIRST: every topic starts as a Short; the numbers of 48-72 hours decide which 4 a month get the long video, whose opening is the
-  Short's footage; a Short at 3 times the median gets a follow-up inside 48 hours (`SHORTS_BREAKOUT_X` and the breakout queue exist). The
-  cadence cells change (12 a month, 3 a week; the cut-down reels of `reels.py` stop being the product).
-- ONE NATIVE UPLOAD PER PLATFORM (`publish.py`): Instagram Trial Reels, cover and audio name; Facebook 90 s at most; the Shorts thumbnail; the
-  Shorts rows of the release sheet read back after upload.
-- In V2c a Short is planned as animated in every second with the hero model the code has; choosing the model by value is V2d.
-What the earlier batches leave ready: `whatifs/formats.py` (formats as data, `use` / `current`, `rule`, the three-tier contract), D13's measures
-(`audience.py`, `layman.py`) and its two runs, the pattern "measure -> repair or one fix -> contract check -> lever", the rehearsal and the
-sweep per format (`WI_FORMAT`).
-Remember: every new contract check must be classified (`rnd.ORG_CHECKS` or raise `rnd.SHOW_CHECKS`, now 43); a department run that returns
-`Out` must say what it did with EVERY inbound memo; when a switch has meant two things, sort EVERY call site before splitting it; run the
-rehearsal in each format before the suite; a held episode stops in about 10 seconds; a check that can hold a video must recognise what is
-wrong, not flag what it does not know (the V1b sweep); NEVER paste code with backslashes through a shell here-document.
-ORDER AFTER V2c (redesign 11.10): V2d THE MOTION LADDER AND THE MONEY (the hero model by value from the live listing, the living tier widened,
-a character drawn or absent - no black shape in any format, the stock rules for NASA and Pexels, the cost model with every paid second - open
-issue 72 - and the split 4 long + 12 Shorts) -> V3 PILOT ON REAL SERVICES AND GO LIVE (three Shorts and one long video; the human kit: his
-voice recording with the consent sentence, five photos, three sentences, the secrets typed by HIM; the release sheet's one-time switches; the
-one-minute release card; then the new code replaces the old) -> V2b INSIDE THE FORMAT (first person and the camera path as measured rules, F1's
-own ending instead of the asks code still inserts - open issue 74, the speaker chip - 75, F3 "The walk", same-subject line-up titles - 69) ->
-V1c THE FLOOR, HIS VERDICT AND THE MAKER'S LINE -> V4 the CEO and the ladder (+ his input tab, the scoreboard, the format and Short shares) ->
-V5 the Breakout Observatory (Shorts first) and the aspect map with the release sheet -> B6b -> B7 -> B8 (+ every run names its scoreboard
-number) -> B9 -> B10. Twelve batches remain; the channel runs the new code after the third.
+**V2c-b - THE LADDER AND THE PLATFORMS** (`handoff_v12/BREAKOUT_REDESIGN.md` SECTION 11: 11.4 "every topic starts as a Short" and "every platform
+natively", 11.7, the rows "Topic ladder", "Winner" and "Platforms" of 11.9; hypothesis H11). Full seven-step MANDATORY BATCH LOOP. Effort: High.
+V2c was SPLIT AT ITS START (rule 6, 11 Nov 2026): V2c-a THE SHORT, THE PRODUCT is ACCEPTED (first record under DONE). V2c-b is the other half:
+- THE CADENCE: 3 Shorts a week, 12 a month (levers of D14: "Shorts a week"). `SHORTS_PER_DAY` (1.5 a day today) and everything that reads it
+  retire together: `shorts2.due` / `target_today`, `caretaker.py`, `dash.py`, `replan.py` (its rungs 2 and 3; `SHORTS_KLING_EVERY` is read by
+  nothing else any more), `levers.py`, `registry.py` (D9's lever), `tools/gen_docs.py`, `REPLAN_MAX_SHORTS_PER_DAY`. A one-time move on a live Sheet.
+- SHORTS FIRST: every topic starts as a Short; after 48-72 hours the brain reads its real numbers (stayed to watch, share watched, engaged
+  views, shares, subscribers per 1,000 views - `brain.ingest_shorts` reads some today); the best 4 topics of the month get the long video,
+  whose opening IS that Short's footage (the Short's clips and pictures are kept for it); a long video without a promoted Short is refused
+  (an owner override is recorded). D10 owns the promote rule; D1's calendar comes in V4.
+- THE WINNER: a Short at `SHORTS_BREAKOUT_X` (3) times the channel's median views per hour gets a follow-up Short within 48 hours from the
+  reserve - a ticket with a clock, overdue = a memo (`breakout.monitor`, `shortslab.breakouts` and the breakout queue exist; today they send
+  the owner a message to tap).
+- ONE NATIVE UPLOAD PER PLATFORM (`whatifs/publish.py`; D9 gets its own run `short_publish` - today a Short is uploaded by
+  `specials._publish` from inside `shorts2.run`, with the special reels' tags): YouTube Shorts with the Shorts thumbnail; Instagram with
+  Trial Reels on, the cover, the audio named after the series, the AI flag; Facebook with 90 seconds at most; never a file with another
+  platform's mark; the Shorts rows of the release sheet read back after upload (`publish.verify_upload` grows toward `release_sheet`).
+- The cut-down reels of `whatifs/reels.py` stop being the product (`REELS_PER_VIDEO`, the bridge style): decide what stays as a pull from a
+  long video to its Short.
+What V2c-a leaves ready (use it, do not rebuild it): `shorts2.run(force, publish, now, episode_id)` and its five department runs; Short
+formats as data (`formats.SHORTS`, `short_pick`, `short_brief`, `short_kept_report`); the seat for a Short (`whatifs/org/shortseat.py`); the
+stage "short" of the contract (58 hard checks); `shorts2.history` (the last ten Shorts with their scripts on tab `Specials`: columns hook,
+script, sec); the Short's format in `Video_Features.lead`; the rehearsal's Short (`WI_SHORT_FORMAT`); `tools/sweep.py --mode short`.
+Remember: every new contract check must be classified (`rnd.ORG_CHECKS` or raise `rnd.SHOW_CHECKS`, now 47); a department run that returns
+`Out` must say what it did with EVERY inbound memo; a check that can hold a video must RECOGNISE what is wrong (V1b: four ordinary words;
+V2c-a: a three-letter word); break the code on purpose and make sure a test fails (V2c-a: the open loop failed none); the offline clips
+barely move - a rule about motion needs a test with clips that do; never run the break script while another run reads the code; run the
+rehearsal in each long format (`WI_FORMAT`) and each Short format (`WI_SHORT_FORMAT`) before the suite; NEVER paste code with backslashes
+through a shell here-document; READ THE WHOLE BINDING READING ORDER FIRST (this batch was stopped by the owner for cutting it short).
+ORDER AFTER V2c-b (redesign 11.10): V2d THE MOTION LADDER AND THE MONEY (the hero model by value from the live listing - a model with clips
+longer than 5 seconds ends the slowed clips of V2c-a, the living tier widened, a character drawn or absent - no black shape in any format,
+the stock rules for NASA and Pexels, `moving_share` measured on the finished file, the first-second sound of a Short, the cost model with
+every paid second - open issues 72 and 83 - and the split 4 long + 12 Shorts) -> V3 PILOT ON REAL SERVICES AND GO LIVE (three Shorts and
+one long video; the human kit: his voice recording with the consent sentence, five photos, three sentences, the secrets typed by HIM; the
+release sheet's one-time switches; the one-minute release card; then the new code replaces the old) -> V2b INSIDE THE FORMAT (first person
+and the camera path as measured rules, F1's own ending instead of the asks code still inserts - open issue 74, the speaker chip - 75, F3
+"The walk", same-subject line-up titles - 69) -> V1c THE FLOOR, HIS VERDICT AND THE MAKER'S LINE -> V4 the CEO and the ladder (+ his input
+tab, the scoreboard, the format and Short shares) -> V5 the Breakout Observatory (Shorts first) and the aspect map with the release sheet
+-> B6b -> B7 -> B8 (+ every run names its scoreboard number) -> B9 -> B10. Twelve batches remain (V2c became two); the channel runs the
+new code after the fourth.
 The notes below (what B5 / B6a leave ready for the Council) stay valid for B6b:
 **B6b - The Council (C)** (01 sections 2 (C), 4, 5, 7 `council_held`; 03 "B6", second bullet). Full seven-step MANDATORY BATCH LOOP. Effort: High.
 Gathers open research / assessment / creative / owner / performance / problem memos; diverge -> blind cross-family jury -> converge -> decision
@@ -175,28 +174,13 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
-### V2c-a - THE SHORT, THE PRODUCT (11 Nov 2026) - IN PROGRESS (steps 1-5 recorded below, steps 6-7 done but NOT yet recorded; NOT ACCEPTED)
-**WHERE THE SESSION STOPPED (usage limit, 11 Nov 2026) - resume here, do not redo the build:**
-- DONE and pushed: research, designs, memo, build, enforce, 22 + 6 tests green, eleven deliberate breaks (all caught now; the open loop was
-  caught only after the loop measure was fixed), rehearsal GREEN in F1 + S1, F2 + S2, F1 + S3, takeaway `v2c.takeaway` (152 founding items).
-- THE FULL LAPTOP SUITE on a frozen copy of 486eb41 (read after the stop): **1323 passed / 1 failed / 1 skipped** (71 test files). The one
-  failure, traced: `tests/test_v102.py::test_every_feature_has_a_probe_and_a_promise` pins the contract's stages to script and final; the new
-  stage "short" is by design - the test now allows it (passes alone). NOT re-run as a whole suite on the final commit.
-- NOT DONE: (1) the whole suite once more on the final commit (or at least on GitHub); (2) the sweep on a frozen copy (20 ids org on + 4 org off + 4
-  rehearsals, and `--mode short` 20 ids); (3) GitHub Checks GREEN on the final commit; (4) steps 6-7, the open issues 81-93, the protected
-  list, the batch log and NEXT = V2c-b in this file (the text is drafted in the session's scratchpad, `finish_state.py`; the facts are in the
-  commit messages of 9b61ba2 and 486eb41 and in the notes folder file `V2c_handover_note.md`).
-- GITHUB CHECKS ARE RED FOR A CAUSE OUTSIDE THE CODE: runs 92, 93, 94 and 95 (two of them before this batch, one a text-only commit) each
-  hung about an hour in the step that installs ffmpeg and failed with apt's exit code 100 before any test ran (step 4, line 107 on the public
-  run page). Other public repositories report the same on 11 Nov 2026: GitHub's regional Ubuntu mirror did not answer. FIXED AT OUR END in
-  `.github/workflows/checks.yml` (the step is bounded at 30 minutes, falls back to archive.ubuntu.com and names its cause on the run page) -
-  a WORKFLOW change that could not be run here: read the first run after this commit. The 12 other workflows still have the unbounded line
-  (a production job would hang the same way): open issue for the batch that touches the workflows, before go-live.
+### V2c-a - THE SHORT, THE PRODUCT (11 Nov 2026) - ACCEPTED (final code commit 3b34cc3 GREEN in GitHub Checks run 99: 1325 passed; sweep 58 of 58 ids)
 The owner: "continue" (a new session for this batch). V2c was SPLIT AT THE START (rule 6): V2c-a is the short video as a product a viewer meets;
 V2c-b is the ladder (Shorts first, the cadence) and the platforms. It answers his item 20 ("reels ... made for breakout virality ... dont make
 excuses"), closes open issues 13 (standalone Shorts outside the department contract) and 62 (Shorts outside the viewer's seat).
 A fault of this session, said plainly: the first start skipped part of the binding reading order (`01`, `03`, sections 0-9 of the redesign, the
 V1a / V1b / V2a records and the open issues). The owner stopped it; the batch was started again from the first step. Nothing had been built.
+The session also ran into its usage limit after the proof step; it stopped with a note here, and the same session finished the batch.
 
 #### Step 1 RESEARCH (E = measured, O = practice / vendor; "read" = the page was read by the build session; the redesign's R20-R38 are the base)
 1. E read - YouTube Help 12220281 "Understand your YouTube content performance" (states the view change of 24 Aug 2026): engaged views = "How
@@ -328,6 +312,61 @@ D. (ORIGINAL, CHOSEN) THE SHORT AS DATA, PLANNED BY CODE, CLOSED BY CODE: a Shor
 | The Shorts Studio, Sound and Audience ran before the gate | `runner.work` in `shorts2.run` | `short_contract`; `python -m whatifs.org.runner` RED |
 | A held Short is not made and nobody is asked | `shorts2.run` (the gate before `make`) | the production test (no clip, no picture, no message) |
 | Every paid clip is in the estimate | `shorts2.est_inr` before the budget rule | the production test (estimate >= clips made) |
+#### Step 6 PROVE
+- `tests/test_v12_short.py`: **22 tests**, each rule both ways (the format rows and the pick with its shares; the offline writer scanned over
+  every premise of the sweep in every format; the hook's words and its end on the real voice; the first frame and the promise text; one
+  number and no expert word, nothing exempt; the length, the hand-back, asks and ordinary sentences that are no asks; the plan in every
+  format; the plan judged; the seat's repair, unchanged when shaped twice; the format kept; no two alike inside a window of ten; the rotation
+  of format and hook; the writers' one fix with every problem named; only clean scripts before the jury; the gate's five checks; wiring,
+  levers, the one-time move; the REAL production in S1, S2 and S3 - five department runs each, the playbook inside the writer's prompt, the
+  clips and pictures counted against the estimate; the loop on the finished file both ways; a refused Short held, not made, nobody asked,
+  the topic tried once more and then left, the problem memos closed by the next Short that passes; two in a row differ and a copy is held;
+  a creative run that goes first on an empty Sheet). `tests/test_v11_shorts.py` rewritten: 6 tests of the track (due, money, follow-ups,
+  review).
+- Fails correctly (eleven deliberate breaks on the real repo, each reverted by the script that made it): D13's run removed -> 8 tests fail
+  and the organisation check is RED ("no runner call for D13 'short_seat'"); the gate ignored -> 2; the seat's repair off -> 1; format and
+  hook not rotated -> 3; the one fix removed -> 1; the cast mirrored before the founding knowledge -> 7; the hook not judged on the real
+  voice -> 1; the estimate understated -> 2; asks not recognised -> 3; likeness not judged -> 2; THE LOOP NOT CLOSED -> **0 at first**.
+- Faults found by running, not by reading: (1) THE FIRST FAKE SHORT did not start: on an empty Sheet a creative run that goes first was
+  handed the cast and none of the founding knowledge (the cast was mirrored before the "is the Palace empty" test - since B6a, for D4 too).
+  Fixed in `runner.run`; a test. (2) AN OLDER TEST, not a new one, found a Short about the Sun HELD: the hand-back rule counted only words
+  of four letters and more. Fixed at the cause (`shortseat.content_words` knows short content words and a list of fillers); every premise of
+  the sweep and four three-letter subjects are scanned in a test. (3) THE OPEN LOOP FAILED NO TEST: the offline clips barely move and the
+  words burned into the first and the last frame hid the picture. The measure now compares only the band of the picture that carries no
+  words (limit 0.01), a test uses clips that scroll (closed 0.001, open 0.028), an open loop is reported to the organisation as a lesson -
+  the break now fails 3 tests. (4) The first plan paid 7 clips for a 24-second Short (above). (5) A founding item with "buy views" in its
+  title was refused by the Palace's own write gate ("gaming the platform") - reworded. (6) Seven of the first 21 tests failed on their own
+  expectations (arithmetic, a constant's spelling, a stored field read the wrong way) - corrected, none hid a fault of the code.
+  (7) GITHUB'S CHECKS WERE RED FOR A CAUSE OUTSIDE THE CODE: runs 92 to 96 (two of them before this batch, two of them text-only commits)
+  hung up to an hour in the step that installs ffmpeg and failed with apt's exit code 100 before any test ran; other public repositories
+  reported the same on 11 Nov 2026 (GitHub's regional Ubuntu mirror did not answer). Traced on the public run page (step 4, line 107) and
+  repaired at our end: the step in `checks.yml` is bounded at 30 minutes, falls back to archive.ubuntu.com and names its cause on the run page.
+- Tests changed by design: 17 departments and 17 playbooks, 63 levers, 5 checks at the stage "short", the one-time moves list, the registry
+  honesty test copies `shorts2.py` into its little tree, and `tests/test_v102.py` allows the stage "short" (found by the full suite, below).
+- Fake rehearsal on the final code: GREEN on the working tree in F1 with a Short in S1, in F2 with S2, in F1 with S3 (each: the long
+  episode's 53 checks as before, then the Short - short gate 5 of 5, five department runs, 21.7 to 23.7 s, the loop closed); 4 of 4 GREEN in sweep C on the frozen copy of 3b34cc3; GitHub's own rehearsal GREEN (episode EP202611111811, script 34/34, final 19/19; its Short is asserted inside the rehearsal - the run page does not print the Short's line yet).
+- Full suite on a frozen copy: the whole suite ran on 486eb41: **1323 passed / 1 failed / 1 skipped** (71 test files). The one failure, traced: `tests/test_v102.py::test_every_feature_has_a_probe_and_a_promise` pinned the contract's stages to script and final; the stage "short" is by design (GitHub's runs 97 and 98 showed the same single failure). Corrected in 3b34cc3. On the frozen copy of 3b34cc3 the corrected file and the two Short files were re-run: **46 passed / 0 failed** (test_v102 18, test_v12_short 22, test_v11_shorts 6); the four files that read the workflow passed on the working tree (123). The whole suite on 3b34cc3 ran on GitHub (below): 1325 passed. NOT done: the whole suite a second time on the laptop on the final commit.
+- Sweep on a frozen copy of 3b34cc3: **58 of 58 ids**. No bad id, no failure class. A: 20 ids, organisation on - 13 drew F1 (each 40 pass + 13 not applicable of 53 checks) and 7 drew F2 (47 pass + 6 not applicable): the same split and the same counts as in V2a, so the long video is untouched. B: 4 ids, organisation off - 4 ok. C: 4 rehearsals - 2 in F1, 2 in F2, each with its Short made and asserted. D (new, `--mode short`): 20 ids, two Shorts each over 24 premises - 40 Shorts (20 in S1, 18 in S2, 2 in S3), every Short under test 5 of 5 at the short gate with 5 department runs, no memo left open, no warning. E: 10 more ids forced to S3 because the mix had drawn it only twice - 20 Shorts, two in a row each, 10 of 10 ids.
+- GitHub Checks (standing rule 1): run **99** on 3b34cc3 **GREEN**: 1325 passed (41:22), rehearsal GREEN (episode EP202611111811; contract script 34/34, final 19/19). Runs 92 to 96 RED at the step that installs ffmpeg (apt's exit code 100 after 28 to 63 minutes; no test ran): GitHub's package mirror, repaired at our end in `checks.yml` (above). Runs 97 (486eb41) and 98 (3f5f99c) RED: 1 failed / 1324 passed - the one stage-pinning test the laptop suite found, corrected in 3b34cc3; not re-run. Run 98 was the first with the bounded install step: it went through on the first mirror, so the fallback branch has still never run.
+- Plan Guard GREEN, Truth GREEN, Palace GREEN (152 founding items), Organisation GREEN (12 wired, 5 pending), docs regenerated without drift.
+- Money: Rs 0 spent (fake mode). In production a Short is estimated at about Rs 290 in the middle of its length band (6 clips of the hero
+  model at today's price, 3 pictures, Rs 36 for the three scripts, the jury, the fix and the voice); the fake Shorts of 22-24 s needed 3
+  to 4 clips (about Rs 125-165 of animation). The writing allowance is the old cell, not measured (open issue 83).
+#### Step 7 TAKEAWAY (also Palace item `v2c.takeaway`)
+- WORKED: the V1a pattern a fourth time (measure -> repair by code -> the one fix -> check -> lever), on a product that had no check at all.
+- WORKED: breaking the code on purpose with a script that puts every file back. Ten breaks failed tests at once; the eleventh showed a
+  measure that could not tell kept from broken. A measure is trusted only after it has failed on a version broken on purpose.
+- WORKED: an experiment before the design (the old Short measured in 7.6 seconds) and counting the first fake Shorts (7 paid clips -> 3).
+- FAILED: I started this batch without the whole reading order and the owner had to stop me. And my first hand-back rule repeated the V1b
+  fault in a new place: it held what it did not know (a three-letter word) instead of what it could recognise as wrong.
+- LIMIT: nothing here proves a viewer stays. No real model has written a Short and no real clip has been made: whether a clip slowed by a
+  quarter, a chain of clips started on the frame before, or a first clip played backwards LOOK right is unknown until the pilot. "One idea"
+  is not measured. The hook budget, the promise text and the loop rest on the redesign and the owner's judgment, not on a study (none was
+  found); only real numbers after publishing can say (H15-H17).
+- NEW QUESTION: which Short format holds viewers best (H17)? The shares are data and the format is in the learning core's features, so the
+  answer can move them (V2c-b reads the numbers, V4 moves the shares).
+- ORGANISATION: a new department's first run needs its founding knowledge AND an empty Sheet must be seeded before anything else is
+  mirrored into the Palace; a problem a later run can close should carry no episode (one memo per class of failure).
 
 ### V2a - FORMATS AS DATA AND THE THREE-TIER CONTRACT (11 Nov 2026) - ACCEPTED (final code commit 75c55ea GREEN in GitHub Checks run 91: 1303 passed; sweep 28 of 28, both formats)
 The owner (mobile only): "Continue". V2 was SPLIT AT THE START (rule 6): V2a is the foundation - an episode has a format, and a format decides
@@ -2006,6 +2045,16 @@ Rehearsal asserts `docs_current` ran and passed.
   (deterministic particle seed).
 
 ## PROTECTED-AREA FILES TOUCHED SO FAR (list them in the final PR)
+- V2c-a: `whatifs/contract.py` (5 checks added at the new stage "short"; no existing check changed), `whatifs/org/runner.py` (LOAD: an empty
+  Sheet is seeded before the cast is mirrored - nothing else in the six steps changed), `whatifs/models.py` (one role, `short_writer`, on the
+  long script's chain - no price or limit changed), `whatifs/formats.py` (the Short formats beside the long ones; the long formats untouched),
+  `whatifs/core.py` (18 cells, 3 columns appended to tab `Specials`, default SHORTS_NEED_MASTERS TRUE -> FALSE), `whatifs/manage.py`
+  (`v12v2c_upgrade` at both upgrade sites), `whatifs/org/registry.py` / `levers.py` / `__init__.py` / `rnd.py` (D14, 12 levers, SHOW_CHECKS
+  47), `tools/repair.py` (PROTECTED + shortseat.py and shorts2.py), `tools/rehearsal.py` (one Short made and asserted). Also touched, not
+  protected before: `whatifs/shorts2.py` (rebuilt; protected now), `whatifs/specials.py` (`_publish` takes an optional text),
+  `whatifs/fakes.py`, `tools/sweep.py` (mode `short`), `tools/gen_docs.py`, and **`.github/workflows/checks.yml`** (the step that installs
+  ffmpeg: bounded at 30 minutes, a second mirror, a named error - a WORKFLOW change; its normal path ran green on GitHub, its fallback
+  path has never run: read it in the final PR).
 - V2a: `whatifs/contract.py` (`run` judges a device by the episode's format - no check is weakened for the trial or for an episode without a
   format; 1 check added), `whatifs/episode.py` (the format after the room, on a resume and reset at the end; designed voices, provenance,
   packaging pairs and the experiment row in every format), `whatifs/room.py` / `room2.py` (the format around the room, three briefs, the
@@ -2294,6 +2343,47 @@ Rehearsal asserts `docs_current` ran and passed.
    `WI_FORMAT=F1` and the sweep's mix - not by the whole suite. GitHub's own rehearsal draws its format by a time-based id (about 7 of 10
    runs F1): a fault in one format can show on some runs only; the laptop proof runs both.
 
+81. (V2c-a -> V3) Only the offline writers have written a Short. At the pilot read the first real scripts against the brief (a hook that
+   ends inside 3 seconds, the format's four beats with their names, the returning word in the last line) and the `short_*` evidence in
+   `Feature_Ledger`; a real model may name its beats differently, and `short_kept` then holds the Short after the one fix.
+82. (V2c-a -> V2d / V3) Three picture choices no fake run can judge: a clip played up to 30% slower to cover its shot
+   (`shortseat.STRETCH_MAX`), a clip started on the frame the clip before ended on (drift over a chain is unknown - redesign R19), and the
+   first clip played backwards as the loop (motion that only reads forward - falling, pouring - may look wrong). V2d's model with longer
+   clips removes the first; the pilot shows the other two; each is one constant or one format row to change.
+83. (V2c-a, money -> V2d) A Short is estimated at about Rs 290 in the middle of its band at today's hero price (the redesign planned Rs
+   150): twelve a month do not fit beside four long videos until V2d chooses the model by value. The writing (three scripts on the long
+   script's model, the jury, one fix) and the voice sit inside the old cell REPLAN_SHORT_INR (Rs 36) - not measured; a Short has no line in
+   `costguard.estimate_lines` (the family of issue 72). V2d's cost model.
+84. (V2c-a -> V2c-b) The cadence is untouched: SHORTS_PER_DAY (1.5) still decides when a Short is due; SHORTS_KLING_EVERY is read only by the
+   re-planner (a stale rung); JOKE_EVERY_SEC_SHORT only by the cut-down reels. The live channel does not run this track.
+85. (V2c-a -> V2c-b) A Short is still uploaded by `specials._publish` from inside `shorts2.run` (the special reels' tags, one text for
+   every platform, no D9 run, nothing read back). The first 3 Shorts wait for the owner's Approve as before.
+86. (V2c-a -> V2d) The loop on the finished file is measured and REPORTED (lesson `loop_open`), not a gate: a Short whose loop did not
+   close is a code fault, and the clips are paid by then. The plan's loop shot is a gate (`short_shape`). `moving_share` on the file is V2d.
+87. (V2c-a, the hand-back) The rule asks for a content word of the first line in the last line. A writer who hands back with another word
+   for the same thing ("mirror" / "reflection") is held after the one fix and the Short is not made (the topic is tried once more). Read the
+   `short_shape` evidence of held Shorts at the pilot; if it happens, let the writer NAME the returning picture and verify that instead.
+88. (V2c-a) "One idea" is not measured: code cannot recognise it. It is carried by the format's four beats and the brief.
+89. (V2c-a -> B7) A held Short gets no repair beyond the writers' one fix. Its problem memo (one per class of failure, no episode) waits
+   for the next Short that passes; a class that never passes climbs to the owner by the memo clocks. B7's repair loop should own it.
+90. (V2c-a, the learning core) The Short's FORMAT is recorded in `Video_Features.lead` (nobody is on screen), so the learning core
+   compares S1, S2 and S3 as the family "lead". Say so wherever that family is shown to the owner (V4).
+91. (V2c-a -> V2d) The sound of a Short is still the special reels' code-made bed (a drone, a hit per beat). "The first-second sound of a
+   Short" (redesign 11.8, D7) is not built.
+92. (V2c-a -> B10, with 18) Five department runs a Short (about 50 Sheet calls) are proven on the local store only.
+93. (V2c-a, CLOSED / narrowed) Issue 13: the standalone Short now runs under the department contract (D14, D7, D13, D8); specials, Case
+   Files, Deep Trial, packaging rescue and the releases still do not. Issue 62: closed (the Short is under the viewer's seat). Issue 76:
+   the standalone Short has its own format and never the trial layer; the cut-down reels and the special reels made by other jobs still
+   follow the global switches (V2c-b).
+94. (V2c-a -> V3, BEFORE GO-LIVE) Twelve other workflows (production, pre-production, learning, specials ...) still install ffmpeg with
+   the unbounded line `apt-get update && apt-get install ffmpeg`. On 11 Nov 2026 GitHub's regional Ubuntu mirror did not answer for hours:
+   a production job would have hung up to an hour and made no video. `checks.yml` has the bounded step with a second mirror (its fallback
+   branch has never run for real). Give the other workflows the same step - and one test that every workflow's install line is the
+   bounded one - in the batch that prepares the pilot, and watch the first runs.
+95. (V2c-a, the Palace note) `python -m whatifs.org.palace` reports limits that do not fit a playbook cap as "D1 3, D2 1, D12 1, C 5"
+   (open issue 6 recorded D1 3, D4 4, D12 1, Council 6 before the writers got their own cap). None of this batch's items is addressed to
+   those departments; D2's one limit was not traced here. The Librarian's batch (B8) owns it.
+
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`
 - Suite: `bash ../shim/runall.sh . <outdir outside repo>` (~35 min; run it in the background). Some files: `bash ../shim/runseq.sh . <outdir> test_a test_b`.
@@ -2345,7 +2435,8 @@ Rehearsal asserts `docs_current` ran and passed.
 | V1a | done 11 Nov 2026 | GitHub 1284 passed (run 85); laptop 312 / 0 on the 9 touched files | GREEN (50 checks: 45 pass, 5 not applicable) | The viewer's seat, measured: department D13 Audience; before any picture is paid the first shot is a picture carrying the animated promise (5 s), the voice gets a pause every 30 s, numbers heard and number graphics have a budget; 3 script-gate checks (50 hard checks), 4 levers (45), long videos 9:00 at most. GitHub run 85 GREEN on f96b87a; sweep 28 of 28. |
 | V1b | done 11 Nov 2026 | 1292 / 0 / 1 (laptop); GitHub 1293 passed (run 89) | GREEN (52 checks: 47 pass, 5 not applicable) | The layman test: expert words a layman would not know counted by code (a budget per minute, in the first 30 s, in one sentence; the writers' one fix carries it) and the promise line-up (two cheap readers of two model families pick the video's title from the first 30 s; a planted opening must get none; verdict by code); 2 script-gate checks (52 hard checks), 3 levers (48), D13's second run. GitHub run 89 GREEN on 4c0e607; sweep 28 of 28 (the first sweep held 1 of 20 for ordinary words - fixed at the cause). |
 | V2a | done 11 Nov 2026 | 1302 / 0 / 1 (laptop); GitHub 1303 passed (run 91) | GREEN in F1 and in F2 (53 checks) | Formats as data and the three-tier contract: every episode has a format (F1 "The day it changed" 70, F2 "The trial" 30; shares are levers of D1), the trial layer, the briefs, the juries and the production follow it; a format can make a show device optional or leave it out and nothing else; new check format_kept (53 hard checks), 3 levers (51). GitHub run 91 GREEN on 75c55ea; sweep 28 of 28 (15 episodes in F1, 9 in F2, 4 rehearsals). |
-| V2c | next | | | THE SHORT (item 20): department D14 Shorts Studio, Short formats as data, the viewer's seat for a Short, Shorts first (every topic starts as a Short; the best 4 a month get the long video), one native upload per platform |
+| V2c-a | done 11 Nov 2026 | 1323 / 1 / 1 on 486eb41, the 1 corrected (laptop); GitHub 1325 passed (run 99) | GREEN in F1 / F2 with a Short in S1 / S2 / S3 (53 + 5 checks) | The Short as a product: department D14 Shorts Studio; Short formats as data (S1, S2, S3); `shorts2.py` rebuilt - one guide voice, every second a clip planned by code, the loop closed by code, no plate; the viewer's seat for a Short (`shortseat.py`) and 5 checks at a new stage "short" (58 hard checks), 12 levers (63); a held Short is not made. V2c was split at its start. GitHub run 99 GREEN on 3b34cc3; sweep 58 of 58 ids. |
+| V2c-b | next | | | The ladder and the platforms: the cadence (3 a week), every topic starts as a Short and the best 4 a month get the long video with the Short's footage, a winner's follow-up within 48 hours, one native upload per platform, the Shorts rows of the release sheet |
 | V2d | after V2c | | | The motion ladder and the money: the hero model by value, the living tier, a character drawn or absent, stock rules (NASA / Pexels), the cost model |
 | V3 | after V2d | | | Pilot on real services (3 Shorts + 1 long video), the human kit, the release sheet's one-time switches, then GO LIVE with the new code |
 | V2b | after V3 | | | Inside the format: first person and camera continuity as measured rules, F1's own ending, F3 "The walk" |

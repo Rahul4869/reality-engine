@@ -4,7 +4,7 @@ rejected the first live video (item 16). This page OVERRIDES `01` section 1 ("co
 the department list in `01` section 2 wherever they differ. The budget is unchanged: Rs 5,000 a month for everything.
 Status: DESIGN (research + designs + decisions). Built so far: V1a (11 Nov 2026). The batches in section 6 build the rest, one per owner
 "continue". SECTION 10 (the owner's item 19, same day) amends sections 4-7. SECTION 11 (his item 20, same night) amends them again -
-Shorts first, the motion ladder, the human kit, the release sheet, a new order of batches: READ SECTION 11 FIRST. Built so far: V1a, V1b, V2a.
+Shorts first, the motion ladder, the human kit, the release sheet, a new order of batches: READ SECTION 11 FIRST. Built so far: V1a, V1b, V2a, V2c-a (the Short as a product; its end note is the last entry of 11.10).
 
 ## 0. THE HONEST FRAME
 - Nobody can make a channel a sure shot. Of 137,355 new long-video channels, 30.8% got even ONE video past 10,000 views in their first ten (R1).
@@ -592,3 +592,18 @@ channels reach 10 million views; any measured reach effect of Meta's AI label; a
 - O11 Four release steps stay with the owner's hand because no API reaches them. If he cannot give that minute, the Short-to-video link is the
   one to keep (R37).
 - O12 Claude Max ends 10 Dec 2026 with twelve batches to go. If time runs out the order above is also the order of importance.
+- ORDER UPDATE (end of V2c-a, 11 Nov 2026): V2c was split. V2c-a built THE SHORT AS A PRODUCT (11.4's formats and the viewer's seat for a
+  Short, department D14); V2c-b builds the ladder and the platforms (the cadence of 3 a week, every topic starts as a Short, the winner's
+  follow-up, one native upload per platform, the Shorts rows of the release sheet). Then V2d, V3 (go live), V2b, V1c, V4, V5, B6b-B10.
+  WHAT THE BUILD CHANGED IN THIS SECTION, with reasons (the record is in `BUILD_STATE.md`): (1) "no two Shorts in ten with the same
+  format and structure" is measured as likeness of script and opener against the last ten plus a rotation of format and hook over the
+  last two - three formats times four hooks are twelve structures and cannot fill ten slots without taking the hook choice away from the
+  learning core. (2) "A hook of 12 words inside 3 seconds": at a normal pace 3 seconds hold about 7 words; the 3 seconds bind and are
+  judged on the real voice. (3) The promise text on the first frame is a switch for the learning loop, not a rule of faith. (4) The loop
+  is built for the viewer who stayed and claims no view: YouTube's engaged views do not include loops. (5) A clip may be played up to
+  30% slower to cover its shot (3 to 4 paid clips for a Short of 22 to 24 seconds instead of 7) until V2d picks a model with longer clips.
+  EVIDENCE CORRECTED by reading the pages: R23 - the study of 5,400 Shorts covers 33 channels, calls itself early research and found that
+  LONGER Shorts did better; another study of 16,537 Shorts found the opposite, so length is a lever per format. R24 - confirmed and made
+  exact: text on screen correlates with views at -0.08 (weak, not positive). New H15 (promise text), H16 (the loop), H17 (which Short
+  format holds best). The estimate of a Short is about Rs 290 at today's clip price against the Rs 150 planned here: V2d's model by value
+  must close that gap before twelve a month fit.
