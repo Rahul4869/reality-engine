@@ -134,7 +134,7 @@ def _plan_knowledge(t, row, st, now):
         if item is not None and clean["content_hash"] != old["content_hash"]: undo.append({"op": "restore", "item": _old_item(old, st)})
         if old["status"] not in PAL.SERVABLE: undo.append({"op": "retire", "id": iid})
     return {"target": f"palace:{iid}", "old": f"{old['status']} v{old['version']}" if old else "", "new": clean["content_hash"], "undo": undo, "item": item,
-            "need": "cited" if REG.inject(dept) == "prompt" else "served"}
+            "need": "cited" if REG.prompted(dept) else "served"}          # v12 B6a: a department whose creative calls carry the playbook must cite the item
 
 def _do_knowledge(row, op, st, now):
     iid = row["target"].split(":", 1)[1]
@@ -164,6 +164,7 @@ def _verify_knowledge(row, st, now):
     books = _books(st); n = 0; cite = row["need"] == "cited"; ref = f"{iid}@{cur['version']}"          # the version the ticket wrote, not an older text of the same item
     for s in st.rows(RUN.STAB):          # a later complete run: it began at or after the second of the change and is not the run that made the change
         if s.get("dept") != row["dept"] or s.get("status") != "ok" or s.get("id") == row["session"] or (parse_iso(s.get("started")) or t0) < t0 or RUN.verify(s): continue
+        if cite and s.get("inject") != "prompt" and not _js(s.get("applied_items"), []): continue      # a run that cannot cite (no model prompt, no code citation) neither proves nor uses up the window
         served = ref in books.get(str(s.get("playbook_id")), ()); cited = iid in _js(s.get("applied_items"), [])
         if served and (cited or not cite):
             return "verified", (f"Sessions:{s['id']} ({row['dept']} {s.get('trigger')}) ran after the change with {ref} in its playbook {s.get('playbook_id')}"

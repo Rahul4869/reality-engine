@@ -2,7 +2,7 @@ Traceback (most recent call last):
   File "C:\Users\rrahu\OneDrive\Desktop\REALITY_ENGINE_HANDOFF\reality-engine\whatifs\cli.py", line 94, in main
     from tools.rehearsal import run; run()
                                      ^^^^^
-  File "C:\Users\rrahu\OneDrive\Desktop\REALITY_ENGINE_HANDOFF\reality-engine\tools\rehearsal.py", line 193, in run
-    assert abs(G87.production_room_inr() - (G87.remaining_inr() - 100 - G87.earmark_left_inr() - G87.specials_left_inr())) < 1e-6, "maintenance reserve (and v9.4a/v10: the owner's earmarks) must sit inside the cap"
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: maintenance reserve (and v9.4a/v10: the owner's earmarks) must sit inside the cap
+  File "C:\Users\rrahu\OneDrive\Desktop\REALITY_ENGINE_HANDOFF\reality-engine\tools\rehearsal.py", line 92, in run
+    assert row4.get("state") == "verified" and log4 == ["intent", "applied", "verified"], ("the rehearsal's decision did not become a verified change", row4.get("state"), row4.get("note"), log4)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ("the rehearsal's decision did not become a verified change", 'applied', '', ['intent', 'applied'])

@@ -12,7 +12,8 @@ SAME_LOOKBACK = 60                    # earlier creative memos a new proposal is
 RULE = ("PALACE CITATIONS (mandatory): your JSON must also contain \"applied_items\": a list of {\"id\": \"<an id from the playbook above>\", "
         "\"where\": \"<4-30 words copied EXACTLY from your own answer, where you applied it>\"} - one entry per playbook line you really applied. "
         "LIMIT lines always apply; do not list them. Code checks every quote against your final answer: list nothing you did not apply.")
-MUST = "MUST CITE (continuity): [{ids}] - the show's own history. Call back to it in ONE spoken line of the narration and cite that exact line."
+MUST = ("MUST CITE (continuity): [{ids}] - the show's own history. Call back to it in ONE spoken line of the narration that names what that case was "
+        "about (a running thread, changed a little - never a recap), and cite that exact line.")
 PROPOSE = ("PROPOSAL (optional, at most one): if this work gave you ONE new idea for the show that the Council should decide on, add \"proposal\": "
            "{\"kind\": \"idea|experiment|bank|world_building\", \"idea\": \"<20-600 characters>\", \"rationale\": \"<why it would make viewers come back>\"}.")
 
@@ -98,7 +99,7 @@ def proposals_to_memos(dept, proposals, st=None, now=None):
         if not isinstance(p, dict): continue
         stats["proposals"] += 1
         idea, kind, why = str(p.get("idea") or "").strip(), str(p.get("kind") or "").strip(), str(p.get("rationale") or "").strip()
-        memo = {"type": "creative_memo", "from_dept": dept, "to_depts": ["C"], "urgency": "P2", "subject": f"{dept} proposes: {idea}"[:140],
+        memo = {"type": "creative_memo", "from_dept": dept, "to_depts": ["C"], "urgency": "P2", "subject": f"{dept} proposes: {idea}"[:140], "owner_visible": False,      # the Council decides; the owner sees only its cards
                 "body": {"idea": idea[:1200], "kind": kind, "rationale": why[:800]}, "dedupe_key": "creative|" + hashlib.sha1(" ".join(sorted(_words(idea))).encode("utf-8")).hexdigest()[:16]}
         if str(p.get("expected_impact") or "").strip(): memo["body"]["expected_impact"] = str(p["expected_impact"])[:400]
         if kind not in PROPOSAL_KINDS or SC.check_memo(memo, now)[1]: stats["dropped_invalid"] += 1; continue

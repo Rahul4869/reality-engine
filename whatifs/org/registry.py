@@ -105,6 +105,10 @@ def inject(dept, trigger=None):
     if trigger is not None and trigger in PROMPT.get(dept, {}) and S("ORG_PROMPT_INJECT", bool): return "prompt"
     return DEPTS[dept]["inject"]
 
+def prompted(dept):
+    """Does any run of this department put its playbook into a model prompt (and so must CITE what it applied)? v12 B6a: D4, D5, D6."""
+    return bool(PROMPT.get(dept)) and S("ORG_PROMPT_INJECT", bool)
+
 def prompt_spec(dept, trigger):
     """{'tasks', 'key', 'propose', 'must'} of a creative run ({} when the run has no prompt spec)."""
     return dict(PROMPT.get(dept, {}).get(trigger) or {})

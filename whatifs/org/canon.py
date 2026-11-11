@@ -104,6 +104,21 @@ def required(rs, dept="D4", at=None, now=None):
     nc = newest_case(rs, at, now) if dept == "D4" else None
     return {"cast": cast, "case": nc["id"] if nc else ""}
 
+GENERIC = {"case", "cases", "verdict", "witness", "twist", "grimm", "prototype", "failed", "promised", "next", "inspector", "vale", "nana", "rosa", "split",
+           "nobody", "outright", "archivist", "court", "charge", "charged", "accused", "judge", "jury", "exhibit", "trial", "defendant", "record", "records"}
+
+def topic_words(r):
+    """What makes one case THIS case: its topic words (premise and charge), or for an older mirrored case the specific words of its title and summary."""
+    if r is None: return set()
+    tags = {t for t in (r.get("topic_tags") or []) if t not in ("canon", "case", CASE_TAG, "vale", "grimm", "split") and not str(t).startswith("aired-")}
+    words = {w for w in tags if re.fullmatch(r"[a-z]{4,}", w)} or {w for w in re.findall(r"[a-z]{5,}", (r.get("title", "") + " " + r.get("summary", "")).lower())}
+    return {w for w in words if w not in GENERIC and w not in PAL._STOP and w not in _WEAK}
+
+def names_case(quote, r):
+    """Does a callback line name its case? At least one of the case's own topic words (stem match: 'pillow' matches 'pillows') is in the line."""
+    q = set(re.findall(r"[a-z]{4,}", str(quote or "").lower())); tw = topic_words(r)
+    return bool(tw) and any(any(x.startswith(w[:6]) or w.startswith(x[:6]) for x in q) for w in tw)
+
 def must_cite(dept, items, rs, now=None):
     """The continuity debt of this run: the newest aired case, when it is in the playbook (D4, CANON_CALLBACK_ON)."""
     if dept != "D4" or not S("CANON_CALLBACK_ON", bool): return []
@@ -138,6 +153,8 @@ def episode_issues(ep, script_text, st=None, now=None):
         q = next((c.get("where") for c in (act.get("citations") or []) if c.get("id") == req["case"]), None)
         if not q: p.append(f"the continuity debt was not paid: the newest aired case {req['case']} is not cited by the writer")
         elif not CITE.found(q, CITE.tokens(script_text)): p.append(f"the callback to {req['case']} is not in the final script (quoted: '{str(q)[:80]}')")
+        elif not names_case(q, PAL.get(req["case"], st=st, rs=rs)):
+            p.append(f"the line cited as the callback to {req['case']} does not name that case (it shares none of: {', '.join(sorted(topic_words(PAL.get(req['case'], st=st, rs=rs)))[:6])})")
         else: res["stats"]["callback"] = str(q)[:80]
     rec = PAL.get(case_id(ep), st=st, rs=rs)
     if rec is None: p.append(f"no case record for {ep}: D4 did not write its continuity takeaway")

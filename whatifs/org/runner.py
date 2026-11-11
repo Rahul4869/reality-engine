@@ -233,7 +233,8 @@ def run(dept, trigger, act, *, episode="", topic="", stage=None, context=None, m
             if cap is not None and REG.spent(dept, st, t0) >= cap:
                 _cap_message(dept, cap, t0); raise CapReached(f"{dept} has used its monthly thinking cap of Rs {cap:.0f}; P1 / P2 work waits for next month")
         mode = REG.inject(dept, trigger) if not legacy else REG.DEPTS[dept]["inject"]       # legacy = an owner-approved draft written before B6a: judged as written then
-        sid = _sid(dept, trigger, episode, key, len(prior) + 1); R = _Run(sid, dept, mode, REG.DEPTS[dept].get("inject_tasks", ()), REG.prompt_spec(dept, trigger) if mode == "prompt" else None)
+        spec = REG.prompt_spec(dept, trigger) if (mode == "prompt" and not legacy and REG.inject(dept, trigger) != REG.DEPTS[dept]["inject"]) else None     # a B6a creative run: only its named calls
+        sid = _sid(dept, trigger, episode, key, len(prior) + 1); R = _Run(sid, dept, mode, REG.DEPTS[dept].get("inject_tasks", ()), spec)
         st.append(STAB, [{"id": sid, "key": key, "dept": dept, "trigger": trigger, "episode_id": episode, "attempt": len(prior) + 1, "status": "running", "started": iso(t0),
                           "budget": budget, "inject": R.mode}])
         inbox = MEM.inbox(dept, st, t0); overdue = sum(1 for m in inbox if (parse_iso(m["sla_due"]) or t0) < t0)

@@ -10,7 +10,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `fal-ai/kling-video/o3/standard/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 1.5 standalone Shorts a day; spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 118 code modules, 713 settings, 82 Sheet tabs, 24 GitHub workflows.
+- Size: 118 code modules, 714 settings, 82 Sheet tabs, 24 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -198,7 +198,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 |---|---|---|
 | PALACE_ON | TRUE | TRUE = the Knowledge Palace is kept up (founding knowledge, expiry, size caps, mirrors of the learning core and the show records) and check palace_health runs on every episode [FALSE = the Palace is left untouched and the check does not apply] |
 | PALACE_PLAYBOOK_TOKENS | 1800 | hard cap, in estimated tokens, of the knowledge block one department receives from the Palace before it acts (200-6000) |
-| PALACE_PLAYBOOK_TOKENS_BY_DEPT | (blank) | optional JSON {department id: cap} that overrides PALACE_PLAYBOOK_TOKENS for single departments, e.g. {"D4": 2400} |
+| PALACE_PLAYBOOK_TOKENS_BY_DEPT | {"D4": 2400} | optional JSON {department id: cap} that overrides PALACE_PLAYBOOK_TOKENS for single departments, e.g. {"D4": 2400} |
 | PALACE_LIMITS_SHARE | 0.4 | share of every department playbook reserved for limits (the owner's words, policy rules, failure lessons); limits are always served first (0.1-0.9) |
 | PALACE_REVIEW_DAYS | (blank) | optional JSON {kind: days} that overrides how long an item stays valid before it must be re-validated (defaults: REVIEW_DAYS in whatifs/org/palace.py; 0 = never) |
 | PALACE_KIND_CAPS | (blank) | optional JSON {kind: most served items}; over the cap the lowest-value item of that kind is expired by code (defaults: KIND_CAPS in whatifs/org/palace.py) |
@@ -466,8 +466,8 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Every wired department run loads its playbook (section 11). Not yet wired (later batches): the playbook inside the creative departments' model
   prompts with items cited back, the Council, the Librarian's merges, outcome scores.
 
-**Founding knowledge** (126 items in `whatifs/org/seed/`; 0 invalid): breakout.json 15, build.json 51, feel.json 15, owner.json 30, platform.json 15.
-By kind: audience_insight 4, failure_lesson 1, owner_preference 26, plan 2, policy_rule 11, strategy 18, takeaway 7, technique 43, tool_fact 14.
+**Founding knowledge** (132 items in `whatifs/org/seed/`; 0 invalid): breakout.json 15, build.json 57, feel.json 15, owner.json 30, platform.json 15.
+By kind: audience_insight 4, failure_lesson 1, owner_preference 26, plan 2, policy_rule 11, strategy 21, takeaway 7, technique 46, tool_fact 14.
 
 **Life cycle** (`palace.MOVES`; a move that is not listed is illegal for everyone)
 

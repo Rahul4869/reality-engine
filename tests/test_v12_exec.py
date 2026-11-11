@@ -8,6 +8,12 @@ from whatifs.org import palace as P, schemas as SC, memos as MEM, registry as RE
 from whatifs.org.schemas import MemoError
 
 H, D = dt.timedelta(hours=1), dt.timedelta(days=1)
+
+@pytest.fixture(autouse=True)
+def _engine_alone():
+    """The engine is judged on its own here: its department runs are code (no model call), so the creative departments stay in brief mode
+    (v12 B6a puts their playbook into model prompts; that path and the cited verification it needs are tested in tests/test_v12_creative.py)."""
+    core.set_setting("ORG_PROMPT_INJECT", "FALSE"); yield
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def now(): return core.now_utc()
 def today(): return core.iso()[:10]
@@ -250,10 +256,10 @@ def test_knowledge_that_no_later_run_is_served_is_retired_again(setting):
     assert P.get(iid)["status"] == "retired" and MEM.get(t["id"])["resolution"]["kind"] == "rolled_back" and ledger(t["id"])[-1]["proof"] == f"{iid}: retired"
 
 def test_a_department_whose_playbook_goes_into_the_prompt_must_cite_the_item(monkeypatch):
-    monkeypatch.setattr(REG, "inject", lambda d: "prompt"); t = ticket("D6", "A", "palace:b4-push-in", item()); T = now()
-    monkeypatch.setattr(RUN.REG, "inject", lambda d: "brief"); run("D6", "plan", at=T); iid = P.item_id("b4-push-in")
-    monkeypatch.setattr(REG, "inject", lambda d: "prompt"); t2 = ticket("D6", "A", "palace:b4-second", item(title="Hold the widest shot for the verdict line", summary="The widest shot of the court is saved for the verdict line so the room reads as one."), subject="Save the wide shot for the verdict")
-    monkeypatch.setattr(EXE.REG, "inject", lambda d: "prompt"); EXE.apply(MEM.get(t2["id"]), now=T); monkeypatch.setattr(REG, "inject", lambda d: "brief")
+    t = ticket("D6", "A", "palace:b4-push-in", item()); T = now()
+    run("D6", "plan", at=T); iid = P.item_id("b4-push-in")                                  # (this file runs with ORG_PROMPT_INJECT off: the engine is judged on its own)
+    monkeypatch.setattr(REG, "prompted", lambda d: True); t2 = ticket("D6", "A", "palace:b4-second", item(title="Hold the widest shot for the verdict line", summary="The widest shot of the court is saved for the verdict line so the room reads as one."), subject="Save the wide shot for the verdict")
+    EXE.apply(MEM.get(t2["id"]), now=T); monkeypatch.setattr(REG, "prompted", lambda d: False)
     assert trow(t["id"])["need"] == "served" and trow(t2["id"])["need"] == "cited"; i2 = P.item_id("b4-second")
     run("D6", "assets", at=T + H); moved = EXE.reconcile(now=T + 2 * H)["moved"]; assert moved == {t["id"]: "applied -> verified"}          # served is not enough for the second
     run("D6", "render", at=T + 3 * H, act=lambda b: RUN.Out({"x": 1}, applied_items=[i for i in b.take()["items"] if i == i2]))
@@ -484,7 +490,7 @@ def decision(tickets, cls="B", **k):
 
 def test_decisions_executed_passes_on_real_tickets_and_fails_on_text_only_decisions():
     assert {(f[0], f[1]) for f in CON.FEATURES} >= {("decisions_executed", "script"), ("lever_verified", "script")} and REG.check_owner("decisions_executed") == "C" and REG.check_owner("lever_verified") == "D12"
-    assert sum(1 for f in CON.FEATURES if f[1] == "script") == 25 and sum(1 for f in CON.FEATURES if f[1] == "final") == 19
+    assert sum(1 for f in CON.FEATURES if f[1] == "script") == 28 and sum(1 for f in CON.FEATURES if f[1] == "final") == 19          # v12 B6a: + palace_injected, palace_cited, canon_in_brief
     s, ev = CON.p_decisions_executed({}); assert s == CON.NA and "nothing to execute" in ev and CON.p_lever_verified({})[0] == CON.PASS          # nothing decided yet: not a PASS (the lever table is still judged)
     t, T = applied_setting(); d = decision([t["id"]]); s, ev = CON.p_decisions_executed({}); assert s == CON.PASS and ev.startswith("1 decision(s), 1 ticket(s): none is text only; 1 open")
     d2 = decision([], subject="Change the camera style for the cold open"); assert CON.p_decisions_executed({})[0] == CON.PASS                # inside the two hours in which its tickets may still arrive

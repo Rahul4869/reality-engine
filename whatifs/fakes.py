@@ -73,8 +73,11 @@ def fake_cite(res, system):
         parts.insert(k, "[DIRECTOR] [calm] " + line); out["script"] = "\n".join(parts); cites.append({"id": iid, "where": line})
     q = _quote(out)
     if q:
-        first = next((i for i, _st, _t in lines if i not in must), None)
-        if first: cites.append({"id": first, "where": q})
+        free = [(i, t) for i, _st, t in lines if i not in must]
+        words = set(re.findall(r"[a-z]{4,}", json.dumps(out).lower()))
+        near = max(free, key=lambda x: len(set(re.findall(r"[a-z]{4,}", x[1].lower())) & words), default=None)      # the line closest to what it wrote
+        for iid in dict.fromkeys([x[0] for x in free[:1]] + ([near[0]] if near and set(re.findall(r"[a-z]{4,}", near[1].lower())) & words else [])):
+            cites.append({"id": iid, "where": q})
     if cites: out["applied_items"] = cites
     if "PROPOSAL (optional" in s:
         out["proposal"] = {"kind": "world_building", "idea": "Dr. Grimm keeps a jar of every failed prototype's last spark on his desk; each case, one more jar lights up.",

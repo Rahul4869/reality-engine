@@ -125,9 +125,9 @@ def cap_for(dept):
 def limits_share():
     return max(0.1, min(0.9, S("PALACE_LIMITS_SHARE", float)))
 
-def canon_share():
-    """v12 B6a: share of a playbook reserved for the show's canon (cast first, then the newest aired cases), after the limits."""
-    return max(0.05, min(0.6, S("PALACE_CANON_SHARE", float)))
+def canon_tokens():
+    """v12 B6a: the canon's own budget (the cast, then the newest aired cases), spent ON TOP of the department's cap."""
+    return int(max(100, min(2000, S("PALACE_CANON_TOKENS", float) or 700)))
 
 def aired(r):
     """When a case record went on air (its 'aired-YYYYMMDDHHMM' tag, written by whatifs/org/canon.py), as a sortable number; 0 = never / not a case."""
@@ -675,8 +675,8 @@ def playbook(dept, stage=None, topic="", rs=None, record=True, cap=None, now=Non
             if r["id"] not in chosen and used[0] + cost[r["id"]] <= budget: chosen.add(r["id"]); used[0] += cost[r["id"]]
     lim = [r for r in ranked if _lane(r) == 0]; canon = [r for r in ranked if _lane(r) == 1]; rest = [r for r in ranked if _lane(r) > 1]
     take(lim, min(cap, base + int(cap * limits_share())))
-    take(canon, min(cap, used[0] + int(cap * canon_share())))            # v12 B6a: the cast, then the newest aired cases, inside their own share
-    take(rest, cap); take(lim, cap); take(canon, cap)
+    u0 = used[0]; take(canon, u0 + canon_tokens()); extra = used[0] - u0    # v12 B6a: the cast, then the newest aired cases, on their own budget
+    cap += extra; take(rest, cap); take(lim, cap)
     picked = [r for r in ranked if r["id"] in chosen]
     out = {"playbook_id": "", "dept": dept, "stage": stage, "topic": str(topic or "")[:120], "text": "", "items": [], "refs": [], "tokens": 0, "cap": cap,
            "palace_hash": palace_hash(rs), "considered": len(cands), "left_out": len(cands) - len(picked),

@@ -7,6 +7,12 @@ from whatifs import core, contract as CON, models as M, notify as NT, prompts as
 from whatifs.org import DEPARTMENTS, palace as P, schemas as SC, memos as MEM, registry as REG, runner as RUN, wraps as WR
 from whatifs.org.schemas import MemoError
 
+@pytest.fixture(autouse=True)
+def _contract_alone():
+    """The six-step contract is judged here with departments whose work is code (no model call), so the creative runs stay in their base mode
+    (v12 B6a puts their playbook into model prompts; that path is proven in tests/test_v12_creative.py and by the rehearsal)."""
+    core.set_setting("ORG_PROMPT_INJECT", "FALSE"); yield
+
 H = dt.timedelta(hours=1)
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def now(): return core.now_utc()
@@ -322,7 +328,7 @@ def test_prompt_mode_puts_the_playbook_into_the_models_prompt_and_proves_it(monk
         assert r.ok and pb["text"] in str(got) and isinstance(got, PR.Packed) and pb["text"] in got.glob and got.role == "ROLE: write\n"      # in the cached layer, layers kept
         act = next(x for x in r.receipts if x["step"] == "ACT"); assert act["injected"] == "in 1 model prompt(s)" and act["model_calls"] == 1
         r2 = RUN.run("D4", "write", lambda b: M.ask("pilot", "plain system", "p2", fake_key="pilot"), episode="EP1", measure=lambda o: {"lines": 3})
-        assert r2.ok and str(seen[-1]).startswith(pb["text"]) and str(seen[-1]).endswith("plain system")
+        assert r2.ok and str(seen[-1]).lstrip().startswith(pb["text"]) and str(seen[-1]).endswith("plain system") and pb["text"] in seen[-1].glob      # v12 B6a: a plain prompt gets the playbook as its cached first layer
         with pytest.raises(RUN.ContractBreach, match="no model call of this run carried the playbook"):
             RUN.run("D4", "write", lambda b: (b.take(), {"x": 1})[1], episode="EP1", measure=lambda o: {"lines": 3})          # taking it is not enough in prompt mode
         n = len(seen); M.ask("pilot", "outside any run", "p3", fake_key="pilot"); assert seen[n] == "outside any run"          # no run in flight: prompts are untouched
@@ -457,7 +463,7 @@ def test_the_registry_is_honest_about_what_runs_under_the_runner(tmp_path):
     assert set(REG.ENTRY) | set(REG.PENDING) == set(DEPARTMENTS) and not set(REG.ENTRY) & set(REG.PENDING)
     assert set(REG.PENDING) <= {"D0", "D1", "D2", "D3", "D11", "C", "L"}, "the pending list may only shrink: wire the department, never add one back"      # v12 B4: D12 is wired
     os.makedirs(tmp_path / "whatifs" / "org"); src = open(os.path.join(ROOT, "whatifs", "episode.py"), encoding="utf-8").read()
-    shutil.copy(os.path.join(ROOT, "whatifs", "cli.py"), tmp_path / "whatifs" / "cli.py"); shutil.copy(os.path.join(ROOT, "whatifs", "org", "execute.py"), tmp_path / "whatifs" / "org" / "execute.py")
+    shutil.copy(os.path.join(ROOT, "whatifs", "cli.py"), tmp_path / "whatifs" / "cli.py"); shutil.copy(os.path.join(ROOT, "whatifs", "org", "execute.py"), tmp_path / "whatifs" / "org" / "execute.py"); shutil.copy(os.path.join(ROOT, "whatifs", "preview.py"), tmp_path / "whatifs" / "preview.py")      # v12 B6a: pre-production writing is a D4 call site
     cut = src.replace('ORG.work("D5", "package", ep, lambda b: ROOM.package(room, chs, d, ep), measure=WR.m_pkg, topic=str(room["spine"].get("premise") or ""))', 'ROOM.package(room, chs, d, ep)')
     assert cut != src; open(tmp_path / "whatifs" / "episode.py", "w", encoding="utf-8").write(cut + '\ndef extra(): ORG.work("D7", "remix", "", None)\n')
     bad = REG.entry_issues(str(tmp_path))
