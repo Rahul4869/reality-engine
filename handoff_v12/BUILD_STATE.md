@@ -179,8 +179,10 @@ What B6a leaves ready for B6b:
 **WHERE THE SESSION STOPPED (usage limit, 11 Nov 2026) - resume here, do not redo the build:**
 - DONE and pushed: research, designs, memo, build, enforce, 22 + 6 tests green, eleven deliberate breaks (all caught now; the open loop was
   caught only after the loop measure was fixed), rehearsal GREEN in F1 + S1, F2 + S2, F1 + S3, takeaway `v2c.takeaway` (152 founding items).
-- NOT DONE: (1) the full laptop suite on a frozen copy - it was started on commit 486eb41 (worktree `<scratchpad>/wt`, results in
-  `<scratchpad>/suite`) and its result was never read: run it again; (2) the sweep on a frozen copy (20 ids org on + 4 org off + 4
+- THE FULL LAPTOP SUITE on a frozen copy of 486eb41 (read after the stop): **1323 passed / 1 failed / 1 skipped** (71 test files). The one
+  failure, traced: `tests/test_v102.py::test_every_feature_has_a_probe_and_a_promise` pins the contract's stages to script and final; the new
+  stage "short" is by design - the test now allows it (passes alone). NOT re-run as a whole suite on the final commit.
+- NOT DONE: (1) the whole suite once more on the final commit (or at least on GitHub); (2) the sweep on a frozen copy (20 ids org on + 4 org off + 4
   rehearsals, and `--mode short` 20 ids); (3) GitHub Checks GREEN on the final commit; (4) steps 6-7, the open issues 81-93, the protected
   list, the batch log and NEXT = V2c-b in this file (the text is drafted in the session's scratchpad, `finish_state.py`; the facts are in the
   commit messages of 9b61ba2 and 486eb41 and in the notes folder file `V2c_handover_note.md`).
