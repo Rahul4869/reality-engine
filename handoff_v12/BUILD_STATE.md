@@ -211,6 +211,140 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
+### V2c-b2b2 - THE CUT-DOWNS (12 Nov 2026) - IN PROGRESS (steps 1-3 recorded; not built yet)
+The owner's "continue" for this batch is the start of this session. The whole binding reading order was read first (handoff `CLAUDE.md`,
+`00`, `02` in full, `01`, `03`, `06`, `04`, `05`, all of the redesign with section 11 and its end notes first, this file's head, the
+standing rules, NEXT, the V2c-b2b1, V2c-b2a, V2c-b1 and V2c-a records, every open issue 1-134, HOW TO RUN, the batch log, the repo's
+`CLAUDE.md`, `docs/CURRENT/` - `SYSTEM.md` to the end of its tab list, the rest of it is generated listings - and the hand-over note),
+then the code the batch touches: `reels.py`, `room.reels` / `past_footage`, the plan stage and `_finish` of `episode.py`,
+`manage.tick` / `release` / `_post_reel` / `_release_extra`, `specials.run` / `_publish` / `approve`, all of `release.py`,
+`pilots.py`, `herostill.make_for_episode`, `shortslab.py`, the two contract probes, `tests/paid_calls.py`.
+
+#### Step 1 RESEARCH (E = measured or the platform's own page, O = practice / vendor; every page below was read by the build session itself on 12 Nov 2026; the redesign's R1-R52 are the base)
+1. E read - YouTube Official Blog, "How to convert YouTube Shorts views into long-form channel growth", 14 Jul 2026
+   (https://blog.youtube/creator-and-artist-stories/youtube-related-videos-traffic-guide/): "The most effective tool for this is the
+   Related Videos link"; a Short clipped from a long video must "function as a standalone piece of value"; when a viewer comes over,
+   "reward them instantly" - the first 5 to 10 seconds of the long video must pay what the Short promised; a spoken pointer in the
+   Short's last 5 seconds is advised. The post gives NO number for how many viewers the link moves.
+2. E read - YouTube Help 14075157, "Add a related video to your YouTube Shorts" (no date on the page; copyright 2026): "Adding a
+   related video is only available with advanced feature access"; the target must be the channel's own video, "public or unlisted";
+   it is set in YouTube Studio, per Short. -> the pull from a Short to its long video is a HAND step (no API field: this file's
+   V2c-b2a record, research 3), and it needs the same phone verification the Shorts thumbnail needs (open issue 112).
+3. E read - YouTube Help 15824265, "Video Clips & Shorts in YouTube Studio" (no date; copyright 2026): a Short cut from a long video
+   WITH STUDIO'S OWN TOOL gets "the source video ... automatically added as a related video"; creators "won't be penalized for
+   using your content in a video clip or Short". -> the one mechanical gain of a cut-down - the link - exists only for a Short cut
+   by hand in Studio. A cut-down uploaded by code carries no link at all.
+4. E / O read - AIR Media-Tech, "Do YouTube Shorts help your long-form videos? Data from 18,000 channels", updated 28 May 2026
+   (https://air.io/en/audience-growth/do-youtube-shorts-help-your-long-form-videos-grow-data-from-18000-channels; Mar 2025 - Mar
+   2026, 11 niches; a vendor; its own words: "Correlation isn't causation"): the best mix is 25% to 40% Shorts by upload count,
+   "above 55% ... long-form performance drops"; SCIENCE is the niche where long-only channels lead (16% more subscribers at mid
+   size): "Most science YouTube Shorts are highlight clips or experiment teases that either give away the payoff entirely or stop
+   too abruptly to satisfy"; the science channels that win with Shorts "treat each one as a complete micro-argument" - "make them
+   genuinely self-contained, not a teaser that requires long-form to pay off"; "a sudden flood of YouTube Shorts ... consistently
+   poor across every niche". Its figure "from 0.04% to 0.5% Shorts-to-long-form conversion" with the Related Video field has no
+   source on the page: recorded as a claim, not as evidence.
+5. E read - Metricool, "YouTube Trends 2026", 29 Jul 2026 (https://metricool.com/youtube-trends/; 799,718 videos, 71,177 accounts;
+   "Correlation isn't causation here"): channels with no Shorts average 4,364 views a long video, with about 5 Shorts a month
+   8,789; "channels posting 35 or more Shorts a month see their long-form performance fall back" to the level of none; a Short
+   does best per post at 2 to 4 a week. (Confirms the redesign's R2 from the page itself.)
+6. E read (abstract) - Rajendran, Creusy, Garnes, "Shorts on the Rise: Assessing the Effects of YouTube Shorts on Long-Form Video
+   Content", arXiv 2402.18208, 28 Feb 2024, revised 8 Apr 2024: 250 large creators, before and after their first Short - "a
+   significant decrease in both view counts and engagement in long-form videos". Before / after, large channels only: an
+   association. -> more short uploads are not free for the long videos; three sources (4, 5, 6) point the same way.
+7. O read, weak - an Australian news outlet's own six-month test, 4 Feb 2026 (187 Shorts, 3.2 million views;
+   https://forestmedia.pages.dev/blog/2026-02-04-youtube-shorts-news-experiment-results; one unnamed outlet, a promotional page):
+   "Taking segments from longer packages and cutting them to 60 seconds almost never worked"; "Very few viewers clicked through
+   from Shorts to the main website or longer content."
+8. E read - PPC Land, 6 Jul 2025, on YouTube's rule in force since 15 Jul 2025
+   (https://ppc.land/youtube-improves-detection-systems-for-unoriginal-content/): content that is "mass-produced or repetitive"
+   earns nothing; clip compilations "with little or no narrative" are named. Nothing in it names a creator's own footage.
+9. O read, second hand - PodcastVideos, 21 Oct 2026, on a reported change of 1 Oct 2026 (it cites other outlets, no YouTube page;
+   the redesign's R26 is the same report): original Shorts get more visibility; "a sustainable Shorts workflow can still reuse
+   material from longer productions" but "selection, framing, and editorial contribution need to give each cut a clear reason to exist".
+NOT FOUND, so nothing is built on it: any measured comparison of a Short cut from a long video with a Short made for the feed; any
+measured rate at which a Short sends viewers to a long video (YouTube's own post gives none); any API field for the related-video
+link; any study of how many short uploads a month a channel of four long videos can carry (the three studies above know "about 5"
+and "35 and more" and a mix of 25% to 40%).
+AN EXPERIMENT BEFORE THE DESIGN (read from the code and counted, no run needed): what the code would upload in a month with its own
+defaults. (1) Twelve standalone Shorts through `release.py` - three native uploads each, read back. (2) SIXTEEN cut-down reels (4 a
+long video) through `manage._post_reel`: one text for every platform, "#shorts" in title and text, a "Full video" line and a
+follow / share ask spoken at the end, nothing read back. (3) EIGHT OR NINE "pilot Shorts" (`PILOTS_ON` TRUE, Wednesday and Friday;
+`pilots.run`): four stills with a push-in - a slideshow - ending on a plate "Should the jury hear this case? Comment YES. Full
+trials Tue + Sat." (4) Two special reels a month (`SPECIALS_ON` TRUE; `specials._publish`): "New trials every Tuesday and
+Saturday ... Take your seat on the jury: subscribe." About THIRTY-EIGHT short uploads a month - past the 35 at which long videos
+lose what Shorts gave them (research 5) - through FOUR doors, three of them unread, two of them stating a cadence the channel does
+not have, and all three with an ask. Only the cut-downs were on this batch's list; the pilots and the other doors were found by
+searching every call that uploads an upright video. (5) What a cut-down is: each chosen shot of the WIDE video scaled until it
+fills 9:16 - the middle 31.6% of the picture, enlarged 1.78 times - for an equal share of the length, mostly stills; it opens on a
+0.4-second cover plate; its lines are written by a paid planning call and spoken again by the voices; two of its four covers are
+paid key art. Judged by the Short's own seat it would fail `short_open` (a plate first) and `short_shape` (an ask, stills). (6) The
+long video's release is tied to it: `manage.release` runs as release 1 (SCHEDULED -> LIVE1: public check, the channel comment,
+the carousel, reel 1) and release 2 six hours later (LIVE1 -> LIVE: reel 2); reels 3 and 4 on the following days.
+#### Step 2 CREATIVITY (scores 1-5: what a viewer or the channel gains / enforceable / cost / reliability / owner effort)
+A. Keep the four cut-downs and move them onto `release.py`: 1 / 4 / 3 / 3 / 5 = 16 - 28 or more short uploads a month, each one a
+   teaser of cropped stills with an ask: the kind research 4 says fails in science, in the number research 4, 5 and 6 warn about.
+B. ONE cut-down a long video, planned by the model as today (the redesign's 4.2 point 5 as first written), through `release.py`:
+   2 / 4 / 4 / 3 / 5 = 18 - still a paid call, two paid covers and a second voice job for the weakest short video on the channel;
+   a cut uploaded by code gets no link to its long video (research 3), so it cannot do the one thing it is for.
+C. (ORIGINAL) A cut made by code from what is paid: the long video's three animated scenes with their own sentences, upright,
+   through `release.py` as its own kind: 2 / 4 / 5 / 3 / 5 = 19 - free, but fifteen seconds of three unconnected peaks is no
+   "standalone piece of value" (research 1) and code cannot check that it is; the wide scene keeps a third of its picture; it
+   would need a second, lower standard for "a Short" beside the seat the owner asked for (item 20: never a by-product).
+D. A second standalone Short on the topic at the long video's launch, made by the Shorts Studio: 3 / 4 / 2 / 4 / 5 = 18 - a real
+   Short, at the full price of one (about Rs 290), for a topic that already had its shot; it takes a slot from a new topic.
+E. (ORIGINAL, CHOSEN) THE SHORT THE VIEWERS CHOSE IS THE PULL, AND THERE IS ONE DOOR: no cut-down is made at all. A topic already
+   has the Short that real viewers picked; the long video opens on its footage and its hook (V2c-b2b1 - exactly what YouTube's own
+   post asks of the first seconds). The pull from that Short to its long video is YouTube's "most effective tool", the related-video
+   link, which only a hand can set: it stays the first line of the one-minute release card (V3) and is never called done by the
+   machine. Everything that made, voiced, covered, counted, checked and posted cut-downs is REMOVED; the long video's release
+   becomes one step. And because the count only means something when it is true: every upload of an upright video goes through
+   ONE door (`release.py`) - the three older doors that were found (pilot Shorts, special reels, the hero-still Short and the
+   audio-drop Reel) are switched off by default, named on a list that may only shrink, and a new door fails the build:
+   4 / 5 / 5 / 5 / 5 = 24.
+#### Step 3 DESIGN MEMO
+- WHAT THE CHANNEL POSTS: twelve short videos a month - the standalone Shorts of the cadence (plus one follow-up of a winner) - each
+  as three native uploads through `release.py`, and four long videos: 16 uploads, 4 a week, the redesign's own plan (11.10). No
+  cut-down, no pilot Short, no special reel goes out unless the owner himself switches one back on.
+- THE CUT-DOWNS ARE GONE, not switched off: `room.reels` (the paid planning call), `room.reel_count` / `reel_style` /
+  `past_footage`, `reels.build_reel` / `reel_lines` and the module with them, the two paid covers and the two free ones, the second
+  voice job, `manage._post_reel` / `_release_extra` / `extra_reel_due`, releases 2 to 4, the checks `shorts` and `short_covers`
+  (60 hard checks: 36 script, 18 final, 5 short, 1 release), the prompt `REEL` with its three styles, the packager's and the
+  showrunner's reel fields, the role `reels`, the cells `REELS_PER_VIDEO`, `REEL_STYLE`, `REEL1_SHORTS_ON`, `REEL2_DELAY_MIN`,
+  `REEL3_DELAY_MIN`, `REEL4_DELAY_MIN`, the sampler's draw of reel formats and its credit in the learning job.
+- THE LONG VIDEO'S RELEASE IS ONE STEP (`manage.release`): `REEL1_DELAY_MIN` minutes after its slot - is it public? (else the
+  alert and the wait, as today) -> the channel comment -> the carousel of a trial -> LIVE. A row an older job left in LIVE1 is
+  closed to LIVE by the next tick and nothing is posted for it.
+- ONE DOOR (`whatifs/truth.py`, NEW list `OLD_DOORS` beside the three lists of things that were never wired): code finds every
+  function of the pipeline that uploads an upright video (`yt_upload(short=True)`, `ig_reel`, `fb_reel`). Outside `release.py`
+  only the listed ones may exist - `specials._publish`, `pilots.run`, `herostill.make_for_episode`, `insights.post_drop` - each
+  with what is true today (off by default; what must happen before it may come back: through `release.py`); the list may only
+  shrink; a new door fails Plan Guard, the tests and check `docs_current`.
+- THE OLDER TRACKS ARE PAUSED BY DEFAULT (the redesign's 4.7 FOCUS, decided on 11 Nov 2026 and never executed in code: "until a
+  long video of the new code reaches 1,000 views, everything that is not the core is paused"): `PILOTS_ON` FALSE (the ladder
+  tests a topic with a real Short; a pilot is four stills and an ask), `SPECIALS_ON` FALSE (their Rs 300 earmark returns to
+  production by the governor's own rule). The cast intro stays a hand-started workflow behind the owner's Approve.
+- A LIVE SHEET IS MOVED ONCE (`manage.v12v2cb2b_upgrade`): the rows of the retired cells are marked RETIRED in their notes;
+  `PILOTS_ON` and `SPECIALS_ON` are set to FALSE where they still hold the old default, with the reason in the note.
+- TRUTH: retired rule `cutdown_reels` - a current doc, a docstring or a prompt that speaks of Shorts cut from the long video as
+  something the code makes fails Plan Guard, the tests and check `docs_current`.
+- CHANGED FROM THE REDESIGN, with reasons: 4.2 point 5 "one more Short is cut from its best moment" is NOT built. 11.4, written
+  later and the binding section, says a Short is "never a trailer, never a cut-down"; 11.10 counts 16 uploads a month with no
+  cut-down among them; the one thing a cut-down does for its long video - the link - a code upload does not get (research 3);
+  and the evidence found says a teaser cut from a long video is what fails in science (research 4, 7).
+- NOT ADOPTED, on purpose: YouTube's advice of a spoken pointer in a Short's last five seconds (research 1). A Short is made one to
+  two weeks before a long video about it exists, two Shorts in three never get one, and the Short's own rule is no ask (item 20).
+- HYPOTHESIS: H24 a long video whose Short was linked to it by hand gets more of its first-week views from the Shorts feed than
+  one whose Short was not (Analytics traffic source; the learning job already reads it).
+- MONEY, said before the build (prices from the Settings cells, not measured): a long video no longer pays the cut-downs'
+  planning call (one call on the editing model, about Rs 5-8), two premium cover pictures (about Rs 7 each at the premium
+  price cell) and four short voice jobs (about two minutes of speech, about Rs 5): about Rs 25 a long video, about Rs 100 a
+  month. With the special reels paused their Rs 300 earmark is production money again; the pilots' Rs 40 a month is not spent.
+  Nothing new is paid. The paid-call counter must show the removed calls before any of this is claimed as done. The known gap
+  stays: at today's clip price twelve Shorts a month do not fit beside four long videos (open issue 83, V2d).
+- NOT IN THIS BATCH, on purpose: the release card with the link (V3); rebuilding the special reels, the cast intro, the pilots
+  and the hero-still reel on `release.py` or deleting them (a new open issue - the batch that prepares the pilot decides which
+  of them the channel still wants); the cost model (V2d).
+
 ### V2c-b2b1 - THE OPENING (12 Nov 2026) - ACCEPTED (final code commit 22103cb GREEN in GitHub Checks run 126: 1416 passed; sweep 58 of 58 ids)
 The owner: "continue in new session" (12 Nov 2026, item 21 of `02`). V2c-b2b was SPLIT AT ITS START (rule 6; the note is at the top of
 NEXT): V2c-b2b1 is the long video's opening made of its Short's footage; V2c-b2b2 is the end of the cut-down reels as a product.
