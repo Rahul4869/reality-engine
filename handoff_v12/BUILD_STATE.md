@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 12 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026 - V2c-b was split at its start, V2c-b2 is next). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 12 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026, V2c-b2a THE PLATFORMS ACCEPTED on 12 Nov 2026 - V2c-b2 was split at its start, V2c-b2b THE OPENING AND THE CUT-DOWNS is next). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -197,9 +197,14 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
-### V2c-b2a - THE PLATFORMS (12 Nov 2026) - IN PROGRESS (not accepted; steps recorded as they finish)
-The owner: "continue in new session" (12 Nov 2026). V2c-b2 was SPLIT AT ITS START (rule 6; the note is at the top of NEXT): V2c-b2a is how a
-finished Short reaches YouTube, Instagram and Facebook and what proves it; V2c-b2b is the long video's opening and the cut-down reels.
+### V2c-b2a - THE PLATFORMS (12 Nov 2026) - ACCEPTED (final code commit 3619c81 GREEN in GitHub Checks run 117: 1392 passed; sweep 58 of 58 ids)
+The owner: "continue in new session" (12 Nov 2026). V2c-b2 was SPLIT AT ITS START (rule 6): V2c-b2a is how a finished Short reaches
+YouTube, Instagram and Facebook and what proves it; V2c-b2b is the long video's opening and the cut-down reels (NEXT is written for it).
+WHY THE SPLIT, by dependency: the batch held two machines that share no code. (a) THE SHORT'S SIDE - `publish.py`, `shorts2.run`, the
+approve path, the Short's record. (b) THE LONG VIDEO'S SIDE - the hook lab, `audience.shape`, `anim.pick_slots`, the assets stage, the
+checkpoint, the render, `room.reels`, `manage.release`, the rehearsal's own asserts and the many older tests that count four cut-down
+Shorts. Each half needs the full loop, the 45-minute suite, the sweep and a GitHub run; V2c-b1 alone took two sessions and met the
+weekly usage limit. (b) depends on (a): whatever stays of the cut-down reels must go out through the upload path (a) builds.
 The whole binding reading order was read first (handoff `CLAUDE.md`, `00`, `02`, `01`, `03`, `06`, `04`, `05`, all of the redesign with
 section 11 first, this file's head, the standing rules, NEXT, the V2c-b1 and V2c-a records, every open issue 1-110, HOW TO RUN, the batch
 log, the repo's `CLAUDE.md`, all of `docs/CURRENT/`, the two hand-over notes), then the code the half touches: `publish.py`, `shorts2.py`,
@@ -386,7 +391,7 @@ E. (ORIGINAL, CHOSEN) THE RELEASE SHEET AS DATA, WITH A RECEIPT FOR EVERY ROW: o
 | Nothing is posted twice | a record with a native id is only read back | three tests count the uploads |
 | MADE is a field | `shorts2._made`, `_keep_master`, `manage.v12v2cb2_upgrade` | tests (any status with the field counts; none without it) |
 | The file fits the platform or is not sent there | `release.fit` | tests (95 s: not to Facebook; 200 s: not to YouTube and the check fails) |
-#### Step 6 PROVE (in progress - what is written here is done; what is owed is named at the end)
+#### Step 6 PROVE
 - FOUND BY THE BREAK LIST, BEFORE ANY BREAK RAN (the list is written as "what would fail if this line went?"): (1) THE CHECK COULD PASS A
   SHORT THAT NEVER REACHED YOUTUBE. `release.report` excused every platform whose record said "not connected" - YouTube too - and its
   test passed for another reason (an Instagram row I had left WAITING a line earlier made the check fail anyway). YouTube is the
@@ -451,8 +456,37 @@ E. (ORIGINAL, CHOSEN) THE RELEASE SHEET AS DATA, WITH A RECEIPT FOR EVERY ROW: o
   (2) a Reel that Instagram refuses with its cover image is sent once more on the promise frame inside the same try; a test makes the
   stand-in platform refuse every Reel that carries a cover link and finds the Reel up, its cover receipt saying "promise frame".
   `tests/test_v12_release.py`: 34 passed. All 63 breaks run again on this code: 63 of 63 failed a test, every file restored.
-- OWED on the final code commit: the rehearsal in F1 / F2 with Shorts in S1 / S2 / S3 again; the full suite and then the sweep on a
-  frozen copy; GitHub's Checks.
+- Fake rehearsal on a frozen copy of the FINAL code commit 3619c81: **GREEN three times** - F1 with Shorts in S1 (EP202611120325), F2
+  with S2 (EP202611120327), F1 with S3 (EP202611120331): every long format and every Short format. Each: a long video refused first
+  (nothing spent), two Shorts made and RELEASED ("short gate 5 / 5; release sheet 1 / 1 on 3 platforms; 7 department runs"), their
+  numbers read, one promoted by the rule, the long video about it (script 35 of 35, final 19 of 19).
+- Full suite on the same frozen copy of 3619c81: **1391 passed / 0 failed / 1 skipped** (73 test files; the skip is the dashboard test
+  that needs node - GitHub runs it). 1358 before, 34 new, 1 gone by design.
+- GitHub Checks (standing rule 1): run **117** on 3619c81 **GREEN**: 1392 passed (41:06), rehearsal GREEN (episode EP202611120406;
+  contract script 35/35, final 19/19); its one warning and its notices are GitHub's own (Node.js 20, the Ubuntu label - open issues
+  37 and 46). Runs 113 (e31b526), 114 (2e65fc4), 115 (7e416b8, the first commit with the new path) and 116 (8975c63) GREEN too:
+  no run of this batch was red.
+- Plan Guard GREEN, Truth GREEN, Palace GREEN (167 founding items), Organisation GREEN (12 wired, 5 pending), docs regenerated
+  without drift.
+- Money: Rs 0 spent (fake mode). The release adds NO paid call: `tests/paid_calls.py` is unchanged and green in the suite, and the
+  production test counts none (no text call, no picture, no clip) and no new Cost_Log row on a second pass. In production a Short's
+  release is API quota only: about 100 units for the upload (its own bucket), 50 for the thumbnail, about 100 for the playlist, 1 to
+  3 a read-back - about 250 of the 10,000 a day, three times a week - and one post each of Meta's 100 (Instagram) and 30 (Facebook)
+  a day. The estimate of a Short itself is unchanged (about Rs 290 at today's clip price, open issue 83): twelve a month still do
+  NOT fit beside four long videos until V2d chooses the clip model by value.
+- Sweep on the same frozen copy of 3619c81, after the suite had finished: **58 of 58 ids**. No bad id, no failure class. A: 20 ids,
+  organisation on - every id climbed the ladder first (its own Short made a week ago and RELEASED through the new path, its numbers
+  read, the promotion) and its long video was scheduled: 13 drew F1 (41 pass + 13 not applicable of 54 checks), 7 drew F2 (48 pass +
+  6 not applicable) - the split and the counts of V2c-b1, so the long video is untouched; 11 department runs each. B: 4 ids,
+  organisation off - 4 ok, each climbed. C: 4 full rehearsals with a fixed id - 2 in F1, 2 in F2. D (`--mode short`): 20 ids, two
+  Shorts each, BOTH RELEASED - the first made while uploads were closed (made, counted, waiting; its local file deleted; sent from
+  its Drive copy when the check passed), the Short under test at once, on 9 of the 20 ids by the owner's Approve; the Short under test:
+  11 in S1, 9 in S2, every one 6 of 6 checks (5 at the short gate, 1 at the release gate), 7 department runs, three platforms DONE,
+  no memo left open, no warning. E: 10 more ids forced to S3 - 10 of 10, 6 of them by Approve. The warnings of A to C are the classes
+  the offline long video has always printed (the stand-in voices, the atmosphere's time valve - issue 26, the prompt-cache note -
+  issue 23, the offline writers' retention fix, the script length; in the rehearsal also its own later scenes: the table-read room
+  "script N% similar to EPTABLE", a reel given up, a repaired show plan); none comes from the release. NOT covered by the sweep: a
+  platform that fails, drift, a refused thumbnail, a file that does not fit (open issue 121).
 #### Step 7 TAKEAWAY (also Palace item `v2cb2.takeaway`)
 - WORKED: reading the platform's own page before the design, a third time. One sentence of YouTube's thumbnail reference ("only after
   the video has finished processing ... might not be applied") turned "set the thumbnail at upload" into a row that waits and a
@@ -2662,6 +2696,18 @@ Rehearsal asserts `docs_current` ran and passed.
   (deterministic particle seed).
 
 ## PROTECTED-AREA FILES TOUCHED SO FAR (list them in the final PR)
+- V2c-b2a: `whatifs/release.py` (NEW; on the protected list from its first commit), `whatifs/publish.py` (three pure request-body
+  functions - `yt_body`, `ig_reel_params`, `fb_reel_finish` - that the uploads now send through; three read-backs - `yt_read`,
+  `ig_read`, `fb_read`; the offline stand-in platform; `ig_reel` / `fb_reel` take new optional arguments - an older caller's request
+  is byte for byte what it was, a test proves it; `verify_upload` unchanged and still behind every YouTube upload),
+  `whatifs/shorts2.py` (`_made` reads the field; `cover`, `_keep_master`, `_hand_over`; the record is written the moment the file is
+  kept; `UPLOAD_HOLD` gone), `whatifs/contract.py` (1 check added at a NEW stage "release", `release_sheet`; no existing check
+  changed), `whatifs/manage.py` (`release.settle` on the tick; `v12v2cb2_upgrade` at both setup sites), `whatifs/core.py` (tab
+  `Release_Sheet`; 3 columns appended to `Specials`; 9 cells in, none out, no default changed), `whatifs/ladder.py` (`went_public`;
+  a Short that is made and never public is PASSED with the window), `whatifs/org/registry.py` / `levers.py` / `rnd.py` (D9 wraps
+  `release.py`; entries D9 `short_publish` and D8 `release_gate`; 2 levers of D9, neither costs money nor weakens a gate; SHOW_CHECKS
+  49), `tools/repair.py` (the list itself). MONEY: no paid call added; `tests/paid_calls.py` unchanged. Not on the list and changed:
+  `whatifs/specials.py` (`approve` hands a Short to Publishing), `tools/rehearsal.py`, `tools/sweep.py`, `tools/gen_docs.py`.
 - V2c-b1: `whatifs/ladder.py` (NEW; on the protected list from its first commit), `whatifs/contract.py` (1 check added at the script
   gate, `topic_ladder`; no existing check changed), `whatifs/episode.py` (`produce` asks the ladder gate before its first paid call; the
   draw carries `ladder`; `ladder.use` once the plan is saved), `whatifs/preview.py` (no draft without the gate), `whatifs/room.py`
@@ -3157,7 +3203,8 @@ Rehearsal asserts `docs_current` ran and passed.
 | V2a | done 11 Nov 2026 | 1302 / 0 / 1 (laptop); GitHub 1303 passed (run 91) | GREEN in F1 and in F2 (53 checks) | Formats as data and the three-tier contract: every episode has a format (F1 "The day it changed" 70, F2 "The trial" 30; shares are levers of D1), the trial layer, the briefs, the juries and the production follow it; a format can make a show device optional or leave it out and nothing else; new check format_kept (53 hard checks), 3 levers (51). GitHub run 91 GREEN on 75c55ea; sweep 28 of 28 (15 episodes in F1, 9 in F2, 4 rehearsals). |
 | V2c-a | done 11 Nov 2026 | 1323 / 1 / 1 on 486eb41, the 1 corrected (laptop); GitHub 1325 passed (run 99) | GREEN in F1 / F2 with a Short in S1 / S2 / S3 (53 + 5 checks) | The Short as a product: department D14 Shorts Studio; Short formats as data (S1, S2, S3); `shorts2.py` rebuilt - one guide voice, every second a clip planned by code, the loop closed by code, no plate; the viewer's seat for a Short (`shortseat.py`) and 5 checks at a new stage "short" (58 hard checks), 12 levers (63); a held Short is not made. V2c was split at its start. GitHub run 99 GREEN on 3b34cc3; sweep 58 of 58 ids. |
 | V2c-b1 | done 12 Nov 2026 | 1358 / 0 / 1 on 3ab0e16 (laptop); GitHub 1359 passed (run 110) | GREEN in F1 / F2 with Shorts in S1 / S2 / S3 (54 + 5 checks) | The ladder: every topic starts as a Short (3 a week, 12 a month, 48 hours apart); YouTube's true numbers are read by processed day (they are 48 to 72 hours late) and public views at the 24-hour and 48-hour mark; D10's promote rule (code, never a model) picks the long video's topic and a long video without a promoted Short or an owner override is refused before any money (new tab `Ladder`, check `topic_ladder`: 59 hard checks); a winner gets ONE follow-up ordered by code with a 48-hour clock, overdue = a memo; 6 levers in, 1 out (68). V2c-b was split at its start. The sweep found what a green suite and four green rehearsals had hidden: on a new Sheet no video could ever have been made - and three faults in what counts as a made Short; all fixed at the cause, 42 deliberate breaks. GitHub run 110 GREEN on 3ab0e16; sweep 58 of 58 ids. Runs 104-106 RED = three tests that pinned what the batch changed by design, corrected. |
-| V2c-b2 | next | | | The platforms and the opening: one native upload per platform under a D9 run, the Shorts rows of the release sheet read back, the long video's opening made from the kept footage of its Short, the cut-down reels stop being the product |
+| V2c-b2a | done 12 Nov 2026 | 1391 / 0 / 1 on 3619c81 (laptop); GitHub 1392 passed (run 117) | GREEN in F1 / F2 with Shorts in S1 / S2 / S3 (54 + 5 + 1 checks) | The platforms: a finished Short goes out as three native uploads of ONE master file under Publishing's own run (new `whatifs/release.py`, D9 `short_publish`) - YouTube Shorts (its own thumbnail, set only after YouTube has processed the video; the playlist of its format), Instagram Reels (a Trial Reel, its cover, the audio named after the series, the AI label), Facebook Reels (90 seconds at most); each under its own words, none with an ask. The release sheet is data (who sets each row, how it is proven), every request body a pure function, every platform read back and every row given a receipt on new tab `Release_Sheet` (kept, fixed, drift, sent only, waiting, refused, skipped, off); a pass on every tick finishes what waits; a release gate after the uploads (D8 `release_gate`, new check `release_sheet` at new stage "release": 60 hard checks); `made` is a field of the Short's record (the status-text match is gone); 2 levers (70). V2c-b2 was split at its start. Found and fixed: an approved Short would have gone out under the special reels' text; a Short made while uploads were closed lost its file; a check that could pass a Short which never reached YouTube; a second upload after a cut-off; the sweep had never published a Short. 63 deliberate breaks, each failed a test. No paid call added. GitHub run 117 GREEN on 3619c81 (no run of the batch was red); sweep 58 of 58 ids. |
+| V2c-b2b | next | | | The opening and the cut-downs: the long video's opening made from the kept footage of its Short; the cut-down reels stop being the product (what stays goes out through `release.py`) |
 | V2d | after V2c | | | The motion ladder and the money: the hero model by value, the living tier, a character drawn or absent, stock rules (NASA / Pexels), the cost model |
 | V3 | after V2d | | | Pilot on real services (3 Shorts + 1 long video), the human kit, the release sheet's one-time switches, then GO LIVE with the new code |
 | V2b | after V3 | | | Inside the format: first person and camera continuity as measured rules, F1's own ending, F3 "The walk" |
