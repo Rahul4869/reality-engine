@@ -92,6 +92,12 @@ def run(ep_id=None):
         pr12 = [x for x in store().rows("Sessions") if x.get("dept") == "D10" and x.get("trigger") == "promote"]
         assert pr12 and all(x["status"] == "ok" for x in pr12) and any(x.get("kind") == "ladder" and "Next long video" in str(x.get("text")) for x in store().rows("Owner_Actions")), "the promote rule did not run as Growth and Learning's run, or the owner was not told"
         print("ladder:", used12[0]["id"], "promoted ->", epid, "|", str(used12[0]["score"])[:150], "| the other Short stays a candidate | topic_ladder PASS")
+        # v12 V2c-b2b: THE OPENING - the long video about the promoted Short opens on that Short's kept footage (laid by code under its first sentences, cut
+        # from the archive, shown through the window) and its first spoken line is the Short's own hook; both checks must PASS - 'not applicable' is a failure here.
+        op12 = {x["feature"]: x for x in st_rows("Feature_Ledger") if x.get("episode_id") == epid and x.get("feature") in ("opening_footage", "opening_shown", "hook_lab")}
+        assert all((op12.get(k) or {}).get("status") == "PASS" for k in ("opening_footage", "opening_shown", "hook_lab")) and used12[0]["id"] in str(op12["opening_shown"].get("evidence")) \
+            and "hook of Short " + used12[0]["id"] in str(op12["hook_lab"].get("evidence")), ("the long video does not open on its Short's footage or its hook", {k: (v.get("status"), v.get("evidence")) for k, v in op12.items()})
+        print("opening:", str(op12["opening_shown"]["evidence"])[:240], "| first line: the Short's hook")
         # v7.2 independent checks on the real rendered files
         from whatifs import qc as QC
         from whatifs.render import probe_dur

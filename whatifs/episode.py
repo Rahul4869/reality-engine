@@ -224,7 +224,7 @@ def anchor_shots(shots, budget, max_run=None, opening=()):
     max_run = max_run or S("FREE_SHOT_MAX_RUN", int)
     own = [i for i, s in enumerate(shots) if s["type"] in ("living", "kling")]
     stills = [i for i, s in enumerate(shots) if s["type"] == "still"]
-    left = max(0, budget - len(own)); a = set(own)
+    left = max(0, budget - len([i for i in own if not shots[i].get("short")])); a = set(own)      # v12 V2c-b2b: a shot of the Short's footage is paid already - it takes nothing from this video's picture budget
     if opening and S("OPENING_FRESH_ON", bool):               # v8.5: every opening shot gets its own picture (fast, fresh cuts while viewers decide); taken from the same budget
         op = [i for i in stills if i in set(opening)][:left]; a |= set(op); left -= len(op)
     heroes = [i for i in stills if shots[i].get("hero") and i not in a][:left]; a |= set(heroes); left -= len(heroes)
@@ -233,6 +233,8 @@ def anchor_shots(shots, budget, max_run=None, opening=()):
         step = len(rest) / min(left, len(rest)); a |= {rest[int(k * step)] for k in range(min(left, len(rest)))}
     first = next((i for i, s in enumerate(shots) if s["type"] in ("still", "graphic")), None)
     if first is not None and not (a & set(range(0, first + 1))): a.add(first)
+    foot = [i for i in own if shots[i].get("short")]             # v12 V2c-b2b: the first still after the Short's footage is a picture of the video's own, whatever the budget says -
+    if foot: a |= {i for i in [next((j for j in range(max(foot) + 1, len(shots)) if shots[j]["type"] == "still"), None)] if i is not None}      # a still never re-uses a frame of the footage
     extra = 0
     while extra < 12:                                           # repetition guard
         run_start = None; worst = (0, 0, 0)
@@ -615,7 +617,7 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
         have = _load_assets(out) if stage in ("assets", "hold") else None
         try: refresh_spend()
         except Exception: pass
-        files = ORG.work("D6", "assets", ep, lambda b: _assets(shots, units, out, ep, budget=d["stills"] + plan["living"] + plan["kling"] + len(OPEN.marked(shots)), have=have, footage=S_.get("opening")),
+        files = ORG.work("D6", "assets", ep, lambda b: _assets(shots, units, out, ep, budget=d["stills"] + plan["living"] + plan["kling"], have=have, footage=S_.get("opening")),
                          measure=lambda f_: dict(WR.m_assets(f_), **OPEN.m_cut(f_)))
         need_img = files["anchors"]; miss = [i for i in need_img if i not in files["img"]]
         log(f"images: {len(files['img'])} for {len(shots)} shots (budget {d['stills'] + plan['living'] + plan['kling']}, Kling delivered {files['delivered']['kling']}/{plan['kling']})")

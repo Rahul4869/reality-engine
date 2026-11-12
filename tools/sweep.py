@@ -47,6 +47,13 @@ def climb(core, ep):
     BR.ingest_shorts()
     return True
 
+def opening_of(core, ep):
+    """v12 V2c-b2b: (ok, words) - did the long video of a climbed id open on its Short's footage? Both checks must have PASSED: 'not applicable' on an
+    id that climbed the ladder would mean the new path was not walked."""
+    led = {r.get("feature"): r for r in core.store().rows("Feature_Ledger") if r.get("episode_id") == ep and r.get("feature") in ("opening_footage", "opening_shown")}
+    bad = [f"{k} {(led.get(k) or {}).get('status') or 'missing'}: {str((led.get(k) or {}).get('evidence') or '')[:120]}" for k in ("opening_footage", "opening_shown") if (led.get(k) or {}).get("status") != "PASS"]
+    return (not bad), ("; ".join(bad) if bad else str(led["opening_shown"].get("evidence"))[:110])
+
 # ------------------------------------------------------------------ one id (runs in its own process: module state never leaks between ids)
 def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
     os.environ.update(WI_FAKE="1", WI_SMALL="1", WI_WORK=os.path.join(work, "work"), PYTHONUTF8="1")
@@ -115,6 +122,9 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
             if r.get("ok") and r.get("episode") == ep and os.path.exists(str(r.get("master") or "")): res["outcome"] = "ok"
             elif r.get("held"): res["outcome"] = "held"
             else: res["outcome"] = "odd"; res["error"] = json.dumps(r, default=str)[:300]
+            if res["outcome"] == "ok" and res.get("ladder") == "climbed":           # v12 V2c-b2b: THE SWEEP WALKS THE OPENING - a long video that climbed must open on its Short's footage
+                ok_o, res["opening"] = opening_of(core, ep)
+                if not ok_o: res["outcome"] = "odd"; res["problems"].append("the long video does not open on its Short's footage: " + res["opening"]); res["error"] = res["opening"][:300]
         res.update(evidence(core, ep, org))
     except BaseException as e:                                                      # a crash is a result too: the last line of the traceback names it
         if isinstance(e, KeyboardInterrupt): raise
@@ -184,7 +194,7 @@ def summary(results):
         for d in r.get("degraded", []): deg.setdefault(str(d)[:90], []).append(r["id"])
         for k in r.get("owner", []): own.setdefault(k, []).append(r["id"])
         for b in r.get("runs_bad", []) + r.get("memos_open", []): fails.setdefault("org:" + b, []).append(r["id"])
-    return {"n": len(results), "outcomes": by, "bad_ids": sorted(r["id"] for r in results if r["outcome"] != "ok"), "fail_classes": {k: sorted(set(v)) for k, v in sorted(fails.items())},
+    return {"n": len(results), "outcomes": by, "opened_on_footage": sum(1 for r in results if r.get("opening") and r["outcome"] == "ok"), "bad_ids": sorted(r["id"] for r in results if r["outcome"] != "ok"), "fail_classes": {k: sorted(set(v)) for k, v in sorted(fails.items())},
             "warn_classes": {k: len(v) for k, v in sorted(warn.items())}, "degraded_classes": {k: len(v) for k, v in sorted(deg.items())}, "owner_message_kinds": {k: len(v) for k, v in sorted(own.items())}}
 
 def main(argv=None):

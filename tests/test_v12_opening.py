@@ -144,6 +144,10 @@ def test_every_opening_shot_gets_its_own_clip_as_long_as_its_sentence_through_th
         pr = REL.probe(oc["clips"][i]); assert (pr["w"], pr["h"]) == (W, H) and abs(pr["sec"] - (b[i + 1] - b[i])) <= 0.07, (i, pr)     # the frame's size, the sentence's length: the renderer plays it whole
         assert os.path.basename(oc["clips"][i]) == f"clip{i:03d}.mp4" and os.path.exists(oc["img"][i]) and oc["opening"]["units"][str(i)]["sha"] == REL.sha(oc["clips"][i])
         assert oc["opening"]["units"][str(i)]["parts"] == shots[i]["short"]["parts"]
+    import numpy as np
+    for i in (0, 1):                                                                                # slowed as the Short played it: the clip MOVES to its last frame (played at its own speed it would end early and freeze)
+        dur = b[i + 1] - b[i]; x, y = OPEN._frame(oc["clips"][i], dur - 0.30), OPEN._frame(oc["clips"][i], dur - 0.07)
+        assert float(np.abs(x.astype(int) - y.astype(int)).mean()) > 0.2, i
     f = oc["opening"]["fit"]; want = OPEN.fit(180, 320, W, H); assert f["show"] == want["show"] and f["enlarge"] == want["enlarge"] and f["ground"] is True
     import cv2
     fr = OPEN._frame(oc["clips"][0], 1.0); g = cv2.cvtColor(fr, cv2.COLOR_BGR2GRAY); side = (W - f["show"][0]) // 2; assert side > 20
@@ -155,7 +159,9 @@ def test_every_opening_shot_gets_its_own_clip_as_long_as_its_sentence_through_th
 def test_the_whole_clip_and_the_filled_frame_are_the_two_ends_of_one_window(tmp_path, setting):
     d, m, u, shots, out, oc = _cut(tmp_path, setting, fitmode="fill"); W, H = RN.out_size()
     assert oc["opening"]["fit"]["ground"] is False and oc["opening"]["fit"]["show"] == [W, H] and REL.probe(oc["clips"][0])["w"] == W    # filled: no ground
-    setting("OPENING_FIT", "whole"); oc2 = OPEN.cut(shots, u, out, m)
+    mid = oc["opening"]["units"]["0"]["sha"]; setting("OPENING_WINDOW_Y", "0"); top = OPEN.cut(shots, u, out, m)["opening"]["units"]["0"]["sha"]
+    setting("OPENING_WINDOW_Y", "1"); low = OPEN.cut(shots, u, out, m)["opening"]["units"]["0"]["sha"]; assert len({mid, top, low}) == 3      # the window sits where OPENING_WINDOW_Y says: top, middle, bottom
+    setting("OPENING_WINDOW_Y", "0.5"); setting("OPENING_FIT", "whole"); oc2 = OPEN.cut(shots, u, out, m)
     assert oc2["opening"]["fit"]["kept"] == 1.0 and oc2["opening"]["fit"]["ground"] is True and oc2["opening"]["units"]["0"]["sha"] != oc["opening"]["units"]["0"]["sha"]      # another window, another file
 
 def test_a_restored_clip_is_kept_and_a_shot_that_cannot_be_cut_stops_before_anything_is_paid(tmp_path, monkeypatch, setting):
@@ -167,6 +173,9 @@ def test_a_restored_clip_is_kept_and_a_shot_that_cannot_be_cut_stops_before_anyt
     OPEN.cut(shots, u, out, m, have); assert len(runs) == 1                                                                              # a file that changed is cut again
     other = dict(have["opening"], short="SH_OTHER"); n0 = len(runs); OPEN.cut(shots, u, out, m, {"opening": other}); assert len(runs) == n0 + 5      # the record of another Short proves nothing
     assert OPEN.cut(_shots(), u, out, m) == {}                                                                                          # no marked shot, nothing to do
+    state = EP._assets_state(dict(oc, anchors=[], urls={})); assert state["opening"] == oc["opening"]                                    # the opening's record travels with the assets checkpoint ...
+    with open(os.path.join(out, "assets.json"), "w") as f: json.dump(state, f)
+    back = EP._load_assets(out); assert back["opening"] == oc["opening"] and sorted(back["clips"]) == [0, 1, 2, 3, 4]                     # ... and comes back with it
     paid = []; monkeypatch.setattr(MD, "still", lambda *a, **k: paid.append("still")); monkeypatch.setattr(MD, "animate", lambda *a, **k: paid.append("clip"))
     os.remove(os.path.join(out, OPEN.DIR, "c1.mp4"))
     with pytest.raises(RuntimeError, match="nothing is paid"): EP._assets(shots, u, out, "EPX", budget=20, footage=m)                    # the assets stage stops BEFORE it would buy another picture for the shot
@@ -240,7 +249,7 @@ def test_the_director_buys_three_scenes_when_the_opening_is_footage_and_four_wit
     assert OPEN.marked(marked) == [0, 1, 2, 3, 4] and all(marked[i]["type"] == "kling" and "anim" not in marked[i] for i in range(5)) and marked[0]["promise"] is True      # ... and never turned back into a still
     plain = _shots(); plan2 = {"kling": 4, "living": 0}; idx2 = ANIM.apply(plain, u, plan2)
     assert len(idx2) == 4 and 0 in idx2 and plan2["kling"] == 4 and [plain[i]["anim"]["slot"] for i in idx2] == [0, 1, 2, 3]            # without footage: four scenes, the first at second 0
-    assert ANIM.pick_slots(_shots(), u, 4) == idx2 and ANIM.pick_slots(_shots(), u, 3, skip={0, 1, 2}, anchors=ANIM.ANCHORS[1:]) == ANIM.pick_slots(_shots(), u, 3, anchors=ANIM.ANCHORS[1:])
+    assert ANIM.pick_slots(_shots(), u, 4) == idx2 and ANIM.pick_slots(_shots(), u, 1, anchors=(0.29,)) == [4] and ANIM.pick_slots(_shots(), u, 1, skip={4}, anchors=(0.29,)) == [3]      # a skipped shot is never a slot: the next nearest is
 
 def test_the_plan_check_and_the_paid_repair_leave_the_footage_alone(setting):
     u = _units(); marked = OPEN.mark(_shots(), u, _man())
@@ -249,12 +258,42 @@ def test_the_plan_check_and_the_paid_repair_leave_the_footage_alone(setting):
     extra = [dict(s) for s in marked]; extra[7]["type"] = "kling"; extra[8]["type"] = "kling"
     S2 = EP.plan_check({"shots": extra, "plan": {"kling": 1, "living": 0}, "vo": {"duration": 60}, "pkg": {"titles": ["T"]}}, u)
     assert S2["shots"][7]["type"] == "kling" and S2["shots"][8]["type"] == "still"                                                       # the plan's own count still binds the video's own scenes
+    own = [i for i in EP.anchor_shots(marked, 3) if i >= 5]; assert len(own) == 3, own                                                 # five footage shots take nothing from a picture budget of three
+    assert len([i for i in EP.anchor_shots(_shots(), 3) if _shots()[i]["type"] == "still"]) == 2                                       # ... while a paid scene of the video's own still does
+    assert 5 in EP.anchor_shots(marked, 0)                                                  # the first still after the footage is the video's own picture even with no budget left: a still never re-uses a frame of the footage
+
+def test_the_paid_repair_never_remakes_a_shot_of_the_footage(monkeypatch, setting):
+    import whatifs.media as MD
+    u = _units(); marked = OPEN.mark(_shots(), u, _man()); paid = []
+    monkeypatch.setattr(MD, "still", lambda *a, **k: (paid.append("still"), ("x.jpg", ""))[1]); monkeypatch.setattr(MD, "animate", lambda *a, **k: (paid.append("clip"), "x.mp4")[1])
+    files = {"img": {i: f"img{i:03d}.jpg" for i in range(6)}, "clips": {i: f"clip{i:03d}.mp4" for i in range(5)}, "anchors": list(range(6)), "missing": [], "urls": {}}
+    job = EP.Job(ep="EPR", out=core.WORK, files=files, shots=marked, units=u, fps=30); job.render_all = lambda: None
+    job.repair_assets({"vision_artifact", "vision_mismatch"}, [0, 1, 2], 80.0); assert not paid, paid                                 # the picture judge flagged three footage shots: none is bought again
+    job.repair_assets({"vision_mismatch"}, [6], 80.0); assert paid == ["still"]                                                        # a picture of the video's own still is
 
 def test_a_cut_down_never_takes_a_shot_of_the_footage(setting):
     u = _units(); marked = OPEN.mark(_shots(), u, _man())
     assert ROOM.past_footage([0, 1, 2, 6], marked) == [5, 7, 8, 6]                                                                       # each footage shot is replaced by the next free shot of the video's own pictures
     assert ROOM.past_footage([6, 7, 8, 9], marked) == [6, 7, 8, 9] and ROOM.past_footage([0, 1, 2], _shots()) == [0, 1, 2]              # nothing to replace; no footage at all
     assert ROOM.past_footage([4, 5, 6, 7, 8, 9, 3], marked) == [5, 6, 7, 8, 9]                                                           # none left: the footage shot is dropped, never kept
+
+def test_the_footage_is_not_offered_to_the_cut_down_planner(monkeypatch, setting):
+    u = _units(); marked = OPEN.mark(_shots(), u, _man()); offered = []; real = ROOM.P.fill
+    def fill(tpl, **kw):
+        if "shots" in kw: offered.append(str(kw["shots"]))
+        return real(tpl, **kw)
+    monkeypatch.setattr(ROOM.P, "fill", fill); monkeypatch.setattr(ROOM, "ask", lambda *a, **k: {"reels": [{"shots": [0, 1, 2, 6], "lines": ["a line"]}]})
+    good = ROOM.reels({"spine": {"premise": "p"}, "script": {"script": "s"}}, marked, {"reel_formats": ["myth"], "playbook": {}}, "EPQ")
+    lines = offered[-1].split("\n"); assert [l.split(":")[0] for l in lines] == ["5", "6", "7", "8", "9"], lines                         # only the video's own pictures are on offer
+    assert good and good[0]["shots"] == [5, 7, 8, 6]                                                                                    # and a planner that names a footage shot anyway gets the next free shot instead
+
+def test_the_sweep_counts_an_opening_only_when_both_checks_passed():
+    from tools import sweep as SW
+    row = lambda f, s: {"ts": core.iso(), "episode_id": "EPS", "stage": "x", "feature": f, "status": s, "evidence": "the first 14.2 s are the footage"}
+    core.store().append("Feature_Ledger", [row("opening_footage", "PASS"), row("opening_shown", "PASS")]); ok, words = SW.opening_of(core, "EPS"); assert ok and "14.2 s" in words
+    core.store().append("Feature_Ledger", [dict(row("opening_shown", CON.NA), episode_id="EPT"), dict(row("opening_footage", "PASS"), episode_id="EPT")])
+    assert SW.opening_of(core, "EPT")[0] is False and "opening_shown" in SW.opening_of(core, "EPT")[1] and SW.opening_of(core, "EPU")[0] is False      # 'not applicable' or no verdict at all: the path was not walked
+    assert SW.summary([{"id": "a", "outcome": "ok", "opening": "x"}, {"id": "b", "outcome": "odd", "opening": "y"}, {"id": "c", "outcome": "ok"}])["opened_on_footage"] == 1
 
 # ------------------------------------------------------------------ 9. wiring
 def test_the_opening_is_registered_classified_and_protected():

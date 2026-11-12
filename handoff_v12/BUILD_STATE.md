@@ -206,7 +206,7 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
-### V2c-b2b1 - THE OPENING (12 Nov 2026) - IN PROGRESS, NOT ACCEPTED (steps 1-3 recorded; nothing built yet)
+### V2c-b2b1 - THE OPENING (12 Nov 2026) - IN PROGRESS, NOT ACCEPTED (steps 1-5 recorded; the proof and the acceptance runs are still owed)
 The owner: "continue in new session" (12 Nov 2026, item 21 of `02`). V2c-b2b was SPLIT AT ITS START (rule 6; the note is at the top of
 NEXT): V2c-b2b1 is the long video's opening made of its Short's footage; V2c-b2b2 is the end of the cut-down reels as a product.
 The whole binding reading order was read first (handoff `CLAUDE.md`, `00`, `02` with the new item 21, `01`, `03`, `06`, `04`, `05`, all
@@ -365,7 +365,54 @@ F. (ORIGINAL, CHOSEN) THE PROVEN OPENING UNDER THE LONG VIDEO'S OWN VOICE, IN TH
   choice, a cut-down that had chosen them fell under the four shots it needs and none was made (check `shorts` then held the
   video). A cut-down's footage shot is REPLACED by the next free shot of the long video's own pictures, and the footage shots are
   not offered to the planner at all. (3) My parameter `opening` of the assets stage was shadowed by a local of the same name (the
-  set of opening units): the first run crashed before anything was paid. Renamed.
+  set of opening units): the first run crashed before anything was paid. Renamed. (4) FOUND BY THE BREAK LIST, before any break
+  ran ("what would fail if this line went?"): eight rules had no test - where the window sits on the clip, that a cut clip is
+  slowed and moves to its last frame, that a footage shot is never a scene slot (my assertion compared two calls that could not
+  differ), that the paid repair leaves the footage alone, that the footage is not offered to the cut-down planner, the sweep's
+  own verdict, the record's way through the checkpoint, a retry on another machine. All written first. (5) FOUND BY ONE OF THOSE
+  NEW TESTS: A STILL RIGHT AFTER THE OPENING COULD RE-USE A FRAME OF THE FOOTAGE. A shot without a picture of its own shows the
+  nearest earlier picture with a camera move; after the opening that picture is the first frame of a footage clip (blurred ground
+  and all), and the paid repair, asked to fix such a shot, found the footage picture and (rightly) refused to re-make it. The
+  first still after the footage is now always a picture of the video's own (`episode.anchor_shots`), whatever the budget says.
+
+#### Step 4 BUILD (what changed)
+- NEW `whatifs/opening.py` (D6; on `tools/repair.py` PROTECTED): `on`, `source`, `none_words`, `manifest`, `fetch`, `proven`, `bounds`,
+  `lay`, `mark`, `marked`, `fit`, `cut`, `plan_report` (check `opening_footage`), `detail`, `alike`, `shown_report` (check
+  `opening_shown`), `m_cut`.
+- `whatifs/episode.py`: the plan stage fetches the footage before the hook, hands the Short's hook to the first line and marks the
+  shot list before the cut-downs are planned (the manifest travels in `plan.json`); `produce` fetches and marks again wherever the
+  job runs; `plan_check` and the paid repair skip marked shots; `anchor_shots` charges no footage shot to the picture budget and
+  makes the first still after the footage a picture of the video's own; `_assets` cuts the opening first (a shot that cannot be
+  cut raises before anything is paid) and its record travels with the assets checkpoint; `_render` plays a footage clip as one
+  piece and places one sound hit at second 0; both gates get what they judge.
+- `whatifs/hooks.py`: `proven_record`, `run_hooks(proven=...)`. `whatifs/anim.py`: `pick_slots(skip=, anchors=)`, `apply` (three
+  scenes at the later anchors when the opening is footage; marked shots are never demoted). `whatifs/room.py`: `past_footage`,
+  `reels` (the footage is not on offer; a named footage shot is replaced by the next free shot of the video's own pictures).
+  `whatifs/contract.py`: `p_opening_footage`, `p_opening_shown`, `p_hook` (the proven line), two rows (62 hard checks: 36 script,
+  20 final, 5 short, 1 release).
+- `whatifs/core.py`: 6 cells (`OPENING_SHORT_ON`, `OPENING_HOOK_ON`, `OPENING_FIT`, `OPENING_ENLARGE_MAX`, `OPENING_WINDOW_Y`,
+  `OPENING_SHORT_MAX_S`). `whatifs/org/registry.py`, `levers.py`: D6 wraps `opening.py`, owns both checks and 2 levers (72 levers).
+  `rnd.py`: SHOW_CHECKS 51.
+- `tools/rehearsal.py`: the long video of the rehearsal must open on its Short's footage and its hook (both checks PASS, never "not
+  applicable"). `tools/sweep.py`: `opening_of` - every id that climbed the ladder must open on its Short's footage or the id is
+  bad; the summary counts them (`opened_on_footage`). `tests/paid_calls.py`: `watch` (the counter's patches as a function) and
+  `V12V2CB2B_REMOVED` (what the opening no longer pays).
+- Seeds: `v2cb2b.opening_is_the_shorts_footage`, `v2cb2b.upright_in_a_wide_frame`, `v2cb2b.the_clip_model_takes_no_shape`,
+  `v2cb2b.compare_detail_not_a_tiny_hash`, `v2cb2b.own_footage_once_per_upload` (172 founding items; all addressed to D6 as
+  strategy / technique / tool fact - no limit was pushed out of a playbook: the Palace's note is unchanged).
+- Docs: 6 matrix rows (one old row reworded), the ledger (the V2c-b2b1 paragraph), `CONCEPT.md`, the builders' recipe "The opening"
+  in `CLAUDE.md`, `SYSTEM.md` regenerated.
+#### Step 5 ENFORCE (rule -> executing code -> fails when broken)
+| Rule | Executed by | Fails when broken |
+|---|---|---|
+| A long video about a promoted Short opens on THAT Short's footage, laid as the rule says | `opening.fetch`, `lay`, `mark` in the plan stage and in `episode.produce` | `opening_footage` at the script gate (held before any picture is paid); the sweep (`opening_of`) |
+| The finished film really shows it | `opening.cut` in D6's assets run; the renderer plays each clip whole | `opening_shown` at the final gate (hashes on record; frames of the master against the clips) |
+| The window follows the clip's real sharpness; never black bars, never a second picture | `opening.fit` (OPENING_FIT, OPENING_ENLARGE_MAX), `opening._show` | tests on the window's arithmetic and on the pixels of a cut clip |
+| Nothing is bought for a footage shot | `opening.cut` raises; `plan_check`, `anim.apply`, the paid repair and `anchor_shots` skip marked shots | tests; the paid-call counter (three scenes, three start frames) |
+| The first line is the Short's hook; no lab for it | `opening.proven`, `hooks.proven_record`, `run_hooks(proven=)` | `hook_lab` (this video's Short, still the first spoken line); the counter (no lab call) |
+| A cut-down never takes a footage shot | `room.reels`, `room.past_footage` | tests; the production test |
+| An override opens on its own pictures and is not judged for footage | `opening.source`, `none_words` | tests; the production under an override (both checks "not applicable", four scenes, the lab) |
+| A missing archive is the owner's decision, asked once | `opening.fetch` -> `plan_report`; `contract.p_opening_shown` reads the waiver | the production whose archive was deleted (held, nothing paid, his Approve, not asked again) |
 
 ### V2c-b2a - THE PLATFORMS (12 Nov 2026) - ACCEPTED (final code commit 3619c81 GREEN in GitHub Checks run 117: 1392 passed; sweep 58 of 58 ids)
 The owner: "continue in new session" (12 Nov 2026). V2c-b2 was SPLIT AT ITS START (rule 6): V2c-b2a is how a finished Short reaches

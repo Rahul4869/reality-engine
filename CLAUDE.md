@@ -95,7 +95,16 @@ pipeline run uses the new code. Nothing restarts.
   Never call a row 'verified' that the platform does not show back (a Trial Reel, the audio name: SENT), never set a Short's thumbnail before `yt_read` says processed, never send a file that
   `release.master` did not vouch for, never upload inside a second pass (a record with a native id is only read). Whether a Short was MADE is the field `made` on tab `Specials`
   (`shorts2._made`); where its upload stands is `status` and the records - never read one for the other. Hand-over is a record too (`release.queue`), not a status word. The special reels and
-  the cut-down reels still use `specials._publish` / `manage._post_reel` (batch V2c-b2b). After touching any of it: `tests/test_v12_release.py` and `tools/sweep.py --mode short`.
+  the cut-down reels still use `specials._publish` / `manage._post_reel` (batch V2c-b2b2). After touching any of it: `tests/test_v12_release.py` and `tools/sweep.py --mode short`.
+- **The opening** (`whatifs/opening.py`, department D6): a long video about a promoted Short opens on that Short's kept footage. `opening.fetch` brings the archive of the draw's
+  ladder row (in the plan stage, and again in `episode.produce` wherever the job runs: the manifest travels in `plan.json`), `opening.lay` is the rule (pure: which stretch of
+  which clip each first sentence shows), `opening.mark` writes it onto the shot list (`short` = {id, parts}; the first one carries the promise), `opening.cut` makes one clip a
+  shot inside D6's `assets` run through `opening.fit` (the window: OPENING_FIT, OPENING_ENLARGE_MAX), and the renderer plays it as any clip. The first line is the Short's hook
+  (`hooks.run_hooks(proven=...)`). Checks: `opening_footage` (script gate, `opening.plan_report`) and `opening_shown` (final gate, `opening.shown_report`: hashes on record and
+  frames of the master against the clips, `opening.alike`). A shot with a `short` mark is paid already: any code that turns animated shots into stills, re-makes clips, picks
+  shots for another upload or adds a sound per animated shot must skip it (`opening.marked`). Never buy a picture for a marked shot (`cut` raises instead), never compare whole
+  frames with a hash of a tiny copy (a vignette beat it: compare detail), never judge the window's look in fake mode - the offline clips are wide, real ones are upright. A long
+  video under an override has no footage: both checks say NA. After touching any of it: `tests/test_v12_opening.py`, `tests/test_v12_opening_e2e.py` and a sweep id.
 - **New format or series idea**: enter it as an experiment arm or a Playbook trial so the data decides; never replace the whole format at once.
 - **Knowledge Palace** (`whatifs/org/palace.py`): knowledge enters only through `palace.add` / `add_many` (dated evidence, real `applied_in` code references)
   and leaves only through `palace.playbook` (the guard runs first). Never write the `Palace_Items` tab directly, never filter statuses yourself.

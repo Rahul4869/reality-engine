@@ -4,13 +4,10 @@ import collections, datetime as dt
 
 FROZEN = dt.datetime(2026, 11, 5, 9, 30, 7, tzinfo=dt.timezone.utc)
 
-def count(monkeypatch, tmp_path):
-    from tools.rehearsal import ToneVoice
-    import whatifs.voice as V
-    from whatifs import core, manage as MG, episode as EP, models as M, media as MD, tts_gemini as T
+def watch(monkeypatch):
+    """Count every call that is paid in real life from here on (the returned Counter fills as production runs)."""
+    from whatifs import models as M, media as MD
     c = collections.Counter()
-    monkeypatch.setattr(V, "KokoroBackend", lambda blend: ToneVoice()); MG.setup(); core.set_setting("VOICE", "C")
-    monkeypatch.setattr(EP, "now_utc", lambda: FROZEN)
     ra = M.ask
     def ask(role, *a, **k): c["text:" + str(role)] += 1; return ra(role, *a, **k)
     monkeypatch.setattr(M, "ask", ask)
@@ -23,6 +20,15 @@ def count(monkeypatch, tmp_path):
     rg = AN.gemini_image; monkeypatch.setattr(AN, "gemini_image", lambda *a, **k: (c.update(["image_ref"]), rg(*a, **k))[1])
     if hasattr(M, "ask_batch"):
         rb = M.ask_batch; monkeypatch.setattr(M, "ask_batch", lambda *a, **k: (c.update(["batch"]), rb(*a, **k))[1])
+    return c
+
+def count(monkeypatch, tmp_path):
+    from tools.rehearsal import ToneVoice
+    import whatifs.voice as V
+    from whatifs import core, manage as MG, episode as EP
+    monkeypatch.setattr(V, "KokoroBackend", lambda blend: ToneVoice()); MG.setup(); core.set_setting("VOICE", "C")
+    monkeypatch.setattr(EP, "now_utc", lambda: FROZEN)
+    c = watch(monkeypatch)
     slot = (FROZEN + dt.timedelta(hours=10)).strftime("%Y-%m-%dT%H:%M:%SZ")
     r = EP.produce(slot)
     return dict(c), r
@@ -55,6 +61,14 @@ V12V1_ADDED = {"image": 2}
 
 # v12 V1b (the layman test): the promise line-up - one small call to a cheap reader of each model family, once per video (saved with the plan).
 V12V1B_ADDED = {"text:probe_gemini": 1, "text:probe_claude": 1}
+
+# v12 V2c-b2b1 (the opening): what a long video that opens on its Short's footage NO LONGER pays, against one that opens on pictures of its own (a video
+# under an override; every video of the older tests, which run with the ladder off - so the baseline above is unchanged). tests/test_v12_opening_e2e.py
+# makes both and compares.
+V12V2CB2B_REMOVED = {"clip_kling": 1,     # the animated scene at second 0: the Short's footage is there, already paid (about Rs 39)
+                     "image_ref": 1,      # ... and its reference-locked start frame (about Rs 6)
+                     "text:hooks": 1,     # the hook lab's ten lines: the first line is the Short's own hook
+                     "text:critic": 1}    # ... and the judge of those ten lines
 
 def allowed_base(base):
     out = dict(base)

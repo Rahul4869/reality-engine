@@ -41,7 +41,10 @@ Brand: **Reality Engine**. The promise is the owner's own: it happens to YOU - f
 - Three Shorts a week, twelve a month. Each Short's real numbers are read (YouTube delivers them 48 to 72 hours late); when a long video is about to start,
   code promotes the best Short of the last 30 days whose topic has no long video yet, and the long video is about that topic (check `topic_ladder`).
 - No promoted Short and no override on record = no long video. A Short at three times the channel's usual views gets one follow-up Short within 48 hours.
-- Until batch V2c-b2b the long video is about the proven topic but opens with its own pictures; the Short's footage is kept for that opening.
+- The long video about a promoted Short OPENS on that Short's footage (`whatifs/opening.py`, Visual Production D6): its clips in its order under the long video's first
+  sentences, its hook as the first spoken line, the upright picture shown through one window (the widest its sharpness allows, on a blurred copy of itself where the
+  window does not fill the frame). Three animated scenes are bought for the rest of the video. A long video made under an override has no Short: it opens on its own
+  animated promise scene (checks `opening_footage`, `opening_shown`).
 
 ## A Short reaches three platforms natively (`whatifs/release.py`, Publishing D9)
 - One master file, three uploads of their own: YouTube Shorts, Instagram Reels (a Trial Reel: non-followers first), Facebook Reels (90 seconds at most). Each gets its own words,
@@ -50,7 +53,7 @@ Brand: **Reality Engine**. The promise is the owner's own: it happens to YOU - f
   The link from a Short to its long video can only be set by hand in YouTube Studio: it is on the sheet as the owner's row and is never called done by the machine.
 
 ## Also made today
-- Bridge Shorts and Reels cut from the long video (they stop being the product in batch V2c-b2b; they still go out the old way).
+- Bridge Shorts and Reels cut from the long video (they stop being the product in batch V2c-b2b2; they still go out the old way and never take a shot of the Short's footage).
 - Spin-offs: the Case Files countdown and the monthly Deep Trial. Sound: per-world beds and story-tied events; ASMR only as touches.
 
 ## Explored and not current
