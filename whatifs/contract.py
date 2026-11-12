@@ -370,15 +370,6 @@ def p_chapters(ctx):
     if 0 < dur < 180: return (PASS, f"{n} chapter(s); a {dur:.0f} s video is too short for YouTube chapters") if n >= 1 else (FAIL, "no chapters")
     return (PASS, f"{n} chapters") if n >= 3 else (FAIL, f"{n} chapters (need 3)")
 
-def p_shorts(ctx):
-    n = len(ctx.get("reel_files") or []); need = min(S("REELS_PER_VIDEO", int), 2)
-    return (PASS, f"{n} Shorts passed QC") if n >= need else (FAIL, f"{n} Shorts passed QC (need {need})")
-
-def p_covers(ctx):
-    rf = ctx.get("reel_files") or []
-    miss = [k for k, x in enumerate(rf) if not (x[2] and os.path.exists(x[2]))]
-    return (PASS, f"{len(rf)} covers") if not miss else (FAIL, f"Shorts without a cover: {miss}")
-
 def p_critique(ctx):
     cr = ctx.get("critique") or {}
     if not cr: return FAIL, "the creative self-review did not run"
@@ -695,8 +686,6 @@ FEATURES = [
     ("thumbnails",    "final",  p_thumbs,       "thumbnail passes the phone check + runner-up"),
     ("titles",        "final",  p_titles,       "several scored titles"),
     ("chapters",      "final",  p_chapters,     "YouTube chapters (at least 3)"),
-    ("shorts",        "final",  p_shorts,       "Shorts cut, checked and ready"),
-    ("short_covers",  "final",  p_covers,       "every Short has a designed cover"),
     ("self_review",   "final",  p_critique,     "6-point creative self-review at or above the bar"),
     ("promise_paid",  "final",  p_promise_paid, "the thumbnail's promise is on screen early"),
     ("impact_map",    "final",  p_impact,       "Impact Map: hook in 3 s, timed punchlines, sound spacing, variety vs last 10, flash safety"),

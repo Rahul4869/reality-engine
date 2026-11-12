@@ -83,7 +83,7 @@ def run(ep_id=None):
                      "body": {"decision": "Serve Visual Production the rehearsal technique.", "why": "The rehearsal must prove that a decision becomes a verified change.", "memos_cited": [tk4["id"]],
                               "lever_class": "A", "tickets": [tk4["id"]], "owner_approval": False}})
         r = EP.produce(slot, episode_id=epid); print("produce ok", json.dumps(r, default=str)[:400])
-        assert os.path.exists(r["master"]) and len(r["reels"]) >= 1, "missing outputs"
+        assert os.path.exists(r["master"]) and "reels" not in r, "missing outputs, or a cut-down reel was made"
         lad12 = {x["id"]: x for x in LAD12.rows()}; used12 = [x for x in lad12.values() if x["state"] == "USED"]; e12 = store().rows("Episodes")[-1]
         assert len(used12) == 1 and used12[0]["episode_id"] == epid == e12["episode_id"] and e12["premise"] == used12[0]["premise"] and used12[0]["evidence"] == "measured", ("the long video is not about the promoted Short's topic", used12, e12.get("premise"))
         assert sorted(x["state"] for x in lad12.values()) == ["READ", "USED"] and json.loads(e12["draw_json"]).get("ladder") == used12[0]["id"], ("the ladder's record is wrong", {k: v["state"] for k, v in lad12.items()})
@@ -102,8 +102,6 @@ def run(ep_id=None):
         from whatifs import qc as QC
         from whatifs.render import probe_dur
         ok, info = QC.check_video(r["master"], probe_dur(r["master"])); assert ok, info
-        for rf in r["reels"]:
-            ok, info = QC.check_video(rf, probe_dur(rf), vertical=True); assert ok, (rf, info)
         assert probe_dur(r["master"]) >= 20, "runtime floor not enforced"
         imgs = [c for c in st_rows("Cost_Log") if c["item"] == "image"]
         print("rehearsal images logged:", len(imgs))
@@ -209,19 +207,20 @@ def run(ep_id=None):
         past = (now_utc() - dt.timedelta(hours=8)).strftime("%Y-%m-%dT%H:%M:%SZ")
         st.update("Episodes", "episode_id", e["episode_id"], {"slot_et": past})
         a = MG.tick(); assert a["action"] == "release1", a; MG.release(e["episode_id"], "release1")
-        a = MG.tick(); assert a["action"] == "release2", a; MG.release(e["episode_id"], "release2")
-        assert st.rows("Episodes")[-1]["status"] == "LIVE"
-        # v8.5 checks: 4 bridge Shorts were made and passed QC, the B thumbnail and runner-up title were saved, reel 3 goes out the next day exactly once
-        assert len(r["reels"]) == 4, f"expected 4 Shorts, got {len(r['reels'])}"
-        rel85 = json.load(open(os.path.join(d74, "release.json")))
-        assert len(rel85["reels"]) == 4 and rel85.get("title_b") and rel85.get("thumb_b") and os.path.exists(os.path.join(d74, "thumb_b.jpg")), "packaging rescue files missing"
-        assert json.loads(st.rows("Episodes")[-1]["draw_json"]).get("reel_style") == "bridge"
+        assert st.rows("Episodes")[-1]["status"] == "LIVE", "the long video's release is one step: public -> the channel comment -> LIVE"
+        a = MG.tick(); assert not str(a.get("action")).startswith("release"), ("nothing else is released for a long video", a)
+        # v12 V2c-b2b: THE CUT-DOWNS ARE GONE - no reel file, no reel cover, no reel on the release record, no reel strategy in the draw, no reel upload
+        # on the episode's row; the only short videos that went out are the two standalone Shorts, each through Publishing's own run (tab Release_Sheet).
+        rel85 = json.load(open(os.path.join(d74, "release.json"))); e85 = st.rows("Episodes")[-1]; dj85 = json.loads(e85["draw_json"])
+        junk85 = [f for f in os.listdir(d74) if re.match(r"(reel\d|cover\d|r\d_|clean\d)", f)]
+        assert not junk85 and "reels" not in rel85 and "reel_style" not in dj85 and "reel_formats" not in dj85 and "reel" not in (dj85.get("strategies") or {}), ("a cut-down reel was planned or made", junk85, sorted(rel85))
+        assert not any(str(e85.get(k) or "").strip() for k in ("reel1_yt", "reel2_yt", "reel3_yt", "reel4_yt", "ig1", "fb1")), ("a cut-down reel was uploaded", e85)
+        assert rel85.get("title_b") and rel85.get("thumb_b") and os.path.exists(os.path.join(d74, "thumb_b.jpg")), "packaging rescue files missing"
+        assert {x.get("kind") for x in st.rows("Release_Sheet")} == {"short"} and {x.get("id") for x in st.rows("Release_Sheet")} == {x["id"] for x in lad12.values()}, "a short video went out that is not a standalone Short"
         day2 = (now_utc() - dt.timedelta(hours=27)).strftime("%Y-%m-%dT%H:%M:%SZ")
-        st.update("Episodes", "episode_id", e["episode_id"], {"slot_et": day2, "assets": {"reel2.mp4": "r2", "reel3.mp4": "r3", "release.json": "rj"}})
-        a = MG.tick(); assert a["action"] == "release3", a; MG.release(e["episode_id"], "release3")
-        e85 = next(x for x in st.rows("Episodes") if x["episode_id"] == e["episode_id"])
-        assert e85["reel3_yt"].startswith("FAKE_") and e85["status"] == "LIVE", e85
-        a = MG.tick(); assert a.get("action") != "release3", "reel 3 must never be posted twice"
+        st.update("Episodes", "episode_id", e["episode_id"], {"slot_et": day2})
+        a = MG.tick(); assert not str(a.get("action")).startswith("release"), ("a day later nothing is released for the long video either", a)
+        print("cut-downs: none made, none uploaded; short videos out:", len({x.get("id") for x in st.rows("Release_Sheet")}), "standalone Shorts through the release sheet")
         print("v8.5 checks ok")
         MG.trend_scout(); print("trends ok")
         old = (now_utc() - dt.timedelta(days=6)).strftime("%Y-%m-%dT%H:%M:%SZ")      # v9.3.1: the rescue now looks at 72-120 h; 6 days old = "too old" (fake mode has no view counts)

@@ -85,17 +85,3 @@ def thumbnail(prompt, text, out_dir, episode, side="left"):
     raw, _ = still(full, os.path.join(out_dir, "thumb_raw.jpg"), episode, seed=episode + "thumb", w=1920, h=1080, premium=True)
     return compose_thumbnail(raw, out_dir, text, side)
 
-def reel_cover(prompt, text, out_dir, episode, k):
-    full = prompt + ". Vertical 9:16 cinematic key art, dramatic subject in lower half, empty dark sky in top third, " + THUMB_STYLE + ", 8k detail, no text, no letters"
-    raw, _ = still(full, os.path.join(out_dir, f"cover{k}_raw.jpg"), episode, seed=f"{episode}cover{k}", w=1080, h=1920, premium=True)
-    im = Image.open(raw).convert("RGB").resize((1080, 1920), Image.LANCZOS)
-    im = _brand(_type(_grade(im), text, vertical=True))
-    p = os.path.join(out_dir, f"cover{k}.jpg"); im.save(p, quality=93); return p
-
-
-def reel_cover_free(src, text, out_dir, k):
-    """v8.5: a 9:16 cover for reels 3-4 drawn from a picture already paid for (no image model, no cost): centre crop, grade, hook text, brand."""
-    im = Image.open(src).convert("RGB"); w, h = im.size; tw = int(h * 9 / 16)
-    if tw < w: im = im.crop(((w - tw) // 2, 0, (w - tw) // 2 + tw, h))
-    im = _brand(_type(_grade(im.resize((1080, 1920), Image.LANCZOS)), text or " ", vertical=True))
-    p = os.path.join(out_dir, f"cover{k}.jpg"); im.save(p, quality=93); return p

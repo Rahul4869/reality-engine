@@ -3,7 +3,7 @@ from __future__ import annotations
 import os, hashlib, json, re, time, datetime as dt, concurrent.futures as cf
 from PIL import Image
 from whatifs.core import S, log, store, iso, JOB, WORK, FAKE, SMALL, flush_log, now_utc, set_setting, scrub, env, month_spend, refresh_spend, take_degraded, note_degraded
-from whatifs import room as ROOM, media as M, render as RN, art as ART, reels as REELS, qc as QC, publish as PUB, hooks as HOOKS, cutmap as CUTMAP, tableread as TR
+from whatifs import room as ROOM, media as M, render as RN, art as ART, qc as QC, publish as PUB, hooks as HOOKS, cutmap as CUTMAP, tableread as TR
 from whatifs import reactions as RX, checkpoint as CK, fixes as FIX, preflight as PF
 from whatifs.voice import narrate, Blend, NarrationResult
 from whatifs.sampler import draw as DRAW
@@ -24,7 +24,7 @@ MERGED_UNITS = set()          # v11.1: units folded into the previous shot by th
 
 def speaker_blends(guest=None, cast=None):
     """The two recurring roles get their own voice recipes (Settings DIRECTOR_VOICE / SKEPTIC_VOICE). Always two DIFFERENT recipes. None in classic mode.
-    v8.9: with GUEST_ROTATION_ON the Curious One is this episode's guest (data.GUESTS, chosen in the draw and saved with the plan, so a retry and the reels
+    v8.9: with GUEST_ROTATION_ON the Curious One is this episode's guest (data.GUESTS, chosen in the draw and saved with the plan, so a retry
     use the same voice). v8.10: with the Cast tab in use (CAST_ON) each role also carries its Gemini voice and style direction; the Kokoro recipes stay as
     the automatic fallback (guest fallback by the cast member's gender, always different from the Director's)."""
     if FE.mode() == "classic": return None
@@ -115,7 +115,6 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     plan = plan_for_episode(est_cost_inr(d), eps_left)
     if plan.get("hold"): raise RuntimeError(plan["reason"] + " - nothing was spent; the slot is skipped (budget gate)")
     d["kling"], d["living"] = plan["kling"], plan["living"]; _apply_tier(d, plan)
-    d["reel_style"] = ROOM.reel_style()                     # v8.5: recorded so the learning job can compare reel styles by Shorts -> long-video views
     from whatifs import preview as PV
     took = PV.take_approved(ep) if not fix_mode() else None          # v8.10: an approved Script Preview is used as written (not paid for twice)
     if took:
@@ -126,7 +125,7 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     log(f"draw: {json.dumps(d)} | spend plan: {plan['reason']}")
     room = ORG.work("D4", "write", ep, (lambda b: took[1]) if took else (lambda b: ROOM.run_room(d, ep)), measure=WR.m_room, topic=str(d.get("ptype") or ""),
                     adopt=(took[1] or {}).get("org_session") if took else None, legacy=(took[1] or {}).get("_legacy_draft") if took else None)      # v12: an approved Script Preview is adopted as written - with its D4 draft run's proof (B6a); an owner-approved draft from before B6a is recorded as such
-    FMT.use(d.get("format") or "")                          # v12 V2a: everything after the room (voice, package, shots, reels) is made in the episode's format
+    FMT.use(d.get("format") or "")                          # v12 V2a: everything after the room (voice, package, shots) is made in the episode's format
     if ORG.on(): CANON.record(ep, room, ORG.last_session("D4", "write", ep))          # v12 B6a: D4's continuity takeaway - the case record (canon once it is on air)
     from whatifs import ladder as LAD                       # v12 V2c-b: where this video's topic comes from - its promoted Short, else the override on record ('' = neither: check topic_ladder holds it)
     d["ladder"] = str(room["spine"].get("ladder") or (d.get("ladder") if took else "") or LAD.claim() or "")
@@ -172,12 +171,11 @@ def _stage_plan(ep, out, eps_left, slot_iso):
         room["bible"]["look"] = room["bible"].get("look", "") + " | fix: " + "; ".join(p.get("fix", "") for p in sync["problems"][:5])
         shots = ROOM.plan_shots(room, units, d, plan, ep)
     shots = ROOM.promise_shot(shots, units, pkg)            # v8.6: the first opening Kling clip shows the thumbnail's scene
-    shots = OPEN.mark(shots, units, opn)                    # v12 V2c-b2b: the Short's picture track is laid under the first sentences (pure code; the cut-downs planned below never take these shots)
+    shots = OPEN.mark(shots, units, opn)                    # v12 V2c-b2b: the Short's picture track is laid under the first sentences (pure code)
     if S("SOUND_DESIGN_ON", bool): shots = SD.plan_sounds(shots, units, SD.density_of(d["strategies"].get("sound")))      # v8.7: close textures under the shots that show them
     if not pkg.get("thumb_prompt") and (d.get("promise") or {}).get("thumb_scene"): pkg["thumb_prompt"] = d["promise"]["thumb_scene"]
     st.update("Episodes", "episode_id", ep, {"draw_json": d, "updated": iso()})          # v8.7: promise, rhythm plan, retention check, beat map, playbook flags
-    rplans = ROOM.reels(room, shots, d, ep)
-    S0 = {"ep": ep, "slot": slot_iso, "d": d, "plan": plan, "room": room, "hook_rec": hook_rec, "shots": shots, "pkg": pkg, "rplans": rplans, "chs": chs, "opening": opn,
+    S0 = {"ep": ep, "slot": slot_iso, "d": d, "plan": plan, "room": room, "hook_rec": hook_rec, "shots": shots, "pkg": pkg, "chs": chs, "opening": opn,
           "vo": {"wav": os.path.basename(vo.wav_path), "timeline": os.path.basename(vo.timeline_path), "duration": vo.duration, "voiceprint": vo.voiceprint, "style": vo.style}}
     S0["probe"] = _probe(S0, ep, units)        # v12 V1b (D13): the promise line-up, saved with the plan so that a resume never pays it twice
     return S0
@@ -214,7 +212,7 @@ def _load_assets(out):
     if not os.path.exists(p): return None
     a = json.load(open(p))
     return {"img": {int(i): os.path.join(out, n) for i, n in a["img"].items() if os.path.exists(os.path.join(out, n))},
-            "clips": {int(i): os.path.join(out, n) for i, n in a["clips"].items() if os.path.exists(os.path.join(out, n))}, "anchors": a.get("anchors", []), "segments": {},
+            "clips": {int(i): os.path.join(out, n) for i, n in a["clips"].items() if os.path.exists(os.path.join(out, n))}, "anchors": a.get("anchors", []),
             "urls": {int(i): u for i, u in (a.get("urls") or {}).items() if u}, "opening": a.get("opening") or {}}
 
 def anchor_shots(shots, budget, max_run=None, opening=()):
@@ -285,14 +283,14 @@ def _assets(shots, units, out, ep, budget=56, have=None, footage=None):
         for i, c in ex.map(get_clip, need_clip):
             if c: clips[i] = c
     delivered = {"kling": sum(1 for i, s in enumerate(shots) if s["type"] == "kling" and i in clips), "living": sum(1 for i, s in enumerate(shots) if s["type"] == "living" and i in clips)}
-    return {"img": img_paths, "clips": clips, "segments": {}, "anchors": anchors, "missing": [i for i in anchors if i not in img_paths], "delivered": delivered, "urls": img_urls, "opening": oc.get("opening") or {}}
+    return {"img": img_paths, "clips": clips, "anchors": anchors, "missing": [i for i in anchors if i not in img_paths], "delivered": delivered, "urls": img_urls, "opening": oc.get("opening") or {}}
 
 class Job:
     """The finishing stage's working state: what the render needs and what the QC fixes act on."""
     def __init__(self, **kw): self.__dict__.update(kw); self.segmeta = []; self.events = []; self.mixpath = None; self.video = None; self.master = None; self.fixn = 0
     # ---- full render from the assets and the narration clock
     def render_all(self):
-        self.files["segments"] = {}; self.segmeta = []; self.master = _render(self); return self.master
+        self.segmeta = []; self.master = _render(self); return self.master
     def own(self): return set(self.files["img"]) | set(self.files["clips"])
     def qc_ctx(self):
         return {"master": self.master, "duration": self.vo.duration, "fps": self.fps, "wav": self.vo.wav_path, "srt": self.srt, "timeline": self.tl, "units": self.units,
@@ -363,7 +361,7 @@ def _render(job):
     segment is recorded in job.segmeta so a fix can re-render just a few of them."""
     files, shots, units, vo, out, ep = job.files, job.shots, job.units, job.vo, job.out, job.ep
     total = vo.duration; fps = RN.fps(); bounds = [0.0] + [u["start"] for u in units[1:]] + [total]
-    segs, segmap, clean_map = [], {}, {}; prev_img = None; reuse = 0
+    segs = []; prev_img = None; reuse = 0
     parts = []
     if S("SPEAKER_TAG_ON", bool) and FE.mode() != "classic":
         try:
@@ -457,17 +455,7 @@ def _render(job):
                 log(f"segment {i}.{k} failed: {e} -> fallback", "WARN")
                 RN.set_overlay(job.overlay); RN.set_cursor(f0); RN.graphic_segment({"label": "", "from": 0, "to": 0}, img, p, nf)
             segs.append(p); job.segmeta.append({"path": p, "i": i, "k": k, "f0": f0, "nf": nf, "img": img})
-            if k == 0:
-                segmap[i] = p
-                full_ = micro_ and pieces > 1 and i not in files["clips"]                # v9.3: a micro-cut piece is short; the reel's copy keeps the whole line
-                if i in job.reel_shots and (job.overlay is not None or full_):     # v8.3: reels get a clean copy of EVERY reel shot (no speaker chip, no reaction burst, nothing half-cropped by the 9:16 cut)
-                    cp = os.path.join(out, f"clean{i:03d}.mp4"); nf_main = nf
-                    if full_: nf = n_total
-                    try: draw(cp, None); clean_map[i] = cp
-                    except Exception as e: log(f"clean copy of segment {i} skipped: {e}", "WARN")
-                    finally: nf = nf_main
     RN.set_overlay(None)
-    files["segments"] = {i: clean_map.get(i, segmap.get(i, segs[0])) for i in range(len(shots))}
     job.video = RN.concat(segs, os.path.join(out, "video.mp4"))
     events = []
     for i, s in enumerate(shots):
@@ -532,10 +520,10 @@ def _slot_taken(st, slot_iso):
     return next((e for e in st.rows("Episodes") if e.get("slot_et") == slot_iso and e.get("status") in _TAKEN), None)
 
 def _cleanup_work(out):
-    """v8.3: delete the big intermediate files (segments, clean copies, reel parts, joined video) once an episode is finished or held. Master, reels, art and checkpoints stay."""
+    """v8.3: delete the big intermediate files (segments, joined video) once an episode is finished or held. Master, art and checkpoints stay."""
     try:
         for f in os.listdir(out):
-            if re.match(r"(seg\d+_\d+|clean\d+|r\d_[\w]+|video)\.(mp4|txt)$", f) or f.endswith((".raw.wav", ".mp4.txt")):
+            if re.match(r"(seg\d+_\d+|video)\.(mp4|txt)$", f) or f.endswith((".raw.wav", ".mp4.txt")):
                 try: os.remove(os.path.join(out, f))
                 except OSError: pass
     except OSError: pass
@@ -665,10 +653,9 @@ def reaction_events(units, shots):
     return [e for e in ev if not (0 <= int(e.get("i", -1)) < len(shots or []) and shots[int(e["i"])].get("short"))]
 
 def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
-    d, room, shots, pkg, rplans, chs, hook_rec = S_["d"], S_["room"], S_["shots"], tidy_pkg(S_["pkg"]), S_["rplans"], S_["chs"], S_["hook_rec"]
+    d, room, shots, pkg, chs, hook_rec = S_["d"], S_["room"], S_["shots"], tidy_pkg(S_["pkg"]), S_["chs"], S_["hook_rec"]
     rx = reaction_events(units, shots)
-    job = Job(ep=ep, out=out, files=files, shots=shots, units=units, vo=vo, tl=tl, rx=rx, fps=RN.fps(), srt=os.path.join(out, "captions.srt"), overlay=None, rhythm=d.get("rhythm_plan") or {}, d=d,
-              reel_shots={int(i) for rp in rplans[:4] for i in rp.get("shots", [])})
+    job = Job(ep=ep, out=out, files=files, shots=shots, units=units, vo=vo, tl=tl, rx=rx, fps=RN.fps(), srt=os.path.join(out, "captions.srt"), overlay=None, rhythm=d.get("rhythm_plan") or {}, d=d)
     t_r0 = time.time(); master = ORG.work("D6", "render", ep, lambda b: job.render_all(), measure=WR.m_render); RN.srt(tl, job.srt)
     atm_ = getattr(job, "atmosphere", None)                      # v9.1: render minutes per episode + the atmosphere's share and any automatic degrade
     try: st.update("Episodes", "episode_id", ep, {"render_min": round((time.time() - t_r0) / 60, 2), "atmos_json": json.dumps({"overhead_pct": round(atm_.overhead_pct(), 1),
@@ -687,25 +674,6 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         log(f"thumbnail still weak {tinfo}, making new key art once", "WARN")
         thumb, thumb_master, phone = ART.thumbnail(pkg.get("thumb_prompt", "") + ", higher contrast, brighter subject", pkg.get("thumb_text", ""), out, ep + "b")
     thumb_b = _thumb_b(pkg, room, out, ep, fix)          # v8.5 packaging rescue: a runner-up thumbnail with a DIFFERENT idea, used only if the video lags
-    covers = []
-    for k, (p, t) in enumerate(zip((pkg.get("reel_cover_prompts") or ["", ""])[:2], (pkg.get("reel_cover_texts") or ["", ""])[:2])):
-        cp = os.path.join(out, f"cover{k}.jpg"); covers.append(cp if (fix and os.path.exists(cp)) else ART.reel_cover(p, t, out, ep, k))
-    for k in range(len(covers), len(rplans[:4])):         # v8.5: reels 3-4 get a FREE cover drawn from their own opening picture + hook text
-        cp = os.path.join(out, f"cover{k}.jpg")
-        if not (fix and os.path.exists(cp)):
-            try: cp = ART.reel_cover_free(_reel_src_image(files, rplans[k], thumb_master), rplans[k].get("hook_text", ""), out, k)
-            except Exception as e: log(f"free cover {k} failed ({e}) - using the thumbnail art", "WARN"); cp = thumb_master
-        covers.append(cp)
-    reel_files = []
-    for k, rp in enumerate(rplans[:4]):
-        try:
-            cov = covers[k] if k < len(covers) else thumb_master; rf = os.path.join(out, f"reel{k}.mp4")
-            if fix and os.path.exists(rf): rd_ = RN.probe_dur(rf)
-            else: rf, rd_ = REELS.build_reel(k, rp, files["segments"], cov, blend(), "urgent", out, speaker_blends=speaker_blends(d.get("guest"), d.get("cast")))
-            ok, info = QC.check_video(rf, rd_, vertical=True, tol=1.0)
-            if ok: reel_files.append((rf, rp, cov))
-            else: log(f"reel {k} failed QC {info}", "WARN")
-        except Exception as e: log(f"reel {k} failed: {e}", "WARN")
     # ---- final QC of the long video: full check, free fixes, small capped paid fixes; anything left = HOLD (never uploaded)
     chk = QC.full_check(job.qc_ctx()); notes = []
     for wait in (90, 240):          # v8.3: if the ONLY problem is that the independent picture judge was unreachable, give it time to come back before holding
@@ -733,7 +701,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     from whatifs import contract as CON                         # v10.2 (K151): every finished-video promise checked; a failure is HELD, never uploaded
     clips = list((files.get("clips") or {}).values()) if isinstance(files.get("clips"), dict) else list(files.get("clips") or [])
     cctx = {"d": d, "room": room, "ep": ep, "title": title, "master": master, "timeline": tl, "clips": [c if isinstance(c, str) else (c or {}).get("path") for c in clips],
-            "holds": holds, "qc_info": chk.get("info") or {}, "thumb": thumb, "thumb_b": thumb_b, "thumb_ok": okt or have_art, "pkg": pkg, "chapters": chs, "reel_files": reel_files,
+            "holds": holds, "qc_info": chk.get("info") or {}, "thumb": thumb, "thumb_b": thumb_b, "thumb_ok": okt or have_art, "pkg": pkg, "chapters": chs,
             "shots": S_.get("shots"), "units": units, "opening": files.get("opening")}          # v11: the promise check reads the shot plan; v12 V2c-b2b: and check opening_shown the opening's record
     pre = CON.run("final", dict(cctx, critique={"hook": 10, "clarity": 10, "humour": 10, "visual_variety": 10, "audio": 10, "accuracy": 10}), ep, write=False)   # measured checks first (not logged)
     cctx["ledger_rows"] = pre["rows"]; cctx["critique"] = CON.critique(cctx, ep)
@@ -760,10 +728,8 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     except Exception as e: log(f"brain tag skipped: {scrub(e)}", "WARN", ep)
     try:
         PUB.yt_thumbnail(vid, thumb); PUB.yt_captions(vid, srt); PUB.yt_playlist(vid, _playlist(d.get("family") or d["ptype"]))
-        rel = {"title": title, "pinned": pkg.get("pinned_comment", "") + (f"\n\nWatch next: {nxt['title']} {nxt['url']}" if nxt else ""), "reels": [],
+        rel = {"title": title, "pinned": pkg.get("pinned_comment", "") + (f"\n\nWatch next: {nxt['title']} {nxt['url']}" if nxt else ""),
                "title_b": _title_b(pkg, title), "thumb_b": os.path.basename(thumb_b) if thumb_b else ""}
-        for k, (rf, rp, cov) in enumerate(reel_files):
-            rel["reels"].append({"file": rf, "cover": cov, "caption": rp.get("caption", ""), "hook": rp.get("hook_text", ""), "format": rp.get("format")})
         json.dump(rel, open(os.path.join(out, "release.json"), "w"))
         from whatifs import show as SHOW
         if SHOW.on() and S("AUDIO_DROPS_ON", bool):               # v9: the clip-bait audio drop (Instagram original audio; filed, never posted by itself)
@@ -846,7 +812,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
             CON.await_approval(ep, vid, slot_iso, f"'{title}'. Self-review: " + ", ".join(f"{k} {cr.get(k)}" for k in CON.CRIT_KEYS if k in cr) +
                                f". {cr.get('notes', '')} Checks: {sum(1 for r in g['rows'] if r['status'] != 'FAIL')}/{len(g['rows'])} pass.")
     except Exception as e: log(f"review gate failed - the video stays as uploaded: {scrub(e)}", "WARN", ep)
-    return {"ok": True, "episode": ep, "yt": vid, "master": master, "reels": [r[0] for r in reel_files], "thumb": thumb, "title": title, "qc_fixes": notes}
+    return {"ok": True, "episode": ep, "yt": vid, "master": master, "thumb": thumb, "title": title, "qc_fixes": notes}
 
 def tidy_pkg(pkg):
     """v8.6: code-checked packaging (idempotent, also applied to plans saved by older versions): titles re-ordered so a clean one (30-60 characters,
@@ -887,13 +853,6 @@ def _thumb_b(pkg, room, out, ep, fix):
         if not ok: log(f"B thumbnail failed the phone-size check {info} - no rescue package for this video", "WARN"); return ""
         shutil.copyfile(up_b, p); return p          # the upload-sized copy (YouTube's 2 MB thumbnail limit)
     except Exception as e: log(f"B thumbnail skipped: {e}", "WARN"); return ""
-
-def _reel_src_image(files, rp, fallback):
-    """The first reel shot that has its own picture (for a free cover)."""
-    for i in rp.get("shots", []):
-        pth = files.get("img", {}).get(int(i)) or files.get("img", {}).get(str(i))
-        if pth and os.path.exists(pth): return pth
-    return fallback
 
 def _fix_link(ep):
     from urllib.parse import quote
@@ -945,7 +904,7 @@ def _review_note(hook_rec, cut_map):
     return " ".join(bits) or "No hook or cut-map report was produced for this episode."
 
 def _review_files(out, ep):
-    """Private Drive copies of the per-episode review reports (hooks, cut map). Keys start with '_' so the reel release code ignores them."""
+    """Private Drive copies of the per-episode review reports (hooks, cut map). Keys start with '_' so the release step does not download them."""
     if FAKE or not S("REVIEW_TO_DRIVE", bool): return {}
     ids = {}
     for f in ("hooks.json", "cutmap.json", "cutmap.md", "table_read.json"):
@@ -1025,11 +984,11 @@ def _archive(out, ep, master, srt_path):
     return ids
 
 def _persist(out, ep):
-    """Keep reels + covers + release info in YOUR PRIVATE Google Drive until release (never public before launch)."""
+    """Keep the runner-up thumbnail and the release info in YOUR PRIVATE Google Drive until release (never public before launch)."""
     if FAKE: return {}
     ids = {}
     for f in sorted(os.listdir(out)):
-        if re.match(r"(reel\d\.mp4|cover\d\.jpg|thumb_b\.jpg|release\.json)$", f):
+        if re.match(r"(thumb_b\.jpg|release\.json)$", f):
             try: ids[f] = PUB.drive_upload(os.path.join(out, f), f"{ep}_{f}", public=False)[0]
             except Exception as e: log(f"drive save failed for {f}: {e}", "WARN")
     return ids

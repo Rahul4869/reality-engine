@@ -73,10 +73,6 @@ DESC_SHARE = [
     "Share it with the person who said it could never happen.",
     "Pass it on to one curious person. One is plenty.",
 ]
-REEL_ASKS = {
-    "follow": [("SKEPTIC", "aside", "Follow, so the simulation keeps running."), ("SKEPTIC", "aside", "Follow for the next impossible day."), ("DIRECTOR", "calm", "Follow, and see what breaks next.")],
-    "share": [("SKEPTIC", "aside", "Send this to the friend who'd panic first."), ("DIRECTOR", "calm", "Share this with someone curious."), ("SKEPTIC", "aside", "Share it. Blame the Director.")],
-}
 
 # v9.3 (CTA_JURY_ON): the trial cast's own voices. [DIRECTOR] = Inspector Vale, [SKEPTIC] = Dr. Grimm, [JUDGE] = Nana Rosa. Subscribing = a seat on the jury
 # (a recurring identity, not a favour). Same rules as POOLS: each entry is recognised as its kind, at most 34 words, no gendered words.
@@ -117,10 +113,6 @@ TRIAL_DESC_SHARE = [
     "Share it with the person who said it could never happen. Let the jury decide.",
     "Pass it on to one curious juror. One is plenty.",
 ]
-TRIAL_REEL_ASKS = {
-    "follow": [("JUDGE", "calm", "Follow, and take your seat on the jury."), ("DIRECTOR", "calm", "Follow for the next impossible case."), ("SKEPTIC", "aside", "Follow. Court is back in session soon.")],
-    "share": [("SKEPTIC", "aside", "Send this to the friend who would vote guilty."), ("JUDGE", "calm", "Share this with whoever thinks it cannot happen."), ("DIRECTOR", "calm", "Send it to the person who would panic first.")],
-}
 
 def _trial():
     """v9.3: the trial cast's lines are used when CTA_JURY_ON and the show format is on (SHOW_MODE = auto)."""
@@ -204,7 +196,3 @@ def description_footer(seed, link=""):
     r = _rng(f"{seed}|desc"); tr = _trial(); sub = r.choice(TRIAL_DESC_SUB if tr else DESC_SUB); sh = r.choice(TRIAL_DESC_SHARE if tr else DESC_SHARE)
     return sub + (f"\n{link}" if link else "") + "\n" + sh
 
-def reel_ask(seed, k):
-    """(speaker, tag, text) spoken at the very end of reel k: reel 1 asks to follow, reel 2 asks to share."""
-    pool = (TRIAL_REEL_ASKS if _trial() else REEL_ASKS)["follow" if k % 2 == 0 else "share"]
-    return _rng(f"{seed}|reel{k}").choice(pool)

@@ -255,8 +255,8 @@ def monthly_cap_reached(maintenance=False):
     return (remaining_inr() if maintenance else production_room_inr()) <= 0      # v8.7: maintenance may use the reserve, never more than the cap itself
 
 def premium_images():
-    """Premium (key-art) images per long video: the thumbnail + 2 reel covers, + the B thumbnail of the packaging rescue (v8.5). Reels 3-4 use free covers."""
-    return 3 + (1 if S("PKG_RESCUE_ON", bool) else 0)
+    """Premium (key-art) images per long video: the thumbnail, + the B thumbnail of the packaging rescue (v12 V2c-b2b: no reel covers - a long video makes no cut-down reels)."""
+    return 1 + (1 if S("PKG_RESCUE_ON", bool) else 0)
 
 def min_episode_cost_inr():
     """Cheapest honest cost of ONE episode with the minimum Kling clips (used before an episode row is even created)."""

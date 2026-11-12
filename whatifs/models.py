@@ -145,7 +145,7 @@ ROUTES = {
     "writer": ("script", "creative"), "rewrite": ("script", "creative"),
     "memo": ("sonnet", "edit"), "objections": ("sonnet", "edit"), "director_read": ("sonnet", "edit"), "director": ("sonnet", "edit"),
     "length": ("sonnet", "edit"), "format": ("sonnet", "edit"), "retention": ("sonnet", "edit"), "humanize": ("sonnet", "edit"),
-    "factfix": ("sonnet", "edit"), "packager": ("sonnet", "edit"), "reels": ("sonnet", "edit"), "immersion": ("sonnet", "edit"),
+    "factfix": ("sonnet", "edit"), "packager": ("sonnet", "edit"), "immersion": ("sonnet", "edit"),
     "hooks": ("sonnet", "edit"), "strategy": ("sonnet", "edit"), "brief": ("sonnet", "edit"), "repair": ("sonnet", "edit"),
     "json_repair": ("haiku", "chore"), "technique_intake": ("sonnet", "edit"),
     "localize": ("sonnet", "edit"), "special": ("sonnet", "edit"), "occasions_check": ("haiku", "chore"), "policy_rescue": ("sonnet", "edit"), "pilot": ("haiku", "chore"),                    # v10: special reels' concept                                                   # v10 G4: titles/descriptions in other languages
@@ -155,7 +155,7 @@ ROUTES = {
     "short_writer": ("script", "creative"),          # v12 V2c: a Short is written (and fixed once) by the model that writes the long script
     "probe_gemini": ("flash", "judge"), "probe_claude": ("haiku", "chore"),          # v12 V1b: the promise line-up's two cheap readers (the right answer is known to code: no taste call)
 }
-SAVER_MEDIUM = ("scout", "showrunner", "bible", "premise_judge", "memo", "objections", "director", "director_read", "hooks", "packager", "reels", "immersion")
+SAVER_MEDIUM = ("scout", "showrunner", "bible", "premise_judge", "memo", "objections", "director", "director_read", "hooks", "packager", "immersion")
 CHAIN_EFFORT = {"opus": "creative", "fable": "creative", "sonnet": "edit", "haiku": "chore"}
 
 def _json_setting(key):

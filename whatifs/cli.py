@@ -61,7 +61,7 @@ def main():
             research_catch_up()                                         # v12 B5: never hold a video for a research round this job can run itself
             slot = sys.argv[2]; res = produce(slot)
             print(json.dumps({k: res.get(k) for k in ("ok", "episode", "yt")}, default=str))      # no title or file names in the public log
-        elif cmd in ("release1", "release2", "release3", "release4"):      # v8.5: reels 3-4 go out on the next days
+        elif cmd == "release1":                                         # the long video's release step (v12 V2c-b2b: one step - no cut-down reels follow)
             from whatifs.manage import release; release(sys.argv[2], cmd)
         elif cmd == "trends":
             from whatifs.manage import trend_scout; trend_scout()

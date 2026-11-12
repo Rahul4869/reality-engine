@@ -189,7 +189,7 @@ def fake_reply(key, prompt):
     if key == "showrunner":
         return json.dumps({"premise": "What if every pillow on Earth floated up at noon?", "headline": "Every Pillow Just Left Earth", "family": "F08_rules", "ptype": "collective", "logline": "l", "thesis": "t",
             "unexpected_answer": "u", "emotional_arc": "a", "peak_moment": "p", "humour_plan": "h", "title_candidates": ["What If Every Pillow Floated Away?"],
-            "thumb_concept": "c", "reel_hooks": ["a", "b"], "risks": "r",
+            "thumb_concept": "c", "risks": "r",
             "show_plan": {"charge": "Every pillow stands accused of breaking gravity at noon.", "defendant": "floating pillows", "intensity": 2,
                           "exhibits": [{"id": "A", "kind": "RECON", "what": "a bedroom at 11:59", "objection": "Pillows do not fly, Inspector."},
                                        {"id": "B", "kind": "DATA", "what": "lift needed per kilogram", "source": "NASA Glenn Research Center", "objection": "Numbers lie."},
@@ -279,18 +279,8 @@ def fake_reply(key, prompt):
     if key == "packager":
         return json.dumps({"titles": ["What If Every Pillow Floated Away At Once?", "8 Billion Pillows Just Left Earth"], "thumb_text": "WHERE'D IT GO?", "thumb_prompt": "giant pillow over New York at dusk",
             "thumb_text_b": "LOOK UP", "thumb_prompt_b": "a single pillow drifting past the Moon",
-            "reel_cover_prompts": ["pillow storm vertical", "pillow over ocean vertical"], "reel_cover_texts": ["8 BILLION PILLOWS?", "LOOK UP"],
             "description": "What happens if every pillow on Earth floats away at once?\n\nChapters\n\n#science #whatif #space",
             "tags": ["what if", "science"], "pinned_comment": "Would you chase yours?"})
-    if key == "reel":
-        return json.dumps({"reels": [{"format": "R1_climax_why", "hook_text": "WAIT FOR IT", "shots": [6, 0, 1, 3, 4, 5], "lines": ["[tension] Every pillow on Earth just left.", "[reveal] And that's the good news."],
-            "end_line": "Full video on our channel.", "caption": "Where would yours go? #whatif #science #shorts"},
-            {"format": "R3_myth", "hook_text": "YOU'RE WRONG", "shots": [2, 3, 5, 6, 0], "lines": ["[calm] Most people think nothing happens.", "[tension] They're wrong."],
-            "end_line": "Full video on our channel.", "caption": "Think again. #whatif #science #shorts"},
-            {"format": "R1_climax_why", "hook_text": "NO GRAVITY?", "shots": [1, 4, 0, 5, 2], "lines": ["[DIRECTOR] [tension] Every pillow on Earth weighs nothing now.", "[SKEPTIC] [wow] So where do they go?"],
-            "end_line": "Where they land on day three? That is the full simulation, on our channel.", "caption": "Look up. #whatif #science #shorts"},
-            {"format": "R3_myth", "hook_text": "8 BILLION", "shots": [3, 0, 6, 2, 1], "lines": ["[DIRECTOR] [calm] Eight billion pillows, one sky.", "[SKEPTIC] [laugh] That's a lot of feathers."],
-            "end_line": "What the sky does next is in the full video.", "caption": "Feathers everywhere. #whatif #science #shorts"}]})
     if key == "vision":
         n = int(re.search(r"FRAMES: (\d+)", prompt).group(1)) if re.search(r"FRAMES: (\d+)", prompt) else 3
         return json.dumps({"frames": [{"i": i, "match": 9, "artifact": False, "note": ""} for i in range(n)]})

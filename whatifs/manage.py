@@ -95,8 +95,8 @@ def _give_up_stuck(eps):
             try: pub = PUB.yt_status(e["yt_id"]) == "public"
             except Exception: pub = False
             if pub:
-                st.update("Episodes", "episode_id", e["episode_id"], {"status": "LIVE", "notes": _note(e, "reels skipped: release kept failing"), "updated": iso()})
-                log(f"{e['episode_id']}: reels given up after {g}", "WARN")
+                st.update("Episodes", "episode_id", e["episode_id"], {"status": "LIVE", "notes": _note(e, "release step skipped: it kept failing"), "updated": iso()})
+                log(f"{e['episode_id']}: the release step was given up after {g}", "WARN")
             else:
                 st.update("Episodes", "episode_id", e["episode_id"], {"status": "STUCK_PRIVATE", "notes": _note(e, "video never became public"), "updated": iso()})
                 try:
@@ -106,9 +106,9 @@ def _give_up_stuck(eps):
                           "did not become public at its slot. The lock detector has paused new videos so nothing is wasted; a separate urgent email explains the next step. "
                           "You can publish this one yourself in the YouTube Studio app (set it to Public).</p>")
             e["status"] = "closed"
-        elif e.get("status") == "LIVE1" and now_utc() > t + dt.timedelta(minutes=S("REEL2_DELAY_MIN", int)) + g:
-            st.update("Episodes", "episode_id", e["episode_id"], {"status": "LIVE", "notes": _note(e, "reel 2 skipped: release kept failing"), "updated": iso()})
-            log(f"{e['episode_id']}: reel 2 given up", "WARN"); e["status"] = "closed"
+        elif e.get("status") == "LIVE1":          # v12 V2c-b2b: a row an older version left between its two reel releases - there is no second release any more
+            st.update("Episodes", "episode_id", e["episode_id"], {"status": "LIVE", "notes": _note(e, "closed to LIVE: a long video makes no cut-down reels any more"), "updated": iso()})
+            log(f"{e['episode_id']}: closed to LIVE (an older version had left it half released)"); e["status"] = "closed"
 
 AUDIT_WORDS = {"approved": "approved - uploads can go public",
                "sent": "SENT - waiting for Google (days to weeks). Videos stay private until it is approved. It flips to approved by itself when a video goes public",
@@ -157,7 +157,7 @@ def audit_nudge(eps):
 
 def recover_stuck(eps):
     """v8.3: a video that stayed private (usually the API audit was still pending) is checked again about twice a day for 30 days. If it has become public it is
-    closed as LIVE so learning counts it; its reels are skipped (their moment passed)."""
+    closed as LIVE so learning counts it; its release step is skipped (its moment passed)."""
     st = store()
     for e in eps:
         if e.get("status") != "STUCK_PRIVATE" or not e.get("yt_id"): continue
@@ -166,7 +166,7 @@ def recover_stuck(eps):
         if last and now_utc() - last < dt.timedelta(hours=12): continue
         try: pub = PUB.yt_status(e["yt_id"]) == "public"
         except Exception: pub = False
-        st.update("Episodes", "episode_id", e["episode_id"], dict({"updated": iso()}, **({"status": "LIVE", "notes": ((e.get("notes") or "") + " became public late; reels skipped").strip()} if pub else {})))
+        st.update("Episodes", "episode_id", e["episode_id"], dict({"updated": iso()}, **({"status": "LIVE", "notes": ((e.get("notes") or "") + " became public late; release step skipped").strip()} if pub else {})))
         if pub: log(f"{e['episode_id']} is public now (it had been stuck on private)"); audit_seen_public()
 
 def clean_dead_checkpoints(eps):
@@ -265,11 +265,6 @@ def tick():
         if e.get("status") == "SCHEDULED":
             t = parse_iso(e.get("slot_et"))
             if t and now_utc() >= t + dt.timedelta(minutes=S("REEL1_DELAY_MIN", int)): due.append(("release1", e["episode_id"]))
-        if e.get("status") == "LIVE1":
-            t = parse_iso(e.get("slot_et"))
-            if t and now_utc() >= t + dt.timedelta(minutes=S("REEL2_DELAY_MIN", int)): due.append(("release2", e["episode_id"]))
-        for k in (2, 3):
-            if extra_reel_due(e, k): due.append((f"release{k+1}", e["episode_id"]))
     prod = _produce_slot(eps)
     if due:
         a = {"action": due[0][0], "episode": due[0][1]}
@@ -327,109 +322,35 @@ def _produce_slot(eps):
         break
     return None
 
-def release(ep_id, which):
-    """Reel k goes to YouTube Shorts + Instagram + Facebook once the long video is live. Posts the channel comment on the long video
-    (YouTube's API cannot pin comments; pin it in Studio if you like)."""
+def release(ep_id, which="release1"):
+    """The long video's release step, once it is public: the channel comment on it (YouTube's API cannot pin a comment; pin it in Studio if you like),
+    the carousel of a trial, status LIVE. v12 V2c-b2b: nothing else goes out with it - a long video makes no cut-down reels (the channel's short
+    videos are the standalone Shorts, sent by whatifs/release.py)."""
     JOB["name"] = "release"; JOB["episode"] = ep_id
     st = store(); e = next(x for x in st.rows("Episodes") if x["episode_id"] == ep_id)
-    want = {"release1": "SCHEDULED", "release2": "LIVE1"}.get(which, "LIVE")
-    if e.get("status") != want: log(f"{which} skipped: status is {e.get('status')} (already done or closed)"); return
+    if e.get("status") != "SCHEDULED": log(f"{which} skipped: status is {e.get('status')} (already done or closed)"); return
     if S("KILL_CHECK", bool) and str(e.get("kill", "")).upper().startswith("KILL"):
         PUB.yt_set_privacy(e["yt_id"], "private"); st.update("Episodes", "episode_id", ep_id, {"status": "KILLED", "updated": iso()}); log("killed by owner"); return
-    k = {"release1": 0, "release2": 1, "release3": 2, "release4": 3}[which]
-    if k >= 2: return _release_extra(st, e, k)
-    if k == 0:
-        if PUB.yt_status(e["yt_id"]) != "public":
-            t = parse_iso(e.get("slot_et"))
-            if t and now_utc() > t + dt.timedelta(hours=S("PRIVATE_ALERT_HOURS", float)) and "private alert sent" not in str(e.get("notes", "")):
-                PUB.email("Video not public yet", f"<p>Episode {ep_id} should be public by now but YouTube still shows it as private. "
-                          "For the first videos this usually means the Google Cloud project still needs the YouTube API audit (SETUP_CHECKLIST Step 4b). "
-                          f"The reels wait; after {S('RELEASE_GIVEUP_HOURS')} h the release is closed so new videos are never blocked.</p>")
-                st.update("Episodes", "episode_id", ep_id, {"notes": _note(e, "private alert sent")})
-            log("long video not public yet - waiting", "WARN"); return
-        audit_seen_public()
+    if PUB.yt_status(e["yt_id"]) != "public":
+        t = parse_iso(e.get("slot_et"))
+        if t and now_utc() > t + dt.timedelta(hours=S("PRIVATE_ALERT_HOURS", float)) and "private alert sent" not in str(e.get("notes", "")):
+            PUB.email("Video not public yet", f"<p>Episode {ep_id} should be public by now but YouTube still shows it as private. "
+                      "For the first videos this usually means the Google Cloud project still needs the YouTube API audit (SETUP_CHECKLIST Step 4b). "
+                      f"The release step waits; after {S('RELEASE_GIVEUP_HOURS')} h it is closed so new videos are never blocked.</p>")
+            st.update("Episodes", "episode_id", ep_id, {"notes": _note(e, "private alert sent")})
+        log("long video not public yet - waiting", "WARN"); return
+    audit_seen_public()
     rel = _fetch_release(ep_id, e.get("assets"))
-    if k == 0:
-        PUB.yt_comment(e["yt_id"], rel.get("pinned", ""))
-        try:                                                    # v10.1 (K149): the Instagram 'Case Files' carousel goes out with the episode
-            from whatifs import carousel as CAR; CAR.post(ep_id)
-        except Exception as x: log(f"carousel post skipped: {scrub(x)}", "WARN")
+    PUB.yt_comment(e["yt_id"], rel.get("pinned", ""))
+    try:                                                    # v10.1 (K149): the Instagram 'Case Files' carousel goes out with the episode
+        from whatifs import carousel as CAR; CAR.post(ep_id)
+    except Exception as x: log(f"carousel post skipped: {scrub(x)}", "WARN")
     long_url = f"https://youtu.be/{e['yt_id']}"
-    upd = {"status": "LIVE1" if k == 0 else "LIVE", "updated": iso()}
-    if k < len(rel.get("reels", [])):
-        sid, ig, fb = _post_reel(rel["reels"][k], rel, long_url)
-        if sid: upd[f"reel{k+1}_yt"] = sid
-        if ig: upd[f"ig{k+1}"] = ig
-        if fb: upd[f"fb{k+1}"] = fb
-    st.update("Episodes", "episode_id", ep_id, upd)
-    if not S("LAUNCH_DONE", bool) and k == 0:
+    st.update("Episodes", "episode_id", ep_id, {"status": "LIVE", "updated": iso()})
+    if not S("LAUNCH_DONE", bool):
         PUB.email("We're live", f"<p>Your first video is live: <a href='{long_url}'>{long_url}</a></p><p>Nothing to do. The channel now runs on its own.</p>")
         set_setting("LAUNCH_DONE", "TRUE")
     flush_log()
-
-def _post_reel(r, rel, long_url):
-    """Upload one reel: YouTube Shorts (+ a comment with the full-video link) and, if META_ON, Instagram + Facebook. Returns (shorts id, ig id, fb id); failures are logged."""
-    sid = ig = fb = ""; path = r["file"]
-    cap = f"{cap_hashtags(r['caption'])}\n\nFull video: {long_url}"
-    if S("REEL1_SHORTS_ON", bool):
-        try:
-            sid = PUB.yt_upload(path, (r.get("hook") or rel["title"])[:80] + " #shorts", cap + "\n#shorts", ["shorts", "what if"], ai_label=S("AI_LABEL_DEFAULT", bool), short=True)
-            PUB.yt_comment(sid, f"Full video: {long_url}")
-        except Exception as x: log(f"short upload failed: {x}", "WARN")
-    else: log("YouTube Shorts copy switched off (REEL1_SHORTS_ON = FALSE)")
-    if not PUB.meta_ready() and S("META_ON", bool): log("Instagram/Facebook not connected (no Meta key yet): this reel goes to YouTube only")
-    if PUB.meta_ready():            # v10.1: only when Meta is connected. v8.9.1 (fix): Instagram and Facebook are tried separately (one failing no longer skips the other), the reel file is sent
-        opened, links = [], {}        # directly, a public Drive link is made only if a platform needs it, and every link made is closed again in 'finally'
-        def link(p):
-            if p not in links:
-                fid, url = PUB.drive_upload(p, os.path.basename(p), public=True); opened.append(fid); links[p] = url
-            return links[p]
-        try:
-            curl = None
-            if r.get("cover"):
-                try: curl = link(r["cover"])
-                except Exception as x: log(f"reel cover link skipped: {scrub(x)}", "WARN")
-            try: ig = PUB.ig_reel(None, cap.replace(long_url, "link in bio"), curl, video_path=path, url_fn=lambda: link(path))
-            except Exception as x: log(f"instagram post failed: {scrub(x)}", "WARN")
-            try: fb = PUB.fb_reel(None, cap, video_path=path, url_fn=lambda: link(path))
-            except Exception as x: log(f"facebook post failed: {scrub(x)}", "WARN")
-        finally:
-            for fid in opened:
-                try: PUB.drive_private(fid)
-                except Exception as x: log(f"could not make a Drive link private again: {scrub(x)}", "WARN")
-    return sid, ig, fb
-
-def extra_reel_due(e, k, now=None):
-    """v8.5: reel k (2 or 3, i.e. reel 3 or 4) is due when the long video's first two reels are done (status LIVE), its delay has passed, the reel file was
-    actually made (its Drive id is in assets: older episodes have none, and nothing is downloaded to find that out) and it has not been tried yet."""
-    if k + 1 > max(2, min(4, S("REELS_PER_VIDEO", int))) or e.get("status") != "LIVE" or not e.get("yt_id"): return False
-    if f"reel{k+1}_yt" not in e: return False
-    if re.search(r"reels skipped|became public late", str(e.get("notes") or "")): return False
-    if str(e.get("kill", "")).upper().startswith("KILL"): return False      # KILL typed after launch: no more Shorts for it      # the launch reels were given up: the extra ones stay quiet too         # the Sheet has no v8.5 columns yet (run Setup once): without the cell to mark, a Short could be posted twice
-    if str(e.get(f"reel{k+1}_yt") or "").strip(): return False
-    try: assets = e.get("assets") if isinstance(e.get("assets"), dict) else json.loads(e.get("assets") or "{}")
-    except Exception: assets = {}
-    if f"reel{k}.mp4" not in assets: return False
-    t = parse_iso(e.get("slot_et")); now = now or now_utc()
-    if not t or now < t + dt.timedelta(minutes=S(f"REEL{k+1}_DELAY_MIN", int)): return False
-    if now > t + dt.timedelta(minutes=S(f"REEL{k+1}_DELAY_MIN", int)) + dt.timedelta(hours=S("RELEASE_GIVEUP_HOURS", float)): return False
-    return True
-
-def _release_extra(st, e, k):
-    """v8.5: reels 3 and 4 go out on the following days (a Short on 6 of 7 days with Tue/Sat videos). One try each: the cell is marked before anything is
-    posted, so a crash can never post a Short twice; the long video's status is never changed."""
-    ep_id = e["episode_id"]; col = f"reel{k+1}_yt"
-    if not extra_reel_due(e, k): log(f"release{k+1} skipped: not due or already tried"); return
-    st.update("Episodes", "episode_id", ep_id, {col: "trying " + iso(), "updated": iso()})
-    upd = {}
-    try:
-        rel = _fetch_release(ep_id, e.get("assets")); reels = rel.get("reels", [])
-        if k >= len(reels): upd[col] = "none"; log(f"release{k+1}: this episode has no reel {k+1}")
-        else:
-            sid, ig, fb = _post_reel(reels[k], rel, f"https://youtu.be/{e['yt_id']}")
-            upd = {col: sid or ("off" if not S("REEL1_SHORTS_ON", bool) else "failed"), f"ig{k+1}": ig, f"fb{k+1}": fb}
-    except Exception as x: upd[col] = "failed"; log(f"release{k+1} failed: {scrub(x)}", "WARN")
-    upd["updated"] = iso(); st.update("Episodes", "episode_id", ep_id, upd); flush_log()
 
 def _fetch_release(ep_id, assets=None):
     d = os.path.join(WORK, ep_id); os.makedirs(d, exist_ok=True); path = os.path.join(d, "release.json")
@@ -438,18 +359,7 @@ def _fetch_release(ep_id, assets=None):
         for name, fid in ids.items():
             if name.startswith("_"): continue          # archive entries, not release files
             PUB.drive_download(fid, os.path.join(d, name))
-    rel = json.load(open(path))
-    for r in rel.get("reels", []):
-        for key in ("file", "cover"):
-            if r.get(key): r[key] = os.path.join(d, os.path.basename(r[key]))
-    return rel
-
-def cap_hashtags(text, n=5):
-    """v8.9: Instagram enforces at most 5 hashtags per Reel (Dec 2025; extra tags can stop publishing or reach). Keep the first n, drop the rest."""
-    seen = []
-    def keep(m):
-        seen.append(m.group(0)); return m.group(0) if len(seen) <= n else ""
-    return re.sub(r"\s{2,}", " ", re.sub(r"#\w+", keep, str(text or ""))).strip()
+    return json.load(open(path))
 
 # ---------------- v8.9: change-ready email + one-click merge (for Claude Code and the Repair Bot) ----------------
 def pr_ready():
@@ -597,6 +507,8 @@ def learn():
     except Exception as x: log(f"v12 V2c-b move skipped: {scrub(x)}", "WARN")
     try: v12v2cb2_upgrade(st)                                    # v12 V2c-b2: 'made' is a field of a Short's record now; the Shorts an older job made get it once
     except Exception as x: log(f"v12 V2c-b2 move skipped: {scrub(x)}", "WARN")
+    try: v12v2cb2b_upgrade(st)                                   # v12 V2c-b2b: no cut-down reels; the pilot Shorts and the special reels are paused; the dead cells are marked
+    except Exception as x: log(f"v12 V2c-b2b move skipped: {scrub(x)}", "WARN")
     try:
         from whatifs import craft as CRF; CRF.seed_techniques()       # v9.3.2: the owner's pre-judged technique cards, filed once
     except Exception as x: log(f"technique seeding skipped: {scrub(x)}", "WARN")
@@ -703,8 +615,8 @@ def learn():
         except Exception as x: log(f"playbook credit skipped: {scrub(x)}", "WARN")
         if m.get("from_shorts") is not None:
             st.append("Lessons", [{"ts": iso(), "lesson": f"{e['episode_id']}: {m['from_shorts']} long-video views came from Shorts, Shorts gained {m.get('shorts_subs', '?')} subscribers "
-                                   f"(reel style {d.get('reel_style', 'teaser')}, formats {', '.join(d.get('reel_formats', [])) or '?'})",
-                                   "evidence": "YouTube Analytics (traffic source SHORTS; per-Short subscribers)", "applies_to": "reels"}])
+                                   + (f"(reel style {d['reel_style']}, formats {', '.join(d.get('reel_formats', [])) or '?'})" if d.get("reel_style") else "(no cut-down reels: its Shorts are standalone)"),
+                                   "evidence": "YouTube Analytics (traffic source SHORTS; per-Short subscribers)", "applies_to": "reels" if d.get("reel_style") else "showrunner"}])
         _credit_strategies(st, strategy_credits(d, sc, swapped))      # v8.9.1: each (dimension, name) credited once per video, matched on BOTH columns
     if rows: st.append("Analytics", rows)
     try: _reaction_learning([r for r in rows if r.get("data_note") == "ok"])
@@ -876,6 +788,27 @@ def v12v2cb2_upgrade(st):
         if st.update("Specials", "id", r.get("id"), {"made": r.get("ts") or iso()}): done.append(r.get("id"))
     set_setting("V12V2CB2_MOVE_DONE", iso() + " " + (f"{len(done)} Short(s)" if done else "none"))
     if done: log(f"v12 V2c-b2: {len(done)} standalone Short(s) made before this version carry the field 'made' now")
+    return done
+
+V12V2CB2B_RETIRED = ("REELS_PER_VIDEO", "REEL_STYLE", "REEL1_SHORTS_ON", "REEL2_DELAY_MIN", "REEL3_DELAY_MIN", "REEL4_DELAY_MIN", "KINETIC_CAPTIONS_ON", "TRIAL_SHORTS_SAFE_ON")
+V12V2CB2B_PAUSED = (("PILOTS_ON", "every topic is tested by its own standalone Short now (the ladder)"),
+                    ("SPECIALS_ON", "the redesign of 11 Nov 2026 pauses what is not the core until a long video of the new code reaches 1,000 views; their Rs 300 is production money meanwhile"))
+
+def v12v2cb2b_upgrade(st):
+    """ONE time on a live Sheet: (1) the rows of the cells that only the cut-down reels read are marked RETIRED in their notes (the value is left as
+    the owner last saw it); (2) the pilot Shorts and the special reels are PAUSED - their switch is set to FALSE where it still holds the old default
+    TRUE, with the reason in its note. He can switch either back on; a cell he had already set to FALSE is left alone. Never runs twice. Returns what
+    it changed."""
+    if str(S("V12V2CB2B_MOVE_DONE") or "").strip(): return []
+    have = {r.get("key"): r for r in st.rows("Settings")}; done = []
+    for k in V12V2CB2B_RETIRED:
+        if k in have and not str(have[k].get("note") or "").startswith("RETIRED"):
+            st.update("Settings", "key", k, {"note": "RETIRED (v12 V2c-b2b): no code reads this cell any more - a long video makes no cut-down reels; the channel's short videos are the standalone Shorts"}); done.append(k)
+    for k, why in V12V2CB2B_PAUSED:
+        if k in have and str(have[k].get("value", "")).strip().upper() == "TRUE":
+            st.update("Settings", "key", k, {"value": "FALSE", "note": f"PAUSED by the v12 V2c-b2b move (it was TRUE): {why}. TRUE switches it back on - through the old upload, nothing read back"}); done.append(k)
+    set_setting("V12V2CB2B_MOVE_DONE", iso() + " " + (",".join(done) or "none"))
+    if done: log("v12 V2c-b2b: a long video makes no cut-down reels any more; the pilot Shorts and the special reels are paused; marked on the Sheet: " + ", ".join(done))
     return done
 
 V12V1_FLIPS = (("RUNTIME_MAX_SEC", "600", "540"), ("PROMISE_BY_SEC", "30", "5"))
@@ -1315,6 +1248,8 @@ def setup():
     except Exception as x: log(f"v12 V2c-b move skipped: {scrub(x)}", "WARN")
     try: v12v2cb2_upgrade(st)                                    # v12 V2c-b2: 'made' is a field of a Short's record now; the Shorts an older job made get it once
     except Exception as x: log(f"v12 V2c-b2 move skipped: {scrub(x)}", "WARN")
+    try: v12v2cb2b_upgrade(st)                                   # v12 V2c-b2b: no cut-down reels; the pilot Shorts and the special reels are paused; the dead cells are marked
+    except Exception as x: log(f"v12 V2c-b2b move skipped: {scrub(x)}", "WARN")
     try:                                                         # v12: the founding knowledge is in the Palace from the first run
         from whatifs.org import palace as PAL, runner as ORGR; PAL.maintain(st); ORGR.install(st)
     except Exception as x: log(f"palace seed skipped: {scrub(x)}", "WARN")

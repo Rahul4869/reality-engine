@@ -416,13 +416,6 @@ def strip_tags(text):
     """Show tags are never spoken: removed before TTS, captions and descriptions."""
     return re.sub(r"[ \t]{2,}", " ", SHOW_TAG_RE.sub("", str(text or ""))).strip()
 
-def clipbait_lines(script):
-    """The labelled lines inside [CLIPBAIT] ... [/CLIPBAIT] (tags removed, labels kept). [] when there is none."""
-    s = str(script or ""); a = s.upper().find("[CLIPBAIT]"); b = s.upper().find("[/CLIPBAIT]")
-    if a < 0 or b < a: return []
-    seg = s[a + len("[CLIPBAIT]"):b]
-    return [re.sub(r"\s+", " ", SHOW_TAG_RE.sub("", ln)).strip() for ln in seg.splitlines() if SHOW_TAG_RE.sub("", ln).strip()][:6]
-
 def check_tags(script, plan):
     """Issues with the show tags in a script against its plan: exactly one CLIPBAIT segment of <= 8 s (word estimate), METER tags well-formed with
     n 1-3 and a final reading that agrees with the verdict, EXHIBIT ids from the plan, 3-5 JURY prompts and none in the first 30 s (word estimate)."""

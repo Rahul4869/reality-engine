@@ -45,6 +45,9 @@ RETIRED = [
      "truth": "every long video has animated Kling scenes (ANIM_SHOTS) plus the ffmpeg/OpenCV render"},
     {"id": "daily_shorts_cadence", "pattern": r"SHORTS_PER_DAY|SHORTS_KLING_EVERY|REPLAN_MAX_SHORTS_PER_DAY|\bShorts ?(?:per|/) ?day\b|\bdaily Shorts\b|\b1\.5 (?:standalone )?Shorts\b", "flags": I, "unless": None, "scopes": ("docs", "prompts"),
      "truth": "the Shorts cadence is set in weeks: SHORTS_PER_WEEK (3) and SHORTS_PER_MONTH (12); every topic starts as a Short (whatifs/ladder.py)"},
+    {"id": "cutdown_reels", "pattern": r"REELS_PER_VIDEO|REEL_STYLE\b|REEL[234]_DELAY_MIN|REEL1_SHORTS_ON|(?i:\bbridge (?:Shorts?|reels?)\b|\b(?:Shorts?|reels?) cut from (?:each|every|the|a) long video|\b[24] (?:Shorts|reels) (?:per|a|from each) (?:long )?video)",
+     "flags": 0, "unless": r"\bno\b|\bnot\b|never|retired|gone|removed|history", "scopes": ("docs", "prompts"),
+     "truth": "a long video makes no cut-down reels: the channel's short videos are the standalone Shorts (whatifs/shorts2.py), each sent through whatifs/release.py; the pull from a Short to its long video is the related-video link, set by hand"},
 ]
 
 # Ratchet baseline for the "prompts" scope: strings in code that MUST name an old value (a one-time setting move has to say what it replaces).
@@ -53,6 +56,7 @@ BASELINE = {
     ("whatifs/manage.py", "old_month_cap"): (1, "log line of the one-time cap move that already ran on the live Sheet"),
     ("whatifs/manage.py", "kling_v3_path"): (1, "the one-time correction names the wrong model id it replaces"),
     ("whatifs/manage.py", "daily_shorts_cadence"): (3, "the one-time move names the three retired cadence cells it marks on a live Sheet"),
+    ("whatifs/manage.py", "cutdown_reels"): (6, "the one-time move names the six retired cut-down cells it marks on a live Sheet"),
 }
 
 _CACHE: dict = {}
@@ -305,7 +309,7 @@ UNWIRED_FUNCTIONS = {
 }
 UNUSED_TABS_MAX, UNWIRED_FUNCTIONS_MAX = 2, 8          # ratchets: lower them with every entry that is wired or removed, never raise them
 _IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
-_LISTS = {"whatifs/core.py": ("DEFAULTS", "TABS"), "whatifs/truth.py": ("UNREAD_SETTINGS", "UNUSED_TABS", "UNWIRED_FUNCTIONS")}      # tables that LIST names: being listed is not being used
+_LISTS = {"whatifs/core.py": ("DEFAULTS", "TABS"), "whatifs/truth.py": ("UNREAD_SETTINGS", "UNUSED_TABS", "UNWIRED_FUNCTIONS", "OLD_DOORS")}      # tables that LIST names: being listed is not being used
 
 def _production_text(root):
     """{rel: text} of everything that can USE a name: the code, the workflows, the dashboard. The listing tables are blanked out."""
@@ -363,11 +367,58 @@ def wiring_issues(root=None):
         if len(listed) > limit: out.append(f"whatifs/truth.py: {name} grew to {len(listed)} (limit {limit}): the list may only shrink")
     return out
 
+# ---------------- one door for every upright video (v12 V2c-b2b: counted from the code, the defaults would have posted about 38 short videos a
+# month through FOUR doors, three of them with one text for every platform, an ask and nothing read back). A short video reaches a platform through
+# Publishing's own run in whatifs/release.py (a receipt for every row of the release sheet) and nowhere else. The doors below are older than that
+# run: each is OFF unless the owner switches it on, and each says what is true today. The list may only shrink - a door is taken off it by sending
+# its upload through whatifs/release.py or by removing the track; a NEW door fails Plan Guard, the tests and check docs_current.
+DOOR_HOME = ("whatifs/release.py", "whatifs/publish.py")          # Publishing's run, and the platform calls it is built from
+DOOR_CALLS = ("ig_reel", "fb_reel")                                # a Reel on Instagram / on Facebook; and yt_upload(..., short=True): a YouTube Short
+OLD_DOORS = {
+    "whatifs/specials.py:_publish": "the special reels and the hand-started cast intro (SPECIALS_ON is FALSE: paused), and a standalone Short only when RELEASE_SHEET_ON is FALSE: one text for every platform, an ask, nothing read back",
+    "whatifs/pilots.py:run": "the pilot Shorts (PILOTS_ON is FALSE: paused - every topic is tested by its own standalone Short): four stills, an ask, YouTube only, nothing read back",
+    "whatifs/herostill.py:make_for_episode": "the hero-still reel as a YouTube Short (HERO_STILL_SHORTS_ON is FALSE): one still with a camera move, nothing read back",
+    "whatifs/insights.py:post_drop": "the audio drop as an Instagram Reel (AUDIO_DROP_POST_ON is FALSE): nothing read back",
+}
+OLD_DOORS_MAX = 4          # ratchet: lower it with every door that is rebuilt on whatifs/release.py or removed, never raise it
+
+def short_doors(root=None):
+    """Every function of whatifs/ outside Publishing's own run that uploads an upright video: it calls `ig_reel` or `fb_reel`, or `yt_upload` with
+    `short` set. Returned as 'file:function' (the outermost function that holds the call), read from the source."""
+    root = root or ROOT
+    if ("doors", root) not in _CACHE:
+        out = set()
+        for p in code_files(root):
+            rel = _rel(root, p)
+            if not (rel.startswith("whatifs/") and rel.endswith(".py")) or rel in DOOR_HOME: continue
+            try: tree = ast.parse(_read(p))
+            except SyntaxError: continue
+            for fn in tree.body:
+                if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)): continue
+                for n in ast.walk(fn):
+                    if not isinstance(n, ast.Call): continue
+                    name = n.func.attr if isinstance(n.func, ast.Attribute) else getattr(n.func, "id", "")
+                    short = any(k.arg == "short" and not (isinstance(k.value, ast.Constant) and k.value.value is False) for k in n.keywords)
+                    if name in DOOR_CALLS or (name == "yt_upload" and short): out.add(f"{rel}:{fn.name}")
+        _CACHE[("doors", root)] = sorted(out)
+    return list(_CACHE[("doors", root)])
+
+def door_issues(root=None):
+    """A new door for short videos, a listed one that is gone, or a list that grew."""
+    root = root or ROOT
+    if not os.path.exists(os.path.join(root, "whatifs", "release.py")): return []          # a test fixture without Publishing's run
+    found = short_doors(root); out = []
+    for x in sorted(set(found) - set(OLD_DOORS)):
+        out.append(f"{x}: uploads an upright video outside whatifs/release.py - a short video reaches a platform only through Publishing's own run (release.short), with a receipt for every row")
+    for x in sorted(set(OLD_DOORS) - set(found)): out.append(f"whatifs/truth.py: OLD_DOORS lists {x}, which uploads nothing any more or is gone - delete the entry and lower OLD_DOORS_MAX")
+    if len(OLD_DOORS) > OLD_DOORS_MAX: out.append(f"whatifs/truth.py: OLD_DOORS grew to {len(OLD_DOORS)} (limit {OLD_DOORS_MAX}): the list may only shrink")
+    return out
+
 def issues(root=None, runtime=False):
     """Everything that would make a new chat (or a model prompt) act on a retired concept. Empty list = one current truth."""
     root = root or ROOT
     out = [f"{f['file']}:{f['line']}: retired '{f['rule']}' ({f['text']}) -> {f['truth']}" for f in scan(root)]
-    if ("layout", root) not in _CACHE: _CACHE[("layout", root)] = docstring_issues(root) + layout_issues(root) + settings_issues(root) + wiring_issues(root)
+    if ("layout", root) not in _CACHE: _CACHE[("layout", root)] = docstring_issues(root) + layout_issues(root) + settings_issues(root) + wiring_issues(root) + door_issues(root)
     out += _CACHE[("layout", root)]
     if runtime: out += live_prompt_issues()
     return out

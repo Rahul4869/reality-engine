@@ -48,9 +48,6 @@ STRATEGIES = {
   "O7_deadline": "A countdown on screen in the first 3 seconds.", "O8_dry_joke": "Deadpan relatable aside, then hard cut to dread."},
  "voice": {"hypnotic": "Slow, low, long pauses.", "urgent": "Faster, short gaps.", "slow_burn": "Starts calm, speeds up.",
   "brake": "Starts fast, slows for the reveal.", "conversational": "Like telling a friend."},
- "reel": {"R1_climax_why": "Climax first, then 'but why?'. Cut to black on the question.", "R2_countdown": "'Second 1... second 10...' stop one step before the answer.",
-  "R3_myth": "'Most people think X. They're wrong.' Cut before the answer.", "R4_three_facts": "Three facts, the third held back.",
-  "R5_scale_ladder": "Body, then city, then planet. Freeze at planet level."},
  "humour": {"none": "No jokes.", "light": "One dry aside in the cold open and one end callback.", "medium": "Cold-open aside, relief line after the peak, end callback (max 3)."},
  "thumb": {"T1_object_scale": "One ordinary object, enormous, against a dramatic landscape.", "T2_before_after": "Split frame: normal world vs aftermath.",
   "T3_silhouette": "Silhouetted person, rim-lit, facing the impossible scene. No real person.", "T4_number": "One giant number + one tiny object.",
@@ -231,13 +228,11 @@ CRAFT = {
               "that the first minute visibly pays off; titles 30-60 characters with the strongest words in the first half (phones cut the end); at most one ALL-CAPS word; "
               "thumbnail text 1-4 words that ADD to the title, never repeat it; one focal subject, big and high-contrast, readable at phone size; keep the bottom-right "
               "corner empty (YouTube's timestamp covers it); no clickbait the video does not deliver (it is punished by retention)."),
- "reel": ("Open on the strongest frame in the first second; one idea per reel; cut for emotion (Murch); motion or a change of picture every 1-2 seconds; "
-          "follow the reel style in the brief (v8.5 default 'bridge': give one real payoff, leave the episode's bigger question open, invite to the full video)."),
 }
 CRAFT["writer"] = CRAFT["retention"] + " " + CRAFT["writer"]          # v8.6: the memos and the humanize pass carry the retention rules too
 CRAFT["humanize"] = CRAFT["writer"] + " " + CRAFT["psychologist"]
 CRAFT_BY_ROLE = {"WRITER": CRAFT["writer"], "AUDIENCE PSYCHOLOGIST": CRAFT["psychologist"], "DIRECTOR + DP": CRAFT["director"],
-                 "EDITOR + SOUND": CRAFT["editor"], "PACKAGER": CRAFT["packager"], "REEL PRODUCER": CRAFT["reel"]}
+                 "EDITOR + SOUND": CRAFT["editor"], "PACKAGER": CRAFT["packager"]}
 
 
 # ---------------- v8.9: locked visual style, living-still atmosphere, rotating guest voices ----------------

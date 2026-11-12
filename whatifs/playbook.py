@@ -4,7 +4,7 @@ import hashlib, json, re
 from whatifs.core import store, S, iso, log, scrub, safe_rows, safe_append
 
 TAB = "Playbook"
-DEPTS = ("showrunner", "writer", "packager", "director", "reel")
+DEPTS = ("showrunner", "writer", "packager", "director")          # v12 V2c-b2b: no reel department - a long video makes no cut-down reels (older rows for it stay as history)
 METRICS = ("pack", "open", "hold", "shorts")
 EVIDENCE = ("official", "well-replicated", "plausible", "speculative")
 MAX_NEW, MAX_TRIALS, MARGIN = 3, 3, 0.03

@@ -35,7 +35,7 @@ DEPTS = {
             "wraps": ("whatifs/contract.py", "whatifs/enforce.py", "whatifs/qc.py", "whatifs/fixes.py"), "levers": ("CONTRACT_OFF", "BREAKOUT_HARD_BAR", "CRITIQUE_MIN"), "takes": ("repair_memo",)},
     "D9":  {"mission": "uploads, the release sheet (every setting of every platform set by code and read back), one native upload of a Short per platform, schedules, spin-offs", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/publish.py", "whatifs/spinoff.py", "whatifs/deeptrial.py", "whatifs/specials.py", "whatifs/release.py"),
-            "levers": ("REEL1_DELAY_MIN", "REEL2_DELAY_MIN", "NEXT_LINK_ON", "IG_TRIAL_REELS_ON", "SHORT_THUMB_ON"), "takes": ()},      # v12 V2c-b2: two rows of the release sheet
+            "levers": ("REEL1_DELAY_MIN", "NEXT_LINK_ON", "IG_TRIAL_REELS_ON", "SHORT_THUMB_ON"), "takes": ()},      # v12 V2c-b2: two rows of the release sheet
     "D10": {"mission": "analytics, technique evidence, sampling, forecasts, the 48-hour monitor, the ladder from a Short to its long video (the promote rule), the winner's follow-up", "cadence": "daily", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/brain.py", "whatifs/breakout.py", "whatifs/growth.py", "whatifs/reach.py", "whatifs/ladder.py"),
             "levers": ("BRAIN_ON", "BRAIN_HOLDOUT", "LADDER_WINDOW_DAYS", "LADDER_MIN_ENGAGED"), "takes": ()},
@@ -106,7 +106,7 @@ CHECK_OWNER = {
     "grimm_prototype": "D4", "verdict_line": "D4", "research": "D2", "brain_playbook": "D10", "docs_current": "D12", "palace_health": "L",
     "designed_voices": "D7", "music_bed": "D7", "animation": "D6", "real_motion": "D6", "no_frozen_frames": "D6", "slop_guard": "D6", "impact_map": "D6",
     "visual_change": "D6", "living_characters": "D6", "aliveness": "D6", "promise_paid": "D6", "thumbnails": "D5", "titles": "D5", "chapters": "D5",
-    "short_covers": "D5", "shorts": "D9", "self_review": "D8", "breakout_bar": "D1", "dept_contract": "D8", "takeaways_written": "D8",
+    "self_review": "D8", "breakout_bar": "D1", "dept_contract": "D8", "takeaways_written": "D8",
     "decisions_executed": "C", "lever_verified": "D12", "research_cadence": "D2", "palace_injected": "D4", "palace_cited": "D4", "canon_in_brief": "D4",
     "viewer_numbers": "D13", "viewer_breath": "D13", "viewer_promise": "D13", "viewer_plain": "D13", "viewer_probe": "D13", "format_kept": "D4",
     "short_open": "D13", "short_plain": "D13", "short_shape": "D13", "short_kept": "D14", "short_contract": "D8", "topic_ladder": "D10", "release_sheet": "D9",

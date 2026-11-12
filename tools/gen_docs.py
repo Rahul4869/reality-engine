@@ -255,7 +255,7 @@ def render():
     A("  Model names are never typed in code: they are discovered live (`whatifs/models.py`) or held in Settings cells.")
     A("- One long episode: tick (`whatifs/manage.py`) -> writers' room (`whatifs/room2.py`, early through `whatifs/preprod.py`) -> script-stage contract ->")
     A("  voice -> shot plan -> paid pictures and clips -> render (`whatifs/render.py`) -> final-stage contract -> held for the owner or scheduled ->")
-    A("  release with Shorts and Reels -> 48-hour breakout monitor (`whatifs/breakout.py`) -> learning (`whatifs/brain.py`). Every paid step is checkpointed.")
+    A("  release step (the channel comment, status LIVE) -> 48-hour breakout monitor (`whatifs/breakout.py`) -> learning (`whatifs/brain.py`). Every paid step is checkpointed.")
     A("- Money: every paid call is logged (`core.cost`), estimated before it runs and stopped by the governor (`whatifs/governor.py`).")
     A("- Organisation: each step of the long-video pipeline that belongs to a department runs under the department contract (`whatifs/org/runner.py`, section 11).")
     A("- Fake mode: `WI_FAKE=1` replaces every provider (`whatifs/fakes.py`); the rehearsal (`tools/rehearsal.py`) runs the whole pipeline at zero cost.")
@@ -274,6 +274,9 @@ def render():
     A(f"- Every Sheet tab must be used by code and every function of `whatifs/` must be called by production code. {len(TRU.UNUSED_TABS)} tabs and "
       f"{len(TRU.UNWIRED_FUNCTIONS)} functions are not (built but never wired); both lists may only shrink and a new one fails the same three guards:")
     for k, what in list(TRU.UNUSED_TABS.items()) + list(TRU.UNWIRED_FUNCTIONS.items()): A(f"  - `{k}`: {what}.")
+    A(f"- A short video reaches a platform only through Publishing's own run (`whatifs/release.py`: one master file, three native uploads, a receipt for every row). "
+      f"{len(TRU.OLD_DOORS)} older doors still exist, each off by default; the list may only shrink and a new door fails the same three guards:")
+    for k, what in TRU.OLD_DOORS.items(): A(f"  - `{k}`: {what}.")
     A("")
     A("## 5. Contract checks (`whatifs/contract.py` FEATURES)")
     A("| check | stage | what it guarantees |")

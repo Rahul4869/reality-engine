@@ -25,15 +25,14 @@ def draw(episode_id, ptype):
         except Exception: pass
     lo, hi = S("RUNTIME_MIN_SEC", int), S("RUNTIME_MAX_SEC", int)
     runtime = int(rng.triangular(lo, hi, lo + (hi - lo) * 0.45))
-    st = {d: pick(d, rng, recent.get(d, [])[-2:]) for d in ("story", "hook", "voice", "reel", "humour", "thumb", "title", "banter")}
+    st = {d: pick(d, rng, recent.get(d, [])[-2:]) for d in ("story", "hook", "voice", "humour", "thumb", "title", "banter")}
     st["family"] = pick("family", rng, recent.get("family", [])[-3:])
     if ptype == "body" and st["humour"] == "medium": st["humour"] = "light"
-    reel2 = pick("reel", rng, [st["reel"]]) or st["reel"]
     out = {"episode_id": episode_id, "ptype": ptype, "runtime_sec": runtime,
             "words": int(runtime / 60 * S("WPM_ESTIMATE", float) * rng.uniform(0.95, 1.03)),
             "stills": rng.randint(S("STILLS_MIN", int), S("STILLS_MAX", int)), "living": S("LIVING_STILLS", int),
             "kling": S("KLING_CLIPS", int), "beats": rng.randint(6, 10), "hook_sec": round(rng.uniform(3, 8), 1),
-            "strategies": st, "reel_formats": [st["reel"], reel2], "shot_sec": round(rng.uniform(4.5, 7.0), 1)}
+            "strategies": st, "shot_sec": round(rng.uniform(4.5, 7.0), 1)}
     from whatifs.data import STRATEGIES
     from whatifs import growth as GR
     for dim in ("rhythm", "sound"):           # v8.7: older Sheets get these rows from the daily learning job; until then a seeded choice from the seed list

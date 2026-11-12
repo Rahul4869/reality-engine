@@ -68,7 +68,7 @@ PACKAGING FIRST (v8.7): decide the click promise NOW, before a word is written: 
 and what the viewer sees and hears in the first 30 seconds that pays that click off (YouTube's Intro report is the share still watching at 30 s; it is high when the opening matches the title and thumbnail).
 Return JSON: {"premise":"","headline":"","family":"","ptype":"","viewer_question":"","exit_emotion":"","logline":"","thesis":"the one surprising truth the episode proves","unexpected_answer":"",
 "emotional_arc":"","peak_moment":"","humour_plan":"","title_candidates":["5 titles, <=60 chars, curiosity gap, no clickbait lies"],
-"thumb_concept":"","reel_hooks":["2 reel hook lines"],"risks":"",
+"thumb_concept":"","risks":"",
 "promise":{"title":"<=60 chars, key words first","thumb_text":"1-4 words that ADD to the title","thumb_scene":"the ONE impossible image on the thumbnail","first_30s":"what the viewer SEES and HEARS in the first 30 s that pays off the click"},
 "next_tease":{"premise":"a DIFFERENT pitch from the list, another family, made as the NEXT episode","headline":"","family":"","ptype":"","line":"<=20 spoken words that make viewers want the next video, a question or a stake, no weekday"}}"""
 
@@ -137,7 +137,6 @@ Thumbnail text must be 1-3 words (4 at most) that ADD a new hook (e.g. title "Yo
 Also make a RUNNER-UP thumbnail (thumb_prompt_b + thumb_text_b) built on a DIFFERENT idea (another object, angle, scale or emotion; not a re-roll of the first).
 It goes live only if the first package under-performs, so it should pair with your 2nd title and still keep the script's promise.
 Return JSON: {"titles":["best 3, best first"],"thumb_text":"<=4 words","thumb_prompt":"cinematic 16:9 key art, no text","thumb_text_b":"<=4 words","thumb_prompt_b":"a different idea, 16:9, no text",
-"reel_cover_prompts":["2 vertical 9:16 key-art prompts, no text"],"reel_cover_texts":["<=5 words each"],
 "description":"150-250 words, first line hooks, then summary, then 'Chapters' placeholder, then 3 hashtags","tags":["15 tags"],"pinned_comment":"a question that sparks replies, then one short witty line that invites a like or a share"}"""
 
 HUMANIZE = HOUSE + """
@@ -151,29 +150,6 @@ Craft reminders (techniques to apply, never copy a work): @@CRAFT@@
 NARRATION:
 @@SCRIPT@@
 Return JSON: {"script":"## BEAT 1\n[calm] ...","changes":"one line"}"""
-
-REEL = HOUSE + """
-ROLE: REEL PRODUCER. Make @@N@@ vertical reels from the long video's existing shots. Each reel uses a DIFFERENT moment of the episode (no two reels share their payoff).
-Reel formats: @@FORMATS@@ (@@FORMATDEFS@@). Each reel MAY reuse one kling shot.
-For each reel: pick shot indexes (5-9) in a new order, write 3-6 short voice lines (re-recorded), and an end line. Start EVERY voice line with [DIRECTOR] or [SKEPTIC]. The pipeline adds a short follow or share ask before the end line, so do not write one.
-@@STYLE@@
-Opening 1 second must be the strongest frame and the first line must state the impossible situation in under 8 words (no greeting, no 'what if' preamble).
-SHOTS (index: type: prompt): @@SHOTS@@  SPINE: @@SPINE@@  TREND BRIEF: @@TRENDS@@
-CRAFT REMINDERS: @@CRAFT@@
-LESSONS FROM OUR OWN SHORTS (what brought viewers to the full video and subscribers): @@LESSONS@@
-Return JSON: {"reels":[{"format":"","hook_text":"<=6 words on screen","shots":[0],"lines":["[DIRECTOR] [tension] ..."],"end_line":"","caption":"<=150 chars + 3 hashtags"}]}"""
-
-REEL_STYLE_TEASER = """Length 25-45 s. They tease and cut at the suspense. Every reel must end on an unanswered question and the end line 'Full video on our channel.'"""
-REEL_STYLE_BRIDGE = """Length 25-40 s. BRIDGE: a Short that gets WATCHED TO THE END and then sends people to the long video. Structure:
-line 1 = the impossible situation (the hook) -> one escalation -> ONE real, satisfying payoff with a number or an image (a small answer is GIVEN, never withheld, so the viewer feels rewarded and keeps watching)
--> the open door: the episode's BIGGER question, which this reel does NOT answer and only the full video does (make it specific: a stake, a number, a 'but then...').
-end_line = a short, witty, in-character invite to the full video that names that bigger question (e.g. 'Whether anyone survives day three? That is the full simulation, on our channel.'). Never 'link in bio', never 'part 2'.
-Each reel opens a DIFFERENT door (a different unanswered question of the episode), so the 4 reels are 4 ways in, not 4 copies."""
-
-REEL_STYLE_STANDALONE = """Length 20-35 s. STANDALONE: the Shorts feed rewards a clip people FINISH and WATCH AGAIN, not a trailer. Each reel is a complete mini-story:
-impossible setup (line 1) -> one escalation -> a real, satisfying payoff with a number or an image (the answer is GIVEN, never withheld) -> the end line.
-The end line is a LOOP line: a half-sentence that flows straight back into line 1 when the clip restarts (e.g. last: 'And that is exactly why...' -> first: 'Every ocean on Earth just froze.').
-Never say 'full video', 'link', 'part 2' or 'watch till the end' in the voice lines (the caption and comments carry the link)."""
 
 CRITIC = """You are the independent CRITIC and SPECTACLE GATE for a YouTube science channel. Be strict; you did not write this.
 Score 0-10 each: hook_strength (first 15 s), curiosity_gap, escalation, unpredictable_answer, science_plausible, pacing_variety,

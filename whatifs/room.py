@@ -24,7 +24,7 @@ def context():
     defs = {r["name"]: r["definition"] for r in st.rows("Strategies")}
     return {"banned": banned, "recent": recent, "trends": "\n".join(trends)[:5000] or "none yet",
             "lessons": GR.lessons_for("showrunner", 15, lrows), "lessons_packager": GR.lessons_for("packager", 12, lrows),
-            "lessons_writer": GR.lessons_for("writer", 10, lrows), "lessons_reel": GR.lessons_for("reel", 10, lrows), "lessons_director": GR.lessons_for("director", 6, lrows), "defs": defs}      # v8.6: each department gets its own lessons
+            "lessons_writer": GR.lessons_for("writer", 10, lrows), "lessons_director": GR.lessons_for("director", 6, lrows), "defs": defs}      # v8.6: each department gets its own lessons
 
 def _banned_hit(text, banned):
     t = text.lower(); return any(b.lower() in t for b in banned)
@@ -72,20 +72,6 @@ def _pkg_extra():
     return (PK.hook_shape_brief(recent) + "\n" + (PK.TITLE_BRIEF if V91_on("TITLE_SHOCK_ON") else "") + "\nALSO return \"titles\": [2 more titles, each a DIFFERENT angle], \"thumb_text_b\" and \"thumb_text_c\" (1-4 words each, "
             "adding to their title, never repeating it). Captions and catchphrases: plain words that auto-translate well (no puns that only work in English).")
 
-def _reel_extra(room):
-    """v9: the Shorts trilogy + the clip-bait Short ('' when SHOW_MODE = off)."""
-    from whatifs import show as SHOW
-    if not SHOW.on(): return ""
-    if S("TRIAL_SHORTS_SAFE_ON", bool):                          # v9.3: a cold Shorts viewer has never met the cast, and a Short must never spend the episode's payoff
-        return ("SHORTS FOR THE TRIAL (a Shorts viewer has never met the cast: every reel must work without them): line 1 of EVERY reel puts YOU inside the "
-                "impossible situation (second person, present tense, a stake, a clock or a number) before any character name or courtroom word. reel 1 = the "
-                "cold open's stake as a cliffhanger (stop right before the answer); reel 2 = Dr. Grimm's strongest objection against Vale's best evidence, cut "
-                "BEFORE anyone wins; reel 3 = the surprise witness's twist, stopped before what it proves; reel 4 = the clip-bait moment (its lines are inserted "
-                "by code). NEVER reveal the verdict, who wins, the final Jury Meter side or the final answer in any reel: the full episode keeps the payoff, and "
-                "each reel's end line names the open question only the full case answers. Plain words that auto-translate well.")
-    return ("SHORTS FOR THE TRIAL: reel 1 = THE CHARGE as a cliffhanger (stop before the verdict); reel 2 = the VERDICT reaction (Grimm or Vale reacting); "
-            "reel 3 = a character rant (Dr. Grimm's best objection, theatrical, never cruel); reel 4 = the clip-bait moment (its lines are inserted by code). "
-            "Plain words that auto-translate well.")
 
 def _format_block(role):
     """v12 V2a: the format's own text for a room role ('' for the trial, whose brief is the Show Plan's, and when no format is set)."""
@@ -777,42 +763,6 @@ def package(room, chapters, draw, episode):
     pt = str((room["spine"].get("promise") or {}).get("title") or "").strip()       # v8.7: the promise title is always a candidate (it wins only if the Packager's are flawed)
     if isinstance(pkg, dict) and pt and pt.lower() not in [str(t).lower() for t in pkg.get("titles") or []]: pkg["titles"] = list(pkg.get("titles") or []) + [pt]
     return pkg
-
-def reel_count(): return max(2, min(4, S("REELS_PER_VIDEO", int)))
-def reel_style():
-    """v8.5: bridge (default) | standalone | teaser. Anything unknown is read as bridge (same rule as reels.reel_style)."""
-    from whatifs.reels import reel_style as _rs
-    return _rs()
-
-def past_footage(sh, shots):
-    """v12 V2c-b2b: a cut-down never takes a shot of the Short's own footage - made of those it would be the Short uploaded a second time. Each such
-    shot is replaced by the next shot of the long video's OWN pictures that the cut-down does not use yet (none left = it is dropped)."""
-    out = []
-    for i in sh:
-        if shots[i].get("short"):
-            i = next((j for j in range(i + 1, len(shots)) if not shots[j].get("short") and j not in out and j not in sh), None)
-        if i is not None and i not in out: out.append(i)
-    return out
-
-def reels(room, shots, draw, episode):
-    ctx = context(); n = reel_count()
-    S_ = "\n".join(f'{i}: {s["type"]}: {(s.get("prompt") or s.get("search") or "")[:90]}' for i, s in enumerate(shots) if not s.get("short"))      # v12 V2c-b2b: the Short's footage is not on offer
-    fm = draw["reel_formats"]
-    style = {"bridge": P.REEL_STYLE_BRIDGE, "standalone": P.REEL_STYLE_STANDALONE, "teaser": P.REEL_STYLE_TEASER}[reel_style()]
-    r = ask("reels", FE.inject(GR.insert_before_json(P.fill(P.REEL, n=n, style=style, formats=fm, formatdefs=_j({f: ctx["defs"].get(f, "") for f in fm}), shots=S_[:12000],
-            spine=_j(room["spine"]), trends=ctx["trends"][:2000], craft=CRAFT["reel"], lessons=ctx["lessons_reel"]), "\n".join(x for x in (PB.text_for("reel", draw.get("playbook")), _reel_extra(room)) if x)), "reels"), f"Make the {n} reels.", episode=episode, fake_key="reel",
-            max_tokens=6000 + 1500 * (n - 2)).get("reels", [])
-    good = []
-    for x in r[:n]:
-        sh = past_footage([int(i) for i in x.get("shots", []) if str(i).isdigit() and int(i) < len(shots)], shots)
-        kl = [i for i in sh if shots[i]["type"] == "kling"]
-        sh = [i for i in sh if shots[i]["type"] != "kling"] + kl[:1]
-        if len(sh) >= 4 and x.get("lines"): x["shots"] = sh; good.append(x)
-    from whatifs import show as SHOW
-    cb = SHOW.clipbait_lines(room.get("script", {}).get("script", "")) if SHOW.on() else []
-    if cb and len(good) >= 4:                                     # v9: the 4th Short IS the clip-bait moment, word for word (its shots stay the planner's)
-        good[3]["lines"] = cb; good[3]["format"] = "clipbait"; good[3].setdefault("hook_text", SHOW.strip_tags(cb[0])[:60])
-    return good
 
 def continuity(pkg, episode):
     try:
