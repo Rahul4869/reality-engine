@@ -358,6 +358,83 @@ E. (ORIGINAL, CHOSEN) THE SHORT THE VIEWERS CHOSE IS THE PULL, AND THERE IS ONE 
   batch changed how many lines a run logs (no reel lines), which moved the 40th line onto the warning in one worker's order.
   Fix at the cause: nothing is logged while the lock is held (the warning is decided inside the lock and written after it);
   a test that fills the buffer to 39 lines and makes the two calls must return; a deliberate break.
+  (2) THE PAID-CALL COUNTER NEVER SAW KEY ART OR A VOICE JOB. To show what the cut-downs cost I looked at the counter first: it
+  patches `media.still` and counts no voice job at all, and `art.py` holds its own name for `still` - so the thumbnail and the
+  two reel covers were never counted, and neither were the four reels spoken again. The counter now patches every module's
+  own name for both; measured on the accepted code of V2c-b2b1 and on this code, one fake long video each: `text:reels` 1 -> 0,
+  premium pictures 4 -> 2, voice jobs 5 -> 1, every other count identical.
+  (3) THREE MORE PLACES STILL SPOKE TO A REEL PRODUCER, found by the older tests once the function was gone: the optional older
+  writers' room had a sixth role "REEL PRODUCER" (a paid memo and a paid objection per video in that mode), the continuity
+  check was asked to compare "reel lines vs facts", and the rulebook's research prompt offered a department "reel". All three
+  are gone. And one function left without a caller (`show.clipbait_lines`: the fourth reel was its only user) and two cells
+  nothing read any more (`KINETIC_CAPTIONS_ON`, `TRIAL_SHORTS_SAFE_ON`) were named by the truth registry at once and removed.
+  (4) THE BREAK LIST, written before any break ran ("what would fail if this line went?"), found two lines of my own that
+  changed nothing - a status word set on a row the tick had already closed, and a filter in the sweep's summary that no
+  result could ever need. Both are gone.
+  (5) **A LONG VIDEO ABOUT A PROMOTED SHORT COULD BE HELD FOR ITS SHORT'S OWN HOOK - a fault of V2c-b2b1 (the opening), found
+  by this batch's third rehearsal (the trial with Shorts in S2, id EP202611121845).** HELD at the script gate by check
+  `retention`: "the first line clears its throat (a greeting, 'today', 'did you know')". Reproduced alone before anything was
+  explained (`tools/sweep.py --one EP202611121845 --mode rehearsal`, F2 / S2) on this code AND on the accepted code of
+  V2c-b2b1 (a frozen copy of 01ad81e): the same hold on both - not this batch's change. Measured: the promoted Short is in
+  format S2 "What would you do?", whose first beat is "you gain or lose one power"; its hook is "Today you lose the rain.";
+  V2c-b2b1 makes that hook the long video's first line, word for word; and the long video's opening rule (`hooks._GREET`, read
+  by `growth.py` and by the hook lab) takes ANY first line that begins with "today" for throat-clearing. The Short's own seat
+  already knew better (`shortseat.GREET_RX` names "today we"; a test says "Today the moon lets go of you" is no greeting). The
+  rule did not recognise what is wrong - the fifth time this build pays for that. The rehearsal's ids are the minute, so it
+  never met this script before; no fixed sweep id of V2c-b2b1 promoted it. On the live channel it would have been an owner
+  card for every long video whose Short opens "Today you ...", and for an F1 writer who opens "Today, gravity lets go" ("ONE
+  law of nature is different today" is F1's own brief). Fix at the cause: "today" is a greeting only where a presenter speaks
+  ("today we", "today I", "today's video", "today, let's"); tests both ways on the pattern, on the opening rule and on the hook
+  lab; the id itself re-run alone before any other proof.
+
+#### Step 4 BUILD (what changed)
+- GONE: `whatifs/reels.py` (the module); `room.reels`, `reel_count`, `reel_style`, `past_footage`, `_reel_extra`; in
+  `whatifs/episode.py` the reel plan in the plan stage, the two paid covers and the two free ones, the reel build with its
+  second voice job, the clean copies of reel shots in the renderer, the reels on the release record and on the result;
+  `manage._post_reel`, `_release_extra`, `extra_reel_due`, `cap_hashtags`, releases 2 to 4 (tick, CLI); the probes and rows of
+  checks `shorts` and `short_covers` (60 hard checks: 36 script, 18 final, 5 short, 1 release); `prompts.REEL` and its three
+  styles, the packager's cover fields, the showrunner's reel hooks; the role `reels` (`models.ROUTES`, `SAVER_MEDIUM`); the
+  reel asks of `cta.py`; `art.reel_cover`, `reel_cover_free`; `show.clipbait_lines`; the craft note, the strategy seeds and the
+  rulebook department "reel"; the sixth role of the older room; the cells `REELS_PER_VIDEO`, `REEL_STYLE`, `REEL1_SHORTS_ON`,
+  `REEL2_DELAY_MIN` (a lever of D9: 71 levers), `REEL3_DELAY_MIN`, `REEL4_DELAY_MIN`, `KINETIC_CAPTIONS_ON`,
+  `TRIAL_SHORTS_SAFE_ON`.
+- `whatifs/manage.py`: `release` is ONE step (public? else the alert once and the wait -> the channel comment -> the carousel
+  of a trial -> LIVE); the tick names it `REEL1_DELAY_MIN` minutes after the slot and nothing afterwards; `_give_up_stuck` closes
+  a row an older version left at LIVE1 without posting; `shorts_lesson` (what a video's Shorts traffic leaves on tab Lessons);
+  `v12v2cb2b_upgrade` at both setup sites (eight dead cells marked RETIRED, `PILOTS_ON` and `SPECIALS_ON` set to FALSE where
+  they still hold the old default, never twice).
+- `whatifs/truth.py`: retired rule `cutdown_reels` (16 rules) with its baseline for the one-time move; `OLD_DOORS` (four older
+  doors, each with the switch that shuts it; limit 4), `short_doors` (reads the code: every function outside `release.py` and
+  `publish.py` that calls `ig_reel`, `fb_reel` or `yt_upload` with `short` set), `door_issues` - part of `truth.issues`, so
+  Plan Guard, the tests and check `docs_current` all refuse a new door.
+- `whatifs/sampler.py`: the draw carries no reel strategy and no reel formats (a video an older version made keeps its
+  credit: `manage.strategy_credits` is unchanged). `whatifs/governor.py`: `premium_images` = the thumbnail and its runner-up.
+  `whatifs/core.py`: `PILOTS_ON` and `SPECIALS_ON` FALSE by default with what TRUE would do, `V12V2CB2B_MOVE_DONE`, the note
+  of `REEL1_DELAY_MIN`. `whatifs/models.py`: THE DEADLOCK FIX (above). `whatifs/org/registry.py`, `levers.py`, `rnd.py`:
+  2 check owners and 1 lever gone, SHOW_CHECKS 49.
+- `tools/rehearsal.py`: the long video's release is one step and the rehearsal asserts that no cut-down was planned, made or
+  uploaded and that every short video that went out is a standalone Short with a record on tab `Release_Sheet`.
+  `tools/sweep.py`: `release_of` - every long-video id is judged the same way and is a bad id otherwise; the summary counts
+  them (`released_without_cutdowns`). `tools/gen_docs.py`: SYSTEM.md lists the older doors. `tests/paid_calls.py`: the
+  counter sees key art and voice jobs; `V12V2CB2C_COUNTED`, `V12V2CB2C_REMOVED` in the baseline.
+- Seeds: `v2cb2c.no_cutdown_the_short_is_the_product`, `v2cb2c.related_video_link_is_the_pull`,
+  `v2cb2c.more_short_uploads_cost_the_long_videos`, `v2cb2c.one_door_for_short_uploads` (all for D9), and the two lessons of
+  V2c-b2b1 that were not in the Palace yet: `v2cb2b.reproduce_the_id_first` (D8), `v2cb2b.never_compare_at_a_cut` (D6); one
+  item of V2c-b2b1 that named removed code was corrected (the Palace's own check named it at the first rehearsal). A first try
+  filed the upload count as a limit for D9 and pushed an older limit out of its playbook: it is a strategy item now.
+- Docs: 3 matrix rows (2 older rows reworded), the ledger, `CONCEPT.md`, 2 dated platform facts, the builders' recipe in
+  `CLAUDE.md`, the redesign's end note, `SYSTEM.md` regenerated.
+#### Step 5 ENFORCE (rule -> executing code -> fails when broken)
+| Rule | Executed by | Fails when broken |
+|---|---|---|
+| A long video makes no cut-down reel | nothing in the code can plan, voice, cover or upload one; `sampler.draw` | tests on what is gone; the paid-call counter (`text:reels` 0, 2 premium pictures, 1 voice job); the rehearsal; the sweep (`release_of`) |
+| The long video's release is one step | `manage.tick`, `manage.release`, `manage._give_up_stuck` | tests (one step, the delay, not public, KILL, never twice, a row at LIVE1); the rehearsal; the sweep |
+| One door for every upright video | `truth.short_doors`, `truth.door_issues` in `truth.issues` | Plan Guard RED, check `docs_current` FAIL, tests (a planted door by each of three calls; a long upload is none; nested; the list may only shrink) |
+| The older tracks are paused by default | `core.DEFAULTS`, `pilots.run`, `specials.run`, `governor.specials_left_inr` | tests (both refuse, nothing uploaded, the earmark is production money; switched on they work) |
+| A live Sheet is moved once | `manage.v12v2cb2b_upgrade` at both setup sites | tests (marks, pauses, leaves his own FALSE alone, never twice, his later TRUE stands) |
+| No current doc or prompt speaks of the old plan | truth rule `cutdown_reels` | Plan Guard, the tests, check `docs_current` |
+| Every estimate counts what is really bought | `governor.premium_images` | tests (two premium pictures fewer; the cost goldens moved by exactly that) |
+| A log line can never hang the job | `models.CacheManager.blocks` logs after the lock is released | `tests/test_v811.py` (the warning as the 40th buffered line must return; it hangs on the old code) |
 
 ### V2c-b2b1 - THE OPENING (12 Nov 2026) - ACCEPTED (final code commit 22103cb GREEN in GitHub Checks run 126: 1416 passed; sweep 58 of 58 ids)
 The owner: "continue in new session" (12 Nov 2026, item 21 of `02`). V2c-b2b was SPLIT AT ITS START (rule 6; the note is at the top of
@@ -3796,7 +3873,14 @@ Rehearsal asserts `docs_current` ran and passed.
 145. (V2c-b2b2, the proof) NOT covered by the sweep: the older doors (they are off), a video that stays private at its
    release, KILL, a row left at LIVE1 (unit tests and deliberate breaks only). Covered on every long-video id: no cut-down
    file, plan or upload; the release in one step; nothing short out but the standalone Shorts.
-146. CLOSED / narrowed in V2c-b2b2: issue 118 - closed for the cut-down reels (gone), open for the special reels as 136. Issue
+146. (V2c-b2b2, the tools) A rehearsal id from a PAST minute cannot be re-run to its end. On the fresh Sheet of the re-run the
+   organisation is younger than the episode the id names, so `dept_contract`, `takeaways_written` and three more organisation
+   checks say "not applicable: this episode was started before the organisation was installed", and the rehearsal's own
+   assertion (they must PASS) stops the run. Everything before that line is reproduced - it was enough here (the hold at the
+   script gate; after the fix 36 of 36 and 18 of 18). To carry a red rehearsal of GitHub past that line, `tools/rehearsal.run`
+   with a fixed id should date the organisation's install before the id's minute. Not built. The fixed ids of the sweep lie in
+   the future and never meet it.
+147. CLOSED / narrowed in V2c-b2b2: issue 118 - closed for the cut-down reels (gone), open for the special reels as 136. Issue
    133 - closed. Issue 76 - closed for the cut-downs. Issue 84's last line (`JOKE_EVERY_SEC_SHORT` "only by the cut-down
    reels") was not exact: `enforce.py` reads the cell for any text judged as a Short; nothing of this batch touched it. Issue
    13 - narrowed: the long video's release step (`manage.release`) is still not a department run of Publishing.

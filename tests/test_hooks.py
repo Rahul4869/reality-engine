@@ -46,7 +46,7 @@ def test_ten_candidates_scored_ranked_and_best_chosen():
     assert rec["chosen_id"] and all(k in rec["candidates"][0] for k in ("clarity", "relevance", "curiosity", "promise_accuracy"))
 
 def test_overlong_and_greeting_lines_are_dropped_and_recorded():
-    bad = [("Welcome to the strangest hour on Earth today friends", "curiosity_gap"), ("Today pillows float.", "curiosity_gap")] + GOOD
+    bad = [("Welcome to the strangest hour on Earth today friends", "curiosity_gap"), ("Today we look at floating pillows.", "curiosity_gap")] + GOOD
     rec = H.build_record(SCRIPT, {}, "EPX", fake_ask(bad))
     assert len(rec["candidates"]) == 10 and len(rec["rejected"]) >= 2
     assert all(c["words"] < 10 for c in rec["candidates"])

@@ -293,6 +293,20 @@ def test_no_reaction_effect_is_drawn_over_the_footage(monkeypatch, setting):
     assert [e["i"] for e in EP.reaction_events(u, _shots())] == [2, 7]                                                                   # a video that opens on its own pictures keeps every reaction effect
     setting("REACTION_FX_ON", "FALSE"); assert EP.reaction_events(u, _shots()) == []
 
+def test_a_shorts_hook_that_opens_on_today_is_no_throat_clearing_and_a_presenters_today_still_is():
+    """v12 V2c-b2b2, found by a rehearsal (id EP202611121845, the trial with a Short in S2): the long video about a promoted Short was HELD by check
+    retention for its Short's own hook, 'Today you lose the rain.' - the opening rule took any first line that begins with 'today' for a greeting."""
+    from whatifs import growth as GR
+    body = "\n".join(f"[SKEPTIC] And then the rain is gone from line {i}, but why does the river still run?" for i in range(40))
+    def throat(first): return [x for x in GR.retention_issues("[DIRECTOR] " + first + "\n" + body, {"title": "You lose the rain"})["issues"] if "clears its throat" in x]
+    assert throat("Today you lose the rain.") == [] and throat("Today, the rain is simply gone.") == []                                  # the impossible thing itself
+    assert len(throat("Today we look at what happens when the rain is gone.")) == 1 and len(throat("Welcome back, today we talk about rain.")) == 1      # a presenter clearing his throat
+    assert "greeting_or_throat_clearing" not in HOOKS.validate_line("Today you lose the rain.", "today you lose the rain")              # the hook lab judges a candidate by the same rule
+    assert "greeting_or_throat_clearing" in HOOKS.validate_line("Today we look at the rain.", "today we look at the rain")
+    from whatifs.org import shortseat as SEAT
+    for line, greet in (("Today you lose the rain.", False), ("Today we lose the rain.", True)):                                         # the Short's seat and the long video's rule agree
+        assert bool(SEAT.GREET_RX.search(line)) is greet and bool(HOOKS._GREET.search(line)) is greet, line
+
 def test_the_sweep_counts_an_opening_only_when_both_checks_passed():
     from tools import sweep as SW
     row = lambda f, s: {"ts": core.iso(), "episode_id": "EPS", "stage": "x", "feature": f, "status": s, "evidence": "the first 14.2 s are the footage"}

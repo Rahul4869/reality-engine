@@ -29,7 +29,11 @@ def test_episode_source_does_not_print_titles_or_premises_publicly():
 
 @pytest.mark.parametrize("line,bad", [("So many people do it at noon.", False), ("So, eight billion do it at noon.", True), ("Right now eight billion do it.", False),
                                       ("Right, eight billion do it.", True), ("Look at the water change colour.", False), ("Look, the water changes colour.", True),
-                                      ("Well... the water changes colour.", True), ("Welcome back everyone.", True), ("Okay so the water changes.", False)])
+                                      ("Well... the water changes colour.", True), ("Welcome back everyone.", True), ("Okay so the water changes.", False),
+                                      # v12 V2c-b2b2: "today" is a greeting only where a presenter speaks - "Today you lose the rain." is a Short's own hook (format S2)
+                                      ("Today you lose the rain.", False), ("Today, gravity lets go of you.", False), ("Today pillows float.", False), ("Today the Moon is gone.", False),
+                                      ("Today we look at the rain.", True), ("Today I want to show you the rain.", True), ("Today's video is about rain.", True),
+                                      ("Today, let's talk about rain.", True), ("Todays episode: rain.", True), ("Today we're losing the rain.", True)])
 def test_greeting_filter_does_not_reject_normal_openings(line, bad):
     assert bool(H._GREET.search(line)) is bad
 

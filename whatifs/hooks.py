@@ -15,7 +15,10 @@ def count_words(line):
     """Conservative count: hyphenated words and slashes count as separate words ('well-known' = 2)."""
     return len(tokens(line))
 
-_GREET = re.compile(r"^\W*(?:(?:hey|hi|hello|welcome|today|in this video|let'?s|let us|have you ever|did you know|ever wondered|"
+# "today" is a greeting only where a PRESENTER speaks ("today we", "today I", "today's video"): "Today you lose the rain." is the impossible thing itself -
+# a Short's own hook in format S2, and F1's brief ("one law of nature is different today"). v12 V2c-b2b2: any first line that began with "today" held the
+# long video about such a Short at the script gate (found by a rehearsal; the Short's seat already knew: shortseat.GREET_RX).
+_GREET = re.compile(r"^\W*(?:(?:hey|hi|hello|welcome|today(?:'?s (?:video|episode|case|topic|story|show)|,?\s+(?:we|i|let'?s|let us|i'?m|i'?ll|we'?re|we'?ll))|in this video|let'?s|let us|have you ever|did you know|ever wondered|"
                     r"imagine|picture this|what'?s up|good (?:morning|evening)|before we begin|quick question)\b"
                     r"|(?:so|well|okay|ok|alright|right|listen|look)\s*(?:[,.!:;\u2026]|\.\.\.|$))", re.I)
 _HYPE = re.compile(r"\b(secrets?|shocking|shocked|you won'?t believe|mind[- ]?blowing|insane|jaw[- ]?dropping|nobody (knows|talks)|"
