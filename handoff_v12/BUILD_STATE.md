@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 12 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026, V2c-b2a THE PLATFORMS ACCEPTED on 12 Nov 2026 - V2c-b2 was split at its start, V2c-b2b THE OPENING AND THE CUT-DOWNS is next). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 12 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026, V2c-b2a THE PLATFORMS ACCEPTED on 12 Nov 2026 - V2c-b2 was split at its start, V2c-b2b was split at its start too: V2c-b2b1 THE OPENING is IN PROGRESS (not accepted - its record under DONE says how far), V2c-b2b2 THE CUT-DOWNS is next). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -85,9 +85,18 @@ ORDER OF BATCHES: live after three. The evidence R20-R38 is not in the Palace ye
 That turn was the DESIGN step for the whole programme (research, designs, decisions, records). Built since: V1a, V1b, V2a and V2c-a (the records are under DONE).
 
 ## NEXT
+**V2c-b2b WAS SPLIT AT ITS START (rule 6, 12 Nov 2026) INTO TWO HALVES, by dependency:** **V2c-b2b1 THE OPENING** (the long video's
+opening is its Short's footage - IN PROGRESS, its record is the first entry under DONE and says how far it is) and **V2c-b2b2 THE
+CUT-DOWNS** (the cut-down reels stop being the product - NEXT, needs its own owner "continue"; the second bullet below is its scope).
+Why two: the two halves share no code (the opening: the hook lab, the shot list, the Animation Director, the assets stage, the
+renderer, two new checks; the cut-downs: `room.reels`, the reel build, `manage.release` / `_post_reel`, two checks that go, the
+rehearsal's asserts and the older tests that count four), each needs the full loop with the 50-minute suite, the sweep and a GitHub
+run, and V2c-b2a alone - one such half - filled a session. Why the opening FIRST: a cut-down is cut from the long video's shots, and
+once the opening is the Short's own footage a cut-down made of those shots would be the Short uploaded a second time; so the opening
+decides what a cut-down may be made of (V2c-b2b1 already keeps the footage shots out of the cut-downs that still exist).
 **V2c-b2b - THE OPENING AND THE CUT-DOWNS** (`handoff_v12/BREAKOUT_REDESIGN.md` SECTION 11: 11.4 "whose opening IS that Short's footage",
 4.2 point 5, the row "Topic ladder" of 11.9; the end notes in 11.10). Full seven-step MANDATORY BATCH LOOP. Effort: High. V2c-b2 was SPLIT
-AT ITS START (rule 6, 12 Nov 2026): V2c-b2a THE PLATFORMS is the first record under DONE - check there and in `git log -5` that it is
+AT ITS START (rule 6, 12 Nov 2026): V2c-b2a THE PLATFORMS is the second record under DONE - check there and in `git log -5` that it is
 ACCEPTED before building on it. V2c-b2b is the LONG VIDEO'S side:
 - THE LONG VIDEO'S OPENING IS ITS SHORT'S FOOTAGE: tab `Ladder`, column footage = the Drive id of `<short id>_footage.zip` (every paid clip
   `c<i>.mp4` as made, every start picture `f<i>.png`, `short.json` with the script, the plan and the voice timeline). The episode's draw
@@ -197,6 +206,156 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
+### V2c-b2b1 - THE OPENING (12 Nov 2026) - IN PROGRESS, NOT ACCEPTED (steps 1-3 recorded; nothing built yet)
+The owner: "continue in new session" (12 Nov 2026, item 21 of `02`). V2c-b2b was SPLIT AT ITS START (rule 6; the note is at the top of
+NEXT): V2c-b2b1 is the long video's opening made of its Short's footage; V2c-b2b2 is the end of the cut-down reels as a product.
+The whole binding reading order was read first (handoff `CLAUDE.md`, `00`, `02` with the new item 21, `01`, `03`, `06`, `04`, `05`, all
+of the redesign with section 11 first, this file's head, the standing rules, NEXT, the V2c-b2a, V2c-b1 and V2c-a records, every open
+issue 1-122, HOW TO RUN, the batch log, the repo's `CLAUDE.md`, all of `docs/CURRENT/`, the three hand-over notes), then the code the
+half touches: `episode.py` (the plan stage, the assets stage, the renderer's loop, the finish), `hooks.py`, `org/audience.py`,
+`anim.py`, `room.py` (`plan_shots`, `promise_shot`, `opening_units`, `reels`), `ladder.py` (`keep`, `enter`, `gate`, `topic_report`),
+`shorts2.py` (`plan`, `make`), `render.py` (`clip_segment`), `checkpoint.py`, `shotplan.pieces_for`, the contract's probes, the
+paid-call counter, the rehearsal's ladder walk.
+
+#### Step 1 RESEARCH (E = measured or the platform's own page, O = practice; every page below was read by the build session itself on 12 Nov 2026; the redesign's R1-R47 are the base)
+1. E read - YouTube Official Blog, "A design journey from mobile to TV: YouTube Shorts arrive on the big screen", 7 Nov 2022, by its two
+   UX directors (https://blog.youtube/news-and-events/youtube-shorts-arrive-on-the-big-screen-design-process/): YouTube tested three
+   ways to show an upright video on a wide screen with viewers. The plain player with empty sides: "the joy of Shorts gets lost".
+   Several videos side by side ("Jukebox"): it "strayed too far from the essence of Shorts", which "features one video at a time".
+   Chosen: one video in the middle on "a color-sampled blurred background" - testers preferred it, it "made better use of the TV
+   screen's additional space" and "made the experience feel more modern". Design research with viewers; the page gives no numbers.
+2. O read - Google Research, "AutoFlip: An Open Source Framework for Intelligent Video Reframing", 13 Feb 2020
+   (https://research.google/blog/autoflip-an-open-source-framework-for-intelligent-video-reframing/): a fixed crop "often lead[s] to
+   unsatisfactory results"; a crop window is stationary, panning or tracking, chosen per scene; when what matters does not fit the new
+   shape the frame is padded - with the ground colour, else with "a blurred version of the original frame". No measured evaluation.
+   -> a window AND a blurred ground are one family of answers, and the choice between them is "does what matters fit?".
+3. E read - YouTube Help 9314415, "Measure key moments for audience retention" (no date on the page; copyright 2026): "Intro tells you
+   what percentage of your audience still watched your video after the first 30 seconds"; a high figure "could mean" that "the content
+   in the first 30 seconds matched the viewer's expectation of the video's thumbnail and title"; the advice: "Modify the first 30
+   seconds of your video and experiment with different styles". -> the opening is the stretch YouTube itself measures; how it is
+   shown is to be experimented with - a setting, not a belief.
+4. E read - YouTube Help 1311392, channel monetisation policies (renamed 15 Jul 2025): reused content = repurposing "content that's
+   already on YouTube or another online source without adding significant original commentary, substantive modifications, or
+   educational or entertainment value"; "If we cannot tell that the content is yours, it may be subject to our reused content
+   policy"; allowed: "Same intro and outro for your videos, but the bulk of your content is different". NOTHING on the page speaks of
+   a creator's own earlier footage inside a new video. -> twenty seconds of the channel's own Short under a new narration, in a
+   nine-minute video, is not what either rule names. A cut-down reel made of those same seconds WOULD be the Short a second time
+   (redesign R26: re-uploads get "less distribution") - so the footage shots are kept out of the cut-downs.
+5. E read - fal, the hero clip model's page and its API schema (read 12 Nov 2026;
+   https://fal.ai/models/fal-ai/kling-video/o3/standard/image-to-video and .../api): inputs are the start picture, an optional end
+   picture, the prompt and a duration of 3 to 15 seconds (default 5); there is NO field for the shape or the pixel size of the clip -
+   it follows the start picture; USD 0.084 a second. -> the Short's clips are upright because their start pictures are; the same
+   scene in 16:9 would be a second paid clip and a new draw (not the footage viewers stayed for). The page does not say how many
+   pixels a clip has: code must measure every clip it is handed.
+6. E read, small - Loyola University Chicago, "Short-form videos: an exploratory study on the impact of subtitles and ASMR split-screen
+   format options ...", MIPRO 2025 (IEEE), 6 Mar 2025 (the abstract, on
+   https://imotions.com/blog/publications/short-form-videos-an-exploratory-study-on-the-impact-of-subtitles-and-asmr-split-screen-format-options-using-eyegaze-and-facial-expression-data/):
+   a second picture beside the first "significantly impact[s] visual attention patterns", with "elevated positive emotions,
+   engagement, and attention" and no significant change in recall. Exploratory; the sample size is not on the page.
+7. O read - N. Krawetz, "Kind of Like That", 21 Jan 2013 (https://www.hackerfactor.com/blog/index.php?/archives/529-Kind-of-Like-That.html):
+   the difference hash - a picture shrunk to 9 x 8 grey pixels, 64 bits, each "whether the left pixel is brighter than the right" -
+   "won't change if the image is scaled or the aspect ratio changes" and barely moves with brightness or colour; a distance of 0 to
+   10 bits is the same picture or a variation, above 10 "likely a different image"; cropping by about a tenth can defeat it.
+   -> a finished film can be compared with the footage it should show, as long as the SAME window of both is compared.
+8. O read - OutlierKit, 7 Sep 2026 (https://outlierkit.com/resources/youtube-shorts-to-long-form/): the related-video link "sends a few
+   hundred viewers per 100,000 Short views" (the author's estimate, no source); nothing on what a long video's opening should do for
+   a viewer who comes from its Short. -> almost everybody who meets the long video's opening has NOT seen the Short; a viewer who
+   has is the rare case and must recognise the topic at once.
+NOT FOUND, so nothing is built on it: any measurement that compares a cropped window, a blurred ground and a split layout for upright
+footage inside a wide video; any study that pairs a Short's opening with the first 30 seconds of a long video on the same topic
+(H1 / H11 stay hypotheses the channel's own pairs must answer); the pixel size of the hero model's clips; any study of how far an
+AI-made clip may be enlarged before viewers notice. The window's limit and the opening's length are therefore STARTING VALUES and
+levers, and what a real upright clip looks like in a wide frame can only be judged at the pilot (V3).
+AN EXPERIMENT BEFORE THE DESIGN (read from the code and counted, no run needed): what today's code would do with a Short's clip.
+(1) The renderer's clip path already crops every clip to the frame's shape around its centre: handed an upright clip it would show
+the middle 31.6% of the picture (a 16:9 window is 9 of 16 of 9 of 16 of the height) and, for a clip 720 pixels wide, enlarge it 2.67
+times to fill 1,920 - with nobody measuring it and nothing on record. (2) With micro-cuts on, an animated unit longer than 2.6
+seconds inside the opening window is cut into pieces of which only the FIRST is the moving clip; the others are the start picture
+with a camera move. Laid under the long video's sentences as they are, most of the Short's paid seconds would never be seen.
+(3) `plan_check` and the Animation Director both turn every animated shot beyond the plan's four back into a still: a marked opening
+would be undone twice before the script gate. (4) A sound hit and a riser are placed at every animated unit's start: six footage
+units in a row would open the video with six booms. (5) The cut-down reels choose their shots from the whole shot list: with the
+footage in it, a cut-down could be the Short again. (6) Three upright panels fill a 16:9 frame almost exactly (3 x 9:16 = 27:16).
+#### Step 2 CREATIVITY (scores 1-5: what a viewer or the channel gains / enforceable / cost / reliability / owner effort)
+A. Replay the Short itself as the cold open (its file, its voice, its burned captions) in a frame: 1 / 4 / 5 / 4 / 5 = 19 - a viewer
+   who comes from the Short watches the same 25 seconds again; everybody else gets an upright strip with captions, another voice
+   than the video's, and an ending built to loop, not to open a nine-minute story.
+B. Pay again: re-make the Short's pictures in 16:9 and animate them: 4 / 3 / 1 / 3 / 5 = 16 - the best picture, but the opening is
+   paid a second time (3 to 4 hero clips, about Rs 115-155 a video) and it is a new draw from the model: not the footage real
+   viewers stayed for (research 5).
+C. The whole upright clip on a blurred ground, always (YouTube's own choice for a wide screen, research 1): 3 / 4 / 5 / 5 / 5 = 22 -
+   nothing enlarged, nothing lost; but in the small player of a phone held upright the picture is a third of the width.
+D. A centre crop that fills the frame, always (what the renderer does today if handed the clip): 3 / 2 / 5 / 3 / 5 = 18 - a full
+   picture, of which two thirds are thrown away and the rest enlarged 2.67 times, unmeasured.
+E. (ORIGINAL) The triptych: three upright panels fill 16:9 (experiment 6) - the Short's three beats side by side, each waking up as
+   the voice reaches it: 2 / 3 / 5 / 3 / 5 = 18 - every paid pixel is used; but several pictures at once is what YouTube's viewers
+   refused (research 1), it divides attention (research 6) and it ends "it happens to YOU, one camera".
+F. (ORIGINAL, CHOSEN) THE PROVEN OPENING UNDER THE LONG VIDEO'S OWN VOICE, IN THE WIDEST WINDOW ITS SHARPNESS ALLOWS, PROVEN ON THE
+   FINISHED FILM: the Short's picture track - its clips in its order at the speed viewers saw them, without the loop - is laid by
+   code under the long video's first sentences; the first spoken line is the Short's own hook, word for word (real viewers
+   outrank a jury: no hook lab for it); the upright picture is shown through ONE window with one dial, from the whole clip on a
+   blurred ground to a full 16:9 window, and code picks the widest window that enlarges the paid picture by no more than a limit
+   (a lever), measured on the clip's real pixels; the Animation Director then buys three scenes, not four. Two checks: before any
+   picture money the shot list opens on THIS Short's footage (from this Short's archive, laid as the rule says), and on the
+   finished film frames of the master are compared with the footage: 5 / 5 / 5 / 4 / 5 = 24.
+#### Step 3 DESIGN MEMO
+- WHAT A VIEWER MEETS: a long video about a promoted Short opens on the picture the Short opened on - already moving at second 0 -
+  and runs through the Short's clips for as long as they last (about 15 to 25 seconds; at most `OPENING_SHORT_MAX_S`), under the
+  long video's own voice. Its first sentence is the Short's hook (`OPENING_HOOK_ON`). Then the long video's own pictures begin.
+- THE FOOTAGE (`whatifs/opening.py` NEW, Visual Production D6; on `tools/repair.py` PROTECTED): `fetch` downloads the archive named
+  on the Short's ladder row (tab `Ladder`, column footage), unpacks only `c<i>.mp4`, `f<i>.png` and `short.json`, refuses an
+  archive whose `short.json` names another Short, and measures every clip (pixels, seconds, SHA-256). The manifest travels with the
+  plan (`plan.json`), so a resume proves it holds the same files.
+- THE LAYING (`opening.lay`, pure code): the Short's picture track is its plan's shots without the loop shot, each clip slowed
+  exactly as the Short played it. Unit i of the long video shows the track from its own start to its own end; the opening ends at
+  the last sentence that ends inside the track (or inside `OPENING_SHORT_MAX_S`). A sentence may cross from one clip into the next.
+- THE WINDOW (`opening.fit`, pure code; `OPENING_FIT` = auto | fill | whole): a window as wide as the clip and of shape A is cut out
+  around `OPENING_WINDOW_Y` of its height and shown at the frame's full height; A runs from the clip's own shape (the whole clip) to
+  16:9 (the frame filled). `auto` takes the widest A that enlarges the picture at most `OPENING_ENLARGE_MAX` times (2.0 to start: a
+  clip 720 pixels wide gets a 4:3 window over three quarters of the frame's width; a clip 1,080 wide fills the frame at 1.78). What
+  the window leaves free is a blurred, darkened copy of the same frame (research 1, 2) - never black bars, never a second picture.
+- THE SHOT LIST (`opening.mark`): each covered unit becomes an animated shot that carries its piece of the track (`short`: the Short's
+  id and the stretch of each clip); the first one carries the promise. `plan_check`, the Animation Director and the paid repair
+  leave marked shots alone; the Director places its scenes at the three later anchors only (3 paid scenes, redesign 11.5 "the
+  opening shared with its Short, three peaks").
+- THE FILES (`opening.cut`, inside D6's `assets` run): one clip per covered unit, cut from the footage, shown through the window,
+  exactly as long as its sentence, at the frame's size - so the renderer plays it as ONE piece (no still tail, no micro-cut) and
+  the checkpoint keeps it like any clip. A footage unit that cannot be cut stops the assets stage BEFORE anything is paid (else the
+  stage would buy a new clip for it). One sound hit at second 0, not one per unit.
+- THE FIRST LINE (`hooks.run_hooks(proven=...)`): for a long video with footage the first spoken line is the first sentence of its
+  Short as the Short's voice spoke it; no candidates are written and no judge is asked. A line the advertiser-safety rule refuses
+  falls back to the hook lab. Check `hook_lab` passes on it only when the line is this video's Short's and is the first spoken line.
+- THE CHECKS (both promises about the show; SHOW_CHECKS 51; 62 hard checks): `opening_footage` at the script gate - the draw's Short
+  has a fetched archive, the shot list's first shots are its footage and nothing else, laid as `lay` says; `opening_shown` at the
+  final gate - the cut files are the ones made from that archive (hashes) and frames of the finished film match them (difference
+  hash of the same window, research 7). A video that opens with other pictures is HELD with the owner's card (Rewrite / Approve
+  anyway): that is the rule the plan asked for, and a missing archive is his decision, not the machine's.
+- A LONG VIDEO UNDER AN OVERRIDE has no Short and no footage: it opens as before this batch - the hook lab's best of ten lines and
+  its own animated promise scene at second 0, four paid scenes (`viewer_promise` and `promise_paid` judge it). Both new checks say
+  "not applicable" for it and name the override.
+- THE CUT-DOWNS that still exist until V2c-b2b2 never take a footage shot (`room.reels`).
+- LEVERS (D6): `OPENING_FIT`, `OPENING_ENLARGE_MAX` (up needs the owner: a softer picture). Switches with safe defaults:
+  `OPENING_SHORT_ON` (FALSE = the opening as before this batch; both checks say NA), `OPENING_HOOK_ON`, `OPENING_WINDOW_Y`,
+  `OPENING_SHORT_MAX_S`.
+- CHANGED FROM THE REDESIGN, with reasons: (1) 4.2 "its first 30-40 seconds ARE the hook" and 11.4 "whose opening IS that Short's
+  footage": the PICTURES and the FIRST LINE are the Short's; the rest of the words are the long video's own - a Short is a complete
+  looping story (11.4), its last line hands back to its first, so replayed whole it would end where a long video must begin.
+  (2) 4.2 "vertical and horizontal cut from the same clips" cannot be one cut: the clip model has no field for the shape
+  (research 5) and a 16:9 window keeps a third of an upright clip. The window is a setting, its limit a lever, the pilot judges it.
+  (3) The opening lasts as long as the Short's own footage (15 to 25 seconds today), not 30-40.
+- HYPOTHESES: H22 a long video that opens on its Short's footage keeps more viewers to second 30 than one that opens on new
+  pictures (YouTube's Intro number; the override videos are the comparison). H23 the wider window holds better than the whole clip
+  on a blurred ground (the lever's two ends).
+- MONEY, said before the build: NOTHING new is paid - the archive is a Drive download, the cut is ffmpeg on the runner. Per long
+  video with footage the production pays LESS: one hero clip (USD 0.42, about Rs 39) and its reference start frame (USD 0.067, about
+  Rs 6), the hook lab's two text calls (ten lines and their judge; a few rupees, not measured) and the fresh stills of the covered
+  opening units (under Rs 1 each): about Rs 45-50 a video, about Rs 190 a month at four. The ESTIMATE before a video still counts
+  four clips (it may only err upward); the paid-call counter must show the smaller count before this is claimed as done. The
+  cut-downs' paid planning call (`room.reels`) belongs to V2c-b2b2. The known gap stays: at today's clip price twelve Shorts a month
+  do not fit beside four long videos (open issue 83, V2d).
+- NOT IN V2c-b2b1, on purpose: the cut-down reels (V2c-b2b2); the long video's thumbnail tied to the Short's first picture
+  (V2b / V1c: one story across title, thumbnail and first seconds); a 16:9 re-make of the footage (V2d may price it).
+
 ### V2c-b2a - THE PLATFORMS (12 Nov 2026) - ACCEPTED (final code commit 3619c81 GREEN in GitHub Checks run 117: 1392 passed; sweep 58 of 58 ids)
 The owner: "continue in new session" (12 Nov 2026). V2c-b2 was SPLIT AT ITS START (rule 6): V2c-b2a is how a finished Short reaches
 YouTube, Instagram and Facebook and what proves it; V2c-b2b is the long video's opening and the cut-down reels (NEXT is written for it).
