@@ -195,7 +195,8 @@ def _film(out, clips, tail, grade="eq=brightness=-0.10:contrast=1.15,vignette=PI
 def test_the_finished_film_is_compared_with_the_footage_it_must_show(tmp_path, setting):
     d, m, u, shots, out, oc = _cut(tmp_path, setting); rec = oc["opening"]; own = _clip(os.path.join(str(tmp_path), "own.mp4"), *RN.out_size(), 6.0, "mandelbrot")
     clips = [oc["clips"][i] for i in range(5)]; master = _film(out, clips + [own], None)
-    ok, why = OPEN.shown_report(d, shots, u, rec, master); assert ok is True and "16.5 s" in why and "5 shots" in why and "10 frames" in why, why      # graded darker with a vignette: still recognised
+    ok, why = OPEN.shown_report(d, shots, u, rec, master); assert ok is True and "16.5 s" in why and "5 shots" in why and "frames of the finished film compared" in why, why      # graded darker with a vignette: still recognised
+    assert int(why.split(" frames")[0].split()[-1]) >= 25, why                                                                           # compared about every half second: a one-second effect cannot fall between two looks
     b = OPEN.bounds(u); o1, o2 = (_clip(os.path.join(str(tmp_path), f"own{i}.mp4"), *RN.out_size(), b[i + 1] - b[i], "mandelbrot") for i in (1, 2))      # other pictures, exactly as long as the sentences they replace
     swapped = _film(out, [clips[0], o1, o2] + clips[3:] + [own], None)
     ok2, why2 = OPEN.shown_report(d, shots, u, rec, swapped); assert ok2 is False and "does not show the footage" in why2, why2          # the film shows OTHER pictures under the second sentence
@@ -211,6 +212,18 @@ def test_the_finished_film_is_compared_with_the_footage_it_must_show(tmp_path, s
     assert CON.p_opening_shown(ctx)[0] == CON.FAIL
     setting("CONTRACT_WAIVERS", json.dumps({"EPW": ["opening_footage"]})); st, ev = CON.p_opening_shown(ctx); assert st == CON.NA and "approved" in ev      # his Approve at the script gate is not asked for a second time
     assert CON.p_opening_shown(dict(ctx, shots=shots))[0] == CON.FAIL                                                                    # ... but a video that DOES carry the footage is still judged
+
+def test_the_film_is_never_compared_where_two_clips_meet(tmp_path, setting):
+    assert OPEN.spots([["c0.mp4", 0.0, 2.0, 1.0]], 2.0) == [0.2, 0.7, 1.2, 1.7] and OPEN.spots([["c0.mp4", 0.0, 0.3, 1.0]], 0.3) == [0.15]      # every half second, away from both ends; a stretch too short: its middle
+    two = OPEN.spots([["c0.mp4", 4.404, 5.0, 1.042], ["c1.mp4", 0.0, 1.238, 1.094]], 1.97); cut = 0.596 * 1.042
+    assert two and all(abs(x - cut) >= OPEN.EDGE_S - 0.002 for x in two) and any(x < cut for x in two) and any(x > cut for x in two), two      # both stretches are looked at, the change between them never (the shot the sweep found: id EP209901140910)
+    assert OPEN.spots([["c0.mp4", 0.0, 0.2, 1.0], ["c1.mp4", 0.0, 1.0, 1.0]], 1.2) == [0.4, 0.9]                                       # a sliver of a clip is skipped, the other stretch is not
+    d, m, u, shots, out, oc = _cut(tmp_path, setting); rec = oc["opening"]; own = _clip(os.path.join(str(tmp_path), "own.mp4"), *RN.out_size(), 6.0, "mandelbrot")
+    late = _film(out, [oc["clips"][i] for i in range(5)] + [own], None, grade="tpad=start=1:start_mode=clone")                           # the film runs ONE FRAME behind its clips: at a change between two clips that is another picture
+    ok, why = OPEN.shown_report(d, shots, u, rec, late); assert ok is True, why                                                           # a shot that crosses two clips (the third sentence) is still recognised
+    b = OPEN.bounds(u); o1 = _clip(os.path.join(str(tmp_path), "own1.mp4"), *RN.out_size(), b[2] - b[1], "mandelbrot")
+    swapped = _film(out, [oc["clips"][0], o1] + [oc["clips"][i] for i in range(2, 5)] + [own], None)
+    assert OPEN.shown_report(d, shots, u, rec, swapped)[0] is False                                                                      # and other pictures under a whole sentence are still found
 
 def test_alike_recognises_a_graded_picture_and_refuses_another_one(tmp_path):
     import cv2, numpy as np

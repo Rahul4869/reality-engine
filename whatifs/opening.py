@@ -10,7 +10,8 @@ SAME_MIN = 0.5                                             # how alike (-1 .. 1)
 GRID = (64, 36)                                            # the small grey copy both frames are compared on
 FLAT = 1.0                                                 # a footage frame with less detail than this (grey levels) has nothing to recognise: it is not compared
 REGION = (0.2, 0.8, 0.15, 0.85)                            # the part of the frame that is compared (x from, x to, y from, y to): its middle - no chip, no bar, no edge of the window
-SAMPLES = (0.3, 0.7)                                       # where inside each opening shot the finished film is compared with the footage
+EVERY_S = 0.5                                              # the finished film is compared with the footage this often inside every stretch of a clip
+EDGE_S = 0.2                                               # ... and never this close to where two clips meet (or the shot begins or ends): film and clip can be a frame apart there
 MIN_PART_S = 0.02
 
 def on():
@@ -251,10 +252,23 @@ def alike(film, clip):
     a = a - a.mean(); b = b - b.mean(); den = float(np.sqrt(float((a * a).sum()) * float((b * b).sum())))
     return round(float((a * b).sum()) / den, 3) if den > 1e-6 else 0.0
 
+def spots(parts, dur):
+    """Where inside one opening shot (seconds from its start) the film is compared with its clip: inside every stretch of a clip of the Short,
+    every EVERY_S seconds, at least EDGE_S away from the stretch's two ends - a change between two clips is never a place to compare (the film
+    and the clip may be a frame apart there, and a frame apart at a cut is another picture). A stretch too short for that gives its middle
+    when it is the only one. Pure."""
+    out = []; at = 0.0
+    for _name, t0, t1, slow in parts or []:
+        ln = min((float(t1) - float(t0)) * float(slow), max(0.0, dur - at)); x = at + EDGE_S
+        while x <= at + ln - EDGE_S + 1e-9: out.append(round(x, 3)); x += EVERY_S
+        at += ln
+    return out or [round(dur / 2, 3)]
+
 def shown_report(d, shots, units, rec, master):
     """(ok, why) for check opening_shown, measured on the FINISHED film; ok None = the check does not apply. The clips of the opening shots must
-    be the files cut from this Short's footage (their hashes are on record) and the film must SHOW them: at two moments of every opening shot
-    the frame of the master is compared with the frame of the clip (the correlation of their detail, `alike`)."""
+    be the files cut from this Short's footage (their hashes are on record) and the film must SHOW them: all through every opening shot
+    the frame of the master is compared with the frame of the clip (the correlation of their detail, `alike`) - at the moments `spots` names:
+    every half second inside every stretch of a clip, never where two clips meet."""
     kind, r = source(d)
     if kind != "short": return None, none_words(kind, r)
     sid = str(r["id"]); idx = marked(shots)
@@ -269,12 +283,12 @@ def shown_report(d, shots, units, rec, master):
         if not u or not os.path.exists(p) or REL.sha(p) != u.get("sha"): return False, f"the clip of opening shot {i} is not the file that was cut from the footage of Short {sid}"
         if u.get("parts") != (shots[i].get("short") or {}).get("parts"): return False, f"the clip of opening shot {i} was cut from other stretches of the footage than its shot names"
         dur = b[i + 1] - b[i]
-        for k in (SAMPLES if dur >= 0.8 else (0.5,)):
-            fm, fc = _frame(master, b[i] + dur * k), _frame(p, dur * k)
-            if fm is None or fc is None: return False, f"no frame of the finished film could be read at {b[i] + dur * k:.1f} s"
+        for o in spots(u.get("parts"), dur):
+            fm, fc = _frame(master, b[i] + o), _frame(p, o)
+            if fm is None or fc is None: return False, f"no frame of the finished film could be read at {b[i] + o:.1f} s"
             same = alike(fm, fc)
             if same is None: continue
-            n += 1; worst = min(worst, (same, round(b[i] + dur * k, 1)))
+            n += 1; worst = min(worst, (same, round(b[i] + o, 1)))
     if n and worst[0] < SAME_MIN:
         return False, f"at {worst[1]:.1f} s the finished film does not show the footage of its Short {sid}: the two pictures are alike by {worst[0]:.2f} (at least {SAME_MIN:g})"
     f = rec.get("fit") or {}

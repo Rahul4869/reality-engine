@@ -393,6 +393,19 @@ F. (ORIGINAL, CHOSEN) THE PROVEN OPENING UNDER THE LONG VIDEO'S OWN VOICE, IN TH
   rehearsal had a reaction inside its opening. Fixed at the cause: no code-drawn reaction effect (and none of its sounds) on a
   shot of the footage - the line is still spoken; a test, a whole-production proof with a planted reaction, a deliberate break.
   The final code commit moves: suite, sweep and GitHub are run again on the new one.
+  (9) **THAT DIAGNOSIS WAS NOT VERIFIED ON THE ID, AND IT WAS NOT THE ID'S CAUSE.** The second sweep (on 2b78a2d, after a green
+  suite of 1415 and GitHub's green run 125) held THE SAME id with the same sentence. I had reasoned from the code ("a reaction
+  effect lasts a second and covers the middle of the frame") instead of reproducing the id - against standing rule 2. Reproduced
+  now (`tools/sweep.py --one`, folder kept) and measured shot by shot: 11 of 12 comparisons at 0.98, one at 0.03 - in the one
+  shot whose sentence crosses from the Short's first clip into its second, at 5.18 s, three hundredths of a second before the
+  change of clips at 5.21 s. The film showed the footage; film and clip are a frame or two apart at a cut, so one showed the
+  last frame of clip 1 and the other the first of clip 2. A FALSE HOLD BY MY OWN CHECK - the fault this build has paid for three
+  times before (a check must recognise what is wrong). The reaction effect over the footage is real all the same (a planted
+  reaction made the film differ and the check failed; it stays fixed) - but no sweep id showed it. Fix of the measure: the film is
+  compared inside every STRETCH of a clip, every half second, never within 0.2 s of a change of clips, and each film frame may
+  match the clip a frame earlier or later. Denser than before (a one-second effect cannot fall between two samples), and blind
+  only where two clips meet. A test with a shot that crosses two clips and is sampled across its cut; the id itself re-run alone
+  before any sweep. The final code commit moves a second time.
 
 #### Step 4 BUILD (what changed)
 - NEW `whatifs/opening.py` (D6; on `tools/repair.py` PROTECTED): `on`, `source`, `none_words`, `manifest`, `fetch`, `proven`, `bounds`,
