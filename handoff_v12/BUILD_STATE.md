@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 12 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026, V2c-b2a THE PLATFORMS ACCEPTED on 12 Nov 2026 - V2c-b2 was split at its start, V2c-b2b was split at its start too: V2c-b2b1 THE OPENING is IN PROGRESS (not accepted - its record under DONE says how far), V2c-b2b2 THE CUT-DOWNS is next). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 12 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026, V2c-b2a THE PLATFORMS ACCEPTED on 12 Nov 2026 - V2c-b2 was split at its start, V2c-b2b was split at its start too: V2c-b2b1 THE OPENING ACCEPTED on 12 Nov 2026, V2c-b2b2 THE CUT-DOWNS is next). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -146,7 +146,11 @@ by searching the type's name before the build (V2c-b2b1: the plan check, the Ani
 budget, the sound events, the cut-downs, the still that re-uses the nearest earlier picture - seven places, three found only by
 running); THE REHEARSAL HAS OLDER ASSERTS OF ITS OWN that pin what a batch changes by design: run all three rehearsals BEFORE the
 break run; A BACKGROUND COMMAND CAN BE ENDED BY THE TOOL after about ten minutes - `git status` after every break run, a break
-script keeps a copy of every file and runs in short parts, long runs are started detached (HOW TO RUN).
+script keeps a copy of every file and runs in short parts, long runs are started detached (HOW TO RUN); REPRODUCE A BAD SWEEP ID
+BEFORE EXPLAINING IT (V2c-b2b1: I explained one from the code, fixed another fault, and paid a whole acceptance pass - suite,
+sweep, GitHub - before the id itself showed a false hold by my own check: `tools/sweep.py --one <id> --work <dir>` keeps the
+folder; measure it); A CHECK THAT COMPARES A FILM WITH ITS CLIPS MUST STAY AWAY FROM CUTS (a frame apart at a cut is another
+picture).
 ORDER AFTER V2c-b2b2 (redesign 11.10): V2d THE MOTION LADDER AND THE MONEY (the hero model by value from the live listing - a model with clips
 longer than 5 seconds ends the slowed clips of V2c-a, the living tier widened, a character drawn or absent - no black shape in any format,
 the stock rules for NASA and Pexels, `moving_share` measured on the finished file, the first-second sound of a Short, the cost model with
@@ -207,7 +211,7 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
-### V2c-b2b1 - THE OPENING (12 Nov 2026) - IN PROGRESS, NOT ACCEPTED (steps 1-5 recorded; the proof and the acceptance runs are still owed)
+### V2c-b2b1 - THE OPENING (12 Nov 2026) - ACCEPTED (final code commit 22103cb GREEN in GitHub Checks run 126: 1416 passed; sweep 58 of 58 ids)
 The owner: "continue in new session" (12 Nov 2026, item 21 of `02`). V2c-b2b was SPLIT AT ITS START (rule 6; the note is at the top of
 NEXT): V2c-b2b1 is the long video's opening made of its Short's footage; V2c-b2b2 is the end of the cut-down reels as a product.
 The whole binding reading order was read first (handoff `CLAUDE.md`, `00`, `02` with the new item 21, `01`, `03`, `06`, `04`, `05`, all
@@ -410,13 +414,14 @@ F. (ORIGINAL, CHOSEN) THE PROVEN OPENING UNDER THE LONG VIDEO'S OWN VOICE, IN TH
 #### Step 4 BUILD (what changed)
 - NEW `whatifs/opening.py` (D6; on `tools/repair.py` PROTECTED): `on`, `source`, `none_words`, `manifest`, `fetch`, `proven`, `bounds`,
   `lay`, `mark`, `marked`, `fit`, `cut`, `plan_report` (check `opening_footage`), `detail`, `alike`, `shown_report` (check
-  `opening_shown`), `m_cut`.
+  `opening_shown`), `spots` (where the film is compared), `m_cut`.
 - `whatifs/episode.py`: the plan stage fetches the footage before the hook, hands the Short's hook to the first line and marks the
   shot list before the cut-downs are planned (the manifest travels in `plan.json`); `produce` fetches and marks again wherever the
   job runs; `plan_check` and the paid repair skip marked shots; `anchor_shots` charges no footage shot to the picture budget and
   makes the first still after the footage a picture of the video's own; `_assets` cuts the opening first (a shot that cannot be
   cut raises before anything is paid) and its record travels with the assets checkpoint; `_render` plays a footage clip as one
-  piece and places one sound hit at second 0; both gates get what they judge.
+  piece and places one sound hit at second 0; `reaction_events` draws no reaction effect over a footage shot; both gates get what
+  they judge.
 - `whatifs/hooks.py`: `proven_record`, `run_hooks(proven=...)`. `whatifs/anim.py`: `pick_slots(skip=, anchors=)`, `apply` (three
   scenes at the later anchors when the opening is footage; marked shots are never demoted). `whatifs/room.py`: `past_footage`,
   `reels` (the footage is not on offer; a named footage shot is replaced by the next free shot of the video's own pictures).
@@ -445,6 +450,145 @@ F. (ORIGINAL, CHOSEN) THE PROVEN OPENING UNDER THE LONG VIDEO'S OWN VOICE, IN TH
 | A cut-down never takes a footage shot | `room.reels`, `room.past_footage` | tests; the production test |
 | An override opens on its own pictures and is not judged for footage | `opening.source`, `none_words` | tests; the production under an override (both checks "not applicable", four scenes, the lab) |
 | A missing archive is the owner's decision, asked once | `opening.fetch` -> `plan_report`; `contract.p_opening_shown` reads the waiver | the production whose archive was deleted (held, nothing paid, his Approve, not asked again) |
+
+#### Step 6 PROVE
+- `tests/test_v12_opening.py`: **21 tests** (19 before the sweep; two came with what it found), each rule both ways - the window's arithmetic (a clip 720 wide: a 4:3 window at 2.0 times;
+  the lever narrows and widens it; `fill`, `whole`, an unknown word, a clip wider than the frame); the laying (a sentence across two
+  clips, each slowed as the Short played it; the end inside the footage; the ceiling); the marks (the promise on the first shot, a
+  number graphic gone, twice = once, the footage gone = the marks gone); check `opening_footage` on eleven wrong cases, one fault
+  at a time (no manifest, another Short's manifest, another archive, a first shot of its own, a footage shot planned as a still,
+  another Short's mark, other stretches, a covered sentence without footage, one too many, a first sentence longer than the
+  footage); an override and the off switch (both checks "not applicable", naming the override); the archive (measured clips, the
+  hook without its delivery tag, only its own file names unpacked, another Short's archive, none kept, none in Drive, a clip
+  missing); the cut files on real UPRIGHT clips that move (the frame's size, the sentence's length, moving to the last frame, a
+  blurred ground beside the window that is neither sharp nor black, the three window modes, the window's place); a restored clip
+  kept by hash and parts, cut again when changed; a shot that cannot be cut stops the assets stage before anything is paid; the
+  record's way through the checkpoint; the finished film against the footage (graded darker with a vignette: recognised; other
+  pictures under one sentence: named with the second; a replaced clip; another Short's record; the owner's waiver not asked twice,
+  and not covering a video that does carry the footage); `alike` on a graded copy, another picture and a flat frame; the first line
+  (no lab call, inserted first, never said twice, the hook of another Short refused, a line that is no longer first refused, a line
+  that is not advertiser-safe -> the lab); three scenes at the later anchors and four without footage; the plan check, the picture
+  budget, the first still after the footage, the paid repair; no reaction effect over the footage; the film never compared where
+  two clips meet (the looks inside one shot; a film one frame behind its clips still recognised; other pictures still found);
+  the cut-downs (the planner's offer, the replacement); the sweep's own verdict; the wiring.
+- `tests/test_v12_opening_e2e.py`: **3 tests, 4 whole productions** - (1) a long video about a promoted Short: both checks PASS, the
+  first spoken line is the Short's hook, every opening shot plays ONE clip of exactly its sentence's frames, one sound hit for the
+  opening, no cut-down takes a footage shot, and the paid-call counter shows 3 hero clips, 3 start frames and no hook lab; then, on
+  another Sheet, a long video under an OVERRIDE: both checks "not applicable" naming the override, the lab's line, its own promise
+  scene, 4 hero clips, 4 start frames - the difference is exactly `V12V2CB2B_REMOVED` and nothing else got dearer; (2) the archive
+  deleted from Drive: HELD at the script gate with `opening_footage` alone, no picture and no clip paid, the owner's card; his
+  "Approve anyway" -> the video goes on with four scenes of its own and `opening_shown` says "not applicable: approved" (he is not
+  asked twice); (3) the runner dies before the pictures: the retry on another machine resumes from the saved plan, fetches the
+  footage again, pays no writing and no hook lab twice, buys three scenes, and both checks PASS.
+- Tests changed by design: `test_v12_exec` (72 levers; 36 script and 20 final checks), `test_v12_release` (51 promises about the
+  show), `tests/paid_calls.py` (`watch`, the removed calls). The rehearsal's two older assertions (above, corrected by the build 6).
+- Fails correctly: **83 deliberate breaks** on the real repo (79 before the sweep, 4 with what it found), each one place, each put
+  back by the script (a copy of every file kept; the hashes compared), nothing else reading the code meanwhile - **each failed at
+  least one test**: 74 seen by the fast tests and 9 only by a whole production - the switch ignored; an override taken for a Short; another Short's archive accepted; any
+  file name unpacked; the loop shot counted as footage; the Short's slowing forgotten (in the track, in the clip's seconds, in the
+  cut); the hook with its tag; OPENING_HOOK_ON ignored; the opening past the footage; the ceiling ignored; no promise on the first
+  shot; a mark without footage kept; a marked shot not animated; a graphic left under the footage; `opening_footage` blind to no
+  manifest, another archive, a first shot of its own, another Short's footage, a still, any laying, a too-long first sentence; the
+  window ignoring its limit, `whole` not whole, an unknown word kept, no blurred ground, its place ignored; the cut going on
+  without the footage, with a clip the archive never held, always cutting again, trusting a file without its hash, trusting
+  another Short's record, a clip longer than its sentence; `opening_shown` blind to a replaced clip, other stretches, never
+  comparing, a first shot of its own, another Short's record; the raw picture compared instead of its detail; a flat frame judged;
+  either check gone; the waiver not read, or read too widely; `hook_lab` passing another Short's hook or a line that is no longer
+  first; the lab run anyway; an unsafe line used; the hook said twice; the Director demoting footage shots, buying the scene at
+  second 0 again, taking a footage shot as a slot, losing slot numbers; the plan check demoting; the assets stage not cutting; the
+  paid repair re-making a footage picture or clip; the footage eating the picture budget; a still re-using a footage frame; the
+  record lost at the checkpoint (saved, restored); a cut-down keeping or being handed a footage shot, the footage on offer; the
+  sweep taking "not applicable" for an opening; no owner of the checks; no lever; a softer window needing nobody; the module
+  unprotected; the checks unclassified; and by production only: the plan stage not laying or not handing the hook over, a clip cut
+  into pieces, a sound hit per shot, either gate without what it judges, no second fetch on another machine, a video without its
+  footage going on without the owner; and with the sweep's findings: a reaction effect drawn over the footage (a fast test and a
+  whole production with a planted one), the film compared where two clips meet, one look a clip instead of one every half
+  second. Three runs of the list found a line that changed nothing each time (a special case of the window, a file test, an
+  allowance of a frame earlier or later); all three are gone.
+- Fake rehearsal on the working tree of the final code: **GREEN three times** - F1 with Shorts in S1, F2 with S2, F1 with S3: every
+  long format and every Short format. Each: a long video refused first (nothing spent), two Shorts made and released, their
+  numbers read, one promoted, and the long video about it OPENING ON ITS SHORT'S FOOTAGE ("the first 12.9 to 17.2 s are the footage
+  of Short ...: 5 or 6 shots, 10 or 12 frames of the finished film compared with it, the least alike by 0.86 to 0.99"), its first
+  line the Short's hook; 56 checks on the long video (F1: 44 pass, 12 not applicable; F2: 51 pass, 5 not applicable).
+- Parallel pre-check of the whole suite before the final code commit (the new tool of item 21): 1413 passed, 1 failed in 33:33 -
+  the one test that still pinned 49 promises about the show; corrected, then the final code commit.
+- THE FINAL CODE COMMIT MOVED TWICE, each time after everything else was green. (a) 10afffc: serial suite on its frozen copy 1414
+  passed / 0 failed / 0 skipped, GitHub run 124 GREEN (1414 passed, rehearsal GREEN EP202611120956) - and the SWEEP on the same
+  frozen copy gave 57 of 58: long-video id EP209901140910 was held by `opening_shown`. I took it for a reaction effect drawn over
+  the footage (a real fault - "corrected by the build" 8 - fixed in 2b78a2d) WITHOUT reproducing the id. (b) 2b78a2d: serial
+  suite 1415 / 0 / 0, GitHub run 125 GREEN (1415 passed, rehearsal GREEN EP202611121154) - and the second sweep held THE SAME ID.
+  Reproduced alone and measured: a false hold by the new check at a change between two clips ("corrected by the build" 9), fixed
+  in 22103cb - the final code commit - where the id passes alone (43 pass, 13 not applicable) before the third sweep began.
+  **83 deliberate breaks in all, each failed a test** (74 seen by the fast tests - all 74 run again after the last change of the
+  measure, the 41 that touch the check or come after it in the list on the final code itself - and 9 only by a whole production:
+  8 on the commit before the sweep's fixes, the planted reaction again on the final code). Three more lines that changed nothing
+  were found by breaks no test noticed and are gone. Three rehearsals GREEN on the final code (F1 / S1, F2 / S2, F1 / S3: "25 to
+  29 frames of the finished film compared with it, the least alike by 0.75 to 0.97").
+- Full suite on a frozen copy of the FINAL code commit 22103cb, serial runner: **1416 passed / 0 failed / 0 skipped** (75 test files;
+  1392 before this batch, 24 new). The first acceptance runs with NO skip: with Node.js on the laptop the dashboard test runs here
+  too. The whole-production file of this batch needs about 9 of the runner's 15 minutes a file on this laptop when nothing else
+  runs (17 minutes beside a sweep: never run them together).
+- Sweep on the same frozen copy of 22103cb, after the suite had finished: **58 of 58 ids**. No bad id, no failure class (the third
+  pass: 57 of 58 on 10afffc and on 2b78a2d, both times id EP209901140910 - see above; on 22103cb that id was run alone first and
+  passed, then the whole sweep). A: 20 ids, organisation on - every id climbed the ladder first (its own Short made a week ago and
+  released, its numbers read, the promotion) and **ALL 20 LONG VIDEOS OPENED ON THEIR SHORT'S FOOTAGE** (13.5 to 18.3 seconds; 24
+  to 34 frames of each finished film compared with its clips; `opening_footage` and `opening_shown` PASS on every one - "not
+  applicable" would have made the id bad): 13 drew F1 (43 pass + 13 not applicable of 56 checks), 7 drew F2 (50 pass + 6 not
+  applicable); 11 department runs each. B: 4 ids, organisation off - 4 ok, each climbed and opened on its Short's footage. C: 4
+  full rehearsals with a fixed id - 2 in F1 (44 pass + 12 not applicable), 2 in F2 (51 + 5), each asserting the opening and the
+  Short's hook inside the rehearsal. D (`--mode short`): 20 ids, two Shorts each, both released (the first made while uploads
+  were closed and sent later from its Drive copy; 9 of the Shorts under test by the owner's Approve): 6 of 6 checks, 7 department
+  runs, no warning. E: 10 more ids forced to S3 - 10 of 10, 6 by Approve. The warnings of A to C are the classes the offline long
+  video has always printed (the stand-in voices, the atmosphere's time valve - issue 26, the prompt-cache note - issue 23; in the
+  rehearsal also its own later scenes: "script N% similar to EPTABLE", a reel given up); none comes from the opening. NOT covered
+  by the sweep: upright clips, a missing archive, an override, a retry on another machine (open issue 132).
+- GitHub Checks (standing rule 1): run **126** on 22103cb **GREEN**: 1416 passed (40:53), rehearsal GREEN (episode EP202611121421;
+  contract script 36/36, final 20/20); its one warning and its notices are GitHub's own (Node.js 20, the Ubuntu label - open issues
+  37 and 46). Runs 124 (10afffc: 1414 passed) and 125 (2b78a2d: 1415 passed) GREEN too - on commits the sweep then proved wrong:
+  a green GitHub rehearsal is ONE id. Runs 121 to 123 RED, all read: 121 (4f57e6b, build part 1) 5 failed -
+  three pinned counts and SYSTEM.md not yet regenerated; 122 (9b305c5) and 123 (0b7c0c1) 1 failed each - the test that pinned 49
+  promises about the show, corrected in 10afffc. None was a fault of the code. Run 120 (8a608c2, text only) GREEN. GitHub's unit
+  tests took 41 to 61 minutes in this batch (41 before): the job's limit is 120.
+- Plan Guard GREEN, Truth GREEN, Palace GREEN (173 founding items), Organisation GREEN (12 wired, 5 pending), docs regenerated
+  without drift.
+- Money: Rs 0 spent (fake mode). The opening adds NO paid call and removes four: the paid-call counter shows, for a long video on
+  its Short's footage against one under an override, one hero clip (USD 0.42, about Rs 39), one reference start frame (USD 0.067,
+  about Rs 6) and the hook lab's two text calls fewer, and no more stills or living clips (`tests/paid_calls.py`
+  `V12V2CB2B_REMOVED`; the older tests' baseline is unchanged - they run with the ladder off). About Rs 45-50 a long video, about
+  Rs 190 a month at four. The estimate before a video still counts four clips (open issue 126). The known gap stays: at today's
+  clip price twelve Shorts a month do NOT fit beside four long videos until V2d chooses the clip model by value (open issue 83).
+#### Step 7 TAKEAWAY (also Palace item `v2cb2b.takeaway`)
+- WORKED: one PURE rule (`opening.lay`) and one MARK on the shot list. Everything after it - the gate, the cut, the renderer, the
+  proof on the finished film - reads the mark; the script-gate check simply computes the rule again and compares.
+- WORKED: the break list written as "what would fail if this line went?" before the last test run - a fourth time. It found eight
+  rules without a test before a single break ran, and one of those new tests found a fault of the product (a still after the
+  opening re-using a frame of the footage). Two breaks that no test noticed were lines that did nothing: deleted.
+- WORKED: the sweep after everything was green - twice. Suite, three rehearsals and GitHub's run were green on two commits whose
+  new check held 1 long video in 20 for nothing. Only a pass over many ids could see it; and only REPRODUCING the id showed why.
+- WORKED: measuring before choosing a limit. The first measure (a hash of a tiny copy) called the film's own footage different;
+  measured pairs - the same footage under a grade, other pictures - showed it at once and set the limit of its replacement.
+- FAILED: the sweep's first bad id I explained from the code instead of reproducing it, "fixed" something else (a real fault, but
+  not that one), and paid a whole acceptance pass - suite, sweep, GitHub - for the guess. Standing rule 2 says: reproduce the id,
+  trace it, fix the cause. And my own check produced a FALSE HOLD: it compared a frame at a change between two clips. The lesson
+  of V1b, V2c-a and V2c-b2a a fourth time - a check that can hold a video must recognise what is wrong.
+- FAILED: I chose that first measure from an article instead of from pairs. And I ran a long break run as a background command:
+  the tool ended it in the middle of a break and left a broken line in a code file - found by `git status`, not by luck. And I
+  pasted two scripts through the shell again although the laptop's oldest rule says never (no backslash was lost this time).
+- FAILED (the plan's, now known): "a mark on a shot" has seven readers in the long video's code that had to learn to skip it - the
+  plan check, the Animation Director, the paid repair, the picture budget, the sound events, the cut-downs, the still that re-uses
+  the nearest earlier picture - and an eighth, the reaction effects, found only while chasing the sweep's id. Search for every reader of a type
+  before giving that type a new meaning.
+- LIMIT: no upright clip of the real model has met the window. Offline clips are wide, so every rehearsal and every sweep id proved
+  "the frame filled, nothing enlarged"; the upright cases rest on small test clips. Whether a 4:3 window on a blurred copy of
+  itself looks like a proven opening or like a pasted phone clip only the owner's eye and the first retention curves can say
+  (open issue 123, H22, H23). The thumbnail is not tied to the Short's first picture yet (124).
+- NEW QUESTION: does a long video that opens on its Short's footage keep more viewers to second 30 than one that opens on new
+  pictures (H22)? Every video under an override is the comparison; YouTube's Intro number is the measure.
+- ORGANISATION: a thing that is "paid already" needs a mark that every department's code respects, and a check that looks at the
+  finished product, not at the plan. And an acceptance run that is green is not the last word while a wider run is still owed.
+- NOT IN THE PALACE YET: the founding item `v2cb2b.takeaway` was written with the first final code commit, before the sweep's two
+  lessons (reproduce the id; never compare at a cut). They are in this record and in NEXT; a seed change is a code change, so the
+  next batch that touches the seed file adds them.
 
 ### V2c-b2a - THE PLATFORMS (12 Nov 2026) - ACCEPTED (final code commit 3619c81 GREEN in GitHub Checks run 117: 1392 passed; sweep 58 of 58 ids)
 The owner: "continue in new session" (12 Nov 2026). V2c-b2 was SPLIT AT ITS START (rule 6): V2c-b2a is how a finished Short reaches
@@ -2945,6 +3089,12 @@ Rehearsal asserts `docs_current` ran and passed.
   (deterministic particle seed).
 
 ## PROTECTED-AREA FILES TOUCHED SO FAR (list them in the final PR)
+- V2c-b2b1: `whatifs/opening.py` (NEW; on the protected list from its first commit), `whatifs/episode.py` (the plan stage fetches and
+  lays the opening; `plan_check`, `anchor_shots`, the paid repair, `_assets`, `_render`, `reaction_events` and both gates know a
+  footage shot), `whatifs/contract.py` (2 new probes and rows; `p_hook` knows the Short's hook), `whatifs/room.py` (`past_footage`;
+  the cut-down planner is not offered footage shots), `whatifs/core.py` (6 cells), `whatifs/org/registry.py`, `levers.py`, `rnd.py`
+  (D6 wraps the module, 2 check owners, 2 levers, SHOW_CHECKS 51), `tools/repair.py` (the list itself). Not protected, touched:
+  `whatifs/hooks.py`, `whatifs/anim.py`, `tools/rehearsal.py`, `tools/sweep.py`, `tests/paid_calls.py`.
 - V2c-b2a: `whatifs/release.py` (NEW; on the protected list from its first commit), `whatifs/publish.py` (three pure request-body
   functions - `yt_body`, `ig_reel_params`, `fb_reel_finish` - that the uploads now send through; three read-backs - `yt_read`,
   `ig_read`, `fb_read`; the offline stand-in platform; `ig_reel` / `fb_reel` take new optional arguments - an older caller's request
@@ -3518,7 +3668,8 @@ Rehearsal asserts `docs_current` ran and passed.
 | V2c-a | done 11 Nov 2026 | 1323 / 1 / 1 on 486eb41, the 1 corrected (laptop); GitHub 1325 passed (run 99) | GREEN in F1 / F2 with a Short in S1 / S2 / S3 (53 + 5 checks) | The Short as a product: department D14 Shorts Studio; Short formats as data (S1, S2, S3); `shorts2.py` rebuilt - one guide voice, every second a clip planned by code, the loop closed by code, no plate; the viewer's seat for a Short (`shortseat.py`) and 5 checks at a new stage "short" (58 hard checks), 12 levers (63); a held Short is not made. V2c was split at its start. GitHub run 99 GREEN on 3b34cc3; sweep 58 of 58 ids. |
 | V2c-b1 | done 12 Nov 2026 | 1358 / 0 / 1 on 3ab0e16 (laptop); GitHub 1359 passed (run 110) | GREEN in F1 / F2 with Shorts in S1 / S2 / S3 (54 + 5 checks) | The ladder: every topic starts as a Short (3 a week, 12 a month, 48 hours apart); YouTube's true numbers are read by processed day (they are 48 to 72 hours late) and public views at the 24-hour and 48-hour mark; D10's promote rule (code, never a model) picks the long video's topic and a long video without a promoted Short or an owner override is refused before any money (new tab `Ladder`, check `topic_ladder`: 59 hard checks); a winner gets ONE follow-up ordered by code with a 48-hour clock, overdue = a memo; 6 levers in, 1 out (68). V2c-b was split at its start. The sweep found what a green suite and four green rehearsals had hidden: on a new Sheet no video could ever have been made - and three faults in what counts as a made Short; all fixed at the cause, 42 deliberate breaks. GitHub run 110 GREEN on 3ab0e16; sweep 58 of 58 ids. Runs 104-106 RED = three tests that pinned what the batch changed by design, corrected. |
 | V2c-b2a | done 12 Nov 2026 | 1391 / 0 / 1 on 3619c81 (laptop); GitHub 1392 passed (run 117) | GREEN in F1 / F2 with Shorts in S1 / S2 / S3 (54 + 5 + 1 checks) | The platforms: a finished Short goes out as three native uploads of ONE master file under Publishing's own run (new `whatifs/release.py`, D9 `short_publish`) - YouTube Shorts (its own thumbnail, set only after YouTube has processed the video; the playlist of its format), Instagram Reels (a Trial Reel, its cover, the audio named after the series, the AI label), Facebook Reels (90 seconds at most); each under its own words, none with an ask. The release sheet is data (who sets each row, how it is proven), every request body a pure function, every platform read back and every row given a receipt on new tab `Release_Sheet` (kept, fixed, drift, sent only, waiting, refused, skipped, off); a pass on every tick finishes what waits; a release gate after the uploads (D8 `release_gate`, new check `release_sheet` at new stage "release": 60 hard checks); `made` is a field of the Short's record (the status-text match is gone); 2 levers (70). V2c-b2 was split at its start. Found and fixed: an approved Short would have gone out under the special reels' text; a Short made while uploads were closed lost its file; a check that could pass a Short which never reached YouTube; a second upload after a cut-off; the sweep had never published a Short. 63 deliberate breaks, each failed a test. No paid call added. GitHub run 117 GREEN on 3619c81 (no run of the batch was red); sweep 58 of 58 ids. |
-| V2c-b2b | next | | | The opening and the cut-downs: the long video's opening made from the kept footage of its Short; the cut-down reels stop being the product (what stays goes out through `release.py`) |
+| V2c-b2b1 | done 12 Nov 2026 | 1416 / 0 / 0 on 22103cb (laptop); GitHub 1416 passed (run 126) | GREEN in F1 / F2 with Shorts in S1 / S2 / S3 (56 + 5 + 1 checks) | The opening: a long video about a promoted Short opens on that Short's kept footage (new `whatifs/opening.py`, D6) - the archive of its ladder row fetched and measured, the Short's picture track laid by code under the first sentences, one clip a shot cut through ONE window whose width follows the clip's real sharpness (a setting and a lever; a blurred copy of the picture as ground), the first spoken line the Short's own hook (no hook lab), three paid scenes instead of four; a video under an override opens on its own promise scene; checks `opening_footage` (before picture money) and `opening_shown` (frames of the finished film against the footage): 62 hard checks; 2 levers (72). V2c-b2b was split at its start. Found and fixed: a hash of a tiny copy could not recognise its own footage under a grade; the cut-downs lost every shot; a still after the opening re-used a frame of the footage; a reaction effect drawn over the footage; and - by the SWEEP, twice, after a green suite, green rehearsals and a green GitHub run - a false hold by the new check on 1 long video in 20 (it compared a frame where two clips meet; first misread, then reproduced and fixed). 83 deliberate breaks, each failed a test. No paid call added, four removed (about Rs 45-50 a long video). GitHub run 126 GREEN on 22103cb (124 and 125 GREEN on the two commits before the sweep's fixes; 121-123 RED = tests that pinned counts changed by design); sweep 58 of 58 ids on the third pass (57 of 58 on the first two). |
+| V2c-b2b2 | next | | | The cut-downs: the cut-down reels stop being the product (what stays goes out through `release.py`) |
 | V2d | after V2c | | | The motion ladder and the money: the hero model by value, the living tier, a character drawn or absent, stock rules (NASA / Pexels), the cost model |
 | V3 | after V2d | | | Pilot on real services (3 Shorts + 1 long video), the human kit, the release sheet's one-time switches, then GO LIVE with the new code |
 | V2b | after V3 | | | Inside the format: first person and camera continuity as measured rules, F1's own ending, F3 "The walk" |
