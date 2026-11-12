@@ -265,6 +265,75 @@ your seat on the jury: subscribe." A courtroom, a wrong cadence and an ask under
 approve tests stub `_publish`). (6) FOUND, A FAULT: a Short that is made while uploads are "not confirmed open" is marked and counted
 as made - and its FILE is nowhere: the job ends, the runner's folder is gone, only the footage archive is in Drive. It could never be
 posted (open issue 100 said "harmless"; it is a paid Short lost). Both are fixed by this batch's design, not patched.
+#### Step 2 CREATIVITY (scores 1-5: what a viewer or the channel gains / enforceable / cost / reliability / owner effort)
+A. Patch the old path: give `specials._publish` a text per platform and the missing Instagram fields: 2 / 1 / 5 / 2 / 5 = 15 - still no
+   department run, nothing read back, the thumbnail set too early (research 2), and the approve path and the upload hold stay broken.
+B. Three uploader functions called one after another from `shorts2.run`, each returning an id: 3 / 2 / 5 / 2 / 5 = 17 - native, but a
+   release is treated as one moment. The Shorts thumbnail cannot be set in that moment, an approved or held Short is posted by other
+   code than a fresh one, and "posted" stays a word nobody proved.
+C. A scheduling service that posts to all three (the usual tool of social teams): 2 / 1 / 2 / 3 / 3 = 11 - a new subscription (refused by
+   the budget rule), the owner's logins in a third system, another firm's defaults between us and the platforms, no read-back we control.
+D. One "master record" that a model fills per platform (title, caption, hashtags written fresh for each): 3 / 1 / 3 / 2 / 5 = 14 - a paid
+   call for text that code can build from what the writers already wrote, and taste in the place where the rule is "no ask, no courtroom".
+E. (ORIGINAL, CHOSEN) THE RELEASE SHEET AS DATA, WITH A RECEIPT FOR EVERY ROW: one table says, for every setting of every platform, WHO sets
+   it (code at every upload / the owner once / his hand per video / a later batch), WHAT it must be (a pure function of the Short) and HOW
+   it is proven (which field of the platform's own answer - or, honestly, "sent only" where the platform shows nothing back). Publishing's
+   run sends ONE master file, never altered, natively to each platform; every request body is built by a pure function; then the
+   platform is READ BACK and each row gets a receipt: KEPT, FIXED (drift repaired once), DRIFT, SENT (no read-back exists), WAITING (the
+   Shorts thumbnail until YouTube has processed the video), REFUSED, SKIPPED (the file does not fit that platform), HAND or LATER. A pass
+   on every tick finishes what waits - the thumbnail, a Short the owner approved later, a Short made while uploads were closed - so there
+   is ONE path to a platform, whoever starts it. A new gate after the upload (check `release_sheet`) judges the receipts; "made" becomes
+   a field of the Short's own record, apart from where its upload stands: 5 / 5 / 5 / 4 / 5 = 24.
+#### Step 3 DESIGN MEMO
+- THE RELEASE SHEET (`whatifs/release.py` NEW, D9; `SHEET` = rows of data): platform, row, who (`code` / `once` / `hand` / `later`), how it
+  is proven (`read` / `sent` / `file`), the batch for what is not built. Rows set BY CODE for a Short - YouTube: title, description (the
+  hook, how it was made, at most 3 hashtags, no ask, no courtroom word), tags, category, both languages, not made for kids, the AI
+  field, public, "it is a Short" (proven on the file: upright, at most 180 s - no API field exists, research 3), the Shorts thumbnail
+  (only after processing, research 2), the caption track, the playlist of its Short format, the master file. Instagram: caption (the
+  hook first, at most 5 hashtags, no link), Reel, cover (`cover_url`, else `thumb_offset` on the promise frame), audio name = the series,
+  AI flag, Trial Reel (`SS_PERFORMANCE`), the master file. Facebook: description, AI flag, 3 to 90 s, published, the master file.
+  HAND and ONCE rows (the link from a Short to its long video; remixing, comments, phone verification) are on the sheet as V3's and are
+  never counted as set: the machine cannot read them (redesign 11.7).
+- ONE MASTER, THREE NATIVE UPLOADS: the file made by `shorts2.make` is kept in Drive at once (the record's `file`) with its SHA-256
+  (`sha`) and its cover (`cover`); every upload - now, after the owner's Approve, or days later when uploads open - sends that file and
+  the receipt stores the hash of the bytes really sent. A platform never receives a file fetched from another platform ("never a file
+  with another platform's mark" becomes a row that can fail: `file`). A file that does not fit a platform (Facebook: over 90 s) is
+  SKIPPED there with the reason, never cut.
+- PURE REQUEST BODIES (`publish.yt_body`, `ig_reel_params`, `fb_reel_finish`): the upload functions build their requests through them
+  in real and in offline mode, so a test reads every field. Offline, a small stand-in platform keeps what it was sent and answers the
+  read-back from it (`publish.yt_read` / `ig_read` / `fb_read`; a test can make it drift, refuse or keep a video in processing).
+- THE RUN (`release.short` = D9's run `short_publish`, the one call site): fit -> texts -> YouTube (upload, read back, wait up to
+  `SHORT_THUMB_WAIT_S` for processing, thumbnail, captions, playlist) -> Instagram -> Facebook -> receipts on NEW tab `Release_Sheet`
+  (one row per Short and platform: native id, state, the hash sent, what was sent, what came back, the receipts). Then D8's NEW run
+  `release_gate` judges NEW check `release_sheet` at NEW contract stage "release" (60 hard checks: 35 script, 19 final, 5 short, 1
+  release; a promise about the show: SHOW_CHECKS 49). A failed row is a problem memo to D9 (one per class, closed by the next Short
+  whose sheet passes); the Short is public by then, so nothing is "held" and the owner is told only what needs his hand.
+- THE PASS THAT FINISHES (`release.settle`, every tick, level-triggered): a Short that is made and not yet out goes out when it may
+  (uploads open; his Approve given); WAITING rows are finished; DRIFT is repaired ONCE by code where an API allows it (the AI field,
+  the thumbnail) and then stands as DRIFT; a platform that failed is tried again at most `RELEASE_TRIES_MAX` times, then it is a
+  failed row. A row still WAITING after `RELEASE_SETTLE_H` hours fails the check.
+- WHAT COUNTS AS A MADE SHORT (open issues 100, 107): tab `Specials` gets `made` (when the file was finished), `sha`, `cover`. The
+  cadence, the last ten, the spent topics and the review count read `made` - never a status text. `shorts2.UPLOAD_HOLD` is gone; a
+  one-time move (`manage.v12v2cb2_upgrade`) writes `made` on the rows an older job left. A Short that is made and never goes public
+  inside the ladder's window is PASSED there with the reason (before: MADE for ever, its footage kept for ever).
+- THE APPROVE PATH: `specials.approve` hands a Short to `release.short` (its own texts, built from its record); the special reels keep
+  `_publish`. The review message of a Short is sent with the master's Drive link as before.
+- CHANGED FROM THE REDESIGN, with reasons: (1) "the Shorts thumbnail" is set only after processing and is a WAITING row until then
+  (research 2). (2) "Trial Reels on" and "the audio named after the series" are sent and can never be read back (research 7): their
+  receipt is SENT, and the record says so instead of "verified". (3) "the cover" is the Short's own promise frame, drawn by code from the
+  first picture already paid - one image for the YouTube thumbnail and the Instagram cover; Facebook's API takes none. (4) Translated
+  titles (redesign 11.7) need a paid model call per Short: a LATER row (V3), not built here.
+- LEVERS (D9): `IG_TRIAL_REELS_ON` (off needs nobody; it is a reach experiment), `SHORT_THUMB_ON`. Switches with safe defaults:
+  `RELEASE_SHEET_ON` (FALSE = the old single upload without receipts; the check says NA), `IG_AUDIO_NAME`, `SHORT_HASHTAGS`,
+  `SHORT_THUMB_WAIT_S`, `RELEASE_TRIES_MAX`, `RELEASE_SETTLE_H`.
+- HYPOTHESES: H20 a Trial Reel reaches more non-followers than a normal Reel of the same Short format (Instagram insights; V5 reads
+  them). H21 a Short with its own thumbnail gets more views from the channel page and search than one without (Analytics traffic source).
+- MONEY, said before the build: NO new paid call. A Short's release costs API quota only - about 100 units for the upload (its own
+  bucket), 50 for the thumbnail, 400 for the caption track, about 100 for the playlist, 1 to 3 a read-back: about 650 of the 10,000 a
+  day, three times a week; one Meta post each of the 100 and 30 a day allowed. The settle pass reads only Shorts with an open row (1
+  unit each). The cover is drawn by code. Drive keeps one master (about 20 MB) per Short. The paid-call counter must stay unchanged.
+- NOT IN V2c-b2a, on purpose (V2c-b2b): the long video's opening from the Short's footage; the cut-down reels (`manage._post_reel`
+  still uploads them the old way, "#shorts" in title and text included); the long video's own rows of the release sheet (V3).
 
 ### V2c-b1 - THE LADDER (12 Nov 2026) - ACCEPTED (final code commit 3ab0e16 GREEN in GitHub Checks run 110: 1359 passed; sweep 58 of 58 ids)
 The owner: "continue" (a new session for V2c-b). V2c-b was SPLIT AT ITS START (rule 6; the note is at the top of NEXT): V2c-b1 is the ladder -
