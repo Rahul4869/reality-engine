@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 11 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 12 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026 - V2c-b was split at its start, V2c-b2 is next). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -103,6 +103,7 @@ LOOP. Effort: High. V2c-b was SPLIT AT ITS START (rule 6, 11 Nov 2026): V2c-b1 T
 - The cut-down reels of `whatifs/reels.py` stop being the product (`REELS_PER_VIDEO`, the bridge style, `manage.release` /
   `_post_reel`, checks `shorts` and `short_covers`): decide what stays as a pull from a long video to its Short.
 - A Short held by "uploads not confirmed open", or never approved, stays MADE on the ladder (open issue 100): the upload path decides.
+  Whether a Short was MADE still hangs on that status text (`shorts2.UPLOAD_HOLD`, open issue 107): give it its own field here.
 What V2c-b1 leaves ready (use it, do not rebuild it): `whatifs/ladder.py` (D10) and tab `Ladder` - `enter` / `keep` (in `shorts2.run`),
 `read` (both clocks onto the row), `rank` (the promote rule), `promote` (D10's run), `gate` / `refuse` / `override`, `pitch` / `claim` /
 `use`, `topic_report` (check `topic_ladder`), `order_followup` / `open_orders` / `order_tried` / `order_done` / `watch` (the winner's one
@@ -117,7 +118,11 @@ the case built to defeat it (V2c-b1: 2 of 20 beat 30 of 2,000); ASK WHEN A NUMBE
 numbers are 48 to 72 hours late - read the platform's own page first); seed every random draw by the id (V2c-b1: a test of V2c-a failed
 once in eleven runs); a test that builds its own fresh Sheet loses the defaults of `tests/conftest.py`; a new retired-concept rule must
 be narrow and needs its strings in the small repository of `tests/test_docs_current.py`; a founding item goes only to the department
-that acts on it, and its date is the UTC day (the laptop's UTC date is a day behind the owner's); the offline clips barely move - a rule
+that acts on it, and its date is the UTC day (the laptop's UTC date is a day behind the owner's); PROVE A NEW FIRST STEP ON AN EMPTY
+SHEET with nothing run before it (V2c-b1: a green suite and four green rehearsals hid that no video could ever be made - both began
+with a step that opened uploads by the way; only the sweep saw it); when one job is made to wait for another, list what the waiting
+job used to do "by the way"; a status text is data other code reads (V2c-b1: "HELD" meant two things on one tab); WRITE A FINDING INTO
+THIS FILE BEFORE THE EDIT THAT FIXES IT (V2c-b1: a session was cut off with a fix applied and no note); the offline clips barely move - a rule
 about motion needs a test with clips that do; never run the break script while another run reads the code; never read a result AFTER
 writing it into a commit message; run the rehearsal in each long format (`WI_FORMAT`) and each Short format (`WI_SHORT_FORMAT`) before
 the suite; NEVER paste code with backslashes through a shell here-document (write the script with the file tool); READ THE WHOLE BINDING
@@ -182,11 +187,7 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
-### V2c-b1 - THE LADDER (12 Nov 2026) - IN PROGRESS, NOT ACCEPTED (the steps below are recorded as they finish)
-WHERE IT STANDS (12 Nov 2026, a second session after the first ran into the weekly usage limit): research, designs, memo, build, enforce,
-42 deliberate breaks and the takeaway are done and pushed; on the final code commit 3ab0e16 the rehearsal is GREEN in every format
-and the full suite is 1358 / 0 / 1. STILL OWED on 3ab0e16: the sweep on the frozen copy (started, not read) and GitHub's own Checks
-(run 110, in progress). The block NEXT above is already written for the batch after this one: it is true only once this header says ACCEPTED.
+### V2c-b1 - THE LADDER (12 Nov 2026) - ACCEPTED (final code commit 3ab0e16 GREEN in GitHub Checks run 110: 1359 passed; sweep 58 of 58 ids)
 The owner: "continue" (a new session for V2c-b). V2c-b was SPLIT AT ITS START (rule 6; the note is at the top of NEXT): V2c-b1 is the ladder -
 the cadence, Shorts first with the promote rule and the refusal, the winner's follow-up; V2c-b2 is the platforms and the opening.
 The whole binding reading order was read first (handoff `CLAUDE.md`, `00`, `02`, `01`, `03`, `06`, `04`, `05`, all of the redesign with
@@ -455,6 +456,28 @@ E. (ORIGINAL, CHOSEN) THE ROLLING LADDER ON TWO CLOCKS: YouTube gives two kinds 
   final 19 of 19), the other Short promoted next, for the pre-production draft.
 - Full suite on a frozen copy of the FINAL code commit 3ab0e16: **1358 passed / 0 failed / 1 skipped** (72 test files; the skip is the
   dashboard test that needs node - GitHub runs it).
+- Sweep on the same frozen copy of 3ab0e16, after the suite had finished: **58 of 58 ids**. No bad id, no failure class. A: 20 ids,
+  organisation on - every id climbed the ladder first (its own Short made a week ago, its numbers read, the promotion) and its long
+  video was scheduled: 13 drew F1 (41 pass + 13 not applicable of 54 checks), 7 drew F2 (48 pass + 6 not applicable) - the split of
+  V2a and V2c-a with one more check, `topic_ladder`; 11 department runs each. (The first sweep of this batch had refused 24 of 24.)
+  B: 4 ids, organisation off - 4 ok, each climbed. C: 4 full rehearsals with a fixed id - 2 in F1, 2 in F2, each refused first and
+  then walked the ladder. D (`--mode short`): 20 ids, two Shorts each - 40 Shorts (20 in S1, 18 in S2, 2 in S3), every one 5 of 5 at
+  the short gate with 5 department runs, no memo left open, no warning. E: 10 more ids forced to S3, two in a row each - 20 Shorts,
+  10 of 10. The warnings of A to C are the classes the offline long video has always printed (the stand-in voices, the atmosphere's
+  time valve - issue 26, the prompt-cache note - issue 23, the offline writers' retention fix, the script length; in the rehearsal
+  also its own table-read room, "script N% similar to EPTABLE"); none comes from the ladder. NOT covered by the sweep: a Short that
+  crashes and uploads that stay closed (open issue 109).
+- GitHub Checks (standing rule 1): run **110** on 3ab0e16 **GREEN**: 1359 passed (26:10), rehearsal GREEN (episode EP202611112325;
+  contract script 35/35, final 19/19); its one warning and its notices are GitHub's own (Node.js 20, the Ubuntu label - open issues 37
+  and 46). Runs 107 (3d2139f), 108 (30f8cca) and 109 (6d785e7) GREEN. Runs 104 to 106 RED, before the three tests that pinned what
+  the batch changed by design were corrected (105 was read: the same three as the laptop suite; 104 and 106 were not read).
+- Plan Guard GREEN, Truth GREEN, Palace GREEN (159 founding items), Organisation GREEN (12 wired, 5 pending), docs regenerated
+  without drift.
+- Money: Rs 0 spent (fake mode). The ladder adds no paid call: the numbers and the public views are API quota, the promote run calls
+  no model, the kept footage is Drive space (`tests/paid_calls.py` is unchanged and green in the suite). A follow-up Short costs what
+  a Short costs (about Rs 290 at today's clip price, open issue 83) and is paid only from the breakout fund or the reserve. At that
+  price twelve Shorts a month do NOT fit beside four long videos: the code keeps the long slots' money and pauses the Shorts when the
+  rest is used up (`shorts2._budget_ok`) - V2d's model by value must close the gap before three a week is real.
 #### Step 7 TAKEAWAY (also Palace item `v2cb.takeaway`)
 - WORKED: reading the platform's own page BEFORE the design. One page (YouTube's numbers are 48 to 72 hours late) turned "read the
   numbers after 48-72 hours" into two clocks; built as first written, the promote rule would have ranked fragments.
@@ -2801,7 +2824,8 @@ Rehearsal asserts `docs_current` ran and passed.
 | V1b | done 11 Nov 2026 | 1292 / 0 / 1 (laptop); GitHub 1293 passed (run 89) | GREEN (52 checks: 47 pass, 5 not applicable) | The layman test: expert words a layman would not know counted by code (a budget per minute, in the first 30 s, in one sentence; the writers' one fix carries it) and the promise line-up (two cheap readers of two model families pick the video's title from the first 30 s; a planted opening must get none; verdict by code); 2 script-gate checks (52 hard checks), 3 levers (48), D13's second run. GitHub run 89 GREEN on 4c0e607; sweep 28 of 28 (the first sweep held 1 of 20 for ordinary words - fixed at the cause). |
 | V2a | done 11 Nov 2026 | 1302 / 0 / 1 (laptop); GitHub 1303 passed (run 91) | GREEN in F1 and in F2 (53 checks) | Formats as data and the three-tier contract: every episode has a format (F1 "The day it changed" 70, F2 "The trial" 30; shares are levers of D1), the trial layer, the briefs, the juries and the production follow it; a format can make a show device optional or leave it out and nothing else; new check format_kept (53 hard checks), 3 levers (51). GitHub run 91 GREEN on 75c55ea; sweep 28 of 28 (15 episodes in F1, 9 in F2, 4 rehearsals). |
 | V2c-a | done 11 Nov 2026 | 1323 / 1 / 1 on 486eb41, the 1 corrected (laptop); GitHub 1325 passed (run 99) | GREEN in F1 / F2 with a Short in S1 / S2 / S3 (53 + 5 checks) | The Short as a product: department D14 Shorts Studio; Short formats as data (S1, S2, S3); `shorts2.py` rebuilt - one guide voice, every second a clip planned by code, the loop closed by code, no plate; the viewer's seat for a Short (`shortseat.py`) and 5 checks at a new stage "short" (58 hard checks), 12 levers (63); a held Short is not made. V2c was split at its start. GitHub run 99 GREEN on 3b34cc3; sweep 58 of 58 ids. |
-| V2c-b | next | | | The ladder and the platforms: the cadence (3 a week), every topic starts as a Short and the best 4 a month get the long video with the Short's footage, a winner's follow-up within 48 hours, one native upload per platform, the Shorts rows of the release sheet |
+| V2c-b1 | done 12 Nov 2026 | 1358 / 0 / 1 on 3ab0e16 (laptop); GitHub 1359 passed (run 110) | GREEN in F1 / F2 with Shorts in S1 / S2 / S3 (54 + 5 checks) | The ladder: every topic starts as a Short (3 a week, 12 a month, 48 hours apart); YouTube's true numbers are read by processed day (they are 48 to 72 hours late) and public views at the 24-hour and 48-hour mark; D10's promote rule (code, never a model) picks the long video's topic and a long video without a promoted Short or an owner override is refused before any money (new tab `Ladder`, check `topic_ladder`: 59 hard checks); a winner gets ONE follow-up ordered by code with a 48-hour clock, overdue = a memo; 6 levers in, 1 out (68). V2c-b was split at its start. The sweep found what a green suite and four green rehearsals had hidden: on a new Sheet no video could ever have been made - and three faults in what counts as a made Short; all fixed at the cause, 42 deliberate breaks. GitHub run 110 GREEN on 3ab0e16; sweep 58 of 58 ids. Runs 104-106 RED = three tests that pinned what the batch changed by design, corrected. |
+| V2c-b2 | next | | | The platforms and the opening: one native upload per platform under a D9 run, the Shorts rows of the release sheet read back, the long video's opening made from the kept footage of its Short, the cut-down reels stop being the product |
 | V2d | after V2c | | | The motion ladder and the money: the hero model by value, the living tier, a character drawn or absent, stock rules (NASA / Pexels), the cost model |
 | V3 | after V2d | | | Pilot on real services (3 Shorts + 1 long video), the human kit, the release sheet's one-time switches, then GO LIVE with the new code |
 | V2b | after V3 | | | Inside the format: first person and camera continuity as measured rules, F1's own ending, F3 "The walk" |
