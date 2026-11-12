@@ -85,42 +85,36 @@ ORDER OF BATCHES: live after three. The evidence R20-R38 is not in the Palace ye
 That turn was the DESIGN step for the whole programme (research, designs, decisions, records). Built since: V1a, V1b, V2a and V2c-a (the records are under DONE).
 
 ## NEXT
-**V2c-b2 WAS SPLIT AT ITS START (token discipline rule 6; 12 Nov 2026, the session that began it): V2c-b2a THE PLATFORMS is being built now
-(its record is the first entry under DONE and says how far it is); V2c-b2b THE OPENING AND THE CUT-DOWNS is the batch after it and needs its own
-owner "continue".** Why, by dependency: the batch holds two machines that share no code. (a) THE SHORT'S SIDE - how a finished Short reaches
-three platforms and what proves it (points 1 and 4 below: `whatifs/publish.py`, `shorts2.run`, the approve path, the Specials record). (b) THE
-LONG VIDEO'S SIDE - its opening made from the Short's kept footage and the end of the cut-down reels (points 2 and 3: the hook lab,
-`audience.shape`, `anim.pick_slots`, the assets stage, the checkpoint, the render, `room.reels`, `manage.release`, the rehearsal's own asserts
-and the many older tests that count four cut-down Shorts). Each half needs the full loop, the 45-minute suite, the sweep and a GitHub run; V2c-b1
-alone took two sessions and met the weekly usage limit. (b) depends on (a): whatever stays as a pull from a long video to its Short must go
-out through the native upload path (a) builds; (a) depends on nothing in (b). So (a) goes first.
-**V2c-b2b - THE OPENING AND THE CUT-DOWNS** = points 2 and 3 of the list below, unchanged, plus what V2c-b2a leaves for it (see its record).
-The original scope of V2c-b2 follows as it was written:
-**V2c-b2 - THE PLATFORMS AND THE OPENING** (`handoff_v12/BREAKOUT_REDESIGN.md` SECTION 11: 11.4 "every platform natively" and "whose opening
-IS that Short's footage", 11.7, the rows "Platforms" and "Topic ladder" of 11.9; its end notes in 11.10). Full seven-step MANDATORY BATCH
-LOOP. Effort: High. V2c-b was SPLIT AT ITS START (rule 6, 11 Nov 2026): V2c-b1 THE LADDER is ACCEPTED (first record under DONE). V2c-b2:
-- ONE NATIVE UPLOAD PER PLATFORM (`whatifs/publish.py`; D9 gets its own run `short_publish`): today a Short is still uploaded by
-  `specials._publish` from inside `shorts2.run` - the special reels' tags ("reality on trial"), one text for every platform, no department
-  run, nothing read back (open issue 85). YouTube Shorts with the Shorts thumbnail; Instagram with Trial Reels on, the cover, the audio
-  named after the series, the AI flag; Facebook with 90 seconds at most; never a file with another platform's mark; the Shorts rows of the
-  release sheet read back after upload (`publish.verify_upload` grows toward `release_sheet`, check `release_sheet`). In fake mode
-  `publish.yt_upload` returns before it builds its request: make the request bodies pure functions so that tests can read every field.
+**V2c-b2b - THE OPENING AND THE CUT-DOWNS** (`handoff_v12/BREAKOUT_REDESIGN.md` SECTION 11: 11.4 "whose opening IS that Short's footage",
+4.2 point 5, the row "Topic ladder" of 11.9; the end notes in 11.10). Full seven-step MANDATORY BATCH LOOP. Effort: High. V2c-b2 was SPLIT
+AT ITS START (rule 6, 12 Nov 2026): V2c-b2a THE PLATFORMS is the first record under DONE - check there and in `git log -5` that it is
+ACCEPTED before building on it. V2c-b2b is the LONG VIDEO'S side:
 - THE LONG VIDEO'S OPENING IS ITS SHORT'S FOOTAGE: tab `Ladder`, column footage = the Drive id of `<short id>_footage.zip` (every paid clip
   `c<i>.mp4` as made, every start picture `f<i>.png`, `short.json` with the script, the plan and the voice timeline). The episode's draw
-  names its Short (`d["ladder"]`). The footage is VERTICAL (9:16): how it opens a 16:9 video is the design decision (open issue 96). It
-  touches the hook lab (`hooks.run_hooks`: the opening is already proven by real viewers), `audience.shape` / `viewer_promise` (the first
-  shot), `anim.pick_slots` (the opening animated scene is already paid), the assets stage, the checkpoint and the render: read them first.
-  A check must fail when a ladder episode opens with other pictures.
-- The cut-down reels of `whatifs/reels.py` stop being the product (`REELS_PER_VIDEO`, the bridge style, `manage.release` /
-  `_post_reel`, checks `shorts` and `short_covers`): decide what stays as a pull from a long video to its Short.
-- A Short held by "uploads not confirmed open", or never approved, stays MADE on the ladder (open issue 100): the upload path decides.
-  Whether a Short was MADE still hangs on that status text (`shorts2.UPLOAD_HOLD`, open issue 107): give it its own field here.
-What V2c-b1 leaves ready (use it, do not rebuild it): `whatifs/ladder.py` (D10) and tab `Ladder` - `enter` / `keep` (in `shorts2.run`),
-`read` (both clocks onto the row), `rank` (the promote rule), `promote` (D10's run), `gate` / `refuse` / `override`, `pitch` / `claim` /
-`use`, `topic_report` (check `topic_ladder`), `order_followup` / `open_orders` / `order_tried` / `order_done` / `watch` (the winner's one
-follow-up with its clock); `brain.ingest_shorts` by processed day; `breakout.monitor` judging a Short at the 24-hour and 48-hour mark;
-`shorts2.cadence` (3 a week, 12 a month); the rehearsal that walks the ladder (`run(ep_id=...)`) and `tools/sweep.py:climb`; 59 hard
-checks (35 script, 19 final, 5 short), 68 levers, 159 founding Palace items, SHOW_CHECKS 48. The older tests run with LADDER_ON FALSE.
+  names its Short (`d["ladder"]`). The footage is VERTICAL (9:16): how it opens a 16:9 video is the design decision (open issue 96) and
+  can only be judged on real clips (the pilot). It touches the hook lab (`hooks.run_hooks`: the opening is already proven by real
+  viewers), `audience.shape` / `viewer_promise` (the first shot), `anim.pick_slots` (the opening animated scene is already paid), the
+  assets stage, the checkpoint and the render: read them first. A check must fail when a ladder episode opens with other pictures. A
+  long video made under an OVERRIDE has no Short and no footage: say what it opens with.
+- THE CUT-DOWN REELS of `whatifs/reels.py` stop being the product: `REELS_PER_VIDEO` (4), the bridge style, `room.reels` (a paid model
+  call a video), `episode.py`'s reel build, `manage.release` / `_release_extra` / `_post_reel` (still the OLD upload: one text for all
+  platforms, "#shorts" in title and text, nothing read back - open issue 118), checks `shorts` and `short_covers` at the final gate,
+  the rehearsal's own asserts ("expected 4 Shorts") and the older tests that count four. Twelve Shorts a month plus four cut-downs a
+  long video would be 28 short uploads a month - near the 35 at which long videos lose what Shorts gave them (redesign R2, R28).
+  Decide what stays as a pull from a long video to its Short (redesign 4.2 point 5: "one more Short is cut from its best moment"),
+  retire the rest truthfully (`truth.RETIRED`, a one-time move where a live cell changes). WHATEVER STAYS GOES OUT THROUGH
+  `whatifs/release.py` - never through `_post_reel`. Decide the special reels' upload (`specials._publish`) with it.
+What V2c-b2a leaves ready (use it, do not rebuild it): `whatifs/release.py` (D9) and tab `Release_Sheet` - `SHEET` (a row per setting and
+platform: who sets it, how it is proven), `fit`, `texts` / `text_issues`, `compare` (the receipts), `master` (only the file whose hash is
+on the record), `queue` (the hand-over is a record), `short` (D9's run `short_publish`), `gate` (D8's run `release_gate`, check
+`release_sheet` at contract stage "release"), `settle` (every tick), `approved`; the pure request bodies `publish.yt_body` /
+`ig_reel_params` / `fb_reel_finish` and the read-backs `yt_read` / `ig_read` / `fb_read` with the offline stand-in platform
+(`publish.FAKE_FAULTS`); a Short's record on tab `Specials` with `made`, `sha`, `file` (the master in Drive), `cover`; `ladder.went_public`.
+What V2c-b1 leaves ready: `whatifs/ladder.py` (D10) and tab `Ladder` - `enter` / `keep`, `read`, `rank`, `promote`, `gate` / `refuse` /
+`override`, `pitch` / `claim` / `use`, `topic_report` (check `topic_ladder`), the follow-up orders; `brain.ingest_shorts` by processed
+day; `breakout.monitor`; `shorts2.cadence`; the rehearsal that walks the ladder (`run(ep_id=...)`) and `tools/sweep.py:climb`.
+Totals other tests and the rehearsal print today: 60 hard checks (35 script, 19 final, 5 short, 1 release), 70 levers, 167 founding Palace
+items, SHOW_CHECKS 49, 84 tabs - count them again before pinning one. The older tests run with LADDER_ON FALSE.
 Remember (every lesson paid for so far): every new contract check must be classified (`rnd.ORG_CHECKS` or raise `rnd.SHOW_CHECKS`, now 48);
 a department run that returns `Out` must say what it did with EVERY inbound memo; a check that can hold a video must RECOGNISE what is
 wrong (V1b: four ordinary words; V2c-a: a three-letter word); break the code on purpose and make sure a test fails - write the break list
@@ -136,9 +130,14 @@ job used to do "by the way"; a status text is data other code reads (V2c-b1: "HE
 THIS FILE BEFORE THE EDIT THAT FIXES IT (V2c-b1: a session was cut off with a fix applied and no note); the offline clips barely move - a rule
 about motion needs a test with clips that do; never run the break script while another run reads the code; never read a result AFTER
 writing it into a commit message; run the rehearsal in each long format (`WI_FORMAT`) and each Short format (`WI_SHORT_FORMAT`) before
-the suite; NEVER paste code with backslashes through a shell here-document (write the script with the file tool); READ THE WHOLE BINDING
+the suite; NEVER paste code with backslashes through a shell here-document (write the script with the file tool); WRITE THE BREAK LIST BEFORE THE LAST TEST RUN, not after it (V2c-b2a: the list itself found a check that could pass a Short which never reached
+YouTube - its test passed for ANOTHER reason - and three missing tests, before a single break ran); a test must fail for the reason it names:
+set up ONE fault at a time; THE SWEEP MUST WALK THE NEW PATH (V2c-b2a: the sweep's Shorts were made with `publish=False`, so the only proof
+that starts from an empty Sheet had never met an upload); a hand-over is a RECORD, never a status word - and a second pass over a record that
+already carries a platform's id may only READ; put a platform's id on record the moment it returns; a scratch script written through a shell
+here-document lost its backslashes AGAIN (write every script with the file tool, even a three-line one); READ THE WHOLE BINDING
 READING ORDER FIRST (a batch was stopped by the owner for cutting it short).
-ORDER AFTER V2c-b2 (redesign 11.10): V2d THE MOTION LADDER AND THE MONEY (the hero model by value from the live listing - a model with clips
+ORDER AFTER V2c-b2b (redesign 11.10): V2d THE MOTION LADDER AND THE MONEY (the hero model by value from the live listing - a model with clips
 longer than 5 seconds ends the slowed clips of V2c-a, the living tier widened, a character drawn or absent - no black shape in any format,
 the stock rules for NASA and Pexels, `moving_share` measured on the finished file, the first-second sound of a Short, the cost model with
 every paid second - open issues 72 and 83 - and the split 4 long + 12 Shorts) -> V3 PILOT ON REAL SERVICES AND GO LIVE (three Shorts and
@@ -147,8 +146,8 @@ release sheet's one-time switches; the one-minute release card; then the new cod
 and the camera path as measured rules, F1's own ending instead of the asks code still inserts - open issue 74, the speaker chip - 75, F3
 "The walk", same-subject line-up titles - 69) -> V1c THE FLOOR, HIS VERDICT AND THE MAKER'S LINE -> V4 the CEO and the ladder (+ his input
 tab, the scoreboard, the format and Short shares) -> V5 the Breakout Observatory (Shorts first) and the aspect map with the release sheet
--> B6b -> B7 -> B8 (+ every run names its scoreboard number) -> B9 -> B10. Twelve batches remain (V2c became three); the channel runs
-the new code after the third (V2c-b2, V2d, V3).
+-> B6b -> B7 -> B8 (+ every run names its scoreboard number) -> B9 -> B10. Twelve batches remain (V2c became four); the channel runs
+the new code after the third (V2c-b2b, V2d, V3).
 The notes below (what B5 / B6a leave ready for the Council) stay valid for B6b:
 **B6b - The Council (C)** (01 sections 2 (C), 4, 5, 7 `council_held`; 03 "B6", second bullet). Full seven-step MANDATORY BATCH LOOP. Effort: High.
 Gathers open research / assessment / creative / owner / performance / problem memos; diverge -> blind cross-family jury -> converge -> decision
@@ -396,7 +395,7 @@ E. (ORIGINAL, CHOSEN) THE RELEASE SHEET AS DATA, WITH A RECEIPT FOR EVERY ROW: o
   that YouTube accepts and does not apply (the receipt must stay DRIFT: a repair counts only when the platform shows it); every sender
   called again with a record that already carries the platform's id (no upload - the guard tried with the case built to defeat it);
   and the tick's hook proven by running the REAL tick job (an approved Short that waits while uploads are closed, then goes out).
-- `tests/test_v12_release.py`: **32 tests**, each rule both ways - the sheet as data (who, proof, the three rows that are not the
+- `tests/test_v12_release.py`: **34 tests** (32 at first; 2 came with the two fixes below), each rule both ways - the sheet as data (who, proof, the three rows that are not the
   machine's); the three request bodies field by field, and an older caller's request unchanged; where a file fits (every limit at its
   edge); the words per platform and the four things recognised as wrong (ordinary sentences are not); the receipts (kept, drift, sent;
   a bad text is drift even when kept); the REAL production (three native ids, the master's hash on each, every row a good receipt,
@@ -415,8 +414,69 @@ E. (ORIGINAL, CHOSEN) THE RELEASE SHEET AS DATA, WITH A RECEIPT FOR EVERY ROW: o
 - Run on the working tree so far: the 8 Shorts / ladder / upload files 158 passed; the 7 docs / matrix / Palace / research / engine /
   organisation files 331 passed; the rehearsal GREEN once (F1, Shorts in S1: "release sheet 1 / 1 on 3 platforms; 7 department runs",
   script 35 of 35, final 19 of 19); three sweep ids of Shorts from an empty Sheet 3 of 3 (6 of 6 checks, 7 runs each).
-- OWED on the final code commit: the deliberate breaks; the rehearsal in F1 / F2 with Shorts in S1 / S2 / S3; the full suite and then
-  the sweep on a frozen copy; GitHub's Checks; step 7.
+- Fails correctly: **63 deliberate breaks** on the real repo (61 at first; 2 more with the two fixes below, and all 63 run again on the final code), each one line, each put back by the script that made it (the files'
+  hashes compared before and after), nothing else reading the code meanwhile - **each failed at least one test**: a file that is not
+  the master sent anyway; the thumbnail set without waiting; a second pass uploading again (YouTube, Instagram, Facebook - three
+  breaks); a text with an ask not judged; a field the platform does not show counted as kept; a waiting row, a row without a
+  receipt, "not connected" on YouTube and a Short that never went up each passing the check; Facebook taking any length; a landscape
+  file or any length going to YouTube as a Short; the fit ignored; one text for two platforms; an ask or a courtroom word not
+  recognised; any number of hashtags; a bad row not making the record flawed; the cover switch ignored; a dropped AI field not
+  repaired; a repair believed without reading it back; a private upload not tripping the lock; the Trial Reel never sent, and not
+  switchable off; a platform that is not connected tried anyway; a failing platform tried for ever; the hand-over record not written
+  by the run; closed uploads ignored; the ladder not told; the gate not marking what it judged; the gate never run; the Approve not
+  starting the release; the pass sending while uploads are closed; a row waiting for ever; a department run every tick while YouTube
+  processes; the pass switched off; the offline platform keeping another request than the upload builds; a scheduled upload not
+  private; a Trial Reel also shared to the feed; a frame winning over the cover image; an older caller's Reel getting a new id;
+  Facebook's AI label ignoring its switch; "made" read out of the status text again; the record not saying when; the master not
+  kept in Drive; the Short not handed over before the upload call; a failure after "made" writing a second row; the off switch
+  ignored; the first Shorts no longer waiting for the owner; the cover not a JPEG; an approved Short going the special reels' way;
+  the old path posting under the special reels' text; a Short never public staying on the ladder; going public twice; the tick no
+  longer finishing releases; the one-time move running every time, and marking refused Shorts as made; the check unable to fail;
+  Publishing's run missing from the registry; the id YouTube returns not recorded at once; a Reel refused with its cover image not
+  tried on the promise frame. No break went uncaught this time - because the list, written first, had already shown one fault and
+  three missing tests (above).
+- Fake rehearsal on the working tree of 8975c63: **GREEN three times** - F1 with Shorts in S1 (EP202611120258), F2 with S2
+  (EP202611120301), F1 with S3 (EP202611120304). Each: a long video refused first, two Shorts made, each released on three platforms
+  ("short gate 5 / 5; release sheet 1 / 1 on 3 platforms; 7 department runs"), numbers read, one promoted, script 35 of 35, final 19 of 19.
+- FOUND BY RE-READING THE UPLOAD PATH AFTER THE BREAKS (written here before the edits that fix them): (1) A JOB CUT OFF RIGHT AFTER
+  AN UPLOAD WOULD UPLOAD AGAIN. The id a platform returns was written to the record only after the read-back, the thumbnail wait (up
+  to three minutes) and the playlist. A job killed in that stretch leaves a record without the id, and the next tick's pass would
+  post the same Short a second time (YouTube's own Shorts lead: deleting and re-posting risks a spam flag - R24). The id must be on
+  record the moment the platform returns it. (2) INSTAGRAM MUST FETCH THE COVER FROM A LINK, AND A LINK CAN FAIL ON META'S SIDE. The
+  fallback to the promise frame ran only when OUR side could not open the link; when Meta cannot fetch it (Drive has answered Meta's
+  fetcher with a web page before - the reason the video itself is sent as bytes since v8.9.1) the Reel fails three times and never
+  goes up, for the sake of a cover. A failed Reel with a cover image must be tried once without it, on the promise frame.
+  BOTH FIXED AND PROVEN: (1) each sender writes the platform's id onto the record the moment the platform returns it, before
+  anything else; a test cuts the job off right after the upload (the read-back raises) and counts ONE upload after the next pass.
+  (2) a Reel that Instagram refuses with its cover image is sent once more on the promise frame inside the same try; a test makes the
+  stand-in platform refuse every Reel that carries a cover link and finds the Reel up, its cover receipt saying "promise frame".
+  `tests/test_v12_release.py`: 34 passed. All 63 breaks run again on this code: 63 of 63 failed a test, every file restored.
+- OWED on the final code commit: the rehearsal in F1 / F2 with Shorts in S1 / S2 / S3 again; the full suite and then the sweep on a
+  frozen copy; GitHub's Checks.
+#### Step 7 TAKEAWAY (also Palace item `v2cb2.takeaway`)
+- WORKED: reading the platform's own page before the design, a third time. One sentence of YouTube's thumbnail reference ("only after
+  the video has finished processing ... might not be applied") turned "set the thumbnail at upload" into a row that waits and a
+  pass that finishes - built as planned it would have been a call that is accepted and does nothing, and nobody would have known.
+  One table of Instagram's media reference turned "verified by reading back" into two honest words: KEPT and SENT.
+- WORKED: the break list written as "what would fail if this line went?" BEFORE the breaks ran. It found a check that could pass a
+  Short which never reached YouTube, whose test was green for another reason, and three guards without a test. Then 63 of 63.
+- WORKED: reading my own upload path once more after everything was green. Two faults no test could have shown, because no test
+  cuts a job off in the middle or lets Meta fail to fetch a link: a second upload after a cut-off, a Reel lost for its cover.
+- FAILED: my first pass decided what to send from a status prefix - the fault this batch exists to retire - and my first senders
+  would have posted a Reel twice on a second pass. Both were caught by reading before a test ran; neither should have been written.
+  And a scratch script pasted through the shell lost its backslashes again (the laptop's oldest pitfall): the break run died on a
+  syntax error, luckily before touching a file.
+- FAILED (inherited, now closed): the sweep - the one proof that starts from an empty Sheet - had made its Shorts with `publish=False`
+  since V2c-a. It never met an upload. A proof that does not walk the new path proves the old one.
+- LIMIT: no real platform has answered. Every "kept" in this record was said by an offline stand-in that returns what it was sent;
+  whether YouTube, Instagram and Facebook take these exact requests (a Trial Reel on a resumable upload, the audio name, the
+  thumbnail after processing, the fields of the read-backs) is known from their pages only. The first three real Shorts of the
+  pilot are the first evidence: read tab `Release_Sheet` row by row. Trial Reels, the cover and the audio name are switches from the
+  redesign with no measured effect behind them (H20, H21).
+- NEW QUESTION: does a Trial Reel help or hurt an account with almost no followers (a profile that stays empty until a Reel
+  graduates)? Instagram's insights can answer after the first twelve Shorts; `IG_TRIAL_REELS_ON` is Publishing's lever.
+- ORGANISATION: what a thing IS belongs in a field, where it stands belongs in its status, and a hand-over between two departments
+  is a record. And a department that says "posted" must show the platform's own answer: a receipt per row, or the word SENT.
 
 ### V2c-b1 - THE LADDER (12 Nov 2026) - ACCEPTED (final code commit 3ab0e16 GREEN in GitHub Checks run 110: 1359 passed; sweep 58 of 58 ids)
 The owner: "continue" (a new session for V2c-b). V2c-b was SPLIT AT ITS START (rule 6; the note is at the top of NEXT): V2c-b1 is the ladder -
@@ -3002,6 +3062,47 @@ Rehearsal asserts `docs_current` ran and passed.
    rewrites it, and four commits carry it with a laptop traceback (a local folder path in a public repository; no key, no
    address). The workflows only upload it from their own runner. Untrack it and add it to `.gitignore` with the next change that
    touches the workflows; until then never `git add` it.
+111. (V2c-b2a -> V3 / B10) Real platforms never touched (no keys here, by rule). Proven with the offline stand-in and the platforms'
+   own pages only: `publish.yt_read` (videos.list with the parts snippet, status, processingDetails; YouTube often leaves
+   `containsSyntheticMedia` out of its answer - the row is then SENT, not KEPT), a Reel container with `trial_params`, `audio_name` and
+   `thumb_offset` on the resumable upload, `ig_read` (Instagram shows `caption` only with Facebook Login), `fb_read`
+   (`status.publishing_phase`). The pilot must read tab `Release_Sheet` of the first three Shorts row by row (state, receipts, note)
+   and the `release_sheet` evidence in `Feature_Ledger`.
+112. (V2c-b2a -> V3, TELL THE OWNER AT THE PILOT) A custom thumbnail needs a phone-verified channel (one of his one-time switches,
+   redesign 11.7). Until then YouTube refuses the call, every Short's sheet fails on the row `thumbnail` and Publishing's memo climbs
+   to him. Either he verifies FIRST (make it the pilot guide's first step) or `SHORT_THUMB_ON` is set to FALSE until he has.
+113. (V2c-b2a -> V3 / V4) Trial Reels on an account with almost no followers: a trial reel is shown to non-followers only, and whether
+   one that never graduates ever shows on the profile is unknown - the Instagram profile could stay empty. `IG_TRIAL_REELS_ON` is a
+   lever of Publishing (redesign O13, H20). Whether `trial_params` and `share_to_feed` may be sent together is unknown too:
+   `share_to_feed` is left out of a trial reel.
+114. (V2c-b2a, low -> B10) Drive housekeeping: every Short's master (about 20 MB) and cover stay in the owner's Drive, and each
+   Instagram upload leaves one copy of the cover that was public for a minute (made private again, never deleted - the pattern the
+   cut-down reels' covers already use). The footage archive is deleted when a topic leaves the window; the master is not.
+115. (V2c-b2a -> B7) A row a platform did not keep is ONE problem memo per class (`gate|release|release_sheet`) to D9, closed by the
+   next Short whose sheet passes. So the fault of one Short (a Reel that never went up after three tries) is "closed" by the next
+   clean Short although that Reel is still missing; tab `Release_Sheet` keeps the truth (FAILED). B7's repair loop should own what is
+   past the limit and tell the owner which Short is missing where.
+116. (V2c-b2a) An upload that comes back private trips the lock (as before), but the Short keeps its YouTube id, says POSTED on tab
+   `Specials` (privacy DRIFT on its sheet) and the ladder starts its clock. Harmless while the lock pauses everything; after the lock
+   such a Short is public only if he publishes it by hand (the lock mail says so).
+117. (V2c-b2a -> B10, with 18 and 92) Sheet calls: a Short's release adds two department runs (about 20 calls) and the tick's pass reads
+   tab `Release_Sheet` every 30 minutes (one call; one more for `Specials` while a record is open). Proven on the local store only.
+118. (V2c-b2a -> V2c-b2b) The cut-down reels (`manage._post_reel`) and the special reels (`specials._publish`) still go out the old
+   way: one text for every platform, "#shorts" in title and text, the tags "shorts" / "what if" / "reality on trial", nothing read
+   back, no record. V2c-b2b decides what stays of the cut-downs; whatever stays must go out through `release.py` (tab `Release_Sheet`
+   has the column `kind` for it).
+119. (V2c-b2a, the hook under a Short) What stands first under a Short is the first SENTENCE of its script as its record kept it. A
+   hook of three words gives a thin first line on Instagram. Read the first real captions at the pilot.
+120. (V2c-b2a -> V3) `SHORT_THUMB_WAIT_S` (the job waits up to 3 minutes for YouTube's processing, asking every 15 seconds) has never
+   run: offline the stand-in is processed at once or not at all. If a 30-second Short usually needs longer, its thumbnail always
+   arrives one tick (30 minutes) late: set the cell from what the pilot shows.
+121. (V2c-b2a, the proof) NOT covered by the sweep: a platform that fails, drift, a refused thumbnail, a file that does not fit (unit
+   tests and deliberate breaks only). Covered by the sweep on every id: a Short made while uploads are closed and sent later from its
+   Drive copy, and a straight release; on about every second id the owner's Approve.
+122. CLOSED / narrowed in V2c-b2a: issue 85 - closed for the standalone Short (Publishing's own run, read back), open for the
+   cut-down and the special reels (118). Issue 100 - closed: a Short made while uploads are closed keeps its file and goes out when
+   they open; one that is never approved leaves the ladder with the window. Issue 107 - closed: `made` is a field. Issue 109 -
+   narrowed: the upload hold is in the sweep now; a crashing Short is not.
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`

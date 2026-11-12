@@ -261,12 +261,12 @@ def test_a_platform_that_fails_is_tried_again_up_to_the_limit_and_youtube_is_nev
     assert r["status"] == "POSTED" and _recs(sid)["instagram"]["state"] == REL.RETRY and _recs(sid)["youtube"]["state"] == REL.DONE and not _led(sid) and not _row(sid)["ig"]
     assert REL.settle(NOW + H) == [sid] and _recs(sid)["instagram"]["state"] == REL.RETRY and int(float(_recs(sid)["instagram"]["tries"])) == 2
     assert REL.settle(NOW + 2 * H) == [sid] and _recs(sid)["instagram"]["state"] == REL.FAILED          # RELEASE_TRIES_MAX (3): it stops trying
-    assert n == {"youtube": 1, "instagram": 3, "facebook": 1}
-    led = _led(sid); assert led[0]["status"] == "FAIL" and "Instagram Reels: never went up (try 3" in led[0]["evidence"] and REL.settle(NOW + 3 * H) == [] and n["instagram"] == 3
+    assert n == {"youtube": 1, "instagram": 6, "facebook": 1}                                            # each of the three tries: with the cover image, then once on the promise frame
+    led = _led(sid); assert led[0]["status"] == "FAIL" and "Instagram Reels: never went up (try 3" in led[0]["evidence"] and REL.settle(NOW + 3 * H) == [] and n["instagram"] == 6
     PUB.FAKE_FAULTS["instagram"] = {"fail": True}; _bench("What if rain fell upward?")
     r2 = SH.run(force=True, now=NOW + 48 * H, episode_id="SHREL15"); assert r2["ok"] and _recs("SHREL15")["instagram"]["state"] == REL.RETRY
     PUB.FAKE_FAULTS.clear(); assert REL.settle(NOW + 49 * H) == ["SHREL15"]                              # the platform is back before the limit
-    assert _recs("SHREL15")["instagram"]["state"] == REL.DONE and _row("SHREL15")["ig"] == "FAKE_IG_SHREL15" and n == {"youtube": 2, "instagram": 5, "facebook": 2} and _led("SHREL15")[0]["status"] == "PASS"
+    assert _recs("SHREL15")["instagram"]["state"] == REL.DONE and _row("SHREL15")["ig"] == "FAKE_IG_SHREL15" and n == {"youtube": 2, "instagram": 9, "facebook": 2} and _led("SHREL15")[0]["status"] == "PASS"
 
 def test_a_youtube_upload_that_fails_leaves_the_short_made_and_waiting_not_posted(monkeypatch, setting):
     PUB.FAKE_FAULTS["youtube"] = {"fail": True}
@@ -317,6 +317,24 @@ def test_a_platform_that_already_has_the_short_is_only_read_never_posted_twice(m
     assert n == {"youtube": 0, "instagram": 0, "facebook": 0}
     for p in REL.PLATFORMS: REL._SEND[p](row, path, digest, "", tx, dict(rec[p], native_id=""), NOW + H)
     assert n == {"youtube": 1, "instagram": 1, "facebook": 1}                                            # (without an id it IS an upload: the counter can see one)
+
+def test_a_job_cut_off_right_after_an_upload_never_uploads_the_short_a_second_time(monkeypatch, setting):
+    """The id a platform returns is on record the moment it returns - before the read-back, the wait for processing and the playlist."""
+    n = _count(monkeypatch); real = PUB.yt_read; calls = []
+    monkeypatch.setattr(PUB, "yt_read", lambda vid: (_ for _ in ()).throw(RuntimeError("the job was cut off")) if not calls.append(1) and len(calls) == 1 else real(vid))
+    r = _short(monkeypatch, setting, "SHREL31"); y = _recs("SHREL31")["youtube"]
+    assert y["native_id"] == "FAKE_SHREL31.mp4" and y["state"] == REL.RETRY and y["sha"] == _row("SHREL31")["sha"] and json.loads(y["sent"])["snippet"]["title"]      # the id is there although everything after the upload was lost
+    assert _row("SHREL31")["yt_id"] == y["native_id"] and r["status"] == "POSTED" and LAD.row("SHREL31")["state"] == "POSTED" and not _led("SHREL31")
+    assert REL.settle(NOW + H) == ["SHREL31"] and n == {"youtube": 1, "instagram": 1, "facebook": 1}    # the next pass finishes the release; it does not post again
+    assert _recs("SHREL31")["youtube"]["state"] == REL.DONE and _led("SHREL31")[0]["status"] == "PASS"
+
+def test_a_reel_that_instagram_refuses_with_its_cover_image_goes_up_on_the_promise_frame(monkeypatch, setting):
+    """Instagram must fetch a cover image from a link; when that fails on Meta's side the Reel is not lost for the sake of a cover."""
+    n = _count(monkeypatch); PUB.FAKE_FAULTS["instagram"] = {"fail_cover": True}
+    _short(monkeypatch, setting, "SHREL32"); s = _sent("SHREL32", "instagram"); rec = _recs("SHREL32")["instagram"]
+    assert n["instagram"] == 2 and rec["state"] == REL.DONE and int(float(rec["tries"])) == 1 and rec["native_id"] == "FAKE_IG_SHREL32"      # one try: with the cover, then without
+    assert "cover_url" not in s and s["thumb_offset"] == str(REL.PROMISE_FRAME_MS) and "promise frame" in _rc("SHREL32", "instagram", "cover")[1] and _led("SHREL32")[0]["status"] == "PASS"
+    assert json.loads(s["trial_params"])["graduation_strategy"] == "SS_PERFORMANCE" and s["audio_name"] == "Reality Engine"      # everything else of the Reel is as it was
 
 # ------------------------------------------------------------------ 12. a file that does not fit a platform, a platform that is not connected, the switches
 def test_a_file_over_90_seconds_is_not_sent_to_facebook_and_never_cut_and_a_missing_meta_connection_is_no_fault(monkeypatch, setting):
@@ -406,8 +424,10 @@ def test_check_release_sheet_reads_the_record_and_cannot_pass_without_one(monkey
     core.store().update_where("Release_Sheet", {"id": "SHREL28", "platform": "instagram"}, {"receipts": json.dumps(dict(rec, trial=[REL.SENT, "x"])), "state": REL.OFF})
     s, ev = CON.p_release_sheet({"release": {"id": "SHREL28"}}); assert s == CON.PASS and "Instagram Reels: not connected" in ev      # 'not connected' excuses Instagram ...
     for stt in (REL.OFF, REL.QUEUED, REL.RETRY, REL.FAILED, REL.SKIPPED):
-        core.store().update_where("Release_Sheet", {"id": "SHREL28", "platform": "youtube"}, {"state": stt})
+        core.store().update_where("Release_Sheet", {"id": "SHREL28", "platform": "youtube"}, {"state": stt, "native_id": ""})
         s, ev = CON.p_release_sheet({"release": {"id": "SHREL28"}}); assert s == CON.FAIL and "YouTube Shorts: never went up" in ev, stt      # ... and never YouTube: a Short that is not on YouTube is not released
+    core.store().update_where("Release_Sheet", {"id": "SHREL28", "platform": "youtube"}, {"state": REL.FAILED, "native_id": "FAKE_SHREL28.mp4"})
+    s, ev = CON.p_release_sheet({"release": {"id": "SHREL28"}}); assert s == CON.FAIL and "YouTube Shorts: is up, but its release could not be finished" in ev
 
 def test_the_release_is_wired_into_the_contract_the_registry_the_levers_and_the_tick():
     from whatifs.org import registry as REG, levers as LV, rnd as RND

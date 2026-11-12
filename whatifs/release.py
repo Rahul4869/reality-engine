@@ -257,7 +257,9 @@ def _extras_youtube(vid, rc, row, cov, got, first, now):
 def _youtube(row, path, digest, cov, tx, rec, now):
     from whatifs import publish as PUB
     body, want = want_youtube(tx); vid = str((rec or {}).get("native_id") or ""); first = not vid
-    if first: vid = PUB.yt_upload(path, tx["youtube"]["title"], tx["youtube"]["description"], tx["youtube"]["tags"], short=True, ai_label=S("AI_LABEL_DEFAULT", bool))
+    if first:
+        vid = PUB.yt_upload(path, tx["youtube"]["title"], tx["youtube"]["description"], tx["youtube"]["tags"], short=True, ai_label=S("AI_LABEL_DEFAULT", bool))
+        _save(row["id"], "youtube", now, native_id=vid, state=OPEN, sha=digest, sent=body)      # on record AT ONCE: a job cut off after this line must never upload the Short a second time
     got = PUB.yt_read(vid); rc = dict((rec or {}).get("receipts") or {})
     rc.update(compare("youtube", want, got) if got else {k: [SENT, "the upload could not be read back"] for k in want})
     if got.get("privacy") == "private":                                             # asked public, came back private: the lock - the detector alerts and production pauses
@@ -288,8 +290,15 @@ def _instagram(row, path, digest, cov, tx, rec, now):
                 try: curl = link(cov)
                 except Exception as e: log(f"the cover link could not be opened ({scrub(e)[:80]}): Instagram takes the promise frame", "WARN", row["id"])
             off = None if curl or not S("SHORT_THUMB_ON", bool) else PROMISE_FRAME_MS
+            try: mid = PUB.ig_reel(None, cap, curl, video_path=path, url_fn=lambda: link(path), thumb_offset_ms=off, audio_name=audio, trial=trial, ref=row["id"])
+            except Exception as e:
+                if not curl: raise
+                # Instagram must FETCH a cover image from a link, and a link can fail on Meta's side: the Reel is never lost for its cover - once more, on the promise frame
+                log(f"Instagram refused the Reel with its cover image ({scrub(e)[:100]}): once more with the promise frame as the cover", "WARN", row["id"])
+                curl = None; off = PROMISE_FRAME_MS
+                mid = PUB.ig_reel(None, cap, None, video_path=path, url_fn=lambda: link(path), thumb_offset_ms=off, audio_name=audio, trial=trial, ref=row["id"])
             sent = PUB.ig_reel_params(cap, curl, off, audio, trial)
-            mid = PUB.ig_reel(None, cap, curl, video_path=path, url_fn=lambda: link(path), thumb_offset_ms=off, audio_name=audio, trial=trial, ref=row["id"])
+            _save(row["id"], "instagram", now, native_id=mid, state=OPEN, sha=digest, sent=sent)      # on record at once (see the YouTube sender)
         finally:
             for fid in opened:
                 try: PUB.drive_private(fid)
@@ -311,7 +320,9 @@ def _facebook(row, path, digest, cov, tx, rec, now):
     from whatifs import publish as PUB
     opened = []; link = _linker(opened); desc = tx["facebook"]["description"]; fid = str((rec or {}).get("native_id") or "")
     if not fid:                                                                     # (it is up already: a later pass only reads it back)
-        try: fid = PUB.fb_reel(None, desc, video_path=path, url_fn=lambda: link(path), ref=row["id"])
+        try:
+            fid = PUB.fb_reel(None, desc, video_path=path, url_fn=lambda: link(path), ref=row["id"])
+            _save(row["id"], "facebook", now, native_id=fid, state=OPEN, sha=digest)                # on record at once (see the YouTube sender)
         finally:
             for x in opened:
                 try: PUB.drive_private(x)
@@ -446,7 +457,8 @@ def report(sid, now=None):
         stt = r.get("state"); rc = r.get("receipts") or {}
         if stt == OFF and p != "youtube": parts.append(f"{NAMES[p]}: not connected"); continue          # Instagram and Facebook are optional; YouTube is the product
         if stt == SKIPPED and p != "youtube": parts.append(f"{NAMES[p]}: not sent ({str(r.get('note'))[:80]})"); continue
-        if stt in (FAILED, RETRY, SKIPPED, OFF, QUEUED): bad.append(f"{NAMES[p]}: never went up ({str(r.get('note'))[:100]})"); continue
+        if stt in (FAILED, RETRY, SKIPPED, OFF, QUEUED):
+            bad.append(f"{NAMES[p]}: " + ("is up, but its release could not be finished" if r.get("native_id") else "never went up") + f" ({str(r.get('note'))[:100]})"); continue
         miss = [k for k in rows_of(p) if k not in rc]
         wrong = [f"{k} {v[0]} ({v[1][:70]})" for k, v in rc.items() if v[0] in BAD + (WAITING,)]
         if miss: bad.append(f"{NAMES[p]}: no receipt for " + ", ".join(miss))

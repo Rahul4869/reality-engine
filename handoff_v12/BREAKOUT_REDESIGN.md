@@ -4,7 +4,7 @@ rejected the first live video (item 16). This page OVERRIDES `01` section 1 ("co
 the department list in `01` section 2 wherever they differ. The budget is unchanged: Rs 5,000 a month for everything.
 Status: DESIGN (research + designs + decisions). Built so far: V1a (11 Nov 2026). The batches in section 6 build the rest, one per owner
 "continue". SECTION 10 (the owner's item 19, same day) amends sections 4-7. SECTION 11 (his item 20, same night) amends them again -
-Shorts first, the motion ladder, the human kit, the release sheet, a new order of batches: READ SECTION 11 FIRST. Built so far: V1a, V1b, V2a, V2c-a (the Short as a product), V2c-b1 (the ladder); their end notes are the last entries of 11.10.
+Shorts first, the motion ladder, the human kit, the release sheet, a new order of batches: READ SECTION 11 FIRST. Built so far: V1a, V1b, V2a, V2c-a (the Short as a product), V2c-b1 (the ladder), V2c-b2a (the platforms - `BUILD_STATE.md` says whether it is accepted); their end notes are the last entries of 11.10.
 
 ## 0. THE HONEST FRAME
 - Nobody can make a channel a sure shot. Of 137,355 new long-video channels, 30.8% got even ONE video past 10,000 views in their first ten (R1).
@@ -632,3 +632,30 @@ channels reach 10 million views; any measured reach effect of Meta's AI label; a
   share from a small sample by the Wilson lower bound. NOT FOUND: any study that pairs one topic as a Short and as a long video; any
   measured effect of a follow-up Short. New H18 (a Short's rank in its pool predicts its long video's views against the channel's
   median) and H19 (a follow-up inside 48 hours gets more views than the channel's median Short).
+- ORDER UPDATE (V2c-b2a, 12 Nov 2026): V2c-b2 was split at its start. V2c-b2a built THE PLATFORMS (one native upload of a Short per
+  platform under Publishing's own run, the Shorts rows of the release sheet sent by code and read back, "made" as a field of the
+  Short's record); V2c-b2b builds THE OPENING AND THE CUT-DOWNS (the long video's opening made from the kept footage of its Short; the
+  cut-down reels stop being the product). Then V2d, V3 (go live), V2b, V1c, V4, V5, B6b-B10: twelve batches remain.
+  WHAT THE BUILD CHANGED IN THIS SECTION, with reasons (the record is in `BUILD_STATE.md`): (1) 11.7 "verified after upload by reading
+  the video back" holds only where a platform SHOWS the value. Instagram shows no field for a Trial Reel and none for the audio name
+  (its own media reference): those two rows are proven as SENT, and the record says so - never "verified". A receipt is one of kept,
+  repaired once, drift, sent only, waiting, refused, skipped, off. (2) 11.7 "the thumbnail (Shorts too)" cannot be one call at upload:
+  YouTube takes a Short's thumbnail only AFTER it has processed the video, and a call made earlier can be accepted and never shown
+  (thumbnails.set reference, 3 Nov 2026). The thumbnail is a row that waits and a pass on every tick finishes it. (3) 11.7 "captions"
+  as a row of every upload: a Short gets NO caption track - its captions are burned into the picture word by word, and a track on top
+  would show every word twice to a viewer with captions switched on. (4) 11.4 "the cover": one image, drawn by code from the Short's
+  first picture and its promise words, is the YouTube thumbnail and the Instagram cover; Facebook's Reels API takes none. (5) 11.7
+  "translated titles and descriptions" for a Short need a paid model call per Short: on the sheet as a later row (V3), not built.
+  (6) "Never a file with another platform's mark" is a rule that can fail: the master is kept with its SHA-256 before any platform is
+  asked and only that file is ever sent. (7) Found by reading the old path, not planned: an approved Short would have gone out under
+  the special reels' text (a courtroom, a wrong cadence, an ask), and a Short made while uploads were closed lost its file.
+  NEW EVIDENCE (read by the build session, 12 Nov 2026): R43 E - YouTube Data API, thumbnails.set and the revision history of 3 Nov
+  2026: a Short's thumbnail only after processing. R44 E - YouTube Help 15424877 and the videos resource: square or upright and at most
+  three minutes is a Short; no API field says so; no hashtag decides it. R45 E - Instagram Platform, media and publishing references:
+  `trial_params`, `audio_name`, `cover_url` / `thumb_offset`, `is_ai_generated`; what can be read back and what cannot. R46 E - Meta,
+  Facebook Reels publishing: 3 to 90 seconds, at least 540 x 960. R47 E - Instagram, 30 Apr 2026: accounts that mostly repost are no
+  longer recommended (nothing is said about a creator's own video on several platforms). NOT FOUND: any measured effect of Trial
+  Reels, a cover, an audio name or a Shorts thumbnail on reach; whether a trial reel that never graduates shows on the profile. New
+  H20 (a Trial Reel reaches more non-followers than a normal Reel of the same Short format) and H21 (a Short with its own thumbnail
+  gets more views from the channel page and search). O13 - an account with almost no followers: a Trial Reel that never graduates may
+  leave the Instagram profile empty; `IG_TRIAL_REELS_ON` is a lever of Publishing, watched at the pilot.

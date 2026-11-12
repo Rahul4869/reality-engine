@@ -53,7 +53,8 @@ def yt_body(title, description, tags, publish_at=None, made_for_kids=False, ai_l
 
 # v12 V2c-b2: the offline stand-in for the three platforms. An offline upload keeps the request it would have sent, and the read-back functions
 # answer from it - so the release sheet's receipts are proven offline with the same code that reads the real platforms. FAKE_FAULTS lets a test make
-# a platform misbehave: {"youtube": {"drift": {"ai": False}, "processing": True, "refuse": ("thumbnail",), "fail": True}, "instagram": {...}}.
+# a platform misbehave: {"youtube": {"drift": {"ai": False}, "processing": True, "refuse": ("thumbnail",), "ignore": ("label",), "fail": True},
+# "instagram": {"drift": {...}, "fail": True, "fail_cover": True}, "facebook": {"drift": {...}, "fail": True}}.
 FAKE_FAULTS = {}
 
 def _fake_file(platform, nid):
@@ -411,7 +412,7 @@ def ig_reel(video_url, caption, cover_url=None, video_path=None, url_fn=None, th
     ref = what this Reel is (a Short's id): offline, the stand-in platform keeps the request under it so the read-back can answer."""
     base = ig_reel_params(caption, cover_url, thumb_offset_ms, audio_name, trial)
     if FAKE:
-        if ref and _fault("instagram", "fail"): raise RuntimeError("IG container: offline fault")
+        if ref and (_fault("instagram", "fail") or (_fault("instagram", "fail_cover") and base.get("cover_url"))): raise RuntimeError("IG container: offline fault")
         mid = "FAKE_IG" + (f"_{ref}" if ref else "")
         if ref: _fake_put("instagram", mid, sent=base)
         return mid
