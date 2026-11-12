@@ -27,7 +27,7 @@ def test_flag_matrix_render_and_qc_never_crash(setting, combo):
 def test_show_mode_off_restores_v811_everywhere(setting):
     setting("SHOW_MODE", "off")
     from whatifs import room as ROOM, episode as EP
-    assert ROOM._show_block() == "" and ROOM._pkg_extra() == "" and ROOM._reel_extra({}) == "" and ROOM._show_writer({"show_plan": PLAN}) == ""
+    assert ROOM._show_block() == "" and ROOM._pkg_extra() == "" and ROOM._show_writer({"show_plan": PLAN}) == ""
     assert SHOW.apply_to_spine({"premise": "p"}, "E") == {"premise": "p"} and "JUDGE" not in (EP.speaker_blends() or {})
 
 # ---------------------------------------------------------------- failure paths: bounded, no duplicate paid calls

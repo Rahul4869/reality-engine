@@ -39,7 +39,6 @@ def test_setup_runs_the_move():
 def test_no_line_for_viewers_states_a_numeric_cadence():
     lines = [t[2] for pools in (CTA.POOLS, CTA.TRIAL_POOLS) for pool in pools.values() for entry in pool for t in entry]
     lines += list(CTA.DESC_SUB) + list(CTA.TRIAL_DESC_SUB) + list(CTA.DESC_SHARE) + list(CTA.TRIAL_DESC_SHARE)
-    lines += [t[2] for asks in (CTA.REEL_ASKS, CTA.TRIAL_REEL_ASKS) for pool in asks.values() for t in pool]
     bad = [l for l in lines if re.search(r"\b(twice|thrice|\w+ times) a (week|month)\b|\bdaily\b|\bevery day\b", l, re.I)]
     assert len(lines) > 30 and not bad, bad
     assert sum("every week" in l.lower() for l in lines) >= 4                                       # true at any cadence of one a week or more

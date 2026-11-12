@@ -132,28 +132,6 @@ def test_new_tabs_are_created_wide_and_clear_covers_every_column():
     assert core.col_letter(28) == "AB" and core.col_letter(52) == "AZ"
 
 # ---------------- Flaw 5: Instagram / Facebook independent, files sent directly, links always closed
-def test_one_platform_failing_never_skips_the_other_and_links_are_closed(monkeypatch, tmp_path):
-    f = tmp_path / "reel0.mp4"; f.write_bytes(b"x"); c = tmp_path / "cover0.jpg"; c.write_bytes(b"y")
-    opened, closed, calls = [], [], []
-    monkeypatch.setattr(MG.PUB, "drive_upload", lambda p, n, public=False: (opened.append(n), (n, "https://drive/" + n))[1])
-    monkeypatch.setattr(MG.PUB, "drive_private", lambda fid: closed.append(fid))
-    def ig(url, cap, cover=None, video_path=None, url_fn=None): calls.append("ig"); raise RuntimeError("IG container: error")
-    def fb(url, cap, video_path=None, url_fn=None): calls.append(("fb", video_path)); return "FB1"
-    monkeypatch.setattr(MG.PUB, "ig_reel", ig); monkeypatch.setattr(MG.PUB, "fb_reel", fb)
-    sid, i, fbid = MG._post_reel({"file": str(f), "cover": str(c), "caption": "c #a", "hook": "h"}, {"title": "T"}, "https://youtu.be/x")
-    assert calls[0] == "ig" and calls[1] == ("fb", str(f)) and fbid == "FB1" and i == ""
-    assert sorted(opened) == sorted(closed) == ["cover0.jpg"]                    # the video itself was never made public (sent directly)
-
-def test_links_are_closed_even_when_everything_fails(monkeypatch, tmp_path):
-    f = tmp_path / "reel0.mp4"; f.write_bytes(b"x"); opened, closed = [], []
-    monkeypatch.setattr(MG.PUB, "drive_upload", lambda p, n, public=False: (opened.append(n), (n, "https://drive/" + n))[1])
-    monkeypatch.setattr(MG.PUB, "drive_private", lambda fid: closed.append(fid))
-    def ig(url, cap, cover=None, video_path=None, url_fn=None): url_fn(); raise RuntimeError("down")
-    def fb(url, cap, video_path=None, url_fn=None): url_fn(); raise RuntimeError("down")
-    monkeypatch.setattr(MG.PUB, "ig_reel", ig); monkeypatch.setattr(MG.PUB, "fb_reel", fb)
-    MG._post_reel({"file": str(f), "caption": "c"}, {"title": "T"}, "https://youtu.be/x")
-    assert opened == ["reel0.mp4"] and closed == ["reel0.mp4"]                   # one link made on demand, shared, then closed
-
 class _R:
     def __init__(self, j, code=200): self._j = j; self.status_code = code; self.text = json.dumps(j)
     def json(self): return self._j

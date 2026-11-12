@@ -39,13 +39,13 @@ def test_clean_notes():
     n = TR.clean_notes({"notes": [{"beat": "2", "note": " hold  still "}, {"beat": "x", "note": "n"}, {"note": ""}, 5] + [{"beat": 1, "note": "z"}] * 9})
     assert n[0] == {"beat": 2, "note": "hold still"} and n[1]["beat"] == 0 and len(n) == 6
 
-def test_objections_round_sends_six_jobs_with_research_free_craft_and_no_placeholders():
+def test_objections_round_sends_one_job_a_role_with_research_free_craft_and_no_placeholders():
     seen = []
     def many(jobs):
         seen.extend(jobs); return [{"objections": [{"to": "WRITER", "objection": "o", "request": "r"}]} for _ in jobs]
     memos = {r: {"big_idea": f"idea of {r}"} for r in TR.ROLES}
     objs = TR.objections_round(memos, {"premise": "p"}, "EPT", many)
-    assert len(seen) == 6 and len(objs) == 5          # the WRITER may not object to itself
+    assert len(seen) == len(TR.ROLES) == 5 and len(objs) == 4          # the WRITER may not object to itself (five roles: the reel producer left with the cut-down reels)
     for j in seen:
         assert "@@" not in j["system"] and j["fake_key"] == "memo2"
     w = next(j for j in seen if "ROLE: WRITER" in j["system"])
@@ -117,18 +117,18 @@ def test_all_other_prompts_have_no_leftover_placeholders(monkeypatch):
     from whatifs import room as ROOM
     r = _run_room("EPTR4"); seen = _spy(monkeypatch)
     units = [{"i": i, "text": f"line {i}", "tag": "none", "start": i, "end": i + 1} for i in range(4)]
-    shots = ROOM.plan_shots(r, units, {"ptype": "collective", "reel_formats": ["R1_climax_why", "R3_myth"], "strategies": {"title": "N1_what_if", "thumb": "T1_object_scale"}}, {"kling": 1, "living": 1}, "EPTR4")
-    d = {"strategies": {"title": "N1_what_if", "thumb": "T1_object_scale"}, "reel_formats": ["R1_climax_why", "R3_myth"]}
-    ROOM.package(r, [("0:00", "Intro")], d, "EPTR4"); ROOM.reels(r, shots, d, "EPTR4"); ROOM.extend(r, "## BEAT 1\n[calm] a b c", 50, "EPTR4")
+    ROOM.plan_shots(r, units, {"ptype": "collective", "strategies": {"title": "N1_what_if", "thumb": "T1_object_scale"}}, {"kling": 1, "living": 1}, "EPTR4")
+    d = {"strategies": {"title": "N1_what_if", "thumb": "T1_object_scale"}}
+    ROOM.package(r, [("0:00", "Intro")], d, "EPTR4"); ROOM.extend(r, "## BEAT 1\n[calm] a b c", 50, "EPTR4")
     ROOM.continuity({"x": 1}, "EPTR4")
-    assert len(seen) >= 5 and all("@@" not in s for _, s in seen), [k for k, s in seen if "@@" in s]
+    assert len(seen) >= 4 and all("@@" not in s for _, s in seen), [k for k, s in seen if "@@" in s]
     assert any("CRAFT REMINDERS" in s and CRAFT["packager"][:30] in s for k, s in seen if k == "packager")
 
 def test_research_reaches_every_department_memo(monkeypatch):
     seen = _spy(monkeypatch)
     _run_room("EPTR5")
     memos = [s for k, s in seen if k == "memo"]
-    assert len(memos) == 6 and all("OBSERVED SIGNALS" in s or "RESEARCH NOT AVAILABLE" in s for s in memos)
+    assert len(memos) == 5 and all("OBSERVED SIGNALS" in s or "RESEARCH NOT AVAILABLE" in s for s in memos)
 
 def test_budget_plan_includes_table_read_cost_only_when_active(setting):
     from whatifs import episode as EP

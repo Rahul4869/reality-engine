@@ -108,7 +108,7 @@ def _give_up_stuck(eps):
             e["status"] = "closed"
         elif e.get("status") == "LIVE1":          # v12 V2c-b2b: a row an older version left between its two reel releases - there is no second release any more
             st.update("Episodes", "episode_id", e["episode_id"], {"status": "LIVE", "notes": _note(e, "closed to LIVE: a long video makes no cut-down reels any more"), "updated": iso()})
-            log(f"{e['episode_id']}: closed to LIVE (an older version had left it half released)"); e["status"] = "closed"
+            log(f"{e['episode_id']}: closed to LIVE (an older version had left it half released)")
 
 AUDIT_WORDS = {"approved": "approved - uploads can go public",
                "sent": "SENT - waiting for Google (days to weeks). Videos stay private until it is approved. It flips to approved by itself when a video goes public",
@@ -614,9 +614,7 @@ def learn():
         try: PB.credit(d.get("playbook") or {}, sc, st)       # v8.7: trial rules are credited on their own metric (missing data is never credited)
         except Exception as x: log(f"playbook credit skipped: {scrub(x)}", "WARN")
         if m.get("from_shorts") is not None:
-            st.append("Lessons", [{"ts": iso(), "lesson": f"{e['episode_id']}: {m['from_shorts']} long-video views came from Shorts, Shorts gained {m.get('shorts_subs', '?')} subscribers "
-                                   + (f"(reel style {d['reel_style']}, formats {', '.join(d.get('reel_formats', [])) or '?'})" if d.get("reel_style") else "(no cut-down reels: its Shorts are standalone)"),
-                                   "evidence": "YouTube Analytics (traffic source SHORTS; per-Short subscribers)", "applies_to": "reels" if d.get("reel_style") else "showrunner"}])
+            st.append("Lessons", [{"ts": iso(), "lesson": shorts_lesson(e["episode_id"], m, d), "evidence": "YouTube Analytics (traffic source SHORTS)", "applies_to": "showrunner"}])
         _credit_strategies(st, strategy_credits(d, sc, swapped))      # v8.9.1: each (dimension, name) credited once per video, matched on BOTH columns
     if rows: st.append("Analytics", rows)
     try: _reaction_learning([r for r in rows if r.get("data_note") == "ok"])
@@ -890,6 +888,12 @@ def v10_upgrade(st):
     set_setting("V10_FLIPS_DONE", iso() + " " + (",".join(done) or "none"))
     if done: log(f"v10: budget cap moved to Rs 5,000 ({', '.join(done)})")
     return done
+
+def shorts_lesson(ep_id, m, d):
+    """What a long video's traffic from the Shorts feed leaves on tab Lessons. A video of today makes no cut-down reels: what came from the feed came from
+    the standalone Shorts. A video an older version made carried cut-down reels: its line still names their style and what they gained."""
+    old = f" (an older version cut {d['reel_style']} reels from it: they gained {m.get('shorts_subs', '?')} subscribers)" if d.get("reel_style") else ""
+    return f"{ep_id}: {m['from_shorts']} long-video views came from the Shorts feed{old}"
 
 def strategy_credits(d, sc, swapped=False):
     """{(dimension, name): score} for one analysed video. v8.9.1: built first and de-duplicated, so a strategy is credited at most once per video

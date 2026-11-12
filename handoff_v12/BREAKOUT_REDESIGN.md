@@ -4,7 +4,7 @@ rejected the first live video (item 16). This page OVERRIDES `01` section 1 ("co
 the department list in `01` section 2 wherever they differ. The budget is unchanged: Rs 5,000 a month for everything.
 Status: DESIGN (research + designs + decisions). Built so far: V1a (11 Nov 2026). The batches in section 6 build the rest, one per owner
 "continue". SECTION 10 (the owner's item 19, same day) amends sections 4-7. SECTION 11 (his item 20, same night) amends them again -
-Shorts first, the motion ladder, the human kit, the release sheet, a new order of batches: READ SECTION 11 FIRST. Built so far: V1a, V1b, V2a, V2c-a (the Short as a product), V2c-b1 (the ladder), V2c-b2a (the platforms), V2c-b2b1 (the opening - `BUILD_STATE.md` says whether it is accepted); their end notes are the last entries of 11.10.
+Shorts first, the motion ladder, the human kit, the release sheet, a new order of batches: READ SECTION 11 FIRST. Built so far: V1a, V1b, V2a, V2c-a (the Short as a product), V2c-b1 (the ladder), V2c-b2a (the platforms), V2c-b2b1 (the opening), V2c-b2b2 (the cut-downs: none is made - `BUILD_STATE.md` says whether it is accepted); their end notes are the last entries of 11.10.
 
 ## 0. THE HONEST FRAME
 - Nobody can make a channel a sure shot. Of 137,355 new long-video channels, 30.8% got even ONE video past 10,000 views in their first ten (R1).
@@ -689,3 +689,36 @@ channels reach 10 million views; any measured reach effect of Meta's AI label; a
   ground). O14 - how an upright clip of the real model looks through the window can only be judged on real clips: the pilot must
   show the owner the first long video's opening, and `OPENING_FIT` / `OPENING_ENLARGE_MAX` are set from what he and the first
   retention curves say.
+- ORDER UPDATE (V2c-b2b2, 12 Nov 2026): V2c-b2b2 built THE CUT-DOWNS - by removing them. V2c is complete (five batches). Then V2d,
+  V3 (go live), V2b, V1c, V4, V5, B6b-B10: eleven batches remain; the channel runs the new code after the second (V2d, V3).
+  WHAT THE BUILD CHANGED IN THIS SECTION, with reasons (the record is in `BUILD_STATE.md`): (1) 4.2 point 5 "one more Short is cut
+  from its best moment" is NOT built, and the four cut-down reels the older code made of every long video are gone: 11.4 says a
+  Short is "never a trailer, never a cut-down", 11.10 counts 16 uploads a month with none among them, in science a teaser cut
+  from a long video is what fails (R53), and the one thing a cut-down does for its long video - the link - only a Short cut BY
+  HAND in YouTube Studio gets (R55). (2) THE PULL from a Short to its long video is the related-video link, YouTube's own "most
+  effective tool" (R54), set by hand on the Short real viewers chose: it is the first line of 11.7's one-minute release card (V3)
+  and the one of O11 to keep. (3) Found by counting, not planned: with its defaults the code would have posted about 38 short
+  videos a month through four separate uploads - 12 Shorts, 16 cut-downs, 8 to 9 "pilot Shorts" (four stills and an ask) and 2
+  special reels - past the 35 of R2 / R28, three of them with one text for every platform and nothing read back. Now 12: every
+  upright video goes through ONE door (`whatifs/release.py`), the pilots and the special reels are paused by default (4.7's
+  FOCUS, decided on 11 Nov and never executed in code until now), and a new door fails the build. (4) 4.7's Rs 300 of "specials"
+  money is production money while they are paused. (5) NOT adopted: YouTube's advice of a spoken pointer in a Short's last five
+  seconds (R54) - a Short is made before a long video about it exists, and the Short's rule is no ask.
+  NEW EVIDENCE (read by the build session, 12 Nov 2026): R53 E / O - AIR Media-Tech, 18,000 channels, updated 28 May 2026 (the page
+  of R3): science is the niche where long-only channels lead; "Most science YouTube Shorts are highlight clips or experiment
+  teases that either give away the payoff entirely or stop too abruptly to satisfy"; the winners "treat each one as a complete
+  micro-argument"; above 55% Shorts by uploads long videos do worse; its own words: "Correlation isn't causation". R54 E - YouTube
+  Official Blog, 14 Jul 2026: "The most effective tool for this is the Related Videos link"; a clipped Short must "function as
+  a standalone piece of value"; the long video's first 5 to 10 seconds must pay what the Short promised (what V2c-b2b1 built);
+  no number is given. R55 E - YouTube Help 14075157 and 15824265: the link needs advanced feature access and a public or
+  unlisted target and is set in Studio; a Short cut with Studio's own tool gets it automatically; "won't be penalized for using
+  your content". R56 E - Metricool, 29 Jul 2026, read from the page (R2): 4,364 views a long video with no Shorts, 8,789 with
+  about 5 a month, back to the level of none at 35 and more. R57 E - arXiv 2402.18208, 8 Apr 2024: 250 large creators lost
+  long-video views and engagement after their first Short (before and after; an association). NOT FOUND: any measured
+  comparison of a cut-down with a Short made for the feed; any measured rate at which the link moves viewers; how many short
+  uploads a channel of four long videos can carry. New H24 (a long video whose Short was linked to it by hand gets more of
+  its first-week views from the Shorts feed). O15 - 12 Shorts beside 4 long videos is 75% Shorts by uploads, above the 55% of
+  R53 and far from the "about 5 a month" of R56; O8 stays: D1 must report long-video views against the Shorts count weekly
+  (V4) and the split is a lever. O16 - four older uploads (special reels with the cast intro, pilot Shorts, the hero-still
+  Short, the audio-drop Reel) are shut by a switch, not rebuilt on the release sheet: the batch that prepares the pilot decides
+  which of them the channel still wants.

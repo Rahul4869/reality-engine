@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib, json, os, random, statistics
 from whatifs.core import S, log, iso, scrub, safe_append, safe_rows, WORK
 
-ROLES = ["WRITER", "AUDIENCE PSYCHOLOGIST", "DIRECTOR + DP", "EDITOR + SOUND", "PACKAGER", "REEL PRODUCER"]
+ROLES = ["WRITER", "AUDIENCE PSYCHOLOGIST", "DIRECTOR + DP", "EDITOR + SOUND", "PACKAGER"]
 MAX_PER_ROLE = 3
 MAX_TOTAL = 12
 MIN_PER_ARM = 5

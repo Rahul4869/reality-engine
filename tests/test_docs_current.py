@@ -24,6 +24,7 @@ SAMPLES = {
     "old_long_cadence":       ("Standard mode makes 8 long videos a month, twice a week.", None),
     "no_kling_statement":     ("The render is ffmpeg-only.", None),
     "daily_shorts_cadence":   ("Cadence: 1.5 standalone Shorts per day (SHORTS_PER_DAY).", "Cadence: 3 standalone Shorts a week (SHORTS_PER_WEEK); thirty near-identical Shorts a day would be spam."),
+    "cutdown_reels":          ("Four bridge Shorts cut from each long video go out on the following days (REELS_PER_VIDEO).", "The standalone Shorts reach Instagram Reels and Facebook Reels; REEL1_DELAY_MIN minutes after its slot a long video's release step runs."),
 }
 
 def _mini(tmp_path):
@@ -39,7 +40,8 @@ def _mini(tmp_path):
     ok = '"""A module. See docs/CURRENT/SYSTEM.md."""\n'
     _w(r, "whatifs/prompts.py", ok + 'WRITER = "Open inside the story. It happens to YOU."\n')
     _w(r, "whatifs/manage.py", ok + 'A = "budget cap moved to Rs 4,700"\nB = "fal-ai/kling-video/v3/standard/image-to-video"\n'
-                                    'C = ("SHORTS_PER_DAY", "SHORTS_KLING_EVERY", "REPLAN_MAX_SHORTS_PER_DAY")\n')      # v12 V2c-b: the one-time move names the three retired cadence cells
+                                    'C = ("SHORTS_PER_DAY", "SHORTS_KLING_EVERY", "REPLAN_MAX_SHORTS_PER_DAY")\n'       # v12 V2c-b: the one-time move names the three retired cadence cells
+                                    'D = ("REELS_PER_VIDEO", "REEL_STYLE", "REEL1_SHORTS_ON", "REEL2_DELAY_MIN", "REEL3_DELAY_MIN", "REEL4_DELAY_MIN")\n')      # v12 V2c-b2b: ... and the six retired cut-down cells
     return r
 
 def _w(root, rel, text, mode="w"):

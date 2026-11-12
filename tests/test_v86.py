@@ -28,16 +28,15 @@ def test_per_video_shorts_lessons_no_longer_push_out_the_others():
     for i in range(30): _lesson(f"shorts {i}", "reels")
     assert "KEEP-ME" in ROOM.context()["lessons"]
 
-def test_reel_producer_and_writer_actually_receive_their_lessons(monkeypatch):
+def test_the_writer_actually_receives_its_lessons_and_no_prompt_gets_the_reel_lessons(monkeypatch):
     _lesson("SHORTS-LESSON-X", "reels"); _lesson("OPENING-LESSON-Y", "opening")
     seen = []; real = ROOM.ask
     def spy(role, system, prompt, **kw): seen.append(system); return real(role, system, prompt, **kw)
     monkeypatch.setattr(ROOM, "ask", spy)
-    ROOM.reels({"spine": {"premise": "p"}}, [{"type": "still", "prompt": "x"} for _ in range(10)], {"reel_formats": ["R3_myth"]}, "EPL")
-    assert any("SHORTS-LESSON-X" in s for s in seen)
-    seen.clear(); ROOM.run_room(DRAW("EPWR", "collective"), "EPWR")
+    ROOM.run_room(DRAW("EPWR", "collective"), "EPWR")
     writer = [s for s in seen if "ROLE: WRITER" in s]
     assert writer and "OPENING-LESSON-Y" in writer[0] and "RETENTION RULES" in writer[0]
+    assert not any("SHORTS-LESSON-X" in s for s in seen), "v12 V2c-b2b2: there is no reel producer any more - a lesson filed for reels reaches no prompt"
 
 # ------------------------------------------------------------------ 2-3. packaging checked in code
 def test_titles_are_checked_and_the_clean_one_wins():

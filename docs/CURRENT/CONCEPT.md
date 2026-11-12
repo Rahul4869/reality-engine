@@ -38,7 +38,7 @@ Brand: **Reality Engine**. The promise is the owner's own: it happens to YOU - f
   no ask, unlike the last ten Shorts (checks `short_open`, `short_plain`, `short_shape`, `short_kept`). A Short that fails is not made.
 
 ## Every topic starts as a Short (`whatifs/ladder.py`, Growth and Learning D10)
-- Three Shorts a week, twelve a month. Each Short's real numbers are read (YouTube delivers them 48 to 72 hours late); when a long video is about to start,
+- Three Shorts a week, twelve a month - and they are the only short videos the channel posts. Each Short's real numbers are read (YouTube delivers them 48 to 72 hours late); when a long video is about to start,
   code promotes the best Short of the last 30 days whose topic has no long video yet, and the long video is about that topic (check `topic_ladder`).
 - No promoted Short and no override on record = no long video. A Short at three times the channel's usual views gets one follow-up Short within 48 hours.
 - The long video about a promoted Short OPENS on that Short's footage (`whatifs/opening.py`, Visual Production D6): its clips in its order under the long video's first
@@ -46,14 +46,16 @@ Brand: **Reality Engine**. The promise is the owner's own: it happens to YOU - f
   window does not fill the frame). Three animated scenes are bought for the rest of the video. A long video made under an override has no Short: it opens on its own
   animated promise scene (checks `opening_footage`, `opening_shown`).
 
-## A Short reaches three platforms natively (`whatifs/release.py`, Publishing D9)
+## A Short reaches three platforms natively - the one door for every short video (`whatifs/release.py`, Publishing D9)
 - One master file, three uploads of their own: YouTube Shorts, Instagram Reels (a Trial Reel: non-followers first), Facebook Reels (90 seconds at most). Each gets its own words,
   built by code from the Short's script; none carries an ask, a courtroom word or a link.
 - Every setting code can set is a row of the release sheet; after the upload each platform is read back and each row gets a receipt (check `release_sheet`).
   The link from a Short to its long video can only be set by hand in YouTube Studio: it is on the sheet as the owner's row and is never called done by the machine.
 
 ## Also made today
-- Bridge Shorts and Reels cut from the long video (they stop being the product in batch V2c-b2b2; they still go out the old way and never take a shot of the Short's footage).
+- Nothing short is cut from a long video: its topic already has the Short that real viewers chose, and the long video opens on it. The pull from that Short to the long video is
+  YouTube's related-video link, which only a hand in YouTube Studio can set (the owner's row of the release sheet). The long video's release is one step: public, the channel comment, live.
+- Paused by default until the channel has viewers (a switch each; they would still go out through the older upload): pilot Shorts and the cast's special reels.
 - Spin-offs: the Case Files countdown and the monthly Deep Trial. Sound: per-world beds and story-tied events; ASMR only as touches.
 
 ## Explored and not current

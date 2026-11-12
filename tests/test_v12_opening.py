@@ -3,7 +3,7 @@ wide frame), the laying (pure), the marks on the shot list, the fetched archive,
 three scenes, and both checks (before picture money and on the finished film). Each rule both ways. No keys, no network."""
 import json, os, subprocess, zipfile
 import pytest
-from whatifs import core, opening as OPEN, ladder as LAD, publish as PUB, hooks as HOOKS, anim as ANIM, contract as CON, episode as EP, room as ROOM, render as RN, release as REL
+from whatifs import core, opening as OPEN, ladder as LAD, publish as PUB, hooks as HOOKS, anim as ANIM, contract as CON, episode as EP, render as RN, release as REL
 
 SID = "SH209912010900"
 TRACK = [{"clip": "c0.mp4", "start": 0.0, "end": 5.8, "slow": 1.16}, {"clip": "c1.mp4", "start": 5.8, "end": 11.2, "slow": 1.08}, {"clip": "c2.mp4", "start": 11.2, "end": 17.2, "slow": 1.2}]
@@ -292,22 +292,6 @@ def test_no_reaction_effect_is_drawn_over_the_footage(monkeypatch, setting):
     assert [e["i"] for e in EP.reaction_events(u, marked)] == [7]                                                                        # the burst and the zoom at second 4.5 would cover the Short's own picture: not drawn
     assert [e["i"] for e in EP.reaction_events(u, _shots())] == [2, 7]                                                                   # a video that opens on its own pictures keeps every reaction effect
     setting("REACTION_FX_ON", "FALSE"); assert EP.reaction_events(u, _shots()) == []
-
-def test_a_cut_down_never_takes_a_shot_of_the_footage(setting):
-    u = _units(); marked = OPEN.mark(_shots(), u, _man())
-    assert ROOM.past_footage([0, 1, 2, 6], marked) == [5, 7, 8, 6]                                                                       # each footage shot is replaced by the next free shot of the video's own pictures
-    assert ROOM.past_footage([6, 7, 8, 9], marked) == [6, 7, 8, 9] and ROOM.past_footage([0, 1, 2], _shots()) == [0, 1, 2]              # nothing to replace; no footage at all
-    assert ROOM.past_footage([4, 5, 6, 7, 8, 9, 3], marked) == [5, 6, 7, 8, 9]                                                           # none left: the footage shot is dropped, never kept
-
-def test_the_footage_is_not_offered_to_the_cut_down_planner(monkeypatch, setting):
-    u = _units(); marked = OPEN.mark(_shots(), u, _man()); offered = []; real = ROOM.P.fill
-    def fill(tpl, **kw):
-        if "shots" in kw: offered.append(str(kw["shots"]))
-        return real(tpl, **kw)
-    monkeypatch.setattr(ROOM.P, "fill", fill); monkeypatch.setattr(ROOM, "ask", lambda *a, **k: {"reels": [{"shots": [0, 1, 2, 6], "lines": ["a line"]}]})
-    good = ROOM.reels({"spine": {"premise": "p"}, "script": {"script": "s"}}, marked, {"reel_formats": ["myth"], "playbook": {}}, "EPQ")
-    lines = offered[-1].split("\n"); assert [l.split(":")[0] for l in lines] == ["5", "6", "7", "8", "9"], lines                         # only the video's own pictures are on offer
-    assert good and good[0]["shots"] == [5, 7, 8, 6]                                                                                    # and a planner that names a footage shot anyway gets the next free shot instead
 
 def test_the_sweep_counts_an_opening_only_when_both_checks_passed():
     from tools import sweep as SW

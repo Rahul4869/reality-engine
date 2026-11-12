@@ -20,6 +20,17 @@ def watch(monkeypatch):
     rg = AN.gemini_image; monkeypatch.setattr(AN, "gemini_image", lambda *a, **k: (c.update(["image_ref"]), rg(*a, **k))[1])
     if hasattr(M, "ask_batch"):
         rb = M.ask_batch; monkeypatch.setattr(M, "ask_batch", lambda *a, **k: (c.update(["batch"]), rb(*a, **k))[1])
+    # v12 V2c-b2b: two kinds of paid call the counter never saw, because other modules hold their own name for the function - the key art (the thumbnail,
+    # its runner-up; until this batch also two reel covers) and a voice job (the narration; until this batch also one per cut-down reel).
+    import sys
+    from whatifs import voice as V
+    def still_(*a, **k): c["image_premium" if k.get("premium") else "image"] += 1; return rs(*a, **k)
+    rv_ = V.narrate
+    def narrate_(*a, **k): c["voice_job"] += 1; return rv_(*a, **k)
+    for mod in list(sys.modules.values()):
+        if not getattr(mod, "__name__", "").startswith("whatifs.") or mod is MD: continue
+        if getattr(mod, "still", None) is rs: monkeypatch.setattr(mod, "still", still_)
+        if getattr(mod, "narrate", None) is rv_: monkeypatch.setattr(mod, "narrate", narrate_)
     return c
 
 def count(monkeypatch, tmp_path):
@@ -70,8 +81,19 @@ V12V2CB2B_REMOVED = {"clip_kling": 1,     # the animated scene at second 0: the 
                      "text:hooks": 1,     # the hook lab's ten lines: the first line is the Short's own hook
                      "text:critic": 1}    # ... and the judge of those ten lines
 
+# v12 V2c-b2b (the cut-downs): since this batch the counter also sees the key art and the voice jobs (always paid, never counted: other modules hold their
+# own name for the function). As the code made them BEFORE this batch - measured on the accepted code of V2c-b2b1 with this counter:
+V12V2CB2C_COUNTED = {"image_premium": 4,     # the thumbnail, its runner-up and two reel covers
+                     "voice_job": 5}         # the narration and one voice job per cut-down reel
+# ... and what a long video NO LONGER pays, because it makes no cut-down reels (measured: every other count is unchanged):
+V12V2CB2C_REMOVED = {"text:reels": 1,        # the cut-downs' planning call (the editing model)
+                     "image_premium": 2,     # two reel covers of premium key art
+                     "voice_job": 4}         # four reels spoken again by the voices
+
 def allowed_base(base):
     out = dict(base)
+    for k, v in V12V2CB2C_COUNTED.items(): out[k] = out.get(k, 0) + v
+    for k, v in V12V2CB2C_REMOVED.items(): out[k] = out.get(k, 0) - v
     for k, v in V102_ADDED.items(): out[k] = out.get(k, 0) + v
     for k, v in V11_ADDED().items(): out[k] = out.get(k, 0) + v
     for k, v in V111_ADDED.items(): out[k] = out.get(k, 0) + v

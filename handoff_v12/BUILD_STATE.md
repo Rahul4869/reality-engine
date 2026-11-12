@@ -344,6 +344,20 @@ E. (ORIGINAL, CHOSEN) THE SHORT THE VIEWERS CHOSE IS THE PULL, AND THERE IS ONE 
 - NOT IN THIS BATCH, on purpose: the release card with the link (V3); rebuilding the special reels, the cast intro, the pilots
   and the hero-still reel on `release.py` or deleting them (a new open issue - the batch that prepares the pilot decides which
   of them the channel still wants); the cost model (V2d).
+- FOUND WHILE PROVING (each written here before the edit that fixes it):
+  (1) **A JOB CAN HANG FOR EVER IN THE PROMPT-CACHE BOOKKEEPING - a fault of the older code, not of this batch.** Two of the
+  first three parallel test runs of this batch stopped at 93-96% with every worker idle and no child process, for half an hour.
+  I named the test that never finished (`tests/test_v86.py::test_missing_analytics_...`, a learning-job test; every finished
+  test logged by name) and dumped the stuck worker's stack with py-spy: `manage.learn` -> `premise.refill_bench` -> `models.ask`
+  -> `CacheManager.blocks` -> `core.log` -> `core.flush_log` -> `CacheManager.flush` -> `CacheManager.rows`, waiting for
+  `CacheManager.lock`. `blocks` writes the warning "prompt cache: two calls share a prefix but differ in model parameters"
+  (open issue 23: printed on EVERY long video) WHILE IT HOLDS that lock; `core.log` flushes its buffer at every 40th line; the
+  flush calls the cache manager's own hook, which asks for the same lock - a lock that cannot be taken twice by one thread. So
+  whenever that warning is the 40th buffered line, the job stops for ever: about one chance in forty per warning, on the
+  live channel a production or learning job stuck until GitHub's six-hour limit, its slot lost. It showed now because this
+  batch changed how many lines a run logs (no reel lines), which moved the 40th line onto the warning in one worker's order.
+  Fix at the cause: nothing is logged while the lock is held (the warning is decided inside the lock and written after it);
+  a test that fills the buffer to 39 lines and makes the two calls must return; a deliberate break.
 
 ### V2c-b2b1 - THE OPENING (12 Nov 2026) - ACCEPTED (final code commit 22103cb GREEN in GitHub Checks run 126: 1416 passed; sweep 58 of 58 ids)
 The owner: "continue in new session" (12 Nov 2026, item 21 of `02`). V2c-b2b was SPLIT AT ITS START (rule 6; the note is at the top of
@@ -3223,6 +3237,18 @@ Rehearsal asserts `docs_current` ran and passed.
   (deterministic particle seed).
 
 ## PROTECTED-AREA FILES TOUCHED SO FAR (list them in the final PR)
+- V2c-b2b2: `whatifs/manage.py` (the long video's release is one step; `_post_reel`, `_release_extra`, `extra_reel_due` and
+  `cap_hashtags` are gone; `shorts_lesson`; the one-time move `v12v2cb2b_upgrade` at both setup sites; a row at LIVE1 is closed
+  by the tick), `whatifs/episode.py` (no reel plan, cover, build or clean copy; the release record lists no reels),
+  `whatifs/room.py` (`reels`, `reel_count`, `reel_style`, `past_footage`, `_reel_extra` are gone), `whatifs/contract.py` (the
+  checks `shorts` and `short_covers` are gone: 60 hard checks), `whatifs/core.py` (8 cells gone, `PILOTS_ON` and
+  `SPECIALS_ON` FALSE by default, 1 new cell, the note of `REEL1_DELAY_MIN`), `whatifs/truth.py` (retired rule
+  `cutdown_reels`, `OLD_DOORS`, `short_doors`, `door_issues`), `whatifs/governor.py` (two premium pictures fewer in every
+  estimate), `whatifs/models.py` (the role `reels` is gone; THE DEADLOCK FIX in `CacheManager.blocks`), `whatifs/playbook.py`
+  (no reel department), `whatifs/org/registry.py`, `levers.py`, `rnd.py` (2 check owners and 1 lever gone: 71 levers;
+  SHOW_CHECKS 49). DELETED: `whatifs/reels.py`. Not protected, touched: `whatifs/sampler.py`, `prompts.py`, `fakes.py`,
+  `data.py`, `format_engine.py`, `cta.py`, `art.py`, `show.py`, `tableread.py`, `cli.py`, `tools/rehearsal.py`,
+  `tools/sweep.py`, `tools/gen_docs.py`, `tests/paid_calls.py`, `mission_control/mission_control.html` (one sample line).
 - V2c-b2b1: `whatifs/opening.py` (NEW; on the protected list from its first commit), `whatifs/episode.py` (the plan stage fetches and
   lays the opening; `plan_check`, `anchor_shots`, the paid repair, `_assets`, `_render`, `reaction_events` and both gates know a
   footage shot), `whatifs/contract.py` (2 new probes and rows; `p_hook` knows the Short's hook), `whatifs/room.py` (`past_footage`;
@@ -3726,6 +3752,55 @@ Rehearsal asserts `docs_current` ran and passed.
    on real clips (123). Issue 65 (the promise needs an animated scene to ride on) - closed for a video on its Short's footage,
    whose opening is always animated; open for a video under an override when the money trims every scene.
 
+135. (V2c-b2b2 -> V3, THE OWNER'S HAND, BEFORE GO-LIVE) The pull from a Short to its long video is YouTube's related-video link
+   and nothing else. No API sets it; it needs advanced feature access (phone verification - issue 112). No code opens the task
+   yet: the one-minute release card (V3) must put it FIRST - at the long video's release, one message with the Studio link of
+   the Short named on the video's ladder row (`d["ladder"]`), the long video's title, the three taps and a "Done" button; never
+   called verified by the machine (the sheet's row `link` is `hand`). H24 measures it (Analytics traffic source SHORTS, which
+   the learning job already reads).
+136. (V2c-b2b2 -> the batch that prepares the pilot) FOUR OLDER DOORS ARE SHUT BY A SWITCH, NOT REBUILT (`truth.OLD_DOORS`):
+   `specials._publish` (the special reels, the hand-started cast intro, and a standalone Short only when RELEASE_SHEET_ON is
+   FALSE), `pilots.run`, `herostill.make_for_episode`, `insights.post_drop`. Each still carries its old words - the special
+   reels' text says "New trials every Tuesday and Saturday ... Take your seat on the jury: subscribe", the pilot's end plate
+   "Comment YES. Full trials Tue + Sat" - and reads nothing back. Switching one on by hand posts through that old upload.
+   Decide per track: rebuild it on `release.py` (a kind of its own on tab `Release_Sheet`) or delete it; the cast intro and the
+   channel trailer of redesign 4.10 belong to the pilot's sitting. The list may only shrink (a test).
+137. (V2c-b2b2) `HERO_STILL_REELS_ON` is TRUE: every long video still makes a hero-still reel file and files it in Drive (free);
+   nothing uploads it unless `HERO_STILL_SHORTS_ON`. A file nobody posts: decide with 136.
+138. (V2c-b2b2 -> V4) Twelve short uploads a month is true by construction now, but no code COUNTS short uploads across kinds:
+   `shortslab.allowed_today` (`SHORTS_WEEKLY_CAP` 10) still counts the old reel cells of tab `Episodes` and every row of tab
+   `Specials`. If an older door is switched on, only that weekly ceiling bounds it. D1's weekly line "long-video views against
+   the Shorts count" (redesign 11.4, O8, O15) is V4.
+139. (V2c-b2b2 -> V3, TELL THE OWNER IN THE GO-LIVE GUIDE) A long video the OLD live code scheduled with four reels waiting:
+   the new code posts none of them (the release is one step; a row at LIVE1 is closed by the tick). The week of the switch has
+   no cut-downs; the one-time move also pauses the pilot Shorts and the special reels on the live Sheet (he can switch either
+   back on - through the old upload, issue 136).
+140. (V2c-b2b2 -> B8) History kept, read by nothing: the rows of the "reel" department on tab `Playbook` and of the dimension
+   "reel" on tab `Strategies` of a live Sheet, lessons filed for "reels" (`growth.lessons_for("reel")` still maps them; no
+   prompt asks for them). A video the old code made keeps its reel credit (`manage.strategy_credits`). The Librarian's batch
+   may archive them.
+141. (V2c-b2b2, money -> V2d) The estimate before a long video fell by two premium pictures (Rs 15.84 at the price cell). The
+   planning call and the four voice jobs sat inside lump allowances (`LLM_EST_INR`, `TTS_EST_INR`) that were NOT lowered: the
+   estimate errs upward by about Rs 10 a video. V2d's cost model (with 72, 83, 126).
+142. (V2c-b2b2) The optional older writers' room (`ROOM_MODE` v1) has five roles now (the reel producer left): one memo and one
+   objection fewer per video in that mode. Only the rehearsal's table-read scene runs it.
+143. (V2c-b2b2, FOUND AND FIXED; the family may be wider) A job could hang for ever in the prompt-cache bookkeeping (a warning
+   logged while a lock was held, when it was the 40th buffered log line - the record of this batch, "found while proving").
+   Fixed in `models.CacheManager.blocks`. NOT checked beyond this module: other code that logs while it holds a lock which a
+   log-flush hook also takes (`core.FLUSH_HOOKS` has one hook today: the cache manager's). A new flush hook must never take a
+   lock its owner holds while logging. On the live channel (old code) the fault is still there until go-live: a production or
+   learning job that sits idle for hours is this, not the platform.
+144. (V2c-b2b2, NOT ADOPTED) YouTube's advice of a spoken pointer to the long video in a Short's last five seconds (its blog,
+   14 Jul 2026): a Short is made one to two weeks before a long video about it exists and two in three never get one. If the
+   hand-set link shows traffic (H24), V4 may test a winner's follow-up Short that points.
+145. (V2c-b2b2, the proof) NOT covered by the sweep: the older doors (they are off), a video that stays private at its
+   release, KILL, a row left at LIVE1 (unit tests and deliberate breaks only). Covered on every long-video id: no cut-down
+   file, plan or upload; the release in one step; nothing short out but the standalone Shorts.
+146. CLOSED / narrowed in V2c-b2b2: issue 118 - closed for the cut-down reels (gone), open for the special reels as 136. Issue
+   133 - closed. Issue 76 - closed for the cut-downs. Issue 84's last line (`JOKE_EVERY_SEC_SHORT` "only by the cut-down
+   reels") was not exact: `enforce.py` reads the cell for any text judged as a Short; nothing of this batch touched it. Issue
+   13 - narrowed: the long video's release step (`manage.release`) is still not a department run of Publishing.
+
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`
 - Suite: `bash ../shim/runall.sh . <outdir outside repo>` (~35 min; run it in the background). Some files: `bash ../shim/runseq.sh . <outdir> test_a test_b`.
@@ -3777,6 +3852,14 @@ Rehearsal asserts `docs_current` ran and passed.
   longer DETACHED - `( <command> > <log outside the repo> 2>&1 & )` in a short foreground call - and wait with a small Python loop on
   the log's last line (at most about 9 minutes a call). A break script keeps a copy of every file before its first break, restores
   from the copy at every start, and runs in parts of a few minutes. After ANY break run: `git status` before the next step.
+- A RUN THAT STOPS WITH EVERY WORKER IDLE IS A FINDING, NOT A FLAKE (12 Nov 2026, batch V2c-b2b2: two of three parallel runs
+  stopped at 93-96% for half an hour - a real deadlock in the prompt-cache bookkeeping, open issue 143). How it was found, in
+  ten minutes: run with `-v` so every finished test is logged by name; the worker whose count stands still names the test (the
+  next one in its file); then dump that worker's stack while it is stuck: `../.venv/Scripts/py-spy.exe dump --pid <pid>`.
+  TOOL INSTALLED ON 12 NOV 2026 under the owner's standing permission (item 21 of `02`): **py-spy** 0.4.3 from PyPI, in the
+  venv only (it reads the stack of a running Python process; it changes nothing that `requirements.txt` pins and no test
+  depends on it). Stop ONLY your own run: find the pytest process by its command line and `taskkill //F //PID <pid> //T`
+  (a blanket kill of every python.exe is refused by the app, rightly).
 - The offline clip maker ignores the shape of its start picture: every offline clip is WIDE (the size of a long video's still), also a
   Short's. A rule about UPRIGHT clips (the opening's window) needs test clips made upright by ffmpeg (`tests/test_v12_opening.py`).
 - git: `core.autocrlf=false` (keep LF); write files with LF. Commit identity Rahul4869 (noreply address); push with

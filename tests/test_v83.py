@@ -54,10 +54,6 @@ def test_the_hook_is_inserted_as_a_director_line_in_the_two_role_format():
     new, ok, _ = hooks.apply_to_script("## BEAT 1\n[DIRECTOR] [calm] A very different opening sentence here.", "Eight billion people do it at noon.")
     assert ok and "[DIRECTOR] [tension] Eight billion people do it at noon." in new
 
-def test_reel_lines_are_labelled_so_they_use_the_two_voices():
-    from whatifs.reels import _label_lines
-    assert _label_lines(["[tension] Every pillow left.", "[SKEPTIC] Wait."], {"DIRECTOR": 1})[0].startswith("[DIRECTOR] ") and _label_lines(["[tension] x"], None) == ["[tension] x"]
-
 # ---------------------------------------------------------------- like / subscribe / share
 def test_every_hand_written_ask_is_recognised_as_its_own_kind_and_is_short():
     for kind, pool in CTA.POOLS.items():
@@ -117,10 +113,6 @@ def test_the_description_ends_with_a_witty_subscribe_line_and_a_link():
     d = EP._description("Hook line.\n\nChapters\n\n#a #b #c", [("0:00", "A"), ("1:00", "B"), ("2:00", "C")], {"spine": {"premise": "p"}}, "EP1")
     assert "0:00 A" in d and "ubscribe" in d and d.count("Chapters") == 1
     d2 = EP._description("No chapter word here", [("0:00", "A"), ("1:00", "B"), ("2:00", "C")], {}, "EP1"); assert "1:00 B" in d2
-
-def test_each_reel_ends_with_a_follow_or_a_share_ask():
-    a = CTA.reel_ask("EP1", 0); b = CTA.reel_ask("EP1", 1)
-    assert "ollow" in a[2] and CTA.kind_of_text(b[2]) == "share"
 
 # ---------------------------------------------------------------- final QC
 def _dark(path, stars, secs=4):

@@ -237,7 +237,7 @@ def test_every_settings_cell_is_read_by_code_or_marked_not_active():
     assert set(T.settings_cells()) == set(core.DEFAULTS)                                                                # the source reader sees every cell of the table
     for k in unread: assert core.DEFAULTS[k][1].startswith(T.NOT_ACTIVE), k                                             # the Sheet and SYSTEM.md tell the truth meanwhile
     assert not [k for k, v in core.DEFAULTS.items() if v[1].startswith(T.NOT_ACTIVE) and k not in unread]
-    for k in ("PRICE_OPUS_IN", "ATMOS_FOG_ON", "EFFORT_JUDGE", "REEL3_DELAY_MIN", "FPS", "VOICE", "ORG_ON"): assert k in core.DEFAULTS and k not in unread      # names the code BUILDS count as read
+    for k in ("PRICE_OPUS_IN", "ATMOS_FOG_ON", "EFFORT_JUDGE", "SHORT_MAX_S_S3", "FPS", "VOICE", "ORG_ON"): assert k in core.DEFAULTS and k not in unread      # names the code BUILDS count as read
     doc = open(os.path.join(ROOT, "docs", "CURRENT", "SYSTEM.md"), encoding="utf-8").read()
     assert all(f"  - `{k}`: " in doc for k in unread) and f"{len(unread)} cells are read by NO code" in doc              # the generated doc names each one
 

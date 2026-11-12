@@ -92,11 +92,10 @@ def test_variety_guard_flags_repeats_without_a_call():
     iss = CM.variety_issues(plan, hist); assert len(iss) == 3
     assert CM.variety_issues(dict(plan, verdict={"winner": "grimm"}, charge="The ocean is charged with standing still", exhibits=[{"kind": "DATA"}]), hist) == []
 
-def test_clipbait_lines_and_audio_drop(tmp_path):
+def test_the_clipbait_moment_is_filed_as_an_audio_drop(tmp_path):
     import subprocess
     from whatifs import showfx as SFX
     sc = "[DIRECTOR] intro\n[CLIPBAIT] [SKEPTIC] Pillows do not fly!\n[DIRECTOR] Observe. [/CLIPBAIT]\n[JUDGE] Mm."
-    assert SHOW.clipbait_lines(sc) == ["[SKEPTIC] Pillows do not fly!", "[DIRECTOR] Observe."] and SHOW.clipbait_lines("none") == []
     m = str(tmp_path / "m.mp4")
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "sine=f=220:d=20", "-f", "lavfi", "-i", "color=c=gray:s=64x36:d=20", "-shortest", m], check=True)
     us = [{"start": 10.0, "end": 12.0, "show": ["[CLIPBAIT]"]}, {"start": 12.0, "end": 16.0, "show": ["[/CLIPBAIT]"]}]

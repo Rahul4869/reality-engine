@@ -53,13 +53,13 @@ from whatifs import pilots as PL, outlier_lab as OL, bakeoff as BK
 def _bench(n=2):
     core.store().append("Premise_Bench", [{"bench_id": f"B{i}", "added": core.iso(), "status": "READY", "premise": f"What if your bed floated {i}", "headline": f"Bed {i}", "combined": str(8 - i)} for i in range(n)])
 
-def test_pilot_short_made_from_the_best_unpiloted_premise(monkeypatch):
-    monkeypatch.setenv("WI_SMALL", "1"); _bench()
+def test_pilot_short_made_from_the_best_unpiloted_premise(monkeypatch, setting):
+    monkeypatch.setenv("WI_SMALL", "1"); _bench(); setting("PILOTS_ON", "TRUE")      # v12 V2c-b2b2: paused by default; switched on, the track works as before
     r = PL.run(publish=False); assert r["ok"] and r["bench_id"] == "B0" and os.path.exists(r["path"])
     assert PL.run(publish=False)["bench_id"] == "B1" and PL.run(publish=False)["ok"] is False      # each premise piloted once
 
 def test_pilot_money_and_switch(setting):
-    _bench(); core.store().append("Cost_Log", [{"ts": core.iso(), "episode_id": "PL202611010000", "item": "image", "inr": "45"}])
+    _bench(); setting("PILOTS_ON", "TRUE"); core.store().append("Cost_Log", [{"ts": core.iso(), "episode_id": "PL202611010000", "item": "image", "inr": "45"}])
     assert "pilot money" in PL.run(publish=False)["why"]
     setting("PILOTS_ON", "FALSE"); assert PL.run(publish=False)["ok"] is False
 

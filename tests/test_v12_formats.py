@@ -135,10 +135,10 @@ def test_the_real_production_makes_an_episode_that_is_not_a_trial_and_holds_one_
     monkeypatch.setattr(V, "KokoroBackend", lambda blend: ToneVoice()); MG.setup(); core.set_setting("VOICE", "C"); core.set_setting("FORMAT_FORCE", "F1")
     slot = lambda h: (now() + dt.timedelta(hours=h)).strftime("%Y-%m-%dT%H:%M:%SZ")
     after = []                                                                        # the steps AFTER the writers' room: each must be made in the episode's format
-    for step in ("package", "plan_shots", "reels"):
+    for step in ("package", "plan_shots"):
         monkeypatch.setattr(ROOM, step, (lambda real, step=step: lambda *a, **k: (after.append((step, FMT.current())), real(*a, **k))[1])(getattr(ROOM, step)))
     r = EP.produce(slot(10), episode_id="EP209901010900"); ep = r.get("episode"); assert r.get("ok") and FMT.current() == "", r
-    assert {s for s, _f in after} == {"package", "plan_shots", "reels"} and {f for _s, f in after} == {"F1"}, after
+    assert {s for s, _f in after} == {"package", "plan_shots"} and {f for _s, f in after} == {"F1"}, after
     st = core.store(); led = {x["feature"]: (x["status"], x["evidence"]) for x in st.rows("Feature_Ledger") if x["episode_id"] == ep}
     assert led["format_kept"][0] == "PASS" and led["dept_contract"][0] == "PASS", led["format_kept"]
     assert led["joke_density"][0] == "N/A" and led["joke_density"][1].startswith("optional in format F1, not held:")           # a device was missing - and nothing was held

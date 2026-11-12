@@ -55,7 +55,7 @@ def test_a_long_video_opens_on_its_shorts_footage_and_one_under_an_override_on_i
         n = int(round(b[i + 1] * fps)) - int(round(b[i] * fps)); assert played.get(f"clip{i:03d}.mp4") == n and [c for c, _n in seen["clips"]].count(f"clip{i:03d}.mp4") == 1, (i, n, played.get(f"clip{i:03d}.mp4"))
     assert 1 in m and not [x for x in core.store().rows("Reaction_Map") if x.get("episode_id") == A and float(x.get("t") or 99) < b[m[-1] + 1]]      # no reaction effect inside the footage opening: the check above compared the film there and passed
     booms = [t for k, t in seen["events"][0] if k == "boom"]; assert sum(1 for t in booms if t < b[m[-1] + 1]) == 1 and len(booms) == 4      # one hit at second 0 for the opening, one for each of the three scenes
-    assert not [i for rp in S_["rplans"] for i in rp.get("shots", []) if int(i) in m] and len(r["reels"]) >= 2                              # no cut-down is made of the Short's own footage
+    assert "rplans" not in S_ and "reels" not in r and a.get("text:reels", 0) == 0                                                         # v12 V2c-b2b2: no cut-down is planned or made at all
     assert (a.get("clip_kling"), a.get("image_ref"), a.get("text:hooks", 0)) == (3, 3, 0), a                                             # three paid scenes, three start frames, no hook lab
     assert sum(1 for c, _n in seen["clips"] if c not in {f"clip{i:03d}.mp4" for i in m}) >= 3                                             # the three scenes play too
     assert EP.produce(_slot(34), episode_id=B).get("skipped") == "ladder"                                                                 # one Short, one long video

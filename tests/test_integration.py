@@ -79,11 +79,9 @@ def test_reality_engine_is_default_and_can_be_disabled(monkeypatch):
     assert "classic What If narration" in format_engine.instructions("writer")
 
 
-def test_reality_engine_speaker_blends_are_supported_for_reels():
+def test_reality_engine_speaker_blends_are_supported_by_the_voice_job():
     import inspect
-    from whatifs import reels
     from whatifs.voice import narrate
-    assert "speaker_blends" in inspect.signature(reels.build_reel).parameters
     assert "speaker_blends" in inspect.signature(narrate).parameters
 
 

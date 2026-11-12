@@ -1,7 +1,7 @@
 """v8.4: natural pacing. Same episode id -> identical audio timing (a retry must match the saved shot list); different episodes -> different timing;
 everything stays inside speech limits; the sense of the line shapes the pause; PACING_MODE=classic still works; reels are seeded per episode."""
 import json, numpy as np
-from whatifs import voice as V, reels
+from whatifs import voice as V
 
 class _BE:
     def __init__(self): self.packs = {"NARRATOR": 0}
@@ -52,12 +52,3 @@ def test_classic_mode_still_works_and_differs(tmp_path, setting):
     setting("PACING_MODE", "classic"); _, c = _run(tmp_path, "EP1", "c")
     setting("PACING_MODE", "natural"); _, n = _run(tmp_path, "EP1", "n")
     assert len(c) == len(n) and [u["speed"] for u in c] != [u["speed"] for u in n]
-
-def test_reels_are_seeded_per_episode(tmp_path, monkeypatch):
-    seen = []
-    def spy(lines, blend, out_base, **kw): seen.append(kw["seed"]); raise RuntimeError("stop")
-    monkeypatch.setattr(reels, "narrate", spy)
-    for ep in ("EP111", "EP222"):
-        try: reels.build_reel(1, {"lines": ["[tension] A line."], "shots": [0]}, ["x.mp4"], "c.jpg", B, "urgent", str(tmp_path / ep))
-        except RuntimeError: pass
-    assert len(seen) == 2 and seen[0] != seen[1] and "EP111" in seen[0] and "reel1" in seen[0]

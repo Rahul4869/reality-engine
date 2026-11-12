@@ -248,11 +248,13 @@ class CacheManager:
             return str(system), info
         info["prefix_tokens"] = cum
         info["hash"] = hashlib.sha256((model_id + "|" + glob + "|" + ep).encode()).hexdigest()[:16]
+        other = None
         with self.lock:
             prev = self.seen.get(info["hash"])
             if prev and prev["sig"] != sig and (info["hash"], "sig") not in self.warned:
-                self.warned.add((info["hash"], "sig"))
-                log(f"prompt cache: two calls share a prefix but differ in model parameters ({prev['sig']} vs {sig}); the second cannot read the first's cache", "WARN")
+                self.warned.add((info["hash"], "sig")); other = prev["sig"]
+        if other is not None:      # v12 V2c-b2b2: written AFTER the lock is released - a log line can flush the log, the flush calls this object's own hook (flush -> rows), and that asks for the same lock: the job hung for ever whenever this warning was the 40th buffered line
+            log(f"prompt cache: two calls share a prefix but differ in model parameters ({other} vs {sig}); the second cannot read the first's cache", "WARN")
         return out, info
 
     def aligned_effort(self, system, model_id, eff):

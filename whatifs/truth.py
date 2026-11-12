@@ -406,7 +406,9 @@ def short_doors(root=None):
 def door_issues(root=None):
     """A new door for short videos, a listed one that is gone, or a list that grew."""
     root = root or ROOT
-    if not os.path.exists(os.path.join(root, "whatifs", "release.py")): return []          # a test fixture without Publishing's run
+    try: home = _read(os.path.join(root, "whatifs", "publish.py"))
+    except OSError: home = ""
+    if "def ig_reel(" not in home: return []          # a test fixture without the platform calls: there is no door to judge
     found = short_doors(root); out = []
     for x in sorted(set(found) - set(OLD_DOORS)):
         out.append(f"{x}: uploads an upright video outside whatifs/release.py - a short video reaches a platform only through Publishing's own run (release.short), with a receipt for every row")

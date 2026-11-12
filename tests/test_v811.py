@@ -128,6 +128,23 @@ def test_params_mismatch_on_a_shared_prefix_is_warned(capsys):
     M.CACHE.blocks(_memo_pack(), "m", "sig-high"); M.CACHE.note({"hash": M.CACHE.blocks(_memo_pack(), "m", "sig-high")[1]["hash"], "ttl": ["1h"]}, "sig-high", 0, 0)
     M.CACHE.blocks(_memo_pack(), "m", "sig-low"); assert "differ in model parameters" in capsys.readouterr().out
 
+def test_that_warning_can_be_the_line_that_flushes_the_log_and_the_job_does_not_hang(capsys):
+    """v12 V2c-b2b2, found by a test run that stopped for ever: the warning was logged WHILE the cache manager's lock was held. core.log flushes at every
+    40th buffered line, the flush calls the manager's own hook (flush -> rows), and that waits for the same lock - held by the very thread that waits."""
+    import threading
+    assert M.CACHE.flush in core.FLUSH_HOOKS, "the cache manager's rows are written with every log flush"
+    h = M.CACHE.blocks(_memo_pack(), "m-flush", "sig-high")[1]["hash"]; M.CACHE.note({"hash": h, "ttl": ["5m"]}, "sig-high", 0, 0)
+    M.CACHE.record("EPF", "m-flush", {"read": 0, "w5": 10, "w1h": 0, "in": 5, "out": 5}, 0.001, 0.0, {"bps": 0})      # a row waits for the next flush
+    core.flush_log(); capsys.readouterr()
+    with core._lock: core._logbuf.extend({"ts": core.iso(), "job": "t", "episode_id": "", "level": "INFO", "message": f"line {i}"} for i in range(39))
+    done = []
+    t = threading.Thread(target=lambda: done.append(M.CACHE.blocks(_memo_pack(), "m-flush", "sig-low")), daemon=True)
+    t.start(); t.join(20)
+    hung = t.is_alive()
+    if hung: M.CACHE.lock = threading.Lock()          # never leave the next test of this worker a lock that is held for ever
+    assert not hung, "the 40th log line was written inside the cache manager's lock: the job waits for its own lock for ever"
+    assert done and "differ in model parameters" in capsys.readouterr().out and len(core._logbuf) < 39, "the warning was written and the log was flushed"
+
 # ---------------------------------------------------------------- routing + effort
 def test_routing_by_capability_and_switches(setting):
     assert M.route("writer") == ("opus", "creative") and M.route("rewrite")[0] == "opus" and M.route("humanize") == ("sonnet", "edit")

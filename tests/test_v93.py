@@ -6,7 +6,7 @@ from whatifs import core, growth as GR, packaging as PK, hooks as H, show as SHO
 from whatifs import room as ROOM, publish as PUB
 
 NEW = ["COLD_OPEN_YOU_ON", "COLD_OPEN_LORE_FREE_SEC", "COLD_OPEN_YOU_MIN", "AD_SAFE_ON", "MICRO_CUTS_ON", "PIECE_MAX_SEC", "PIECE_MAX_SEC_OPENING", "PIECE_MIN_SEC",
-       "CUTMAP_MAX_HOLD_SEC", "TRIAL_SHORTS_SAFE_ON", "HERO_SHORT_DELAY_MIN", "PKG_ROTATE_START_H", "PKG_ROTATE_MIN_VIEWS", "CTA_JURY_ON", "V93_FLIPS_ON", "V93_FLIPS_DONE"]
+       "CUTMAP_MAX_HOLD_SEC", "HERO_SHORT_DELAY_MIN", "PKG_ROTATE_START_H", "PKG_ROTATE_MIN_VIEWS", "CTA_JURY_ON", "V93_FLIPS_ON", "V93_FLIPS_DONE"]
 
 def test_every_v93_setting_has_a_default_and_a_note():
     for k in NEW: assert k in core.DEFAULTS and core.DEFAULTS[k][1].strip(), k
@@ -141,10 +141,6 @@ def test_cut_map_measures_still_holds():
     assert "Pacing (v9.3)" in CM.to_markdown(m) and "pacing" not in CM.build_cutmap(None, tl, None, 30, (), "EPC")
 
 # ------------------------------------------------------------------ K114 Shorts keep the payoff
-def test_trial_shorts_never_spend_the_payoff(setting):
-    t = ROOM._reel_extra({}); assert "NEVER reveal the verdict" in t and "VERDICT reaction" not in t and "YOU" in t
-    setting("TRIAL_SHORTS_SAFE_ON", "FALSE"); assert "VERDICT reaction" in ROOM._reel_extra({})
-
 def test_hero_short_is_scheduled_after_the_long_video_and_linked(monkeypatch, tmp_path, setting):
     setting("HERO_STILL_SHORTS_ON", "TRUE")                                    # v10.1 default is off; the mechanism is still tested
     from whatifs import herostill as HS
@@ -171,8 +167,6 @@ def test_trial_asks_are_recognised_short_and_in_character():
             assert sum(len(t[2].split()) for t in entry) <= 34
             for spk, tag, text in entry:
                 assert spk in ("DIRECTOR", "SKEPTIC", "JUDGE") and not re.search(r"\b(he|she|his|her|him|control room|simulation)\b", text, re.I), text
-    for k, pool in CTA.TRIAL_REEL_ASKS.items():
-        for spk, tag, text in pool: assert ("ollow" in text) if k == "follow" else CTA.kind_of_text(text) == "share"
 
 def test_ensure_uses_jury_lines_in_the_trial_and_the_old_lines_when_off(setting):
     sc = "\n".join(["## BEAT 1"] + [f"[{'DIRECTOR' if i % 2 == 0 else 'SKEPTIC'}] [calm] Plain sentence number {i} about the case." for i in range(30)])

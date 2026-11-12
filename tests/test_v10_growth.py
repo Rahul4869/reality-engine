@@ -100,6 +100,8 @@ def test_specials_days_and_off_switch(setting):
 
 def test_cap_is_5000_with_both_earmarks_out_of_production(setting):
     assert core.DEFAULTS["BUDGET_CEILING_INR"][0] == "5000" and G.cap_inr() == 5000
+    assert G.production_room_inr() == pytest.approx(5000 - core.S("BUDGET_MAINT_RESERVE_INR", float) - 200 - G.org_left_inr())      # v12 V2c-b2b2: the special reels are paused by default - their Rs 300 is production money
+    setting("SPECIALS_ON", "TRUE")                                                                                              # switched on, they have their earmark again
     assert G.production_room_inr() == pytest.approx(5000 - core.S("BUDGET_MAINT_RESERVE_INR", float) - 200 - 300 - G.org_left_inr())      # v12 B5: the organisation's thinking caps
     st = core.store(); st.append("Settings", [{"key": "BUDGET_FLOOR_INR", "value": "4700", "note": ""}, {"key": "BUDGET_CEILING_INR", "value": "6000", "note": ""}])
     core._settings_cache = None
@@ -144,21 +146,8 @@ def test_record_views_after_7_days(monkeypatch):
     monkeypatch.setattr(PUB, "yt_engaged_views", lambda vid, since: 1234)
     assert SP.record_views() == 1 and next(r for r in core.store().rows("Specials") if r["id"] == "SPx")["views_7d"] in (1234, "1234")
 
-# ---------------- Shorts Lab (K135): kinetic captions, winners-only link card, breakouts, weekly cap
-from whatifs import reels as RLS, shortslab as SL, notify as NT2
-
-def test_kinetic_captions_light_one_word_at_a_time_inside_the_safe_zone(tmp_path, setting):
-    tl = {"units": [{"text": "You have 90 seconds left", "start": 0.0, "end": 2.0,
-                     "words": [{"w": "You", "s": 0.0, "e": 0.3}, {"w": "have", "s": 0.3, "e": 0.6}, {"w": "90", "s": 0.6, "e": 1.0}, {"w": "seconds", "s": 1.0, "e": 1.5}, {"w": "left", "s": 1.5, "e": 2.0}]}]}
-    p = RLS._ass(tl, str(tmp_path / "a.ass"), "Hook", 1080, 1920); t = open(p).read()
-    caps = [l for l in t.splitlines() if l.startswith("Dialogue: 0,")]
-    assert len(caps) == 5 and "{\\c&H0000D7FF&\\fscx112\\fscy112}YOU{\\r}" in caps[0] and "{\\c&H0000D7FF&\\fscx112\\fscy112}90{\\r}" in caps[2]
-    style = next(l for l in t.splitlines() if l.startswith("Style: Cap"))
-    assert style.split(",")[-2] == str(int(1920 * 0.38))                                          # >= 36% up from the bottom
-    hook = next(l for l in t.splitlines() if l.startswith("Style: Hook")); assert hook.split(",")[18] == "8"   # hook text in the top area
-    setting("KINETIC_CAPTIONS_ON", "FALSE")
-    t2 = open(RLS._ass(tl, str(tmp_path / "b.ass"), "Hook", 1080, 1920)).read()
-    assert len([l for l in t2.splitlines() if l.startswith("Dialogue: 0,")]) == 2
+# ---------------- Shorts Lab (K135): winners-only link card, breakouts, weekly cap
+from whatifs import shortslab as SL, notify as NT2
 
 def _eps_with_reels(n, hours_ago):
     t = (core.now_utc() - dt.timedelta(hours=hours_ago)).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -179,7 +168,7 @@ def test_the_hourly_link_card_is_retired_the_winner_rule_spots_a_short_that_take
     assert not hasattr(SL, "breakouts") and callable(BRK.short_winner) and "SL.breakouts" not in open(__import__("whatifs.manage", fromlist=["x"]).__file__, encoding="utf-8").read()
 
 def test_weekly_cap_blocks_specials(setting):
-    _eps_with_reels(7, 20); setting("SHORTS_WEEKLY_CAP", "14")
+    _eps_with_reels(7, 20); setting("SHORTS_WEEKLY_CAP", "14"); setting("SPECIALS_ON", "TRUE")
     assert SL.weekly_count() == 14 and not SL.allowed_today()
     r = SP.run(kind="special", publish=False); assert r["ok"] is False and "ceiling" in r["why"]
 

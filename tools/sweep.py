@@ -54,6 +54,34 @@ def opening_of(core, ep):
     bad = [f"{k} {(led.get(k) or {}).get('status') or 'missing'}: {str((led.get(k) or {}).get('evidence') or '')[:120]}" for k in ("opening_footage", "opening_shown") if (led.get(k) or {}).get("status") != "PASS"]
     return (not bad), ("; ".join(bad) if bad else str(led["opening_shown"].get("evidence"))[:110])
 
+def release_of(core, ep, r):
+    """v12 V2c-b2b: (ok, words) - the long video of this id made NO cut-down reel and its release is ONE step. The slot is moved into the past, the
+    tick must name its release, the release must end at LIVE, and the next tick must name no release; no reel file, cover or plan was made, nothing
+    is on the episode's reel cells, and every short video that went out is a standalone Short with a record on tab Release_Sheet."""
+    from whatifs import manage as MG
+    st = core.store(); out = os.path.dirname(str(r.get("master") or "")); bad = []
+    junk = sorted(f for f in os.listdir(out) if re.match(r"(reel\d|cover\d|r\d_|clean\d)", f))
+    if junk or "reels" in r: bad.append("cut-down files were made: " + ", ".join(junk[:4] or ["a reel on the result"]))
+    try: rel = json.load(open(os.path.join(out, "release.json")))
+    except (OSError, ValueError): rel = None
+    if rel is None or "reels" in rel: bad.append("the release record is missing or still lists reels")
+    row = next(x for x in st.rows("Episodes") if x.get("episode_id") == ep)
+    try: dj = json.loads(row.get("draw_json") or "{}") if isinstance(row.get("draw_json"), str) else (row.get("draw_json") or {})
+    except ValueError: dj = {}
+    if "reel_style" in dj or "reel_formats" in dj or "reel" in (dj.get("strategies") or {}): bad.append("the draw still carries a reel strategy")
+    st.update("Episodes", "episode_id", ep, {"slot_et": (core.now_utc() - dt.timedelta(hours=8)).strftime("%Y-%m-%dT%H:%M:%SZ")})
+    a = MG.tick()
+    if a.get("action") != "release1" or a.get("episode") != ep: bad.append(f"the tick did not name the long video's release: {json.dumps(a)[:120]}")
+    else:
+        MG.release(ep, "release1"); row = next(x for x in st.rows("Episodes") if x.get("episode_id") == ep)
+        if row.get("status") != "LIVE": bad.append(f"the release did not end at LIVE in one step (status {row.get('status')})")
+        a2 = MG.tick()
+        if str(a2.get("action")).startswith("release"): bad.append(f"a second release was named: {json.dumps(a2)[:120]}")
+    if any(str(row.get(k) or "").strip() for k in ("reel1_yt", "reel2_yt", "reel3_yt", "reel4_yt", "ig1", "ig2", "fb1", "fb2")): bad.append("a cut-down reel is on the episode's row")
+    kinds = sorted({str(x.get("kind")) for x in st.rows("Release_Sheet")}) if "Release_Sheet" in core.TABS else []
+    if [k for k in kinds if k != "short"]: bad.append(f"a short video went out that is not a standalone Short: {kinds}")
+    return (not bad), ("; ".join(bad) if bad else "no cut-down made or uploaded; released in one step" + (f"; short videos out: {len({x.get('id') for x in st.rows('Release_Sheet')})} standalone Short(s)" if kinds else ""))
+
 # ------------------------------------------------------------------ one id (runs in its own process: module state never leaks between ids)
 def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
     os.environ.update(WI_FAKE="1", WI_SMALL="1", WI_WORK=os.path.join(work, "work"), PYTHONUTF8="1")
@@ -125,6 +153,9 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
             if res["outcome"] == "ok" and res.get("ladder") == "climbed":           # v12 V2c-b2b: THE SWEEP WALKS THE OPENING - a long video that climbed must open on its Short's footage
                 ok_o, res["opening"] = opening_of(core, ep)
                 if not ok_o: res["outcome"] = "odd"; res["problems"].append("the long video does not open on its Short's footage: " + res["opening"]); res["error"] = res["opening"][:300]
+            if res["outcome"] == "ok":                                              # v12 V2c-b2b: THE SWEEP WALKS THE RELEASE - no cut-down reel, one step to LIVE, nothing short out but the Shorts
+                ok_r, res["release"] = release_of(core, ep, r)
+                if not ok_r: res["outcome"] = "odd"; res["problems"].append("cut-downs or the release step: " + res["release"]); res["error"] = res["release"][:300]
         res.update(evidence(core, ep, org))
     except BaseException as e:                                                      # a crash is a result too: the last line of the traceback names it
         if isinstance(e, KeyboardInterrupt): raise
@@ -194,7 +225,8 @@ def summary(results):
         for d in r.get("degraded", []): deg.setdefault(str(d)[:90], []).append(r["id"])
         for k in r.get("owner", []): own.setdefault(k, []).append(r["id"])
         for b in r.get("runs_bad", []) + r.get("memos_open", []): fails.setdefault("org:" + b, []).append(r["id"])
-    return {"n": len(results), "outcomes": by, "opened_on_footage": sum(1 for r in results if r.get("opening") and r["outcome"] == "ok"), "bad_ids": sorted(r["id"] for r in results if r["outcome"] != "ok"), "fail_classes": {k: sorted(set(v)) for k, v in sorted(fails.items())},
+    return {"n": len(results), "outcomes": by, "opened_on_footage": sum(1 for r in results if r.get("opening") and r["outcome"] == "ok"),
+            "released_without_cutdowns": sum(1 for r in results if str(r.get("release") or "").startswith("no cut-down") and r["outcome"] == "ok"), "bad_ids": sorted(r["id"] for r in results if r["outcome"] != "ok"), "fail_classes": {k: sorted(set(v)) for k, v in sorted(fails.items())},
             "warn_classes": {k: len(v) for k, v in sorted(warn.items())}, "degraded_classes": {k: len(v) for k, v in sorted(deg.items())}, "owner_message_kinds": {k: len(v) for k, v in sorted(own.items())}}
 
 def main(argv=None):

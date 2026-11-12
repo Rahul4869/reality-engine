@@ -27,7 +27,7 @@ def test_a_full_nine_video_month_fits_under_the_production_line(setting):
     with_palace = EP.est_cost_inr(d); assert G.palace_prompt_inr() == 15              # v12 B6a: the Palace in the creative prompts is in every estimate (Rs 15 a long video)
     setting("ORG_PROMPT_INJECT", "FALSE")      # v12 B6a: this golden describes the NINE-video month of the v8.11 cost profile; the Palace allowance and the owner's 4-a-month plan are tested in test_v12_creative
     per = EP.est_cost_inr(d); assert round(with_palace - per, 2) == 15
-    assert 455 < per < 475 and core.S("LLM_EST_INR", float) == 176      # v9: AI_SAVER_ON by default (v8.11: 200; Opus script, thinking 40)
+    assert 440 < per < 460 and core.S("LLM_EST_INR", float) == 176      # v9: AI_SAVER_ON by default (v8.11: 200; Opus script, thinking 40)
     assert 8 * per <= core.S("BUDGET_CEILING_INR", float)                 # v8.11: 8 videos fit the cap on padded estimates; 9 do not (see the v8.11 report:
     plan = G.plan_for_episode(per, 9)                                      # AI-side savings, never visual cuts) - and the planner keeps every picture and clip
     assert plan["tier"] == "full" and plan["kling"] == 3
