@@ -219,9 +219,36 @@ def save(rec, out_dir):
     except Exception as e: log(f"could not write hooks.json: {scrub(e)}", "WARN"); return None
     return p
 
-def run_hooks(script, spine, episode, out_dir, ask_fn=None):
-    """Stage entry point for episode.py. Returns (script, record|None). NEVER raises; on any failure the script is returned unchanged."""
+def proven_record(script, proven, episode=""):
+    """v12 V2c-b2b: the record of an opening line that needs no lab - the first sentence of the Short this long video is about, the line real
+    viewers stayed for. No candidate is written and no judge is asked (real viewers outrank a jury); the one rule that still binds is advertiser
+    safety, as for anything a viewer hears first. Returns None when there is no such line or it is not ad-safe (then the lab runs as usual)."""
+    line = _clean_line((proven or {}).get("line")); sid = str((proven or {}).get("short") or "")
+    if not line or not sid: return None
+    try:
+        from whatifs.packaging import ad_risk
+        if ad_risk(line): log(f"the hook of Short {sid} is not advertiser-safe as a long video's first line: the hook lab runs instead", "WARN", episode); return None
+    except Exception: pass
+    c = {"id": "h0", "line": line, "type": "proven", "basis": f"the first sentence of Short {sid}", "issues": [], "words": count_words(line), "clarity": "", "relevance": "",
+         "curiosity": "", "promise_accuracy": "", "total": "", "valid": True, "rank": 1, "note": "proven by the viewers of the Short"}
+    return {"episode_id": episode, "created": iso(), "scored_by": "viewers", "source": "short", "short": sid, "mode": S("HOOK_APPLY_MODE").lower(), "min_score": S("HOOK_MIN_SCORE", float),
+            "candidates": [c], "rejected": [], "type_mix": {}, "chosen_id": "h0", "status": "pending", "applied": False,
+            "notes": [f"The opening line is the hook of Short {sid}, word for word: no hook lab was run."]}
+
+def run_hooks(script, spine, episode, out_dir, ask_fn=None, proven=None):
+    """Stage entry point for episode.py. Returns (script, record|None). NEVER raises; on any failure the script is returned unchanged.
+    proven = {line, short}: the hook of the Short a long video is about (whatifs/opening.py) - used as the first line instead of the lab."""
     if not S("HOOKS_ON", bool): return script, None
+    try:
+        rec = proven_record(script, proven, episode) if proven else None
+        if rec:
+            script = decide(rec, script)
+            if not rec["applied"] and rec.get("apply_note") == "writer's opening already says this":      # the writer opened on the Short's own words: that IS the proven line in place
+                rec["applied"] = True; rec["status"] = "applied"
+            save(rec, out_dir)
+            log(f"opening line: the hook of Short {rec['short']}, proven by its viewers (status {rec['status']}; no hook lab)", episode=episode)
+            return script, rec
+    except Exception as e: log(f"the Short's hook could not be used ({scrub(e)[:120]}): the hook lab runs", "WARN", episode)
     try:
         rec = build_record(script, spine, episode, ask_fn)
         script = decide(rec, script); save(rec, out_dir)

@@ -61,15 +61,16 @@ ACTING = {
 AVOID = "no morphing faces, no extra fingers, no text, no lip movement, no camera cuts, no realistic human skin, no glossy plastic look"
 
 # ------------------------------------------------------------------ 1. slots
-def pick_slots(shots, units, n=None):
-    """Indexes of the shots nearest the retention anchors (unique, each a picture shot with a unit)."""
-    n = n if n is not None else S("ANIM_SHOTS", int)
+def pick_slots(shots, units, n=None, skip=(), anchors=None):
+    """Indexes of the shots nearest the retention anchors (unique, each a picture shot with a unit). skip = shots that are never a slot (the
+    opening made of the Short's footage is animated already); anchors = the anchors to fill (default: all of ANCHORS)."""
+    n = n if n is not None else S("ANIM_SHOTS", int); skip = set(skip or ()); anchors = ANCHORS if anchors is None else anchors
     if not shots or not units or n <= 0: return []
     times = [(i, float(units[i].get("start", units[i].get("t0", 0)) or 0)) for i, s in enumerate(shots) if i < len(units) and s.get("type") in ("still", "living", "kling")]
     if not times: return []
-    end = max(t for _, t in times) or 1.0
+    end = max(t for _, t in times) or 1.0; times = [(i, t) for i, t in times if i not in skip]
     chosen = []
-    for a in ANCHORS[:n]:
+    for a in anchors[:n]:
         target = a * end
         cand = sorted((abs(t - target), i) for i, t in times if i not in chosen)
         if cand: chosen.append(cand[0][1])
@@ -85,17 +86,19 @@ def apply(shots, units, plan=None):
     """Turns the chosen shots into animated scenes (type 'kling' + an 'anim' record) and every other paid clip into a living still.
     Returns the chosen indexes."""
     if not S("ANIM_DIRECTOR_ON", bool): return []
-    n = min(S("ANIM_SHOTS", int), int(plan.get("kling", S("ANIM_SHOTS", int)))) if plan is not None else None
-    idx = pick_slots(shots, units, n)
+    n = min(S("ANIM_SHOTS", int), int(plan.get("kling", S("ANIM_SHOTS", int)))) if plan is not None else S("ANIM_SHOTS", int)
+    foot = {i for i, s in enumerate(shots) if s.get("short")}   # v12 V2c-b2b: the opening made of the Short's footage is animated and paid already - the scene at second 0 is not bought again
+    idx = pick_slots(shots, units, max(0, n - 1), skip=foot, anchors=ANCHORS[1:]) if foot else pick_slots(shots, units, n)
     for i, s in enumerate(shots):                               # a Kling slot that moved becomes a plain still (no extra paid living clip)
-        if s.get("type") == "kling" and i not in idx:
+        if s.get("type") == "kling" and i not in idx and i not in foot:
             s["type"] = "still"; s.pop("promise", None)        # v12 fix: the promise rides on an animated scene; left on a demoted still it hid the re-aim and held finished videos
     for k, i in enumerate(idx):
-        u = units[i] if i < len(units) else {}
+        u = units[i] if i < len(units) else {}; k = k + (1 if foot else 0)      # the later scenes keep their slot numbers (and their worlds) when the opening is footage
         w = world_for(shots[i], u, k)
         shots[i]["type"] = "kling"; shots[i]["anim"] = {"slot": k, "world": w, "line": str(u.get("text", ""))[:160]}
     if plan is not None: plan["kling"] = len(idx)
-    log(f"animation director: {len(idx)} animated scenes at {[round(float(units[i].get('start', 0) or 0)) for i in idx if i < len(units)]} s")
+    log(f"animation director: {len(idx)} animated scenes at {[round(float(units[i].get('start', 0) or 0)) for i in idx if i < len(units)]} s"
+        + (f"; the opening ({len(foot)} shots) is the Short's footage, already paid" if foot else ""))
     return idx
 
 # ------------------------------------------------------------------ 2. start frames (Google image model + locked portraits)

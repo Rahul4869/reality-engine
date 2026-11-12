@@ -784,9 +784,19 @@ def reel_style():
     from whatifs.reels import reel_style as _rs
     return _rs()
 
+def past_footage(sh, shots):
+    """v12 V2c-b2b: a cut-down never takes a shot of the Short's own footage - made of those it would be the Short uploaded a second time. Each such
+    shot is replaced by the next shot of the long video's OWN pictures that the cut-down does not use yet (none left = it is dropped)."""
+    out = []
+    for i in sh:
+        if shots[i].get("short"):
+            i = next((j for j in range(i + 1, len(shots)) if not shots[j].get("short") and j not in out and j not in sh), None)
+        if i is not None and i not in out: out.append(i)
+    return out
+
 def reels(room, shots, draw, episode):
     ctx = context(); n = reel_count()
-    S_ = "\n".join(f'{i}: {s["type"]}: {(s.get("prompt") or s.get("search") or "")[:90]}' for i, s in enumerate(shots))
+    S_ = "\n".join(f'{i}: {s["type"]}: {(s.get("prompt") or s.get("search") or "")[:90]}' for i, s in enumerate(shots) if not s.get("short"))      # v12 V2c-b2b: the Short's footage is not on offer
     fm = draw["reel_formats"]
     style = {"bridge": P.REEL_STYLE_BRIDGE, "standalone": P.REEL_STYLE_STANDALONE, "teaser": P.REEL_STYLE_TEASER}[reel_style()]
     r = ask("reels", FE.inject(GR.insert_before_json(P.fill(P.REEL, n=n, style=style, formats=fm, formatdefs=_j({f: ctx["defs"].get(f, "") for f in fm}), shots=S_[:12000],
@@ -794,7 +804,7 @@ def reels(room, shots, draw, episode):
             max_tokens=6000 + 1500 * (n - 2)).get("reels", [])
     good = []
     for x in r[:n]:
-        sh = [int(i) for i in x.get("shots", []) if str(i).isdigit() and int(i) < len(shots)]
+        sh = past_footage([int(i) for i in x.get("shots", []) if str(i).isdigit() and int(i) < len(shots)], shots)
         kl = [i for i in sh if shots[i]["type"] == "kling"]
         sh = [i for i in sh if shots[i]["type"] != "kling"] + kl[:1]
         if len(sh) >= 4 and x.get("lines"): x["shots"] = sh; good.append(x)

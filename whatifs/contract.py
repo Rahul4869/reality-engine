@@ -60,6 +60,11 @@ def p_hook(ctx):
     rec = ctx.get("hook_rec") or {}
     if not S("HOOKS_ON", bool): return NA, "Hook Lab switched off"
     if not rec or rec.get("status") == "failed" or not rec.get("applied"): return FAIL, f"Hook Lab did not run or was not applied ({(rec or {}).get('status', 'no record')})"
+    if rec.get("source") == "short":                           # v12 V2c-b2b: the first line is the hook of the Short this video is about - real viewers stayed for it, no lab is run
+        ref = str((ctx.get("d") or {}).get("ladder") or "") if isinstance(ctx.get("d"), dict) else ""
+        if not ref or str(rec.get("short") or "") != ref: return FAIL, f"the opening line was taken from Short {rec.get('short') or '?'}, but this video is about {ref or 'no Short'}"
+        if rec.get("status") != "applied": return FAIL, f"the hook of Short {ref} is not the first spoken line of the finished narration ({rec.get('status')})"
+        return PASS, f"the opening line is the hook of Short {ref}, word for word: the line its viewers stayed for (no lab needed)"
     n = len(rec.get("candidates") or []); sc = rec.get("score") or rec.get("winner_score")
     if n < S("CONTRACT_HOOK_MIN_CANDIDATES", int): return FAIL, f"only {n} hook candidates (need {S('CONTRACT_HOOK_MIN_CANDIDATES', int)})"
     if sc is not None and float(sc) < S("CONTRACT_HOOK_MIN_SCORE", float): return FAIL, f"winning hook scored {sc} (bar {S('CONTRACT_HOOK_MIN_SCORE', float)})"
@@ -481,6 +486,24 @@ def p_topic_ladder(ctx):
     ok, why = LAD.topic_report(d, ((ctx.get("room") or {}).get("spine") or {}).get("premise"), ctx.get("ep"))
     return (PASS if ok else FAIL), why[:380]
 
+def p_opening_footage(ctx):
+    """v12 V2c-b2b (the opening, D6): a long video about a promoted Short opens on THAT Short's kept footage - judged on the shot list, before any
+    picture is paid: the archive of its ladder row was fetched whole, the first shots carry it and nothing else, laid as the rule says."""
+    from whatifs import opening as OPEN
+    d = ctx.get("d") if isinstance(ctx.get("d"), dict) else {}
+    ok, why = OPEN.plan_report(d, ctx.get("shots") or [], ctx.get("units") or [], ctx.get("opening"))
+    return (NA if ok is None else PASS if ok else FAIL), why[:380]
+
+def p_opening_shown(ctx):
+    """v12 V2c-b2b (the opening, D6): the FINISHED film opens on its Short's footage - the opening clips are the files cut from that Short's
+    archive and frames of the master match them. A video the owner approved without its footage (opening_footage waived) is not judged again."""
+    from whatifs import opening as OPEN
+    d = ctx.get("d") if isinstance(ctx.get("d"), dict) else {}
+    if OPEN.source(d)[0] == "short" and not OPEN.marked(ctx.get("shots")) and _waived(ctx.get("ep"), "opening_footage"):
+        return NA, "the owner approved this video without its Short's footage (opening_footage waived): it opens on its own pictures"
+    ok, why = OPEN.shown_report(d, ctx.get("shots") or [], ctx.get("units") or [], ctx.get("opening"), ctx.get("master"))
+    return (NA if ok is None else PASS if ok else FAIL), why[:380]
+
 def p_viewer_numbers(ctx):
     """v12 V1 (the viewer's seat, D13): few numbers - what a viewer hears per minute, and the full-screen number graphics he must read."""
     from whatifs.org import audience as AUD
@@ -642,6 +665,7 @@ FEATURES = [
     ("viewer_probe", "script", p_viewer_probe, "the promise line-up: from the first 30 s alone two first-time readers pick this video's title, and give none to a planted opening (the layman test)"),
     ("format_kept", "script", p_format_kept, "the script is what its format says: a format that is not a trial does not sound like one, a trial has its Show Plan (formats as data)"),
     ("topic_ladder", "script", p_topic_ladder, "every topic starts as a Short: this long video is about the topic of a Short the promote rule took, or was made under an override on record (the ladder)"),
+    ("opening_footage", "script", p_opening_footage, "a long video about a promoted Short opens on that Short's own footage, laid by code under its first sentences - or was made under an override, which has none (the opening)"),
     ("palace_injected", "script", p_palace_injected, "the Knowledge Palace playbook was inside the model prompt of every creative run's key call (the writer, the packager, the director), and the exact text is stored"),
     ("palace_cited", "script", p_palace_cited, "every creative run cited Palace knowledge it really applied: each counted citation has a quote that code found in the final output"),
     ("canon_in_brief", "script", p_canon_in_brief, "the writer was given the show's canon (cast and the newest aired case), called back to that case in a line of the final script, and wrote this episode's case record"),
@@ -680,6 +704,7 @@ FEATURES = [
     ("living_characters", "final", p_living,   "reaction cutaways show the approved character, blinking, breathing and talking"),
     ("breakout_bar",  "final",  p_breakout_bar, "Breakout Score >= BREAKOUT_HARD_BAR (no upload below it)"),
     ("aliveness",     "final",  p_alive,        "no stretch of the video looks like a still photo"),
+    ("opening_shown", "final",  p_opening_shown, "the finished film opens on its Short's footage: the opening clips are the files cut from that Short's archive and the frames of the film match them (the opening)"),
     ("takeaways_written", "final", p_takeaways_written, "every department run of this episode finished its six steps and wrote a valid takeaway"),
     # v12 V2c: stage "short" = the short gate of a standalone Short (whatifs/shorts2.py), judged before any picture is paid; a held Short is not made
     ("short_open",    "short",  p_short_open,   "a Short opens on the moving promise picture, its hook has at most SHORT_HOOK_WORDS_MAX words and ends inside SHORT_HOOK_BY_S seconds of the real voice, the promise text is on screen in the first second (the viewer's seat for a Short)"),

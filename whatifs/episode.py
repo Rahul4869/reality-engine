@@ -136,7 +136,9 @@ def _stage_plan(ep, out, eps_left, slot_iso):
                                               "status": "VOICING", "draw_json": d, "updated": iso()})
     _mark_premise(room["spine"]["premise"], ep)
     script = room["script"]["script"]
-    script, hook_rec = HOOKS.run_hooks(script, room["spine"], ep, out)
+    from whatifs import opening as OPEN                     # v12 V2c-b2b: the footage of the Short this video is about - its pictures open the video and its hook is the first line
+    opn = OPEN.fetch(d, out)
+    script, hook_rec = HOOKS.run_hooks(script, room["spine"], ep, out, proven=OPEN.proven(opn))
     room["script"]["script"] = script
     beat_names = [b.get("purpose", f"Part {b.get('n')}") for b in room["bible"].get("beats", [])]
     clean, beat_marks = _strip_beats(script)
@@ -170,11 +172,12 @@ def _stage_plan(ep, out, eps_left, slot_iso):
         room["bible"]["look"] = room["bible"].get("look", "") + " | fix: " + "; ".join(p.get("fix", "") for p in sync["problems"][:5])
         shots = ROOM.plan_shots(room, units, d, plan, ep)
     shots = ROOM.promise_shot(shots, units, pkg)            # v8.6: the first opening Kling clip shows the thumbnail's scene
+    shots = OPEN.mark(shots, units, opn)                    # v12 V2c-b2b: the Short's picture track is laid under the first sentences (pure code; the cut-downs planned below never take these shots)
     if S("SOUND_DESIGN_ON", bool): shots = SD.plan_sounds(shots, units, SD.density_of(d["strategies"].get("sound")))      # v8.7: close textures under the shots that show them
     if not pkg.get("thumb_prompt") and (d.get("promise") or {}).get("thumb_scene"): pkg["thumb_prompt"] = d["promise"]["thumb_scene"]
     st.update("Episodes", "episode_id", ep, {"draw_json": d, "updated": iso()})          # v8.7: promise, rhythm plan, retention check, beat map, playbook flags
     rplans = ROOM.reels(room, shots, d, ep)
-    S0 = {"ep": ep, "slot": slot_iso, "d": d, "plan": plan, "room": room, "hook_rec": hook_rec, "shots": shots, "pkg": pkg, "rplans": rplans, "chs": chs,
+    S0 = {"ep": ep, "slot": slot_iso, "d": d, "plan": plan, "room": room, "hook_rec": hook_rec, "shots": shots, "pkg": pkg, "rplans": rplans, "chs": chs, "opening": opn,
           "vo": {"wav": os.path.basename(vo.wav_path), "timeline": os.path.basename(vo.timeline_path), "duration": vo.duration, "voiceprint": vo.voiceprint, "style": vo.style}}
     S0["probe"] = _probe(S0, ep, units)        # v12 V1b (D13): the promise line-up, saved with the plan so that a resume never pays it twice
     return S0
@@ -203,7 +206,7 @@ def _vo_of(S_, out):
 def _assets_state(files):
     b = os.path.basename
     return {"img": {str(i): b(p) for i, p in files["img"].items()}, "clips": {str(i): b(p) for i, p in files["clips"].items()}, "anchors": files["anchors"],
-            "urls": {str(i): u for i, u in (files.get("urls") or {}).items() if u}}      # v8.9.1: picture URLs survive a resume (no paid re-make just to get a URL)
+            "urls": {str(i): u for i, u in (files.get("urls") or {}).items() if u}, "opening": files.get("opening") or {}}      # v8.9.1: picture URLs survive a resume (no paid re-make just to get a URL)
 
 def _load_assets(out):
     """Pictures and clips restored from a checkpoint (paths re-based to this machine)."""
@@ -212,7 +215,7 @@ def _load_assets(out):
     a = json.load(open(p))
     return {"img": {int(i): os.path.join(out, n) for i, n in a["img"].items() if os.path.exists(os.path.join(out, n))},
             "clips": {int(i): os.path.join(out, n) for i, n in a["clips"].items() if os.path.exists(os.path.join(out, n))}, "anchors": a.get("anchors", []), "segments": {},
-            "urls": {int(i): u for i, u in (a.get("urls") or {}).items() if u}}
+            "urls": {int(i): u for i, u in (a.get("urls") or {}).items() if u}, "opening": a.get("opening") or {}}
 
 def anchor_shots(shots, budget, max_run=None, opening=()):
     """Which shots get a NEW picture. Kling and living clips always do; then the Director's hero shots (consequences, new places, peaks); then the rest of the
@@ -242,11 +245,14 @@ def anchor_shots(shots, budget, max_run=None, opening=()):
         a.add((worst[1] + worst[2]) // 2 if shots[(worst[1] + worst[2]) // 2]["type"] == "still" else worst[1]); extra += 1
     return sorted(a)
 
-def _assets(shots, units, out, ep, budget=56, have=None):
+def _assets(shots, units, out, ep, budget=56, have=None, footage=None):
     """Pictures only for anchor shots, then clips. Each failed asset is retried (a Kling clip KLING_RETRY_MAX times); what still fails is reported in files['missing'] /
     files['delivered'] and judged by final QC. have = assets restored from a checkpoint: only what is missing is made (and paid for)."""
     opening = set(ROOM.opening_units(units)); anchors = anchor_shots(shots, budget, opening=sorted(opening))
     img_paths = dict((have or {}).get("img", {})); clips = dict((have or {}).get("clips", {})); img_urls = {i: u for i, u in ((have or {}).get("urls") or {}).items() if i in img_paths}
+    from whatifs import opening as OPEN                         # v12 V2c-b2b: the opening shots are cut from the Short's footage FIRST (free). A shot that cannot be cut raises here,
+    oc = OPEN.cut(shots, units, out, footage, have)             # before any picture is paid - otherwise the lines below would buy a new clip for it
+    img_paths.update(oc.get("img") or {}); clips.update(oc.get("clips") or {})
     def get_img(i):
         s = shots[i]; p = os.path.join(out, f"img{i:03d}.jpg"); last = None
         for attempt in range(2):
@@ -277,7 +283,7 @@ def _assets(shots, units, out, ep, budget=56, have=None):
         for i, c in ex.map(get_clip, need_clip):
             if c: clips[i] = c
     delivered = {"kling": sum(1 for i, s in enumerate(shots) if s["type"] == "kling" and i in clips), "living": sum(1 for i, s in enumerate(shots) if s["type"] == "living" and i in clips)}
-    return {"img": img_paths, "clips": clips, "segments": {}, "anchors": anchors, "missing": [i for i in anchors if i not in img_paths], "delivered": delivered, "urls": img_urls}
+    return {"img": img_paths, "clips": clips, "segments": {}, "anchors": anchors, "missing": [i for i in anchors if i not in img_paths], "delivered": delivered, "urls": img_urls, "opening": oc.get("opening") or {}}
 
 class Job:
     """The finishing stage's working state: what the render needs and what the QC fixes act on."""
@@ -321,6 +327,7 @@ class Job:
             return i if i in f["img"] else next((j for j in range(i, -1, -1) if j in f["img"]), i)
         targets = set(f.get("missing", [])) | {i for i in f["anchors"] if i not in f["img"]}
         if codes & {"vision_mismatch", "vision_artifact"}: targets |= {anchor_of(i) for i in idx or []}
+        foot = {i for i, s in enumerate(shots) if s.get("short")}; targets -= foot      # v12 V2c-b2b: a shot of the Short's footage is never re-made from another picture
         if "reuse_run" in codes:
             run = [i for i, s in enumerate(shots) if s["type"] == "still" and i not in self.own()]
             if run: targets.add(run[len(run) // 2])
@@ -332,7 +339,7 @@ class Job:
                 f["img"][i] = path; self._urls = getattr(self, "_urls", {}); self._urls[i] = url; done = True
                 if i not in f["anchors"]: f["anchors"].append(i)
             except Exception as e: log(f"repair of picture {i} failed: {e}", "WARN")
-        redo = {i for i in (idx or []) if "vision_artifact" in codes and i < len(shots) and shots[i]["type"] == "kling" and i in f["clips"]}      # v8.3: a Kling clip the picture judge flagged is re-made (the old one is kept if the re-make fails)
+        redo = {i for i in (idx or []) if "vision_artifact" in codes and i < len(shots) and shots[i]["type"] == "kling" and i in f["clips"] and i not in foot}      # v8.3: a Kling clip the picture judge flagged is re-made (the old one is kept if the re-make fails)
         if "kling_short" in codes or redo:
             for i, s in enumerate(shots):
                 if s["type"] != "kling" or (i in f["clips"] and i not in redo) or spent() >= cap_inr - 26: continue
@@ -414,7 +421,7 @@ def _render(job):
         if own: prev_img = own
         from whatifs.shotplan import pieces_for as _pieces_for
         opening_ = a < S("OPENING_WINDOW_SEC", float)
-        pieces = _pieces_for(dur, s["type"], opening_, ep)                    # v9.3: micro-cuts (MICRO_CUTS_ON); OFF = the v9.2 rule (1 / 2 / 3 pieces)
+        pieces = 1 if (s.get("short") and i in files["clips"]) else _pieces_for(dur, s["type"], opening_, ep)      # v12 V2c-b2b: a clip cut from the Short's footage plays whole | v9.3: micro-cuts (MICRO_CUTS_ON); OFF = the v9.2 rule (1 / 2 / 3 pieces)
         cut = [int(n_total * k / pieces) for k in range(pieces + 1)]
         cd = 0.0
         if i in files["clips"] and s["type"] in ("kling", "living"):
@@ -462,7 +469,7 @@ def _render(job):
     job.video = RN.concat(segs, os.path.join(out, "video.mp4"))
     events = []
     for i, s in enumerate(shots):
-        if s["type"] == "kling": events.append(("boom", units[i]["start"])); events.append(("riser", units[i]["start"]))
+        if s["type"] == "kling" and not (s.get("short") and i): events.append(("boom", units[i]["start"])); events.append(("riser", units[i]["start"]))      # v12 V2c-b2b: the footage opening gets ONE hit, at second 0
         elif units[i]["tag"] == "reveal": events.append(("whoosh", max(0, units[i]["start"] - 0.3)))
     if job.rx and S("REACTION_FX_ON", bool): events += RX.sfx_events(job.rx)
     if S("SOUND_IMMERSIVE_ON", bool):                                  # v8.10: sound events locked to the POV camera events (same clock, same frame)
@@ -506,7 +513,7 @@ def plan_check(S_, units):
             if not str(x.get("prompt") or "").strip(): x["prompt"] = units[i]["text"]; fixes.append(f"shot {i} had no prompt")
             if lock and lock not in x["prompt"]: x["prompt"] = x["prompt"].rstrip(". ") + ". " + lock
     for typ in ("kling", "living"):
-        idx = [i for i, x in enumerate(shots) if x.get("type") == typ]; cap = int(plan.get(typ) or 0)
+        idx = [i for i, x in enumerate(shots) if x.get("type") == typ and not x.get("short")]; cap = int(plan.get(typ) or 0)      # v12 V2c-b2b: the Short's footage is no paid scene of this plan
         for i in idx[cap:]: shots[i]["type"] = "still"; fixes.append(f"{typ} on shot {i} above the plan -> still")
     pkg = S_.get("pkg") or {}
     if not [t for t in pkg.get("titles") or [] if str(t).strip()]:
@@ -587,6 +594,8 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
         FMT.use(d.get("format") or "")                      # v12 V2a: a resumed plan is finished in the format it was written in ('' = written before formats)
         vo = _vo_of(S_, out); tl = json.load(open(vo.timeline_path)); units = tl["units"]
         S_ = plan_check(S_, units); shots = S_["shots"]          # v8.9: the last free check before any picture money is spent
+        from whatifs import opening as OPEN                     # v12 V2c-b2b: the Short's footage is fetched again where this job runs (free) and the marks are rebuilt from the rule
+        S_["opening"] = OPEN.fetch(d, out); S_["shots"] = shots = OPEN.mark(shots, units, S_["opening"])
         from whatifs.org import audience as AUD                 # v12 V1 (D13): the viewer's seat - free repairs BEFORE the Animation Director places its scenes
         shots = ORG.work("D13", "seat", ep, lambda b: AUD.shape(S_["shots"], units, S_.get("pkg") or {}), measure=AUD.m_shape); S_["shots"] = shots
         if S_.get("probe") is None: S_["probe"] = _probe(S_, ep, units)          # v12 V1b: a plan saved before the layman test carries no line-up yet
@@ -595,7 +604,7 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
         if not any(s_.get("promise") for s_ in shots):                 # v11.1 fix: the Animation Director re-places the scenes and can drop the promise
             shots = ROOM.promise_shot(shots, units, S_.get("pkg") or {}); S_["shots"] = shots       # flag (v8.6) - re-aim the opening scene again
         from whatifs import contract as CON                     # v10.2 (K151): every script-stage promise checked BEFORE any picture is paid for
-        g = ORG.work("D8", "script_gate", ep, lambda b: CON.run("script", {"d": d, "room": S_["room"], "hook_rec": S_.get("hook_rec"), "ep": ep, "shots": shots, "units": units, "pkg": S_.get("pkg") or {}, "probe": S_.get("probe")}, ep),
+        g = ORG.work("D8", "script_gate", ep, lambda b: CON.run("script", {"d": d, "room": S_["room"], "hook_rec": S_.get("hook_rec"), "ep": ep, "shots": shots, "units": units, "pkg": S_.get("pkg") or {}, "probe": S_.get("probe"), "opening": S_.get("opening")}, ep),
                      measure=WR.m_gate, lesson=WR.gate_lessons, emit=WR.gate_memos(ep, "script"), settle=WR.gate_settle(ep, "script"))
         if not g["ok"]:
             st.update("Episodes", "episode_id", ep, {"status": "HOLD_QC", "notes": CK.set_attempts("contract hold (script): " + ", ".join(f for f, _ in g["failed"]), 1), "updated": iso()})
@@ -606,7 +615,8 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
         have = _load_assets(out) if stage in ("assets", "hold") else None
         try: refresh_spend()
         except Exception: pass
-        files = ORG.work("D6", "assets", ep, lambda b: _assets(shots, units, out, ep, budget=d["stills"] + plan["living"] + plan["kling"], have=have), measure=WR.m_assets)
+        files = ORG.work("D6", "assets", ep, lambda b: _assets(shots, units, out, ep, budget=d["stills"] + plan["living"] + plan["kling"] + len(OPEN.marked(shots)), have=have, footage=S_.get("opening")),
+                         measure=lambda f_: dict(WR.m_assets(f_), **OPEN.m_cut(f_)))
         need_img = files["anchors"]; miss = [i for i in need_img if i not in files["img"]]
         log(f"images: {len(files['img'])} for {len(shots)} shots (budget {d['stills'] + plan['living'] + plan['kling']}, Kling delivered {files['delivered']['kling']}/{plan['kling']})")
         if need_img and len(miss) / len(need_img) > 0.15:
@@ -716,7 +726,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     clips = list((files.get("clips") or {}).values()) if isinstance(files.get("clips"), dict) else list(files.get("clips") or [])
     cctx = {"d": d, "room": room, "ep": ep, "title": title, "master": master, "timeline": tl, "clips": [c if isinstance(c, str) else (c or {}).get("path") for c in clips],
             "holds": holds, "qc_info": chk.get("info") or {}, "thumb": thumb, "thumb_b": thumb_b, "thumb_ok": okt or have_art, "pkg": pkg, "chapters": chs, "reel_files": reel_files,
-            "shots": S_.get("shots"), "units": units}                                          # v11: the promise check reads the shot plan
+            "shots": S_.get("shots"), "units": units, "opening": files.get("opening")}          # v11: the promise check reads the shot plan; v12 V2c-b2b: and check opening_shown the opening's record
     pre = CON.run("final", dict(cctx, critique={"hook": 10, "clarity": 10, "humour": 10, "visual_variety": 10, "audio": 10, "accuracy": 10}), ep, write=False)   # measured checks first (not logged)
     cctx["ledger_rows"] = pre["rows"]; cctx["critique"] = CON.critique(cctx, ep)
     g = ORG.work("D8", "final_gate", ep, lambda b: CON.run("final", cctx, ep), measure=WR.m_gate, lesson=WR.gate_lessons, emit=WR.gate_memos(ep, "final"), settle=WR.gate_settle(ep, "final"))

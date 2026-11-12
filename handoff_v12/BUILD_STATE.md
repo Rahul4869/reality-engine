@@ -355,6 +355,17 @@ F. (ORIGINAL, CHOSEN) THE PROVEN OPENING UNDER THE LONG VIDEO'S OWN VOICE, IN TH
   do not fit beside four long videos (open issue 83, V2d).
 - NOT IN V2c-b2b1, on purpose: the cut-down reels (V2c-b2b2); the long video's thumbnail tied to the Short's first picture
   (V2b / V1c: one story across title, thumbnail and first seconds); a 16:9 re-make of the footage (V2d may price it).
+- CORRECTED BY THE BUILD (found by the FIRST fake long video that walked the new path; each written here before the edit that fixes it):
+  (1) THE MEASURE ON THE FINISHED FILM COULD NOT RECOGNISE ITS OWN FOOTAGE. The difference hash of research 7 said "22 to 26 of 64
+  points differ" (limit 12) on frames that visibly show the same picture: in a trial-format video the renderer lays a dark vignette,
+  grain, rain and a "REC" stamp over the opening, and a 9 x 8 grey copy of a smooth picture follows the vignette, not the picture.
+  A check that holds a finished, paid video must recognise what is wrong, not what is graded. The measure becomes the correlation of
+  the DETAIL of both frames (each grey copy minus its own blur, so brightness, vignette and tint drop out), limit set from measured
+  pairs - the same footage against other pictures. (2) THE CUT-DOWNS LOST EVERY SHOT: with the opening shots taken out of their
+  choice, a cut-down that had chosen them fell under the four shots it needs and none was made (check `shorts` then held the
+  video). A cut-down's footage shot is REPLACED by the next free shot of the long video's own pictures, and the footage shots are
+  not offered to the planner at all. (3) My parameter `opening` of the assets stage was shadowed by a local of the same name (the
+  set of opening units): the first run crashed before anything was paid. Renamed.
 
 ### V2c-b2a - THE PLATFORMS (12 Nov 2026) - ACCEPTED (final code commit 3619c81 GREEN in GitHub Checks run 117: 1392 passed; sweep 58 of 58 ids)
 The owner: "continue in new session" (12 Nov 2026). V2c-b2 was SPLIT AT ITS START (rule 6): V2c-b2a is how a finished Short reaches

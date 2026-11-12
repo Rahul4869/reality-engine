@@ -47,6 +47,7 @@ LEVERS = {
     "SHORTS_PER_WEEK": _n("int", 1, 5, 1, "up", COST), "SHORTS_PER_MONTH": _n("int", 4, 20, 2, "up", COST),                       # v12 V2c-b: the cadence in weeks (the Shorts Studio)
     "SHORTS_BREAKOUT_X": _n("float", 2, 10, 1, "down", COST), "FOLLOWUP_WITHIN_H": _n("int", 24, 96, 24),                          # the double-down line and its clock
     "LADDER_WINDOW_DAYS": _n("int", 14, 60, 7, "", "", ("topic_ladder",)), "LADDER_MIN_ENGAGED": _n("int", 0, 500, 50, "", "", ("topic_ladder",)),   # v12 V2c-b: the promote rule (Growth and Learning)
+    "OPENING_FIT": _e(("auto", "fill", "whole"), (), "", ("opening_shown",)), "OPENING_ENLARGE_MAX": _n("float", 1, 3, 0.5, "up", GATE, ("opening_shown",)),   # v12 V2c-b2b: the opening window (Visual Production); wider = softer
     "REEL1_DELAY_MIN": _n("int", 0, 120, 30), "REEL2_DELAY_MIN": _n("int", 60, 1440, 180), "NEXT_LINK_ON": _b(),
     "IG_TRIAL_REELS_ON": _b(checks=("release_sheet",)), "SHORT_THUMB_ON": _b(checks=("release_sheet",)),      # v12 V2c-b2: two rows of a Short's release sheet (reach trials: neither costs money nor weakens a gate)
     "BRAIN_ON": _b("off", "the channel stops learning from its own videos"), "BRAIN_HOLDOUT": _n("float", 0.05, 0.5, 0.1),
