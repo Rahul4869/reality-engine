@@ -658,9 +658,15 @@ def _world_of_unit(u):
     try: return SD._world_of(u) or None
     except Exception: return None
 
+def reaction_events(units, shots):
+    """The reaction moments whose effect the renderer draws (a punch-in zoom, a comic burst with a pop-up word, their sounds). v12 V2c-b2b: never on a
+    shot of the Short's footage - the opening shows the pictures real viewers stayed for as they were; the reaction LINE is still spoken."""
+    ev = RX.find_events(units) if (FE.mode() != "classic" and S("REACTION_FX_ON", bool)) else []
+    return [e for e in ev if not (0 <= int(e.get("i", -1)) < len(shots or []) and shots[int(e["i"])].get("short"))]
+
 def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     d, room, shots, pkg, rplans, chs, hook_rec = S_["d"], S_["room"], S_["shots"], tidy_pkg(S_["pkg"]), S_["rplans"], S_["chs"], S_["hook_rec"]
-    rx = RX.find_events(units) if (FE.mode() != "classic" and S("REACTION_FX_ON", bool)) else []
+    rx = reaction_events(units, shots)
     job = Job(ep=ep, out=out, files=files, shots=shots, units=units, vo=vo, tl=tl, rx=rx, fps=RN.fps(), srt=os.path.join(out, "captions.srt"), overlay=None, rhythm=d.get("rhythm_plan") or {}, d=d,
               reel_shots={int(i) for rp in rplans[:4] for i in rp.get("shots", [])})
     t_r0 = time.time(); master = ORG.work("D6", "render", ep, lambda b: job.render_all(), measure=WR.m_render); RN.srt(tl, job.srt)

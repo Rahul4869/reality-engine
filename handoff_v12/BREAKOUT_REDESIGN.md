@@ -4,7 +4,7 @@ rejected the first live video (item 16). This page OVERRIDES `01` section 1 ("co
 the department list in `01` section 2 wherever they differ. The budget is unchanged: Rs 5,000 a month for everything.
 Status: DESIGN (research + designs + decisions). Built so far: V1a (11 Nov 2026). The batches in section 6 build the rest, one per owner
 "continue". SECTION 10 (the owner's item 19, same day) amends sections 4-7. SECTION 11 (his item 20, same night) amends them again -
-Shorts first, the motion ladder, the human kit, the release sheet, a new order of batches: READ SECTION 11 FIRST. Built so far: V1a, V1b, V2a, V2c-a (the Short as a product), V2c-b1 (the ladder), V2c-b2a (the platforms - `BUILD_STATE.md` says whether it is accepted); their end notes are the last entries of 11.10.
+Shorts first, the motion ladder, the human kit, the release sheet, a new order of batches: READ SECTION 11 FIRST. Built so far: V1a, V1b, V2a, V2c-a (the Short as a product), V2c-b1 (the ladder), V2c-b2a (the platforms), V2c-b2b1 (the opening - `BUILD_STATE.md` says whether it is accepted); their end notes are the last entries of 11.10.
 
 ## 0. THE HONEST FRAME
 - Nobody can make a channel a sure shot. Of 137,355 new long-video channels, 30.8% got even ONE video past 10,000 views in their first ten (R1).
@@ -659,3 +659,33 @@ channels reach 10 million views; any measured reach effect of Meta's AI label; a
   H20 (a Trial Reel reaches more non-followers than a normal Reel of the same Short format) and H21 (a Short with its own thumbnail
   gets more views from the channel page and search). O13 - an account with almost no followers: a Trial Reel that never graduates may
   leave the Instagram profile empty; `IG_TRIAL_REELS_ON` is a lever of Publishing, watched at the pilot.
+- ORDER UPDATE (V2c-b2b1, 12 Nov 2026): V2c-b2b was split at its start. V2c-b2b1 built THE OPENING (a long video about a promoted Short
+  opens on that Short's kept footage: the pictures real viewers stayed for, its first line the Short's own hook, two checks);
+  V2c-b2b2 builds THE CUT-DOWNS (the cut-down reels stop being the product; what stays goes out through `whatifs/release.py`). Then
+  V2d, V3 (go live), V2b, V1c, V4, V5, B6b-B10: twelve batches remain.
+  WHAT THE BUILD CHANGED IN THIS SECTION, with reasons (the record is in `BUILD_STATE.md`): (1) 11.4 "whose opening IS that Short's
+  footage" and 4.2 "its first 30-40 seconds ARE the hook": the PICTURES and the FIRST LINE are the Short's; the other words are the
+  long video's own. A Short is a complete looping story (11.4): replayed whole it would end where a long video must begin, and a
+  viewer who came from it would watch it twice. (2) 4.2 point 2 "vertical and horizontal cut from the same clips" cannot be one cut:
+  the clip model has no field for a clip's shape (R48), so the footage is upright and a 16:9 window keeps a third of it. It is shown
+  through ONE window whose width follows the clip's measured sharpness (`OPENING_FIT`; `OPENING_ENLARGE_MAX` is a lever), on a
+  blurred copy of itself where the window does not fill the frame (R49, R50). (3) The opening lasts as long as the Short's own
+  footage - 13 to 17 seconds in the offline runs - not 30 to 40. (4) 11.5 "the opening (shared with its Short), three peaks" is
+  literal now: three scenes are bought, at the later anchors, and no hook lab is run. (5) A long video whose archive is missing is
+  HELD for the owner's one tap before any picture is paid - never made quietly with other pictures. (6) Found by building, not
+  planned: the cut-downs that still exist never take a footage shot (they would be the Short uploaded a second time, R26), and the
+  first still after the opening is always a picture of the video's own (a still re-uses the nearest earlier picture - after the
+  opening that would have been a frame of the footage).
+  NEW EVIDENCE (read by the build session, 12 Nov 2026): R48 E - fal, the hero clip model's page and schema: a start picture, an
+  optional end picture, 3 to 15 seconds, NO field for the shape or the size of a clip. R49 E - YouTube Official Blog, 7 Nov 2022, its
+  own design study for upright video on a wide screen: one video on "a color-sampled blurred background" beat empty sides and
+  several videos side by side. R50 O - Google Research, AutoFlip, 13 Feb 2020: a fixed crop "often lead[s] to unsatisfactory
+  results"; what does not fit is padded with a blurred copy of the frame. R51 E - YouTube Help 9314415: Intro = the share still
+  watching after 30 seconds; "experiment with different styles" for those seconds. R52 E - YouTube Help 1311392: nothing in the
+  reuse rules names a creator's own footage inside a new video. NOT FOUND: any measurement that compares a window, a blurred ground
+  and a split layout for upright footage in a wide video; any pairing of a Short's opening with its long video's first 30 seconds.
+  New H22 (a long video that opens on its Short's footage keeps more viewers to second 30 than one that opens on new pictures -
+  the videos made under an override are the comparison) and H23 (the wider window holds better than the whole clip on a blurred
+  ground). O14 - how an upright clip of the real model looks through the window can only be judged on real clips: the pilot must
+  show the owner the first long video's opening, and `OPENING_FIT` / `OPENING_ENLARGE_MAX` are set from what he and the first
+  retention curves say.

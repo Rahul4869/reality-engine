@@ -40,6 +40,8 @@ def _render_log(monkeypatch):
 def test_a_long_video_opens_on_its_shorts_footage_and_one_under_an_override_on_its_own_pictures(monkeypatch, setting, tmp_path):
     from tools.sweep import climb
     _start(monkeypatch, setting); seen = _render_log(monkeypatch); A, B, sid = "EP209902010900", "EP209902080900", "SH209902010900"
+    found = EP.RX.find_events                                                                      # a reaction moment is planted on the SECOND sentence: inside the opening (the sweep found one there on 1 id in 14)
+    monkeypatch.setattr(EP.RX, "find_events", lambda units: [e for e in found(units) if e["i"] != 1] + [{"i": 1, "t": round(float(units[1]["start"]), 2), "end": round(float(units[1]["end"]), 2), "kind": "shock", "word": "WAIT", "line": str(units[1]["text"])[:80]}])
     assert climb(core, A) is True and LAD.row(sid)["footage"]
     paid = watch(monkeypatch); r = EP.produce(_slot(10), episode_id=A); a = dict(paid); assert r.get("ok"), r
     led = _ledger(A); assert not [k for k, v in led.items() if v[0] == "FAIL"], led
@@ -51,6 +53,7 @@ def test_a_long_video_opens_on_its_shorts_footage_and_one_under_an_override_on_i
     played = dict(seen["clips"])
     for i in m:                                                                                    # every opening shot plays ONE clip, whole: its own cut of the footage, exactly as long as its sentence
         n = int(round(b[i + 1] * fps)) - int(round(b[i] * fps)); assert played.get(f"clip{i:03d}.mp4") == n and [c for c, _n in seen["clips"]].count(f"clip{i:03d}.mp4") == 1, (i, n, played.get(f"clip{i:03d}.mp4"))
+    assert 1 in m and not [x for x in core.store().rows("Reaction_Map") if x.get("episode_id") == A and float(x.get("t") or 99) < b[m[-1] + 1]]      # no reaction effect inside the footage opening: the check above compared the film there and passed
     booms = [t for k, t in seen["events"][0] if k == "boom"]; assert sum(1 for t in booms if t < b[m[-1] + 1]) == 1 and len(booms) == 4      # one hit at second 0 for the opening, one for each of the three scenes
     assert not [i for rp in S_["rplans"] for i in rp.get("shots", []) if int(i) in m] and len(r["reels"]) >= 2                              # no cut-down is made of the Short's own footage
     assert (a.get("clip_kling"), a.get("image_ref"), a.get("text:hooks", 0)) == (3, 3, 0), a                                             # three paid scenes, three start frames, no hook lab

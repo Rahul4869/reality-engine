@@ -102,7 +102,7 @@ pipeline run uses the new code. Nothing restarts.
   shot inside D6's `assets` run through `opening.fit` (the window: OPENING_FIT, OPENING_ENLARGE_MAX), and the renderer plays it as any clip. The first line is the Short's hook
   (`hooks.run_hooks(proven=...)`). Checks: `opening_footage` (script gate, `opening.plan_report`) and `opening_shown` (final gate, `opening.shown_report`: hashes on record and
   frames of the master against the clips, `opening.alike`). A shot with a `short` mark is paid already: any code that turns animated shots into stills, re-makes clips, picks
-  shots for another upload or adds a sound per animated shot must skip it (`opening.marked`). Never buy a picture for a marked shot (`cut` raises instead), never compare whole
+  shots for another upload, adds a sound per animated shot or draws an effect over a shot must skip it (`opening.marked`; the sweep found a comic burst over the footage). Never buy a picture for a marked shot (`cut` raises instead), never compare whole
   frames with a hash of a tiny copy (a vignette beat it: compare detail), never judge the window's look in fake mode - the offline clips are wide, real ones are upright. A long
   video under an override has no footage: both checks say NA. After touching any of it: `tests/test_v12_opening.py`, `tests/test_v12_opening_e2e.py` and a sweep id.
 - **New format or series idea**: enter it as an experiment arm or a Playbook trial so the data decides; never replace the whole format at once.

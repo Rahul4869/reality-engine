@@ -273,6 +273,13 @@ def test_the_paid_repair_never_remakes_a_shot_of_the_footage(monkeypatch, settin
     job.repair_assets({"vision_artifact", "vision_mismatch"}, [0, 1, 2], 80.0); assert not paid, paid                                 # the picture judge flagged three footage shots: none is bought again
     job.repair_assets({"vision_mismatch"}, [6], 80.0); assert paid == ["still"]                                                        # a picture of the video's own still is
 
+def test_no_reaction_effect_is_drawn_over_the_footage(monkeypatch, setting):
+    u = _units(); marked = OPEN.mark(_shots(), u, _man()); ev = [{"i": 2, "t": 4.5, "end": 6.9, "kind": "shock", "word": "WAIT", "line": "x"}, {"i": 7, "t": 24.0, "end": 30.9, "kind": "shock", "word": "NO", "line": "y"}]
+    monkeypatch.setattr(EP.RX, "find_events", lambda units: [dict(e) for e in ev]); monkeypatch.setattr(EP.FE, "mode", lambda: "duo"); setting("REACTION_FX_ON", "TRUE")
+    assert [e["i"] for e in EP.reaction_events(u, marked)] == [7]                                                                        # the burst and the zoom at second 4.5 would cover the Short's own picture: not drawn
+    assert [e["i"] for e in EP.reaction_events(u, _shots())] == [2, 7]                                                                   # a video that opens on its own pictures keeps every reaction effect
+    setting("REACTION_FX_ON", "FALSE"); assert EP.reaction_events(u, _shots()) == []
+
 def test_a_cut_down_never_takes_a_shot_of_the_footage(setting):
     u = _units(); marked = OPEN.mark(_shots(), u, _man())
     assert ROOM.past_footage([0, 1, 2, 6], marked) == [5, 7, 8, 6]                                                                       # each footage shot is replaced by the next free shot of the video's own pictures

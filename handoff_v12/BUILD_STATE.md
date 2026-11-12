@@ -85,26 +85,11 @@ ORDER OF BATCHES: live after three. The evidence R20-R38 is not in the Palace ye
 That turn was the DESIGN step for the whole programme (research, designs, decisions, records). Built since: V1a, V1b, V2a and V2c-a (the records are under DONE).
 
 ## NEXT
-**V2c-b2b WAS SPLIT AT ITS START (rule 6, 12 Nov 2026) INTO TWO HALVES, by dependency:** **V2c-b2b1 THE OPENING** (the long video's
-opening is its Short's footage - IN PROGRESS, its record is the first entry under DONE and says how far it is) and **V2c-b2b2 THE
-CUT-DOWNS** (the cut-down reels stop being the product - NEXT, needs its own owner "continue"; the second bullet below is its scope).
-Why two: the two halves share no code (the opening: the hook lab, the shot list, the Animation Director, the assets stage, the
-renderer, two new checks; the cut-downs: `room.reels`, the reel build, `manage.release` / `_post_reel`, two checks that go, the
-rehearsal's asserts and the older tests that count four), each needs the full loop with the 50-minute suite, the sweep and a GitHub
-run, and V2c-b2a alone - one such half - filled a session. Why the opening FIRST: a cut-down is cut from the long video's shots, and
-once the opening is the Short's own footage a cut-down made of those shots would be the Short uploaded a second time; so the opening
-decides what a cut-down may be made of (V2c-b2b1 already keeps the footage shots out of the cut-downs that still exist).
-**V2c-b2b - THE OPENING AND THE CUT-DOWNS** (`handoff_v12/BREAKOUT_REDESIGN.md` SECTION 11: 11.4 "whose opening IS that Short's footage",
-4.2 point 5, the row "Topic ladder" of 11.9; the end notes in 11.10). Full seven-step MANDATORY BATCH LOOP. Effort: High. V2c-b2 was SPLIT
-AT ITS START (rule 6, 12 Nov 2026): V2c-b2a THE PLATFORMS is the second record under DONE - check there and in `git log -5` that it is
-ACCEPTED before building on it. V2c-b2b is the LONG VIDEO'S side:
-- THE LONG VIDEO'S OPENING IS ITS SHORT'S FOOTAGE: tab `Ladder`, column footage = the Drive id of `<short id>_footage.zip` (every paid clip
-  `c<i>.mp4` as made, every start picture `f<i>.png`, `short.json` with the script, the plan and the voice timeline). The episode's draw
-  names its Short (`d["ladder"]`). The footage is VERTICAL (9:16): how it opens a 16:9 video is the design decision (open issue 96) and
-  can only be judged on real clips (the pilot). It touches the hook lab (`hooks.run_hooks`: the opening is already proven by real
-  viewers), `audience.shape` / `viewer_promise` (the first shot), `anim.pick_slots` (the opening animated scene is already paid), the
-  assets stage, the checkpoint and the render: read them first. A check must fail when a ladder episode opens with other pictures. A
-  long video made under an OVERRIDE has no Short and no footage: say what it opens with.
+**V2c-b2b2 - THE CUT-DOWNS** (`handoff_v12/BREAKOUT_REDESIGN.md`: 4.2 point 5 "one more Short is cut from its best moment", R2 / R28,
+the end notes in 11.10). Full seven-step MANDATORY BATCH LOOP. Effort: High. V2c-b2b was SPLIT AT ITS START (rule 6, 12 Nov 2026) into
+V2c-b2b1 THE OPENING - the first record under DONE: check there and in `git log -5` that it is ACCEPTED before building on it - and
+V2c-b2b2, the other half of the long video's side (the two halves share no code; the opening came first because it decides what a
+cut-down may be made of):
 - THE CUT-DOWN REELS of `whatifs/reels.py` stop being the product: `REELS_PER_VIDEO` (4), the bridge style, `room.reels` (a paid model
   call a video), `episode.py`'s reel build, `manage.release` / `_release_extra` / `_post_reel` (still the OLD upload: one text for all
   platforms, "#shorts" in title and text, nothing read back - open issue 118), checks `shorts` and `short_covers` at the final gate,
@@ -113,6 +98,15 @@ ACCEPTED before building on it. V2c-b2b is the LONG VIDEO'S side:
   Decide what stays as a pull from a long video to its Short (redesign 4.2 point 5: "one more Short is cut from its best moment"),
   retire the rest truthfully (`truth.RETIRED`, a one-time move where a live cell changes). WHATEVER STAYS GOES OUT THROUGH
   `whatifs/release.py` - never through `_post_reel`. Decide the special reels' upload (`specials._publish`) with it.
+  Since V2c-b2b1 a cut-down never takes a shot of the Short's footage (`room.past_footage`; the footage is not offered to the planner);
+  the rehearsal and the production test of the opening still expect cut-downs to be made (`len(r["reels"])`).
+What V2c-b2b1 leaves ready (use it, do not rebuild it): `whatifs/opening.py` (D6) - `fetch` (the Short's archive, measured), `lay` /
+`mark` (the footage on the shot list: `short` = {id, parts}), `marked(shots)` (the shots that are the Short's footage - any code that
+picks shots of a long video for another upload, re-makes clips or turns animated shots into stills must skip them), `fit` / `cut`
+(the window), `plan_report` / `shown_report` (checks `opening_footage`, `opening_shown`), `alike` (is this frame of a finished film
+that picture? - a measure with a limit taken from pairs known to be the same and pairs known to differ); `hooks.run_hooks(proven=)`;
+`tests/paid_calls.py:watch` and `V12V2CB2B_REMOVED` (a paid call that is REMOVED is written into the baseline like this - `room.reels`
+is next); `tools/sweep.py:opening_of` (the sweep judges every climbed id).
 What V2c-b2a leaves ready (use it, do not rebuild it): `whatifs/release.py` (D9) and tab `Release_Sheet` - `SHEET` (a row per setting and
 platform: who sets it, how it is proven), `fit`, `texts` / `text_issues`, `compare` (the receipts), `master` (only the file whose hash is
 on the record), `queue` (the hand-over is a record), `short` (D9's run `short_publish`), `gate` (D8's run `release_gate`, check
@@ -122,8 +116,8 @@ on the record), `queue` (the hand-over is a record), `short` (D9's run `short_pu
 What V2c-b1 leaves ready: `whatifs/ladder.py` (D10) and tab `Ladder` - `enter` / `keep`, `read`, `rank`, `promote`, `gate` / `refuse` /
 `override`, `pitch` / `claim` / `use`, `topic_report` (check `topic_ladder`), the follow-up orders; `brain.ingest_shorts` by processed
 day; `breakout.monitor`; `shorts2.cadence`; the rehearsal that walks the ladder (`run(ep_id=...)`) and `tools/sweep.py:climb`.
-Totals other tests and the rehearsal print today: 60 hard checks (35 script, 19 final, 5 short, 1 release), 70 levers, 167 founding Palace
-items, SHOW_CHECKS 49, 84 tabs - count them again before pinning one. The older tests run with LADDER_ON FALSE.
+Totals other tests and the rehearsal print today: 62 hard checks (36 script, 20 final, 5 short, 1 release), 72 levers, 173 founding Palace
+items, SHOW_CHECKS 51 (pinned in `tests/test_v12_exec.py`, `test_v12_rnd.py` and `test_v12_release.py`), 84 tabs - count them again before pinning one. The older tests run with LADDER_ON FALSE.
 Remember (every lesson paid for so far): every new contract check must be classified (`rnd.ORG_CHECKS` or raise `rnd.SHOW_CHECKS`, now 48);
 a department run that returns `Out` must say what it did with EVERY inbound memo; a check that can hold a video must RECOGNISE what is
 wrong (V1b: four ordinary words; V2c-a: a three-letter word); break the code on purpose and make sure a test fails - write the break list
@@ -145,8 +139,15 @@ set up ONE fault at a time; THE SWEEP MUST WALK THE NEW PATH (V2c-b2a: the sweep
 that starts from an empty Sheet had never met an upload); a hand-over is a RECORD, never a status word - and a second pass over a record that
 already carries a platform's id may only READ; put a platform's id on record the moment it returns; a scratch script written through a shell
 here-document lost its backslashes AGAIN (write every script with the file tool, even a three-line one); READ THE WHOLE BINDING
-READING ORDER FIRST (a batch was stopped by the owner for cutting it short).
-ORDER AFTER V2c-b2b (redesign 11.10): V2d THE MOTION LADDER AND THE MONEY (the hero model by value from the live listing - a model with clips
+READING ORDER FIRST (a batch was stopped by the owner for cutting it short); A MEASURE NEEDS BOTH KINDS OF PAIRS BEFORE IT GETS A LIMIT
+(V2c-b2b1: a hash of a tiny copy called the film's own footage "different" under a vignette - measure pairs known to be the same AND
+pairs known to differ first); A MARK ON A SHOT MUST BE SKIPPED BY EVERY LATER STEP THAT TOUCHES THAT KIND OF SHOT - list those steps
+by searching the type's name before the build (V2c-b2b1: the plan check, the Animation Director, the paid repair, the picture
+budget, the sound events, the cut-downs, the still that re-uses the nearest earlier picture - seven places, three found only by
+running); THE REHEARSAL HAS OLDER ASSERTS OF ITS OWN that pin what a batch changes by design: run all three rehearsals BEFORE the
+break run; A BACKGROUND COMMAND CAN BE ENDED BY THE TOOL after about ten minutes - `git status` after every break run, a break
+script keeps a copy of every file and runs in short parts, long runs are started detached (HOW TO RUN).
+ORDER AFTER V2c-b2b2 (redesign 11.10): V2d THE MOTION LADDER AND THE MONEY (the hero model by value from the live listing - a model with clips
 longer than 5 seconds ends the slowed clips of V2c-a, the living tier widened, a character drawn or absent - no black shape in any format,
 the stock rules for NASA and Pexels, `moving_share` measured on the finished file, the first-second sound of a Short, the cost model with
 every paid second - open issues 72 and 83 - and the split 4 long + 12 Shorts) -> V3 PILOT ON REAL SERVICES AND GO LIVE (three Shorts and
@@ -155,8 +156,8 @@ release sheet's one-time switches; the one-minute release card; then the new cod
 and the camera path as measured rules, F1's own ending instead of the asks code still inserts - open issue 74, the speaker chip - 75, F3
 "The walk", same-subject line-up titles - 69) -> V1c THE FLOOR, HIS VERDICT AND THE MAKER'S LINE -> V4 the CEO and the ladder (+ his input
 tab, the scoreboard, the format and Short shares) -> V5 the Breakout Observatory (Shorts first) and the aspect map with the release sheet
--> B6b -> B7 -> B8 (+ every run names its scoreboard number) -> B9 -> B10. Twelve batches remain (V2c became four); the channel runs
-the new code after the third (V2c-b2b, V2d, V3).
+-> B6b -> B7 -> B8 (+ every run names its scoreboard number) -> B9 -> B10. Twelve batches remain (V2c became five); the channel runs
+the new code after the third (V2c-b2b2, V2d, V3).
 The notes below (what B5 / B6a leave ready for the Council) stay valid for B6b:
 **B6b - The Council (C)** (01 sections 2 (C), 4, 5, 7 `council_held`; 03 "B6", second bullet). Full seven-step MANDATORY BATCH LOOP. Effort: High.
 Gathers open research / assessment / creative / owner / performance / problem memos; diverge -> blind cross-family jury -> converge -> decision
@@ -383,6 +384,15 @@ F. (ORIGINAL, CHOSEN) THE PROVEN OPENING UNDER THE LONG VIDEO'S OWN VOICE, IN TH
   first break, restores from it at every start, and runs in parts that end inside the tool's limit. 41 of the first 43 breaks
   had failed a test; the two that did not were lines that changed nothing (a special case for the whole clip that the general
   line already gives; a file test that the cut's own failure already covers) - both lines are gone.
+  (8) **FOUND BY THE SWEEP ON THE FIRST FINAL CODE COMMIT (10afffc), after a green suite of 1414 and three green rehearsals: A
+  REACTION EFFECT WAS DRAWN OVER THE FOOTAGE.** Id EP209901140910 (1 of the first 14 long-video ids) was HELD at the final gate:
+  "at 5.2 s the finished film does not show the footage of its Short: the two pictures are alike by 0.03". The check was right. A
+  reaction moment of the long video's script fell inside the opening, and the renderer drew its effect - a punch-in zoom and a
+  comic burst with a pop-up word, one second long - over the Short's picture. The pictures real viewers stayed for, covered by a
+  gimmick the Short never had (the owner on the first live video: "the whole video looked a lot gimmicky"). No test and no
+  rehearsal had a reaction inside its opening. Fixed at the cause: no code-drawn reaction effect (and none of its sounds) on a
+  shot of the footage - the line is still spoken; a test, a whole-production proof with a planted reaction, a deliberate break.
+  The final code commit moves: suite, sweep and GitHub are run again on the new one.
 
 #### Step 4 BUILD (what changed)
 - NEW `whatifs/opening.py` (D6; on `tools/repair.py` PROTECTED): `on`, `source`, `none_words`, `manifest`, `fetch`, `proven`, `bounds`,
@@ -3378,6 +3388,47 @@ Rehearsal asserts `docs_current` ran and passed.
    they open; one that is never approved leaves the ladder with the window. Issue 107 - closed: `made` is a field. Issue 109 -
    narrowed: the upload hold is in the sweep now; a crashing Short is not.
 
+123. (V2c-b2b1 -> V3, TELL THE OWNER AT THE PILOT) How an upright clip of the real model looks through the opening's window is NOT KNOWN.
+   Offline clips are wide (the offline clip maker ignores its start picture's shape), so every rehearsal and every sweep id met only
+   the case "the frame filled, nothing enlarged"; the upright cases (a 4:3 window on a blurred copy, the filled frame, the whole
+   clip) are proven on small test clips only. At the pilot: read the opening's log line of the first long video ("clips of W x H,
+   window ..., enlarged ... times"), show the owner its first 20 seconds, and set `OPENING_FIT`, `OPENING_ENLARGE_MAX` and
+   `OPENING_WINDOW_Y` from what he says and what the first retention curves show (redesign O14, H22, H23).
+124. (V2c-b2b1 -> V2b / V1c) The long video's THUMBNAIL is not tied to the Short's first picture. The promise flag sits on the first
+   footage shot, so `viewer_promise` / `promise_paid` say "the promise is on screen at 0.x s" because the Short's own promise picture
+   opens the video - nobody compares it with the thumbnail's scene. One story across title, thumbnail and first seconds is V2b / V1c.
+125. (V2c-b2b1 -> V3 / V2b) In the trial format (F2) the show's devices - the "REC" look with its vignette and grain, rain, the speaker
+   chip - are drawn over the footage opening. Check `opening_shown` recognises the footage under them (0.80 and more), but whether
+   the pictures viewers stayed for should be graded at all is a question for the owner's eye at the pilot.
+126. (V2c-b2b1, money -> V2d) The estimate before a long video still counts four hero clips and the hook lab; a video on its Short's
+   footage pays one clip, one start frame and two text calls fewer (about Rs 45-50). The estimate errs upward only. V2d's cost
+   model should count a ladder video truthfully (with issues 72 and 83).
+127. (V2c-b2b1 -> B7) A long video whose archive is missing or unreadable is held at the script gate with the owner's card. Its
+   "Rewrite" button drops the episode and the next tick starts it again - with the same missing archive it is held again; only
+   "Approve anyway" moves it (then it opens on its own pictures and is not asked again). B7's repair loop should own it: one
+   automatic re-fetch, then a card that offers only what helps.
+128. (V2c-b2b1) The opening ends with the last sentence that ENDS inside the footage, so the last seconds of the footage are usually not
+   shown (17.2 s of footage gave 12.9 to 16.5 s of opening in the rehearsals). Carrying a sentence over the footage's end would need
+   a rule about freezing or slowing: not built.
+129. (V2c-b2b1 -> V3 / V2b) The Short's hook is INSERTED before the writer's own first line (as the lab's line always was). A real
+   writer who knows the premise may open with nearly the same words; code skips the insert only when the two lines overlap 80% both
+   ways. Read the first real scripts at the pilot; V2b (the inside of a format) may hand the hook to the writers instead.
+130. (V2c-b2b1, FOUND, not this batch's -> V2d) With micro-cuts on, an animated scene of the video's OWN that is longer than 2.6 seconds
+   inside the opening window (4 seconds elsewhere) is cut into pieces of which only the first plays the clip; the others show its
+   start picture with a camera move. Part of a paid 5-second scene may so never be seen. (A footage clip is played whole since
+   this batch.) V2d measures `moving_share` on the finished file: fix it there.
+131. (V2c-b2b1, FOUND, not this batch's) Check `hook_lab` passes for a LAB line that is no longer the first spoken line:
+   `hooks.verify_in_narration` sets the status to needs_human_choice and leaves `applied` true, and the check reads only `applied`.
+   The Short's hook is judged strictly (the status must be "applied"); the lab's path was not changed here.
+132. (V2c-b2b1, the proof) NOT covered by the sweep: upright clips (123), a missing archive, an override, a retry on another machine
+   (whole-production tests and deliberate breaks only). Covered by the sweep on every long-video id: the footage fetched, laid,
+   cut, rendered and found again on the finished film.
+133. (V2c-b2b1 -> V2c-b2b2) The cut-down reels still exist and still go out the old way (issue 118); since this batch they never take a
+   footage shot. V2c-b2b2 decides what stays of them.
+134. CLOSED / narrowed in V2c-b2b1: issue 96 - closed as a design (the window is a setting and its limit a lever), open as a judgment
+   on real clips (123). Issue 65 (the promise needs an animated scene to ride on) - closed for a video on its Short's footage,
+   whose opening is always animated; open for a video under an override when the money trims every scene.
+
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`
 - Suite: `bash ../shim/runall.sh . <outdir outside repo>` (~35 min; run it in the background). Some files: `bash ../shim/runseq.sh . <outdir> test_a test_b`.
@@ -3424,6 +3475,13 @@ Rehearsal asserts `docs_current` ran and passed.
   the sweep. Nothing that `requirements.txt` pins was touched (`pip check`: no broken requirements); never upgrade a pinned package
   (standing rule 4). With node present the serial suite should report 0 skipped from now on - not seen yet; the next acceptance run
   will show it. If a parallel total ever differs from the serial one, trust the serial one, trace the difference and write it here.
+- A BACKGROUND COMMAND CAN BE ENDED BY THE TOOL after about ten minutes (12 Nov 2026, batch V2c-b2b1: a run of deliberate breaks was cut
+  off in the middle of a break and left one broken line in a code file - a kill does not run a script's "put it back"). Start anything
+  longer DETACHED - `( <command> > <log outside the repo> 2>&1 & )` in a short foreground call - and wait with a small Python loop on
+  the log's last line (at most about 9 minutes a call). A break script keeps a copy of every file before its first break, restores
+  from the copy at every start, and runs in parts of a few minutes. After ANY break run: `git status` before the next step.
+- The offline clip maker ignores the shape of its start picture: every offline clip is WIDE (the size of a long video's still), also a
+  Short's. A rule about UPRIGHT clips (the opening's window) needs test clips made upright by ffmpeg (`tests/test_v12_opening.py`).
 - git: `core.autocrlf=false` (keep LF); write files with LF. Commit identity Rahul4869 (noreply address); push with
   `GIT_TERMINAL_PROMPT=1 GCM_INTERACTIVE=always git push` (credentials are saved).
 
