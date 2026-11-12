@@ -334,6 +334,89 @@ E. (ORIGINAL, CHOSEN) THE RELEASE SHEET AS DATA, WITH A RECEIPT FOR EVERY ROW: o
   unit each). The cover is drawn by code. Drive keeps one master (about 20 MB) per Short. The paid-call counter must stay unchanged.
 - NOT IN V2c-b2a, on purpose (V2c-b2b): the long video's opening from the Short's footage; the cut-down reels (`manage._post_reel`
   still uploads them the old way, "#shorts" in title and text included); the long video's own rows of the release sheet (V3).
+- CORRECTED BY THE BUILD (found while writing and running, not in the memo above): (1) NO CAPTION TRACK FOR A SHORT. The memo listed
+  one (and 400 quota units for it). A Short's captions are burned into the picture, word by word; a caption track on top would show
+  every word twice to a viewer who has captions switched on. So the row is not on the sheet and a Short's release costs about 250
+  quota units, not 650. (2) THE HAND-OVER IS A RECORD, NOT A STATUS WORD. My first pass read a status prefix ("UPLOAD_WAITING",
+  "APPROVED", "POSTED") to decide what Publishing may send - the very fault this batch retires. A Short is handed to Publishing by a
+  row on tab `Release_Sheet` (state QUEUED, `release.queue`), written BEFORE the call that uploads; a Short that waits for the owner's
+  Approve has no such row and the pass never touches it. (3) A SECOND PASS MUST ONLY READ. As first written, a later pass over a
+  platform that was up and still had a waiting row would have posted the Reel a SECOND time on Instagram and Facebook (only the
+  YouTube path looked at the id it already had). Found by reading before any test ran; now a record with a platform's id is only read
+  back, and three tests count the uploads. (4) A CRASH AFTER "MADE" IS NO CRASHED SHORT: the record is appended the moment the file
+  is kept, before the ladder and the hand-over; a failure after that never writes a second row. (5) Tags: the format's name is no
+  search tag - a Short's tags are its hashtags' words and "what if".
+#### Step 4 BUILD (what changed)
+- NEW `whatifs/release.py` (D9; on `tools/repair.py` PROTECTED): `SHEET` (28 rows: 25 set by code, 1 hand, 1 once, 1 later), `on`,
+  `rows_of`, `not_ours`, `sha`, `probe`, `fit`, `hashtags`, `texts`, `text_issues`, `want_youtube`, `compare`, `state_of`, `records`,
+  `master`, `cover`, `connected`, `queue`, `short` (D9's run `short_publish`), `gate` (D8's run `release_gate`), `report` (check
+  `release_sheet`), `approved`, `settle`, the per-platform senders and the gate's memo hooks.
+- `whatifs/publish.py`: `yt_body`, `ig_reel_params`, `fb_reel_finish` (pure; the uploads send exactly what they return), `yt_read`,
+  `ig_read`, `fb_read` (the read-backs), the offline stand-in platform (`FAKE_FAULTS`, `_fake_put`, `_fake_get`); `ig_reel` takes
+  `thumb_offset_ms`, `audio_name`, `trial`, `ref`; `fb_reel` takes `ref`. An older caller sends byte for byte what it sent before (a test).
+- `whatifs/shorts2.py`: `_made` (the field), `cover`, `_keep_master`, `_hand_over`; `run` puts the Short on record the moment its file
+  is kept. Gone: `UPLOAD_HOLD` and the text match. `whatifs/specials.py`: `approve` hands a Short to Publishing (and even with the
+  release sheet switched off an approved Short now goes out under its own words). `whatifs/ladder.py`: `went_public`; a Short that is
+  made and never public is PASSED with the window. `whatifs/manage.py`: the tick calls `release.settle`; `v12v2cb2_upgrade` at both
+  setup sites. `whatifs/contract.py`: `p_release_sheet`, stage "release" (60 hard checks: 35 script, 19 final, 5 short, 1 release).
+- `whatifs/core.py`: tab `Release_Sheet` (84 tabs); 3 columns on `Specials` (made, sha, cover); 9 cells (`RELEASE_SHEET_ON`,
+  `IG_TRIAL_REELS_ON`, `IG_AUDIO_NAME`, `SHORT_THUMB_ON`, `SHORT_THUMB_WAIT_S`, `SHORT_HASHTAGS`, `RELEASE_TRIES_MAX`,
+  `RELEASE_SETTLE_H`, `V12V2CB2_MOVE_DONE`). `whatifs/org/registry.py`, `levers.py`: D9 wraps `release.py`, entries D9 `short_publish`
+  and D8 `release_gate`, the runs before the release gate, the check's owner D9, 2 levers of D9 (70 levers). `rnd.py`: SHOW_CHECKS 49.
+- `tools/rehearsal.py`: each Short of the rehearsal is released and asserted (three platforms, the master's hash on each, every row a
+  good receipt, 7 department runs). `tools/sweep.py` (`--mode short`): the Shorts are RELEASED now - before, the sweep made them with
+  `publish=False`, so the one proof that starts from an empty Sheet never met any upload path of a Short. The first Short of every id
+  is made while uploads are closed, must be made-and-waiting, loses its local file and must go out from the Drive copy when the check
+  passes; the Short under test goes out at once, and on every second id by the owner's Approve. `tools/gen_docs.py`: the release gate
+  is counted.
+- Seeds: `v2cb2.release_sheet_with_receipts`, `v2cb2.shorts_thumbnail_after_processing`, `v2cb2.a_short_is_proven_on_our_file`,
+  `v2cb2.instagram_trial_and_audio_are_sent_only`, `v2cb2.facebook_reel_limits`, `v2cb2.one_master_own_words`,
+  `v2cb2.made_is_a_field` (166 founding items; all addressed to D9 - a first try addressed two limits to D9 and D12 and pushed older
+  limits out of their playbooks: narrowed, as HOW TO RUN says).
+- Docs: 5 matrix rows, the ledger (the V2c-b2a paragraph), `CONCEPT.md` (a section on the platforms), 4 dated platform facts, the
+  builders' recipe "The platforms" in `CLAUDE.md`, `SYSTEM.md` regenerated.
+#### Step 5 ENFORCE (rule -> executing code -> fails when broken)
+| Rule | Executed by | Fails when broken |
+|---|---|---|
+| One master, three native uploads; only the master is ever sent | `shorts2._keep_master`, `release.master`, `release._one` | `release_sheet` (rows `file`, a platform that never went up); tests (a changed Drive copy is refused before any upload) |
+| Every row code sets has a receipt from the platform's own answer | `publish.yt_body` / `ig_reel_params` / `fb_reel_finish`, `yt_read` / `ig_read` / `fb_read`, `release.compare` | `release_sheet` (DRIFT, REFUSED, WAITING, a missing receipt) |
+| A row the platform shows nothing back for is SENT, never "kept"; a hand-only row is never counted | `release.SHEET` (proof `sent`; who `hand` / `once` / `later`), `release.not_ours` | tests on the sheet and on the evidence text |
+| Each platform its own words; no ask, courtroom word or link | `release.texts`, `release.text_issues` in `compare` | `release_sheet` (a bad text is DRIFT even when kept); tests |
+| The thumbnail only after processing; what waits is finished by the tick | `release._extras_youtube`, `release.settle` in `manage.tick` | tests (no call while processing; set after; REFUSED after `RELEASE_SETTLE_H`) |
+| One path: fresh, approved, late | `shorts2._hand_over`, `specials.approve` -> `release.approved`, `release.settle` -> `release.short` | tests; `python -m whatifs.org.runner` RED when the call site is gone; the sweep (all three ways) |
+| Nothing is posted twice | a record with a native id is only read back | three tests count the uploads |
+| MADE is a field | `shorts2._made`, `_keep_master`, `manage.v12v2cb2_upgrade` | tests (any status with the field counts; none without it) |
+| The file fits the platform or is not sent there | `release.fit` | tests (95 s: not to Facebook; 200 s: not to YouTube and the check fails) |
+#### Step 6 PROVE (in progress - what is written here is done; what is owed is named at the end)
+- FOUND BY THE BREAK LIST, BEFORE ANY BREAK RAN (the list is written as "what would fail if this line went?"): (1) THE CHECK COULD PASS A
+  SHORT THAT NEVER REACHED YOUTUBE. `release.report` excused every platform whose record said "not connected" - YouTube too - and its
+  test passed for another reason (an Instagram row I had left WAITING a line earlier made the check fail anyway). YouTube is the
+  product: a record that is OFF, QUEUED, RETRY, FAILED or SKIPPED there now fails the check ("never went up"), and the test tries each
+  of the five after proving that the same state on Instagram IS excused. (2) Three tests were missing and were written first: a repair
+  that YouTube accepts and does not apply (the receipt must stay DRIFT: a repair counts only when the platform shows it); every sender
+  called again with a record that already carries the platform's id (no upload - the guard tried with the case built to defeat it);
+  and the tick's hook proven by running the REAL tick job (an approved Short that waits while uploads are closed, then goes out).
+- `tests/test_v12_release.py`: **32 tests**, each rule both ways - the sheet as data (who, proof, the three rows that are not the
+  machine's); the three request bodies field by field, and an older caller's request unchanged; where a file fits (every limit at its
+  edge); the words per platform and the four things recognised as wrong (ordinary sentences are not); the receipts (kept, drift, sent;
+  a bad text is drift even when kept); the REAL production (three native ids, the master's hash on each, every row a good receipt,
+  7 department runs, the gate's evidence, the ladder's clock; a second pass uploads nothing and pays nothing); the cover; a dropped AI
+  field repaired once, a repair that is refused, a repair that does not hold, the memo to Publishing and its closing by the next clean
+  Short; other words shown than sent; an upload that comes back private (the lock trips); the thumbnail waiting for processing, the
+  pass asking without starting a run, finishing once, judging once; a thumbnail never settable or refused; made while uploads are
+  closed - made, counted, waiting, sent later from the Drive copy; a changed Drive copy refused before any platform; a platform that
+  fails - tried again, bounded, nothing twice; a failed YouTube upload leaves the Short made and waiting; the owner's Approve through
+  the same run under the Short's own words; the off switch; 95 and 200 seconds; Meta not connected; the two Instagram switches; the
+  cover link that cannot be opened; MADE as a field against every status text; a failure after "made" never a second row; the
+  one-time move; never public -> PASSED with the window; the check itself; the wiring.
+- Tests changed by design: `test_v12_ladder` (its two fixtures write `made`; the test of the upload-hold TEXT is gone - its rule is
+  proven by the field's test in the new file: 32 tests there), `test_v102` (the stage "release"), `test_v12_exec` (70 levers, 1 check
+  at the release gate), `test_v12_org` (the registry honesty test's little tree gets `release.py`).
+- Run on the working tree so far: the 8 Shorts / ladder / upload files 158 passed; the 7 docs / matrix / Palace / research / engine /
+  organisation files 331 passed; the rehearsal GREEN once (F1, Shorts in S1: "release sheet 1 / 1 on 3 platforms; 7 department runs",
+  script 35 of 35, final 19 of 19); three sweep ids of Shorts from an empty Sheet 3 of 3 (6 of 6 checks, 7 runs each).
+- OWED on the final code commit: the deliberate breaks; the rehearsal in F1 / F2 with Shorts in S1 / S2 / S3; the full suite and then
+  the sweep on a frozen copy; GitHub's Checks; step 7.
 
 ### V2c-b1 - THE LADDER (12 Nov 2026) - ACCEPTED (final code commit 3ab0e16 GREEN in GitHub Checks run 110: 1359 passed; sweep 58 of 58 ids)
 The owner: "continue" (a new session for V2c-b). V2c-b was SPLIT AT ITS START (rule 6; the note is at the top of NEXT): V2c-b1 is the ladder -

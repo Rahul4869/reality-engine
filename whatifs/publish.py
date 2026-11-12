@@ -152,7 +152,7 @@ def yt_set_label(vid, on=True):
     """v9.3.1: set status.containsSyntheticMedia on an uploaded video (videos.update, about 50 quota units). True when set."""
     if FAKE:
         ok = "label" not in (_fault("youtube", "refuse") or ())
-        if ok: _fake_put("youtube", vid, fixed={"ai": bool(on)})
+        if ok and "label" not in (_fault("youtube", "ignore") or ()): _fake_put("youtube", vid, fixed={"ai": bool(on)})      # 'ignore' = the call is accepted and nothing changes
         return ok
     try:
         r = requests.get(YT + f"videos?part=status&id={vid}", headers=gheaders(), timeout=30).json()

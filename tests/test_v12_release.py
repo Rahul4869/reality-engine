@@ -184,8 +184,11 @@ def test_a_dropped_ai_field_is_set_again_once_and_a_repair_that_does_not_hold_fa
     led = _led("SHREL05"); assert led[0]["status"] == "FAIL" and "YouTube Shorts: ai DRIFT" in led[0]["evidence"]
     ms = MEM.find(type="problem_memo", stage="release"); assert len(ms) == 1 and ms[0]["to_depts"] == ["D9"] and ms[0]["body"]["check"] == "release_sheet" and not ms[0]["episode_id"]
     assert not [x for x in core.store().rows("Owner_Actions") if x.get("kind") == "contract_hold"]       # the Short is public: nothing is held and the owner is not asked
+    PUB.FAKE_FAULTS["youtube"] = {"drift": {"ai": False}, "ignore": ("label",)}; _bench("What if the wind kept every word?")
+    r4 = SH.run(force=True, now=NOW + 72 * H, episode_id="SHREL05B"); a = _rc("SHREL05B", "youtube", "ai")
+    assert r4["ok"] and a[0] == REL.DRIFT and "did not hold" in a[1]                                    # YouTube accepted the repair and still shows no label: a repair counts only when the platform shows it
     PUB.FAKE_FAULTS.clear(); _bench("What if every mirror showed tomorrow?")
-    r3 = SH.run(force=True, now=NOW + 96 * H, episode_id="SHREL06"); assert r3["ok"] and _led("SHREL06")[0]["status"] == "PASS"
+    r3 = SH.run(force=True, now=NOW + 120 * H, episode_id="SHREL06"); assert r3["ok"] and _led("SHREL06")[0]["status"] == "PASS"
     assert not MEM.find(type="problem_memo", stage="release")                                           # the next Short whose sheet passes closes Publishing's memo
 
 def test_a_platform_that_shows_other_words_than_were_sent_is_drift(monkeypatch, setting):
@@ -293,6 +296,28 @@ def test_with_the_release_sheet_switched_off_the_old_single_path_runs_and_the_ch
     setting("SHORTS_REVIEW_FIRST_N", "9"); _bench("What if rain fell upward?"); r2 = SH.run(force=True, now=NOW + 48 * H, episode_id="SHREL19"); assert r2["status"] == "AWAITING_APPROVAL"
     assert SP.approve("SHREL19").startswith("posted") and seen[-1] and "subscribe" not in seen[-1].lower() and seen[-1].startswith(_row("SHREL19")["script"].splitlines()[0][:20])      # even the old path now posts an approved Short under its own words
 
+def test_an_approved_short_waits_when_uploads_are_closed_and_the_real_tick_sends_it(monkeypatch, setting):
+    """The hook in the tick is proven by running the real tick job, not by reading its name."""
+    n = _count(monkeypatch)
+    r = _short(monkeypatch, setting, "SHREL29", review="3", closed=True); sid = "SHREL29"
+    said = SP.approve(sid); assert "is approved and waits" in said and n["youtube"] == 0 and _row(sid)["status"].startswith("UPLOAD_WAITING")
+    assert _recs(sid)["youtube"]["state"] == REL.QUEUED                                                  # approved = handed to Publishing: on record, so no tick forgets it
+    MG.tick(); assert n["youtube"] == 0 and not _row(sid)["yt_id"]                                       # uploads are still closed
+    assert LA.upload_check() == "passed"; MG.tick()
+    assert n == {"youtube": 1, "instagram": 1, "facebook": 1} and _row(sid)["status"] == "POSTED" and _led(sid)[0]["status"] == "PASS"
+    MG.tick(); assert n["youtube"] == 1 and len(_led(sid)) == 1                                          # and the next tick finds nothing left to do
+
+def test_a_platform_that_already_has_the_short_is_only_read_never_posted_twice(monkeypatch, setting):
+    """The guard, tried with the case built to defeat it: every sender is called again with a record that already carries the platform's id."""
+    r = _short(monkeypatch, setting, "SHREL30"); row = _row("SHREL30"); rec = _recs("SHREL30"); n = _count(monkeypatch)
+    path, digest = REL.master(row, r["path"]); tx = REL.texts(row)
+    for p in REL.PLATFORMS:
+        nid, sent, got, rc = REL._SEND[p](row, path, digest, "", tx, rec[p], NOW + H)
+        assert nid == rec[p]["native_id"] and got and all(v[0] in REL.GOOD for v in rc.values()), (p, rc)
+    assert n == {"youtube": 0, "instagram": 0, "facebook": 0}
+    for p in REL.PLATFORMS: REL._SEND[p](row, path, digest, "", tx, dict(rec[p], native_id=""), NOW + H)
+    assert n == {"youtube": 1, "instagram": 1, "facebook": 1}                                            # (without an id it IS an upload: the counter can see one)
+
 # ------------------------------------------------------------------ 12. a file that does not fit a platform, a platform that is not connected, the switches
 def test_a_file_over_90_seconds_is_not_sent_to_facebook_and_never_cut_and_a_missing_meta_connection_is_no_fault(monkeypatch, setting):
     n = _count(monkeypatch); real = REL.probe; monkeypatch.setattr(REL, "probe", lambda p: dict(real(p), sec=95.0))
@@ -378,8 +403,11 @@ def test_check_release_sheet_reads_the_record_and_cannot_pass_without_one(monkey
     s, ev = CON.p_release_sheet({"release": {"id": "SHREL28"}}); assert s == CON.FAIL and "Instagram Reels: no receipt for trial" in ev      # a row without a receipt is not a row that passed
     core.store().update_where("Release_Sheet", {"id": "SHREL28", "platform": "instagram"}, {"receipts": json.dumps(dict(rec, trial=[REL.WAITING, "x"]))})
     assert CON.p_release_sheet({"release": {"id": "SHREL28"}})[0] == CON.FAIL                            # a row that still waits has not passed either
-    core.store().update_where("Release_Sheet", {"id": "SHREL28", "platform": "youtube"}, {"state": REL.OFF})
-    assert CON.p_release_sheet({"release": {"id": "SHREL28"}})[0] == CON.FAIL                            # 'not connected' excuses Instagram and Facebook, never YouTube
+    core.store().update_where("Release_Sheet", {"id": "SHREL28", "platform": "instagram"}, {"receipts": json.dumps(dict(rec, trial=[REL.SENT, "x"])), "state": REL.OFF})
+    s, ev = CON.p_release_sheet({"release": {"id": "SHREL28"}}); assert s == CON.PASS and "Instagram Reels: not connected" in ev      # 'not connected' excuses Instagram ...
+    for stt in (REL.OFF, REL.QUEUED, REL.RETRY, REL.FAILED, REL.SKIPPED):
+        core.store().update_where("Release_Sheet", {"id": "SHREL28", "platform": "youtube"}, {"state": stt})
+        s, ev = CON.p_release_sheet({"release": {"id": "SHREL28"}}); assert s == CON.FAIL and "YouTube Shorts: never went up" in ev, stt      # ... and never YouTube: a Short that is not on YouTube is not released
 
 def test_the_release_is_wired_into_the_contract_the_registry_the_levers_and_the_tick():
     from whatifs.org import registry as REG, levers as LV, rnd as RND

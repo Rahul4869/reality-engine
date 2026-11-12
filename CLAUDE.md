@@ -88,6 +88,14 @@ pipeline run uses the new code. Nothing restarts.
   the cadence, `ladder.watch` (every tick) turns an overdue order into a problem memo. The cadence is `shorts2.cadence` (`SHORTS_PER_WEEK`, `SHORTS_PER_MONTH`): a rule about WHEN a
   Short is due goes there, never back into a daily cell. The older tests run with `LADDER_ON` FALSE (`tests/conftest.py`); the ladder's tests are `tests/test_v12_ladder.py`, the
   rehearsal and the sweep walk it (`tools/sweep.py:climb` makes the Short a week ago, because the offline YouTube is as late as the real one).
+- **The platforms** (`whatifs/release.py`, department D9; tab `Release_Sheet`): a finished Short reaches a platform ONLY through `release.short` (D9's run `short_publish`) - a fresh one
+  (`shorts2._hand_over`), an approved one (`specials.approve` -> `release.approved`) and one that waited (`release.settle`, every tick). A setting of a platform = a row of `release.SHEET` (who sets
+  it, how it is proven) + its value in a PURE request-body function of `publish.py` (`yt_body`, `ig_reel_params`, `fb_reel_finish`: the upload sends exactly what they return) + its field in the
+  read-back (`publish.yt_read` / `ig_read` / `fb_read`, offline answered by the stand-in platform; `publish.FAKE_FAULTS` makes it drift, refuse or keep a video in processing) + its receipt.
+  Never call a row 'verified' that the platform does not show back (a Trial Reel, the audio name: SENT), never set a Short's thumbnail before `yt_read` says processed, never send a file that
+  `release.master` did not vouch for, never upload inside a second pass (a record with a native id is only read). Whether a Short was MADE is the field `made` on tab `Specials`
+  (`shorts2._made`); where its upload stands is `status` and the records - never read one for the other. Hand-over is a record too (`release.queue`), not a status word. The special reels and
+  the cut-down reels still use `specials._publish` / `manage._post_reel` (batch V2c-b2b). After touching any of it: `tests/test_v12_release.py` and `tools/sweep.py --mode short`.
 - **New format or series idea**: enter it as an experiment arm or a Playbook trial so the data decides; never replace the whole format at once.
 - **Knowledge Palace** (`whatifs/org/palace.py`): knowledge enters only through `palace.add` / `add_many` (dated evidence, real `applied_in` code references)
   and leaves only through `palace.playbook` (the guard runs first). Never write the `Palace_Items` tab directly, never filter statuses yourself.

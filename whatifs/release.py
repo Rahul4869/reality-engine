@@ -444,9 +444,9 @@ def report(sid, now=None):
         r = recs.get(p)
         if not r: bad.append(f"{NAMES[p]}: no record"); continue
         stt = r.get("state"); rc = r.get("receipts") or {}
-        if stt == OFF: parts.append(f"{NAMES[p]}: not connected"); continue
+        if stt == OFF and p != "youtube": parts.append(f"{NAMES[p]}: not connected"); continue          # Instagram and Facebook are optional; YouTube is the product
         if stt == SKIPPED and p != "youtube": parts.append(f"{NAMES[p]}: not sent ({str(r.get('note'))[:80]})"); continue
-        if stt in (FAILED, RETRY, SKIPPED): bad.append(f"{NAMES[p]}: never went up ({str(r.get('note'))[:100]})"); continue
+        if stt in (FAILED, RETRY, SKIPPED, OFF, QUEUED): bad.append(f"{NAMES[p]}: never went up ({str(r.get('note'))[:100]})"); continue
         miss = [k for k in rows_of(p) if k not in rc]
         wrong = [f"{k} {v[0]} ({v[1][:70]})" for k, v in rc.items() if v[0] in BAD + (WAITING,)]
         if miss: bad.append(f"{NAMES[p]}: no receipt for " + ", ".join(miss))
@@ -462,7 +462,7 @@ def approved(sid):
     """The owner approved a Short: it goes out through the same run as every other Short (its own words, its master, its cover)."""
     row = _short_row(sid)
     if not row: return f"{sid} not found"
-    store().update("Specials", "id", sid, {"status": "APPROVED"}); queue(sid)
+    store().update("Specials", "id", sid, {"status": "APPROVED"})
     out = short(sid) or {}
     return f"posted {sid}" if out.get("yt_id") else f"{sid} is approved and waits: {out.get('waiting') or 'the upload did not go through yet'}"
 
