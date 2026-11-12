@@ -237,9 +237,10 @@ def render():
     A(f"- Channel: \"Reality on Trial\" (brand Reality Engine). Concept: `docs/CURRENT/CONCEPT.md`. Owner requirements: `docs/CURRENT/OWNER_REQUIREMENTS_LEDGER.md`.")
     A(f"- Money: hard cap Rs {int(float(val('BUDGET_CEILING_INR'))):,} a month, everything included (`BUDGET_CEILING_INR`); extras pause at {val('BUDGET_GUARD_PCT')}% of the cap; "
       f"breakout fund carries over at most Rs {int(float(val('BREAKOUT_FUND_CAP_INR'))):,}. One month can be overridden in `MONTH_CAP_OVERRIDES`.")
-    short = [f for f in CON.FEATURES if f[1] == "short"]
+    short = [f for f in CON.FEATURES if f[1] == "short"]; rel = [f for f in CON.FEATURES if f[1] == "release"]
     A(f"- Quality: {len(CON.FEATURES)} HARD contract checks ({len(script)} at the script stage and {len(final)} on the final video of an episode, {len(short)} at the short gate of a "
-      f"standalone Short). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway); a held Short is simply not made. No upload below Breakout Score {val('BREAKOUT_HARD_BAR')}.")
+      f"standalone Short and {len(rel)} at its release gate, after the uploads). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway); a held Short is simply not made; "
+      f"a release row a platform did not keep is a problem memo to Publishing (the Short is public by then). No upload below Breakout Score {val('BREAKOUT_HARD_BAR')}.")
     A(f"- Writers' room: mode `{val('ROOM_MODE')}` ({val('ROOM_V2_DRAFTS')} drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.")
     A(f"- Animated scenes: {val('ANIM_SHOTS')} per long video on `{val('FAL_HERO_MODEL')}`; stills on `{val('FAL_STILL_MODEL')}`; look `{val('ART_STYLE')}`; voice engine `{val('TTS_ENGINE')}`.")
     A(f"- Cadence: at most {val('STANDARD_MAX_LONG_PER_MONTH')} long videos a month, on {val('PUBLISH_DAYS')} (US Eastern); "

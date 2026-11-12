@@ -18,12 +18,12 @@ def _bench(*premises):
 
 def _made(now, *hours_ago, held=False, brk=False):
     core.store().append("Specials", [{"ts": core.iso(now - dt.timedelta(hours=h)), "id": f"{'BRK' if brk else 'SH'}{i}{int(h)}", "kind": "short", "format": "S1",
-                                      "status": "HELD (short_plain)" if held else "POSTED", "premise": f"p{i}{h}"} for i, h in enumerate(hours_ago)])
+                                      "status": "HELD (short_plain)" if held else "POSTED", "made": "" if held else core.iso(now - dt.timedelta(hours=h)), "premise": f"p{i}{h}"} for i, h in enumerate(hours_ago)])
 
 def _short(sid, premise, age_days, now=None, eng=None, watched=70.0, subs=0, shares=0, views=None, days=5, v24=None, v48=None, follow_of=None, script="A line. Another line."):
     """A posted Short of `age_days` with its rows on Specials and the ladder, and - when it has numbers - on Analytics and Monitor48."""
     now = now or core.now_utc(); st = core.store(); ts = core.iso(now - dt.timedelta(days=age_days)); yt = "yt_" + sid
-    rec = {"ts": ts, "id": sid, "kind": "short", "title": "T " + sid, "format": "S1", "yt_id": yt, "status": "POSTED", "premise": premise, "hook": "you_pov", "script": script, "sec": 22}
+    rec = {"ts": ts, "id": sid, "kind": "short", "title": "T " + sid, "format": "S1", "yt_id": yt, "status": "POSTED", "made": ts, "premise": premise, "hook": "you_pov", "script": script, "sec": 22}
     st.append("Specials", [rec]); LAD.enter(rec, {"follow_of": follow_of} if follow_of else None, footage="")
     if eng is not None:
         first = {"days": 3, "views": int((views or eng * 2) * 0.8), "engaged": int(eng * 0.8), "watched": watched, "shares": shares, "subs": subs}
@@ -341,20 +341,6 @@ def test_a_short_whose_job_crashed_is_on_record_and_tried_again_a_day_later(monk
     r2 = SH.run(force=True, now=NOW + dt.timedelta(hours=25)); assert r2["ok"] and r2["status"] == "AWAITING_APPROVAL" and r2["premise"] == "What if the Moon left tonight?", r2.get("status")      # the crash was not one of the first Shorts he must see: the first Short that IS made still waits for his Approve
     setting("SHORTS_WEEKLY_CAP", "3"); _short("SHW", "What if the Sun went out?", 1, now=NOW); LAD.order_followup("SHW", "yt_SHW", 9000, 1000, 24, NOW)
     assert SH.order_due(NOW + dt.timedelta(hours=26))["video_key"] == "SHW"      # two Shorts were made this week, not three: under a ceiling of three the winner's follow-up is still due
-
-def test_a_short_that_was_made_and_waits_for_its_upload_counts_as_made(monkeypatch, setting):
-    """Before, the upload path's 'HELD (uploads not confirmed open)' read like a refusal at the short gate: a Short paid in full was 'not made' - the
-    cadence started another a day later, the same topic could be made again and the Short was missing from the last ten."""
-    from whatifs import specials as SP, launch as LA
-    _bench("What if the Moon left tonight?", "What if rain fell upward?"); st = core.store()
-    monkeypatch.setattr(LA, "uploads_open", lambda: False); res = SP._publish("no.mp4", "t", "SHU1")
-    assert res["status"].startswith(SH.UPLOAD_HOLD) and "yt_id" not in res, res                    # the status the upload path really writes is the one the Shorts Studio recognises
-    st.append("Specials", [{"ts": core.iso(NOW), "id": "SHU1", "kind": "short", "format": "S1", "status": res["status"], "premise": "What if the Moon left tonight?", "hook": "you_pov", "script": "A line."}])
-    row = st.rows("Specials")[-1]; assert not SH._held(row) and not SH._unmade(row)
-    ok, why = SH.cadence(NOW + dt.timedelta(hours=25)); assert not ok and "48 hours apart" in why and SH.cadence(NOW + dt.timedelta(hours=48))[0]      # it counts as made: the next comes 48 hours after it, not a day after it
-    assert [h["id"] for h in SH.history()] == ["SHU1"] and SH._spent_premises() == ({"what if the moon left tonight?"}, set())
-    assert SH.pick_topic()["premise"] == "What if rain fell upward?"                               # its topic is used: the next Short takes the next one
-    assert SH._held({"status": "HELD (short_upload_x)"}) and SH._held({"status": "HELD (short_plain)"})      # a refusal at the short gate stays one, whatever a check is called
 
 def test_one_short_id_always_draws_the_same_hook(setting):
     """A Short's hook comes from the learning core's sampler. Seeded by the Short's id it is the same on every run (a fault can be reproduced) and still varies from Short to Short."""

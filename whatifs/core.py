@@ -112,7 +112,7 @@ TABS = {
  "Model_Changes":   ["ts", "role", "from", "to", "why"],                     # v10.1 (K150): every automatic model switch
  "Viewer_Questions": ["ts", "video_id", "comment_id", "author", "text", "used"],   # v10.1 (K147)
  "Carousels":       ["ts", "episode_id", "files", "caption", "status", "ig_id"],     # v10.1 (K149)
- "Specials":        ["ts", "id", "kind", "title", "format", "ask", "yt_id", "ig", "fb", "status", "views_7d", "file", "premise", "hook", "script", "sec"],      # v11: + file (Drive id for approval; was dropped), premise     # v10 (K134): cast intro + twice-monthly special reels (format learning)           # v10 G4: localized titles/descriptions set
+ "Specials":        ["ts", "id", "kind", "title", "format", "ask", "yt_id", "ig", "fb", "status", "views_7d", "file", "premise", "hook", "script", "sec", "made", "sha", "cover"],      # v12 V2c-b2: + made (when the Short's file was finished: what counts as MADE, apart from where its upload stands), sha (of the master file), cover (Drive id)      # v11: + file (Drive id for approval; was dropped), premise     # v10 (K134): cast intro + twice-monthly special reels (format learning)           # v10 G4: localized titles/descriptions set
  "WA_Outbox":       ["ts", "wamid", "action_id", "kind", "status"],          # v9.4b: WhatsApp messages sent and their delivery status
  "WA_Chat":         ["ts", "msg_id", "who", "text"],                         # v9.4b: the owner chat (private Sheet; never in logs)                      # v9.4b: dashboard taps handled (the page clears "Queued" from these)
  "Owner_Actions":   ["id", "created", "tier", "kind", "episode_id", "text", "buttons", "default_action", "expires_at", "status", "answered_at", "answer", "channel", "delivered_at", "dedupe_key", "urgent"],      # v9.4a (WP4): every owner message, button, default and answer
@@ -163,6 +163,9 @@ TABS = {
                      "cost_inr", "note", "palace_ref"],
  "Board_Log":       ["ts", "session_id", "memo_ref", "label", "canary", "judge", "family", "role", "model", "order", "answers", "verdict"],
  # v12 V2c-b (the ladder, whatifs/ladder.py): one row per Short = one step of a topic toward its long video; an override is a row too
+ # v12 V2c-b2 (the release sheet, whatifs/release.py): one row per Short and platform - the id the platform gave, the hash of the file it was sent, what was
+ # sent, what the platform answered and a receipt for every row of the sheet (kept, fixed, drift, sent only, waiting, refused, skipped)
+ "Release_Sheet":   ["ts", "id", "platform", "kind", "native_id", "state", "sha", "sent", "got", "receipts", "tries", "checked", "note"],
  "Ladder":          ["id", "topic", "premise", "title", "format", "hook", "yt_id", "posted", "state", "evidence", "days", "views", "engaged", "watched", "shares", "subs", "first",
                      "v24", "v48", "multiple", "score", "read_at", "promoted_at", "episode_id", "footage", "by", "note"],
 }
@@ -1023,6 +1026,15 @@ DEFAULTS = {
  "LADDER_MIN_ENGAGED": ("30", "v12 V2c-b (a lever of D10): a Short with fewer engaged views than this in its first days is ranked after every Short above it, and its promotion says 'thin evidence'"),
  "FOLLOWUP_WITHIN_H": ("48", "v12 V2c-b (a lever of the Shorts Studio, D14): a winner's follow-up Short must be made within this many hours of the order; later the Shorts Studio gets a problem memo that climbs to the owner"),
  "SHORTS_WINNER_MIN_VIEWS": ("10000", "v12 V2c-b: the winner line at the 48-hour mark while the channel has fewer than BREAKOUT_MIN_HISTORY earlier Shorts to compare with (about 1 Short in 5 of a new channel reaches 10,000 views in 30 days)"),
+ "RELEASE_SHEET_ON": ("TRUE", "v12 V2c-b2 (Publishing, D9): TRUE = a Short goes out as three native uploads (YouTube Shorts, Instagram Reels, Facebook Reels) from ONE master file, every setting of the release sheet is sent by code and read back from the platform, and check release_sheet judges the receipts [FALSE = one upload through the special reels' path, nothing read back; the check does not apply]"),
+ "IG_TRIAL_REELS_ON": ("TRUE", "v12 V2c-b2 (a lever of Publishing, D9): TRUE = a Short goes to Instagram as a Trial Reel - shown to non-followers first and shared with everybody by Instagram itself when it performs well (graduation by performance). Instagram shows no field to read this back: the receipt says 'sent' [FALSE = a normal Reel, also shown in the feed]"),
+ "IG_AUDIO_NAME": ("Reality Engine", "v12 V2c-b2: the name a Short's audio gets on Instagram (the series, so that every Reel's audio page carries it; Instagram lets it be named once). Blank = Instagram's own 'Original audio'"),
+ "SHORT_THUMB_ON": ("TRUE", "v12 V2c-b2 (a lever of Publishing, D9): TRUE = a Short gets its own cover - the promise frame, drawn by code from the first picture already paid - as its YouTube thumbnail (set only after YouTube has processed the video) and as its Instagram cover [FALSE = the platforms pick a frame]"),
+ "SHORT_THUMB_WAIT_S": ("180", "v12 V2c-b2: how long the upload job waits for YouTube to finish processing a Short before it sets the thumbnail (seconds; a thumbnail set earlier may be accepted and never shown). Past it the row waits and the next tick sets it"),
+ "SHORT_HASHTAGS": ("#whatif #science", "v12 V2c-b2: the hashtags under a Short (YouTube and Facebook get the first 3, Instagram the first 5). Hashtags show no measurable link to views; they are kept few and never replace the hook"),
+ "RELEASE_TRIES_MAX": ("3", "v12 V2c-b2: how many times the upload of a Short to one platform is tried (across ticks) before it is recorded as failed and Publishing gets a problem memo"),
+ "RELEASE_SETTLE_H": ("24", "v12 V2c-b2: a row of a Short's release sheet that still waits (the thumbnail until YouTube has processed the video) after this many hours counts as not set, and check release_sheet fails"),
+ "V12V2CB2_MOVE_DONE": ("", "v12 V2c-b2: set once after the one-time move that gives every standalone Short made before it the 'made' field (blank = not done yet)"),
  "SHORT_HOLD_RETRIES": ("1", "v12 V2c: how many more times a topic is tried as a Short after the short gate held it (a held Short is never made and the owner is not asked)"),
  "V12V2C_FLIPS_DONE": ("", "v12 V2c: set once SHORTS_NEED_MASTERS moved from TRUE to FALSE where the cell still held the old default; never runs twice"),
  "V12V1_FLIPS_DONE": ("", "v12 V1: set once RUNTIME_MAX_SEC (600 -> 540) and PROMISE_BY_SEC (30 -> 5) moved where the cells still held the old defaults; never runs twice"),

@@ -12,16 +12,19 @@ FPS = 30
 
 def _rows(): return [r for r in store().rows("Specials") if r.get("kind") == "short"]
 
-UPLOAD_HOLD = "HELD (uploads"           # how the upload path marks a Short that was MADE and waits to be posted (`specials._publish`)
+def _made(r):
+    """Was this Short MADE (its file finished)? v12 V2c-b2: that is a FIELD of its record - `made`, the moment `make` delivered the file - and never a
+    word in its status: where its upload stands (posted, waiting for the owner's Approve, waiting for uploads to open, failed on a platform) says
+    nothing about whether it was made. Only on a Sheet that does not have the column yet (Setup has not run since the upgrade) the old reading
+    stands in, on the safe side: a row that is neither a refusal nor a crash counts as made, so the cadence can never run away."""
+    if "made" in r: return bool(str(r.get("made") or "").strip())
+    return not str(r.get("status") or "").startswith(("HELD", "FAILED"))
 
-def _held(r):
-    """Was this Short refused by the short gate (written, voiced, judged - and NOT made)? A Short that was made and whose upload is on hold is not:
-    it is recognised by the upload path's own status, never by a word that the name of a check could carry."""
-    s = str(r.get("status") or ""); return s.startswith("HELD") and not s.startswith(UPLOAD_HOLD)
+def _held(r): return not _made(r) and str(r.get("status") or "").startswith("HELD")          # refused by the short gate: written, voiced, judged - and NOT made
 
-def _failed(r): return str(r.get("status") or "").startswith("FAILED")      # its job crashed: nothing was made
+def _failed(r): return not _made(r) and str(r.get("status") or "").startswith("FAILED")      # its job crashed before the file was finished
 
-def _unmade(r): return _held(r) or _failed(r)
+def _unmade(r): return not _made(r)
 
 HELD_WAIT_H = 24                        # after a Short the short gate refused, the cadence tries again this many hours later (one paid writing a day at most)
 ORDER_WAIT_H = 6                        # a follow-up order that could not be made (no money, held) is tried again this many hours later
@@ -302,10 +305,25 @@ def _loop_diff(path):
     a, b = (cv2.resize(cv2.cvtColor(x, cv2.COLOR_BGR2GRAY), (90, 160)).astype(np.float32)[int(160 * LOOP_BAND[0]):int(160 * LOOP_BAND[1])] for x in (a, b))
     return round(float(np.mean(np.abs(a - b))) / 255.0, 3)
 
+def cover(frame, text, path):
+    """v12 V2c-b2: the Short's own cover, drawn by code from its FIRST picture (already paid) and the promise words - the YouTube thumbnail of the
+    Short and its Instagram cover. Upright 9:16, JPEG (Instagram takes nothing else). No plate, no logo, no ask: the picture the Short opens on."""
+    from PIL import Image, ImageDraw
+    from whatifs import specials as SP
+    from whatifs.media import font
+    W, H = SP._vsize(); im = Image.open(frame).convert("RGB"); k = max(W / im.width, H / im.height)
+    im = im.resize((int(im.width * k) + 1, int(im.height * k) + 1)); x0, y0 = (im.width - W) // 2, (im.height - H) // 2; im = im.crop((x0, y0, x0 + W, y0 + H))
+    words = " ".join(str(text or "").split()).upper()
+    if words:
+        d = ImageDraw.Draw(im); f = font(max(24, W // 10)); y = int(H * 0.12)
+        for line in SP._wrap(d, words, f, int(W * 0.88))[:3]:
+            w = d.textlength(line, font=f); d.text(((W - w) / 2 + 3, y + 3), line, font=f, fill=(0, 0, 0)); d.text(((W - w) / 2, y), line, font=f, fill=(255, 214, 0)); y += int(f.size * 1.15)
+    im.save(path, "JPEG", quality=92); return path
+
 def make(sc, v, pl, ep, wd):
     """The Short itself: each planned shot is one clip of the hero model, started on its own picture or on the frame the clip before ended on; the
     loop shot is the first clip played backwards (free); captions and the promise text are burned in; no plate at either end. Returns
-    {path, seconds, clips, pictures, loop_diff}."""
+    {path, seconds, clips, pictures, loop_diff, cover}."""
     from whatifs import specials as SP, media as MD
     W, H = SP._vsize(); sw, sh = _still_size(); shots = pl["shots"]; clips = []; paid = pics = 0
     for s in shots:
@@ -338,7 +356,10 @@ def make(sc, v, pl, ep, wd):
     out = os.path.join(wd, f"{ep}.mp4")
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error"] + inputs + ["-i", snd, "-filter_complex", ";".join(filt), "-map", "[vout]", "-map", f"{len(clips)}:a", "-t", f"{total:.2f}",
                     "-c:v", "libx264", "-preset", "veryfast", "-crf", "19", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", out], check=True, timeout=900)
-    return {"path": out, "seconds": round(total, 2), "clips": paid, "pictures": pics, "loop_diff": _loop_diff(out)}
+    cov = ""
+    try: cov = cover(os.path.join(wd, "f0.png"), str((pl.get("promise") or {}).get("text") or sc.get("title") or ""), os.path.join(wd, "cover.jpg"))
+    except Exception as e: log(f"the cover of Short {ep} was not drawn ({scrub(e)[:100]}): the platforms pick a frame", "WARN", ep)
+    return {"path": out, "seconds": round(total, 2), "clips": paid, "pictures": pics, "loop_diff": _loop_diff(out), "cover": cov}
 
 def m_make(r):
     return {k: (r or {}).get(k, 0) for k in ("seconds", "clips", "pictures", "loop_diff")}
@@ -425,17 +446,54 @@ def run(force=False, publish=True, now=None, episode_id=None):
                arm=choice.get("p_draws"), holdout=choice.get("holdout"))          # lead = the Short's FORMAT (nobody is on screen): the learning core compares S1, S2, S3
         BR.forecast(ep, "short", hook=arch)
         reviewed = sum(1 for r in _rows() if not _unmade(r))
-        if publish and reviewed < S("SHORTS_REVIEW_FIRST_N", int):
-            rec.update(SP._await_review(out, {"title": sc["title"]}, "short", ep, [{"who": "GUIDE", "line": l} for l in FMT.short_lines(sc)]))
-        elif publish: rec.update(SP._publish(out, sc["title"], ep, desc=description(sc)))
-        store().append("Specials", [rec])
+        rec.update(_keep_master(ep, out, made.get("cover"), now))      # v12 V2c-b2: MADE is a field of the record, and the master is in the owner's Drive before any platform is asked
+        store().append("Specials", [rec])                          # on record at once: whatever happens to an upload, the Short was made, counts and can still go out
         LAD.enter(rec, topic, footage)                         # v12 V2c-b: every Short is a step on the ladder - its numbers decide whether its topic gets the long video
         if brk: LAD.order_done(topic["follow_of"], ep, now)     # the order is closed with the Short that paid it (an approved long-video breakout has two)
+        if publish: rec.update(_hand_over(rec, sc, out, made.get("cover"), reviewed, now))
         log(f"Short {ep} ({fmt} '{FMT.short_name(fmt)}', hook {arch}{', holdout' if choice.get('holdout') else ''}; {made['seconds']:.0f} s, {made['clips']} clips, loop {made['loop_diff']}): "
             f"{sc['title']} -> {rec['status']}", episode=ep)
         return dict(rec, ok=True, path=out)
     except Exception as e:
+        if rec.get("made") and any(r.get("id") == ep and _made(r) for r in _rows()):      # v12 V2c-b2: it crashed AFTER the Short was made and put on record: the Short stands (one row, never a second one)
+            log(f"Short {ep} was made; a step after it failed: {scrub(e)[:200]}", "WARN", ep); return dict(rec, ok=True, path=os.path.join(WORK, ep, f"{ep}.mp4"))
         if brk: LAD.order_tried(topic["follow_of"], f"the Short failed ({scrub(e)[:100]})", now)
         try: store().append("Specials", [dict(rec, status=("FAILED (" + scrub(e)[:90] + ")")[:120])])      # v12 V2c-b: a crashed Short is on record - the cadence waits a day before the next paid try
         except Exception: pass
         log(f"Short failed (nothing posted): {scrub(e)[:200]}", "WARN", ep); return {"ok": False, "why": scrub(e)[:200]}
+
+def _keep_master(ep, out, cov, now):
+    """What makes a Short MADE on its record: the moment its file was finished (`made`), the SHA-256 of that file (`sha`) and where the master and its
+    cover are kept in the owner's Drive (`file`, `cover`) - before any platform is asked. So a Short whose upload must wait (the owner's Approve,
+    uploads not open yet, a platform down) can still go out days later, and only THIS file can. A Short is never lost because Drive was down:
+    it is made all the same, and the upload of this very job still has the file."""
+    from whatifs import publish as PUB, release as REL
+    rec = {"made": iso(now), "sha": REL.sha(out)}
+    for key, path, name in (("file", out, f"{ep}.mp4"), ("cover", cov, f"{ep}_cover.jpg")):
+        if not path or not os.path.exists(path): continue
+        try: rec[key] = "drive:" + str(PUB.drive_upload(path, name, public=False)[0])
+        except Exception as e: log(f"the {key} of Short {ep} was not kept in Drive ({scrub(e)[:100]}): it can only go out from this job", "WARN", ep)
+    return rec
+
+def _hand_over(rec, sc, out, cov, reviewed, now):
+    """A Short is made and on record; now where it goes. The first SHORTS_REVIEW_FIRST_N wait for the owner's Approve (one message with the film).
+    Every other one is handed to Publishing: D9's run `short_publish` - three native uploads of the one master, every row of the release sheet
+    read back (`whatifs/release.py`). Never raises: the Short is made whatever happens here. Returns what changed on its record."""
+    from whatifs import specials as SP, release as REL, ladder as LAD
+    ep = rec["id"]; st = store()
+    try:
+        if reviewed < S("SHORTS_REVIEW_FIRST_N", int):
+            upd = SP._await_review(out, {"title": sc["title"]}, "short", ep, [{"who": "GUIDE", "line": l} for l in FMT.short_lines(sc)])
+        elif REL.on():
+            REL.queue(ep, now); REL.short(ep, path=out, cover_path=cov, now=now)
+            row = next((r for r in _rows() if r.get("id") == ep), {}); return {k: row.get(k, "") for k in ("yt_id", "ig", "fb", "status")}
+        else:
+            upd = SP._publish(out, sc["title"], ep, desc=description(sc))
+            if upd.get("yt_id"): LAD.went_public(ep, upd["yt_id"], now)
+        st.update("Specials", "id", ep, upd); return upd
+    except Exception as e:
+        log(f"Short {ep} is made, but it could not be handed over ({scrub(e)[:160]}): Publishing's next pass takes it up", "WARN", ep)
+        upd = {"status": "UPLOAD_WAITING (the hand-over failed)"}
+        try: st.update("Specials", "id", ep, upd)
+        except Exception: pass
+        return upd

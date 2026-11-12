@@ -68,9 +68,33 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
             if not org: core.set_setting("ORG_ON", "FALSE")
             h = int(__import__("hashlib").sha1(ep.encode()).hexdigest(), 16); prem = [SHORT_PREMISES[(h + i * 7) % len(SHORT_PREMISES)] for i in range(2)]
             core.store().append("Premise_Bench", [{"bench_id": f"SW{i}", "premise": p, "status": "READY", "combined": 99 - i} for i, p in enumerate(prem)])
-            r0 = SH.run(force=True, publish=False, episode_id="SHW" + ep[2:]); r = SH.run(force=True, publish=False, episode_id=ep)
-            res["problems"] = [f"the first Short: {x}" for x in (r0.get("failed") or ([r0.get("why")] if not r0.get("ok") else []))] + [str(x) for x in (r.get("failed") or [])]
-            if r0.get("ok") and r.get("ok") and os.path.exists(str(r.get("path") or "")): res["outcome"] = "ok"; res["short"] = f"{r0.get('format')}>{r.get('format')}"
+            # v12 V2c-b2: the Shorts of the sweep are RELEASED. The first is made while nobody has proven that uploads are open (an empty Sheet whose upload
+            # check could not run): it must be MADE on its record, handed to Publishing and wait. Then the check passes, the file on this machine is gone
+            # (another job, another day) and the tick's pass must send the copy kept in Drive. The Short under test goes out at the first try.
+            from whatifs import release as REL, launch as LA
+            core.set_setting("SHORTS_REVIEW_FIRST_N", "0"); core.set_setting("UPLOAD_CHECK_AT", core.iso())      # the check 'could not run' a moment ago: it is not tried again for 6 hours
+            r0 = SH.run(force=True, publish=True, episode_id="SHW" + ep[2:]); late = []
+            if r0.get("ok"):
+                row0 = next((x for x in core.store().rows("Specials") if x.get("id") == r0["id"]), {}); rec0 = {x["platform"]: x for x in REL.records(r0["id"])}
+                if not (row0.get("made") and not row0.get("yt_id") and (rec0.get("youtube") or {}).get("state") == REL.QUEUED and SH._made(row0) and REL.settle() == []):
+                    late.append(f"a Short made while uploads were closed is not made-and-waiting (status {row0.get('status')}, record {(rec0.get('youtube') or {}).get('state')})")
+                try: os.remove(str(r0.get("path")))
+                except OSError: pass
+                LA.upload_check(); done0 = REL.settle()
+                ok0, why0 = REL.report(r0["id"]); row0 = next((x for x in core.store().rows("Specials") if x.get("id") == r0["id"]), {})
+                if not (done0 == [r0["id"]] and ok0 and row0.get("yt_id") and row0.get("status") == "POSTED" and REL.settle() == []): late.append(f"the waiting Short did not go out when uploads opened: {why0[:160]}")
+            approve = h % 2 == 1                                                         # every second id: the Short under test waits for the owner's Approve and goes out by his tap
+            if approve: core.set_setting("SHORTS_REVIEW_FIRST_N", "99")
+            r = SH.run(force=True, publish=True, episode_id=ep)
+            if approve and r.get("ok"):
+                from whatifs import specials as SPW
+                if r.get("status") != "AWAITING_APPROVAL" or REL.records(ep) or REL.settle(): late.append(f"a Short that waits for the owner's Approve was touched by Publishing (status {r.get('status')})")
+                said = SPW.approve(ep); r = dict(r, **next((x for x in core.store().rows("Specials") if x.get("id") == ep), {}))
+                if not str(said).startswith("posted"): late.append(f"the approved Short did not go out: {str(said)[:120]}")
+            okr, whyr = REL.report(ep) if r.get("ok") else (False, "not made")
+            res["problems"] = [f"the first Short: {x}" for x in (r0.get("failed") or ([r0.get("why")] if not r0.get("ok") else []))] + [str(x) for x in (r.get("failed") or [])] + late + ([] if okr or not r.get("ok") else [f"release sheet: {whyr[:200]}"])
+            if r0.get("ok") and r.get("ok") and os.path.exists(str(r.get("path") or "")) and okr and not late and r.get("status") == "POSTED":
+                res["outcome"] = "ok"; res["short"] = f"{r0.get('format')}>{r.get('format')}"; res["release"] = ("approved:" if approve else "") + "+".join(x["state"] for x in REL.records(ep))
             elif r.get("held") or r0.get("held"): res["outcome"] = "held"
             else: res["outcome"] = "odd"; res["error"] = json.dumps({k: v for k, v in dict(r0, **r).items() if k != "script"}, default=str)[:300]
         elif mode == "rehearsal":                                                   # the path GitHub's Checks run: the full rehearsal, its one time-based id replaced by the fixed one

@@ -212,6 +212,9 @@ def tick():
         try:                                                    # v12 V2c-b: a winner's follow-up that is past its clock becomes a memo for the Shorts Studio
             from whatifs import ladder as LADW; LADW.watch()
         except Exception as x: log(f"follow-up watch skipped: {scrub(x)}", "WARN")
+        try:                                                    # v12 V2c-b2: Publishing finishes what waits - a Short made while uploads were closed, a platform that failed, a thumbnail that waited for processing
+            from whatifs import release as RELW; RELW.settle()
+        except Exception as x: log(f"release settle skipped: {scrub(x)}", "WARN")
         try:                                                    # v11 (K164/K165): Monday money re-plan, weekly tool scout, month restore
             from whatifs import replan as RPL, scout as SCT; RPL.month_restore(); RPL.weekly(); SCT.weekly()
         except Exception as x: log(f"re-plan / tool scout skipped: {scrub(x)}", "WARN")
@@ -592,6 +595,8 @@ def learn():
     except Exception as x: log(f"v12 V2c flips skipped: {scrub(x)}", "WARN")
     try: v12v2cb_upgrade(st)                                     # v12 V2c-b: the Shorts cadence is set in weeks now (3 a week, 12 a month); the old cells are marked
     except Exception as x: log(f"v12 V2c-b move skipped: {scrub(x)}", "WARN")
+    try: v12v2cb2_upgrade(st)                                    # v12 V2c-b2: 'made' is a field of a Short's record now; the Shorts an older job made get it once
+    except Exception as x: log(f"v12 V2c-b2 move skipped: {scrub(x)}", "WARN")
     try:
         from whatifs import craft as CRF; CRF.seed_techniques()       # v9.3.2: the owner's pre-judged technique cards, filed once
     except Exception as x: log(f"technique seeding skipped: {scrub(x)}", "WARN")
@@ -855,6 +860,22 @@ def v12v2cb_upgrade(st):
     except Exception as x: log(f"v12 V2c-b: the re-planner's state was not cleaned ({scrub(x)[:80]})", "WARN")
     set_setting("V12V2CB_FLIPS_DONE", iso() + " " + (",".join(done) or "none"))
     if done: log("v12 V2c-b: the Shorts cadence is set in weeks now (3 a week, 12 a month); marked on the Sheet: " + ", ".join(done))
+    return done
+
+def v12v2cb2_upgrade(st):
+    """ONE time: every standalone Short an older job left on tab Specials gets the field `made` (the time on its row) - unless its status says the
+    short gate refused it or its job crashed. It is the LAST time a status text decides what was made (the old rule, word for word: a row that begins
+    with HELD is a refusal unless it is the upload path's own 'HELD (uploads ...'); from now on `shorts2._made` reads the field. Never runs twice.
+    Returns the ids it marked."""
+    if str(S("V12V2CB2_MOVE_DONE") or "").strip(): return []
+    done = []
+    for r in st.rows("Specials"):
+        s = str(r.get("status") or "")
+        if r.get("kind") != "short" or "made" not in r or str(r.get("made") or "").strip(): continue
+        if s.startswith("FAILED") or (s.startswith("HELD") and not s.startswith("HELD (uploads")): continue
+        if st.update("Specials", "id", r.get("id"), {"made": r.get("ts") or iso()}): done.append(r.get("id"))
+    set_setting("V12V2CB2_MOVE_DONE", iso() + " " + (f"{len(done)} Short(s)" if done else "none"))
+    if done: log(f"v12 V2c-b2: {len(done)} standalone Short(s) made before this version carry the field 'made' now")
     return done
 
 V12V1_FLIPS = (("RUNTIME_MAX_SEC", "600", "540"), ("PROMISE_BY_SEC", "30", "5"))
@@ -1292,6 +1313,8 @@ def setup():
     except Exception as x: log(f"v12 V2c flips skipped: {scrub(x)}", "WARN")
     try: v12v2cb_upgrade(st)                                     # v12 V2c-b: the Shorts cadence is set in weeks now (3 a week, 12 a month); the old cells are marked
     except Exception as x: log(f"v12 V2c-b move skipped: {scrub(x)}", "WARN")
+    try: v12v2cb2_upgrade(st)                                    # v12 V2c-b2: 'made' is a field of a Short's record now; the Shorts an older job made get it once
+    except Exception as x: log(f"v12 V2c-b2 move skipped: {scrub(x)}", "WARN")
     try:                                                         # v12: the founding knowledge is in the Palace from the first run
         from whatifs.org import palace as PAL, runner as ORGR; PAL.maintain(st); ORGR.install(st)
     except Exception as x: log(f"palace seed skipped: {scrub(x)}", "WARN")

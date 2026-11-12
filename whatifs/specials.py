@@ -457,10 +457,15 @@ def approve(sid, replace=False):
     from whatifs import publish as PUB
     st = store(); row = next((r for r in st.rows("Specials") if r.get("id") == sid), None)
     if not row: return f"{sid} not found"
+    desc = None
+    if row.get("kind") == "short":                               # v12 V2c-b2: a standalone Short is no special reel - it goes out through Publishing's own run, under its OWN words
+        from whatifs import release as REL                       # (before, an approved Short was posted under the special reels' text: a courtroom, a cadence, an ask)
+        if REL.on(): return REL.approved(sid)
+        desc = REL.texts(row)["youtube"]["description"]
     path = os.path.join(WORK, sid, f"{sid}.mp4"); os.makedirs(os.path.dirname(path), exist_ok=True)
     if not os.path.exists(path): PUB.drive_download(str(row.get("file", "")).replace("drive:", ""), path)
     old = [r for r in st.rows("Specials") if r.get("kind") == "cast_intro" and r.get("yt_id") and r.get("id") != sid] if replace else []
-    res = _publish(path, row.get("title") or "Reality on Trial", sid)
+    res = _publish(path, row.get("title") or "Reality on Trial", sid) if desc is None else _publish(path, row.get("title") or "Reality on Trial", sid, desc=desc)
     st.update("Specials", "id", sid, res)
     for r in old:
         try: PUB.yt_set_privacy(r["yt_id"], "private"); st.update("Specials", "id", r["id"], {"status": "REPLACED"})

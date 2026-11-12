@@ -609,6 +609,17 @@ def p_short_kept(ctx):
 
 def p_short_contract(ctx): return _org_gate(ctx, "short")
 
+def p_release_sheet(ctx):
+    """v12 V2c-b2 (Publishing, D9): the release sheet of a Short, judged AFTER its uploads from what each platform itself answered - every row code
+    sets was kept (or repaired once, or sent where the platform shows nothing back), on YouTube always and on Instagram and Facebook when they are
+    connected; the file each platform got is the one master."""
+    from whatifs import release as REL
+    if not REL.on(): return NA, "the release sheet is switched off (RELEASE_SHEET_ON)"
+    sid = str((ctx.get("release") or {}).get("id") or "")
+    if not sid: return FAIL, "nothing reached the release gate"
+    ok, why = REL.report(sid)
+    return (PASS if ok else FAIL), why[:380]
+
 def p_decisions_executed(ctx): return _exec_gate("decisions")
 def p_lever_verified(ctx): return _exec_gate("levers")
 def p_dept_contract(ctx): return _org_gate(ctx, "script")
@@ -676,6 +687,8 @@ FEATURES = [
     ("short_shape",   "short",  p_short_shape,  "a Short has its format's length, hands its last line back to the first, asks for nothing, is an animated clip in every second and loops into its first frame, captions above the buttons (the viewer's seat for a Short)"),
     ("short_kept",    "short",  p_short_kept,   "a Short is what its Short format says and is not like the last ten Shorts (Short formats as data)"),
     ("short_contract", "short", p_short_contract, "every department that worked on a Short (the Shorts Studio, Sound, Audience) ran under the department contract before the short gate"),
+    # v12 V2c-b2: stage "release" = the release gate of a standalone Short (whatifs/release.py), judged AFTER the uploads from the platforms' own answers; the Short is public by then: nothing is held
+    ("release_sheet", "release", p_release_sheet, "every setting of a Short's release sheet that code sets was kept by YouTube, Instagram and Facebook as each platform itself answers (or was repaired once), and each got the one master file (the release sheet)"),
 ]
 CRIT_KEYS = ("hook", "clarity", "humour", "visual_variety", "audio", "accuracy")
 

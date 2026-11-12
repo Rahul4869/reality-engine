@@ -56,11 +56,18 @@ def run(ep_id=None):
         rs12 = SH12.run(force=True, publish=True, now=t12, episode_id="SH" + epid[2:]); rs12b = SH12.run(force=True, publish=True, now=t12 + dt.timedelta(hours=48), episode_id="SHB" + epid[2:])
         assert rs12.get("ok") and os.path.exists(str(rs12.get("path") or "")) and rs12b.get("ok"), ("the rehearsal's Shorts were not made", {k: v for k, v in rs12.items() if k != "script"}, {k: v for k, v in rs12b.items() if k != "script"})
         sl12 = {r["feature"]: r["status"] for r in st_rows("Feature_Ledger") if r.get("episode_id") == rs12["id"]}
-        assert sl12 == {k: "PASS" for k in ("short_open", "short_plain", "short_shape", "short_kept", "short_contract")}, ("the short gate did not pass", sl12)
+        assert sl12 == {k: "PASS" for k in ("short_open", "short_plain", "short_shape", "short_kept", "short_contract", "release_sheet")}, ("the short gate or the release gate did not pass", sl12)
         ss12 = [(s["dept"], s["trigger"], s["status"]) for s in st.rows("Sessions") if s.get("episode_id") == rs12["id"]]
-        assert ss12 == [("D14", "write", "ok"), ("D7", "short_voice", "ok"), ("D13", "short_seat", "ok"), ("D8", "short_gate", "ok"), ("D14", "make", "ok")], ("a department run of the Short is missing or broken", ss12)
+        assert ss12 == [("D14", "write", "ok"), ("D7", "short_voice", "ok"), ("D13", "short_seat", "ok"), ("D8", "short_gate", "ok"), ("D14", "make", "ok"), ("D9", "short_publish", "ok"), ("D8", "release_gate", "ok")], ("a department run of the Short is missing or broken", ss12)
+        # v12 V2c-b2: THE PLATFORMS - the Short went out as three native uploads of ONE master file under Publishing's own run, and every row of its release
+        # sheet was read back from the (offline) platform: kept, or sent where a platform shows nothing back. The record says MADE in a field of its own.
+        from whatifs import release as REL12
+        rl12 = {x["platform"]: x for x in REL12.records(rs12["id"])}; sp12 = next(x for x in st.rows("Specials") if x["id"] == rs12["id"])
+        assert set(rl12) == set(REL12.PLATFORMS) and all(x["state"] == REL12.DONE and x["native_id"] and x["sha"] == sp12["sha"] and x["checked"] for x in rl12.values()), ("a platform did not get the Short, or not its master", {k: (v["state"], v["note"]) for k, v in rl12.items()})
+        assert sp12["made"] and sp12["status"] == "POSTED" and sp12["yt_id"] == rl12["youtube"]["native_id"] and sp12["file"].startswith("drive:") and sp12["cover"], ("the Short's record is incomplete", sp12)
+        assert all(k in rl12[p]["receipts"] for p in REL12.PLATFORMS for k in REL12.rows_of(p)) and not [v for p in rl12.values() for v in p["receipts"].values() if v[0] not in REL12.GOOD], "a row of the release sheet has no good receipt"
         lo12, hi12 = FMT12.short_len(rs12["format"]); assert lo12 <= float(rs12["sec"]) <= hi12 and SH12._loop_diff(rs12["path"]) <= SH12.LOOP_MAX, ("the Short has the wrong length or does not loop", rs12["sec"])
-        print("short:", rs12["id"], "format", rs12["format"], "(" + FMT12.short_name(rs12["format"]) + "), hook", rs12["hook"], ",", rs12["sec"], "s; short gate 5 / 5; 5 department runs")
+        print("short:", rs12["id"], "format", rs12["format"], "(" + FMT12.short_name(rs12["format"]) + "), hook", rs12["hook"], ",", rs12["sec"], "s; short gate 5 / 5; release sheet 1 / 1 on", len(rl12), "platforms; 7 department runs")
         lad12 = {x["id"]: x for x in LAD12.rows()}
         assert set(lad12) == {rs12["id"], rs12b["id"]} and all(x["state"] == "POSTED" and x["yt_id"] and x["footage"] for x in lad12.values()), ("a Short is not on the ladder, not posted or its footage was not kept", lad12)
         ok12, why12, _x12 = LAD12.gate(); assert not ok12 and "no numbers yet" in why12, ("a Short without numbers was promoted", why12)

@@ -39,16 +39,51 @@ def _resume_point(loc, size):
         rng = r.headers.get("Range"); return ("at", int(rng.split("-")[1]) + 1 if rng else 0)
     return None
 
-def yt_upload(path, title, description, tags, publish_at=None, made_for_kids=False, ai_label=True, short=False, privacy=None, verify=True):
-    """privacy: v9.3.1 explicit privacy (e.g. 'unlisted' for the upload check); default = private when scheduled, else public.
-    verify: v9.3.1 (L2) read the upload back (lock detector + AI-label read-back)."""
-    if FAKE: return "FAKE_" + os.path.basename(path)
+def yt_body(title, description, tags, publish_at=None, made_for_kids=False, ai_label=True, privacy=None):
+    """v12 V2c-b2: the whole request body of a YouTube upload, built WITHOUT a network call - the upload sends exactly this, in real and in offline
+    mode, so a test (and the release sheet) can read every field. privacy: default = private when scheduled, else public (never left out: YouTube
+    would decide)."""
     title, description, tags = clean_meta(title, description, tags)
     body = {"snippet": {"title": title, "description": description, "tags": tags, "categoryId": S("YT_CATEGORY"),
                         "defaultLanguage": "en", "defaultAudioLanguage": "en"},
             "status": {"privacyStatus": privacy or ("private" if publish_at else "public"), "selfDeclaredMadeForKids": made_for_kids,
                        "embeddable": True, "license": "youtube", "containsSyntheticMedia": bool(ai_label)}}
     if publish_at: body["status"]["publishAt"] = publish_at
+    return body
+
+# v12 V2c-b2: the offline stand-in for the three platforms. An offline upload keeps the request it would have sent, and the read-back functions
+# answer from it - so the release sheet's receipts are proven offline with the same code that reads the real platforms. FAKE_FAULTS lets a test make
+# a platform misbehave: {"youtube": {"drift": {"ai": False}, "processing": True, "refuse": ("thumbnail",), "fail": True}, "instagram": {...}}.
+FAKE_FAULTS = {}
+
+def _fake_file(platform, nid):
+    d = os.path.join(WORK, "_platform"); os.makedirs(d, exist_ok=True)
+    return os.path.join(d, re.sub(r"[^A-Za-z0-9_.-]", "_", f"{platform}_{nid}") + ".json")
+
+def _fake_put(platform, nid, **kw):
+    """Offline: remember what `platform` was sent for the upload `nid` (merged into what is already known). Never raises."""
+    try:
+        p = _fake_file(platform, nid); rec = {}
+        if os.path.exists(p):
+            with open(p, encoding="utf-8") as f: rec = json.load(f)
+        rec.update(kw)
+        with open(p, "w", encoding="utf-8") as f: json.dump(rec, f, ensure_ascii=False, default=str)
+    except Exception as e: log(f"offline platform record not written: {e}", "WARN")
+
+def _fake_get(platform, nid):
+    try:
+        with open(_fake_file(platform, nid), encoding="utf-8") as f: return json.load(f)
+    except Exception: return {}
+
+def _fault(platform, key, default=None): return (FAKE_FAULTS.get(platform) or {}).get(key, default)
+
+def yt_upload(path, title, description, tags, publish_at=None, made_for_kids=False, ai_label=True, short=False, privacy=None, verify=True):
+    """privacy: v9.3.1 explicit privacy (e.g. 'unlisted' for the upload check); default = private when scheduled, else public.
+    verify: v9.3.1 (L2) read the upload back (lock detector + AI-label read-back)."""
+    body = yt_body(title, description, tags, publish_at, made_for_kids, ai_label, privacy)
+    if FAKE:
+        if _fault("youtube", "fail"): raise RuntimeError("YouTube start 503: offline fault")
+        vid = "FAKE_" + os.path.basename(path); _fake_put("youtube", vid, sent=body); return vid
     session = {}                                   # v8.3: the upload session survives a retry, so a lost final answer can never create a second video
     def go():
         size = os.path.getsize(path); chunk = 64 * 1024 * 1024; sent = 0
@@ -115,7 +150,10 @@ def verify_upload(vid, want_privacy, want_publish_at=None, want_label=True):
 
 def yt_set_label(vid, on=True):
     """v9.3.1: set status.containsSyntheticMedia on an uploaded video (videos.update, about 50 quota units). True when set."""
-    if FAKE: return True
+    if FAKE:
+        ok = "label" not in (_fault("youtube", "refuse") or ())
+        if ok: _fake_put("youtube", vid, fixed={"ai": bool(on)})
+        return ok
     try:
         r = requests.get(YT + f"videos?part=status&id={vid}", headers=gheaders(), timeout=30).json()
         if not r.get("items"): return False
@@ -143,15 +181,46 @@ def yt_engaged_views(vid, start_date):
         return int(rows[0][0]) if rows and rows[0] and rows[0][0] is not None else None
     except Exception as e: log(f"engaged views unavailable for {vid}: {e}", "WARN"); return None
 
+def yt_read(vid):
+    """v12 V2c-b2: what YouTube itself says about an upload, flattened to the rows of the release sheet ({} when it cannot be read). ONE videos.list
+    call (1 quota unit). 'ai' is None when YouTube leaves the field out (it often does); 'processed' = processing has succeeded - only then may a
+    Short's thumbnail be set (thumbnails.set reference, 3 Nov 2026)."""
+    if not vid: return {}
+    if FAKE:
+        rec = _fake_get("youtube", vid); body = rec.get("sent") or {}
+        if not body: return {}
+        sn, stt = body.get("snippet") or {}, body.get("status") or {}
+        out = {"title": sn.get("title"), "description": sn.get("description"), "tags": list(sn.get("tags") or []), "category": sn.get("categoryId"),
+               "language": sn.get("defaultLanguage"), "audio_language": sn.get("defaultAudioLanguage"), "privacy": stt.get("privacyStatus"),
+               "kids": bool(stt.get("selfDeclaredMadeForKids")), "ai": stt.get("containsSyntheticMedia"), "processed": not _fault("youtube", "processing")}
+        out.update(_fault("youtube", "drift") or {}); out.update(rec.get("fixed") or {})      # a repair made after the upload wins over what the platform dropped
+        return out
+    try:
+        r = requests.get(YT + f"videos?part=snippet,status,processingDetails&id={vid}", headers=gheaders(), timeout=30).json()
+        it = (r.get("items") or [None])[0]
+        if not it: return {}
+        sn, stt = it.get("snippet") or {}, it.get("status") or {}
+        return {"title": sn.get("title"), "description": sn.get("description"), "tags": list(sn.get("tags") or []), "category": sn.get("categoryId"),
+                "language": sn.get("defaultLanguage"), "audio_language": sn.get("defaultAudioLanguage"), "privacy": stt.get("privacyStatus"),
+                "kids": bool(stt.get("selfDeclaredMadeForKids") or stt.get("madeForKids")), "ai": stt.get("containsSyntheticMedia"),
+                "processed": (it.get("processingDetails") or {}).get("processingStatus") == "succeeded"}
+    except Exception as e: log(f"read-back of {vid} failed: {e}", "WARN"); return {}
+
 def yt_thumbnail(vid, path):
-    if FAKE: return True
+    if FAKE:
+        ok = "thumbnail" not in (_fault("youtube", "refuse") or ())
+        if ok: _fake_put("youtube", vid, thumbnail=os.path.basename(str(path)))
+        return ok
     h = gheaders(); h["Content-Type"] = "image/jpeg"
     r = requests.post(UP + f"thumbnails/set?videoId={vid}", headers=h, data=open(path, "rb").read(), timeout=120)
     if r.status_code >= 400: log(f"thumbnail failed {r.status_code}: {r.text[:300]} (is the channel phone-verified?)", "WARN"); return False
     return True
 
 def yt_captions(vid, srt_path):
-    if FAKE: return True
+    if FAKE:
+        ok = "captions" not in (_fault("youtube", "refuse") or ())
+        if ok: _fake_put("youtube", vid, captions=os.path.basename(str(srt_path)))
+        return ok
     meta = {"snippet": {"videoId": vid, "language": "en", "name": "English", "isDraft": False}}
     boundary = "wi" + str(int(time.time()))
     body = (f"--{boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{json.dumps(meta)}\r\n--{boundary}\r\n"
@@ -162,7 +231,10 @@ def yt_captions(vid, srt_path):
     return True
 
 def yt_playlist(vid, name):
-    if FAKE: return True
+    if FAKE:
+        ok = "playlist" not in (_fault("youtube", "refuse") or ())
+        if ok: _fake_put("youtube", vid, playlist=str(name))
+        return ok
     try:
         r = requests.get(YT + "playlists?part=snippet&mine=true&maxResults=50", headers=gheaders(), timeout=30).json()
         pl = next((p["id"] for p in r.get("items", []) if p["snippet"]["title"] == name), None)
@@ -319,15 +391,32 @@ def _ig_finish(ig, cid):
     if "id" not in p: raise RuntimeError(f"IG publish: {p}")
     return p["id"]
 
-def ig_reel(video_url, caption, cover_url=None, video_path=None, url_fn=None):
+def ig_reel_params(caption, cover_url=None, thumb_offset_ms=None, audio_name="", trial="", ai=None):
+    """v12 V2c-b2: the parameters of an Instagram Reel container, built WITHOUT a network call (the upload sends exactly these). cover_url wins over
+    thumb_offset_ms (Instagram's own rule); audio_name names the Reel's audio (it can be named once); trial = a graduation strategy ('SS_PERFORMANCE'
+    or 'MANUAL') makes it a Trial Reel - shown to non-followers only, so share_to_feed is not sent with it; ai = Meta's AI self-disclosure
+    (None = the Settings cell META_AI_LABEL_ON)."""
+    base = {"media_type": "REELS", "caption": str(caption or "")[:2100]}
+    if trial: base["trial_params"] = json.dumps({"graduation_strategy": str(trial)})
+    else: base["share_to_feed"] = "true"
+    if (S("META_AI_LABEL_ON", bool) if ai is None else ai): base["is_ai_generated"] = "true"              # v10.1: Meta AI self-disclosure (verified 8 Nov 2026)
+    if cover_url: base["cover_url"] = cover_url
+    elif thumb_offset_ms is not None: base["thumb_offset"] = str(int(thumb_offset_ms))
+    if str(audio_name or "").strip(): base["audio_name"] = str(audio_name).strip()[:100]
+    return base
+
+def ig_reel(video_url, caption, cover_url=None, video_path=None, url_fn=None, thumb_offset_ms=None, audio_name="", trial="", ref=None):
     """Instagram Reel. v8.9.1: with video_path the file is sent directly (Instagram's resumable upload), so Meta never has to fetch it from a Drive
-    link (Drive can answer crawlers with an HTML page). Only if that fails is a public link used (url_fn makes it on demand; the caller makes it private)."""
-    if FAKE: return "FAKE_IG"
+    link (Drive can answer crawlers with an HTML page). Only if that fails is a public link used (url_fn makes it on demand; the caller makes it private).
+    ref = what this Reel is (a Short's id): offline, the stand-in platform keeps the request under it so the read-back can answer."""
+    base = ig_reel_params(caption, cover_url, thumb_offset_ms, audio_name, trial)
+    if FAKE:
+        if ref and _fault("instagram", "fail"): raise RuntimeError("IG container: offline fault")
+        mid = "FAKE_IG" + (f"_{ref}" if ref else "")
+        if ref: _fake_put("instagram", mid, sent=base)
+        return mid
     ig = S("IG_USER_ID")
     if not ig: raise RuntimeError("IG_USER_ID missing")
-    base = {"media_type": "REELS", "caption": caption[:2100], "share_to_feed": "true"}
-    if S("META_AI_LABEL_ON", bool): base["is_ai_generated"] = "true"              # v10.1: Meta AI self-disclosure (verified 8 Nov 2026)
-    if cover_url: base["cover_url"] = cover_url
     if video_path and os.path.exists(video_path):
         try:
             c = requests.post(gv() + f"{ig}/media", headers=MH(), data=dict(base, upload_type="resumable"), timeout=60).json()
@@ -343,9 +432,52 @@ def ig_reel(video_url, caption, cover_url=None, video_path=None, url_fn=None):
     if "id" not in c: raise RuntimeError(f"IG container: {c}")
     return _ig_finish(ig, c["id"])
 
-def fb_reel(video_url, description, video_path=None, url_fn=None):
-    """Facebook Reel. v8.9.1: the file's bytes go straight to rupload.facebook.com; a public link (url_fn) is only the fallback."""
-    if FAKE: return "FAKE_FB"
+def ig_read(mid):
+    """v12 V2c-b2: what Instagram itself says about a published Reel, flattened to the rows of the release sheet ({} when it cannot be read).
+    Instagram shows NO field for a Trial Reel and none for the audio name: those two rows can only be proven as sent."""
+    if not mid: return {}
+    if FAKE:
+        p = _fake_get("instagram", mid).get("sent") or {}
+        if not p: return {}
+        out = {"product": p.get("media_type"), "caption": p.get("caption"), "ai": p.get("is_ai_generated") == "true", "cover": bool(p.get("cover_url") or "thumb_offset" in p),
+               "permalink": "https://example.invalid/reel/" + str(mid)}
+        out.update(_fault("instagram", "drift") or {}); return out
+    try:
+        r = requests.get(gv() + str(mid), headers=MH(), params={"fields": "media_product_type,caption,is_ai_generated,thumbnail_url,permalink"}, timeout=30).json()
+        if "id" not in r and "media_product_type" not in r: return {}
+        return {"product": r.get("media_product_type"), "caption": r.get("caption"), "ai": r.get("is_ai_generated"), "cover": bool(r.get("thumbnail_url")), "permalink": r.get("permalink") or ""}
+    except Exception as e: log(f"read-back of Instagram {mid} failed: {e}", "WARN"); return {}
+
+def fb_reel_finish(description, vid, ai=None):
+    """v12 V2c-b2: the parameters of the call that publishes a Facebook Reel, built WITHOUT a network call (ai = Meta's AI self-disclosure; None = the
+    Settings cell META_AI_LABEL_ON)."""
+    return {**({"is_ai_generated": "true"} if (S("META_AI_LABEL_ON", bool) if ai is None else ai) else {}), "upload_phase": "finish", "video_id": vid,
+            "video_state": "PUBLISHED", "description": str(description or "")[:2000]}
+
+def fb_read(vid):
+    """v12 V2c-b2: what Facebook itself says about a published Reel ({} when it cannot be read): its description, its length and whether it is out."""
+    if not vid: return {}
+    if FAKE:
+        p = _fake_get("facebook", vid).get("sent") or {}
+        if not p: return {}
+        out = {"description": p.get("description"), "published": p.get("video_state") == "PUBLISHED"}
+        out.update(_fault("facebook", "drift") or {}); return out
+    try:
+        r = requests.get(gv() + str(vid), headers=MH(), params={"fields": "status,description,length,permalink_url"}, timeout=30).json()
+        if "status" not in r and "description" not in r: return {}
+        st = r.get("status") or {}; pub = (st.get("publishing_phase") or {}).get("publish_status")
+        return {"description": r.get("description"), "published": pub == "published" or st.get("video_status") in ("ready", "published"), "seconds": r.get("length"),
+                "permalink": r.get("permalink_url") or ""}
+    except Exception as e: log(f"read-back of Facebook {vid} failed: {e}", "WARN"); return {}
+
+def fb_reel(video_url, description, video_path=None, url_fn=None, ref=None):
+    """Facebook Reel. v8.9.1: the file's bytes go straight to rupload.facebook.com; a public link (url_fn) is only the fallback.
+    ref = what this Reel is (a Short's id): offline, the stand-in platform keeps the request under it so the read-back can answer."""
+    if FAKE:
+        if ref and _fault("facebook", "fail"): raise RuntimeError("FB start: offline fault")
+        vid = "FAKE_FB" + (f"_{ref}" if ref else "")
+        if ref: _fake_put("facebook", vid, sent=fb_reel_finish(description, vid))
+        return vid
     page = S("FB_PAGE_ID"); k = _meta_key()
     s = requests.post(gv() + f"{page}/video_reels", headers=MH(), data={"upload_phase": "start"}, timeout=60).json()
     vid = s.get("video_id")
@@ -362,8 +494,7 @@ def fb_reel(video_url, description, video_path=None, url_fn=None):
         if not video_url: raise RuntimeError("FB: no file and no link to upload")
         u = requests.post(up, headers={"Authorization": "OAuth " + k, "file_url": video_url}, timeout=300).json()
         if not u.get("success", True): raise RuntimeError(f"FB upload: {u}")
-    f = requests.post(gv() + f"{page}/video_reels", data={**({"is_ai_generated": "true"} if S("META_AI_LABEL_ON", bool) else {}), "upload_phase": "finish", "video_id": vid, "video_state": "PUBLISHED",
-                      "description": description[:2000]}, headers=MH(), timeout=60).json()
+    f = requests.post(gv() + f"{page}/video_reels", data=fb_reel_finish(description, vid), headers=MH(), timeout=60).json()
     if not f.get("success"): raise RuntimeError(f"FB finish: {f}")
     _fb_wait(vid)
     return vid

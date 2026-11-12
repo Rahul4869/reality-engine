@@ -33,9 +33,9 @@ DEPTS = {
             "wraps": ("whatifs/voice.py", "whatifs/tts_gemini.py", "whatifs/sound.py"), "levers": ("SOUND_DESIGN_ON", "TTS_ENGINE"), "takes": ()},
     "D8":  {"mission": "the Feature Contract, the Impact Map, the enforcement matrix, problem memos, the repair loop", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/contract.py", "whatifs/enforce.py", "whatifs/qc.py", "whatifs/fixes.py"), "levers": ("CONTRACT_OFF", "BREAKOUT_HARD_BAR", "CRITIQUE_MIN"), "takes": ("repair_memo",)},
-    "D9":  {"mission": "uploads, Shorts, Instagram and Facebook, schedules, spin-offs", "cadence": "episode", "cap_inr": None, "inject": "brief",
-            "wraps": ("whatifs/publish.py", "whatifs/spinoff.py", "whatifs/deeptrial.py", "whatifs/specials.py"),
-            "levers": ("REEL1_DELAY_MIN", "REEL2_DELAY_MIN", "NEXT_LINK_ON"), "takes": ()},
+    "D9":  {"mission": "uploads, the release sheet (every setting of every platform set by code and read back), one native upload of a Short per platform, schedules, spin-offs", "cadence": "episode", "cap_inr": None, "inject": "brief",
+            "wraps": ("whatifs/publish.py", "whatifs/spinoff.py", "whatifs/deeptrial.py", "whatifs/specials.py", "whatifs/release.py"),
+            "levers": ("REEL1_DELAY_MIN", "REEL2_DELAY_MIN", "NEXT_LINK_ON", "IG_TRIAL_REELS_ON", "SHORT_THUMB_ON"), "takes": ()},      # v12 V2c-b2: two rows of the release sheet
     "D10": {"mission": "analytics, technique evidence, sampling, forecasts, the 48-hour monitor, the ladder from a Short to its long video (the promote rule), the winner's follow-up", "cadence": "daily", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/brain.py", "whatifs/breakout.py", "whatifs/growth.py", "whatifs/reach.py", "whatifs/ladder.py"),
             "levers": ("BRAIN_ON", "BRAIN_HOLDOUT", "LADDER_WINDOW_DAYS", "LADDER_MIN_ENGAGED"), "takes": ()},
@@ -78,8 +78,8 @@ ENTRY = {
     "D5":  (("whatifs/episode.py", "package"),),
     "D6":  (("whatifs/episode.py", "plan"), ("whatifs/episode.py", "assets"), ("whatifs/episode.py", "render")),
     "D7":  (("whatifs/episode.py", "voice"), ("whatifs/shorts2.py", "short_voice")),      # v12 V2c: a Short is voiced by the same voice job
-    "D8":  (("whatifs/episode.py", "script_gate"), ("whatifs/episode.py", "final_gate"), ("whatifs/shorts2.py", "short_gate")),
-    "D9":  (("whatifs/episode.py", "publish"),),
+    "D8":  (("whatifs/episode.py", "script_gate"), ("whatifs/episode.py", "final_gate"), ("whatifs/shorts2.py", "short_gate"), ("whatifs/release.py", "release_gate")),      # v12 V2c-b2: the gate after a Short's uploads
+    "D9":  (("whatifs/episode.py", "publish"), ("whatifs/release.py", "short_publish")),      # v12 V2c-b2: a Short goes out through Publishing's own run
     "D10": (("whatifs/cli.py", "daily"), ("whatifs/ladder.py", "promote")),      # v12 V2c-b: the promote rule runs when a long video is about to start
     "D2":  (("whatifs/cli.py", "daily"), ("whatifs/cli.py", "weekly")),             # v12 B5: the learning job runs R&D first (daily always, weekly when due)
     "D3":  (("whatifs/cli.py", "assess"),),                                          # v12 B5: then the Review Board, whenever a research memo waits
@@ -95,8 +95,9 @@ EPISODE_RUNS = {
     "script": (("D4", "write"), ("D7", "voice"), ("D5", "package"), ("D6", "plan"), ("D13", "probe"), ("D13", "seat")),
     "final":  (("D4", "write"), ("D7", "voice"), ("D5", "package"), ("D6", "plan"), ("D13", "probe"), ("D13", "seat"), ("D8", "script_gate"), ("D6", "assets"), ("D6", "render")),
     "short":  (("D14", "write"), ("D7", "short_voice"), ("D13", "short_seat")),          # v12 V2c: a standalone Short before its own gate
+    "release": (("D9", "short_publish"),),                                                # v12 V2c-b2: a Short's uploads before its release gate
 }
-GATE_RUNS = {"script": ("D8", "script_gate"), "final": ("D8", "final_gate"), "short": ("D8", "short_gate")}
+GATE_RUNS = {"script": ("D8", "script_gate"), "final": ("D8", "final_gate"), "short": ("D8", "short_gate"), "release": ("D8", "release_gate")}
 
 # Which department owns each contract check (a failed check becomes a problem memo to that department).
 CHECK_OWNER = {
@@ -108,7 +109,7 @@ CHECK_OWNER = {
     "short_covers": "D5", "shorts": "D9", "self_review": "D8", "breakout_bar": "D1", "dept_contract": "D8", "takeaways_written": "D8",
     "decisions_executed": "C", "lever_verified": "D12", "research_cadence": "D2", "palace_injected": "D4", "palace_cited": "D4", "canon_in_brief": "D4",
     "viewer_numbers": "D13", "viewer_breath": "D13", "viewer_promise": "D13", "viewer_plain": "D13", "viewer_probe": "D13", "format_kept": "D4",
-    "short_open": "D13", "short_plain": "D13", "short_shape": "D13", "short_kept": "D14", "short_contract": "D8", "topic_ladder": "D10",
+    "short_open": "D13", "short_plain": "D13", "short_shape": "D13", "short_kept": "D14", "short_contract": "D8", "topic_ladder": "D10", "release_sheet": "D9",
 }
 
 def runnable(dept):

@@ -64,6 +64,13 @@ def enter(rec, topic=None, footage=""):
                      "footage": footage, "by": "D14", "note": (f"follow-up of {parent['id']}" if parent else "") + ("" if footage else ("; " if parent else "") + "footage not kept")}])
     return True
 
+def went_public(sid, yt_id, now=None):
+    """v12 V2c-b2: Publishing put a Short on YouTube (at once, after the owner's Approve, or when uploads opened): its ladder row gets the id and its
+    clock starts NOW - the numbers of its first days are counted from the moment viewers could see it. Once per Short."""
+    r = row(sid)
+    if not r or r.get("state") != "MADE" or not yt_id: return False
+    _set(sid, yt_id=str(yt_id), posted=iso(now or now_utc()), state="POSTED"); return True
+
 def _drop_footage(r):
     fid = str(r.get("footage") or "")
     if not fid: return
@@ -89,6 +96,10 @@ def read(now=None):
         if r.get("state") == "MADE":                                     # it waited for the owner's Approve: public once its row on tab Specials has a YouTube id
             y = str((sp.get(r["id"]) or {}).get("yt_id") or "")
             if y: upd.update(yt_id=y, posted=iso(now), state="POSTED"); r.update(upd)
+            else:                                                            # v12 V2c-b2: made and never public (never approved, uploads never opened): it leaves the ladder with the window
+                t = parse_iso((sp.get(r["id"]) or {}).get("made") or (sp.get(r["id"]) or {}).get("ts"))
+                if t and (now - t).days > win:
+                    upd.update(state="PASSED", note=_note(r, f"made on {t:%d %b} and never public: it left the {win}-day window")); _drop_footage(r); upd["footage"] = ""
         if r.get("state") in CANDIDATE:
             t = parse_iso(r.get("posted"))
             if t and (now - t).days > win:
