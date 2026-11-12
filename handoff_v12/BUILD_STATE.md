@@ -85,6 +85,17 @@ ORDER OF BATCHES: live after three. The evidence R20-R38 is not in the Palace ye
 That turn was the DESIGN step for the whole programme (research, designs, decisions, records). Built since: V1a, V1b, V2a and V2c-a (the records are under DONE).
 
 ## NEXT
+**V2c-b2 WAS SPLIT AT ITS START (token discipline rule 6; 12 Nov 2026, the session that began it): V2c-b2a THE PLATFORMS is being built now
+(its record is the first entry under DONE and says how far it is); V2c-b2b THE OPENING AND THE CUT-DOWNS is the batch after it and needs its own
+owner "continue".** Why, by dependency: the batch holds two machines that share no code. (a) THE SHORT'S SIDE - how a finished Short reaches
+three platforms and what proves it (points 1 and 4 below: `whatifs/publish.py`, `shorts2.run`, the approve path, the Specials record). (b) THE
+LONG VIDEO'S SIDE - its opening made from the Short's kept footage and the end of the cut-down reels (points 2 and 3: the hook lab,
+`audience.shape`, `anim.pick_slots`, the assets stage, the checkpoint, the render, `room.reels`, `manage.release`, the rehearsal's own asserts
+and the many older tests that count four cut-down Shorts). Each half needs the full loop, the 45-minute suite, the sweep and a GitHub run; V2c-b1
+alone took two sessions and met the weekly usage limit. (b) depends on (a): whatever stays as a pull from a long video to its Short must go
+out through the native upload path (a) builds; (a) depends on nothing in (b). So (a) goes first.
+**V2c-b2b - THE OPENING AND THE CUT-DOWNS** = points 2 and 3 of the list below, unchanged, plus what V2c-b2a leaves for it (see its record).
+The original scope of V2c-b2 follows as it was written:
 **V2c-b2 - THE PLATFORMS AND THE OPENING** (`handoff_v12/BREAKOUT_REDESIGN.md` SECTION 11: 11.4 "every platform natively" and "whose opening
 IS that Short's footage", 11.7, the rows "Platforms" and "Topic ladder" of 11.9; its end notes in 11.10). Full seven-step MANDATORY BATCH
 LOOP. Effort: High. V2c-b was SPLIT AT ITS START (rule 6, 11 Nov 2026): V2c-b1 THE LADDER is ACCEPTED (first record under DONE). V2c-b2:
@@ -187,6 +198,74 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
+### V2c-b2a - THE PLATFORMS (12 Nov 2026) - IN PROGRESS (not accepted; steps recorded as they finish)
+The owner: "continue in new session" (12 Nov 2026). V2c-b2 was SPLIT AT ITS START (rule 6; the note is at the top of NEXT): V2c-b2a is how a
+finished Short reaches YouTube, Instagram and Facebook and what proves it; V2c-b2b is the long video's opening and the cut-down reels.
+The whole binding reading order was read first (handoff `CLAUDE.md`, `00`, `02`, `01`, `03`, `06`, `04`, `05`, all of the redesign with
+section 11 first, this file's head, the standing rules, NEXT, the V2c-b1 and V2c-a records, every open issue 1-110, HOW TO RUN, the batch
+log, the repo's `CLAUDE.md`, all of `docs/CURRENT/`, the two hand-over notes), then the code the half touches: `publish.py`, `shorts2.py`,
+`specials.py`, `ladder.py`, `launch.py`, `reels.py`, `manage.release` / `_post_reel`, the contract's short gate, the registry.
+
+#### Step 1 RESEARCH (E = measured or the platform's own page, O = practice; every page below was read by the build session itself on 12 Nov 2026; the redesign's R20-R38 are the base)
+1. E read - YouTube Data API, revision history (https://developers.google.com/youtube/v3/revision_history). 3 Nov 2026: `thumbnails.set`
+   "now supports custom thumbnails for Shorts after video processing finishes"; the thumbnails resource gained `shortsAspectRatio`.
+   2 Nov 2026: uploads from unverified API projects are no longer locked to private; with `status.privacyStatus` omitted the default is
+   public. 4 Dec 2025: an upload costs about 100 quota units (was about 1,600). 27 Aug 2026: public views count from the first frame.
+2. E read - YouTube Data API, `thumbnails.set` (https://developers.google.com/youtube/v3/docs/thumbnails/set): for a Short "call this
+   method only after the video has finished processing" (`processingDetails.processingStatus` = `succeeded`); called earlier "the custom
+   thumbnail might not be applied" - and NO error says so. About 50 quota units; 50 MB; a 403 when the channel may not set custom
+   thumbnails. -> THE FINDING THAT SHAPES THE DESIGN: today's long-video code calls it right after the upload; for a Short that call can
+   be accepted and do nothing. A thumbnail is a row that WAITS for processing and is finished later - a release cannot be one call.
+3. E read - YouTube Data API, the `videos` resource (https://developers.google.com/youtube/v3/docs/videos): NO field says whether a video
+   is a Short; `status.containsSyntheticMedia` discloses REALISTIC altered or synthetic content; title 100 characters, description 5,000
+   bytes, tags 500 characters; `privacyStatus` defaults to public when omitted. -> "it is a Short" can only be proven on our own file.
+4. E read - YouTube Help 15424877 (https://support.google.com/youtube/answer/15424877): an upload "with a square or vertical aspect ratio
+   up to three minutes in length will be categorized as Shorts" (standard channels, since 15 Oct 2024). The page names no hashtag: "#shorts"
+   in a title or a description decides nothing (today's cut-down reels still write it into both).
+5. E read - Instagram Platform, IG User Media reference (https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media;
+   its newest dated change is 9 Jul 2025): a Reel container takes `cover_url` (a public JPEG; wins over `thumb_offset`), `thumb_offset`
+   (milliseconds into the video; default 0 = the first frame), `audio_name` (the audio "can be renamed only once"), `share_to_feed`,
+   `is_ai_generated`, `trial_params` = {`graduation_strategy`: `MANUAL` | `SS_PERFORMANCE`}; caption 2,200 characters, 30 hashtags; 3 seconds
+   to 15 minutes, 23-60 frames a second, at most 1,920 pixels wide, 9:16 recommended, moov atom at the front of the file.
+6. E read - Instagram Platform, content publishing guide (https://developers.facebook.com/docs/instagram-platform/content-publishing):
+   trial reels are "only shared to non-followers"; `SS_PERFORMANCE` = "graduated automatically if it performs well"; a container is
+   FINISHED / IN_PROGRESS / ERROR / EXPIRED / PUBLISHED; 100 API posts in 24 hours; a published reel reads back `media_type` VIDEO, so
+   `media_product_type` (REELS) is the field that proves a Reel.
+7. E read - Instagram Platform, IG Media reference (https://developers.facebook.com/docs/instagram-platform/reference/instagram-media):
+   readable after publishing: `media_product_type`, `is_ai_generated` ("indicates if the media has an AI label"), `is_shared_to_feed`,
+   `thumbnail_url`, `permalink`, `caption`. NOT readable: whether it is a trial reel, the audio name. -> two Instagram rows can only be
+   proven as SENT, never as read back; the record must say which is which.
+8. E read - Meta, Facebook Reels publishing (https://developers.facebook.com/docs/video-api/guides/reels-publishing; examples at Graph
+   v27.0): 3 to 90 seconds, 9:16, at least 540 x 960, 24-60 frames a second; `is_ai_generated` on the finish call (default false); 30 API
+   posts in 24 hours; status read back with `fields=status` (`video_status`, `publishing_phase.publish_status`). Error 1363128 = a
+   duration outside 3-90 seconds.
+9. E read - Instagram, "Rewarding original creators", 30 Apr 2026 (https://creators.instagram.com/blog/rewarding-original-creators-on-instagram):
+   adding "only a border, watermark, subtitles, or credit in the caption" to someone else's work is not original; accounts that mostly
+   repost are no longer recommended; a rolling 30-day window. The page says NOTHING about a creator's own video posted on several
+   platforms and nothing about AI-made video. (Reported by a search, not read: Instagram's statement of Feb 2021 that Reels "visibly
+   recycled from other apps" - logos, watermarks - are recommended less; Tubefilter, 10 Feb 2021.)
+10. O read - Kubernetes, "Controllers" (https://kubernetes.io/docs/concepts/architecture/controller/): a controller compares the desired
+    state with the current state, acts, "and then reports the current state back"; the loop does not end. And HashiCorp's drift tutorial
+    (https://developer.hashicorp.com/terraform/tutorials/state/resource-drift): drift = the recorded state "out of sync" with the real
+    thing, found by reading the real thing back and comparing; then it is either accepted or overwritten. -> the release sheet is a
+    desired state, the platform's own answer is the current state, and a pass that runs every tick closes the gap or names it.
+NOT FOUND, so nothing is built on it: any measured effect of Trial Reels, of a Reel's cover, of an audio name or of a Shorts thumbnail on
+reach (YouTube's own Shorts lead, 2023: "most thumbnails are never seen" - V2c-a research 8); whether a trial reel that does not graduate
+ever shows on the profile; whether `trial_params` and `share_to_feed` may be sent together; a way to read a trial reel's state or an
+audio name back; any API field for the link from a Short to its long video (hand-only, V3). Trial Reels, the cover and the audio name
+are therefore SWITCHES AND STARTING VALUES from the redesign (11.4), not proven boosters.
+AN EXPERIMENT BEFORE THE DESIGN (read from the code, no run needed): what a Short of today's code would carry onto the platforms.
+(1) Tags "reality on trial", "what if" - the special reels' tags on a Short that is by rule never a trial. (2) ONE text for YouTube,
+Instagram and Facebook; Instagram's copy gets the words "(link in bio)" only when the text happens to contain "Reality Engine channel"
+- a Short's text does not. (3) No thumbnail, no cover, no audio name, no trial flag. (4) Nothing is read back for Instagram or Facebook;
+for YouTube only privacy and the AI label. (5) FOUND, A FAULT: the first three Shorts wait for the owner's Approve
+(`SHORTS_REVIEW_FIRST_N`), and `specials.approve` posts an approved Short through `_publish` WITHOUT the Short's own text - so exactly
+the Shorts he approves would go out under the special reels' text: "New trials every Tuesday and Saturday: Reality on Trial ... Take
+your seat on the jury: subscribe." A courtroom, a wrong cadence and an ask under a product that has none of them. No test saw it (the
+approve tests stub `_publish`). (6) FOUND, A FAULT: a Short that is made while uploads are "not confirmed open" is marked and counted
+as made - and its FILE is nowhere: the job ends, the runner's folder is gone, only the footage archive is in Drive. It could never be
+posted (open issue 100 said "harmless"; it is a paid Short lost). Both are fixed by this batch's design, not patched.
+
 ### V2c-b1 - THE LADDER (12 Nov 2026) - ACCEPTED (final code commit 3ab0e16 GREEN in GitHub Checks run 110: 1359 passed; sweep 58 of 58 ids)
 The owner: "continue" (a new session for V2c-b). V2c-b was SPLIT AT ITS START (rule 6; the note is at the top of NEXT): V2c-b1 is the ladder -
 the cadence, Shorts first with the promote rule and the refusal, the winner's follow-up; V2c-b2 is the platforms and the opening.
