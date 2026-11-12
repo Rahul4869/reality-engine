@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 12 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026, V2c-b2a THE PLATFORMS ACCEPTED on 12 Nov 2026 - V2c-b2 was split at its start, V2c-b2b was split at its start too: V2c-b2b1 THE OPENING ACCEPTED on 12 Nov 2026, V2c-b2b2 THE CUT-DOWNS is next). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 13 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026, V2c-b2a THE PLATFORMS ACCEPTED on 12 Nov 2026 - V2c-b2 was split at its start, V2c-b2b was split at its start too: V2c-b2b1 THE OPENING ACCEPTED on 12 Nov 2026, V2c-b2b2 THE CUT-DOWNS ACCEPTED on 13 Nov 2026 - V2c is complete; V2d THE MOTION LADDER AND THE MONEY is next). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -85,21 +85,30 @@ ORDER OF BATCHES: live after three. The evidence R20-R38 is not in the Palace ye
 That turn was the DESIGN step for the whole programme (research, designs, decisions, records). Built since: V1a, V1b, V2a and V2c-a (the records are under DONE).
 
 ## NEXT
-**V2c-b2b2 - THE CUT-DOWNS** (`handoff_v12/BREAKOUT_REDESIGN.md`: 4.2 point 5 "one more Short is cut from its best moment", R2 / R28,
-the end notes in 11.10). Full seven-step MANDATORY BATCH LOOP. Effort: High. V2c-b2b was SPLIT AT ITS START (rule 6, 12 Nov 2026) into
-V2c-b2b1 THE OPENING - the first record under DONE: check there and in `git log -5` that it is ACCEPTED before building on it - and
-V2c-b2b2, the other half of the long video's side (the two halves share no code; the opening came first because it decides what a
-cut-down may be made of):
-- THE CUT-DOWN REELS of `whatifs/reels.py` stop being the product: `REELS_PER_VIDEO` (4), the bridge style, `room.reels` (a paid model
-  call a video), `episode.py`'s reel build, `manage.release` / `_release_extra` / `_post_reel` (still the OLD upload: one text for all
-  platforms, "#shorts" in title and text, nothing read back - open issue 118), checks `shorts` and `short_covers` at the final gate,
-  the rehearsal's own asserts ("expected 4 Shorts") and the older tests that count four. Twelve Shorts a month plus four cut-downs a
-  long video would be 28 short uploads a month - near the 35 at which long videos lose what Shorts gave them (redesign R2, R28).
-  Decide what stays as a pull from a long video to its Short (redesign 4.2 point 5: "one more Short is cut from its best moment"),
-  retire the rest truthfully (`truth.RETIRED`, a one-time move where a live cell changes). WHATEVER STAYS GOES OUT THROUGH
-  `whatifs/release.py` - never through `_post_reel`. Decide the special reels' upload (`specials._publish`) with it.
-  Since V2c-b2b1 a cut-down never takes a shot of the Short's footage (`room.past_footage`; the footage is not offered to the planner);
-  the rehearsal and the production test of the opening still expect cut-downs to be made (`len(r["reels"])`).
+**V2d - THE MOTION LADDER AND THE MONEY** (`handoff_v12/BREAKOUT_REDESIGN.md`: 11.5, the rows "Long: motion", "Characters", "Stock"
+and "Money" of 11.9, 11.10 with its end notes; R13, R30, R31, R38). Full seven-step MANDATORY BATCH LOOP. Effort: High. V2c is
+COMPLETE (five batches; the last, V2c-b2b2 THE CUT-DOWNS, is the first record under DONE: check there and in `git log -5` that it
+is ACCEPTED before building on it). V2d is large - SPLIT IT AT ITS START by dependency (rule 6) and say so here. A split that
+follows the code: (a) THE MONEY AND THE MODEL - the hero clip model chosen BY VALUE from the live listing (rank per dollar, a
+start picture, upright output; a model with clips longer than 5 seconds ends the slowed clips of V2c-a, open issue 82), the cost
+model with EVERY paid second and call as a line of the estimate (open issues 72, 83, 126, 141: a Short has no line of its own,
+the ladder video is over-estimated, the lump allowances), and the split 4 long + 12 Shorts inside Rs 5,000 - today twelve Shorts
+at about Rs 290 do NOT fit beside four long videos; (b) THE LADDER'S RULES - the living tier widened (L3), `moving_share`
+measured on the finished file (a Short 100%; a long video about 40% as a lever; open issues 86, 130: part of a paid scene is
+never seen when micro-cuts split it), a character drawn or absent in every format (no silhouette fallback; open issue 75), the
+stock rules for NASA and Pexels (10% at most, never first, never two in a row, changed, no people, credited; none in a Short;
+check `stock_share`), the first-second sound of a Short (open issue 91). Read the fal pages and the ranking yourself before any
+design: prices moved while the redesign was written (O10) and two fal pages disagreed.
+What V2c-b2b2 leaves ready (use it, do not rebuild it): the channel's short videos are the STANDALONE SHORTS and nothing else -
+a long video makes no cut-down reel, its release is one step (`manage.release`: public -> the channel comment -> LIVE), and every
+upload of an upright video goes through ONE door, `whatifs/release.py`. `truth.short_doors` / `door_issues` / `OLD_DOORS`: a new
+function that calls `ig_reel`, `fb_reel` or `yt_upload(short=True)` outside `release.py` fails Plan Guard, the tests and check
+`docs_current`; the four older doors (special reels with the cast intro, pilot Shorts, the hero-still Short, the audio-drop
+Reel) are OFF by default and may only leave that list (open issue 136). The paid-call counter (`tests/paid_calls.py:watch`)
+now sees key art (`image_premium`) and voice jobs (`voice_job`): V2d's cost model can be checked against it call by call -
+`V12V2CB2C_REMOVED` shows how a removed call is written into the baseline. `tools/sweep.py:release_of` judges every
+long-video id (no cut-down, one step to LIVE). The pull from a Short to its long video is the related-video link - a hand
+step, the first line of V3's release card (open issue 135).
 What V2c-b2b1 leaves ready (use it, do not rebuild it): `whatifs/opening.py` (D6) - `fetch` (the Short's archive, measured), `lay` /
 `mark` (the footage on the shot list: `short` = {id, parts}), `marked(shots)` (the shots that are the Short's footage - any code that
 picks shots of a long video for another upload, re-makes clips or turns animated shots into stills must skip them), `fit` / `cut`
@@ -116,8 +125,9 @@ on the record), `queue` (the hand-over is a record), `short` (D9's run `short_pu
 What V2c-b1 leaves ready: `whatifs/ladder.py` (D10) and tab `Ladder` - `enter` / `keep`, `read`, `rank`, `promote`, `gate` / `refuse` /
 `override`, `pitch` / `claim` / `use`, `topic_report` (check `topic_ladder`), the follow-up orders; `brain.ingest_shorts` by processed
 day; `breakout.monitor`; `shorts2.cadence`; the rehearsal that walks the ladder (`run(ep_id=...)`) and `tools/sweep.py:climb`.
-Totals other tests and the rehearsal print today: 62 hard checks (36 script, 20 final, 5 short, 1 release), 72 levers, 173 founding Palace
-items, SHOW_CHECKS 51 (pinned in `tests/test_v12_exec.py`, `test_v12_rnd.py` and `test_v12_release.py`), 84 tabs - count them again before pinning one. The older tests run with LADDER_ON FALSE.
+Totals other tests and the rehearsal print today: 60 hard checks (36 script, 18 final, 5 short, 1 release), 71 levers, 180 founding Palace
+items, SHOW_CHECKS 49 (pinned in `tests/test_v12_exec.py`, `test_v12_rnd.py`, `test_v12_release.py` and `test_v12_cutdowns.py`), 84 tabs, 16 retired
+rules, 4 older doors - count them again before pinning one. The older tests run with LADDER_ON FALSE.
 Remember (every lesson paid for so far): every new contract check must be classified (`rnd.ORG_CHECKS` or raise `rnd.SHOW_CHECKS`, now 48);
 a department run that returns `Out` must say what it did with EVERY inbound memo; a check that can hold a video must RECOGNISE what is
 wrong (V1b: four ordinary words; V2c-a: a three-letter word); break the code on purpose and make sure a test fails - write the break list
@@ -150,18 +160,24 @@ script keeps a copy of every file and runs in short parts, long runs are started
 BEFORE EXPLAINING IT (V2c-b2b1: I explained one from the code, fixed another fault, and paid a whole acceptance pass - suite,
 sweep, GitHub - before the id itself showed a false hold by my own check: `tools/sweep.py --one <id> --work <dir>` keeps the
 folder; measure it); A CHECK THAT COMPARES A FILM WITH ITS CLIPS MUST STAY AWAY FROM CUTS (a frame apart at a cut is another
-picture).
-ORDER AFTER V2c-b2b2 (redesign 11.10): V2d THE MOTION LADDER AND THE MONEY (the hero model by value from the live listing - a model with clips
-longer than 5 seconds ends the slowed clips of V2c-a, the living tier widened, a character drawn or absent - no black shape in any format,
-the stock rules for NASA and Pexels, `moving_share` measured on the finished file, the first-second sound of a Short, the cost model with
-every paid second - open issues 72 and 83 - and the split 4 long + 12 Shorts) -> V3 PILOT ON REAL SERVICES AND GO LIVE (three Shorts and
-one long video; the human kit: his voice recording with the consent sentence, five photos, three sentences, the secrets typed by HIM; the
-release sheet's one-time switches; the one-minute release card; then the new code replaces the old) -> V2b INSIDE THE FORMAT (first person
-and the camera path as measured rules, F1's own ending instead of the asks code still inserts - open issue 74, the speaker chip - 75, F3
-"The walk", same-subject line-up titles - 69) -> V1c THE FLOOR, HIS VERDICT AND THE MAKER'S LINE -> V4 the CEO and the ladder (+ his input
-tab, the scoreboard, the format and Short shares) -> V5 the Breakout Observatory (Shorts first) and the aspect map with the release sheet
--> B6b -> B7 -> B8 (+ every run names its scoreboard number) -> B9 -> B10. Twelve batches remain (V2c became five); the channel runs
-the new code after the third (V2c-b2b2, V2d, V3).
+picture); COUNT WHAT THE CODE WOULD REALLY DO BEFORE DECIDING WHAT TO KEEP (V2c-b2b2: the batch's list named the cut-down
+reels; searching every call that uploads an upright video found three more doors and about 38 short uploads a month); A RUN
+THAT STOPS WITH EVERY WORKER IDLE IS A FINDING, NOT A FLAKE (V2c-b2b2: a real deadlock - log every finished test by name, dump
+the stuck worker's stack with py-spy, HOW TO RUN); NEVER LOG WHILE HOLDING A LOCK THAT A LOG-FLUSH HOOK TAKES; THE REHEARSAL'S
+IDS ARE THE MINUTE - a red one is a new id, reproduce it on the ACCEPTED code too before calling it this batch's (V2c-b2b2: a
+hold of V2c-b2b1 showed up three batches of rehearsals later); a `wait for a line in a log` must not match the line a PREVIOUS
+run left in the same file (V2c-b2b2: I read two old rehearsal logs as new); a script pasted through a shell here-document
+lost its backslashes a THIRD time - the file tool, always.
+ORDER AFTER V2d (redesign 11.10): V3 PILOT ON REAL SERVICES AND GO LIVE (three Shorts and one long video; the human kit: his
+voice recording with the consent sentence, five photos, three sentences, the secrets typed by HIM; the release sheet's one-time
+switches - phone verification FIRST, open issue 112; the one-minute release card with the Short-to-video link as its first line,
+open issue 135; the older doors decided, open issue 136; the bounded ffmpeg install in every workflow, open issue 94; then the
+new code replaces the old) -> V2b INSIDE THE FORMAT (first person and the camera path as measured rules, F1's own ending
+instead of the asks code still inserts - open issue 74, the speaker chip - 75, F3 "The walk", same-subject line-up titles -
+69) -> V1c THE FLOOR, HIS VERDICT AND THE MAKER'S LINE -> V4 the CEO and the ladder (+ his input tab, the scoreboard, the
+format and Short shares, long-video views against the Shorts count - 138) -> V5 the Breakout Observatory (Shorts first) and
+the aspect map with the release sheet -> B6b -> B7 -> B8 (+ every run names its scoreboard number) -> B9 -> B10. Eleven
+batches remain; the channel runs the new code after the second (V2d, V3).
 The notes below (what B5 / B6a leave ready for the Council) stay valid for B6b:
 **B6b - The Council (C)** (01 sections 2 (C), 4, 5, 7 `council_held`; 03 "B6", second bullet). Full seven-step MANDATORY BATCH LOOP. Effort: High.
 Gathers open research / assessment / creative / owner / performance / problem memos; diverge -> blind cross-family jury -> converge -> decision
@@ -211,7 +227,7 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
-### V2c-b2b2 - THE CUT-DOWNS (12 Nov 2026) - IN PROGRESS (steps 1-3 recorded; not built yet)
+### V2c-b2b2 - THE CUT-DOWNS (12-13 Nov 2026) - ACCEPTED (final code commit 1d3a77a GREEN in GitHub Checks run 131: 1457 passed; sweep 58 of 58 ids)
 The owner's "continue" for this batch is the start of this session. The whole binding reading order was read first (handoff `CLAUDE.md`,
 `00`, `02` in full, `01`, `03`, `06`, `04`, `05`, all of the redesign with section 11 and its end notes first, this file's head, the
 standing rules, NEXT, the V2c-b2b1, V2c-b2a, V2c-b1 and V2c-a records, every open issue 1-134, HOW TO RUN, the batch log, the repo's
@@ -435,6 +451,120 @@ E. (ORIGINAL, CHOSEN) THE SHORT THE VIEWERS CHOSE IS THE PULL, AND THERE IS ONE 
 | No current doc or prompt speaks of the old plan | truth rule `cutdown_reels` | Plan Guard, the tests, check `docs_current` |
 | Every estimate counts what is really bought | `governor.premium_images` | tests (two premium pictures fewer; the cost goldens moved by exactly that) |
 | A log line can never hang the job | `models.CacheManager.blocks` logs after the lock is released | `tests/test_v811.py` (the warning as the 40th buffered line must return; it hangs on the old code) |
+#### Step 6 PROVE
+- `tests/test_v12_cutdowns.py`: **50 tests** (26 test functions; the door and the truth rule run on many cases), each rule both ways - nothing of the cut-downs is left (no check, cell, role,
+  prompt field, module or lever; 60 checks by stage; the delay cell says what it is now); the draw plans no reel and seeds none,
+  while a video an older version made keeps its reels' credit; the lesson of a video's Shorts traffic; the rulebook refuses a
+  reel department; the release in ONE step (the tick names it, public -> comment -> LIVE, nothing uploaded, never twice, no
+  second release named - not after 7, 27 or 51 hours either); the delay; a private video waits and the owner hears once; KILL;
+  a row left at LIVE1 closed by the tick with nothing posted; the CLI and the workflow; the rehearsal and the sweep walk the
+  rule; ONE DOOR (the repo has the four listed doors and no other, each shut by a FALSE default; a planted door by `ig_reel`,
+  by `fb_reel`, by a bare name, by `yt_upload(short=True)` and by `short=<a variable>` is found; a long upload, `short=False`
+  and a thumbnail call are not; a call inside a nested function is found at its outer function; `release.py` and `publish.py`
+  are the door's home; a listed door that uploads nothing any more must leave the list; the list cannot grow; a new door fails
+  the truth registry and, alone, check `docs_current`; a fixture without the platform calls is not judged); the paused tracks
+  (both refuse with their reason, nothing is uploaded, the earmark is production money, switched on it is back); the one-time
+  move (marks eight cells and leaves their values, pauses both tracks, leaves a FALSE he typed alone, never twice, his later
+  TRUE stands, both setup sites call it); the truth rule on ten sentences of the old plan and nine true ones; the estimate; and
+  ONE WHOLE PRODUCTION with the paid-call counter - no `text:reels`, 2 premium pictures, 1 voice job - on which the sweep's own
+  verdict passes, is repeatable, and names five planted cut-downs each alone (a reel file, a reel on the release record, a reel
+  on the episode's row, a reel strategy in the draw, another kind of short upload).
+- With the two older faults: `tests/test_v811.py` (the warning as the 40th buffered line must return inside 20 seconds - it
+  hangs on the code before the fix: run once on that code, 1 failed), `tests/test_v12_opening.py` and `tests/test_safety.py` (a
+  Short's hook that opens on "Today you ..." is no throat-clearing for the opening rule, the hook lab and the Short's seat
+  alike; "today we", "today I", "today's video", "today, let's" still are - ten sentences).
+- Tests changed by design (24 older files): the reel tests of the patch that introduced the reels are gone with what they tested
+  (`test_v85` 12, `test_v83` 2, `test_v891` 2, `test_v84`, `test_v89`, `test_v93`, `test_v10_growth` 1 each, `test_v12_opening`
+  2); counts (`test_v12_exec`: 71 levers, 18 final checks, its lever example; `test_v12_release`: 49 promises about the show;
+  `test_tableread`: five roles); the cost goldens moved by exactly two premium pictures (`test_v87`, `test_v89`, `test_v85`);
+  the pilot and special-reel tests switch their track on first (`test_v10_future`, `test_v10_growth`); the rest lost one line
+  each that named a removed thing. `tests/test_docs_current.py`: the new rule's sample and the little repository's baseline.
+- Fails correctly: **63 deliberate one-place breaks** on the real repo (58 seen by the fast tests, 5 only by a whole production),
+  each put back by the script (a copy of every file kept; the hashes compared), nothing else reading the code meanwhile, the
+  list written before the last test run - **each failed at least one test**: a release that runs twice, ends at LIVE1, ignores
+  a private video, posts no comment, ignores KILL, does not wait for its delay; a second release named for a live video; a row
+  at LIVE1 never closed; the owner mailed at every try; the draw carrying a reel strategy; an older video's reels losing their
+  credit; every lesson speaking of reels; the rulebook taking a reel department; a check, a cell, a role or a prompt field of
+  the cut-downs back; the delay cell's note or its lever gone; the estimate counting two reel covers; a Facebook Reel, an
+  Instagram Reel or a YouTube Short being no door; every YouTube upload taken for a short one; `short=False` taken for a Short;
+  `short=<a variable>` not seen; only a bare call seen; a new door raising nothing; a gone door staying listed; the list
+  growing; the ratchet raised; the rule outside the truth registry; the platform calls or Publishing's run taken for doors; a
+  fixture judged; one module not searched; the retired cell or the old sentence allowed again; the rule firing on a true
+  sentence or on the word "bridge"; a prompt allowed to name the old plan; a wrong baseline; the pilots or the special reels on
+  by default; either switch not read; the paused reels keeping their earmark; the move not marking, not pausing, rewriting his
+  FALSE, running every time, leaving no mark, or writing "paused" and leaving the switch on; the release job's command unknown;
+  the sweep's verdict blind to a reel file, to a reel on the release record, on the episode's row or in the draw, or to another
+  kind of short upload; a bad verdict not making the id bad; the warning logged inside the lock again (the test waits its 20
+  seconds and fails); "today" a greeting again for every line, or for no line. Two breaks of the list were left out and say why
+  (one is only meaningful together with another; one is read by a wiring test that looks at other words of the same line).
+- Fake rehearsal on the working tree of the final code: **GREEN three times** - the trial with Shorts in S2 (EP202611121904), F1
+  with S1 (EP202611121907), F1 with S3 (EP202611121910): every long format and every Short format. Each: a long video refused
+  first (nothing spent), two Shorts made and released on three platforms, their numbers read, one promoted, the long video about
+  it opening on its Short's footage - and "cut-downs: none made, none uploaded; short videos out: 2 standalone Shorts through
+  the release sheet", the release in one step, no release named a day later; script 36 of 36, final 18 of 18. The first try of
+  the trial with S2 (EP202611121845) was the one that found the fault of the opening (above): its long video was held; after
+  the fix that id's own gates pass (36 of 36 and 18 of 18); its run then stops at the rehearsal's assertion on the organisation's
+  checks, which say "not applicable" for an id from a past minute (open issue 146).
+- Parallel pre-check of the whole suite before the final code commit was accepted as final: **1457 passed in 32:44**, no
+  failure, no skip. Before it: three parallel runs to list what the batch changed by design (the first and the third stopped
+  on the deadlock; the second listed 29 failed tests and 3 files that could not be collected - all older tests that pinned
+  reels, the pilot default or counts; the 29 touched files then 804 passed).
+- Full suite on a frozen copy of the FINAL code commit 1d3a77a, serial runner: **1457 passed / 0 failed / 0 skipped** (76 test files;
+  1416 before this batch: 63 new, 22 gone with the reels they tested). No stall: the two runs that stopped were the deadlock.
+- Sweep on the same frozen copy of 1d3a77a, after the suite had finished: **58 of 58 ids** on the first pass. No bad id, no failure
+  class. A: 20 ids, organisation on - every id climbed the ladder first, its long video opened on its Short's footage (20 of
+  20) and **ALL 20 WERE RELEASED IN ONE STEP WITH NO CUT-DOWN** (`release_of` on every id: no reel file, cover, plan or upload;
+  the tick names the release, it ends at LIVE, no second release is named; the only short video on the Sheet is the id's own
+  standalone Short): 13 drew F1 (41 pass + 13 not applicable of 54 checks), 7 drew F2 (48 + 6); 11 department runs each. B: 4
+  ids, organisation off - 4 ok, each climbed, opened on its footage and was released without a cut-down. C: 4 full rehearsals
+  with a fixed id - 2 in F2 (49 pass + 5 not applicable), 2 in F1 (42 + 12), each asserting inside the rehearsal that no
+  cut-down was planned, made or uploaded. D (`--mode short`): 20 ids, two Shorts each, both released (the first made while
+  uploads were closed and sent later from its Drive copy; 9 of the Shorts under test by the owner's Approve): 6 of 6 checks, 7
+  department runs, no warning. E: 10 more ids forced to S3 - 10 of 10, 6 by Approve. The warnings of A to C are the classes the
+  offline long video has always printed (the stand-in voices, the atmosphere's time valve - issue 26, the prompt-cache note -
+  issue 23, now written outside the lock; in the rehearsal also its own later scenes); none comes from this batch. NOT covered
+  by the sweep: the older doors (off), a video that stays private, KILL, a row at LIVE1 (open issue 145).
+- GitHub Checks (standing rule 1): run **131** on 1d3a77a **GREEN**: 1457 passed (56:27), rehearsal GREEN (episode EP202611122025;
+  contract script 36/36, final 18/18); its one warning and its notices are GitHub's own (Node.js 20, the Ubuntu label - open
+  issues 37 and 46). Run 130 (6c09850, build part 2) GREEN too: 1446 passed, rehearsal GREEN (EP202611121929). Run 129 (6b00b68,
+  build part 1) RED, read: three test files could not be collected - they imported the reel module that commit deleted
+  (corrected in 6c09850; no fault of the code). Run 128 (dfbdc9f, text only) GREEN.
+- Plan Guard GREEN, Truth GREEN, Palace GREEN (180 founding items), Organisation GREEN (12 wired, 5 pending), docs regenerated
+  without drift.
+- Money: Rs 0 spent (fake mode). The batch adds NO paid call and removes seven a long video - the paid-call counter, on one
+  fake long video of the accepted code of V2c-b2b1 against one of this code: the cut-downs' planning call 1 -> 0, premium
+  pictures 4 -> 2, voice jobs 5 -> 1, every other count identical (`tests/paid_calls.py` `V12V2CB2C_REMOVED`). In rupees, from
+  the price cells and not measured on a real bill: two premium pictures Rs 15.84 (USD 0.08 each at Rs 99) - the estimate before
+  every video fell by exactly that -, the planning call about Rs 5-8, four short voice jobs about Rs 5: about Rs 27 a long video,
+  about Rs 110 a month at four. Paused by default: the special reels (their Rs 300 earmark is production money meanwhile) and
+  the pilot Shorts (up to Rs 40 a month). The known gap stays: at today's clip price twelve Shorts a month do NOT fit beside
+  four long videos until V2d chooses the clip model by value (open issue 83).
+#### Step 7 TAKEAWAY (also Palace item `v2cb2c.takeaway`)
+- WORKED: counting what the code would really do before deciding what to keep. The batch's list named the cut-down reels; a
+  search for every call that uploads an upright video found three more doors and a total of about 38 short uploads a month -
+  past the line the plan itself warns about, with two texts that state a cadence the channel does not have. The decision
+  ("none") only means something because the count is true now, and a guard that reads the code keeps it true.
+- WORKED: reading the platform's own pages before the design, a fifth time. One sentence of a Help page - only a Short cut with
+  Studio's own tool gets the link to its long video - took away the one reason to keep a cut-down made by code.
+- WORKED: treating a test run that stops as a finding. Every finished test logged by name, the stuck worker's stack dumped
+  while it was stuck: a real deadlock of the older code, named in ten minutes, that would have cost the live channel a video
+  about once in forty warnings.
+- WORKED: reproducing the red rehearsal's id on the ACCEPTED code before explaining it (the lesson of V2c-b2b1, used at once):
+  the hold was the previous batch's, and the cause was a rule that did not recognise what is wrong.
+- WORKED: the break list written before the last test run - 63 of 63, and the list found two lines of mine that did nothing.
+- FAILED: I pasted a script through the shell again and it lost its backslashes (nothing was applied - a syntax error); I read
+  two old rehearsal logs as new ones because my wait matched a line the previous run had left in the same file; and I ran
+  other tests and edited files beside the first parallel run, so its stall could not be told from my own noise.
+- FAILED (inherited, now closed): three batches of green rehearsals, suites and sweeps had not met a Short whose hook opens
+  "Today you ..." - the offline writer has two scripts a format and the fixed ids never promoted that one. A rule that reads a
+  viewer's first line needs its test sentences from EVERY format's own brief.
+- LIMIT: nothing real has met any of this. The four older doors are shut by a switch, not rebuilt on the release sheet (open
+  issue 136). The pull from a Short to its long video is one hand step that no code opens yet (135). No code counts short
+  uploads across kinds (138). Twelve Shorts beside four long videos is 75% Shorts by uploads - above the mix at which long
+  videos did best in the one large study (redesign O15): only the channel's own numbers can say, and nobody reports them yet.
+- NEW QUESTION: does the hand-set link move viewers at all (H24)? YouTube calls it its most effective tool and gives no number.
+- ORGANISATION: a decision about "how many" is only as good as the count behind it - count from the code, not from the plan.
+  And a department's old track that nobody switched off is still a department's upload: paused is a state that must be SET.
 
 ### V2c-b2b1 - THE OPENING (12 Nov 2026) - ACCEPTED (final code commit 22103cb GREEN in GitHub Checks run 126: 1416 passed; sweep 58 of 58 ids)
 The owner: "continue in new session" (12 Nov 2026, item 21 of `02`). V2c-b2b was SPLIT AT ITS START (rule 6; the note is at the top of
@@ -3970,8 +4100,8 @@ Rehearsal asserts `docs_current` ran and passed.
 | V2c-b1 | done 12 Nov 2026 | 1358 / 0 / 1 on 3ab0e16 (laptop); GitHub 1359 passed (run 110) | GREEN in F1 / F2 with Shorts in S1 / S2 / S3 (54 + 5 checks) | The ladder: every topic starts as a Short (3 a week, 12 a month, 48 hours apart); YouTube's true numbers are read by processed day (they are 48 to 72 hours late) and public views at the 24-hour and 48-hour mark; D10's promote rule (code, never a model) picks the long video's topic and a long video without a promoted Short or an owner override is refused before any money (new tab `Ladder`, check `topic_ladder`: 59 hard checks); a winner gets ONE follow-up ordered by code with a 48-hour clock, overdue = a memo; 6 levers in, 1 out (68). V2c-b was split at its start. The sweep found what a green suite and four green rehearsals had hidden: on a new Sheet no video could ever have been made - and three faults in what counts as a made Short; all fixed at the cause, 42 deliberate breaks. GitHub run 110 GREEN on 3ab0e16; sweep 58 of 58 ids. Runs 104-106 RED = three tests that pinned what the batch changed by design, corrected. |
 | V2c-b2a | done 12 Nov 2026 | 1391 / 0 / 1 on 3619c81 (laptop); GitHub 1392 passed (run 117) | GREEN in F1 / F2 with Shorts in S1 / S2 / S3 (54 + 5 + 1 checks) | The platforms: a finished Short goes out as three native uploads of ONE master file under Publishing's own run (new `whatifs/release.py`, D9 `short_publish`) - YouTube Shorts (its own thumbnail, set only after YouTube has processed the video; the playlist of its format), Instagram Reels (a Trial Reel, its cover, the audio named after the series, the AI label), Facebook Reels (90 seconds at most); each under its own words, none with an ask. The release sheet is data (who sets each row, how it is proven), every request body a pure function, every platform read back and every row given a receipt on new tab `Release_Sheet` (kept, fixed, drift, sent only, waiting, refused, skipped, off); a pass on every tick finishes what waits; a release gate after the uploads (D8 `release_gate`, new check `release_sheet` at new stage "release": 60 hard checks); `made` is a field of the Short's record (the status-text match is gone); 2 levers (70). V2c-b2 was split at its start. Found and fixed: an approved Short would have gone out under the special reels' text; a Short made while uploads were closed lost its file; a check that could pass a Short which never reached YouTube; a second upload after a cut-off; the sweep had never published a Short. 63 deliberate breaks, each failed a test. No paid call added. GitHub run 117 GREEN on 3619c81 (no run of the batch was red); sweep 58 of 58 ids. |
 | V2c-b2b1 | done 12 Nov 2026 | 1416 / 0 / 0 on 22103cb (laptop); GitHub 1416 passed (run 126) | GREEN in F1 / F2 with Shorts in S1 / S2 / S3 (56 + 5 + 1 checks) | The opening: a long video about a promoted Short opens on that Short's kept footage (new `whatifs/opening.py`, D6) - the archive of its ladder row fetched and measured, the Short's picture track laid by code under the first sentences, one clip a shot cut through ONE window whose width follows the clip's real sharpness (a setting and a lever; a blurred copy of the picture as ground), the first spoken line the Short's own hook (no hook lab), three paid scenes instead of four; a video under an override opens on its own promise scene; checks `opening_footage` (before picture money) and `opening_shown` (frames of the finished film against the footage): 62 hard checks; 2 levers (72). V2c-b2b was split at its start. Found and fixed: a hash of a tiny copy could not recognise its own footage under a grade; the cut-downs lost every shot; a still after the opening re-used a frame of the footage; a reaction effect drawn over the footage; and - by the SWEEP, twice, after a green suite, green rehearsals and a green GitHub run - a false hold by the new check on 1 long video in 20 (it compared a frame where two clips meet; first misread, then reproduced and fixed). 83 deliberate breaks, each failed a test. No paid call added, four removed (about Rs 45-50 a long video). GitHub run 126 GREEN on 22103cb (124 and 125 GREEN on the two commits before the sweep's fixes; 121-123 RED = tests that pinned counts changed by design); sweep 58 of 58 ids on the third pass (57 of 58 on the first two). |
-| V2c-b2b2 | next | | | The cut-downs: the cut-down reels stop being the product (what stays goes out through `release.py`) |
-| V2d | after V2c | | | The motion ladder and the money: the hero model by value, the living tier, a character drawn or absent, stock rules (NASA / Pexels), the cost model |
+| V2c-b2b2 | done 13 Nov 2026 | 1457 / 0 / 0 on 1d3a77a (laptop); GitHub 1457 passed (run 131) | GREEN in F1 / F2 with Shorts in S1 / S2 / S3 (54 + 5 + 1 checks) | The cut-downs: a long video makes NO cut-down reels any more - the paid planning call, two paid covers, four re-voiced reels, the old upload, releases 2 to 4 and the checks `shorts` and `short_covers` are gone (60 hard checks; 71 levers); its topic already has the Short real viewers chose and the pull from that Short is YouTube's related-video link, a hand step (V3's release card); the long video's release is one step. Counted from the code, the defaults would have posted about 38 short videos a month through four uploads (12 Shorts, 16 cut-downs, 8-9 pilot Shorts, 2 special reels): now 12 - ONE door for every upright video (`release.py`; `truth.OLD_DOORS`: four older doors, off by default, may only shrink; a new door fails Plan Guard, the tests and check `docs_current`), the pilot Shorts and the special reels paused by default and moved once on a live Sheet. Found while proving and fixed at the cause, both older than this batch: a job could hang for ever in the prompt-cache bookkeeping (a warning logged inside a lock; found with a stack dump of a stuck test worker), and a long video was held for its Short's own hook 'Today you ...' (reproduced with the id on the accepted code first). 63 deliberate breaks, each failed a test. No paid call added, seven removed a long video (about Rs 27; the counter agrees). GitHub run 131 GREEN on 1d3a77a (130 GREEN; 129 RED = three test files importing the deleted module at the first build checkpoint); sweep 58 of 58 ids on the first pass. |
+| V2d | next | | | The motion ladder and the money: the hero model by value, the living tier, a character drawn or absent, stock rules (NASA / Pexels), the cost model |
 | V3 | after V2d | | | Pilot on real services (3 Shorts + 1 long video), the human kit, the release sheet's one-time switches, then GO LIVE with the new code |
 | V2b | after V3 | | | Inside the format: first person and camera continuity as measured rules, F1's own ending, F3 "The walk" |
 | V1c | after V2b | | | The judged floor with the canary (the owner's rejected video must lose), his verdict tab, the maker's line |
