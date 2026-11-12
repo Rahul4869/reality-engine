@@ -722,3 +722,15 @@ channels reach 10 million views; any measured reach effect of Meta's AI label; a
   (V4) and the split is a lever. O16 - four older uploads (special reels with the cast intro, pilot Shorts, the hero-still
   Short, the audio-drop Reel) are shut by a switch, not rebuilt on the release sheet: the batch that prepares the pilot decides
   which of them the channel still wants.
+- THE OWNER'S DESK: ITEM 22, ANSWERED (13 Nov 2026, after V2c-b2b2; his words are item 22 of `02_OWNER_VERBATIM.md`). (1) "save
+  some time ... without ... any molecular worth of quality or compromise": ADOPTED for the waiting only - his own waits between
+  batches (an automatic start of the next batch once the last is verified ACCEPTED was offered; it needs his yes) and his part of
+  the pilot made ready before V3. REFUSED for everything a batch is built from or judged by (the reading, the research, the
+  tests, the deliberate breaks, the rehearsals, the serial suite, the sweep, GitHub's Checks, the size of a batch, the effort):
+  measured on V2c-b2b2 the proving is about half of a batch and it found two real faults, and running its parts side by side
+  is a lesson already paid for. (2) "PAUSED as TRUE": NOTED - it replaces the "not paused" half of 10.4 (item 19); the channel
+  posts nothing until go-live; V3 turns it back by his hand, after the videos the pause is holding were shown to him
+  (BUILD_STATE open issue 148). (3) A CORRECTION this answer found, to 11.7: "advanced features" is not phone verification.
+  The phone gives custom thumbnails; the Short-to-video link, the pinned comment, the thumbnail A/B test, chapters and the
+  multi-language features need ADVANCED access - channel history, or identity verification by video or ID (YouTube Help
+  9890437, read 13 Nov 2026; BUILD_STATE open issue 149). The pilot's first step is the page "Feature eligibility".

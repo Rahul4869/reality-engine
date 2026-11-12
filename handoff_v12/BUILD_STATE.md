@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 13 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026, V2c-b2a THE PLATFORMS ACCEPTED on 12 Nov 2026 - V2c-b2 was split at its start, V2c-b2b was split at its start too: V2c-b2b1 THE OPENING ACCEPTED on 12 Nov 2026, V2c-b2b2 THE CUT-DOWNS ACCEPTED on 13 Nov 2026 - V2c is complete; V2d THE MOTION LADDER AND THE MONEY is next). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 13 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026, V2c-b2a THE PLATFORMS ACCEPTED on 12 Nov 2026 - V2c-b2 was split at its start, V2c-b2b was split at its start too: V2c-b2b1 THE OPENING ACCEPTED on 12 Nov 2026, V2c-b2b2 THE CUT-DOWNS ACCEPTED on 13 Nov 2026 - V2c is complete; V2d THE MOTION LADDER AND THE MONEY is next; THE LIVE CHANNEL IS PAUSED BY THE OWNER'S OWN HAND since 13 Nov 2026 - item 22 below, open issue 148). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -82,6 +82,20 @@ Short animated in every second; the paid model by value - today's costs four tim
 replicated voice needs no disclosure; the maker's line; no sample stops a platform seeing AI and for stylised animation it need not), THE
 RELEASE SHEET (what code can set, what one sitting sets, what only his hand can do per video), new department D14 Shorts Studio, and a NEW
 ORDER OF BATCHES: live after three. The evidence R20-R38 is not in the Palace yet (same rule as above).
+ITEM 22 (13 Nov 2026, after V2c-b2b2): "can we save some time from the remaining build without losing any details or build or aspect
+or any molecular worth of quality or compromise?" and "i have put the setting tab's PAUSED as TRUE as of now FYI". ANSWERED FROM
+MEASUREMENT (the commit times of this build), not from opinion: a batch takes 4.5 to 10 hours from one ACCEPTED to the next (6 h 05
+for V2c-b2b2); about half of it is proving, and the fixed block at its end is 2 h 07 of machine time (the parallel pre-check 33
+minutes, the serial suite 56, the sweep 38; GitHub's 56 run beside the write-up). NOTHING OF THE PROVING IS FREE: the suite and the
+sweep side by side is a lesson already paid for (HOW TO RUN: false failures under load), and item 21 says that what a batch is
+judged by is never replaced or weakened; fewer tests, a smaller sweep, fewer breaks, a shorter reading, bigger batches or a lower
+effort each cost something - none was offered. FREE, and only these: (1) HIS WAITS between batches (2 h 11 min that night) - he was
+offered that the session which started a batch starts the next one once the last is verified ACCEPTED, up to the pilot; HIS YES IS
+NEEDED, and until it is on record in `02_OWNER_VERBATIM.md` one batch per owner "continue" stands; (2) HIS PART OF THE PILOT made
+ready before V3 - first of all the channel's feature access, which is more than the phone (open issue 149). THE PAUSE: he set PAUSED
+to TRUE on the live Sheet himself. It replaces the "not paused" half of item 19; the rejected video stays public (he did not say
+otherwise). Nobody asks him about it and no session touches the cell; what the cell does and what V3 must do BEFORE it turns back
+is open issue 148.
 That turn was the DESIGN step for the whole programme (research, designs, decisions, records). Built since: V1a, V1b, V2a and V2c-a (the records are under DONE).
 
 ## NEXT
@@ -170,7 +184,8 @@ run left in the same file (V2c-b2b2: I read two old rehearsal logs as new); a sc
 lost its backslashes a THIRD time - the file tool, always.
 ORDER AFTER V2d (redesign 11.10): V3 PILOT ON REAL SERVICES AND GO LIVE (three Shorts and one long video; the human kit: his
 voice recording with the consent sentence, five photos, three sentences, the secrets typed by HIM; the release sheet's one-time
-switches - phone verification FIRST, open issue 112; the one-minute release card with the Short-to-video link as its first line,
+switches - phone verification FIRST, open issue 112, AND ADVANCED FEATURE ACCESS, which is more than the phone: open issue 149;
+PAUSED set back to FALSE by HIS hand, only after the held rows were shown to him: open issue 148; the one-minute release card with the Short-to-video link as its first line,
 open issue 135; the older doors decided, open issue 136; the bounded ffmpeg install in every workflow, open issue 94; then the
 new code replaces the old) -> V2b INSIDE THE FORMAT (first person and the camera path as measured rules, F1's own ending
 instead of the asks code still inserts - open issue 74, the speaker chip - 75, F3 "The walk", same-subject line-up titles -
@@ -4014,6 +4029,33 @@ Rehearsal asserts `docs_current` ran and passed.
    133 - closed. Issue 76 - closed for the cut-downs. Issue 84's last line (`JOKE_EVERY_SEC_SHORT` "only by the cut-down
    reels") was not exact: `enforce.py` reads the cell for any text judged as a Short; nothing of this batch touched it. Issue
    13 - narrowed: the long video's release step (`manage.release`) is still not a department run of Publishing.
+148. (the owner, 13 Nov 2026 -> V3, BEFORE GO-LIVE; item 22 of `02_OWNER_VERBATIM.md`) THE LIVE CHANNEL IS PAUSED BY THE OWNER'S OWN
+   HAND: he set the Settings cell PAUSED to TRUE. What the live code (`origin/main`) does while it is TRUE, read from the code,
+   NOT from the live Sheet (the build session cannot see it): `manage.tick` runs `kill_check`, then `hold_scheduled("paused")` -
+   a video already on YouTube's schedule with its slot still ahead is set to private and its row to HELD - and returns: nothing
+   is produced, no release step runs; the jobs `preprod`, `pilot` and `special --if-due` stop at the gate of `cli.py`. Hand-started
+   jobs still run, and so does whatever only reads (the learning job was not read line by line). The rejected video stays public.
+   WHAT V3 MUST DO: (1) the new code reads the same cell (`manage.paused`, `shorts2.py`): NOTHING is made until HE sets it back
+   to FALSE - an explicit step of the pilot guide, after his secrets and the first pre-flight, never set by the machine;
+   (2) the first tick after that runs `resume_held`: EVERY row at HELD with a `yt_id` goes back on the schedule - a video the OLD
+   code made would be published by the new channel, unasked. Before the cell turns, the pilot guide must list the HELD rows and
+   take his word on each (keep private, or delete); no code does that today; (3) his decision of 11 Nov ("not paused", item 19)
+   is replaced for the pause only - never ask him about it, never touch the cell; (4) while it is paused the old code spends
+   nothing on new videos and the hang of open issue 143 cannot bite. Until go-live the channel posts nothing.
+149. (found 13 Nov 2026 while answering item 22 -> V3; CORRECTS redesign 11.7 and the wording of issues 112 and 135) "ADVANCED
+   FEATURES" IS NOT PHONE VERIFICATION. YouTube Help 9890437, read 13 Nov 2026: the phone gives the INTERMEDIATE features
+   (videos over 15 minutes, custom thumbnails, live streaming); the ADVANCED ones need enough channel history, or identity
+   verification by video, or by a valid ID (the page: either unlocks them "immediately"; its details page was not read - how
+   long a review takes is not known). On the advanced list: related video on Shorts, pin comments, add chapters, A/B testing,
+   clickable links in a long video's description, apply for monetization, multi-language features. So on the release sheet:
+   the thumbnail needs the phone (issue 112 stands); the Short-to-video link (135), the pinned comment, the thumbnail A/B test
+   and the translated titles need ADVANCED access - and so may the chapters code writes into every description (whether
+   YouTube shows them without it was not found). Where he sees it: YouTube Studio > Settings > Channel > Feature eligibility
+   ("Enabled" next to what the channel has). He was told on 13 Nov 2026 to look NOW, so that the pilot does not wait for a
+   verification. V3: the pilot guide's first step is that page, not only the phone; a row of the release sheet whose feature
+   the channel does not have yet must say so (`hand` / not available), never fail as if the upload were wrong. The dated row
+   for `docs/CURRENT/PLATFORM_FACTS.md` goes in with the batch that touches `release.py` (no code and no current doc changed
+   on 13 Nov).
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`
