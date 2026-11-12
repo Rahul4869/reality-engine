@@ -2856,7 +2856,9 @@ Rehearsal asserts `docs_current` ran and passed.
 26. (B0b -> B10) The atmosphere's time valve (`ATMOSPHERE_MAX_OVERHEAD_PCT` 30) switches its particles off on EVERY small fake render (153% measured),
    so the rehearsal never shows the full set of layers after frame 120 and says nothing about full size. First-run verification must read
    `Episodes.atmos_json` (`dropped`) of the first real videos; if layers are dropped there, D6 tunes the cell.
-27. (B0b, laptop) One test still skips on the laptop: the dashboard render needs node (GitHub runs it). Install node only if a batch changes the Worker.
+27. CLOSED on 12 Nov 2026 (the owner allowed tools that help, item 21 of `02`): Node.js is installed and the dashboard test runs on the
+   laptop (HOW TO RUN, "TOOLS INSTALLED ON 12 NOV 2026"). Was: (B0b, laptop) One test still skips on the laptop: the dashboard render
+   needs node (GitHub runs it). Install node only if a batch changes the Worker.
 28. (B4 -> B6) Knowledge and rule levers (A, D) are verified as SERVED (the item, in that version, was in the playbook of a later complete run). CITED
    is demanded by the same verifier as soon as a department runs in `prompt` mode (B6, open issue 12). Until then "verified" for A / D means handed over.
 29. (B4 -> B10) The code lever (E) has never run against the real GitHub: `builds.pr_files`, `builds.commit_state`, the dispatch of `checks.yml` on main
@@ -3181,6 +3183,21 @@ Rehearsal asserts `docs_current` ran and passed.
   `test_v91_flaky_root` (999 s that day) and `test_v82` (764 s) run into it. Suite first (about 40 minutes with the engine's tests), then the sweep.
 - NEVER paste code with backslashes through a shell here-document on this laptop: the shell halves them (it broke a file twice in B0b). Write the
   file with the file tools, then run it.
+- TOOLS INSTALLED ON 12 NOV 2026 (the owner's standing permission, item 21 of `02_OWNER_VERBATIM.md`: a tool is allowed where it helps
+  the tests or saves tokens, from an official source, and NEVER at the price of quality - what a batch is judged by stays "in the
+  same manner"). (1) **Node.js LTS** v26.13.1 (winget package `OpenJS.NodeJS.LTS`, in `C:\Program Files\nodejs`; a shell that does
+  not find it: `export PATH="/c/Program Files/nodejs:$PATH"`). The dashboard test of `tests/test_v94b.py` no longer skips: THE LAPTOP
+  NOW RUNS EVERY TEST GITHUB RUNS (14 passed in that file with `WI_NO_SKIPS=1`). (2) **pytest-xdist** 3.8.0 (with execnet 2.1.2) in
+  the venv: the whole suite with real pytest, in parallel and strict like GitHub -
+  `PYTHONPATH= WI_NO_SKIPS=1 ../.venv/Scripts/python.exe -m pytest tests -q -p no:cacheprovider -n 6 > <log outside the repo> 2>&1`.
+  PROVEN ONCE on 3e4636f (the accepted code of V2c-b2a): **1392 passed in 30:25, exit 0** - GitHub's own total for run 117 - against
+  about 50 minutes for the serial runner. USE IT AS THE PRE-CHECK before a batch's final code commit: one run shows every test the
+  batch changed by design (the three red runs of V2c-a and V2c-b1 were exactly such tests). THE ACCEPTANCE RUN IS UNCHANGED: the
+  serial suite on a frozen copy (`bash ../shim/runall.sh`), then the sweep, then GitHub's Checks. Its output to a file is buffered:
+  wait for the process to end and read the last line; a red run: `grep -a "^FAILED" <log>`. Never run it beside the serial suite or
+  the sweep. Nothing that `requirements.txt` pins was touched (`pip check`: no broken requirements); never upgrade a pinned package
+  (standing rule 4). With node present the serial suite should report 0 skipped from now on - not seen yet; the next acceptance run
+  will show it. If a parallel total ever differs from the serial one, trust the serial one, trace the difference and write it here.
 - git: `core.autocrlf=false` (keep LF); write files with LF. Commit identity Rahul4869 (noreply address); push with
   `GIT_TERMINAL_PROMPT=1 GCM_INTERACTIVE=always git push` (credentials are saved).
 
