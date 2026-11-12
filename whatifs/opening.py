@@ -147,7 +147,7 @@ def fit(w, h, W, H, mode=None, emax=None):
         cw = min(w, int(round(h * F)) // 2 * 2)
         return {"mode": mode, "shape": round(F, 4), "crop": [cw, h], "show": [W, H], "enlarge": round(H / h, 3), "ground": False, "kept": round(cw / w, 3)}
     A = a if mode == "whole" else F if mode == "fill" else min(F, max(a, emax * w / H))
-    ch = h if mode == "whole" else max(2, min(h, int(w / A + 1e-6) // 2 * 2))      # rounded DOWN to whole pixel pairs: a window meant to fill the frame never leaves a strip of ground
+    ch = max(2, min(h, int(w / A + 1e-6) // 2 * 2))      # rounded DOWN to whole pixel pairs: a window meant to fill the frame never leaves a strip of ground
     dw = min(W, int(round(H * w / ch)) // 2 * 2)
     return {"mode": mode, "shape": round(w / ch, 4), "crop": [w, ch], "show": [dw, H], "enlarge": round(H / ch, 3), "ground": dw < W, "kept": round(ch / h, 3)}
 
@@ -189,7 +189,7 @@ def cut(shots, units, out, man, have=None):
             inputs, filt = [], []
             for k, (name, t0, t1, slow) in enumerate(parts):
                 c = (man.get("clips") or {}).get(name); src = os.path.join(wd, name)
-                if not c or not os.path.exists(src): raise RuntimeError(f"opening shot {i} needs {name}, which is not in the footage of Short {man['short']} - nothing is paid; will retry")
+                if not c: raise RuntimeError(f"opening shot {i} needs {name}, which is not in the footage of Short {man['short']} - nothing is paid; will retry")
                 f = fit(c["w"], c["h"], W, H); rec["fit"] = rec["fit"] or dict(f, w=c["w"], h=c["h"])
                 t0 = min(float(t0), max(0.0, float(c["sec"]) - 0.1)); inputs += ["-i", src]
                 filt.append(f"[{k}:v]trim=start={t0:.3f}:end={max(float(t1), t0 + 0.05):.3f},setpts=(PTS-STARTPTS)*{float(slow):.4f}," + _show(k, c, f, W, H, fps))

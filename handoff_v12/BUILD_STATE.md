@@ -374,6 +374,15 @@ F. (ORIGINAL, CHOSEN) THE PROVEN OPENING UNDER THE LONG VIDEO'S OWN VOICE, IN TH
   nearest earlier picture with a camera move; after the opening that picture is the first frame of a footage clip (blurred ground
   and all), and the paid repair, asked to fix such a shot, found the footage picture and (rightly) refused to re-make it. The
   first still after the footage is now always a picture of the video's own (`episode.anchor_shots`), whatever the budget says.
+  (6) THE REHEARSAL'S OWN OLDER ASSERTIONS met the new opening twice: "ten hook candidates" (a video on its Short's hook has one
+  line and no lab) and "four planned animated shots, one of them the opening hook" (the plan's own opening clip may lie under the
+  footage). Both now state what is true for a video about a promoted Short; the lab's ten lines are proven by the production
+  under an override. (7) THE FIRST BREAK RUN WAS CUT OFF BY THE TOOL AFTER ABOUT TEN MINUTES, IN THE MIDDLE OF BREAK 44, AND LEFT
+  ONE BROKEN LINE IN `whatifs/contract.py` (a kill does not run the script's "put it back"). Found by `git status` before any
+  other step; the file was restored from git and its text compared. The break script now keeps a copy of every file before its
+  first break, restores from it at every start, and runs in parts that end inside the tool's limit. 41 of the first 43 breaks
+  had failed a test; the two that did not were lines that changed nothing (a special case for the whole clip that the general
+  line already gives; a file test that the cut's own failure already covers) - both lines are gone.
 
 #### Step 4 BUILD (what changed)
 - NEW `whatifs/opening.py` (D6; on `tools/repair.py` PROTECTED): `on`, `source`, `none_words`, `manifest`, `fetch`, `proven`, `bounds`,

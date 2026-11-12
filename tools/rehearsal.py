@@ -162,9 +162,10 @@ def run(ep_id=None):
         rc5 = CON5.p_research_cadence({}); set_setting("ORG_SINCE", since5); assert rc5[0] == "PASS", rc5
         print("R&D + Review Board:", len(rm5), "research memo(s) ->", ", ".join(f"{m['body']['kind']}:{m['body']['verdict']}" for m in am5), "| canary rejected by both families |", rc5[1][:120])
         from whatifs.core import S as _S89; np89 = _S89("NEXT_PREMISE")      # v8.9: the scheduled video leaves its tease for the next episode (v8.9.1: only a saved plan uses it up)
-        # v7.4 checks: research brief, ten opening hooks, reviewable cut map
+        # v7.4 checks: research brief, the opening line, reviewable cut map. v12 V2c-b2b: this long video is about a promoted Short, so its first line is that
+        # Short's own hook and no hook lab ran (the lab's ten lines and their rules are proven by the long video made under an override, tests/test_v12_opening_e2e.py)
         d74 = os.path.dirname(r["master"])
-        hk = json.load(open(os.path.join(d74, "hooks.json"))); assert len(hk["candidates"]) == 10 and all(c["words"] < 10 for c in hk["candidates"]), "hook rules"
+        hk = json.load(open(os.path.join(d74, "hooks.json"))); assert hk.get("source") == "short" and hk.get("short") == used12[0]["id"] and hk.get("applied") and len(hk["candidates"]) == 1, ("the opening line is not the promoted Short's hook", {k: hk.get(k) for k in ("source", "short", "applied", "status")})
         cm = json.load(open(os.path.join(d74, "cutmap.json"))); assert cm["apply_policy"].startswith("REVIEW ONLY"), "cut map must stay review-only"
         assert st.rows("Research_Brief") and st.rows("Hook_Candidates"), "v7.4 reports missing from the store"
         print("v7.4 checks ok")
@@ -298,9 +299,10 @@ def run(ep_id=None):
         flush_costs(); from whatifs.core import flush_log as _fl; _fl()
         cs811 = [r for r in store().rows("Cache_Stats") if r["episode_id"] == e["episode_id"]]
         assert cs811 and float(cs811[0]["hit_ratio"] or 0) > 0 and int(cs811[0]["cache_read_tok"]) > 0, f"prompt cache not used: {cs811[:1]}"
-        kl811 = [i for i, s_ in enumerate(sh87) if s_.get("type") == "kling"]
-        assert len(kl811) == S("KLING_CLIPS", int) and sum(1 for i in kl811 if sh87[i].get("opening_hook")) == 1 and any(sh87[i].get("impact") for i in kl811), \
-            f"Kling placement: {[(i, sh87[i].get('opening_hook'), sh87[i].get('impact')) for i in kl811]}"
+        kl811 = [i for i, s_ in enumerate(sh87) if s_.get("type") == "kling" and not s_.get("short")]      # v12 V2c-b2b: the video's OWN planned animated shots (the opening is the Short's footage, paid already)
+        ft811 = [i for i, s_ in enumerate(sh87) if s_.get("short")]                          # the opening hook IS the footage now: the plan's own opening clip may lie under it (then one paid shot fewer is planned)
+        assert ft811 and ft811[0] == 0 and S("KLING_CLIPS", int) - 1 <= len(kl811) <= S("KLING_CLIPS", int) and sum(1 for i in kl811 if sh87[i].get("opening_hook")) <= 1 and any(sh87[i].get("impact") for i in kl811), \
+            f"Kling placement: {[(i, sh87[i].get('opening_hook'), sh87[i].get('impact')) for i in kl811]} after the footage shots {ft811}"
         sm811 = [r for r in store().rows("Cost_Log") if r["item"] == "ai_per_video_summary" and r["episode_id"] == e["episode_id"]]
         assert sm811 and sm811[0]["inr"] == "0" and float(sm811[0]["est_inr"]) > 0, "measured-vs-estimated AI cost row missing"
         from whatifs import premise as PR811, room as ROOM811

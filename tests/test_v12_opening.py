@@ -180,6 +180,8 @@ def test_a_restored_clip_is_kept_and_a_shot_that_cannot_be_cut_stops_before_anyt
     os.remove(os.path.join(out, OPEN.DIR, "c1.mp4"))
     with pytest.raises(RuntimeError, match="nothing is paid"): EP._assets(shots, u, out, "EPX", budget=20, footage=m)                    # the assets stage stops BEFORE it would buy another picture for the shot
     with pytest.raises(RuntimeError, match="nothing is paid"): EP._assets(shots, u, out, "EPX", budget=20, footage={"none": "broken"})
+    named = [dict(s) for s in shots]; named[0] = dict(named[0], short={"id": SID, "parts": [["c9.mp4", 0.0, 2.0, 1.0]]})
+    with pytest.raises(RuntimeError, match="nothing is paid"): EP._assets(named, u, out, "EPX", budget=20, footage=m)                   # a shot that names a clip the archive never held
     assert not paid
 
 # ------------------------------------------------------------------ 6. check opening_shown: the finished film
