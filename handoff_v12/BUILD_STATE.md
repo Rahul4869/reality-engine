@@ -5316,6 +5316,15 @@ Rehearsal asserts `docs_current` ran and passed.
    about 150 lines, so the count there is unknown until a real one is made; if the bought share stays under the plan, a living clip could
    also run on a line BEFORE a scene, or a longer clip be bought - a design for the batch that owns the moving share's levers (168).
    Not a rule that holds any video: the floor (20%) is judged on the film and every id stands at 60 to 80%.
+182. PLAN ISSUE 1 (the repairer of V2d-b, 13 Nov 2026): `OPUS_BUILD_PLAN.md` 5.9 orders "4. the builder's block ... 5. Write
+   "expect_tests" ... 6. built_gate.py until it prints GREEN"; `proving/built_gate.py` reads `expect_tests` from the block AS IT WAS WHEN
+   THE RUN STARTED (`RUN.json`), so a value written after the run is never seen: `python proving/built_gate.py V2d-b <scratch>` printed
+   "BUILT GATE V2d-b b5068bb: NOT YET (1): write "expect_tests": 1551 into proving/blocks/V2d-b.json" with 1551 already in the file. The
+   SAFER reading was done (nothing in `proving/` changed): the builder's block ran AGAIN on d8101c8 with `expect_tests` in the block file.
+   A Fable session should fix the plan's order (write `expect_tests` from a pre-check before the builder's block) or the gate.
+   WHERE THE SESSION STANDS (written at about 69% of the repairer's context): everything of the repair is done and pushed (final code commit
+   d8101c8; breaks 39 of 39; 28 ids; the record); left: the second builder's block, `built_gate.py` GREEN, `next.py --to BUILT --commit
+   d8101c8`, commit `STATE.json`, start a fresh prover. A fresh session given the REPAIRER card resumes at the second builder's block.
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - SINCE 13 NOV 2026 (the owner's item 33): the acceptance block, its verdict, the deliberate breaks and the moves of the state are
