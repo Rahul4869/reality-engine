@@ -597,7 +597,8 @@ words change it at any time (L12).
 | `cleanup.py` | removes the frozen copies and work folders of a scratch folder |
 | `blocks/` | the acceptance block as DATA: `default.json` is the floor, `<batch>.json` the batch's own (never weaker) |
 | `breaks/`, `built/`, `verdicts/`, `logs/`, `notes/` | break lists and results; gate results; verdicts and judges' reports; the archived logs of every block; hand-over and red notes |
-PROVEN BOTH WAYS by the session that wrote them (the test scripts are in that session's scratchpad; the results are in the record of V2d-b):
+PROVEN BOTH WAYS by the session that wrote them (the test scripts are kept for the auditor's eye in `proving/selftests/` - they ran from
+that session's scratchpad against the logs now archived under `proving/logs/V2d-b_60d9483_1/`; the results are in the record of V2d-b):
 `verdict.py` on the REAL logs of V2d-b's first pass (RED, for the reasons a judge wrote by hand, plus the thin margins as WATCH lines), on
 a doctored copy with the one bad id made good (GREEN; PENDING without GitHub; RED when GitHub's total differs; RED for a missed break and
 for breaks run on other code), and refused a second run on the red commit; `github_run.py` on a green, a red and a running run;
