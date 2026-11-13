@@ -77,11 +77,13 @@ def recompose(out_dir, text, boost, side="left"):
     """Redraw the thumbnail from the key art already paid for (thumb_raw.jpg) with stronger contrast. v8.3: the text stays on the side the art was composed for (the subject sits on the other two thirds)."""
     return compose_thumbnail(os.path.join(out_dir, "thumb_raw.jpg"), out_dir, text, side, boost)
 
-def thumbnail(prompt, text, out_dir, episode, side="left"):
+def thumbnail(prompt, text, out_dir, episode, side="left", seed=None):
+    """The key art and the thumbnail drawn from it. `episode` is the video the picture is PAID for; `seed` is what makes it this picture and no
+    other (default: the episode). v12 V2d: the two were one argument, so a runner-up thumbnail seeded 'EP...B' was booked to an episode that does not exist."""
     os.makedirs(out_dir, exist_ok=True)
     full = prompt + ". Ultra-detailed cinematic key art, one dramatic focal subject placed on the " + ("right" if side == "left" else "left") + \
            " two-thirds, strong rim light, deep contrast, volumetric haze, " + THUMB_STYLE + \
            ", 8k detail, no text, no letters, no logos, no watermark"
-    raw, _ = still(full, os.path.join(out_dir, "thumb_raw.jpg"), episode, seed=episode + "thumb", w=1920, h=1080, premium=True)
+    raw, _ = still(full, os.path.join(out_dir, "thumb_raw.jpg"), episode, seed=str(seed or episode) + "thumb", w=1920, h=1080, premium=True)
     return compose_thumbnail(raw, out_dir, text, side)
 

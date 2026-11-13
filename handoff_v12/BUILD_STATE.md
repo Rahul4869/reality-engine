@@ -417,6 +417,89 @@ E. (ORIGINAL, CHOSEN) THE BEST MODEL THE PLAN CAN PAY, BOUGHT BY THE SECOND, IN 
 - NOT IN V2d-a, on purpose: the living tier and the moving seconds of a long video, `moving_share`, the micro-cuts that hide
   part of a paid scene (130), a character drawn or absent, the stock rules, the first-second sound of a Short (all V2d-b); an
   offline clip that follows its start picture's shape (the offline clips stay wide: open issue 123); wiring Finance (D11).
+- CORRECTED BY THE BUILD (found by running, each written here before or with the edit that fixes it):
+  (1) THE MONEY TABLE ABOVE WAS TOO LOW FOR A SHORT. The first whole Shorts bought MORE seconds than the estimate said before
+  their scripts existed (23 against 21): the loop - the first clip played backwards, free - is never longer than that first
+  clip, so part of a Short's last beat is usually a paid clip too. The estimate may only err upward: every beat is counted as
+  a paid clip now (`costguard.short_shots`). The code's own numbers after that, replacing the table's right column: a Short
+  Rs 93 to 111 by format (Rs 101 weighted by the format shares: 28 to 36 paid seconds Rs 55 to 71, pictures Rs 0.6 to 2.4,
+  writing 36, voice 1.3 to 1.5); a long video about a promoted Short Rs 381, under an override Rs 402; a month of four long
+  videos Rs 1,769 with the margin + twelve Shorts Rs 1,214 + the reserve 300 = Rs 3,283 of the Rs 4,280: about Rs 1,000 not
+  planned. THE LINE the plan can pay is USD 0.042 a second. At MiniMax H3's 0.06 EIGHT Shorts fit beside four long videos
+  (not "twelve, with nothing left"), at the 0.084 of the model this batch replaces FIVE. With the exact plans of the first
+  Shorts made offline (22 to 24 seconds: 18 to 23 paid seconds) a Short's own estimate was Rs 74 to 83.
+  (2) "the best OTHER model" - `steward.next_candidate` has always meant the best model other than the one in use; under the
+  clip market it is the next pick by the same rule with the model in use left out (MiniMax H3 today, at three times the
+  price: the plan then pays 8 Shorts, and the owner is told by the Steward's switch message and by the split's).
+  (3) Two functions of the governor had no caller left once every estimate read the one table (`voice_think_inr`,
+  `v91_extra_inr`): the truth registry named them at the first Plan Guard run and they are gone, with one condition in
+  `costguard.reconcile` that could never decide anything.
+  (4) A script pasted through the shell lost a backslash a FOURTH time (two edits of four were applied before it stopped;
+  found by `git status` and a search, the other two made with the file tool). The file tool, always.
+  (6) **FOUND BY ONE OF THOSE NEW ASSERTIONS, A FAULT OF THE OLDER CODE: A LONG VIDEO'S SECOND THUMBNAIL IS BOOKED TO
+  ANOTHER EPISODE.** On a whole production the paid-call counter saw two key-art pictures and the episode's own cost record
+  held ONE. `art.thumbnail` uses its `episode` argument twice - as the seed of the picture and as the id the cost is booked
+  to - and `episode.py` calls it with `ep + "B"` for the runner-up thumbnail (and `ep + "b"` for a re-made one): Rs 7.92 of
+  every long video is logged under an episode that does not exist. The month's total was right (the row is in Cost_Log);
+  the episode's own cost (`_ep_cost`, the cell `cost_inr`, the weekly "estimate against measured" mail) was Rs 8 to 16 too
+  low, and a breakout follow-up's runner-up was booked outside the breakout fund's ids. Not this batch's change - found
+  because this batch sets what was paid against the estimate line by line. Fix at the cause: the seed and the cost id are
+  two arguments (`art.thumbnail(..., episode, seed=)`), so the pictures stay exactly what they were and the cost goes to
+  the video that ordered it; a test on the seed and the booking, the whole production's assertion, two deliberate breaks.
+  (5) THE BREAK LIST, written before the last test run ("what would fail if this line went?"), showed six rules without an
+  assertion: the start pictures and the key art on a whole production's summary, the writing line plus the hook lab equal
+  to the writing allowance, a Short's estimate from its real plan, an episode's estimate when its draw names a promoted
+  Short, the size a row buys deciding its price, the two lines of the sweep that make an id bad. All written first.
+
+#### Step 4 BUILD (what changed)
+- NEW `whatifs/clips.py` (D6; on `tools/repair.py` PROTECTED, with `whatifs/costguard.py`): `on`, `table`, `row`, `hero`, `usd_s`,
+  `secs`, `usd`, `longest`, `buy`, `hero_usd_s`, `paid_s`, `args`, `issues`, `pick`, `floor_of`, `choice`, `schema_issues`,
+  `refresh`, `review`, `preflight`, `shape_ok`.
+- `whatifs/media.py`: `animate(..., seconds=)` - a hero clip is bought by the second; `_fal_video` builds the request from the
+  model's row and logs the seconds; a hero clip of another shape than its start picture raises; offline, a still, a clip and
+  a start picture leave a Cost_Log row with their units and no rupee (`anim.gemini_image` too), so that an estimate can be
+  checked against a run that paid nothing.
+- `whatifs/costguard.py`: `lines` (THE estimate), `total`, `table_read_runs`, `voice_inr`, `short_shots`, `reconcile`;
+  `estimate_lines` only sums the lines. `whatifs/governor.py`: `long_kind`, `full_episode_inr(kind=)`, `min_episode_cost_inr`,
+  `short_inr`, `month_room_inr`, `line_usd_s`, `split`, `split_tell`; `tier_saving` at the still price really paid. Gone:
+  `voice_think_inr`, `v91_extra_inr`. `whatifs/episode.py`: `est_cost_inr` reads the lines at the episode's own kind and
+  tier; `reconcile` after the video is finished. `whatifs/models.py`: `ai_estimate_inr` counts the table read only where it runs.
+- `whatifs/shorts2.py`: `plan` (every shot carries `buy` and `slow`; one clip a shot, none slowed with the market on; the
+  loop no longer than the first clip), `slow_of`, `make` (the seconds asked for; `paid_s`), `est_inr(fmt, pl)`,
+  `made_this_month`, `cadence` (the month's split binds and spreads), `run` (the exact plan is checked against the money
+  before any picture is paid; `reconcile` after the Short is made). `whatifs/org/shortseat.py`: `clip_max`. `whatifs/opening.py`:
+  the picture track reads how the Short played each clip. `whatifs/replan.py`: `short_inr` is the governor's.
+- `whatifs/steward.py`: the hero's replacement is the clip market's next pick. `whatifs/scout.py`: `fal_schema`; `weekly` runs
+  `clips.review` and no longer writes the listing's price into `PRICE_KLING_USD` while the market is on.
+  `whatifs/preflight.py`: the check "clip model" (a warning). `whatifs/manage.py`: `v12v2d_upgrade` at both setup sites; the
+  learning job calls `split_tell`. `whatifs/truth.py`: three truth sentences no longer name a model. `whatifs/org/registry.py`:
+  D6 wraps `clips.py`.
+- `whatifs/core.py`: 9 new cells (`CLIP_VALUE_ON`, `CLIP_MODELS`, `SPLIT_ON`, `MONTH_RESERVE_INR`, `HOOK_LAB_EST_INR`,
+  `PROBE_EST_INR`, `TTS_RETAKES`, `SPLIT_TOLD_MONTH`, `V12V2D_MOVE_DONE`), 1 gone (`TTS_EST_INR`), 3 defaults changed
+  (`FAL_HERO_MODEL`, `PRICE_KLING_USD` 0.42 -> 0.10, `LLM_EST_INR` 176 -> 170).
+- `tools/sweep.py`: `money_of` - every id's estimate against what its runs paid (a long video and its Short; both Shorts of
+  a Shorts id); the summary counts `money_agreed`. `tools/rehearsal.py`: asserts the pick, and the money of the long video
+  and both Shorts. `tests/conftest.py`: `OLD_CLIPS` - the older tests keep the model and the flat price they were written
+  for and a cadence the money does not bind. `tests/paid_calls.py`: no call added, none removed (a note says what changed).
+- Seeds: `v2da.best_model_the_plan_can_pay`, `v2da.listing_price_is_a_base_price`, `v2da.the_ranking_is_not_our_setting`
+  (D6), `v2da.a_clip_is_bought_by_the_second` (D14, D6), `v2da.one_table_of_cost_lines`,
+  `v2da.an_allowance_for_calls_that_never_run` (D11), `v2da.the_split_says_what_fits` (D14), `v2da.takeaway` (D6): 188
+  founding items; the Palace's note on limits that do not fit a playbook is unchanged.
+- Docs: 5 matrix rows, the ledger (the stack line, the V2d-a paragraph), 7 dated platform facts, two builders' recipes in
+  `CLAUDE.md` ("The clip market", "The cost model") and hard rule 2 reworded, `SYSTEM.md` regenerated.
+#### Step 5 ENFORCE (rule -> executing code -> fails when broken)
+| Rule | Executed by | Fails when broken |
+|---|---|---|
+| The hero clip model is the best rank the month's plan can pay; a tie goes to the cheaper; never a model without a rank or a word on its clip's shape; never below the model in use | `clips.pick`, `issues`, `choice`, `governor.line_usd_s`; `clips.review` in `scout.weekly`; `steward.next_candidate`; `manage.v12v2d_upgrade` | tests on the rule with the case built to defeat it (a model a hundred times cheaper and ranked lowest); the rehearsal (the pick is the model in use) |
+| No model is named in code; a model is a row of what its own page says | cell `CLIP_MODELS`, `clips.args`, `media._fal_video` | a test reads the module's source and builds another request from another row; Plan Guard |
+| fal's listing is read for status, inputs and clip lengths; its price is watched and never taken | `clips.refresh`, `schema_issues`, `scout.fal_schema`; `scout.weekly` | tests (a moved base price marks the row and leaves the estimate; the scout writes no price) |
+| A clip is bought by the second at the length of its shot; nothing is slowed | `clips.buy` / `secs`, `media.animate(seconds=)`, `shorts2.plan` / `make`, `shortseat.clip_max` | tests; check `short_shape` (a shot longer than one clip); whole Shorts (paid seconds = the plan's) |
+| A hero clip of another shape than its start picture is a failed clip | `clips.shape_ok` in `media.animate` | a test on real files and on the request path (the Steward counts the failure) |
+| Every paid second and call is a line of ONE estimate that every gate reads | `costguard.lines`; `governor.full_episode_inr`, `min_episode_cost_inr`, `short_inr`; `episode.est_cost_inr`; `shorts2.est_inr` | tests (every estimate equals the lines; a price cell moves its line and nothing else); whole productions with the paid-call counter, call by call |
+| An allowance is counted only where its calls run | `costguard.table_read_runs`, `lines`; `models.ai_estimate_inr` | tests both ways (room v2: no line; the older room: Rs 55) |
+| What a run paid is set against its lines | `costguard.reconcile` in `episode` and `shorts2.run` | tests (a paid item without a line and an exceeded line are named); the sweep's `money_of` makes the id bad; the rehearsal asserts it |
+| The month's split says how many Shorts fit; the cadence makes that many, spread; a Short whose real plan cannot be paid is not made | `governor.split`, `shorts2.cadence`, `shorts2.run`, `governor.split_tell` in the learning job | tests (fit at three prices; the spread; told once; nothing paid for an unpayable plan) |
+| A live Sheet is moved once | `manage.v12v2d_upgrade` at both setup sites | tests (the pick, the allowance, the retired note, never twice, his own value left alone) |
 
 ### V2c-b2b2 - THE CUT-DOWNS (12-13 Nov 2026) - ACCEPTED (final code commit 1d3a77a GREEN in GitHub Checks run 131: 1457 passed; sweep 58 of 58 ids)
 The owner's "continue" for this batch is the start of this session. The whole binding reading order was read first (handoff `CLAUDE.md`,

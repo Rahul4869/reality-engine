@@ -96,7 +96,7 @@ def reconcile(episode, L, kind=""):
         from whatifs.core import flush_costs
         flush_costs(); paid = {}
         for r in store().rows("Cost_Log"):
-            if r.get("episode_id") != episode or r.get("basis") == "summary" or stage_of(r.get("item"), r.get("provider")) != "visuals": continue
+            if r.get("episode_id") != episode or stage_of(r.get("item"), r.get("provider")) != "visuals": continue      # pictures and clips only (a summary row is no paid item: its stage is 'other')
             try: paid[r["item"]] = paid.get(r["item"], 0.0) + float(r.get("units") or 0)
             except (TypeError, ValueError): pass
         want = {}

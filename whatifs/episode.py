@@ -673,7 +673,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         thumb, thumb_master, phone = ART.recompose(out, pkg.get("thumb_text", ""), boost); okt, tinfo = QC.check_thumb(thumb, phone)
     if not okt and not have_art:
         log(f"thumbnail still weak {tinfo}, making new key art once", "WARN")
-        thumb, thumb_master, phone = ART.thumbnail(pkg.get("thumb_prompt", "") + ", higher contrast, brighter subject", pkg.get("thumb_text", ""), out, ep + "b")
+        thumb, thumb_master, phone = ART.thumbnail(pkg.get("thumb_prompt", "") + ", higher contrast, brighter subject", pkg.get("thumb_text", ""), out, ep, seed=ep + "b")
     thumb_b = _thumb_b(pkg, room, out, ep, fix)          # v8.5 packaging rescue: a runner-up thumbnail with a DIFFERENT idea, used only if the video lags
     # ---- final QC of the long video: full check, free fixes, small capped paid fixes; anything left = HOLD (never uploaded)
     chk = QC.full_check(job.qc_ctx()); notes = []
@@ -850,7 +850,7 @@ def _thumb_b(pkg, room, out, ep, fix):
     try:
         import shutil
         b_dir = os.path.join(out, "_b"); txt = text or pkg.get("thumb_text", "")
-        up_b, _, phone = ART.thumbnail(prompt, txt, b_dir, ep + "B", side="right")
+        up_b, _, phone = ART.thumbnail(prompt, txt, b_dir, ep, side="right", seed=ep + "B")      # v12 V2d: the same picture (its seed), booked to THIS video
         ok, info = QC.check_thumb(up_b, phone)
         if not ok:                                   # v8.6: the B thumbnail passes the same phone-size check as the main one (free redraws), or is not used
             for boost in (1, 2):

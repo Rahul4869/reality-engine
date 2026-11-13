@@ -49,6 +49,7 @@ def test_a_clip_is_bought_in_whole_seconds_inside_the_models_shortest_and_longes
     hey, pix = CL.row(HEY), CL.row(PIX)
     assert [CL.secs(hey, s) for s in (0.4, 3.2, 5.0, 5.01, 9.99, 10.0, 14.2, 17)] == [5, 5, 5, 6, 10, 10, 15, 15]
     assert [CL.secs(pix, s) for s in (0.4, 1.0, 1.01)] == [1, 1, 2]
+    assert CL.usd_s(hey) == 0.02 and CL.usd_s(dict(hey, res="1080p")) == 0.06 and CL.usd_s(dict(hey, res="4k")) is None          # the price of a second is the price of the size the row BUYS
     assert CL.usd(hey, 6.2) == pytest.approx(7 * 0.02) and CL.usd(CL.row(H3), 5) == pytest.approx(0.30) and CL.usd(CL.row(KLING), 5) == pytest.approx(0.42)
     assert CL.buy(6.2)[1:] == (7, pytest.approx(0.14)) and CL.buy()[1] == CL.SCENE_S == 5 and CL.longest() == 10 and CL.hero_usd_s() == 0.02 and CL.paid_s(6.2, 3) == 21
 
@@ -205,6 +206,7 @@ def test_a_short_buys_each_shot_one_clip_as_long_as_the_shot_and_slows_nothing(m
         assert loop["src"] == "loop" and loop["buy"] == 0 and loop["slow"] == 1.0 and loop["end"] - loop["start"] <= paid[0]["buy"] + 0.01          # the loop is no slower than the clip it returns
         assert SEAT.shape_report(sc, fmt, t["units"], SEAT.shape(pl, sc, fmt))["problems"] == [], fmt
         assert sum(s["buy"] for s in paid) == next(l["n"] for l in CG.lines("short", fmt=fmt, shots=shots, seconds=pl["seconds"]) if l["key"] == "hero_clips")
+        assert SH.est_inr(fmt, pl) == round(CG.total(CG.lines("short", fmt=fmt, shots=shots, seconds=pl["seconds"])), 1) > SH.est_inr(fmt, dict(pl, shots=shots[:1] + shots[-1:]))      # the estimate of a real plan is ITS seconds
     sc = good("S1"); t = tl(sc, pace=0.9); pl = SH.plan(sc, t, "S1")                                 # a slow voice: beats of more than 10 seconds are split
     assert max(s["end"] - s["start"] for s in pl["shots"]) <= 10.01 and len(pl["shots"]) > 5 and all(s["slow"] == 1.0 for s in pl["shots"][:-1])
     long = dict(pl, shots=[dict(pl["shots"][0], end=12.5)] + pl["shots"][1:])
@@ -228,6 +230,7 @@ def test_every_estimate_is_the_same_table_of_lines(market, setting):
     sh = FMT.short_shares(); assert G.short_inr() == pytest.approx(sum(SH.est_inr(f) * w for f, w in sh.items()) / sum(sh.values()), abs=0.1) and RP.short_inr() == G.short_inr()
     E = CG.estimate_lines(); assert abs(sum(E.values()) - G.full_episode_inr(kind="long") - E["community"]) < 1.0 and E["tts"] == pytest.approx(CG.voice_inr(540), abs=0.1)
     assert M.ai_estimate_inr() == core.S("LLM_EST_INR", float) + core.S("THINK_EST_INR", float) + core.S("ROOM_EXTRA_EST_INR", float)
+    Ll = {l["key"]: l["inr"] for l in CG.lines("long")}; assert Ll["writing"] + Ll["hook_lab"] == core.S("LLM_EST_INR", float)          # the hook lab is PART of the writing allowance: never counted twice
     before = G.full_episode_inr(kind="long"); setting("PRICE_GEM_IMAGE_USD", "0.5")
     assert G.full_episode_inr(kind="long") == pytest.approx(before + 4 * (0.5 - 0.067) * core.S("USD_INR", float), abs=0.05)          # a price cell moves its line and nothing else
 
@@ -245,7 +248,10 @@ def test_a_long_video_about_a_promoted_short_is_its_own_kind(market, setting):
     assert lo["hero_clips"]["calls"] == {"clip_kling": 4} and la["hero_clips"]["calls"] == {"clip_kling": 3} and la["start_frames"]["calls"] == {"image_ref": 3}
     assert CG.total(list(lo.values())) - CG.total(list(la.values())) == pytest.approx(5 * 0.02 * u + 0.067 * u + core.S("HOOK_LAB_EST_INR", float), abs=0.02)
     setting("LADDER_ON", "TRUE"); assert G.long_kind() == "long"                                    # nothing promoted yet: the next long video opens on its own pictures (an override)
-    core.store().append("Ladder", [{"id": "SHK1", "premise": "p", "state": "PROMOTED"}]); assert G.long_kind() == "ladder" and G.full_episode_inr() == CG.total(list(la.values()))
+    core.store().append("Ladder", [{"id": "SHK1", "premise": "p", "state": "PROMOTED"}, {"id": "OVR1", "state": "OVERRIDE", "by": "owner"}])
+    assert G.long_kind() == "ladder" and G.full_episode_inr() == CG.total(list(la.values()))
+    d = {"stills": 52, "living": 8, "kling": 4, "episode_id": "EPK"}                                  # an episode's own estimate follows what its draw names
+    assert EP.est_cost_inr(dict(d, ladder="SHK1")) == CG.total(list(la.values())) and EP.est_cost_inr(dict(d, ladder="OVR1")) == CG.total(list(lo.values()))
     setting("OWNER_NEXT_PREMISE", "his own topic"); assert G.long_kind() == "long"
     setting("OWNER_NEXT_PREMISE", ""); setting("OPENING_SHORT_ON", "FALSE"); assert G.long_kind() == "long"
 
@@ -281,6 +287,16 @@ def test_reconcile_names_a_paid_item_without_a_line_and_a_counted_line_that_was_
     from tools.sweep import money_of
     ok, words = money_of(core, ["EPR1"]); assert ok and "15 of 15 estimated seconds of hero clip" in words
     ok, words = money_of(core, ["EPR1", "EPR2", "EPR9"]); assert not ok and "paid with no line in the estimate: stock_clip" in words and "more paid than estimated" in words and "EPR9: no estimate" in words
+
+def test_a_thumbnail_is_booked_to_the_video_that_ordered_it_and_stays_the_same_picture(market, tmp_path):
+    """Found by setting what was paid against the estimate: the runner-up thumbnail was seeded AND booked as 'EP...B' - an episode that does not exist."""
+    from whatifs import art as ART, release as REL
+    a, b = str(tmp_path / "a"), str(tmp_path / "b")
+    ART.thumbnail("a red door", "WAIT", a, "EPT9B"); ART.thumbnail("a red door", "WAIT", b, "EPT9", seed="EPT9B")
+    assert REL.sha(os.path.join(a, "thumb_raw.jpg")) == REL.sha(os.path.join(b, "thumb_raw.jpg"))                    # the SEED makes the picture: it is what it always was
+    core.flush_costs(); rows = [(r["episode_id"], r["item"]) for r in core.store().rows("Cost_Log") if r["item"] == "image_premium"]
+    assert rows == [("EPT9B", "image_premium"), ("EPT9", "image_premium")]                                            # the EPISODE pays for it
+    src = inspect.getsource(EP); assert 'ep, side="right", seed=ep + "B")' in src and 'out, ep, seed=ep + "b")' in src and src.count("ART.thumbnail(") == 3
 
 # ------------------------------------------------------------------ the month's split
 def test_the_months_split_says_how_many_shorts_fit(market, setting, monkeypatch):
@@ -369,12 +385,14 @@ def test_whole_long_videos_the_counter_and_the_lines_agree_call_by_call(market, 
     assert (a["clip_kling"], a["image_ref"], a["image_premium"], a["voice_job"], a.get("text:hooks", 0)) == (3, 3, 2, 1, 0), a
     j, row = _summary(A); assert j["unlisted"] == [] and j["over"] == [] and j["paid"]["hero_clip"] == 15 == j["lines"]["hero_clip"] and row["role"].startswith("ladder: ")
     assert j["paid"]["image"] <= j["lines"]["image"] and j["paid"].get("living_clip", 0) <= j["lines"]["living_clip"]
+    assert (j["paid"]["image_ref"], j["lines"]["image_ref"], j["paid"]["image_premium"], j["lines"]["image_premium"]) == (3, 3, 2, 2), j          # the start pictures and the key art are on the record too
     ok, words = money_of(core, [A, sid]); assert ok and f"{A} (ladder): 15 of 15" in words and f"{sid} (short" in words, words
     E2E._new_sheet(tmp_path, "sheet_b.json"); LAD.override("owner", "make it anyway"); c.clear()                # another Sheet: a long video under an override opens on its own pictures
     r2 = EP.produce(E2E._slot(10), episode_id=B); b = dict(c); assert r2.get("ok"), r2
     L2 = CG.lines("long"); assert _covered(b, L2) == [], (_covered(b, L2), b)
     assert (b["clip_kling"], b["image_ref"], b["image_premium"], b["voice_job"]) == (4, 4, 2, 1) and b.get("text:hooks", 0) >= 1, b
     j2, row2 = _summary(B); assert j2["unlisted"] == [] and j2["over"] == [] and j2["paid"]["hero_clip"] == 20 == j2["lines"]["hero_clip"] and row2["role"].startswith("long: ")
+    assert (j2["paid"]["image_ref"], j2["lines"]["image_ref"], j2["paid"]["image_premium"]) == (4, 4, 2), j2
     assert float(row2["est_inr"]) > float(row["est_inr"]) > 300                                     # each at its own tier; what the two kinds differ by is pinned in the kind's own test
     extra = dict(b, clip_kling=5); assert _covered(extra, L2) == ["clip_kling: 5 paid, 4 in the estimate"]
     assert _covered(dict(b, stock=1), L2) == ["stock: paid 1 time(s), no line in the estimate"]
@@ -387,6 +405,7 @@ def test_the_batch_is_wired_protected_and_documented():
         assert k in core.DEFAULTS and core.DEFAULTS[k][1], k
     assert OLD_CLIPS["CLIP_VALUE_ON"] == "FALSE" and OLD_CLIPS["FAL_HERO_MODEL"] == KLING and core.DEFAULTS["CLIP_VALUE_ON"][0] == core.DEFAULTS["SPLIT_ON"][0] == "TRUE"
     sw = open(os.path.join(ROOT, "tools", "sweep.py"), encoding="utf-8").read(); assert sw.count("money_of(core, ") == 3 and '"money_agreed"' in sw
+    assert 'if not ok_m: res["outcome"] = "odd"; res["problems"].append("the cost model: "' in sw and 'if not ok_m: late.append("the cost model: "' in sw      # a bad money verdict makes the id bad, in both modes
     assert "CG.reconcile(ep, " in inspect.getsource(SH.run) and "CG.reconcile(ep, " in inspect.getsource(EP) and "seconds=sec" in inspect.getsource(SH.make)
     facts = open(os.path.join(ROOT, "docs", "CURRENT", "PLATFORM_FACTS.md"), encoding="utf-8").read()
     assert "BASE price" in facts and "2026-11-13" in facts and HEY in facts

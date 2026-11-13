@@ -16,8 +16,8 @@ While the v12 "Organisation" build is running, progress and open issues are in `
 1. **Hard enforcement or it does not exist.** Every rule has code that executes it AND a check or test that fails when it is not executed.
    Prove both ways: the test passes when satisfied and fails when violated. No documentation-only features.
 2. **Money: Rs 5,000 a month TOTAL**, everything included (retries, failures, repairs, research). Every new paid call is logged with `core.cost`,
-   counted in the estimates (`costguard.estimate_lines`, `governor.min_episode_cost_inr`), asks `governor.extras_allowed()` if it is an extra, and is
-   shown in a cost table in the pull request.
+   gets its LINE in the one cost model (`costguard.lines`: the count, the price cell, the Cost_Log item and the paid calls it stands for - every
+   estimate reads that table), asks `governor.extras_allowed()` if it is an extra, and is shown in a cost table in the pull request.
 3. **Breakout first, money second, savings never the goal.** Never weaken or switch off a quality check to make something pass.
 4. **Zero manual work for the owner.** If a step truly needs him it is ONE tap, pre-filled, sent through `whatifs/notify.py`.
 5. **Plan Guard** (`tools/plan_guard.py`): no AI model name typed in code (models are discovered live or held in Settings), no flagged words in
@@ -51,6 +51,20 @@ pipeline run uses the new code. Nothing restarts.
 - **Image and clip models** are Settings cells (`FAL_STILL_MODEL`, `FAL_PREMIUM_MODEL`, `FAL_LIVING_MODEL`, `FAL_HERO_MODEL`) with `PRICE_*` cells.
   A new provider needs: a call with cost logging, a pre-flight check (`whatifs/preflight.py`), a switch, fake replies, tests, prices verified on the
   provider's page.
+- **The clip market** (`whatifs/clips.py`, department D6; cell `CLIP_MODELS`): the hero clip model is PICKED BY VALUE, never typed. A model = a ROW of the table, written from
+  the provider's OWN model page and API schema (price per second by size, shortest and longest clip, the start-picture field, where the clip's shape comes from, its rank
+  with its error band, the page, the day read). `clips.pick` is the rule and is pure: the best rank at or under `governor.line_usd_s()` (what the month's plan can pay for
+  a second), ties by error band to the cheaper, never a model without a rank or without a word on its clip's shape. `clips.review` (weekly, inside the tool scout) refreshes
+  the rows from fal's live listing and the Model Steward makes the switch; the Steward's fail-over for the hero asks the same rule. A hero clip is bought BY THE SECOND:
+  `media.animate(..., hero=True, seconds=<what the shot needs>)` - the request body comes from the row (`clips.args`), the cost row's units are the seconds. Never read a
+  price from fal's listing or pricing API into an estimate (it is a base figure, wrong for our setting: `PLATFORM_FACTS.md`), never match a model by its name in code,
+  never slow a clip to cover a shot (buy the seconds). The older tests run with `CLIP_VALUE_ON` and `SPLIT_ON` FALSE (`tests/conftest.py`, `OLD_CLIPS`).
+- **The cost model** (`whatifs/costguard.py`): `lines(kind)` is THE estimate - kinds `long` (opens on its own pictures), `ladder` (a long video about a promoted Short: one
+  scene and one start picture fewer, no hook lab) and `short` (per Short format, or its real plan). `governor.full_episode_inr`, `min_episode_cost_inr`, `short_inr`,
+  `episode.est_cost_inr`, `shorts2.est_inr` and `costguard.estimate_lines` only sum it. A new paid call = a line (count x price cell, `item` = its Cost_Log item, `calls` =
+  what `tests/paid_calls.py:watch` counts for it); never add rupees to an estimate anywhere else, and never keep an allowance for a call that no longer runs. After a run
+  `costguard.reconcile` sets what was paid against the lines (one summary row; the sweep's `money_of` makes an id bad when a picture or clip was paid without a line).
+  The month: `governor.split()` says how many Shorts fit beside the long videos and `shorts2.cadence` follows it; a plan that does not fit is said, never forced.
 - **Show format**: the Show Plan is part of the Showrunner's JSON (never a new AI role); validate with `show.validate`; show tags are data, never
   spoken; render devices live in `whatifs/showfx.py` (code only); community text is untrusted data.
 - **Flag-gated extras**: `v91.on(FLAG)` + `v91.guard(FLAG, episode)`; an extra never adds a paid call unless its own flag is on.

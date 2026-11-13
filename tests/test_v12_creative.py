@@ -285,9 +285,10 @@ def test_the_palace_in_the_prompts_is_counted_in_every_estimate():
     from whatifs import episode as EPI
     per = EPI.est_cost_inr({"stills": 52, "living": 8, "kling": 4, "episode_id": "EPC"})
     assert G.plan_for_episode(per, 4)["tier"] == "full" and 4 * per < 0.5 * core.S("BUDGET_CEILING_INR", float)      # at the owner's cadence (4 long videos a month) it never costs a picture
-    on = G.voice_think_inr(); lines_on = CG.estimate_lines()["ai_writing"]
+    on = CG.total(CG.lines("long")); lines_on = CG.estimate_lines()["ai_writing"]          # v12 V2d: the Palace is a LINE of the one cost model
+    assert next(l["inr"] for l in CG.lines("long") if l["key"] == "palace") == core.S("PALACE_PROMPT_EST_INR", float)
     core.set_setting("ORG_PROMPT_INJECT", "FALSE")
-    assert G.palace_prompt_inr() == 0 and round(on - G.voice_think_inr(), 2) == core.S("PALACE_PROMPT_EST_INR", float) > 0
+    assert G.palace_prompt_inr() == 0 and round(on - CG.total(CG.lines("long")), 2) == core.S("PALACE_PROMPT_EST_INR", float) > 0 and "palace" not in {l["key"] for l in CG.lines("long")}
     assert round(lines_on - CG.estimate_lines()["ai_writing"], 1) == core.S("PALACE_PROMPT_EST_INR", float)
 
 def test_the_writers_cap_moves_once_and_never_over_the_owners_value():

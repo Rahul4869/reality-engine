@@ -179,10 +179,20 @@ def test_claude_md_and_deployed_kernel_exist_and_match_the_package():
     assert len(k.split("\n\n", 1)[1]) > 2000                                                  # the archived text under its header is the old kernel, unedited (v12 B0b: the comparison with a copy in the old upload package ran on no machine and is gone)
 
 # ---------------- cost: unchanged by v8.9
+# v12 V2d: the cost golden of a long video with 3 scenes at USD 0.25, 52 stills and 8 living stills, the voice / thinking / room / Palace allowances aside.
+# It was 360.61 until the one cost model: - 55 (the objections round of the optional room v1 never runs under the room in use), + 19.90 (3 start
+# pictures that no estimate counted), + 7.21 (a still at the price really paid), - 6 (the cut-downs' planning call is gone), + 0.5 (the promise
+# line-up), + 3.0 (two small community lines that only the month's estimate counted).
+GOLDEN = 330.22
+
+def _allowances():
+    from whatifs import costguard as CG
+    return sum(l["inr"] for l in CG.lines("long") if l["key"] in ("voice", "thinking", "room_extras", "palace"))
+
 def test_v89_adds_no_cost(setting):
     setting("PRICE_KLING_USD", "0.25")      # v10.1: this cost golden keeps the Kling 2.1 price; the new $0.35 is tested in test_v101
     d = SA.draw("EPC", "collective"); d.update(stills=52, living=8, kling=3)
-    assert abs(EP.est_cost_inr(d) - G.voice_think_inr() - 360.61) < 1.0      # v8.10: only the TTS / thinking / new-room allowances were added
+    assert abs(EP.est_cost_inr(d) - _allowances() - GOLDEN) < 1.0      # v8.10: only the TTS / thinking / new-room allowances were added
     assert d["tier"] == "public" and d["guest"] in GUESTS
 
 # ---------------- K72 (owner request): stronger, varied moves everywhere + validated Director suggestions, no new cost
@@ -234,5 +244,5 @@ def test_suggested_move_reaches_the_renderer_and_frame_count_is_exact(tmp_path, 
 def test_camera_moves_add_no_cost_and_change_no_counts(setting):
     setting("PRICE_KLING_USD", "0.25")      # v10.1: this cost golden keeps the Kling 2.1 price; the new $0.35 is tested in test_v101
     d = {"episode_id": "EPX", "stills": 52, "living": 8, "kling": 3}
-    assert EP.est_cost_inr(d) - G.voice_think_inr() == pytest.approx(360.61, abs=0.5)        # same as v8.7 (v8.10 allowances aside): camera motion is code on pictures already paid for
+    assert EP.est_cost_inr(d) - _allowances() == pytest.approx(GOLDEN, abs=0.5)        # same as v8.7 (v8.10 allowances aside): camera motion is code on pictures already paid for
     assert core.DEFAULTS["KLING_CLIPS"][0] == "4" and core.DEFAULTS["LIVING_STILLS"][0] == "8" and core.DEFAULTS["KLING_MIN_CLIPS"][0] == "4"

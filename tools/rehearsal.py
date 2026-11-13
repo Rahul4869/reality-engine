@@ -98,6 +98,16 @@ def run(ep_id=None):
         assert all((op12.get(k) or {}).get("status") == "PASS" for k in ("opening_footage", "opening_shown", "hook_lab")) and used12[0]["id"] in str(op12["opening_shown"].get("evidence")) \
             and "hook of Short " + used12[0]["id"] in str(op12["hook_lab"].get("evidence")), ("the long video does not open on its Short's footage or its hook", {k: (v.get("status"), v.get("evidence")) for k, v in op12.items()})
         print("opening:", str(op12["opening_shown"]["evidence"])[:240], "| first line: the Short's hook")
+        # v12 V2d: THE MONEY - the hero clip model is the one the clip market picks, every clip was bought by the second, and what each run really paid
+        # for pictures and clips is set against the lines of its estimate (the long video and both Shorts): nothing paid without a line, no counted line exceeded.
+        from whatifs import clips as CL12, governor as G12, core as core12
+        from tools.sweep import money_of as money12
+        pk12 = CL12.choice(); sp12 = G12.split()
+        assert CL12.on() and pk12 and pk12["row"]["id"] == S("FAL_HERO_MODEL") and pk12["fits"], ("the hero clip model is not the clip market's pick", pk12 and pk12["why"], S("FAL_HERO_MODEL"))
+        ok12, said12 = money12(core12, [epid] + [x["id"] for x in st_rows("Ladder") if str(x.get("id", "")).startswith("SH")])
+        assert ok12 and f"{epid} (ladder)" in said12, ("the cost model and what was paid do not agree", said12)
+        print("money:", pk12["row"].get("name"), "at USD", CL12.usd_s(pk12["row"]), "a second (the plan can pay", round(G12.line_usd_s(), 3), "); a long video Rs", round(G12.full_episode_inr(), 0),
+              ", a Short Rs", round(G12.short_inr(), 0), ";", sp12["fit"], "of", sp12["plan"], "Shorts fit this month |", said12[:330])
         # v7.2 independent checks on the real rendered files
         from whatifs import qc as QC
         from whatifs.render import probe_dur

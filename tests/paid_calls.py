@@ -90,6 +90,11 @@ V12V2CB2C_REMOVED = {"text:reels": 1,        # the cut-downs' planning call (the
                      "image_premium": 2,     # two reel covers of premium key art
                      "voice_job": 4}         # four reels spoken again by the voices
 
+# v12 V2d (the money and the model): NO paid call is added and none is removed. What changed is what a call BUYS and what the estimate says about it:
+# a hero clip is bought by the second (its Cost_Log units are seconds), and every key this counter counts is named by a line of the one cost model
+# (`whatifs/costguard.py:lines`, field `calls`) - `tests/test_v12_money.py` makes whole productions and compares the two call by call: clip_kling,
+# image_ref, image_premium and voice_job must be EQUAL to their lines (4 / 4 / 2 / 1 for a long video on its own pictures, 3 / 3 / 2 / 1 for one about a
+# promoted Short), image and clip may not exceed theirs, and every text call needs the writing line.
 def allowed_base(base):
     out = dict(base)
     for k, v in V12V2CB2C_COUNTED.items(): out[k] = out.get(k, 0) + v
