@@ -824,6 +824,59 @@ The first pass's verdict is on file as the machinery computes it - `proving/verd
 to the batch's own judges, all named in this record (`V2d-b_60d9483_judges.json`). The red note, its dump and the builder's hand-over
 note now also lie at their fixed place, `proving/notes/` (`V2d-b_RED_1.md`, `V2d-b_BUILT.md`). The week's Fable allowance when the plan
 was written: 73% used (about 16:20 UTC) - the prover's pass 14 points at most, the plan and its machinery 5.
+#### THE REPAIR OF RED 1 (a fresh REPAIRER, Opus 5.5, under `OPUS_BUILD_PLAN.md`; 13 Nov 2026; nothing below is an acceptance)
+START: `next.py` gave the REPAIRER card (red commit 60d9483, round 1 of 3); the owner's message was "continue / gate on" (item 34 of
+`02`: the Fable design gate is ON from V2b's design; `next.py --gate on`; state RED -> REPAIR, commit 4db38e4). Usage at the start: the
+5-hour window 28%, weekly all models 37%, weekly Fable 74% (no separate Opus line on the card); this session's context 12%. The builder's
+whole reading (the plan's chapter 4) was done first; not read whole, by the plan's own list: the older records under DONE, `05`, `archive/`.
+REPRODUCED ALONE on a frozen copy of 60d9483 with a listener on `anim.apply` and `motion.place` (wrapped, never changed): the same hold,
+88.5%. What the Director and the placing were given and did (the red film's 35 lines): the Director picked lines 10, 23 and 33 for the three
+scenes - each COULD show a whole scene when it was picked (line 10 is 1.46 s, but lines 11 to 14 were plain stills: 9.7 s of room). Then
+`motion.place` (budget 148 living seconds, 50 bought) took line 11, line 24 and line 34 - the line right after each scene - so `motion.carry`
+cut each scene where the next clip began: 1.46, 3.46 and 4.36 s of 5 on screen. Line 11's own clip was bought at 5 s for a room of 4.76 s
+(14 was taken first), line 34's at 5 s for the 4.81 s left of the film: the quarter second `take()` allows by construction.
+CORRECTED BY THE BUILD, numbered on (each written here before the edit that fixes it):
+  (15) THE SCENES' ROOM WAS NEVER RESERVED: `motion.place` started with an empty `busy` set, so a living clip could take the line a scene
+  had to run on into (the brief's (b); confirmed above on the real shot list). (16) THE DIRECTOR FELL BACK TO A LINE THAT CANNOT SHOW A WHOLE
+  SCENE when none fits (`anim.pick_slots`: `... or cand`) - a scene that is cut is paid and not seen (the brief's (a)). (17) A CLIP WAS
+  BOUGHT FOR A ROOM A QUARTER SECOND TOO SHORT: `take()` accepted `b <= room + 0.25` and `scene_fit` `room >= SCENE_S - 0.25` (the brief's
+  (c)). (18) FOUND WHILE LOOKING FOR THE SAME FAULT ELSEWHERE (the plan's 8.7 (5)): the renderer merges a line under `UNIT_MERGE_SEC` into
+  the line before it and spares only scenes - a LIVING clip on such a line starts up to a second late and its end is cut where the next
+  picture waits (`episode._render`); the placing never knew of the merge. (19) THE MEASURE LOST TIME TO ITS GRID: `motion._cells` counts
+  whole half seconds from the start of each stretch, so the rest of every stretch was never counted (1.47 s counted as 1.0; 2.7 s of the red
+  film; the brief's (d)). (20) THE SEEN SHARE COULD HIDE A LOST CLIP: seconds counted were summed over all clips, so a clip played slower
+  over a longer line (5 s paid, 5.9 s on screen) paid for another clip that was cut - the share is now counted per clip, never more than
+  that clip's own seconds (a STRICTER judge, named here before it is changed). (21) OPEN ISSUE 176 - THE RECORD SAID MORE THAN THE MEASURE
+  DOES: Step 3's "a half second counts where the film's frame is that clip's frame (`opening.alike`)" and design D (5) "the FINISHED FILE is
+  compared with every paid clip" are NOT what `motion.long_report` does and are corrected: a half second counts where the RENDER'S RECORD
+  (`job.segmeta`) says a paid clip played there AND the film's picture changes there (the film is read; the clip files are not opened -
+  their lengths are what was paid). A clip's place taken by another moving picture would count; only the renderer writes that record.
+  (22) OPEN ISSUE 179: a rehearsal whose long video is held ends with `KeyError: 'master'` (`tools/rehearsal.py:86`) - it must end on an
+  assertion that names the held checks.
+THE REPAIR'S DESIGN NOTE (scores 1-5: what a viewer gains / enforceable / cost / reliability / owner effort):
+  A. Place the scenes AFTER the living clips (the clips first, the scenes on what is left): 2 / 4 / 5 / 3 / 5 = 19 - the scenes are the
+     peaks at the retention anchors; they would lose their places to the gentle clips.
+  B. Let a clip push the picture after it later (the next clip starts when the scene is over): 3 / 3 / 5 / 2 / 5 = 18 - every later line
+     moves, a living clip loses its own room in turn, and the narration no longer drives the cuts.
+  C. Buy shorter clips where the room is short: 1 / 4 / 5 / 3 / 5 = 18 - the model's shortest clip is 5 s: nothing shorter exists to buy.
+  D. (ORIGINAL, CHOSEN) RESERVE, BUY ONLY WHAT IS SHOWN, COUNT THE WHOLE STRETCH: (1) the Director puts a scene only on a line whose room can
+     show it whole with SPARE_S (0.25 s: a clip file can be a few frames longer than bought) - no fallback: a scene no line can show is not
+     bought; (2) `motion.place` FIRST reserves every scene's run-on lines (a real-footage anchor or a reaction cutaway inside a scene's
+     seconds becomes a plain still the scene runs over - the scene at second 0 under an override is the case; a scene even that cannot
+     show is made a still and not bought); (3) a living clip is bought only at seconds its room shows with SPARE_S, never more; (4) the
+     renderer never merges a line that carries a paid clip (one rule, `motion.merge`, for the renderer and the tests); (5) the measure
+     tiles each stretch - the last half second as long as what is left - and counts each clip's moving seconds up to its own length;
+     (6) the check's words and the sweep say the scene seconds on screen of the scene seconds paid: 5 / 5 / 5 / 4 / 5 = 24.
+  MEASURED EFFECT on the 28 long-video ids of sweep parts A, B and C, each run alone with `--one` during the build: written below when run.
+  FORBIDDEN AND NOT DONE (the plan's 12.1): no cell changed (`MOVING_SEEN_MIN_PCT`, `MOVING_SHARE_MIN_LONG`, `MOVING_CHANGE_MIN`,
+  `SHORT_CHANGE_MIN`); the share is never computed from `played_s` or the plan; `paid_s` stays the clip files' seconds; the scenes stay in
+  what was paid; no "not applicable"; the block's floor stays; no id is special-cased.
+TESTS CHANGED BY DESIGN (named before they are changed; each read first): `tests/test_v12_motion.py` -
+  `test_a_scene_takes_the_nearest_line_that_can_show_it_whole`: "no line fits: the nearest one, as before" becomes "no line fits: no scene"
+  (16); `test_code_places_the_living_seconds_on_lines_that_can_show_a_whole_clip`: the last line of 6 s buys 5, not 6, and 23 of the 24
+  seconds are bought (17: a clip of 6 s on a room of exactly 6 s is the case SPARE_S exists for); `test_placing_never_buys_a_second_no_line_can_show`:
+  a line of exactly 6 s before a graphic buys 5, not 6 (17). The sweep's `motion_of` keeps 300 characters of the check's words, not 210,
+  so that the scene seconds fit (a judge's wording, no verdict changed).
 #### Step 7 TAKEAWAY - THE BUILDER'S DRAFT (the prover completes it; also Palace item `v2db.takeaway`)
 - WORKED: reading the provider's own page for the model the code already paid for - it found a licence nobody had read,
   and the finding shaped the whole design (one market, one rule). Measuring before setting a limit, three times: the
