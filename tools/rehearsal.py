@@ -83,6 +83,7 @@ def run(ep_id=None):
                      "body": {"decision": "Serve Visual Production the rehearsal technique.", "why": "The rehearsal must prove that a decision becomes a verified change.", "memos_cited": [tk4["id"]],
                               "lever_class": "A", "tickets": [tk4["id"]], "owner_approval": False}})
         r = EP.produce(slot, episode_id=epid); print("produce ok", json.dumps(r, default=str)[:400])
+        assert r.get("ok"), ("the long video was held or not made - what held it:", r.get("problems"), r.get("skipped"), r.get("why"))      # v12 V2d-b red 1: never a KeyError on a held video (open issue 179)
         assert os.path.exists(r["master"]) and "reels" not in r, "missing outputs, or a cut-down reel was made"
         lad12 = {x["id"]: x for x in LAD12.rows()}; used12 = [x for x in lad12.values() if x["state"] == "USED"]; e12 = store().rows("Episodes")[-1]
         assert len(used12) == 1 and used12[0]["episode_id"] == epid == e12["episode_id"] and e12["premise"] == used12[0]["premise"] and used12[0]["evidence"] == "measured", ("the long video is not about the promoted Short's topic", used12, e12.get("premise"))

@@ -18,6 +18,8 @@ BAND = (0.0, 1.0, 0.30, 0.52)     # the part of an upright Short that is compare
 # MOVING_CHANGE_MIN for a long video, SHORT_CHANGE_MIN for a Short.
 NEXT_MIN_S = 1.0                  # a still whose line a clip runs into keeps at least this long of its own (else the clip covers it whole)
 TAIL_MIN_S = 1.0                  # what is left of a line after its clip is cut as a still of its own only from this length on (a shorter rest: the clip is played that little slower)
+SPARE_S = 0.25                    # a clip is bought only where its lines can show it whole AND this much more: a clip file can be a few frames longer than the seconds bought
+                                  # (v12 V2d-b red 1: a quarter second LESS was allowed, and a paid clip was cut by construction)
 
 def on():
     from whatifs import clips as CL
@@ -51,11 +53,27 @@ def covers(i, secs, shots, sp, busy=()):
     while left > 1e-6 and j < len(shots) and plain(shots[j]) and j not in busy: out.append(j); left -= sp[j][1] - sp[j][0]; j += 1
     return out
 
-def scene_fit(shots, units, total=None):
-    """For the Animation Director: can an animated scene on line i be shown WHOLE (its own line and the stills it may run into are as long as a scene)?"""
+def scene_s():
+    """The seconds one animated scene of a long video is bought at (the hero model's row: never under its shortest clip)."""
     from whatifs import clips as CL
-    sp = lines_of(units, float(total if total is not None else (units[-1].get("end") or units[-1].get("start") or 0) if units else 0))
-    return lambda i: i < len(sp) and room_s(i, shots, sp) >= CL.SCENE_S - 0.25
+    r = CL.hero()
+    return float(CL.secs(r, CL.SCENE_S)) if r else float(CL.SCENE_S)
+
+def scene_fit(shots, units, total=None):
+    """For the Animation Director: can an animated scene on line i be shown WHOLE (its own line and the plain stills it may run into hold the whole
+    scene and SPARE_S)? A scene goes only where this is true - a scene no line can show whole is not bought."""
+    sp = lines_of(units, float(total if total is not None else (units[-1].get("end") or units[-1].get("start") or 0) if units else 0)); need = scene_s() + SPARE_S
+    return lambda i: i < len(sp) and room_s(i, shots, sp) >= need - 1e-6
+
+def merge(bounds, shots, merged, keep=MOVING):
+    """THE RENDERER'S MERGE, one rule for the renderer and the tests: a line shorter than UNIT_MERGE_SEC continues the picture before it (no sub-second
+    flash) - never a line whose shot is of a type in `keep` (a line that carries a paid clip: its clip would start late and lose its end; with the motion
+    ladder off only a scene, as before). `bounds` is changed in place; the merged lines are added to `merged`."""
+    lim = S("UNIT_MERGE_SEC", float)
+    for i in range(1, len(bounds) - 1):
+        if i < len(shots) and bounds[i + 1] - bounds[i] < lim and shots[i].get("type") not in keep and i - 1 not in merged:
+            bounds[i] = bounds[i + 1]; merged.add(i)
+    return bounds
 
 # ------------------------------------------------------------------ the placing: living seconds on the lines that can show them
 def place(shots, units, total, plan):
@@ -70,23 +88,37 @@ def place(shots, units, total, plan):
     out = [dict(s) for s in shots[:len(units)]] + [dict(s) for s in shots[len(units):]]
     if plan.get("living_s") is None: plan["living_s"] = int(plan.get("living") or 0) * int(CL.SCENE_S)      # a plan saved before the motion ladder says clips, not seconds
     budget = int(plan.get("living_s") or 0); sp = lines_of(units, total); lo = int(lr.get("min_s") or CL.SCENE_S); cap = cap_s(lr)
-    n = min(len(out), len(sp)); used = 0; busy = set(); placed = []
-    moving = [(sp[i][0] + sp[i][1]) / 2 for i in range(n) if out[i].get("type") == "kling" or out[i].get("short")]
+    n = min(len(out), len(sp)); used = 0; busy = set(); placed = []; freed = []; dropped = []
     asked = [i for i in range(n) if out[i].get("type") == "living" and not out[i].get("short")]
     for i in asked: out[i]["type"] = "still"; out[i].pop("buy", None)
+    need = scene_s() + SPARE_S                                          # v12 V2d-b red 1: THE SCENES' ROOM IS RESERVED FIRST - the lines each animated scene runs on into are never
+    for i in [k for k in range(n) if out[k].get("type") == "kling" and not out[k].get("short")]:      # taken by a living clip (one did, and three scenes of 5 s were shown for 1.5 to 4.4 s)
+        r = sp[i][1] - sp[i][0]; j = i + 1
+        while r < need - 1e-6 and j < n and j not in busy and not out[j].get("short") and not out[j].get("promise") and not out[j].get("anim") \
+                and (plain(out[j]) or out[j].get("type") in ("stock", "reaction")):
+            if not plain(out[j]):                                          # an anchor of real footage or a cutaway inside a scene's seconds becomes a plain still the scene runs over
+                freed.append(f"{j} ({out[j]['type']})"); out[j]["type"] = "still"; out[j]["prompt"] = out[j].get("prompt") or str(units[j].get("text") or "")
+                for k_ in ("search", "stock_s", "speaker"): out[j].pop(k_, None)
+            r += sp[j][1] - sp[j][0]; j += 1
+        if r < need - 1e-6:                                                # even so it cannot be shown whole: NOT BOUGHT (a paid scene that is cut is money nobody sees)
+            out[i]["type"] = "still"; out[i].pop("anim", None); out[i].pop("promise", None); dropped.append(i)
+            if plan.get("kling"): plan["kling"] = max(0, int(plan["kling"]) - 1)
+            continue
+        busy.update(covers(i, need, out, sp, busy))
+    moving = [(sp[i][0] + sp[i][1]) / 2 for i in range(n) if out[i].get("type") == "kling" or out[i].get("short")]
     def can(i): return out[i].get("type") == "still" and not out[i].get("short") and not out[i].get("promise") and not out[i].get("anim") and i not in busy
     def take(i):
         nonlocal used
         own = sp[i][1] - sp[i][0]; r = room_s(i, out, sp, busy)
         b = CL.secs(lr, min(max(own, lo), cap))
-        while b > lo and b > r + 0.25: b -= 1                            # never buy a second that no line can show
-        if b > r + 0.25 or used + b > budget: return False
+        while b > lo and b + SPARE_S > r + 1e-6: b -= 1                  # never buy a second that its lines cannot show (with SPARE_S to the frame)
+        if b + SPARE_S > r + 1e-6 or used + b > budget: return False
         out[i].update(type="living", buy=int(b)); used += int(b); placed.append(i); moving.append((sp[i][0] + sp[i][1]) / 2)
-        busy.update(covers(i, b, out, sp, busy)); return True
+        busy.update(covers(i, b + SPARE_S, out, sp, busy)); return True
     for i in asked:
         if can(i): take(i)
     while budget - used >= lo:
-        cand = [i for i in range(n) if can(i) and room_s(i, out, sp, busy) >= lo - 0.25]
+        cand = [i for i in range(n) if can(i) and room_s(i, out, sp, busy) >= lo + SPARE_S - 1e-6]
         if not cand: break
         def far(i):
             t = (sp[i][0] + sp[i][1]) / 2
@@ -96,9 +128,11 @@ def place(shots, units, total, plan):
             if take(i): took = True; break
         if not took: break
     plan["living"] = len(placed); plan["living_bought_s"] = used
-    if asked or placed:
+    if asked or placed or freed or dropped:
         log(f"motion ladder: {len(placed)} stills brought to life for {used} of {budget} planned seconds"
-            + (f"; {len([i for i in asked if i not in placed])} of the Director's living shots sit on lines too short for a whole clip and stay stills" if [i for i in asked if i not in placed] else ""))
+            + (f"; {len([i for i in asked if i not in placed])} of the Director's living shots sit on lines too short for a whole clip and stay stills" if [i for i in asked if i not in placed] else "")
+            + (f"; line(s) {', '.join(freed)} became plain stills inside a scene's seconds" if freed else "")
+            + (f"; {len(dropped)} scene(s) at {dropped} cannot be shown whole and are NOT bought" if dropped else ""))
     return out
 
 # ------------------------------------------------------------------ the cutting: one rule for the renderer and for the checks
@@ -150,12 +184,18 @@ def _cells(fr, t0, t1, gap):
     """[(start of the half second, the change between two pictures `gap` frames apart)] for every half second that lies wholly inside [t0, t1). Both
     pictures are taken inside the stretch, EDGE_S away from its ends: the pair starts in the half second where it can and is moved back where the
     stretch ends before the second picture. A stretch too short for a pair gives nothing."""
+    return [(c, ch) for c, ch, ln in _tiles(fr, t0, t1, gap) if ln >= CELL_S - 1e-6]
+
+def _tiles(fr, t0, t1, gap):
+    """THE WHOLE STRETCH in half seconds: [(start, change, length)] - the last piece as long as what is left of the stretch (v12 V2d-b red 1: counting
+    whole half seconds only lost the rest of every stretch - 2.7 s of the red film). Each piece is judged by the same pair of pictures inside the
+    stretch, EDGE_S away from its ends; a stretch too short for a pair gives nothing (it is not counted: `unmeasured_s`)."""
     import numpy as np
     lo = int(math.ceil((float(t0) + EDGE_S) * READ_FPS - 1e-9)); hi = min(len(fr) - 1, int(math.floor((float(t1) - EDGE_S) * READ_FPS + 1e-9)))
     out = []; c = float(t0)
-    while c + CELL_S <= float(t1) + 1e-6:
+    while c < float(t1) - 1e-6:
         k1 = int(math.ceil((c + EDGE_S) * READ_FPS - 1e-9)); ka = max(lo, min(k1, hi - gap)); kb = min(ka + gap, hi)
-        if kb - ka >= min(gap, GAP_SHORT) and kb > ka: out.append((round(c, 3), float(np.mean(np.abs(fr[kb] - fr[ka])))))
+        if kb - ka >= min(gap, GAP_SHORT) and kb > ka: out.append((round(c, 3), float(np.mean(np.abs(fr[kb] - fr[ka]))), min(CELL_S, float(t1) - c)))
         c += CELL_S
     return out
 
@@ -165,22 +205,29 @@ def _quiet(cells, lim):
     return [c for c in low if any(all(round(c + (j - k) * CELL_S, 3) in s for j in range(RUN)) for k in range(RUN))]
 
 def long_report(master, spans, paid_s=None, duration=None):
-    """WHAT REALLY MOVES IN A FINISHED LONG VIDEO. `spans` = [(start, end, kind)] - the stretches in which the renderer played a clip made by a model
-    (kind 'footage' = its Short's, 'scene', 'living'), as the render recorded them. A half second counts as MOVING when it lies inside such a
-    stretch AND the film's picture changes there (MOVING_CHANGE_MIN over three quarters of a second; a second or more without change does not
-    count) - a clip that ran out, froze or was replaced by a held picture is found.
-    Returns {duration, moving_s, share_pct, by (seconds per kind), played_s (per kind, as recorded), frozen: [(second, kind)], paid_s, seen_pct}."""
-    fr, dur = _read(master, REGION); dur = float(duration or dur); by = {}; played = {}; frozen = []; lim = S("MOVING_CHANGE_MIN", float)
-    for a, b, kind in spans or []:
-        played[kind] = played.get(kind, 0.0) + (float(b) - float(a))
-        cells = _cells(fr, a, b, GAP_LONG); still = set(_quiet(cells, lim))
-        for c, _ch in cells:
+    """WHAT REALLY MOVES IN A FINISHED LONG VIDEO. `spans` = [(start, end, kind[, the seconds of its clip file])] - the stretches in which the renderer
+    played a clip made by a model (kind 'footage' = its Short's, 'scene', 'living'), as the render RECORDED them (`job.segmeta`; the clip files are not
+    opened - their lengths are what was paid). A piece of a stretch counts as MOVING when the film's picture changes there (MOVING_CHANGE_MIN over three
+    quarters of a second; a second or more without change does not count) - a clip that ran out, froze or was replaced by a held picture is found.
+    Every stretch is counted WHOLE (`_tiles`), and a clip counts towards the seconds paid never more than its own length: a clip played slower over a
+    longer line pays for no other clip that was cut (v12 V2d-b red 1).
+    Returns {duration, moving_s, share_pct, by (seconds per kind), played_s (per kind, as recorded), frozen: [(second, kind)], paid_s, seen_pct,
+    scene_shown_s (the scenes' seconds on screen as recorded, each up to its own length), unmeasured_s}."""
+    fr, dur = _read(master, REGION); dur = float(duration or dur); by = {}; played = {}; frozen = []; lim = S("MOVING_CHANGE_MIN", float); own = 0.0; shown = 0.0; gone = 0.0
+    for sp_ in spans or []:
+        a, b, kind = float(sp_[0]), float(sp_[1]), sp_[2]; clip = float(sp_[3]) if len(sp_) > 3 and sp_[3] else None
+        played[kind] = played.get(kind, 0.0) + (b - a)
+        tiles = _tiles(fr, a, b, GAP_LONG); still = set(_quiet([(c, ch) for c, ch, _ in tiles], lim)); got = 0.0
+        for c, _ch, ln in tiles:
             if c in still: frozen.append((round(c, 1), kind))
-            else: by[kind] = by.get(kind, 0.0) + CELL_S
-    mv = sum(by.values()); own = sum(v for k, v in by.items() if k != "footage")
+            else: got += ln
+        by[kind] = by.get(kind, 0.0) + got; gone += max(0.0, (b - a) - sum(ln for _c, _ch, ln in tiles))
+        if kind != "footage": own += min(got, clip) if clip else got
+        if kind == "scene": shown += min(b - a, clip) if clip else (b - a)
+    by = {k: v for k, v in by.items() if v > 1e-9}; mv = sum(by.values())
     return {"duration": round(dur, 1), "moving_s": round(mv, 1), "share_pct": round(100.0 * mv / max(0.1, dur), 1), "by": {k: round(v, 1) for k, v in sorted(by.items())},
             "played_s": {k: round(v, 1) for k, v in sorted(played.items())}, "frozen": frozen[:8], "paid_s": None if paid_s is None else round(float(paid_s), 1),
-            "seen_pct": None if not paid_s else round(100.0 * own / float(paid_s), 1)}
+            "seen_pct": None if not paid_s else round(100.0 * own / float(paid_s), 1), "scene_shown_s": round(shown, 2), "unmeasured_s": round(gone, 2)}
 
 def short_report(path):
     """WHAT REALLY MOVES IN A FINISHED SHORT: every half second of the file, judged in the band of the picture that never carries words. A second or

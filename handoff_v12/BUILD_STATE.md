@@ -875,7 +875,8 @@ TESTS CHANGED BY DESIGN (named before they are changed; each read first): `tests
   `test_a_scene_takes_the_nearest_line_that_can_show_it_whole`: "no line fits: the nearest one, as before" becomes "no line fits: no scene"
   (16); `test_code_places_the_living_seconds_on_lines_that_can_show_a_whole_clip`: the last line of 6 s buys 5, not 6, and 23 of the 24
   seconds are bought (17: a clip of 6 s on a room of exactly 6 s is the case SPARE_S exists for); `test_placing_never_buys_a_second_no_line_can_show`:
-  a line of exactly 6 s before a graphic buys 5, not 6 (17). The sweep's `motion_of` keeps 300 characters of the check's words, not 210,
+  a line of exactly 6 s before a graphic buys 5, not 6 (17), and in the same test "the budget binds" is shown with a budget of 10, not 11
+  (with SPARE_S three lines of 6 s buy 6 + 5 = 11 - the budget still binds, at 10 the second clip no longer fits; found by the first run). The sweep's `motion_of` keeps 300 characters of the check's words, not 210,
   so that the scene seconds fit (a judge's wording, no verdict changed).
 #### Step 7 TAKEAWAY - THE BUILDER'S DRAFT (the prover completes it; also Palace item `v2db.takeaway`)
 - WORKED: reading the provider's own page for the model the code already paid for - it found a licence nobody had read,

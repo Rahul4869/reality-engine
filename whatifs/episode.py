@@ -417,13 +417,10 @@ def _render(job):
     RN._LAST["move"] = None
     from whatifs import v91 as _V91
     micro_ = _V91.on("MICRO_CUTS_ON", ep)                                      # v9.3: computed once per render
-    MERGED_UNITS.clear()                                                         # v11.1: a still line under UNIT_MERGE_SEC (own picture or not)
-    for i in range(1, len(units)):                                               # continues the previous shot (no sub-second picture flash = no overload)
-        if ((bounds[i + 1] - bounds[i]) < S("UNIT_MERGE_SEC", float)) and shots[i].get("type") != "kling" \
-                and i - 1 not in MERGED_UNITS:
-            bounds[i] = bounds[i + 1]; MERGED_UNITS.add(i)
+    MERGED_UNITS.clear()                                                         # v11.1: a still line under UNIT_MERGE_SEC (own picture or not) continues the previous shot (no sub-second picture flash = no overload)
     from whatifs import motion as MOT, stock as STK                              # v12 V2d-b: A PAID CLIP IS SHOWN WHOLE - a clip longer than its line runs on into
     ladder_ = MOT.on(); clip_s_ = {}; job.absent = 0                              # the stills that follow, and no micro-cut ever shows its start picture in its place
+    MOT.merge(bounds, shots, MERGED_UNITS, keep=MOT.MOVING if ladder_ else ("kling",))      # ... and a line that carries a paid clip is never merged away (red 1: its clip began late and lost its end)
     if ladder_:
         for i, s in enumerate(shots[:len(units)]):
             if i in files["clips"] and s.get("type") in MOT.MOVING and not s.get("short"):
@@ -728,9 +725,10 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         except Exception as e: log(f"next-video link skipped: {scrub(e)}", "WARN")
     from whatifs import stock as STK, motion as MOT                # v12 V2d-b: what the render really showed - the moving stretches, every picture state, the real footage
     sm_ = [m_ for m_ in getattr(job, "segmeta", []) if m_.get("nf")]; t_ = lambda m_: (round(m_["f0"] / job.fps, 3), round((m_["f0"] + m_["nf"]) / job.fps, 3))
-    moving_ = [t_(m_) + ("footage" if m_.get("short") else "scene" if m_.get("type") == "kling" else "living",) for m_ in sm_ if m_.get("clip") and m_.get("type") in MOT.MOVING]
-    stock_ = [t_(m_) + (m_["i"],) for m_ in sm_ if m_.get("clip") and m_.get("type") == "stock"]
     own_ = [i for i, c_ in (files.get("clips") or {}).items() if i < len(shots) and shots[i].get("type") in MOT.MOVING and not shots[i].get("short")]
+    cs_ = {i: RN.probe_dur(files["clips"][i]) for i in own_}                  # red 1: each stretch carries the seconds of ITS clip - a clip counts towards what was paid up to its own length
+    moving_ = [t_(m_) + ("footage" if m_.get("short") else "scene" if m_.get("type") == "kling" else "living", cs_.get(m_["i"])) for m_ in sm_ if m_.get("clip") and m_.get("type") in MOT.MOVING]
+    stock_ = [t_(m_) + (m_["i"],) for m_ in sm_ if m_.get("clip") and m_.get("type") == "stock"]
     desc = _description(pkg.get("description", ""), chs, room, ep, nxt, credits=STK.credits([(files.get("stock") or {}).get(x[2]) for x in stock_]))
     if fix: slot_iso = _fix_slot(slot_iso)
     from whatifs import contract as CON                         # v10.2 (K151): every finished-video promise checked; a failure is HELD, never uploaded
@@ -738,7 +736,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     cctx = {"d": d, "room": room, "ep": ep, "title": title, "master": master, "timeline": tl, "clips": [c if isinstance(c, str) else (c or {}).get("path") for c in clips],
             "holds": holds, "qc_info": chk.get("info") or {}, "thumb": thumb, "thumb_b": thumb_b, "thumb_ok": okt or have_art, "pkg": pkg, "chapters": chs,
             "shots": S_.get("shots"), "units": units, "opening": files.get("opening"),
-            "moving": moving_, "moving_paid_s": sum(RN.probe_dur(files["clips"][i]) for i in own_), "scenes": [files["clips"][i] for i in own_ if shots[i].get("type") == "kling"],
+            "moving": moving_, "moving_paid_s": sum(cs_.values()), "scenes": [files["clips"][i] for i in own_ if shots[i].get("type") == "kling"],
             "states": [t_(m_) + (m_.get("type"), bool(m_.get("clip")), bool(m_.get("short"))) for m_ in sm_] if MOT.on() else None,
             "stock": {"spans": stock_, "records": files.get("stock") or {}, "description": desc}, "absent": getattr(job, "absent", 0)}          # v11: the promise check reads the shot plan; v12 V2c-b2b: and check opening_shown the opening's record
     pre = CON.run("final", dict(cctx, critique={"hook": 10, "clarity": 10, "humour": 10, "visual_variety": 10, "audio": 10, "accuracy": 10}), ep, write=False)   # measured checks first (not logged)

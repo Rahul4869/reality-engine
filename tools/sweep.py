@@ -107,7 +107,7 @@ def motion_of(core, ep, shorts=()):
     want = ([(ep, k) for k in ("moving_share", "stock_share", "living_characters")] if ep else []) + [(s, k) for s in shorts for k in ("short_moving", "short_sound")]
     bad = [f"{i} {k} {(led.get((i, k)) or {}).get('status') or 'missing'}: {str((led.get((i, k)) or {}).get('evidence') or '')[:140]}" for i, k in want if (led.get((i, k)) or {}).get("status") != "PASS"]
     if bad: return False, "; ".join(bad)
-    said = ([str(led[(ep, "moving_share")].get("evidence"))[:210], str(led[(ep, "stock_share")].get("evidence"))[:90]] if ep else []) + [f"{len(list(shorts))} Short(s): every half second of the file moves, sound from the first frame"]
+    said = ([str(led[(ep, "moving_share")].get("evidence"))[:300], str(led[(ep, "stock_share")].get("evidence"))[:90]] if ep else []) + [f"{len(list(shorts))} Short(s): every half second of the file moves, sound from the first frame"]
     return True, "the ladder's rules held: " + " | ".join(said)
 
 # ------------------------------------------------------------------ one id (runs in its own process: module state never leaks between ids)

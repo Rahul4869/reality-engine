@@ -213,9 +213,10 @@ def test_code_places_the_living_seconds_on_lines_that_can_show_a_whole_clip(ladd
     shots = [{"type": "still", "prompt": "x"} for _ in units]; shots[0].update(type="kling", anim={"slot": 0}); shots[1]["type"] = "living"; shots[6]["type"] = "graphic"
     plan = {"living_s": 24, "living": 4}; out = MOT.place(shots, units, total, plan)
     liv = {i: s["buy"] for i, s in enumerate(out) if s["type"] == "living"}
-    assert liv == {1: 5, 9: 6, 5: 8, 7: 5} and plan["living_bought_s"] == 24 and plan["living"] == 4
+    assert liv == {1: 5, 9: 5, 5: 8, 7: 5} and plan["living_bought_s"] == 23 and plan["living"] == 4
     # 1: the Director's own shot, on a 3-second line - kept, because the still after it carries the clip on (the model's shortest clip is 5 s)
-    # 9: then the line farthest from everything that moves | 5: a 9-second line buys 8 (two picture states at most) | 7: the last 5 seconds of the budget
+    # 9: then the line farthest from everything that moves - the last line, 6 s to the film's end: 5 s with SPARE_S to spare (red 1: 6 s on 6 s left no frame to spare)
+    # 5: a 9-second line buys 8 (two picture states at most) | 7: 5 more seconds; the budget's last second buys nothing (no clip is under 5 s)
     assert 2 not in liv and all(shots[i]["type"] == out[i]["type"] for i in (0, 6))                             # the line a clip runs into is left alone; a scene and a graphic are never touched
     assert all("buy" not in s for s in out if s["type"] != "living") and [s["type"] for s in shots][1] == "living"      # the input is not changed
 
@@ -231,8 +232,8 @@ def test_placing_never_buys_a_second_no_line_can_show(ladder):
     u6, t6 = _units([6, 6, 6, 6])                                                                                 # ... and not for want of room: every line here can show a whole clip
     for mark in ({"promise": True}, {"short": {"id": "x"}}, {"anim": {"slot": 0, "world": "w", "line": "l"}}):      # the marks as the code writes them (anim.apply)
         out = MOT.place([dict({"type": "still"}, **mark), {"type": "graphic"}, {"type": "still"}, {"type": "graphic"}], u6, t6, {"living_s": 30})
-        assert [s.get("buy") for s in out] == [None, None, 6, None] and out[0]["type"] == "still", mark
-    units, total = _units([6, 6, 6]); plan = {"living_s": 11}; out = MOT.place([{"type": "still"}] * 3, units, total, plan); assert plan["living_bought_s"] == 6      # the budget binds: one clip of 6, not two
+        assert [s.get("buy") for s in out] == [None, None, 5, None] and out[0]["type"] == "still", mark            # 6 s before a graphic: 5 s with SPARE_S to spare (red 1)
+    units, total = _units([6, 6, 6]); plan = {"living_s": 10}; out = MOT.place([{"type": "still"}] * 3, units, total, plan); assert plan["living_bought_s"] == 6      # the budget binds: one clip of 6, not 6 + 5
     plan = {"living": 2}; MOT.place([{"type": "still"}] * 3, units, total, plan); assert plan["living_s"] == 10 and plan["living_bought_s"] == 6      # a plan saved before the ladder says clips: five seconds each
 
 def test_with_the_ladder_off_nothing_is_placed(ladder, setting):
@@ -271,7 +272,8 @@ def test_a_scene_takes_the_nearest_line_that_can_show_it_whole(ladder, setting):
     free = AN.pick_slots(shots, units, 1, anchors=(0.2,)); strict = AN.pick_slots(shots, units, 1, anchors=(0.2,), fit=fit)
     assert free == [1] and strict == [0]                                                                          # the nearest line that can show the whole scene, not the nearest line
     assert AN.pick_slots(shots, units, 1, anchors=(0.0,), fit=lambda i: i == 9) == [0]                             # the scene at second 0 stays the first picture
-    assert AN.pick_slots(shots, units, 1, anchors=(0.2,), fit=lambda i: False) == [1]                             # no line fits: the nearest one, as before
+    assert AN.pick_slots(shots, units, 1, anchors=(0.2,), fit=lambda i: False) == []                              # no line fits: NO scene - one that would be cut is not bought (red 1)
+    assert AN.pick_slots(shots, units, 1, anchors=(0.2,)) == [1]                                                  # without a rule of fit (the motion ladder off): the nearest line, as before
 
 # ------------------------------------------------------------------ 4. the measure: what the finished film really shows
 def test_the_finished_film_is_measured_where_a_clip_played(ladder, tmp_path):
@@ -535,8 +537,11 @@ def test_a_whole_long_video_moves_as_it_paid_shows_its_stock_under_the_rules_and
     from tests import test_v12_opening_e2e as E2E
     E2E._start(monkeypatch, setting); A, B, sid = OWN_IDS[:3]; _sheets(tmp_path)
     setting("STOCK_MIN_S", "0.5"); setting("STOCK_MAX_S", "30"); setting("STOCK_SHARE_MAX_PCT", "20")             # the offline lines are short and few: wide rules, so that real footage STAYS in this film and the path is walked
+    spy = []; real_lr = MOT.long_report; monkeypatch.setattr(MOT, "long_report", lambda m, sp, *x, **k: (spy.append(list(sp or [])), real_lr(m, sp, *x, **k))[1])
     assert climb(core, A) is True; c = watch(monkeypatch); r = EP.produce(E2E._slot(10), episode_id=A); a = dict(c); assert r.get("ok"), r
     led = _led(A); out, S_, units = E2E._plan(A); d = S_["d"]; plan = S_["plan"]; shots = json.load(open(os.path.join(out, "plan.json"), encoding="utf-8"))["shots"]
+    assert spy and all(len(x) == 4 and (x[2] == "footage" or x[3] >= 4.9) for x in spy[-1]), spy[-1]              # red 1: every stretch of a paid clip reaches the measure with the seconds of ITS clip
+    import re as _re; m_ = _re.search(r"the scenes on screen ([\d.]+) of ([\d.]+) s", led["moving_share"][1]); assert m_ and m_.group(1) == m_.group(2), led["moving_share"]      # every paid scene on screen whole
     assert led["moving_share"][0] == "PASS" and led["stock_share"][0] == "PASS" and led["living_characters"][0] == "PASS" and led["visual_change"][0] == "PASS", {k: led[k] for k in ("moving_share", "stock_share", "living_characters", "visual_change")}
     j, row = _summary(A); assert j["unlisted"] == [] and j["over"] == [] and row["role"].startswith("ladder: ")   # THE MONEY: every living second had its line and none was paid beyond the plan
     assert d["living_s"] >= G.moving_floor("ladder", d["runtime_sec"])["living_s"] and j["lines"]["living_clip"] == d["living_s"] and 0 < j["paid"]["living_clip"] <= d["living_s"]
@@ -668,7 +673,7 @@ def test_ep209901010900_every_paid_clip_of_the_red_film_is_shown_whole(ladder):
     clip = {i: float(s["buy"]) if s["type"] == "living" else float(CL.SCENE_S) for i, s in enumerate(out) if s["type"] in MOT.MOVING and not s.get("short")}
     b = [0.0] + [u["start"] for u in units[1:]] + [RED1_TOTAL]; MOT.carry(b, out, clip, set())
     lost = {i: (round(b[i + 1] - b[i], 3), c) for i, c in clip.items() if b[i + 1] - b[i] < c - 1e-6}
-    assert sum(1 for i in clip if out[i]["type"] == "kling") == 3 and plan["living_bought_s"] >= 40, (plan, [s["type"] for s in out])
+    assert sum(1 for i in clip if out[i]["type"] == "kling") == 3 and plan["living_bought_s"] == sum(int(s["buy"]) for s in out if s["type"] == "living") >= 30, (plan, [s["type"] for s in out])      # 35 s in 7 clips (50 s in 10 on 60d9483: three lines now hold the scenes' seconds)
     assert lost == {}, lost                                                                                        # {line: (seconds on screen, seconds paid)}
 
 def test_a_scene_is_bought_only_where_it_is_shown_whole_and_its_room_is_kept_for_it(ladder):
@@ -681,6 +686,12 @@ def test_a_scene_is_bought_only_where_it_is_shown_whole_and_its_room_is_kept_for
     units, total = _units([2, 2, 6]); plan = {"living_s": 0, "kling": 1}                                          # a graphic inside its five seconds: the scene cannot be shown whole and is NOT BOUGHT
     out = MOT.place([{"type": "kling", "anim": {"slot": 0}, "promise": True}, {"type": "graphic"}, {"type": "still"}], units, total, plan)
     assert out[0]["type"] == "still" and "anim" not in out[0] and "promise" not in out[0] and plan["kling"] == 0, out[0]
+    assert MOT.scene_s() == float(CL.secs(CL.hero(), CL.SCENE_S)) == 5.0                                          # the seconds a scene is bought at: what its room must hold
+
+def test_a_clips_spare_quarter_second_is_kept_free(ladder):
+    units, total = _units([7, 2, 4, 3]); plan = {"living_s": 20}
+    out = MOT.place([{"type": "still"}, {"type": "still"}, {"type": "still"}, {"type": "graphic"}], units, total, plan)
+    assert [s.get("buy") for s in out] == [7, None, None, None] and plan["living_bought_s"] == 7, [s.get("buy") for s in out]      # the line after a clip that fills its own line is kept for its SPARE_S: no next clip cuts a file a few frames longer than bought
 
 def test_a_line_that_carries_a_paid_clip_is_never_merged_away(ladder):
     units, total = _units([3, 0.8, 4.5, 3]); shots = [{"type": "graphic"}, {"type": "still"}, {"type": "still"}, {"type": "graphic"}]
@@ -689,7 +700,7 @@ def test_a_line_that_carries_a_paid_clip_is_never_merged_away(ladder):
     assert 1 not in merged and b[2] - b[1] >= 5.0 - 1e-6, (b, merged)                                             # before: the renderer merged that line into the graphic before it, the clip began 0.8 s late and lost half a second at its end
     b = [0.0, 3.0, 3.8, 8.3, 11.3]; merged = set(); MOT.merge(b, [{"type": "graphic"}, {"type": "still"}, {"type": "still"}, {"type": "graphic"}], merged); assert merged == {1} and b[1] == 3.8      # a still line under a second continues the picture before it, as before
     b = [0.0, 3.0, 3.8, 8.3, 11.3]; MOT.merge(b, out, set(), keep=("kling",)); assert b[1] == 3.8                  # the older rule (the ladder off) spares only scenes
-    assert "MOT.merge(bounds, shots, MERGED_UNITS" in inspect.getsource(EP._render)
+    assert "MOT.merge(bounds, shots, MERGED_UNITS, keep=MOT.MOVING if ladder_ else (\"kling\",))" in inspect.getsource(EP._render)
 
 def test_the_measure_counts_each_stretch_whole_and_each_clip_up_to_its_own_seconds(ladder, monkeypatch, tmp_path):
     lens = [1.47, 3.47, 4.37, 4.77, 5.9, 2.0]                                                                     # the red film's stretches: each lost what was left after its last whole half second (2.7 s of that film)
@@ -699,6 +710,9 @@ def test_the_measure_counts_each_stretch_whole_and_each_clip_up_to_its_own_secon
     film2 = _film(str(tmp_path / "g.mp4"), [("move", 5.9), ("move", 4.1)])                                        # a clip played slower over 5.9 s next to a scene cut to 4.1 s
     r = MOT.long_report(film2, [(0.0, 5.9, "living", 5.0), (5.9, 10.0, "scene", 5.0)], paid_s=10.0)
     assert r["seen_pct"] == pytest.approx(91.0, abs=0.6) and r["scene_shown_s"] == pytest.approx(4.1, abs=0.05), r      # before: 5.9 + 4.1 = 100% - the slowed clip paid for the scene's lost second
+    assert MOT.long_report(film2, [(0.0, 5.9, "scene", 5.0)], paid_s=5.0)["scene_shown_s"] == 5.0                # a scene on screen counts up to its own seconds
+    r = MOT.long_report(film, [(0.0, 0.3, "living")]); assert r["unmeasured_s"] == pytest.approx(0.3, abs=0.01) and r["moving_s"] == 0      # a stretch too short for a pair of pictures is never counted - and said
+    fr_, _d = MOT._read(film, MOT.REGION); assert [c for c, _ in MOT._cells(fr_, 0.0, 1.3, MOT.GAP_LONG)] == [0.0, 0.5] and [round(t[2], 2) for t in MOT._tiles(fr_, 0.0, 1.3, MOT.GAP_LONG)] == [0.5, 0.5, 0.3]      # a Short is still judged in whole half seconds; a long video's stretch is tiled whole
     for small in (True, False):                                                                                   # BOTH KINDS OF PAIRS AGAIN, at both render sizes: a picture HELD under the renderer's grain never counts, not even a short last piece
         monkeypatch.setattr(RN, "SMALL", small)
         seg = RN.clip_segment(MD.fake_clip(str(tmp_path / f"c{small}.mp4"), 640, 360, "c", 2), str(tmp_path / f"h{small}.mp4"), 6 * RN.fps())      # played (2 s, slowed to 2.5), then held

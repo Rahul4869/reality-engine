@@ -73,8 +73,8 @@ def pick_slots(shots, units, n=None, skip=(), anchors=None, fit=None):
     for a in anchors[:n]:
         target = a * end
         cand = sorted((abs(t - target), i) for i, t in times if i not in chosen)
-        if fit is not None and a > 0:                           # v12 V2d-b: a scene after the opening takes the nearest line on which it can be shown WHOLE (the scene at second 0 stays the first picture)
-            cand = [c for c in cand if fit(c[1])] or cand
+        if fit is not None and a > 0:                           # v12 V2d-b: a scene after the opening takes the nearest line on which it can be shown WHOLE (the scene at second 0 stays the first picture);
+            cand = [c for c in cand if fit(c[1])]               # no such line: no scene at this anchor - a scene that would be cut is not bought (red 1: the fallback to the nearest line)
         if cand: chosen.append(cand[0][1])
     return chosen
 
