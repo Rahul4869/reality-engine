@@ -117,6 +117,13 @@ def test_a_living_clip_is_bought_by_the_second_and_logged_in_seconds(ladder, set
     setting("MOTION_LADDER_ON", "FALSE"); p3 = MD.animate(None, img, "p", str(tmp_path / "l3.mp4"), "EPL3", hero=False, seconds=9); core.flush_costs()
     assert float(next(r for r in core.store().rows("Cost_Log") if r["episode_id"] == "EPL3")["units"]) == 1.0 and abs(STK.seconds(p3) - 5) < 0.2      # the older way: one flat five-second clip
 
+def test_the_asset_step_buys_each_living_clip_at_the_seconds_code_placed(ladder, tmp_path):
+    units, _total = _units([7, 5, 4])                                                                             # the real asset step of a long video, offline: what `motion.place` wrote as `buy` is what is bought
+    shots = [{"type": "living", "buy": 7, "prompt": "a"}, {"type": "living", "buy": 5, "prompt": "b"}, {"type": "still", "prompt": "c"}]
+    files = EP._assets(shots, units, str(tmp_path), "EPAS1"); core.flush_costs()
+    got = sorted(float(r["units"]) for r in core.store().rows("Cost_Log") if r["episode_id"] == "EPAS1" and r["item"] == "living_clip")
+    assert got == [5.0, 7.0] and abs(STK.seconds(files["clips"][0]) - 7) < 0.2 and abs(STK.seconds(files["clips"][1]) - 5) < 0.2      # seven seconds paid and seven seconds of clip for the line of seven
+
 def test_a_real_living_request_is_its_rows_request_at_its_rows_price(ladder, setting, monkeypatch, tmp_path):
     sent = []
     monkeypatch.setattr(MD, "FAKE", False); monkeypatch.setattr(MD, "fal_allowed", lambda: True)
@@ -156,7 +163,8 @@ def test_the_floor_of_a_long_video_is_seconds_every_estimate_counts(ladder, sett
     assert G.full_episode_inr(kind="ladder") == CG.total(L) and G.min_episode_cost_inr() == CG.total(CG.lines(G.long_kind(), kling=core.S("KLING_MIN_CLIPS", int), stills=core.S("STILLS_MIN", int)))
     assert next(l for l in CG.lines(G.long_kind(), kling=4, stills=44, living=0) if l["key"] == "living_clips")["n"] == G.moving_floor()["living_s"]      # the cheapest episode still has its floor
     setting("MOVING_SHARE_MIN_LONG", "30"); assert G.moving_floor("ladder")["living_s"] == 135 and next(l for l in CG.lines("ladder") if l["key"] == "living_clips")["n"] == 135
-    setting("MOVING_SHARE_LONG", "10"); assert G.moving_floor("ladder")["living_target_s"] == 135                 # a target under the floor is the floor
+    setting("MOVING_SHARE_LONG", "10"); tf = G.moving_floor("ladder")
+    assert tf["living_target_s"] == 135 and (tf["target_pct"], tf["target_s"]) == (30, tf["floor_s"]) == (30, 162)      # a target under the floor is the floor - in the seconds, the percent and the living seconds alike
     setting("MOTION_LADDER_ON", "FALSE"); off = G.moving_floor("ladder"); assert off["on"] is False and off["living_s"] == 0
     old = next(l for l in CG.lines("ladder") if l["key"] == "living_clips"); assert (old["n"], old["unit"], old["calls"]) == (8, "", {"clip": 8})      # the older way: eight flat-priced clips
 
@@ -220,6 +228,10 @@ def test_placing_never_buys_a_second_no_line_can_show(ladder):
     assert [s.get("buy") for s in out] == [5, None, None]                                                         # a short line whose clip can run on into the stills after it: one clip, and the lines it covers are left alone
     out = MOT.place([{"type": "still", "promise": True}, {"type": "still", "short": {"id": "x"}}, {"type": "still", "anim": {}}], units, total, {"living_s": 30})
     assert all(s["type"] == "still" and "buy" not in s for s in out)                                              # the promise picture, the Short's footage and a scene's slot are never brought to life
+    u6, t6 = _units([6, 6, 6, 6])                                                                                 # ... and not for want of room: every line here can show a whole clip
+    for mark in ({"promise": True}, {"short": {"id": "x"}}, {"anim": {"slot": 0, "world": "w", "line": "l"}}):      # the marks as the code writes them (anim.apply)
+        out = MOT.place([dict({"type": "still"}, **mark), {"type": "graphic"}, {"type": "still"}, {"type": "graphic"}], u6, t6, {"living_s": 30})
+        assert [s.get("buy") for s in out] == [None, None, 6, None] and out[0]["type"] == "still", mark
     units, total = _units([6, 6, 6]); plan = {"living_s": 11}; out = MOT.place([{"type": "still"}] * 3, units, total, plan); assert plan["living_bought_s"] == 6      # the budget binds: one clip of 6, not two
     plan = {"living": 2}; MOT.place([{"type": "still"}] * 3, units, total, plan); assert plan["living_s"] == 10 and plan["living_bought_s"] == 6      # a plan saved before the ladder says clips: five seconds each
 
@@ -375,6 +387,7 @@ def test_the_stock_rules_on_the_shot_list(ladder, setting):
     # 0: never the first picture | 2: never two in a row | 3: a line of 6 s is no anchor | 6: a line of 1 s is a flash | 8, 12: a tenth of the film at most (the earliest stay)
     assert all(out[i]["type"] == "still" and out[i]["prompt"] == f"p{i}" and "search" not in out[i] for i in (0, 2, 3, 6, 8, 12))
     assert [i for i, s in enumerate(run([2, 4])) if s["type"] == "stock"] == [2, 4] and run([5]) != [] and run([])[0]["type"] == "still"
+    assert [s["type"] for s in run([3])].count("stock") == 0 and [s["type"] for s in run([6])].count("stock") == 0      # alone, with the whole tenth free: 6 s is no anchor, 1 s is a flash
     setting("STOCK_SHARE_MAX_PCT", "5"); assert [i for i, s in enumerate(run([1, 4])) if s["type"] == "stock"] == [1]; setting("STOCK_SHARE_MAX_PCT", "10")
     setting("STOCK_MAX_S", "6"); assert 3 in [i for i, s in enumerate(run([3])) if s["type"] == "stock"]; setting("STOCK_MAX_S", "4")
     setting("STOCK_ON", "FALSE"); assert [s["type"] for s in run([1, 4])].count("stock") == 0                     # switched off: none stays
@@ -480,6 +493,8 @@ def test_the_sound_under_a_short_is_its_places_own_from_the_first_sample(ladder,
     import soundfile as sf
     p, kind = SD.short_bed(6.0, [2, 2, 2], "rain on your window tonight", "SHA", str(tmp_path / "a.wav")); a, sr = sf.read(p)
     assert kind == "rain" and a.shape == (6 * sr, 2) and float(np.abs(a).max()) <= 0.9 and float(np.sqrt(np.mean(a[:sr // 100] ** 2))) > 0.02      # it sounds inside the first hundredth of a second
+    rms = lambda t0, t1: float(np.sqrt(np.mean(a[int(t0 * sr):int(t1 * sr)] ** 2)))
+    assert rms(0, 0.1) > 2 * rms(1.0, 1.1) and rms(0, 0.01) > 0.25                                                # the first frame is HIT (measured: 7 times the bed with the hit, 1.1 times without it)
     assert SD.short_bed(6.0, [2, 2, 2], "your shadow on the wall", "SHA", str(tmp_path / "b.wav"))[1] in ("rumble", "hum", "wind")       # nothing obvious in the words: one of three, by the Short's id
     q, _ = SD.short_bed(6.0, [2, 2, 2], "rain on your window tonight", "SHB", str(tmp_path / "c.wav")); b, _ = sf.read(q)
     r, _ = SD.short_bed(6.0, [2, 2, 2], "rain on your window tonight", "SHA", str(tmp_path / "d.wav")); c, _ = sf.read(r)
@@ -604,7 +619,8 @@ def test_the_sweep_makes_an_id_bad_when_a_rule_was_not_walked(ladder):
     ok, words = SW.motion_of(core, "EPB", []); assert ok is False and "EPB moving_share N/A" in words            # 'not applicable' = the new path was not walked
     ok, words = SW.motion_of(core, "EPA", ["SHZ"]); assert ok is False and "SHZ short_moving missing" in words and "SHZ short_sound missing" in words
     s = SW.summary([{"id": "EPA", "outcome": "ok", "motion": "the ladder's rules held: x"}, {"id": "EPB", "outcome": "odd", "motion": "EPB moving_share N/A"}]); assert s["ladder_rules_held"] == 1
-    src = inspect.getsource(SW.one); assert src.count("motion_of(core") == 2 and 'res["outcome"] = "odd"; res["problems"].append("the ladder\'s rules: "' in src
+    src = inspect.getsource(SW.one); assert src.count("motion_of(core") == 2 and 'if not ok_x: res["outcome"] = "odd"; res["problems"].append("the ladder\'s rules: "' in src
+    assert 'if not ok_x: late.append("the ladder\'s rules: "' in src and "okr and not late and" in src      # a Short id is good only with nothing late
 
 def test_the_batch_is_wired_protected_and_documented():
     prot = open(os.path.join(ROOT, "tools", "repair.py"), encoding="utf-8").read()
