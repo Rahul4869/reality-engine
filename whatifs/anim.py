@@ -61,7 +61,7 @@ ACTING = {
 AVOID = "no morphing faces, no extra fingers, no text, no lip movement, no camera cuts, no realistic human skin, no glossy plastic look"
 
 # ------------------------------------------------------------------ 1. slots
-def pick_slots(shots, units, n=None, skip=(), anchors=None):
+def pick_slots(shots, units, n=None, skip=(), anchors=None, fit=None):
     """Indexes of the shots nearest the retention anchors (unique, each a picture shot with a unit). skip = shots that are never a slot (the
     opening made of the Short's footage is animated already); anchors = the anchors to fill (default: all of ANCHORS)."""
     n = n if n is not None else S("ANIM_SHOTS", int); skip = set(skip or ()); anchors = ANCHORS if anchors is None else anchors
@@ -73,6 +73,8 @@ def pick_slots(shots, units, n=None, skip=(), anchors=None):
     for a in anchors[:n]:
         target = a * end
         cand = sorted((abs(t - target), i) for i, t in times if i not in chosen)
+        if fit is not None and a > 0:                           # v12 V2d-b: a scene after the opening takes the nearest line on which it can be shown WHOLE (the scene at second 0 stays the first picture)
+            cand = [c for c in cand if fit(c[1])] or cand
         if cand: chosen.append(cand[0][1])
     return chosen
 
@@ -88,7 +90,9 @@ def apply(shots, units, plan=None):
     if not S("ANIM_DIRECTOR_ON", bool): return []
     n = min(S("ANIM_SHOTS", int), int(plan.get("kling", S("ANIM_SHOTS", int)))) if plan is not None else S("ANIM_SHOTS", int)
     foot = {i for i, s in enumerate(shots) if s.get("short")}   # v12 V2c-b2b: the opening made of the Short's footage is animated and paid already - the scene at second 0 is not bought again
-    idx = pick_slots(shots, units, max(0, n - 1), skip=foot, anchors=ANCHORS[1:]) if foot else pick_slots(shots, units, n)
+    from whatifs import motion as MOT
+    fit = MOT.scene_fit(shots, units) if MOT.on() else None
+    idx = pick_slots(shots, units, max(0, n - 1), skip=foot, anchors=ANCHORS[1:], fit=fit) if foot else pick_slots(shots, units, n, fit=fit)
     for i, s in enumerate(shots):                               # a Kling slot that moved becomes a plain still (no extra paid living clip)
         if s.get("type") == "kling" and i not in idx and i not in foot:
             s["type"] = "still"; s.pop("promise", None)        # v12 fix: the promise rides on an animated scene; left on a demoted still it hid the re-aim and held finished videos

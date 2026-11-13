@@ -9,7 +9,8 @@ import pytest
 from whatifs import core
 
 # v12 V2d: what the older tests were written for - the hero clip model of that time at a flat price for a 5-second clip, and a cadence the month's money does not bind
-OLD_CLIPS = {"CLIP_VALUE_ON": "FALSE", "SPLIT_ON": "FALSE", "FAL_HERO_MODEL": "fal-ai/kling-video/o3/standard/image-to-video", "PRICE_KLING_USD": "0.42"}
+OLD_CLIPS = {"CLIP_VALUE_ON": "FALSE", "SPLIT_ON": "FALSE", "FAL_HERO_MODEL": "fal-ai/kling-video/o3/standard/image-to-video", "PRICE_KLING_USD": "0.42",
+             "MOTION_LADDER_ON": "FALSE", "FAL_LIVING_MODEL": "fal-ai/ltx-video/image-to-video", "PRICE_LIVING_USD": "0.02"}      # v12 V2d-b: ... and living stills as they were (eight flat-priced clips); the motion ladder has its own tests (test_v12_motion)
 
 @pytest.fixture(autouse=True)
 def fresh_store(tmp_path):

@@ -38,18 +38,28 @@ def test_scene_aware_anchors_whole_words_and_variety():
     out = IM.apply([{"type": "still", "prompt": u["text"]} for u in us], us, {}, {"kling": 0}, "EPA")
     v = SP.prompt_variety(out); assert v["top_anchor_share"] <= 0.35 and v["top_opening_share"] <= 0.35, v
 
+def _approved_cast():
+    """v12 V2d-b: a character is drawn or absent - a cutaway is planned only for a character with approved (LOCKED) art."""
+    from whatifs import core
+    core.store().append("Character_Sheets", [{"ts": "t", "character": c, "expression": "neutral", "hash": c, "prompt": "", "file": "sheet.png", "status": "LOCKED", "approved_at": "t"}
+                                             for c in ("VALE", "GRIMM", "ROSA", "ARCHIVIST")])
+
 def test_tiny_lines_become_reaction_cutaways_not_bought(setting):
     us = _units(); shots = [{"type": "still", "prompt": u["text"]} for u in us]
+    out0, n0 = SP.reaction_shots([dict(s) for s in shots], us)
+    assert n0 == 0 and all(s["type"] == "still" for s in out0)                    # v12 V2d-b: no approved art = no cutaway of that character: every line keeps its picture
+    _approved_cast()
     out, n = SP.reaction_shots(shots, us)
     assert n == 4 and out[3]["type"] == "reaction" and out[3]["speaker"] == "SKEPTIC" and out[10]["type"] == "reaction" and out[11]["type"] == "still"   # a jury prompt stays
     assert out[9]["type"] == "still"                                               # a clip-bait line is never a cutaway
-    fr = SP.reaction_frame("SKEPTIC", np.full((90, 160, 3), 120, np.uint8), 320, 180, 0.5)
-    assert fr.shape == (180, 320, 3) and fr.std() > 5
-    for sp in ("DIRECTOR", "JUDGE", "WITNESS"): assert SP.reaction_frame(sp, None, 320, 180, 0.0).shape == (180, 320, 3)
 
-def test_reaction_segment_renders(tmp_path):
-    p = str(tmp_path / "r.mp4"); SP.reaction_segment("JUDGE", None, p, 12)
-    import cv2; cap = cv2.VideoCapture(p); assert int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) == 12
+def test_the_code_that_drew_a_shape_in_place_of_a_character_is_gone():
+    """v12 V2d-b (the owner, 11 Nov 2026, on the first live video: a flat black shape with two ovals and a name): nothing in the shot-plan module can
+    draw a stand-in for a character any more, and the renderer has no call to one."""
+    import inspect
+    from whatifs import episode as EPI
+    assert not hasattr(SP, "reaction_frame") and not hasattr(SP, "reaction_segment")
+    src = inspect.getsource(EPI._render); assert "reaction_segment" not in src and "job.absent += 1" in src
 
 def test_safe_mode_restores_v91_shot_plan(setting):
     setting("V91_SAFE_MODE", "TRUE")

@@ -27,10 +27,10 @@ DEPTS = {
     "D5":  {"mission": "titles, thumbnails, the promise, packaging tests", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/packaging.py", "whatifs/art.py"), "levers": ("PROMISE_BY_SEC",), "takes": ()},
     "D6":  {"mission": "stills, animated scenes, living characters, particles, micro-cuts, the render", "cadence": "episode", "cap_inr": None, "inject": "brief",
-            "wraps": ("whatifs/media.py", "whatifs/anim.py", "whatifs/living.py", "whatifs/render.py", "whatifs/shotplan.py", "whatifs/opening.py", "whatifs/clips.py"),
-            "levers": ("ANIM_SHOTS", "VISUAL_CHANGE_MAX_S", "PARTICLES_ON", "LIVING_CHARACTERS_ON", "CAMERA_MOTION", "OPENING_FIT", "OPENING_ENLARGE_MAX"), "takes": ()},      # v12 V2c-b2b: the opening from the Short's footage
+            "wraps": ("whatifs/media.py", "whatifs/anim.py", "whatifs/living.py", "whatifs/render.py", "whatifs/shotplan.py", "whatifs/opening.py", "whatifs/clips.py", "whatifs/motion.py", "whatifs/stock.py"),
+            "levers": ("ANIM_SHOTS", "VISUAL_CHANGE_MAX_S", "PARTICLES_ON", "LIVING_CHARACTERS_ON", "CAMERA_MOTION", "OPENING_FIT", "OPENING_ENLARGE_MAX", "MOVING_SHARE_LONG", "MOVING_SHARE_MIN_LONG", "STOCK_SHARE_MAX_PCT"), "takes": ()},      # v12 V2c-b2b: the opening from the Short's footage
     "D7":  {"mission": "voices, sound worlds, story events, the music bed, the pause before a punchline", "cadence": "episode", "cap_inr": None, "inject": "brief",
-            "wraps": ("whatifs/voice.py", "whatifs/tts_gemini.py", "whatifs/sound.py"), "levers": ("SOUND_DESIGN_ON", "TTS_ENGINE"), "takes": ()},
+            "wraps": ("whatifs/voice.py", "whatifs/tts_gemini.py", "whatifs/sound.py"), "levers": ("SOUND_DESIGN_ON", "TTS_ENGINE", "SHORT_SOUND_BY_S"), "takes": ()},
     "D8":  {"mission": "the Feature Contract, the Impact Map, the enforcement matrix, problem memos, the repair loop", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/contract.py", "whatifs/enforce.py", "whatifs/qc.py", "whatifs/fixes.py"), "levers": ("CONTRACT_OFF", "BREAKOUT_HARD_BAR", "CRITIQUE_MIN"), "takes": ("repair_memo",)},
     "D9":  {"mission": "uploads, the release sheet (every setting of every platform set by code and read back), one native upload of a Short per platform, schedules, spin-offs", "cadence": "episode", "cap_inr": None, "inject": "brief",
@@ -78,7 +78,7 @@ ENTRY = {
     "D5":  (("whatifs/episode.py", "package"),),
     "D6":  (("whatifs/episode.py", "plan"), ("whatifs/episode.py", "assets"), ("whatifs/episode.py", "render")),
     "D7":  (("whatifs/episode.py", "voice"), ("whatifs/shorts2.py", "short_voice")),      # v12 V2c: a Short is voiced by the same voice job
-    "D8":  (("whatifs/episode.py", "script_gate"), ("whatifs/episode.py", "final_gate"), ("whatifs/shorts2.py", "short_gate"), ("whatifs/release.py", "release_gate")),      # v12 V2c-b2: the gate after a Short's uploads
+    "D8":  (("whatifs/episode.py", "script_gate"), ("whatifs/episode.py", "final_gate"), ("whatifs/shorts2.py", "short_gate"), ("whatifs/shorts2.py", "short_file_gate"), ("whatifs/release.py", "release_gate")),      # v12 V2c-b2: the gate after a Short's uploads
     "D9":  (("whatifs/episode.py", "publish"), ("whatifs/release.py", "short_publish")),      # v12 V2c-b2: a Short goes out through Publishing's own run
     "D10": (("whatifs/cli.py", "daily"), ("whatifs/ladder.py", "promote")),      # v12 V2c-b: the promote rule runs when a long video is about to start
     "D2":  (("whatifs/cli.py", "daily"), ("whatifs/cli.py", "weekly")),             # v12 B5: the learning job runs R&D first (daily always, weekly when due)
@@ -95,9 +95,10 @@ EPISODE_RUNS = {
     "script": (("D4", "write"), ("D7", "voice"), ("D5", "package"), ("D6", "plan"), ("D13", "probe"), ("D13", "seat")),
     "final":  (("D4", "write"), ("D7", "voice"), ("D5", "package"), ("D6", "plan"), ("D13", "probe"), ("D13", "seat"), ("D8", "script_gate"), ("D6", "assets"), ("D6", "render")),
     "short":  (("D14", "write"), ("D7", "short_voice"), ("D13", "short_seat")),          # v12 V2c: a standalone Short before its own gate
+    "short_file": (("D14", "write"), ("D7", "short_voice"), ("D13", "short_seat"), ("D8", "short_gate"), ("D14", "make")),      # v12 V2d-b: a Short's finished file before its own gate
     "release": (("D9", "short_publish"),),                                                # v12 V2c-b2: a Short's uploads before its release gate
 }
-GATE_RUNS = {"script": ("D8", "script_gate"), "final": ("D8", "final_gate"), "short": ("D8", "short_gate"), "release": ("D8", "release_gate")}
+GATE_RUNS = {"script": ("D8", "script_gate"), "final": ("D8", "final_gate"), "short": ("D8", "short_gate"), "short_file": ("D8", "short_file_gate"), "release": ("D8", "release_gate")}
 
 # Which department owns each contract check (a failed check becomes a problem memo to that department).
 CHECK_OWNER = {
@@ -110,6 +111,7 @@ CHECK_OWNER = {
     "decisions_executed": "C", "lever_verified": "D12", "research_cadence": "D2", "palace_injected": "D4", "palace_cited": "D4", "canon_in_brief": "D4",
     "viewer_numbers": "D13", "viewer_breath": "D13", "viewer_promise": "D13", "viewer_plain": "D13", "viewer_probe": "D13", "format_kept": "D4",
     "short_open": "D13", "short_plain": "D13", "short_shape": "D13", "short_kept": "D14", "short_contract": "D8", "topic_ladder": "D10", "release_sheet": "D9",
+    "moving_share": "D6", "stock_share": "D6", "short_moving": "D6", "short_sound": "D7",      # v12 V2d-b: the motion ladder, real footage, a Short's first second
     "opening_footage": "D6", "opening_shown": "D6",                                       # v12 V2c-b2b: the long video opens on its Short's footage
 }
 

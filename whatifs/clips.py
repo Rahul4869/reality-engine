@@ -10,6 +10,8 @@ OLD_STRETCH = 1.3                   # ... and may be played this much slower to 
 SHAPES_OK = ("follows", "inferred")  # where a clip's shape comes from: the page says it follows the start picture / not stated and measured on every clip
 STALE_PCT = 0.10                    # the listing's base price moved by more than this: the model's page must be read again
 SHAPE_TOL = 0.12                    # how far a clip's shape (width / height) may be from its start picture's before it counts as another shape
+LICENSED = "commercial"             # the only licence word of a provider's listing under which a clip is ever bought (v12 V2d-b: one model in use was "research")
+ROLE_CELL = {"hero": "FAL_HERO_MODEL", "living": "FAL_LIVING_MODEL"}      # the two things a clip model is bought for, and the cell that names the model of each
 
 def on(): return S("CLIP_VALUE_ON", bool)
 
@@ -33,6 +35,17 @@ def hero():
     """The row of the hero clip model while the clip market is on; None = the older way (a flat price for a 5-second clip)."""
     r = row() if on() else None
     return r if r is not None and usd_s(r) is not None else None
+
+def ladder():
+    """Is the motion ladder on (v12 V2d-b)? It needs the clip market: a living clip is bought from a row of the table or not at all."""
+    return on() and S("MOTION_LADDER_ON", bool)
+
+def living():
+    """The row a still is BROUGHT TO LIFE with while the motion ladder is on: the model the cell FAL_LIVING_MODEL names when its row can be bought
+    (a price, a commercial licence, alive) - else the hero's row: a living clip never comes from a model outside the table. None = the older way."""
+    if not ladder(): return None
+    r = row(S("FAL_LIVING_MODEL"))
+    return r if r is not None and not issues(r) else hero()
 
 def usd_s(r):
     """USD for one second of this model at the size its row buys; None when the row does not say."""
@@ -84,6 +97,7 @@ def issues(r, dead=()):
     if not str(r.get("start") or "").strip(): p.append("no field for a start picture")
     if str(r.get("shape") or "") not in SHAPES_OK: p.append("nothing says its clip takes the shape of the start picture")
     if usd_s(r) is None or usd_s(r) <= 0: p.append("no price at the size it would be bought in")
+    if str(r.get("lic") or "").strip().lower() != LICENSED: p.append(f"its licence is '{r.get('lic') or 'not stated'}', not {LICENSED}")
     if int(r.get("max_s") or 0) < SCENE_S: p.append(f"its longest clip is under {SCENE_S} seconds")
     if str(r.get("status") or "active") != "active": p.append(f"fal lists it as {r.get('status')}")
     if r.get("schema"): p.append(f"its inputs changed: {r.get('schema')}")
@@ -112,10 +126,11 @@ def floor_of(mid, rows=None):
     r = row(mid, rows)
     return None if not r or r.get("elo") is None else float(r["elo"]) - float(r.get("ci") or 0)
 
-def choice(dead=(), rows=None):
-    """The pick as of now: the table, the line of the month's plan, the Steward's record of failing models. A model that is dead sets no floor."""
+def choice(dead=(), rows=None, role="hero"):
+    """The pick as of now: the table, the line of the month's plan, the Steward's record of failing models. A model that is dead sets no floor.
+    role "living" (v12 V2d-b) = the model a still is brought to life with: the SAME rule at the same line, its floor the living model in use."""
     from whatifs import steward as STW, governor as G
-    rows = table() if rows is None else rows; cur = str(S("FAL_HERO_MODEL") or "")
+    rows = table() if rows is None else rows; cur = str(S(ROLE_CELL[role]) or "")
     gone = set(dead) | {r["id"] for r in rows if not STW.usable(r["id"])}
     return pick(rows, G.line_usd_s(), None if cur in gone else floor_of(cur, rows), gone)
 
@@ -152,9 +167,10 @@ def refresh(rows=None, save=True):
     def safe(fn, *a):
         try: return fn(*a)
         except Exception as e: log(f"clip market: {fn.__name__} not read ({scrub(e)[:100]})", "WARN"); return None
-    status = safe(SC.fal_status, ids) or {}; prices = safe(SC.fal_prices, ids) or {}; ranks = safe(SC.aa_ranking) or {}
+    status = safe(SC.fal_status, ids) or {}; prices = safe(SC.fal_prices, ids) or {}; ranks = safe(SC.aa_ranking) or {}; lics = safe(SC.fal_licence, ids) or {}
     for r in rows:
         if r["id"] in status: r["status"] = "active" if status[r["id"]] == "active" else str(status[r["id"]])
+        if lics.get(r["id"]): r["lic"] = str(lics[r["id"]]).strip().lower()          # v12 V2d-b: the licence is read live - a model that turns to "research" is never bought again
         doc = safe(SC.fal_schema, r["id"])
         if doc is not None:
             bad, upd = schema_issues(r, _props(doc)); r.update(upd)
@@ -190,6 +206,12 @@ def review(now=None):
     five = usd(p["row"], SCENE_S)
     if p["row"]["id"] != cur: STW.switch("hero", {"id": p["row"]["id"], "usd": five}, "picked by value: " + p["why"], tier="week")
     elif abs(S("PRICE_KLING_USD", float) - five) > 1e-9: set_setting("PRICE_KLING_USD", str(five))
+    if ladder():                                                  # v12 V2d-b: the living tier is picked by the same rule (today the same model: nothing licensed is cheaper)
+        pl = choice(rows=rows, role="living"); curl = str(S("FAL_LIVING_MODEL") or "")
+        if pl:
+            out.update(living=pl["row"]["id"]); fivel = usd(pl["row"], SCENE_S)
+            if pl["row"]["id"] != curl: STW.switch("living", {"id": pl["row"]["id"], "usd": fivel}, "picked by value: " + pl["why"], tier="week")
+            elif abs(S("PRICE_LIVING_USD", float) - fivel) > 1e-9: set_setting("PRICE_LIVING_USD", str(fivel))
     return out
 
 def preflight():
@@ -204,6 +226,9 @@ def preflight():
         bad, _upd = schema_issues(r, _props(SC.fal_schema(mid)))
         if bad: return False, f"{mid}: " + "; ".join(bad)
     except Exception as e: return False, f"fal's listing was not read ({scrub(e)[:100]})"
+    if ladder():                                                  # v12 V2d-b: the model that brings stills to life must be a row that can be bought
+        lm = str(S("FAL_LIVING_MODEL") or ""); lr = row(lm)
+        if lr is None or issues(lr): return False, f"the living model {lm} cannot be bought ({'no row in CLIP_MODELS' if lr is None else '; '.join(issues(lr))}): living clips come from {mid}"
     return True, f"{mid} is listed, active and takes the inputs its row says"
 
 # ------------------------------------------------------------------ a measured guard

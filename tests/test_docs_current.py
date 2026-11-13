@@ -24,6 +24,7 @@ SAMPLES = {
     "old_long_cadence":       ("Standard mode makes 8 long videos a month, twice a week.", None),
     "no_kling_statement":     ("The render is ffmpeg-only.", None),
     "daily_shorts_cadence":   ("Cadence: 1.5 standalone Shorts per day (SHORTS_PER_DAY).", "Cadence: 3 standalone Shorts a week (SHORTS_PER_WEEK); thirty near-identical Shorts a day would be spam."),
+    "presenter_silhouette":   ("Show the roles only as silhouettes, hands on a console or backs of heads.", "A character appears only as its approved art; without it nobody is shown and no silhouette is ever drawn."),
     "cutdown_reels":          ("Four bridge Shorts cut from each long video go out on the following days (REELS_PER_VIDEO).", "The standalone Shorts reach Instagram Reels and Facebook Reels; REEL1_DELAY_MIN minutes after its slot a long video's release step runs."),
 }
 

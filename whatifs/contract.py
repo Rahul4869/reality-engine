@@ -250,17 +250,17 @@ def p_retention(ctx):
     return (PASS, f"longest stretch without a re-hook {r.get('max_gap', 0):.0f} s") if not r.get("issues") else (FAIL, "; ".join(r["issues"])[:300])
 
 def p_living(ctx):
-    """v11.1 (K167): once character sheets are LOCKED, every reaction cutaway shows the approved character (blinking, breathing, talking)."""
+    """v12 V2d-b: A CHARACTER IS DRAWN OR ABSENT, in every format (the owner's rejected video showed a flat black shape with a name: the code that
+    drew it is gone). Every reaction cutaway of the plan is for a character with approved art, and the renderer showed that art in each (blinking,
+    breathing, talking). No cutaway at all = nobody is on screen: that passes - absent is the other half of the rule."""
     from whatifs import living as LV
-    if not S("LIVING_CHARACTERS_ON", bool): return NA, "living characters off (owner setting)"
-    locked = [r for r in store().rows("Character_Sheets") if r.get("status") == "LOCKED"]
-    shots = ctx.get("shots") or []
-    n_react = sum(1 for s in shots if s.get("type") == "reaction")
-    if not locked: return NA, "no character sheets locked yet (run Character sheets)"
-    if not n_react: return NA, "no reaction cutaways in this episode"
-    used = len(LV.USED)
-    return (PASS, f"{used} living character shots ({sum(u['blinks'] for u in LV.USED)} blinks, {sum(u['mouth_frames'] for u in LV.USED)} talking frames)") \
-        if used >= n_react else (FAIL, f"{n_react - used} of {n_react} reaction cutaways fell back to a silhouette")
+    react = [s for s in (ctx.get("shots") or []) if s.get("type") == "reaction"]
+    bare = sorted({str(s.get("speaker")) for s in react if not LV.has_art(s.get("speaker"))})
+    if bare: return FAIL, f"a reaction cutaway is planned for {', '.join(bare)} without approved character art: a character is drawn or absent"
+    absent = int(ctx.get("absent") or 0)
+    if absent: return FAIL, f"{absent} of {len(react)} reaction cutaways could not show the approved character (the picture before was continued; nothing was drawn in its place)"
+    if not react: return PASS, "nobody is on screen: no cutaway of a character was made (a character without approved art is absent, never a shape)"
+    return PASS, f"{len(react)} reaction cutaways, each the approved character ({sum(u['blinks'] for u in LV.USED)} blinks, {sum(u['mouth_frames'] for u in LV.USED)} talking frames in this job)"
 
 def p_visual_change(ctx):
     """Impact Map V2 + V5: a new picture state at least every VISUAL_CHANGE_MAX_S (graphics/reaction cutaways animate: 2x), and no 2-s window
@@ -269,6 +269,15 @@ def p_visual_change(ctx):
     units, shots = ctx.get("units") or [], ctx.get("shots") or []
     if not units or not shots: return NA, "no shot timeline in this run"
     mx = S("VISUAL_CHANGE_MAX_S", float); bounds, worst, where, fast, facts = [], 0.0, "", [], []
+    if ctx.get("states"):                                          # v12 V2d-b: judged on what the RENDER showed - one entry per picture state - never on a second copy of the cutting rule
+        for a, b, typ, clip, short in ctx["states"]:
+            step = float(b) - float(a); bounds.append(float(a))
+            if step < 1.0: fast.append(float(a))
+            if clip and short: continue                            # a stretch of the Short's own footage was cut and judged as a Short
+            lim = S("VISUAL_ANIMATED_MAX_S", float) if typ in ("graphic", "reaction") else mx * (2 if clip else 1)
+            if step > lim + 0.05 and step - lim > worst: worst, where = step - lim, f"{float(a):.0f}s ({'a playing clip' if clip else typ}, {step:.1f} s as one picture state)"
+        facts = [float(u.get("start", 0) or 0) for u in units if re.search(r"\d", str(u.get("text", "")))]
+        units = []                                                 # nothing is recomputed below
     merged = set(ctx.get("merged_units") or [])
     if not merged:
         try:
@@ -335,7 +344,8 @@ def p_animation(ctx):
     return PASS, f"{len(clips)} animated scenes, {secs:.0f} s"
 
 def p_motion(ctx):
-    clips = [c for c in (ctx.get("clips") or []) if c and os.path.exists(c)]
+    src = ctx.get("scenes") if ctx.get("scenes") is not None else ctx.get("clips")      # v12 V2d-b: the animated SCENES (a still brought to life moves gently by design: check moving_share judges it on the film)
+    clips = [c for c in (src or []) if c and os.path.exists(c)]
     if not clips: return NA, "no animated scenes"
     if FAKE and not S("CONTRACT_MEASURE_IN_FAKE", bool): return PASS, "measured live only"
     sc = [motion_score(c) for c in clips]; low = [round(x, 1) for x in sc if x < S("ANIM_MIN_MOTION", float)]
@@ -561,6 +571,85 @@ def p_canon_in_brief(ctx):
     return PASS, (f"canon given: {s.get('cast', 0)} cast item(s) + newest case {s.get('newest_case')}; " + (f"callback in the script: '{s['callback']}'" if s.get("callback") else "no aired case to call back to yet")
                   + "; case record written")
 
+def p_moving_share(ctx):
+    """v12 V2d-b (the motion ladder, D6): THE SHARE OF THE FINISHED FILM THAT REALLY MOVES. Measured on the file: a half second counts where the
+    renderer played a clip made by a model (its Short's footage, an animated scene, a still brought to life) AND the film's picture changes there.
+    The video is held under the floor MOVING_SHARE_MIN_LONG, and when it shows less than MOVING_SEEN_MIN_PCT of the seconds of clip it paid for."""
+    from whatifs import motion as MOT
+    if not MOT.on(): return NA, "the motion ladder is switched off (MOTION_LADDER_ON; it needs CLIP_VALUE_ON)"
+    m = ctx.get("master")
+    if ctx.get("moving") is None: return NA, "no render record in this run (judged on the finished film)"
+    if not m or not os.path.exists(m): return FAIL, "no finished video to measure"
+    try: r = MOT.long_report(m, ctx.get("moving"), ctx.get("moving_paid_s"))
+    except Exception as e: return FAIL, f"could not measure: {scrub(e)[:120]}"
+    d = ctx.get("d") if isinstance(ctx.get("d"), dict) else {}; d["moving_share"] = {k: r[k] for k in ("duration", "moving_s", "share_pct", "by", "paid_s", "seen_pct")}
+    floor = S("MOVING_SHARE_MIN_LONG", float); seen = S("MOVING_SEEN_MIN_PCT", float); plan = d.get("moving") or {}; p = []
+    if r["share_pct"] < floor - 1e-6: p.append(f"only {r['share_pct']:g}% of the film is moving pictures (the floor is {floor:g}%)")
+    if r["seen_pct"] is not None and r["seen_pct"] < seen - 1e-6:
+        p.append(f"of {r['paid_s']:g} s of clip this video paid for only {r['seen_pct']:g}% are on screen and moving (at least {seen:g}%)"
+                 + (f"; nothing changes at {', '.join(f'{t:g} s ({k})' for t, k in r['frozen'][:4])}" if r["frozen"] else ""))
+    ev = (f"{r['moving_s']:g} of {r['duration']:g} s move = {r['share_pct']:g}% (floor {floor:g}%; the lever asks {S('MOVING_SHARE_LONG', float):g}%"
+          + (f", this month's money planned {plan.get('bought_pct'):g}%" if plan.get("bought_pct") is not None else "") + "): "
+          + (", ".join(f"{k} {v:g} s" for k, v in r["by"].items()) or "nothing") + (f"; {r['seen_pct']:g}% of the {r['paid_s']:g} s paid are seen moving" if r["seen_pct"] is not None else ""))
+    return (FAIL, ("; ".join(p) + " | " + ev)[:380]) if p else (PASS, ev[:380])
+
+def p_stock_share(ctx):
+    """v12 V2d-b (real footage, D6): THE STOCK RULES ON THE FINISHED FILM - what the renderer really showed of NASA's and Pexels' footage: a tenth of
+    the runtime at most, never the first picture, never two in a row, never longer than an anchor, every clip with a record that names its source
+    and no person, every credit in the description. No real footage at all passes (it is allowed, never demanded)."""
+    from whatifs import stock as STK
+    st_ = ctx.get("stock")
+    if st_ is None: return NA, "no render record in this run (judged on the finished film)"
+    dur = float((ctx.get("timeline") or {}).get("duration") or 0) or _dur(ctx.get("master") or "")
+    r = STK.report(ctx.get("shots") or [], st_.get("spans"), st_.get("records"), st_.get("description"), dur)
+    if r["problems"]: return FAIL, "; ".join(r["problems"])[:380]
+    if not r["n"]: return PASS, "no real footage in this video" + ("" if STK.on() else " (switched off: STOCK_ON)")
+    return PASS, (f"{r['n']} clip(s) of real footage, {r['seconds']:g} s = {r['share_pct']:g}% of the film (limit {r['limit_pct']:g}%); never first, never two in a row; "
+                  f"cropped in and slowed by the renderer; no title names a person; credited: {', '.join(r['credits'])}")
+
+# ------------------------------------------------------------------ v12 V2d-b: the gate of a Short's FINISHED FILE (stage "short_file": after it is made, before it is handed to Publishing)
+def _short_file(ctx):
+    from whatifs import motion as MOT
+    if not MOT.on(): return None, (NA, "the motion ladder is switched off (MOTION_LADDER_ON; it needs CLIP_VALUE_ON)")
+    f = ctx.get("short_file") if isinstance(ctx.get("short_file"), dict) else {}
+    if not f.get("path") or not os.path.exists(str(f["path"])): return None, (FAIL, "no finished Short reached the gate of its file")
+    return f, None
+
+def p_short_moving(ctx):
+    """v12 V2d-b (D6): A SHORT MOVES IN EVERY SECOND - measured on its finished file, half second by half second, in the band of the picture that never
+    carries words: a clip that came back shorter than it was bought and was held on its last frame, or a clip that does not move, is found."""
+    from whatifs import motion as MOT
+    f, out = _short_file(ctx)
+    if f is None: return out
+    try: r = MOT.short_report(f["path"])
+    except Exception as e: return FAIL, f"could not measure: {scrub(e)[:120]}"
+    if not r["cells"]: return FAIL, "the finished Short has no picture to measure"
+    if r["still"]: return FAIL, (f"{r['cells'] - r['moving']} of {r['cells']} half seconds of the Short do not move ({r['share_pct']:g}% moves; a Short moves in every second): "
+                                 f"nothing changes at {', '.join(f'{t:g}' for t in r['still'][:6])} s")
+    return PASS, f"every one of the {r['cells']} half seconds of the {r['duration']:g} s Short changes on the finished file (100% moves)"
+
+def p_short_sound(ctx):
+    """v12 V2d-b (Sound, D7): A SHORT SOUNDS FROM ITS FIRST FRAME - measured on its finished file: its level passes the floor inside SHORT_SOUND_BY_S
+    seconds, the first fifth of a second is at least SHORT_SOUND_MIN_DB loud (no fade-in from silence), nothing clips, and the guide's first
+    word starts inside SHORT_VOICE_BY_S seconds (the real voice timeline)."""
+    from whatifs import sound as SD
+    f, out = _short_file(ctx)
+    if f is None: return out
+    try: r = SD.first_second(f["path"])
+    except Exception as e: return FAIL, f"could not measure: {scrub(e)[:120]}"
+    by, mn, vb = S("SHORT_SOUND_BY_S", float), S("SHORT_SOUND_MIN_DB", float), S("SHORT_VOICE_BY_S", float); units = f.get("units") or []; p = []
+    try: v0 = float(((units[0].get("words") or [{}])[0]).get("s", units[0].get("start"))) if units else None
+    except (TypeError, ValueError, IndexError): v0 = None
+    if r["onset_s"] is None: p.append("the Short is silent in its first second and a half")
+    elif r["onset_s"] > by + 1e-6: p.append(f"the first sound comes at {r['onset_s']:g} s (inside {by:g} s of the first frame)")
+    if r["onset_s"] is not None and r["db_200"] < mn - 1e-6: p.append(f"the first fifth of a second is only {r['db_200']:g} dBFS loud (at least {mn:g}): it fades in")
+    if r["peak_db"] > -0.1: p.append(f"the first second clips ({r['peak_db']:g} dBFS)")
+    if v0 is None: p.append("no voice timeline reached the gate")
+    elif v0 > vb + 1e-6: p.append(f"the guide's first word starts at {v0:g} s (inside {vb:g} s)")
+    if p: return FAIL, "; ".join(p)[:380]
+    return PASS, (f"sound from {r['onset_s']:g} s (limit {by:g} s), the first fifth of a second at {r['db_200']:g} dBFS (at least {mn:g}), the first second at {r['db_1000']:g} dBFS; "
+                  f"the guide speaks from {v0:g} s" + (f"; the place sounds of {f.get('sound')}" if f.get("sound") else ""))
+
 # ------------------------------------------------------------------ v12 V2c: the short gate (stage "short": a standalone Short, before any picture is paid)
 def _short(ctx):
     s = ctx.get("short"); return s if isinstance(s, dict) and isinstance(s.get("script"), dict) else None
@@ -690,10 +779,12 @@ FEATURES = [
     ("promise_paid",  "final",  p_promise_paid, "the thumbnail's promise is on screen early"),
     ("impact_map",    "final",  p_impact,       "Impact Map: hook in 3 s, timed punchlines, sound spacing, variety vs last 10, flash safety"),
     ("visual_change", "final",  p_visual_change, "a new picture state every <= VISUAL_CHANGE_MAX_S, no overload"),
-    ("living_characters", "final", p_living,   "reaction cutaways show the approved character, blinking, breathing and talking"),
+    ("living_characters", "final", p_living,   "a character is drawn or absent: every reaction cutaway shows the approved character, blinking, breathing and talking - and where no art is approved nobody is shown, never a shape"),
     ("breakout_bar",  "final",  p_breakout_bar, "Breakout Score >= BREAKOUT_HARD_BAR (no upload below it)"),
     ("aliveness",     "final",  p_alive,        "no stretch of the video looks like a still photo"),
     ("opening_shown", "final",  p_opening_shown, "the finished film opens on its Short's footage: the opening clips are the files cut from that Short's archive and the frames of the film match them (the opening)"),
+    ("moving_share",  "final",  p_moving_share, "the share of the finished film that really moves - measured on the file where the renderer played a clip made by a model - is at least MOVING_SHARE_MIN_LONG, and the seconds of clip the video paid for are on screen and moving (the motion ladder)"),
+    ("stock_share",   "final",  p_stock_share,  "real footage (NASA, Pexels) is a short anchor: STOCK_SHARE_MAX_PCT of the film at most, never the first picture, never two in a row, changed, no clip whose title names a person, every credit in the description"),
     ("takeaways_written", "final", p_takeaways_written, "every department run of this episode finished its six steps and wrote a valid takeaway"),
     # v12 V2c: stage "short" = the short gate of a standalone Short (whatifs/shorts2.py), judged before any picture is paid; a held Short is not made
     ("short_open",    "short",  p_short_open,   "a Short opens on the moving promise picture, its hook has at most SHORT_HOOK_WORDS_MAX words and ends inside SHORT_HOOK_BY_S seconds of the real voice, the promise text is on screen in the first second (the viewer's seat for a Short)"),
@@ -701,6 +792,9 @@ FEATURES = [
     ("short_shape",   "short",  p_short_shape,  "a Short has its format's length, hands its last line back to the first, asks for nothing, is an animated clip in every second and loops into its first frame, captions above the buttons (the viewer's seat for a Short)"),
     ("short_kept",    "short",  p_short_kept,   "a Short is what its Short format says and is not like the last ten Shorts (Short formats as data)"),
     ("short_contract", "short", p_short_contract, "every department that worked on a Short (the Shorts Studio, Sound, Audience) ran under the department contract before the short gate"),
+    # v12 V2d-b: stage "short_file" = the gate of a Short's FINISHED FILE (whatifs/shorts2.py), after it is made and before it is handed to Publishing; a Short that fails is kept and waits for the owner's tap
+    ("short_moving",  "short_file", p_short_moving, "a Short moves in every second: every half second of its finished file changes (the motion ladder)"),
+    ("short_sound",   "short_file", p_short_sound, "a Short sounds from its first frame: its place's own sound inside SHORT_SOUND_BY_S seconds at full level, the guide's first word inside SHORT_VOICE_BY_S seconds - measured on the finished file"),
     # v12 V2c-b2: stage "release" = the release gate of a standalone Short (whatifs/release.py), judged AFTER the uploads from the platforms' own answers; the Short is public by then: nothing is held
     ("release_sheet", "release", p_release_sheet, "every setting of a Short's release sheet that code sets was kept by YouTube, Instagram and Facebook as each platform itself answers (or was repaired once), and each got the one master file (the release sheet)"),
 ]

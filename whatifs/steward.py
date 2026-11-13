@@ -53,6 +53,11 @@ def next_candidate(role, after=None):
         if CL.on():
             p = CL.choice(dead={frm} if frm else ())
             return {"id": p["row"]["id"], "usd": CL.usd(p["row"], CL.SCENE_S)} if p and p["row"]["id"] != frm else None
+    if role == "living":                                           # v12 V2d-b: so is the model that brings stills to life - never an entry of the older ladder (one was licensed for research only)
+        from whatifs import clips as CL
+        if CL.ladder():
+            p = CL.choice(dead={frm} if frm else (), role="living")
+            return {"id": p["row"]["id"], "usd": CL.usd(p["row"], CL.SCENE_S)} if p and p["row"]["id"] != frm else None
     for e in ladders().get(role, []):
         mid = e.get("id")
         if mid == frm or not usable(mid): continue

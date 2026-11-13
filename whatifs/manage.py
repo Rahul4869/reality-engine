@@ -511,6 +511,8 @@ def learn():
     except Exception as x: log(f"v12 V2c-b2b move skipped: {scrub(x)}", "WARN")
     try: v12v2d_upgrade(st)                                      # v12 V2d: the hero clip model picked by value; the writing allowance without the cut-downs' call; the flat voice allowance retired
     except Exception as x: log(f"v12 V2d move skipped: {scrub(x)}", "WARN")
+    try: v12v2db_upgrade(st)                                     # v12 V2d-b: the living model leaves the one licensed for research only
+    except Exception as x: log(f"v12 V2d-b move skipped: {scrub(x)}", "WARN")
     try:
         from whatifs import craft as CRF; CRF.seed_techniques()       # v9.3.2: the owner's pre-judged technique cards, filed once
     except Exception as x: log(f"technique seeding skipped: {scrub(x)}", "WARN")
@@ -813,6 +815,27 @@ def v12v2cb2b_upgrade(st):
 
 V12V2D_FLIPS = (("LLM_EST_INR", "176", "170"),)          # the cut-downs' planning call is gone: the writing allowance loses it
 V12V2D_RETIRED = ("TTS_EST_INR",)                        # the voice is estimated by the second at the price of the day
+
+def v12v2db_upgrade(st):
+    """ONE time on a live Sheet (v12 V2d-b, the ladder's rules): the model that brings stills to life leaves the one licensed for RESEARCH ONLY (fal's own
+    page and listing, read 13 Nov 2026) - picked NOW by the rule of the clip market and switched by the Model Steward, who tells the owner with
+    'Discuss'; the older ladder of living models loses that entry. A model the owner chose himself (any other value) is left alone. Never runs twice."""
+    if str(S("V12V2DB_MOVE_DONE") or "").strip(): return []
+    done = []
+    try:
+        from whatifs import clips as CL, steward as STW
+        cur = str(S("FAL_LIVING_MODEL") or "").strip()
+        if cur == V12V2DB_OLD_LIVING and CL.ladder():
+            p = CL.choice(role="living")
+            if p: STW.switch("living", {"id": p["row"]["id"], "usd": CL.usd(p["row"], CL.SCENE_S)}, "the model in use is licensed for research only; picked by value: " + p["why"], tier="week"); done.append("FAL_LIVING_MODEL")
+        lad = STW.ladders(); liv = [e for e in lad.get("living", []) if e.get("id") != V12V2DB_OLD_LIVING]
+        if len(liv) != len(lad.get("living", [])): lad["living"] = liv; set_setting("MODEL_LADDERS", json.dumps(lad)); done.append("MODEL_LADDERS")
+    except Exception as x: log(f"v12 V2d-b: the living model was not moved now ({scrub(x)[:120]}); a living clip is bought from the hero's row meanwhile", "WARN")
+    set_setting("V12V2DB_MOVE_DONE", iso() + " " + (",".join(done) or "none"))
+    if done: log("v12 V2d-b: stills are brought to life by a model of the clip market that is licensed for commercial use; changed on the Sheet: " + ", ".join(done))
+    return done
+
+V12V2DB_OLD_LIVING = "fal-ai/ltx-video/image-to-video"          # licensed for research only on its provider's own page and listing (read 13 Nov 2026)
 
 def v12v2d_upgrade(st):
     """ONE time on a live Sheet (v12 V2d, the money and the model): (1) the hero clip model is picked by value NOW - the rule of the clip market on
@@ -1284,6 +1307,8 @@ def setup():
     except Exception as x: log(f"v12 V2c-b2b move skipped: {scrub(x)}", "WARN")
     try: v12v2d_upgrade(st)                                      # v12 V2d: the hero clip model picked by value; the writing allowance without the cut-downs' call; the flat voice allowance retired
     except Exception as x: log(f"v12 V2d move skipped: {scrub(x)}", "WARN")
+    try: v12v2db_upgrade(st)                                     # v12 V2d-b: the living model leaves the one licensed for research only
+    except Exception as x: log(f"v12 V2d-b move skipped: {scrub(x)}", "WARN")
     try:                                                         # v12: the founding knowledge is in the Palace from the first run
         from whatifs.org import palace as PAL, runner as ORGR; PAL.maintain(st); ORGR.install(st)
     except Exception as x: log(f"palace seed skipped: {scrub(x)}", "WARN")

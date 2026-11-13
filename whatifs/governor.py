@@ -209,14 +209,20 @@ def episodes_left_this_month():
 # 8:25 minimum (the 8:10 mid-roll line plus margin), 3 Kling clips, both roles, captions, full QC. Order of trimming: living stills, stills, runtime.
 TIERS = (("full", 600, 52, 8), ("lean", 600, 48, 4), ("slim", 570, 44, 0), ("floor", 505, 40, 0))     # name, runtime cap (s), new stills, living stills
 
-def tier_saving(tier, full=TIERS[0]):
-    """Rupees a tier saves against the full tier (living stills, stills, a small share of the AI-writing cost for the shorter script)."""
+def tier_saving(tier, full=TIERS[0], living_s=None, floor_s=None):
+    """Rupees a tier saves against the full tier (living stills, stills, a small share of the AI-writing cost for the shorter script). v12 V2d-b:
+    with the motion ladder (`living_s` = the living seconds the full tier buys) a smaller tier keeps the FLOOR's living seconds and saves the rest -
+    never more: a long video under the floor of moving pictures is not made."""
     u = S("USD_INR", float)
     from whatifs import media as MD                          # v12 V2d: a still at the price the code really pays (megapixels rounded up), as the cost lines count it
-    return (u * ((full[2] - tier[2]) * MD.still_usd(S("STILL_W", int), S("STILL_H", int)) + (full[3] - tier[3]) * S("PRICE_LIVING_USD", float))
+    if living_s is not None:
+        from whatifs import clips as CL
+        lv = 0.0 if tier[0] == full[0] else max(0.0, float(living_s) - float(floor_s or 0)) * living_usd_s()
+    else: lv = (full[3] - tier[3]) * S("PRICE_LIVING_USD", float)
+    return (u * ((full[2] - tier[2]) * MD.still_usd(S("STILL_W", int), S("STILL_H", int)) + lv)
             + S("LLM_EST_INR", float) * 0.15 * (full[1] - tier[1]) / max(1, full[1]))
 
-def plan_for_episode(est_full_inr, eps_left):
+def plan_for_episode(est_full_inr, eps_left, living_s=None, floor_s=None):
     """Pick the budget tier for ONE episode (see TIERS) and keep the configured minimum Kling clips in every tier.
 
     Returns tier, runtime_cap (seconds), stills, living, kling, hold, reason. The cap is a planning guard, not a provider-side spending lock;
@@ -234,17 +240,22 @@ def plan_for_episode(est_full_inr, eps_left):
     p = {"kling": requested_kling, "opus": True, "hold": False, "tier": "full", "reason": "full"}
     chosen = None
     for t in TIERS:                                    # richest tier that fits this video's fair share of the month
-        cost = est_full_inr - tier_saving(t)
+        cost = est_full_inr - tier_saving(t, living_s=living_s, floor_s=floor_s)
         if cost <= per and cost * margin <= rem: chosen = t; break
     if chosen is None:                                 # nothing fits the fair share: take the floor if the whole remaining month can still pay for it (the share is only a guide)
-        floor_cost = est_full_inr - tier_saving(TIERS[-1])
+        floor_cost = est_full_inr - tier_saving(TIERS[-1], living_s=living_s, floor_s=floor_s)
         if floor_cost * margin <= rem: chosen = TIERS[-1]
         else:
             p.update(hold=True, tier="hold", living=0, stills=TIERS[-1][2], runtime_cap=TIERS[-1][1],
                      reason=f"budget hold: about Rs {rem:.0f} left this month, the cheapest complete episode needs about Rs {floor_cost * margin:.0f}")
             return p
-    p.update(tier=chosen[0], runtime_cap=max(run_min, min(chosen[1], cap_run)), stills=chosen[2], living=min(chosen[3], S("LIVING_STILLS", int)),
-             reason="full" if chosen[0] == "full" else f"budget tier '{chosen[0]}': runtime up to {chosen[1] // 60}:{chosen[1] % 60:02d}, {chosen[2]} new stills, {chosen[3]} living stills, {requested_kling} Kling clips kept")
+    if living_s is not None:                           # v12 V2d-b: the living tier in SECONDS - the full tier buys what the month's money gave this video, every smaller tier the floor
+        from whatifs import clips as CL
+        ls = int(living_s if chosen[0] == TIERS[0][0] else min(int(living_s), int(floor_s or 0)))
+        p.update(living_s=ls, living=ls // max(1, int(CL.SCENE_S)))
+    p.update(tier=chosen[0], runtime_cap=max(run_min, min(chosen[1], cap_run)), stills=chosen[2], living=p["living"] if living_s is not None else min(chosen[3], S("LIVING_STILLS", int)),
+             reason="full" if chosen[0] == "full" else f"budget tier '{chosen[0]}': runtime up to {chosen[1] // 60}:{chosen[1] % 60:02d}, {chosen[2]} new stills, "
+                    + (f"{p.get('living_s')} living seconds (the floor)" if living_s is not None else f"{chosen[3]} living stills") + f", {requested_kling} Kling clips kept")
     return p
 
 def _balance(provider):
@@ -272,6 +283,42 @@ def min_episode_cost_inr():
     the one cost model (costguard.lines)."""
     from whatifs import costguard as CG
     return CG.total(CG.lines(long_kind(), kling=S("KLING_MIN_CLIPS", int), stills=S("STILLS_MIN", int), living=0))
+
+OPENING_EST_S = 12            # the seconds of its Short's footage a long video about a promoted Short is COUNTED to show before it exists (the first whole runs showed 12.9 to 16.5: counted low, so the floor is met by what is bought)
+
+def living_usd_s():
+    """USD for one second of a still brought to life (0 with the motion ladder off)."""
+    from whatifs import clips as CL
+    r = CL.living(); return float(CL.usd_s(r)) if r else 0.0
+
+def moving_floor(kind=None, runtime=None):
+    """THE FLOOR of one long video (v12 V2d-b), before anything is spent: of `runtime` seconds at least MOVING_SHARE_MIN_LONG percent are moving pictures
+    made by a model - its Short's footage (kind 'ladder': counted at OPENING_EST_S), its animated scenes and its LIVING stills. Returns {on, floor_s,
+    target_s, own_s (footage + scenes), living_s (the floor's living seconds), living_target_s, inr_s}. Every estimate of a long video counts the
+    floor's living seconds (costguard.lines); it never asks the month's split, so the split can ask it."""
+    import math
+    from whatifs import clips as CL
+    kind = kind or long_kind(); run = float(runtime or S("RUNTIME_MAX_SEC", float)); usd = living_usd_s()
+    k = max(0, S("KLING_CLIPS", int) - (1 if kind == "ladder" else 0)); own = k * CL.SCENE_S + (OPENING_EST_S if kind == "ladder" else 0)
+    lo = max(0.0, S("MOVING_SHARE_MIN_LONG", float)); hi = max(lo, S("MOVING_SHARE_LONG", float))
+    out = {"on": usd > 0, "kind": kind, "runtime_s": run, "own_s": own, "floor_pct": lo, "target_pct": hi, "floor_s": math.ceil(lo / 100 * run), "target_s": math.ceil(hi / 100 * run)}
+    if usd <= 0: return dict(out, living_s=0, living_target_s=0, inr_s=0.0)
+    lf = max(0, out["floor_s"] - own)
+    return dict(out, living_s=lf, living_target_s=max(lf, out["target_s"] - own), inr_s=round(usd * (S("USD_INR", float) or 99.0), 4))
+
+def moving_plan(kind=None, runtime=None, mine=False, now=None):
+    """THE MOVING SECONDS THIS LONG VIDEO GETS (v12 V2d-b): the floor, plus what the month's split leaves free (`split()["free_inr"]`: after the long
+    videos still to come at their floor, the Shorts still to make and the reserve), shared by the long videos still to make, up to the target
+    MOVING_SHARE_LONG. `mine` = the video being planned already has its row on tab Episodes, so the split no longer counts it among those to
+    come: its own floor cost is taken from what is free first. Returns moving_floor's fields with living_s = what this video buys, bought_pct
+    (the share its plan reaches) and free_inr."""
+    mf = moving_floor(kind, runtime)
+    if not mf["on"]: return dict(mf, bought_pct=0.0, free_inr=0.0)
+    m = S("BUDGET_SAFETY_MARGIN", float); sp = split(now); n = sp["long_left"] + (1 if mine else 0)
+    free = float(sp["free_inr"]) - (full_episode_inr(kind=mf["kind"]) * m if mine else 0.0)
+    extra = max(0, int(free // (n * m * mf["inr_s"]))) if n > 0 else 0
+    ls = min(mf["living_target_s"], mf["living_s"] + extra)
+    return dict(mf, living_floor_s=mf["living_s"], living_s=ls, bought_pct=round(100.0 * (mf["own_s"] + ls) / max(1.0, mf["runtime_s"]), 1), free_inr=round(free, 0))
 
 def palace_prompt_inr():
     """v12 B6a: the Palace playbook inside the creative model prompts (about 2,000 input tokens at the end of about 15 creative calls, outside the cached layers, plus the citations)."""
@@ -312,9 +359,9 @@ def line_usd_s():
     market picks the best-ranked model at or under it (whatifs/clips.py). It does not depend on the PRICE of the model in use."""
     from whatifs import costguard as CG, formats as FMT
     u = S("USD_INR", float) or 99.0; m = S("BUDGET_SAFETY_MARGIN", float); n_long = max_long_videos(); n_short = max(0, S("SHORTS_PER_MONTH", int)) if S("SHORTS_TRACK_ON", bool) else 0
-    def split_of(L):
-        hero = next((l for l in L if l["key"] == "hero_clips"), None)
-        return (CG.total(L) - (hero["inr"] if hero else 0.0)), (float(hero["n"]) if hero else 0.0)
+    def split_of(L):                                              # v12 V2d-b: the living seconds of the floor are seconds of the same market - the line must pay them too
+        hero = [l for l in L if l["key"] == "hero_clips" or (l["key"] == "living_clips" and l.get("unit") == "s")]
+        return (CG.total(L) - sum(l["inr"] for l in hero)), float(sum(l["n"] for l in hero))
     lo, ls = split_of(CG.lines("long")); sh = FMT.short_shares(); tot = sum(sh.values()) or 1; so = ss = 0.0
     for f, w in sh.items():
         o, s_ = split_of(CG.lines("short", fmt=f)); so += o * w / tot; ss += s_ * w / tot

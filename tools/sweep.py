@@ -97,6 +97,19 @@ def money_of(core, ids):
         hero = (j.get("paid") or {}).get("hero_clip", 0); said.append(f"{i} ({kind}): {hero:g} of {(j.get('lines') or {}).get('hero_clip', 0):g} estimated seconds of hero clip, Rs {float(r.get('est_inr') or 0):.0f} estimated")
     return (not bad), ("; ".join(bad) if bad else "every paid picture and clip had its line: " + "; ".join(said))
 
+def motion_of(core, ep, shorts=()):
+    """v12 V2d-b: (ok, words) - THE SWEEP WALKS THE LADDER'S RULES. The long video of this id (None = an id of Shorts only) must have PASSED the checks
+    that measure its finished film - moving_share (the share that really moves; the seconds of clip it paid for found again), stock_share (real
+    footage under its rules) and living_characters (drawn or absent) - and every Short named must have PASSED the gate of its finished file
+    (short_moving, short_sound). 'Not applicable' or a missing row is a failure here: it would mean the new path was not walked."""
+    led = {}
+    for r in core.store().rows("Feature_Ledger"): led[(r.get("episode_id"), r.get("feature"))] = r
+    want = ([(ep, k) for k in ("moving_share", "stock_share", "living_characters")] if ep else []) + [(s, k) for s in shorts for k in ("short_moving", "short_sound")]
+    bad = [f"{i} {k} {(led.get((i, k)) or {}).get('status') or 'missing'}: {str((led.get((i, k)) or {}).get('evidence') or '')[:140]}" for i, k in want if (led.get((i, k)) or {}).get("status") != "PASS"]
+    if bad: return False, "; ".join(bad)
+    said = ([str(led[(ep, "moving_share")].get("evidence"))[:210], str(led[(ep, "stock_share")].get("evidence"))[:90]] if ep else []) + [f"{len(list(shorts))} Short(s): every half second of the file moves, sound from the first frame"]
+    return True, "the ladder's rules held: " + " | ".join(said)
+
 # ------------------------------------------------------------------ one id (runs in its own process: module state never leaks between ids)
 def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
     os.environ.update(WI_FAKE="1", WI_SMALL="1", WI_WORK=os.path.join(work, "work"), PYTHONUTF8="1")
@@ -145,6 +158,8 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
             if r0.get("ok") and r.get("ok"):                                             # v12 V2d: THE SWEEP WALKS THE MONEY - both Shorts' estimates against what their runs paid
                 ok_m, res["money"] = money_of(core, [r0["id"], ep])
                 if not ok_m: late.append("the cost model: " + res["money"][:240])
+                ok_x, res["motion"] = motion_of(core, None, [r0["id"], ep])          # v12 V2d-b: THE SWEEP WALKS THE LADDER'S RULES - both Shorts' finished files were measured
+                if not ok_x: late.append("the ladder's rules: " + res["motion"][:240])
             res["problems"] = [f"the first Short: {x}" for x in (r0.get("failed") or ([r0.get("why")] if not r0.get("ok") else []))] + [str(x) for x in (r.get("failed") or [])] + late + ([] if okr or not r.get("ok") else [f"release sheet: {whyr[:200]}"])
             if r0.get("ok") and r.get("ok") and os.path.exists(str(r.get("path") or "")) and okr and not late and r.get("status") == "POSTED":
                 res["outcome"] = "ok"; res["short"] = f"{r0.get('format')}>{r.get('format')}"; res["release"] = ("approved:" if approve else "") + "+".join(x["state"] for x in REL.records(ep))
@@ -177,6 +192,9 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
             if res["outcome"] == "ok":                                              # v12 V2d: THE SWEEP WALKS THE MONEY - the long video's estimate (and its Short's) against what the runs really paid
                 ok_m, res["money"] = money_of(core, [ep] + (["SH" + ep[2:]] if res.get("ladder") == "climbed" else []))
                 if not ok_m: res["outcome"] = "odd"; res["problems"].append("the cost model: " + res["money"]); res["error"] = res["money"][:300]
+            if res["outcome"] == "ok":                                              # v12 V2d-b: THE SWEEP WALKS THE LADDER'S RULES - the finished film (and its Short's file) measured: what moves, real footage, characters
+                ok_x, res["motion"] = motion_of(core, ep, ["SH" + ep[2:]] if res.get("ladder") == "climbed" else [])
+                if not ok_x: res["outcome"] = "odd"; res["problems"].append("the ladder's rules: " + res["motion"]); res["error"] = res["motion"][:300]
         res.update(evidence(core, ep, org))
     except BaseException as e:                                                      # a crash is a result too: the last line of the traceback names it
         if isinstance(e, KeyboardInterrupt): raise
@@ -248,7 +266,8 @@ def summary(results):
         for b in r.get("runs_bad", []) + r.get("memos_open", []): fails.setdefault("org:" + b, []).append(r["id"])
     return {"n": len(results), "outcomes": by, "opened_on_footage": sum(1 for r in results if r.get("opening") and r["outcome"] == "ok"),
             "released_without_cutdowns": sum(1 for r in results if str(r.get("release") or "").startswith("no cut-down") and r["outcome"] == "ok"),
-            "money_agreed": sum(1 for r in results if str(r.get("money") or "").startswith("every paid picture") and r["outcome"] == "ok"), "bad_ids": sorted(r["id"] for r in results if r["outcome"] != "ok"), "fail_classes": {k: sorted(set(v)) for k, v in sorted(fails.items())},
+            "money_agreed": sum(1 for r in results if str(r.get("money") or "").startswith("every paid picture") and r["outcome"] == "ok"),
+            "ladder_rules_held": sum(1 for r in results if str(r.get("motion") or "").startswith("the ladder's rules held") and r["outcome"] == "ok"), "bad_ids": sorted(r["id"] for r in results if r["outcome"] != "ok"), "fail_classes": {k: sorted(set(v)) for k, v in sorted(fails.items())},
             "warn_classes": {k: len(v) for k, v in sorted(warn.items())}, "degraded_classes": {k: len(v) for k, v in sorted(deg.items())}, "owner_message_kinds": {k: len(v) for k, v in sorted(own.items())}}
 
 def main(argv=None):

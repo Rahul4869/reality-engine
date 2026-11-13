@@ -154,7 +154,7 @@ def vision_check(master, units, shots, episode="", n=None):
         if os.path.exists(f): imgs.append(("image/jpeg", base64.b64encode(open(f, "rb").read()).decode())); lines.append(f'{len(imgs) - 1}: "{units[i]["text"][:140]}"')
     if not imgs: return [], {"vision": "no frames"}
     sysmsg = ("You are an independent video QC inspector. For each numbered frame you get the narration line spoken at that moment. Rate match 0-10: does the picture "
-              "plausibly illustrate or support the line (presenter silhouettes or control-room screens during dialogue are fine when they fit)? Set artifact true ONLY for a clear visual "
+              "plausibly illustrate or support the line (a control-room screen or the scenario itself during dialogue is fine when it fits)? Set artifact true ONLY for a clear visual "
               "defect: garbled or misspelled on-screen text, a melted or distorted face or body, an obvious glitch, a stray interface overlay. Judge only what you see. "
               'Return JSON: {"frames":[{"i":0,"match":0,"artifact":false,"note":""}]}')
     r = ask_vision(sysmsg, f"FRAMES: {len(imgs)}\n" + "\n".join(lines), imgs, episode)

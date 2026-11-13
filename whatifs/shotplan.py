@@ -137,54 +137,17 @@ def stake_slots(shots, units, k, imp=None, taken=(), exclude=()):
 def words(t): return len(re.findall(r"[A-Za-z0-9']+", str(t or "")))
 
 def reaction_shots(shots, units):
-    """Tiny lines become free REACTION cutaways (speaker card). Never a Kling / living / impact / exhibit / clip-bait line. Returns (shots, n_converted)."""
-    n = 0; mx = S("REACTION_MAX_WORDS", int)
+    """Tiny lines become free REACTION cutaways of the speaking character - ONLY where that character has approved art (v12 V2d-b: a character is drawn
+    or absent; a line of a character without it keeps its picture). Never a Kling / living / impact / exhibit / clip-bait line. Returns (shots, n_converted)."""
+    from whatifs import living as LV
+    n = 0; mx = S("REACTION_MAX_WORDS", int); art = {}
+    def drawn(spk):
+        if spk not in art: art[spk] = LV.has_art(spk)
+        return art[spk]
     for i, s in enumerate(shots):
         if i >= len(units) or s.get("type") != "still" or s.get("impact") or s.get("opening_hook") or s.get("promise"): continue
         u = units[i]; tg = _tags(u)
         if any(t.startswith(("[EXHIBIT", "[CLIPBAIT", "[/CLIPBAIT", "[JURY")) for t in tg): continue
-        if u.get("speaker") in ("DIRECTOR", "SKEPTIC", "JUDGE", "WITNESS") and words(u.get("text")) <= mx:
+        if u.get("speaker") in ("DIRECTOR", "SKEPTIC", "JUDGE", "WITNESS") and words(u.get("text")) <= mx and drawn(u.get("speaker")):
             s["type"] = "reaction"; s["speaker"] = u.get("speaker"); s.pop("prompt", None); n += 1
     return shots, n
-
-# ---------------------------------------------------------------- the reaction card (render)
-def reaction_frame(speaker, bg, W, H, t, line=""):
-    """One frame of a reaction cutaway: the previous picture blurred and graded in the character's colour, a procedural silhouette of the character with
-    one unmistakable feature (Vale: glasses; Grimm: high collar + red pocket square; Rosa: hair bun + teacup; Archivist: shelves), the name, and the
-    character's camera grammar (tilt / handheld / drift). Deterministic in t."""
-    import numpy as np, cv2
-    from PIL import Image, ImageDraw
-    from whatifs.overlay import COLOURS, name_of
-    from whatifs.media import font
-    base = cv2.GaussianBlur(cv2.resize(bg, (W, H)), (0, 0), 18) if bg is not None else np.full((H, W, 3), 30, np.uint8)
-    col = COLOURS.get(speaker, (200, 200, 200))
-    base = (base.astype(np.float32) * 0.45 + np.array(col[::-1], np.float32)[None, None, :] * 0.18).clip(0, 255).astype(np.uint8)
-    im = Image.fromarray(cv2.cvtColor(base, cv2.COLOR_BGR2RGB)); d = ImageDraw.Draw(im)
-    cx, cy, r = W * 0.5, H * 0.46, H * 0.16; sil = (12, 12, 16)
-    d.ellipse((cx - r, cy - r * 1.2, cx + r, cy + r * 0.9), fill=sil)                                    # head
-    d.polygon([(cx - r * 2.4, H), (cx - r * 1.1, cy + r * 1.1), (cx + r * 1.1, cy + r * 1.1), (cx + r * 2.4, H)], fill=sil)   # shoulders
-    if speaker == "DIRECTOR":
-        for dx in (-0.45, 0.45): d.ellipse((cx + dx * r - r * 0.32, cy - r * 0.25, cx + dx * r + r * 0.32, cy + r * 0.1), outline=(200, 210, 220), width=max(2, int(H * 0.006)))
-    elif speaker == "SKEPTIC":
-        d.polygon([(cx - r * 1.3, cy + r * 1.0), (cx - r * 0.6, cy - r * 0.2), (cx - r * 0.4, cy + r * 1.2)], fill=sil); d.polygon([(cx + r * 1.3, cy + r * 1.0), (cx + r * 0.6, cy - r * 0.2), (cx + r * 0.4, cy + r * 1.2)], fill=sil)
-        d.rectangle((cx + r * 0.9, cy + r * 1.6, cx + r * 1.25, cy + r * 1.85), fill=(200, 30, 40))
-    elif speaker == "JUDGE":
-        d.ellipse((cx - r * 0.45, cy - r * 1.75, cx + r * 0.45, cy - r * 0.95), fill=sil)
-        d.chord((cx + r * 1.4, cy + r * 1.7, cx + r * 2.2, cy + r * 2.4), 0, 180, fill=(235, 225, 210))
-    elif speaker == "WITNESS":
-        for k in range(4): d.line((W * 0.08, H * (0.2 + 0.18 * k), W * 0.92, H * (0.2 + 0.18 * k)), fill=(60, 55, 50), width=max(2, int(H * 0.008)))
-    f = font(int(H * 0.05)); nm = name_of(speaker); tw = d.textlength(nm, font=f)
-    d.text((cx - tw / 2, H * 0.83), nm, font=f, fill=tuple(col))
-    out = cv2.cvtColor(np.array(im), cv2.COLOR_RGB2BGR)
-    try:
-        from whatifs import v91 as V91, herostill as HS
-        if V91.on("CHAR_GRAMMAR_ON"): out = HS.apply_grammar(out, speaker, t)
-    except Exception: pass
-    return out
-
-def reaction_segment(speaker, bg_path, path, nframes):
-    """Render a reaction cutaway through the normal frame pipe (overlay stack, cursor, encoder)."""
-    import cv2
-    from whatifs import render as RN
-    W, H = RN.work_size(); bg = cv2.imread(bg_path) if bg_path else None
-    RN._pipe(path, (reaction_frame(speaker, bg, W, H, k / RN.fps()) for k in range(nframes)), nframes, W, H)

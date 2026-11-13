@@ -367,7 +367,11 @@ def make(sc, v, pl, ep, wd):
         if beat_secs and s["beat"] == last_beat: beat_secs[-1] += float(s["end"]) - float(s["start"])
         else: beat_secs.append(float(s["end"]) - float(s["start"]))
         last_beat = s["beat"]
-    snd = SP._mix(SP._sound(total, beat_secs, os.path.join(wd, "bed.wav")), [(v["wav"], 0.0)], os.path.join(wd, "mix.wav"))
+    from whatifs import motion as MOT, sound as SD
+    if MOT.on():                                               # v12 V2d-b: the place's own sound from the first sample, a colour of its own for every Short (before: a drone that rose out of silence)
+        bed, sound_kind = SD.short_bed(total, beat_secs, f"{shots[0].get('picture') if shots else ''} {sc.get('title') or ''}", ep, os.path.join(wd, "bed.wav"))
+    else: bed, sound_kind = SP._sound(total, beat_secs, os.path.join(wd, "bed.wav")), ""
+    snd = SP._mix(bed, [(v["wav"], 0.0)], os.path.join(wd, "mix.wav"))
     fd = os.path.abspath("fonts") if os.path.isdir("fonts") else "/usr/share/fonts"
     if os.name == "nt": ass, fd = ("'" + p.replace("\\", "/").replace(":", "\\:") + "'" for p in (ass, fd))      # Windows dev laptops only: a drive colon breaks ffmpeg filter arguments
     inputs, filt = [], []
@@ -384,7 +388,7 @@ def make(sc, v, pl, ep, wd):
     cov = ""
     try: cov = cover(os.path.join(wd, "f0.png"), str((pl.get("promise") or {}).get("text") or sc.get("title") or ""), os.path.join(wd, "cover.jpg"))
     except Exception as e: log(f"the cover of Short {ep} was not drawn ({scrub(e)[:100]}): the platforms pick a frame", "WARN", ep)
-    return {"path": out, "seconds": round(total, 2), "clips": paid, "paid_s": paid_s, "pictures": pics, "loop_diff": _loop_diff(out), "cover": cov}
+    return {"path": out, "seconds": round(total, 2), "clips": paid, "paid_s": paid_s, "pictures": pics, "loop_diff": _loop_diff(out), "cover": cov, "sound": sound_kind}
 
 def m_make(r):
     return {k: (r or {}).get(k, 0) for k in ("seconds", "clips", "paid_s", "pictures", "loop_diff")}
@@ -399,24 +403,25 @@ def description(sc):
     return f"{sc.get('title')}\n{SEAT.hook(sc)}\nOne law of nature is different today, and it happens to you. Reality Engine.\nAI-assisted pictures and voice; an original script."
 
 # ------------------------------------------------------------------ the short gate: problems go to the department that owns the check, never to the owner
-def _gate_memos(ep):
+def _gate_memos(ep, stage="short"):
     """emit hook of the short gate: one problem memo per CLASS of failed check (no episode on it: a held Short is never made again under its id), to
     the department that owns the check. The next Short that passes the same check closes it."""
     from whatifs.org import registry as REG
     def emit(g, brief):
-        return [{"type": "problem_memo", "from_dept": "D8", "to_depts": [REG.check_owner(fid)], "subject": f"{fid} held a Short at the short gate"[:140],
-                 "body": {"what_failed": f"contract check {fid}: {str(ev)[:300]}", "where": f"{ep} short gate", "attempt": 1, "check": fid, "stage": "short"},
-                 "done_when": f"a Short passes check {fid} at the short gate", "episode_id": "", "dedupe_key": f"gate|short|{fid}",
-                 "evidence": [{"source": f"Feature_Ledger:{ep}:short:{fid}", "date": iso()[:10], "type": "own data", "finding": str(ev)[:300]}]}
+        gate = "short gate" if stage == "short" else "gate of its finished file"
+        return [{"type": "problem_memo", "from_dept": "D8", "to_depts": [REG.check_owner(fid)], "subject": f"{fid} held a Short at the {gate}"[:140],
+                 "body": {"what_failed": f"contract check {fid}: {str(ev)[:300]}", "where": f"{ep} {gate}", "attempt": 1, "check": fid, "stage": stage},
+                 "done_when": f"a Short passes check {fid} at the {gate}", "episode_id": "", "dedupe_key": f"gate|{stage}|{fid}",
+                 "evidence": [{"source": f"Feature_Ledger:{ep}:{stage}:{fid}", "date": iso()[:10], "type": "own data", "finding": str(ev)[:300]}]}
                 for fid, ev in ((g or {}).get("failed") or [])]
     return emit
 
-def _gate_settle(ep):
+def _gate_settle(ep, stage="short"):
     from whatifs.org import memos as MEM
     def settle(g, brief):
         rows = {r.get("feature"): r.get("status") for r in ((g or {}).get("rows") or [])}
-        return [(m["id"], "repair_verified", f"Feature_Ledger:{ep}:short:{m['body'].get('check')}:PASS")
-                for m in MEM.find(type="problem_memo", from_dept="D8", stage="short") if rows.get(m["body"].get("check")) == "PASS"]
+        return [(m["id"], "repair_verified", f"Feature_Ledger:{ep}:{stage}:{m['body'].get('check')}:PASS")
+                for m in MEM.find(type="problem_memo", from_dept="D8", stage=stage) if rows.get(m["body"].get("check")) == "PASS"]
     return settle
 
 # ------------------------------------------------------------------ one Short, from the topic to the review or the upload
@@ -475,6 +480,11 @@ def run(force=False, publish=True, now=None, episode_id=None):
             made = ORG.work("D14", "make", ep, lambda b: make(sc, v, pl, ep, wd), measure=m_make, lesson=make_lessons)
             from whatifs import costguard as CG
             CG.reconcile(ep, CG.lines("short", fmt=fmt, shots=pl["shots"], seconds=pl.get("seconds")), "short " + fmt)      # what was really paid against the lines said before
+            gf = None
+            from whatifs import motion as MOT                    # v12 V2d-b: THE FINISHED FILE has a gate of its own - does every half second move, does it sound from its first frame?
+            if MOT.on():
+                fctx = {"ep": ep, "short_file": {"path": made["path"], "units": v["timeline"].get("units") or [], "sound": made.get("sound")}}
+                gf = ORG.work("D8", "short_file_gate", ep, lambda b: CON.run("short_file", fctx, ep), measure=WR.m_gate, lesson=WR.gate_lessons, emit=_gate_memos(ep, "short_file"), settle=_gate_settle(ep, "short_file"))
         out = made["path"]
         footage = LAD.keep(ep, wd, sc, pl, v["timeline"])          # v12 V2c-b: what the Short was made of is kept - the opening of the long video its topic may earn
         BR.tag(ep, "short", title=sc["title"], premise=topic["premise"], hook=arch, sec=made["seconds"], lead=fmt, origin=topic.get("origin", "ai"),
@@ -485,7 +495,8 @@ def run(force=False, publish=True, now=None, episode_id=None):
         store().append("Specials", [rec])                          # on record at once: whatever happens to an upload, the Short was made, counts and can still go out
         LAD.enter(rec, topic, footage)                         # v12 V2c-b: every Short is a step on the ladder - its numbers decide whether its topic gets the long video
         if brk: LAD.order_done(topic["follow_of"], ep, now)     # the order is closed with the Short that paid it (an approved long-video breakout has two)
-        if publish: rec.update(_hand_over(rec, sc, out, made.get("cover"), reviewed, now))
+        if gf is not None and not gf["ok"]: rec.update(_file_hold(rec, gf, publish))      # v12 V2d-b: made, kept, on the ladder - and NOT handed to Publishing: it waits for the owner's one tap
+        elif publish: rec.update(_hand_over(rec, sc, out, made.get("cover"), reviewed, now))
         log(f"Short {ep} ({fmt} '{FMT.short_name(fmt)}', hook {arch}{', holdout' if choice.get('holdout') else ''}; {made['seconds']:.0f} s, {made['clips']} clips, loop {made['loop_diff']}): "
             f"{sc['title']} -> {rec['status']}", episode=ep)
         return dict(rec, ok=True, path=out)
@@ -496,6 +507,27 @@ def run(force=False, publish=True, now=None, episode_id=None):
         try: store().append("Specials", [dict(rec, status=("FAILED (" + scrub(e)[:90] + ")")[:120])])      # v12 V2c-b: a crashed Short is on record - the cadence waits a day before the next paid try
         except Exception: pass
         log(f"Short failed (nothing posted): {scrub(e)[:200]}", "WARN", ep); return {"ok": False, "why": scrub(e)[:200]}
+
+def _file_hold(rec, gf, publish):
+    """v12 V2d-b: a finished Short whose FILE failed a check (a second that does not move, no sound in its first frame). Its clips are paid, so it is
+    MADE and kept on its record - and it is NOT handed to Publishing. The owner gets ONE message with the film and the reason; his Approve sends
+    it out through the same door as any approved Short (specials.approve -> release.approved); without his tap it stays unposted. The department
+    that owns the failed check has its problem memo from the gate. Never raises. Returns what changed on the record."""
+    ep = rec["id"]; failed = [f for f, _ in gf["failed"]]; why = "; ".join(f"{f}: {str(e)[:150]}" for f, e in gf["failed"])[:420]
+    upd = {"status": ("FILE_HELD (" + ", ".join(failed) + ")")[:120]}
+    log(f"Short {ep} is made and HELD by the gate of its finished file, not handed to Publishing: {why}", "WARN", ep)
+    if publish:
+        try:
+            from whatifs import notify as NT
+            fid = str(rec.get("file") or "").replace("drive:", "")
+            NT.send("special_review", f"A Short was made and is HELD - nothing is posted. Its finished file failed a check: {why}. "
+                    + (f"Watch: https://drive.google.com/file/d/{fid}/view  " if fid else "") + "Approve posts it as it is; without your tap it stays unposted.",
+                    [("Approve", f"SPECIAL APPROVE {ep}"), ("Leave it", "OK")], tier="now", urgent=True, episode=ep, default="not posted", expires_h=72, dedupe_key=f"special|{ep}")
+            upd["status"] = "AWAITING_APPROVAL"
+        except Exception as e: log(f"the owner was not told about the held Short {ep}: {scrub(e)[:120]}", "WARN", ep)
+    try: store().update("Specials", "id", ep, upd)
+    except Exception as e: log(f"the hold of Short {ep} was not written to its record: {scrub(e)[:120]}", "WARN", ep)
+    return upd
 
 def _keep_master(ep, out, cov, now):
     """What makes a Short MADE on its record: the moment its file was finished (`made`), the SHA-256 of that file (`sha`) and where the master and its

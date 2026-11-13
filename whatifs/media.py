@@ -54,10 +54,14 @@ def fake_image(path, w, h, seed, label=""):
     if label: ImageDraw.Draw(img).text((20, 20), label[:60], fill=(255, 255, 255))
     img.save(path, quality=92); return path
 
+FAKE_DRIFT_S = 16.0          # an offline clip crosses its picture once in this many seconds (longer than the longest clip any model sells)
+
 def fake_clip(path, w, h, seed, sec=5):
+    """An offline clip: one made picture under a camera that never stops. v12 V2d-b: it travels at ONE steady speed (before: a slow swing that stood
+    still twice in five seconds - a rule about what really moves could not tell such a clip from a frozen one)."""
     img = fake_image(path + ".jpg", w, h, seed)
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-i", img, "-t", str(sec), "-vf",
-                    f"scale={w*1.1:.0f}:-2,crop={w}:{h}:'(iw-ow)/2+sin(t)*20':'(ih-oh)/2',format=yuv420p", "-r", "30", path], check=True)
+                    f"scale={w*1.3:.0f}:-2,crop={w}:{h}:'(iw-ow)*min(1,t/{FAKE_DRIFT_S})':'(ih-oh)*(0.5+0.4*min(1,t/{FAKE_DRIFT_S}))',format=yuv420p", "-r", "30", path], check=True)
     os.remove(img); return path
 
 # ---------------- images ----------------
@@ -130,9 +134,10 @@ def animate(image_url, image_path, prompt, path, episode, hero=False, model=None
     """One clip from a picture. v12 V2d: a hero clip is bought BY THE SECOND - `seconds` is what its shot needs (None = a scene of a long video); the
     clip market (whatifs/clips.py) rounds it up inside the model's shortest and longest clip, and the cost row says the seconds."""
     from whatifs import clips as CL
-    n = CL.buy(seconds)[1] if hero else int(CL.OLD_CLIP_S)
+    lr = None if (hero or model is not None) else CL.living()          # v12 V2d-b: a still is brought to life by a row of the SAME table, bought by the second (None = the older way)
+    n = CL.buy(seconds)[1] if hero else (CL.secs(lr, CL.SCENE_S if seconds is None else seconds) if lr else int(CL.OLD_CLIP_S))
     if FAKE:
-        cost("hero_clip" if hero else "living_clip", "fal", n if hero else 1, 0.0, episode)      # offline: the seconds that WOULD be paid, without a rupee (costguard.reconcile reads them)
+        cost("hero_clip" if hero else "living_clip", "fal", n if (hero or lr) else 1, 0.0, episode)      # offline: the seconds that WOULD be paid, without a rupee (costguard.reconcile reads them)
         return fake_clip(path, S("STILL_W", int), S("STILL_H", int), prompt, n)
     if not image_url:              # v8.9.1 (fix): a missing URL in production used to return the offline TEST clip; now the real picture is sent, or it fails loudly
         if not image_path or not os.path.exists(image_path): raise RuntimeError("no picture to animate (no URL and no file)")
@@ -140,15 +145,17 @@ def animate(image_url, image_path, prompt, path, episode, hero=False, model=None
     if not fal_allowed(): raise RuntimeError("fal credit exhausted")
     explicit = model is not None
     role = "hero" if hero else "living"
-    model = model or (S("FAL_HERO_MODEL") if hero else S("FAL_LIVING_MODEL"))          # v10: an explicit model only for the bake-off
+    model = model or (S("FAL_HERO_MODEL") if hero else (lr["id"] if lr else S("FAL_LIVING_MODEL")))          # v10: an explicit model only for the bake-off
+    if lr is not None and str(lr.get("id")) != str(S("FAL_LIVING_MODEL") or ""):
+        log(f"the living model {S('FAL_LIVING_MODEL')} has no row that can be bought (licence, price or status): this clip is bought from {lr['id']}", "WARN", episode)
     if hero and any(str(model).startswith(r) for r in RETIRED_MODELS):
         log(f"video model {model} is retired on fal; using {DEFAULTS['FAL_HERO_MODEL'][0]}", "WARN", episode); model = DEFAULTS["FAL_HERO_MODEL"][0]
     from whatifs import steward as STW
     if not explicit and S("MODEL_STEWARD_ON", bool): model = STW.ensure(role, model)
     if model == STW.CODE_MOTION: return _code_motion(image_path, path)
     try:
-        out = _fal_video(model, image_url, image_path, prompt, path, episode, hero, price_usd, seconds)
-        if hero and not explicit and CL.on() and image_path and os.path.exists(image_path):      # v12 V2d: a measured guard - one model's page does not say where its clip's shape comes from
+        out = _fal_video(model, image_url, image_path, prompt, path, episode, hero, price_usd, seconds, market=hero or lr is not None)
+        if (hero or lr is not None) and not explicit and CL.on() and image_path and os.path.exists(image_path):      # v12 V2d: a measured guard - one model's page does not say where its clip's shape comes from
             same, words = CL.shape_ok(out, image_path)
             if not same: raise RuntimeError(f"the clip came back in another shape than its start picture ({words})")
         STW.report_success(model); return out
@@ -158,7 +165,7 @@ def animate(image_url, image_path, prompt, path, episode, hero=False, model=None
         if not nxt or nxt == model: raise
         log(f"retrying with {nxt} after: {str(e)[:120]}", "WARN", episode)
         if nxt == STW.CODE_MOTION: return _code_motion(image_path, path)
-        return _fal_video(nxt, image_url, image_path, prompt, path, episode, hero, None, seconds)
+        return _fal_video(nxt, image_url, image_path, prompt, path, episode, hero, None, seconds, market=hero or lr is not None)
 
 def _code_motion(image_path, path, sec=5.0):
     """v10.1 (K150): the ₹0 last rung for living stills: a slow push-in on the picture we already own."""
@@ -167,11 +174,12 @@ def _code_motion(image_path, path, sec=5.0):
     W, H = S("STILL_W", int), S("STILL_H", int)
     return _portrait_motion(image_path, path, sec, W - W % 2, H - H % 2)
 
-def _fal_video(model, image_url, image_path, prompt, path, episode, hero, price_usd, seconds=None):
+def _fal_video(model, image_url, image_path, prompt, path, episode, hero, price_usd, seconds=None, market=None):
+    market = hero if market is None else market                   # v12 V2d-b: a living clip of the motion ladder is a clip of the market too (its row, its seconds)
     if not image_url:
         image_url = _data_uri(image_path)
     from whatifs import clips as CL
-    r = CL.row(model) if (hero and CL.on()) else None              # v12 V2d: the request and the price come from the MODEL'S OWN ROW (after a fail-over that is another row than the hero's)
+    r = CL.row(model) if (market and CL.on()) else None              # v12 V2d: the request and the price come from the MODEL'S OWN ROW (after a fail-over that is another row than the hero's)
     if r is not None and CL.usd_s(r) is not None:
         n = CL.secs(r, CL.SCENE_S if seconds is None else seconds); args = CL.args(r, image_url, prompt, n)
         usd = CL.usd_s(r) * n if price_usd is None else price_usd
@@ -179,43 +187,59 @@ def _fal_video(model, image_url, image_path, prompt, path, episode, hero, price_
         n = int(CL.OLD_CLIP_S); args = video_args(model, image_url, prompt, hero)
         usd = price_usd if price_usd is not None else (S("PRICE_KLING_USD", float) if hero else S("PRICE_LIVING_USD", float))
     out = fal_run(model, args, timeout=1500)
-    cost("hero_clip" if hero else "living_clip", "fal", n if hero else 1, usd, episode)      # v8.3: logged before the download; v12 V2d: a hero clip's units are its SECONDS
+    cost("hero_clip" if hero else "living_clip", "fal", n if (hero or (market and r is not None and CL.usd_s(r) is not None)) else 1, usd, episode)      # v8.3: logged before the download; v12 V2d: a clip of the market is logged in SECONDS
     url = (out.get("video") or {}).get("url")
     if not url: raise RuntimeError(f"no video in fal reply: {str(out)[:200]}")
     _dl(url, path)
     return path
 
 # ---------------- free real footage ----------------
-def stock(query, path, episode):
-    if FAKE: return fake_clip(path, 1280, 720, query, 6)
+def stock(query, path, episode, need_s=None):
+    """One clip of free real footage (NASA first, then Pexels) with its RECORD beside the file (whatifs/stock.py: where it came from, how it is credited).
+    v12 V2d-b: a clip whose own title names a person is not taken, and neither is one shorter than the line it must cover (`need_s`). None = nothing fit."""
+    from whatifs import stock as STK
+    need = float(need_s or S("STOCK_MAX_S", float))
+    if FAKE:
+        fake_clip(path, 1280, 720, query, 6)
+        STK.write_record(path, {"provider": "nasa", "id": "offline-" + hashlib.md5(str(query).encode()).hexdigest()[:8], "title": str(query)[:80], "page": "https://images.nasa.gov/",
+                                "maker": "", "credit": "NASA", "people": False, "seconds": 6.0}); return path
     for fn in (_nasa, _pexels):
         try:
-            if fn(query, path): return path
+            rec = fn(query, path, need)
+            if rec: STK.write_record(path, dict(rec, people=False, seconds=round(STK.seconds(path), 1))); return path
         except Exception as e: log(f"stock {fn.__name__} failed: {e}", "WARN", episode)
     return None
 
-def _nasa(q, path):
+def _nasa(q, path, need=0.0):
+    from whatifs import stock as STK
     r = requests.get("https://images-api.nasa.gov/search", params={"q": q, "media_type": "video"}, timeout=30).json()
     for it in r.get("collection", {}).get("items", [])[:8]:
         d = (it.get("data") or [{}])[0]
         if "copyright" in json.dumps(d).lower(): continue
+        if STK.names_person(f"{d.get('title') or ''} {' '.join(map(str, d.get('keywords') or []))} {str(d.get('description') or '')[:200]}"): continue      # v12 V2d-b: no recognisable people
         files = requests.get(it["href"], timeout=30).json()
         mp4 = [f for f in files if f.endswith(".mp4")]
         pick = next((f for f in mp4 if "~medium" in f), None) or next((f for f in mp4 if "~mobile" in f), None) or (mp4[0] if mp4 else None)
         if pick:
             _dl(pick.replace("http://", "https://").replace(" ", "%20"), path)
-            if os.path.getsize(path) > 200_000: return True
-    return False
+            if os.path.getsize(path) > 200_000 and STK.seconds(path) >= need:
+                nid = str(d.get("nasa_id") or "")
+                return {"provider": "nasa", "id": nid or pick.rsplit("/", 1)[-1], "title": str(d.get("title") or "")[:120], "page": f"https://images.nasa.gov/details/{nid}" if nid else pick, "maker": str(d.get("center") or ""), "credit": "NASA"}
+    return None
 
-def _pexels(q, path):
+def _pexels(q, path, need=0.0):
+    from whatifs import stock as STK
     k = env("PEXELS_KEY")
-    if not k: return False
-    r = requests.get("https://api.pexels.com/videos/search", params={"query": q, "per_page": 5, "orientation": "landscape"}, headers={"Authorization": k}, timeout=30).json()
+    if not k: return None
+    r = requests.get("https://api.pexels.com/videos/search", params={"query": q, "per_page": 15, "orientation": "landscape"}, headers={"Authorization": k}, timeout=30).json()
     for v in r.get("videos", []):
+        if float(v.get("duration") or 0) < need or STK.names_person(v.get("url") or ""): continue      # v12 V2d-b: long enough for its line; its page address spells its title - no recognisable people
         files = sorted([f for f in v.get("video_files", []) if (f.get("width") or 0) >= 1280], key=lambda f: f.get("width") or 0)
         if files:
-            _dl(files[0]["link"], path); return True
-    return False
+            _dl(files[0]["link"], path); who = str((v.get("user") or {}).get("name") or "")
+            return {"provider": "pexels", "id": str(v.get("id") or ""), "title": str(v.get("url") or "").rstrip("/").rsplit("/", 1)[-1][:120], "page": str(v.get("url") or ""), "maker": who,
+                    "credit": f"Video by {who} on Pexels" if who else "Pexels"}
+    return None
 
 # ---------------- depth ----------------
 _depth = None

@@ -71,7 +71,7 @@ def est_cost_inr(d):
     is its own kind (one scene and one start picture fewer, no hook lab); the table read is counted only where it runs."""
     from whatifs import costguard as CG, opening as OPEN
     kind = ("ladder" if OPEN.source(d)[0] == "short" else "long") if d.get("ladder") else G.long_kind()
-    return CG.total(CG.lines(kind, kling=d["kling"], stills=d["stills"], living=d["living"], table_read=TR.active_arm(d.get("episode_id", ""))[0] == "on"))
+    return CG.total(CG.lines(kind, kling=d["kling"], stills=d["stills"], living=d["living"], living_s=d.get("living_s"), table_read=TR.active_arm(d.get("episode_id", ""))[0] == "on"))
 
 def chapters(timeline, beats_at):
     ch = [("0:00", "Intro")]
@@ -113,9 +113,15 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     try:                                                     # v11 (K163): the monthly Deep Trial
         from whatifs import deeptrial as DT; DT.maybe(d, ep, slot_iso)
     except Exception as x: log(f"Deep Trial check skipped: {scrub(x)}", "WARN", ep)
-    plan = plan_for_episode(est_cost_inr(d), eps_left)
+    mp = G.moving_plan(None, d.get("runtime_sec"), mine=True)       # v12 V2d-b: the moving seconds this video gets - the floor, plus what the month's split leaves free, up to the target
+    if mp["on"]: d["living_s"] = mp["living_s"]
+    plan = plan_for_episode(est_cost_inr(d), eps_left, living_s=d.get("living_s"), floor_s=mp.get("living_floor_s"))
     if plan.get("hold"): raise RuntimeError(plan["reason"] + " - nothing was spent; the slot is skipped (budget gate)")
     d["kling"], d["living"] = plan["kling"], plan["living"]; _apply_tier(d, plan)
+    if mp["on"]:
+        d["living_s"] = plan["living_s"]
+        d["moving"] = {"floor_pct": mp["floor_pct"], "target_pct": mp["target_pct"], "own_s": mp["own_s"], "living_s": plan["living_s"], "living_floor_s": mp["living_floor_s"],
+                       "bought_pct": round(100.0 * (mp["own_s"] + plan["living_s"]) / max(1.0, mp["runtime_s"]), 1), "free_inr": mp["free_inr"]}
     from whatifs import preview as PV
     took = PV.take_approved(ep) if not fix_mode() else None          # v8.10: an approved Script Preview is used as written (not paid for twice)
     if took:
@@ -205,7 +211,7 @@ def _vo_of(S_, out):
 def _assets_state(files):
     b = os.path.basename
     return {"img": {str(i): b(p) for i, p in files["img"].items()}, "clips": {str(i): b(p) for i, p in files["clips"].items()}, "anchors": files["anchors"],
-            "urls": {str(i): u for i, u in (files.get("urls") or {}).items() if u}, "opening": files.get("opening") or {}}      # v8.9.1: picture URLs survive a resume (no paid re-make just to get a URL)
+            "urls": {str(i): u for i, u in (files.get("urls") or {}).items() if u}, "opening": files.get("opening") or {}, "stock": {str(i): r for i, r in (files.get("stock") or {}).items()}}      # v8.9.1: picture URLs survive a resume (no paid re-make just to get a URL)
 
 def _load_assets(out):
     """Pictures and clips restored from a checkpoint (paths re-based to this machine)."""
@@ -214,7 +220,7 @@ def _load_assets(out):
     a = json.load(open(p))
     return {"img": {int(i): os.path.join(out, n) for i, n in a["img"].items() if os.path.exists(os.path.join(out, n))},
             "clips": {int(i): os.path.join(out, n) for i, n in a["clips"].items() if os.path.exists(os.path.join(out, n))}, "anchors": a.get("anchors", []),
-            "urls": {int(i): u for i, u in (a.get("urls") or {}).items() if u}, "opening": a.get("opening") or {}}
+            "urls": {int(i): u for i, u in (a.get("urls") or {}).items() if u}, "opening": a.get("opening") or {}, "stock": {int(i): r for i, r in (a.get("stock") or {}).items()}}
 
 def anchor_shots(shots, budget, max_run=None, opening=()):
     """Which shots get a NEW picture. Kling and living clips always do; then the Director's hero shots (consequences, new places, peaks); then the rest of the
@@ -272,10 +278,10 @@ def _assets(shots, units, out, ep, budget=56, have=None, footage=None):
         s = shots[i]; p = os.path.join(out, f"clip{i:03d}.mp4"); tries = 1 + (S("KLING_RETRY_MAX", int) if s["type"] == "kling" else 1)
         for attempt in range(tries):
             try:
-                if s["type"] == "stock": return i, M.stock(s.get("search", "space"), p, ep)
+                if s["type"] == "stock": return i, M.stock(s.get("search", "space"), p, ep, need_s=(float(units[i + 1]["start"]) - float(units[i]["start"])) if i + 1 < len(units) else None)
                 if s["type"] in ("living", "kling") and i in img_paths:
                     mp = __import__("whatifs.anim", fromlist=["x"]).acting_prompt(s) if s.get("anim") else motion_prompt(s, units[i]["text"], i in opening)
-                    return i, M.animate(img_urls.get(i), img_paths[i], mp, p, ep, hero=s["type"] == "kling")
+                    return i, M.animate(img_urls.get(i), img_paths[i], mp, p, ep, hero=s["type"] == "kling", seconds=s.get("buy") if s["type"] == "living" else None)      # v12 V2d-b: a living clip is bought as long as its line
                 return i, None
             except Exception as e: log(f"clip {i} failed ({s['type']}, try {attempt + 1}/{tries}): {e}", "WARN"); time.sleep(3)
         log(f"clip {i} gave up ({s['type']}) -> still", "WARN"); return i, None
@@ -284,7 +290,9 @@ def _assets(shots, units, out, ep, budget=56, have=None, footage=None):
         for i, c in ex.map(get_clip, need_clip):
             if c: clips[i] = c
     delivered = {"kling": sum(1 for i, s in enumerate(shots) if s["type"] == "kling" and i in clips), "living": sum(1 for i, s in enumerate(shots) if s["type"] == "living" and i in clips)}
-    return {"img": img_paths, "clips": clips, "anchors": anchors, "missing": [i for i in anchors if i not in img_paths], "delivered": delivered, "urls": img_urls, "opening": oc.get("opening") or {}}
+    from whatifs import stock as STK                            # v12 V2d-b: where every clip of real footage came from (its record is written beside the file when it is fetched)
+    stock = {i: STK.record_of(c) for i, c in clips.items() if i < len(shots) and shots[i]["type"] == "stock"}
+    return {"img": img_paths, "clips": clips, "anchors": anchors, "missing": [i for i in anchors if i not in img_paths], "delivered": delivered, "urls": img_urls, "opening": oc.get("opening") or {}, "stock": stock}
 
 class Job:
     """The finishing stage's working state: what the render needs and what the QC fixes act on."""
@@ -317,6 +325,7 @@ class Job:
             try:
                 if img: RN.parallax_segment(img, m["path"], m["nf"], seed=f"{self.ep}fix{self.fixn}{m['i']}", detail=True, focus="center", look=RN.LOOKS[self.fixn % len(RN.LOOKS)])
                 else: RN.graphic_segment({"label": "", "from": 0, "to": 0}, None, m["path"], m["nf"])
+                m["clip"] = False                               # v12 V2d-b: whatever played here before, it is a still picture now (the moving-share record follows)
             except Exception as e:
                 log(f"segment {m['i']} re-render failed: {e} -> plain fallback", "WARN"); RN.graphic_segment({"label": "", "from": 0, "to": 0}, img, m["path"], m["nf"])
         RN.set_overlay(None); return self.rebuild_video()
@@ -413,6 +422,14 @@ def _render(job):
         if (bounds[i + 1] - bounds[i]) < S("UNIT_MERGE_SEC", float) and shots[i].get("type") != "kling" \
                 and i - 1 not in MERGED_UNITS:
             bounds[i] = bounds[i + 1]; MERGED_UNITS.add(i)
+    from whatifs import motion as MOT, stock as STK                              # v12 V2d-b: A PAID CLIP IS SHOWN WHOLE - a clip longer than its line runs on into
+    ladder_ = MOT.on(); clip_s_ = {}; job.absent = 0                              # the stills that follow, and no micro-cut ever shows its start picture in its place
+    if ladder_:
+        for i, s in enumerate(shots[:len(units)]):
+            if i in files["clips"] and s.get("type") in MOT.MOVING and not s.get("short"):
+                try: clip_s_[i] = RN.probe_dur(files["clips"][i])
+                except Exception: pass
+        MOT.carry(bounds, shots, clip_s_, MERGED_UNITS)
     for i, u in enumerate(units):
         s = shots[i]; a, b = bounds[i], bounds[i + 1]; dur = b - a
         n_total = int(round(b * fps)) - int(round(a * fps))
@@ -428,7 +445,9 @@ def _render(job):
         if i in files["clips"] and s["type"] in ("kling", "living"):
             try: cd = RN.probe_dur(files["clips"][i])
             except Exception: cd = 0.0
-        if cd > 0 and dur > cd * 1.25 and s["type"] != "graphic":       # v8.3: a clip plays at its own speed; the rest of a longer line is a camera move on the same picture (no frame-doubling judder)
+        if clip_s_.get(i, 0) > 0:                                        # v12 V2d-b: one rule - the clip whole as ONE picture state, then what is left of the line as stills
+            cut = MOT.cuts(n_total, clip_s_[i], fps, lambda sec: (_pieces_for(sec, "still", opening_, ep) if micro_ else (1 if sec < 7.5 else 2))); pieces = len(cut) - 1
+        elif cd > 0 and dur > cd * 1.25 and s["type"] != "graphic":       # v8.3: a clip plays at its own speed; the rest of a longer line is a camera move on the same picture (no frame-doubling judder)
             n0 = min(n_total - 1, max(1, int(round(cd * fps)))); rest = n_total - n0; extra = 1 if (rest / fps) < 7.5 else 2
             extra = max(extra, _pieces_for(rest / fps, "still", opening_, ep)) if micro_ else extra      # v9.3: the still tail after a clip is micro-cut too
             cut = [0, n0] + [n0 + int(rest * j / extra) for j in range(1, extra + 1)]; pieces = len(cut) - 1
@@ -438,24 +457,30 @@ def _render(job):
             fxk = s.get("pov_fx") if k == 0 else None                  # v8.10: the POV camera effect (every shot type), locked to the sound event at this unit's start
             def draw(path, ovl):
                 RN.set_overlay(RN.with_fx(ovl, fxk, nf, f"{ep}{i}{k}", f0)); RN.set_cursor(f0)
-                if k == 0 and i in files["clips"]: RN.clip_segment(files["clips"][i], path, nf, loop=s["type"] == "stock", push=(0.07 if i in strong else 0.035) if (s["type"] == "living" and dyn) else 0.0)
+                if k == 0 and i in files["clips"] and s["type"] == "stock" and STK.on(): RN.clip_segment(files["clips"][i], path, nf, stock=True)      # v12 V2d-b: real footage is CHANGED (cropped in, slowed) and never looped
+                elif k == 0 and i in files["clips"]: RN.clip_segment(files["clips"][i], path, nf, loop=s["type"] == "stock", push=(0.07 if i in strong else 0.035) if (s["type"] == "living" and dyn and not ladder_) else 0.0)
                 elif s["type"] == "graphic": RN.graphic_segment(s.get("graphic") or {}, img, path, nf)      # v11.1: every piece re-animates
                 elif s["type"] == "reaction":                    # v9.2: the code-made reaction cutaway (no image bought)
                     from whatifs import shotplan as SP, living as LV
                     spk_ = s.get("speaker") or units[i].get("speaker"); u_ = units[i] if i < len(units) else {}
                     done_ = LV.render(spk_, u_.get("text", ""), u_.get("words"), float(u_.get("start", 0) or 0), path, nf, ep, seed=f"{ep}{i}") \
                         if S("LIVING_CHARACTERS_ON", bool) else None             # v11.1 (K167): the approved character, blinking / breathing / talking
-                    if not done_: SP.reaction_segment(spk_, img, path, nf)
+                    if not done_:                                # v12 V2d-b: DRAWN OR ABSENT - no approved art, no character: the picture before continues (no shape is ever drawn)
+                        job.absent += 1
+                        if img: RN.parallax_segment(img, path, nf, seed=f"{ep}{i}{k}", detail=True, look=RN.LOOKS[(reuse + 1) % len(RN.LOOKS)], world=_world_of_unit(u_))
+                        else: RN.graphic_segment({"label": "", "from": 0, "to": 0}, None, path, nf)
                 elif img:
                     RN.parallax_segment(img, path, nf, seed=f"{ep}{i}{k}", detail=((k + reuse) % 2 == 1), focus=s.get("focus"), look=None if own else RN.LOOKS[reuse % len(RN.LOOKS)], energy="high" if (i in strong and k == 0) else "calm",
                                        move=s.get("camera") if k == 0 else None,      # v8.9: the Director's suggested move (validated in render.pick_move)
                                        world=_world_of_unit(units[i] if i < len(units) else {}))   # v11 (K161b): the particle look follows the scene
                 else: RN.graphic_segment({"label": "", "from": 0, "to": 0}, None, path, nf)
+            drawn_ = True
             try: draw(p, job.overlay)
             except Exception as e:
-                log(f"segment {i}.{k} failed: {e} -> fallback", "WARN")
+                log(f"segment {i}.{k} failed: {e} -> fallback", "WARN"); drawn_ = False
                 RN.set_overlay(job.overlay); RN.set_cursor(f0); RN.graphic_segment({"label": "", "from": 0, "to": 0}, img, p, nf)
-            segs.append(p); job.segmeta.append({"path": p, "i": i, "k": k, "f0": f0, "nf": nf, "img": img})
+            segs.append(p); job.segmeta.append({"path": p, "i": i, "k": k, "f0": f0, "nf": nf, "img": img, "type": s["type"], "short": bool(s.get("short")),
+                                                "clip": bool(drawn_ and k == 0 and i in files["clips"])})      # v12 V2d-b: what this segment really shows - the checks read the render, never the plan
     RN.set_overlay(None)
     job.video = RN.concat(segs, os.path.join(out, "video.mp4"))
     events = []
@@ -587,6 +612,8 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
         S_ = plan_check(S_, units); shots = S_["shots"]          # v8.9: the last free check before any picture money is spent
         from whatifs import opening as OPEN                     # v12 V2c-b2b: the Short's footage is fetched again where this job runs (free) and the marks are rebuilt from the rule
         S_["opening"] = OPEN.fetch(d, out); S_["shots"] = shots = OPEN.mark(shots, units, S_["opening"])
+        from whatifs import stock as STK                        # v12 V2d-b: real footage under its rules (never first, never two in a row, a short anchor, a tenth of the film at most) - by code, before any money
+        S_["shots"] = shots = STK.shape(shots, units, vo.duration)
         from whatifs.org import audience as AUD                 # v12 V1 (D13): the viewer's seat - free repairs BEFORE the Animation Director places its scenes
         shots = ORG.work("D13", "seat", ep, lambda b: AUD.shape(S_["shots"], units, S_.get("pkg") or {}), measure=AUD.m_shape); S_["shots"] = shots
         if S_.get("probe") is None: S_["probe"] = _probe(S_, ep, units)          # v12 V1b: a plan saved before the layman test carries no line-up yet
@@ -594,6 +621,8 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
         ANIM.apply(shots, units, plan); S_["shots"] = shots
         if not any(s_.get("promise") for s_ in shots):                 # v11.1 fix: the Animation Director re-places the scenes and can drop the promise
             shots = ROOM.promise_shot(shots, units, S_.get("pkg") or {}); S_["shots"] = shots       # flag (v8.6) - re-aim the opening scene again
+        from whatifs import motion as MOT                       # v12 V2d-b: the living seconds are placed by code on the lines that can show a whole clip (the last step before the gate)
+        if MOT.on(): S_["shots"] = shots = MOT.place(shots, units, vo.duration, plan); S_["plan"] = plan
         from whatifs import contract as CON                     # v10.2 (K151): every script-stage promise checked BEFORE any picture is paid for
         g = ORG.work("D8", "script_gate", ep, lambda b: CON.run("script", {"d": d, "room": S_["room"], "hook_rec": S_.get("hook_rec"), "ep": ep, "shots": shots, "units": units, "pkg": S_.get("pkg") or {}, "probe": S_.get("probe"), "opening": S_.get("opening")}, ep),
                      measure=WR.m_gate, lesson=WR.gate_lessons, emit=WR.gate_memos(ep, "script"), settle=WR.gate_settle(ep, "script"))
@@ -697,13 +726,21 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     if S("NEXT_LINK_ON", bool):                           # v8.7: send viewers on to the best related earlier video (sessions + returning viewers)
         try: nxt = GR.related_episode(st.rows("Episodes"), st.rows("Analytics"), d.get("family") or "", ep)
         except Exception as e: log(f"next-video link skipped: {scrub(e)}", "WARN")
-    desc = _description(pkg.get("description", ""), chs, room, ep, nxt)
+    from whatifs import stock as STK, motion as MOT                # v12 V2d-b: what the render really showed - the moving stretches, every picture state, the real footage
+    sm_ = [m_ for m_ in getattr(job, "segmeta", []) if m_.get("nf")]; t_ = lambda m_: (round(m_["f0"] / job.fps, 3), round((m_["f0"] + m_["nf"]) / job.fps, 3))
+    moving_ = [t_(m_) + ("footage" if m_.get("short") else "scene" if m_.get("type") == "kling" else "living",) for m_ in sm_ if m_.get("clip") and m_.get("type") in MOT.MOVING]
+    stock_ = [t_(m_) + (m_["i"],) for m_ in sm_ if m_.get("clip") and m_.get("type") == "stock"]
+    own_ = [i for i, c_ in (files.get("clips") or {}).items() if i < len(shots) and shots[i].get("type") in MOT.MOVING and not shots[i].get("short")]
+    desc = _description(pkg.get("description", ""), chs, room, ep, nxt, credits=STK.credits([(files.get("stock") or {}).get(x[2]) for x in stock_]))
     if fix: slot_iso = _fix_slot(slot_iso)
     from whatifs import contract as CON                         # v10.2 (K151): every finished-video promise checked; a failure is HELD, never uploaded
     clips = list((files.get("clips") or {}).values()) if isinstance(files.get("clips"), dict) else list(files.get("clips") or [])
     cctx = {"d": d, "room": room, "ep": ep, "title": title, "master": master, "timeline": tl, "clips": [c if isinstance(c, str) else (c or {}).get("path") for c in clips],
             "holds": holds, "qc_info": chk.get("info") or {}, "thumb": thumb, "thumb_b": thumb_b, "thumb_ok": okt or have_art, "pkg": pkg, "chapters": chs,
-            "shots": S_.get("shots"), "units": units, "opening": files.get("opening")}          # v11: the promise check reads the shot plan; v12 V2c-b2b: and check opening_shown the opening's record
+            "shots": S_.get("shots"), "units": units, "opening": files.get("opening"),
+            "moving": moving_, "moving_paid_s": sum(RN.probe_dur(files["clips"][i]) for i in own_), "scenes": [files["clips"][i] for i in own_ if shots[i].get("type") == "kling"],
+            "states": [t_(m_) + (m_.get("type"), bool(m_.get("clip")), bool(m_.get("short"))) for m_ in sm_] if MOT.on() else None,
+            "stock": {"spans": stock_, "records": files.get("stock") or {}, "description": desc}, "absent": getattr(job, "absent", 0)}          # v11: the promise check reads the shot plan; v12 V2c-b2b: and check opening_shown the opening's record
     pre = CON.run("final", dict(cctx, critique={"hook": 10, "clarity": 10, "humour": 10, "visual_variety": 10, "audio": 10, "accuracy": 10}), ep, write=False)   # measured checks first (not logged)
     cctx["ledger_rows"] = pre["rows"]; cctx["critique"] = CON.critique(cctx, ep)
     g = ORG.work("D8", "final_gate", ep, lambda b: CON.run("final", cctx, ep), measure=WR.m_gate, lesson=WR.gate_lessons, emit=WR.gate_memos(ep, "final"), settle=WR.gate_settle(ep, "final"))
@@ -795,7 +832,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     try:                                                          # v12 V2d: what this video really paid for pictures and clips against the lines of its estimate (one summary row in Cost_Log)
         from whatifs import opening as _OP
         _kind = ("ladder" if _OP.source(d)[0] == "short" else "long") if d.get("ladder") else "long"
-        CG.reconcile(ep, CG.lines(_kind, kling=d.get("kling"), stills=d.get("stills"), living=d.get("living")), _kind)
+        CG.reconcile(ep, CG.lines(_kind, kling=d.get("kling"), stills=d.get("stills"), living=d.get("living"), living_s=d.get("living_s")), _kind)
     except Exception as e: log(f"cost lines not reconciled: {scrub(e)[:120]}", "WARN", ep)
     CG.ladder_mail(ep)                                            # v9: one email if the AI-side overrun ladder was used
     try:
@@ -929,7 +966,7 @@ def _strip_beats(script):
     clean = "\n".join(lines)
     return clean, marks
 
-def _description(desc, chs, room, ep="", nxt=None):
+def _description(desc, chs, room, ep="", nxt=None, credits=""):
     chapters = "\n".join(f"{t} {n}" for t, n in chs) if len(chs) >= 3 else ""
     if "Chapters" in desc: body = desc.replace("Chapters", "Chapters\n" + chapters if chapters else "")
     else: body = desc + (("\n\nChapters\n" + chapters) if chapters else "")      # v8.3: chapters are added even if the packager forgot the word 'Chapters'
@@ -950,7 +987,7 @@ def _description(desc, chs, room, ep="", nxt=None):
     except Exception as e: log(f"affiliate block skipped: {scrub(e)}", "WARN")
     nl = str(S("NEWSLETTER_URL") or "").strip()
     news = f"Case Files newsletter (the sources behind every verdict): {nl}" if nl.startswith("https://") else ""      # v10.1: owned audience
-    return body + (("\n\n" + aff) if aff else "") + (("\n\n" + news) if news else "") + (("\n\n" + foot) if foot else "") + "\n\nThis video uses AI-assisted visuals and narration over an original script. Science is simplified for storytelling."
+    return body + (("\n\n" + aff) if aff else "") + (("\n\n" + news) if news else "") + (("\n\n" + foot) if foot else "") + (("\n\n" + credits) if credits else "") + "\n\nThis video uses AI-assisted visuals and narration over an original script. Science is simplified for storytelling."
 
 def _playlist(ptype):
     from whatifs.data import FAMILY_PLAYLIST

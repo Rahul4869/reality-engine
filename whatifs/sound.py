@@ -289,3 +289,49 @@ def doppler(sec, seed="", sr=48000):
     pan = np.clip(t * 1.2 - 0.1, 0, 1).astype(np.float32)
     out = np.stack([x * (1 - pan), x * pan], 1); out /= (np.abs(out).max() + 1e-9)
     return out.astype(np.float32)
+
+# ---------------------------------------------------------------- v12 V2d-b: the sound under a Short, from its first frame
+SHORT_BED_LEVEL = 0.20                       # the place's own sound under a Short, before the voice ducks it
+SHORT_HITS = ("thump", "tick", "knock")      # the colours a beat change may sound in: never the same twice in a row (a sound heard again and again is no longer heard)
+ONSET_DB = -45.0                             # the level (dBFS, over 10 ms) from which a file counts as sounding
+
+def short_bed(total, beats, text, seed, path, sr=48000):
+    """THE SOUND UNDER A SHORT (v12 V2d-b; before: a drone that rose out of silence over a second and a half). The PLACE'S OWN SOUND from the first
+    sample - a texture chosen from the words of the first picture (`guess`; nothing obvious = one of three, by the Short's id) at its full level,
+    no fade-in; ONE soft hit on the first frame; a hit on every beat change in rotating colours; a short tail. Every Short's colours follow its id,
+    so no two Shorts sound alike. Peak-normalised. Returns (path, the texture's kind)."""
+    import soundfile as sf
+    n = max(2, int(float(total) * sr)); rng = np.random.default_rng(_seed(f"{seed}|short")); kind = guess(text) or ("rumble", "hum", "wind")[_seed(seed) % 3]
+    head = int(0.3 * sr); tex = texture(kind, float(total) + 0.6, f"{seed}|bed", sr)[head:head + n]      # cut behind the texture's own fade-in: the place sounds at once
+    out = np.zeros((n, 2), np.float32); out[:len(tex)] += tex * SHORT_BED_LEVEL
+    air = rng.standard_normal(n).astype(np.float32); out += ((_smooth(air, 24) - _smooth(air, 480)) * 0.05)[:, None]      # the air of a place: band-limited noise, never digital silence
+    pal = float(rng.uniform(0.85, 1.2))
+    def hit(at, colour, level):
+        m = int(0.45 * sr); tt = np.arange(m) / sr
+        if colour == "thump": s = np.sin(2 * np.pi * (70 * pal * np.exp(-tt * 9) + 38 * pal) * tt) * np.exp(-tt * 9)
+        elif colour == "tick": s = np.sin(2 * np.pi * 1900 * pal * tt) * np.exp(-tt * 70) * 0.5 + np.sin(2 * np.pi * 240 * pal * tt) * np.exp(-tt * 22) * 0.6
+        else: s = np.sin(2 * np.pi * 150 * pal * tt) * np.exp(-tt * 28) + rng.standard_normal(m) * np.exp(-tt * 120) * 0.25
+        i0 = int(at * sr); e = min(n, i0 + m)
+        if e > i0: out[i0:e] += (s[:e - i0] * level).astype(np.float32)[:, None]
+    hit(0.0, "thump", 0.55)                                      # the first frame SOUNDS: the impossible picture arrives with a body
+    at = 0.0; last = "thump"
+    for b in list(beats or [])[:-1]:
+        at += float(b); colour = [c for c in SHORT_HITS if c != last][int(rng.integers(0, len(SHORT_HITS) - 1))]; hit(at, colour, 0.4); last = colour
+    ramp = max(1, int(0.004 * sr)); out[:ramp] *= np.linspace(0, 1, ramp, dtype=np.float32)[:, None]      # four milliseconds against a click, nothing more
+    tail = min(n, int(0.25 * sr)); out[-tail:] *= np.linspace(1, 0.2, tail, dtype=np.float32)[:, None]
+    out = out / (float(np.max(np.abs(out))) + 1e-9) * 0.89
+    sf.write(path, out.astype(np.float32), sr); return path, kind
+
+def first_second(path, sr=16000):
+    """What a finished file SOUNDS like when it starts: {onset_s (the first moment its level passes ONSET_DB; None = never inside a second and a half),
+    db_200 (the mean level of its first fifth of a second, dBFS), db_1000 (of its first second), peak_db}. Measured on the file itself (ffmpeg
+    decodes it; no model, no opinion)."""
+    import math, subprocess
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-t", "1.5", "-i", path, "-vn", "-ac", "1", "-ar", str(sr), "-f", "s16le", "-"], capture_output=True, timeout=120).stdout
+    x = np.frombuffer(raw, "<i2").astype(np.float64) / 32768.0
+    def db(v): return round(20 * math.log10(max(1e-6, float(np.sqrt(np.mean(v ** 2))))), 1) if len(v) else -120.0
+    if len(x) < sr // 20: return {"onset_s": None, "db_200": -120.0, "db_1000": -120.0, "peak_db": -120.0}
+    hop = sr // 100; on = None
+    for k in range(0, len(x) - hop, hop):
+        if db(x[k:k + hop]) >= ONSET_DB: on = round(k / sr, 3); break
+    return {"onset_s": on, "db_200": db(x[:sr // 5]), "db_1000": db(x[:sr]), "peak_db": round(20 * math.log10(max(1e-6, float(np.max(np.abs(x))))), 1)}

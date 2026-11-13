@@ -31,6 +31,16 @@ def fal_status(ids):
     got = {m["endpoint_id"]: (m.get("metadata") or {}).get("status", "active") for m in j.get("models", [])}
     return {i: got.get(i, "missing") for i in ids}
 
+def fal_licence(ids):
+    """{model id: the licence word of fal's own listing ("commercial", "research", ...)} - free, no key needed. v12 V2d-b: read live, because a model
+    the code paid was licensed for research only. Offline: what each model's own row says."""
+    if FAKE:
+        from whatifs import clips as CL
+        return {i: str((CL.row(i) or {}).get("lic") or "") for i in ids}
+    h = {"Authorization": f"Key {env('FAL_KEY')}"} if env("FAL_KEY") else {}
+    j = _get(f"{FAL}/models", [("endpoint_id", i) for i in ids], h)
+    return {m["endpoint_id"]: str(m.get("license_type") or (m.get("metadata") or {}).get("license_type") or "") for m in j.get("models", [])}
+
 def fal_prices(ids):
     if not ids: return {}
     if FAKE: return {i: {"unit_price": 0.07, "unit": "second", "currency": "USD"} for i in ids}

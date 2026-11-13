@@ -37,7 +37,7 @@ def short_shots(fmt):
     each = max(1, math.ceil(per / CL.longest() - 1e-6))
     return nb * each, per / each, (nb if cut else 1), sec
 
-def lines(kind="long", kling=None, stills=None, living=None, table_read=None, fmt=None, shots=None, seconds=None):
+def lines(kind="long", kling=None, stills=None, living=None, table_read=None, fmt=None, shots=None, seconds=None, living_s=None):
     """THE estimate: every paid second and call of one video as a line - {key, what, n, unit, unit_inr, inr, stage, item, calls}. `n` times the price
     cell is the line; `item` is the Cost_Log item that pays it (reconcile); `calls` is what the paid-call counter must see for it. Kinds: 'long' (a
     long video that opens on its own pictures: an override, or the ladder off), 'ladder' (a long video about a promoted Short: its opening is that
@@ -62,10 +62,15 @@ def lines(kind="long", kling=None, stills=None, living=None, table_read=None, fm
     k = S("KLING_CLIPS", int) if kling is None else int(kling)
     if ladder: k = max(0, k - 1)                                          # the scene at second 0 is the Short's footage: paid when the Short was made
     st_n = full[2] if stills is None else int(stills); lv = min(full[3], S("LIVING_STILLS", int)) if living is None else int(living)
+    lr = CL.living()                                                    # v12 V2d-b: with the motion ladder a still is brought to life BY THE SECOND from a row of the clip market:
+    if lr is not None:                                                  # `living_s` = the seconds this video buys (None = the floor every long video is counted with); each clip has its own picture
+        ls = int(G.moving_floor(kind)["living_s"] if living_s is None else living_s); lc = ls // max(1, int(lr.get("min_s") or CL.SCENE_S)); st_n += lc
+        live = _line("living_clips", "stills brought to life: seconds of a clip model of the market", ls, CL.usd_s(lr) * u, "visuals", "s", "living_clip", {"clip": lc})
+    else: live = _line("living_clips", "living stills", lv, S("PRICE_LIVING_USD", float) * u, "visuals", "", "living_clip", {"clip": lv})
     L = [_line("hero_clips", "animated scenes of the hero model", CL.paid_s(CL.SCENE_S, k), hero_inr, "visuals", "s", "hero_clip", {"clip_kling": k}),
          _line("start_frames", "the reference-locked start picture of each animated scene", k, S("PRICE_GEM_IMAGE_USD", float) * u, "visuals", "", "image_ref", {"image_ref": k}),
          _line("stills", "pictures", st_n, MD.still_usd(S("STILL_W", int), S("STILL_H", int)) * u, "visuals", "", "image", {"image": st_n}),
-         _line("living_clips", "living stills", lv, S("PRICE_LIVING_USD", float) * u, "visuals", "", "living_clip", {"clip": lv}),
+         live,
          _line("key_art", "the thumbnail and its runner-up", G.premium_images(), S("PRICE_THUMB_USD", float) * u, "visuals", "", "image_premium", {"image_premium": G.premium_images()}),
          _line("voice", "the narration, by the second", 1, voice_inr(S("RUNTIME_MAX_SEC", float)), "tts", "", "gemini_tts", {"voice_job": 1}),
          _line("writing", "the writers' room, the juries and every edit of the script", 1, max(0.0, S("LLM_EST_INR", float) - S("HOOK_LAB_EST_INR", float)), "ai_writing", "", None, {t: None for t in TEXT}),
@@ -103,7 +108,9 @@ def reconcile(episode, L, kind=""):
         for l in L:
             if l.get("item") and l["stage"] == "visuals": want[l["item"]] = want.get(l["item"], 0.0) + float(l["n"])
         unlisted = sorted(i for i in paid if i not in want and paid[i] > 0)
-        over = sorted(f"{i}: {paid[i]:g} paid, {want[i]:g} estimated" for i in paid if i in want and i in COUNTED and paid[i] > want[i] + 1e-6)
+        from whatifs import clips as _CL
+        counted = COUNTED + (("living_clip",) if _CL.living() is not None else ())          # v12 V2d-b: living seconds are a budget - more paid than planned is an overrun
+        over = sorted(f"{i}: {paid[i]:g} paid, {want[i]:g} estimated" for i in paid if i in want and i in counted and paid[i] > want[i] + 1e-6)
         out = {"paid": paid, "lines": want, "unlisted": unlisted, "over": over, "est_inr": total(L)}
         store().append("Cost_Log", [{"ts": iso(), "episode_id": episode, "item": "cost_lines_summary", "provider": "summary", "units": 0, "inr": 0, "basis": "summary",
                                      "est_inr": out["est_inr"], "role": (f"{kind}: " + json.dumps({"paid": paid, "lines": want, "unlisted": unlisted, "over": over}, sort_keys=True))[:900]}])

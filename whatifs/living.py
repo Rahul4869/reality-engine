@@ -22,6 +22,12 @@ def _local(file_ref, char, expr):
         PUB.drive_download(str(file_ref)[6:], p)
     return p if os.path.exists(p) else None
 
+def has_art(speaker):
+    """Is there APPROVED art of this speaker's character (a LOCKED sheet with a file)? v12 V2d-b: a character is drawn or absent - without it no
+    cutaway of the character is planned and nothing is ever drawn in its place."""
+    try: return bool(S("LIVING_CHARACTERS_ON", bool) and _sheet_rows(SPEAKER_CHAR.get(str(speaker).upper(), str(speaker).upper())))
+    except Exception: return False
+
 def expression_for(speaker, line=""):
     """(path, expression) of the LOCKED still that fits the line's mood; neutral when nothing matches; (None, None) when no sheets are locked."""
     char = SPEAKER_CHAR.get(str(speaker).upper(), str(speaker).upper()); rows = _sheet_rows(char)
