@@ -814,7 +814,11 @@ channels reach 10 million views; any measured reach effect of Meta's AI label; a
   166). (5) 11.4's "sound + motion onset in frame 1": the Short's older sound DID start at second 0 and a phone played
   none of it (an 80 Hz thump; -62 dBFS above 400 Hz) - the measure hears like a phone, and the first frame gets a sound
   a phone can play. (6) L1 (code-rendered explaining animation, "tried in V2d") was not built here: it is part of the
-  batch DRAWN BY CODE (the desk note below).
+  batch DRAWN BY CODE (the desk note below). (7) THE REPAIR OF ITS FIRST RED PASS (13 Nov 2026, the first work under the Opus plan): "a
+  paid clip is shown whole" was not yet true - on one sweep id of twenty the three peak scenes were shown for 1.5 to 4.4 of their 5 s,
+  because a gentle living clip took the line each scene had to run on into. Now each scene's seconds are reserved before any living clip
+  is placed, nothing is bought that its lines cannot show, and the measure counts every second it recorded; on all 28 long-video ids every
+  scene is on screen 15 of 15 s. Fewer living seconds fit the short offline films (BUILD_STATE open issue 181).
   NEW EVIDENCE (read by the build session, 13 Nov 2026): R64 E - fal, the page and the listing of the model paid for
   living stills: "Research only" / `license_type` "research", USD 0.02 a 5-second clip. R65 E - fal, the listing of
   image-to-video models (the first 100): every one "commercial" - a program can read the licence live. R66 E - fal,
