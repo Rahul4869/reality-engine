@@ -48,7 +48,7 @@ RETIRED = [
     {"id": "cutdown_reels", "pattern": r"REELS_PER_VIDEO|REEL_STYLE\b|REEL[234]_DELAY_MIN|REEL1_SHORTS_ON|(?i:\bbridge (?:Shorts?|reels?)\b|\b(?:Shorts?|reels?) cut from (?:each|every|the|a) long video|\b[24] (?:Shorts|reels) (?:per|a|from each) (?:long )?video)",
      "flags": 0, "unless": r"\bno\b|\bnot\b|never|retired|gone|removed|history", "scopes": ("docs", "prompts"),
      "truth": "a long video makes no cut-down reels: the channel's short videos are the standalone Shorts (whatifs/shorts2.py), each sent through whatifs/release.py; the pull from a Short to its long video is the related-video link, set by hand"},
-    {"id": "presenter_silhouette", "pattern": r"(?i)\bonly as silhouettes?\b|\bpresenter silhouettes?\b|\bprocedural silhouette\b|\bfell back to a silhouette\b",
+    {"id": "presenter_silhouette", "pattern": r"(?i)\bonly as silhouettes?\b|\bpresenter silhouettes?\b|\bprocedural silhouette\b|\bfell back to a silhouette\b|\(silhouette\b",
      "flags": 0, "unless": r"\bno\b|\bnot\b|never|retired|gone|removed|deleted|history", "scopes": ("docs", "prompts"),
      "truth": "a character is drawn or absent: it appears only as its approved character art (whatifs/living.py); without approved art nobody is shown and no shape is ever drawn in its place"},
 ]

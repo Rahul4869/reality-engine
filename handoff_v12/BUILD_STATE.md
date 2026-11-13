@@ -488,6 +488,52 @@ D. (ORIGINAL, CHOSEN) THE MOVING SECONDS ARE A BUDGET THAT IS BOUGHT, PLACED, SH
   format with a rising drone (the first twelve Shorts against the next twelve, by `SHORT_SOUND_BY_S`).
 - NOT IN V2d-b, on purpose: the speaker chip of F1 (open issue 75's other half: V2b); the loop of a Short as a gate (86: it
   stays a report); a paid vision check for people in stock footage; Finance (D11) and Strategy (D1) as owners of the levers.
+- CORRECTED BY THE BUILD (found by running or measuring; each written here with the edit that fixes it):
+  (1) A SHORT'S OLD SOUND DID HIT AT SECOND 0 - AND A PHONE PLAYS NONE OF IT. The older bed is a thump of 80 Hz under a
+  drone of 55 to 80 Hz that rises over 1.5 s. Measured on files (the bed mixed under a voice as a Short mixes it): -22 dBFS
+  in its first fifth of a second on the whole signal, -62 dBFS above 400 Hz, and the first sound a phone's speaker plays is
+  the VOICE at 0.35 s. My first new bed had the same flaw (a low thump). Research added: phone speakers play next to nothing
+  under about 400 Hz (reviews: -10 dB near 450 Hz; flat from 230 to 700 Hz up). So `sound.first_second` hears like a phone
+  (everything under `PHONE_HZ` 400 filtered away), the first frame gets a knock a phone can play, low textures get more of
+  the place's air. The new bed: -30 to -37 dBFS above 400 Hz from the first sample, for every texture (floor -40).
+  (2) THE FIRST LIMIT OF THE MOTION MEASURE SAT INSIDE THE ENCODER'S NOISE. A held picture under the renderer's grain still
+  changes from frame to frame, the more the more detail it has: a held test picture measured 0.143 against my first limit
+  of 0.14 (over a quarter second). A second idea - "real motion grows with the gap, noise does not" - was REFUTED by
+  measuring it: a held picture's change over 0.75 s is 1.1 to 4.9 times its change over 0.25 s (the encoder drifts). What
+  holds, measured at both render sizes: over THREE QUARTERS OF A SECOND a held picture changes 0.04 to 0.27 grey levels
+  (at full size at most 0.11), a 4% push-in over eight seconds 0.37 to 0.48, a detailed picture under a 2% push 1.5 and
+  more, the offline clips 2.6 and more. Cell `MOVING_CHANGE_MIN` 0.32 over 0.75 s. A Short has no grain (held: 0.000 to
+  0.008 over half a second; offline Shorts 0.7 and more): cell `SHORT_CHANGE_MIN` 0.015 over 0.5 s.
+  (3) THE FIRST REHEARSAL HELD A SHORT FOR ONE HALF SECOND OF A FLAT OFFLINE PICTURE (0.02; reproduced and measured on the
+  kept file before it was explained). Like FFmpeg's own freeze detector, the rule needs a DURATION: a stretch does not move
+  when two half seconds in a row do not change (`motion.RUN`, `_quiet`): a second or more.
+  (4) THE OFFLINE CLIP STOOD STILL TWICE IN FIVE SECONDS (a swing: `sin(t)`): no rule about motion could be tested on it
+  (the lesson of V2c-b1, met again). `media.fake_clip` now travels at one steady speed for 16 seconds.
+  (5) THREE PROMPTS, not one, asked models for presenter silhouettes (the format engine's rules, its production bible and
+  its director brief); the retired-concept rule `presenter_silhouette` covers their wording.
+  (6) Check `real_motion` would have judged every living clip by the bar of an animated scene (`ANIM_MIN_MOTION`): with
+  twenty gentle clips a video it would hold every real video. It judges the scenes; `moving_share` judges the rest on the film.
+  (7) Check `visual_change` recomputed the cutting rule from the plan - a second copy that no longer matched the render;
+  it reads the picture states the render really showed. (8) Every living clip has a picture of its own that no estimate
+  counted: the stills line carries them. (9) A paid clip longer than its line is not cut: it runs on into the stills after
+  it (`motion.carry`) - needed so that the offline videos' short lines (and any real short line) lose nothing.
+  (10) MONEY, by the code's own lines after the build: the floor makes a long video about a promoted Short about Rs 535
+  (Rs 381 before), under an override Rs 570; the line the model pick may cost falls from USD 0.042 to 0.026 a second (the
+  pick at 0.02 still fits; the next model in line at 0.06 does not); a December of Rs 5,000 leaves about Rs 400 free after
+  four long videos at the floor, twelve Shorts and the reserve: about 47 more living seconds a video = about 29% of it moves.
+#### WHERE THE BUILDER STANDS (13 Nov 2026, about 10:40 UTC; the session's context was at 90%, the week's Fable allowance at 47%, so this is written before anything else)
+BUILT AND COMMITTED: all six parts (the market and the licence, the money, the placing and the cutting, the measure, the
+characters, the stock rules, the Short's sound), the docs (8 matrix rows, the ledger, 6 platform facts, the concept page,
+4 builders' recipes), 9 founding items (197), `tests/test_v12_motion.py` (43 unit tests GREEN; 4 whole productions were
+running when this was written), one rehearsal GREEN (F1, the motion block walked: 74.7% of that small film moves, 94% of
+its paid seconds found). Plan Guard, Palace, Organisation GREEN.
+STILL OWED BY THE BUILDER, in this order: (1) the four whole-production tests of `test_v12_motion.py` green; (2) the older
+tests that pin what the batch changed by design - 64 hard checks (36 script, 20 final, 5 short, 2 short_file, 1 release),
+`SHOW_CHECKS` 53, 75 levers, 197 founding items, 17 retired rules, the enforcement meta-test; (3) the break list and the
+break script (the pattern of V2d-a: copies, hashes, the fast tests GREEN before every part); (4) the rehearsals GREEN in
+F1 / S1, F2 / S2 and F1 / S3; (5) the new whole-production tests once in ONE process with the files after them; (6) the
+parallel pre-check GREEN on the final code commit; (7) steps 4 to 6a of this record, the open issues from 164 on, NEXT
+rewritten under NOT ACCEPTED YET, the redesign's end note, the hand-over note `V2d-b_BUILT_handover_note.md`.
 
 ### V2d-a - THE MONEY AND THE MODEL (13 Nov 2026) - ACCEPTED (final code commit 22fb8fd GREEN in GitHub Checks run 139: 1491 passed; sweep 58 of 58 ids)
 The owner's "continue" for this batch is the start of this session (item 22 of `02`). V2d was SPLIT AT ITS START (the note is at

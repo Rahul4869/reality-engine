@@ -48,7 +48,7 @@ pipeline run uses the new code. Nothing restarts.
 ## Recipes (non-obvious rules of this codebase)
 - **Text models**: route a role by its job in `models.ROUTES`; pass system prompts as `prompts.Packed` so they are cached; never retry a cut reply
   with MORE tokens (lower the effort, `models.TIGHT_NOTE`).
-- **Image and clip models** are Settings cells (`FAL_STILL_MODEL`, `FAL_PREMIUM_MODEL`, `FAL_LIVING_MODEL`, `FAL_HERO_MODEL`) with `PRICE_*` cells.
+- **Image and clip models** are Settings cells (`FAL_STILL_MODEL`, `FAL_PREMIUM_MODEL`, `FAL_LIVING_MODEL`, `FAL_HERO_MODEL`) with `PRICE_*` cells; the two clip models are rows of `CLIP_MODELS`.
   A new provider needs: a call with cost logging, a pre-flight check (`whatifs/preflight.py`), a switch, fake replies, tests, prices verified on the
   provider's page.
 - **The clip market** (`whatifs/clips.py`, department D6; cell `CLIP_MODELS`): the hero clip model is PICKED BY VALUE, never typed. A model = a ROW of the table, written from
@@ -59,6 +59,20 @@ pipeline run uses the new code. Nothing restarts.
   `media.animate(..., hero=True, seconds=<what the shot needs>)` - the request body comes from the row (`clips.args`), the cost row's units are the seconds. Never read a
   price from fal's listing or pricing API into an estimate (it is a base figure, wrong for our setting: `PLATFORM_FACTS.md`), never match a model by its name in code,
   never slow a clip to cover a shot (buy the seconds). The older tests run with `CLIP_VALUE_ON` and `SPLIT_ON` FALSE (`tests/conftest.py`, `OLD_CLIPS`).
+- **The motion ladder** (`whatifs/motion.py`, department D6; switch `MOTION_LADDER_ON`): the MOVING SECONDS of a long video are a budget. `governor.moving_floor` is the floor every estimate counts
+  (`costguard.lines` carries its living seconds: line `living_clips`, unit `s`), `governor.moving_plan` adds what `governor.split()["free_inr"]` leaves, up to `MOVING_SHARE_LONG`; the episode keeps
+  `d["living_s"]`. A still is brought to life by `clips.living()` - a row of `CLIP_MODELS` with a commercial licence (`clips.issues`), bought by the second: `media.animate(..., seconds=shot["buy"])`.
+  `motion.place` (in `episode.produce`, the last step before the script gate) decides WHICH stills; `motion.carry` and `motion.cuts` are the ONE rule for a line that carries a clip (the renderer and
+  check `visual_change` both read what was rendered: `job.segmeta` -> `ctx["states"]`, `ctx["moving"]`). `motion.long_report` / `short_report` measure the finished file; their limits are the cells
+  `MOVING_CHANGE_MIN` / `SHORT_CHANGE_MIN`, set from BOTH kinds of measured pairs (a held picture under grain still changes: never lower a limit without measuring one). Never buy a living clip
+  from a model outside the table, never count a moving second from the plan, never let a later render step show a clip's start picture in its place. A Short's finished file has its own gate
+  (stage `short_file` in `shorts2.run`: `short_moving`, `short_sound`); a Short that fails is made and waits for the owner (`shorts2._file_hold`), it is never dropped and never posted by itself.
+  The older tests run with the ladder off (`tests/conftest.py`, `OLD_MOTION`). After touching any of it: `tests/test_v12_motion.py`, a rehearsal and `tools/sweep.py` (its `motion_of` judges every id).
+- **Characters**: a character is DRAWN OR ABSENT. `shotplan.reaction_shots` plans a cutaway only where `living.has_art(speaker)`; the renderer continues the picture before when the art is gone
+  (`job.absent`, check `living_characters`). Never add code or a prompt that stands a shape, a silhouette or a back of a head in for a character.
+- **Real footage** (`whatifs/stock.py`, D6): `stock.shape` places it (pure, before any money), `media.stock` fetches it with its record (`stock.write_record`) and refuses a clip whose title names a
+  person, `render.clip_segment(stock=True)` changes it, `stock.credits` writes the description's line, check `stock_share` judges the film. A new library = a fetch function that returns a record.
+- **A Short's sound** (`sound.short_bed`, D7): the place's own sound from the first sample; judge any change with `sound.first_second` (it hears like a phone: nothing under `PHONE_HZ`).
 - **The cost model** (`whatifs/costguard.py`): `lines(kind)` is THE estimate - kinds `long` (opens on its own pictures), `ladder` (a long video about a promoted Short: one
   scene and one start picture fewer, no hook lab) and `short` (per Short format, or its real plan). `governor.full_episode_inr`, `min_episode_cost_inr`, `short_inr`,
   `episode.est_cost_inr`, `shorts2.est_inr` and `costguard.estimate_lines` only sum it. A new paid call = a line (count x price cell, `item` = its Cost_Log item, `calls` =

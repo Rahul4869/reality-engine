@@ -31,6 +31,8 @@ Brand: **Reality Engine**. The promise is the owner's own: it happens to YOU - f
 
 ## The Short is a product of its own (`whatifs/shorts2.py`, the Shorts Studio D14; never a cut-down, never a trial)
 - One guide voice speaking to you; nobody on screen; every second an animated clip; no plate at either end; the last frame is the first frame (it loops).
+- It sounds from its first frame: the place's own sound, chosen from the words of its first picture, in a colour of its own - as a phone plays it. After it is made its file is measured
+  (every second moves, it sounds at once: checks `short_moving`, `short_sound`); a Short that fails is kept and waits for the owner's tap.
 - **S1 "The second it changed"**: the impossible picture, two consequences, a question that hands back to the first picture (20 to 35 seconds).
 - **S2 "What would you do?"**: you gain or lose one power, it turns personal, the price, your own choice (20 to 45 seconds).
 - **S3 "The whole thing in 30 seconds"**: one big idea as one continuous camera move that returns to where it started (20 to 35 seconds).
@@ -45,6 +47,13 @@ Brand: **Reality Engine**. The promise is the owner's own: it happens to YOU - f
   sentences, its hook as the first spoken line, the upright picture shown through one window (the widest its sharpness allows, on a blurred copy of itself where the
   window does not fill the frame). Three animated scenes are bought for the rest of the video. A long video made under an override has no Short: it opens on its own
   animated promise scene (checks `opening_footage`, `opening_shown`).
+
+## What moves, and who is on screen (`whatifs/motion.py`, `whatifs/stock.py`, Visual Production D6)
+- A long video has a floor: a fifth of its time is moving pictures made by a model - its Short's footage, its animated scenes and stills brought to life - and the month's money buys
+  more, up to two fifths. Code places the moving seconds, a paid clip is shown whole, and the finished film is measured (check `moving_share`). Every other still travels under the camera.
+- A character is drawn or absent: it appears only as its approved art; without it nobody is shown and no shape is ever drawn in its place (check `living_characters`, every format).
+- Real footage of NASA and Pexels is a short anchor of a long video - a tenth of it at most, never first, never two in a row, changed, credited, no clip whose title names a person (check
+  `stock_share`). A Short has none.
 
 ## A Short reaches three platforms natively - the one door for every short video (`whatifs/release.py`, Publishing D9)
 - One master file, three uploads of their own: YouTube Shorts, Instagram Reels (a Trial Reel: non-followers first), Facebook Reels (90 seconds at most). Each gets its own words,

@@ -6,13 +6,16 @@ from whatifs.core import S, log
 MOVING = ("kling", "living")      # the shot types that carry a clip made by a model
 CELL_S = 0.5                      # the finished file is judged in half seconds ...
 READ_FPS = 8                      # ... read at eight pictures a second ...
-GAP = 2                           # ... each half second by two of its pictures a quarter second apart (both inside it: never across a cut)
-EDGE_S = 0.05                     # the first of the two is at least this far inside its half second (film and clip can be a frame apart at a cut)
-GRID = 96                         # the long side of the small grey copy two pictures are compared on (the encoder's grain is averaged away)
+GAP_LONG = 6                      # ... a long video by two pictures three quarters of a second apart: its renderer adds grain, and a HELD picture under grain still changes a
+                                  # little from frame to frame - over three quarters of a second real motion has left that noise behind (measured, see MOVING_CHANGE_MIN)
+GAP_SHORT = 4                     # ... a Short by two pictures half a second apart: it has no grain, a held picture does not change at all (two such half seconds in a row = a second held)
+RUN = 2                           # a stretch does NOT move when this many half seconds in a row do not change (a second or more: one quiet half second is no freeze)
+EDGE_S = 0.05                     # no picture is taken closer than this to where a stretch begins or ends (film and clip can be a frame apart at a cut)
+GRID = 96                         # the long side of the small grey copy two pictures are compared on
 REGION = (0.2, 0.8, 0.15, 0.85)   # the part of a wide film that is compared (x from, x to, y from, y to): its middle - no chip, no bar, no caption
 BAND = (0.0, 1.0, 0.30, 0.52)     # the part of an upright Short that is compared: the band that never carries words (under the promise text, above the captions)
 # From which mean change (grey levels of 255) between its two pictures a half second MOVES is a Settings cell with the measurements in its note:
-# MOVING_CHANGE_MIN for a long video (the renderer's grain makes a held picture change a little), SHORT_CHANGE_MIN for a Short (no grain: a held picture is 0.000).
+# MOVING_CHANGE_MIN for a long video, SHORT_CHANGE_MIN for a Short.
 NEXT_MIN_S = 1.0                  # a still whose line a clip runs into keeps at least this long of its own (else the clip covers it whole)
 TAIL_MIN_S = 1.0                  # what is left of a line after its clip is cut as a still of its own only from this length on (a shorter rest: the clip is played that little slower)
 
@@ -144,35 +147,45 @@ def _read(path, region):
     x0, x1, y0, y1 = region
     return fr[:, int(h * y0):max(int(h * y0) + 1, int(h * y1)), int(w * x0):max(int(w * x0) + 1, int(w * x1))], (dur or n / READ_FPS)
 
-def _cells(fr, t0, t1):
-    """[(start of the half second, the change between its two pictures)] for every half second that lies wholly inside [t0, t1)."""
+def _cells(fr, t0, t1, gap):
+    """[(start of the half second, the change between two pictures `gap` frames apart)] for every half second that lies wholly inside [t0, t1). Both
+    pictures are taken inside the stretch, EDGE_S away from its ends: the pair starts in the half second where it can and is moved back where the
+    stretch ends before the second picture. A stretch too short for a pair gives nothing."""
     import numpy as np
+    lo = int(math.ceil((float(t0) + EDGE_S) * READ_FPS - 1e-9)); hi = min(len(fr) - 1, int(math.floor((float(t1) - EDGE_S) * READ_FPS + 1e-9)))
     out = []; c = float(t0)
     while c + CELL_S <= float(t1) + 1e-6:
-        k1 = int(math.ceil((c + EDGE_S) * READ_FPS - 1e-9)); k2 = k1 + GAP
-        if k2 < len(fr): out.append((round(c, 3), float(np.mean(np.abs(fr[k2] - fr[k1])))))
+        k1 = int(math.ceil((c + EDGE_S) * READ_FPS - 1e-9)); ka = max(lo, min(k1, hi - gap)); kb = min(ka + gap, hi)
+        if kb - ka >= min(gap, GAP_SHORT) and kb > ka: out.append((round(c, 3), float(np.mean(np.abs(fr[kb] - fr[ka])))))
         c += CELL_S
     return out
+
+def _quiet(cells, lim):
+    """The half seconds that do NOT move: those below `lim` that stand in a row of RUN or more (a second or more without change)."""
+    low = [c for c, ch in cells if ch < lim]; s = set(low)
+    return [c for c in low if any(all(round(c + (j - k) * CELL_S, 3) in s for j in range(RUN)) for k in range(RUN))]
 
 def long_report(master, spans, paid_s=None, duration=None):
     """WHAT REALLY MOVES IN A FINISHED LONG VIDEO. `spans` = [(start, end, kind)] - the stretches in which the renderer played a clip made by a model
     (kind 'footage' = its Short's, 'scene', 'living'), as the render recorded them. A half second counts as MOVING when it lies inside such a
-    stretch AND the film's picture changes in it (MOVING_CHANGE_MIN) - a clip that ran out, froze or was replaced by a held picture is not counted.
+    stretch AND the film's picture changes there (MOVING_CHANGE_MIN over three quarters of a second; a second or more without change does not
+    count) - a clip that ran out, froze or was replaced by a held picture is found.
     Returns {duration, moving_s, share_pct, by (seconds per kind), played_s (per kind, as recorded), frozen: [(second, kind)], paid_s, seen_pct}."""
     fr, dur = _read(master, REGION); dur = float(duration or dur); by = {}; played = {}; frozen = []; lim = S("MOVING_CHANGE_MIN", float)
     for a, b, kind in spans or []:
         played[kind] = played.get(kind, 0.0) + (float(b) - float(a))
-        for c, ch in _cells(fr, a, b):
-            if ch >= lim: by[kind] = by.get(kind, 0.0) + CELL_S
-            else: frozen.append((round(c, 1), kind))
+        cells = _cells(fr, a, b, GAP_LONG); still = set(_quiet(cells, lim))
+        for c, _ch in cells:
+            if c in still: frozen.append((round(c, 1), kind))
+            else: by[kind] = by.get(kind, 0.0) + CELL_S
     mv = sum(by.values()); own = sum(v for k, v in by.items() if k != "footage")
     return {"duration": round(dur, 1), "moving_s": round(mv, 1), "share_pct": round(100.0 * mv / max(0.1, dur), 1), "by": {k: round(v, 1) for k, v in sorted(by.items())},
             "played_s": {k: round(v, 1) for k, v in sorted(played.items())}, "frozen": frozen[:8], "paid_s": None if paid_s is None else round(float(paid_s), 1),
             "seen_pct": None if not paid_s else round(100.0 * own / float(paid_s), 1)}
 
 def short_report(path):
-    """WHAT REALLY MOVES IN A FINISHED SHORT: every half second of the file, judged in the band of the picture that never carries words.
-    Returns {duration, cells, moving, share_pct, still: [the seconds at which nothing changes]}."""
-    fr, dur = _read(path, BAND); cells = _cells(fr, 0.0, min(dur, len(fr) / READ_FPS))
-    still = [c for c, ch in cells if ch < S("SHORT_CHANGE_MIN", float)]
+    """WHAT REALLY MOVES IN A FINISHED SHORT: every half second of the file, judged in the band of the picture that never carries words. A second or
+    more without change (SHORT_CHANGE_MIN) is a held picture. Returns {duration, cells, moving, share_pct, still: [the seconds at which nothing changes]}."""
+    fr, dur = _read(path, BAND); cells = _cells(fr, 0.0, min(dur, len(fr) / READ_FPS), GAP_SHORT)
+    still = _quiet(cells, S("SHORT_CHANGE_MIN", float))
     return {"duration": round(dur, 1), "cells": len(cells), "moving": len(cells) - len(still), "share_pct": round(100.0 * (len(cells) - len(still)) / max(1, len(cells)), 1), "still": still[:8]}
