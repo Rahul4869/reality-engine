@@ -338,14 +338,19 @@ def with_fx(ovl, kind, nframes, seed, f0):
 STOCK_CROP = 1.10        # real footage is shown cropped in by this much ...
 STOCK_SLOW = 1.12        # ... and this much slower than it was shot: with the show's own grade it is CHANGED footage, never a copy (v12 V2d-b)
 
+def stock_pre(ww, wh, want):
+    """How real footage is CHANGED before it is shown (pure: the filter the decoder is given): cropped in by STOCK_CROP, played STOCK_SLOW times slower,
+    its last frame held when it runs out - never looped."""
+    return (f"scale={int(ww * STOCK_CROP)}:{int(wh * STOCK_CROP)}:force_original_aspect_ratio=increase,crop={ww}:{wh},setpts={STOCK_SLOW:.4f}*PTS,fps={fps()},"
+            f"tpad=stop_mode=clone:stop_duration={want + 1:.2f}")
+
 def clip_segment(clip_path, path, nframes, loop=False, push=0.0, stock=False):
     """push > 0 (v8.9, living stills only): a slow sub-pixel push-in over the clip (1 -> 1 + push), so atmospheric clips also carry camera motion.
     stock (v12 V2d-b) = real footage: cropped in, slowed, never looped (a clip that runs out holds its last frame)."""
     W, H = out_size(); ww, wh = work_size()
     dur_in = probe_dur(clip_path); want = nframes / fps()
     if stock:
-        pre = (f"scale={int(ww * STOCK_CROP)}:{int(wh * STOCK_CROP)}:force_original_aspect_ratio=increase,crop={ww}:{wh},setpts={STOCK_SLOW:.4f}*PTS,fps={fps()},"
-               f"tpad=stop_mode=clone:stop_duration={want + 1:.2f}")
+        pre = stock_pre(ww, wh, want)
         if _OVL["obj"] is not None:
             proc = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-i", clip_path, "-vf", pre + ",format=bgr24", "-f", "rawvideo", "-pix_fmt", "bgr24", "-"], stdout=subprocess.PIPE)
             def sframes():

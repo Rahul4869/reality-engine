@@ -819,7 +819,8 @@ V12V2D_RETIRED = ("TTS_EST_INR",)                        # the voice is estimate
 def v12v2db_upgrade(st):
     """ONE time on a live Sheet (v12 V2d-b, the ladder's rules): the model that brings stills to life leaves the one licensed for RESEARCH ONLY (fal's own
     page and listing, read 13 Nov 2026) - picked NOW by the rule of the clip market and switched by the Model Steward, who tells the owner with
-    'Discuss'; the older ladder of living models loses that entry. A model the owner chose himself (any other value) is left alone. Never runs twice."""
+    'Discuss' (the older ladder of living models is not read while the motion ladder is on: the Steward's replacement comes from the market). A model
+    the owner chose himself (any other value) is left alone. Never runs twice."""
     if str(S("V12V2DB_MOVE_DONE") or "").strip(): return []
     done = []
     try:
@@ -828,14 +829,13 @@ def v12v2db_upgrade(st):
         if cur == V12V2DB_OLD_LIVING and CL.ladder():
             p = CL.choice(role="living")
             if p: STW.switch("living", {"id": p["row"]["id"], "usd": CL.usd(p["row"], CL.SCENE_S)}, "the model in use is licensed for research only; picked by value: " + p["why"], tier="week"); done.append("FAL_LIVING_MODEL")
-        lad = STW.ladders(); liv = [e for e in lad.get("living", []) if e.get("id") != V12V2DB_OLD_LIVING]
-        if len(liv) != len(lad.get("living", [])): lad["living"] = liv; set_setting("MODEL_LADDERS", json.dumps(lad)); done.append("MODEL_LADDERS")
     except Exception as x: log(f"v12 V2d-b: the living model was not moved now ({scrub(x)[:120]}); a living clip is bought from the hero's row meanwhile", "WARN")
     set_setting("V12V2DB_MOVE_DONE", iso() + " " + (",".join(done) or "none"))
     if done: log("v12 V2d-b: stills are brought to life by a model of the clip market that is licensed for commercial use; changed on the Sheet: " + ", ".join(done))
     return done
 
 V12V2DB_OLD_LIVING = "fal-ai/ltx-video/image-to-video"          # licensed for research only on its provider's own page and listing (read 13 Nov 2026)
+V12V2DB_FLIPS = (("FAL_LIVING_MODEL", V12V2DB_OLD_LIVING, "the clip market's pick"), ("PRICE_LIVING_USD", "0.02", "five seconds of the pick"))      # what the one-time move may change on a live Sheet (the Steward writes both)
 
 def v12v2d_upgrade(st):
     """ONE time on a live Sheet (v12 V2d, the money and the model): (1) the hero clip model is picked by value NOW - the rule of the clip market on

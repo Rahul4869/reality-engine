@@ -95,6 +95,15 @@ V12V2CB2C_REMOVED = {"text:reels": 1,        # the cut-downs' planning call (the
 # (`whatifs/costguard.py:lines`, field `calls`) - `tests/test_v12_money.py` makes whole productions and compares the two call by call: clip_kling,
 # image_ref, image_premium and voice_job must be EQUAL to their lines (4 / 4 / 2 / 1 for a long video on its own pictures, 3 / 3 / 2 / 1 for one about a
 # promoted Short), image and clip may not exceed theirs, and every text call needs the writing line.
+# v12 V2d-b (the ladder's rules): a shot of real footage that breaks the stock rules becomes a PICTURE OF OUR OWN (never first, never two in a row, only on
+# a line of 2 to 4 seconds, a tenth of the film at most). The offline Director asks for real footage on every seventh line; in the fake episode two of them
+# sit on lines too long for an anchor (up to 3 more paid stills). And A CHARACTER IS DRAWN OR ABSENT: the tiny line of a character without approved art is
+# no longer a free cutaway with a drawn shape - it is a picture line like any other and may get a picture of its own (up to 7 more in the fake episode,
+# which has no approved cast). Under Rs 1 each, about Rs 6 a video at most; a still is a ceiling of the estimate's stills line. Counted with this counter:
+# 26 before, 36 now; every other count is unchanged. (Letting such a line re-use the picture before instead - no picture bought - was tried while
+# building and raised the flash-safety check on one offline episode: BUILD_STATE, open issue 164.)
+V12V2DB_ADDED = {"image": 10}
+
 def allowed_base(base):
     out = dict(base)
     for k, v in V12V2CB2C_COUNTED.items(): out[k] = out.get(k, 0) + v
@@ -104,5 +113,6 @@ def allowed_base(base):
     for k, v in V111_ADDED.items(): out[k] = out.get(k, 0) + v
     for k, v in V12V1_ADDED.items(): out[k] = out.get(k, 0) + v
     for k, v in V12V1B_ADDED.items(): out[k] = out.get(k, 0) + v
+    for k, v in V12V2DB_ADDED.items(): out[k] = out.get(k, 0) + v
     return out
 

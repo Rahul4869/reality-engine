@@ -78,7 +78,6 @@ def place(shots, units, total, plan):
     def take(i):
         nonlocal used
         own = sp[i][1] - sp[i][0]; r = room_s(i, out, sp, busy)
-        if r < lo - 0.25: return False                                   # even the model's shortest clip could not be shown whole here
         b = CL.secs(lr, min(max(own, lo), cap))
         while b > lo and b > r + 0.25: b -= 1                            # never buy a second that no line can show
         if b > r + 0.25 or used + b > budget: return False

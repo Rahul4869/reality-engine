@@ -97,6 +97,10 @@ def test_the_weekly_review_picks_the_living_model_by_the_same_rule_and_the_stewa
     setting("PRICE_LIVING_USD", "0.5"); CL.review(); assert float(core.S("PRICE_LIVING_USD")) == pytest.approx(0.10)      # the price cell follows the row
     setting("MOTION_LADDER_ON", "FALSE"); setting("FAL_LIVING_MODEL", PIX); assert "living" not in CL.review() and core.S("FAL_LIVING_MODEL") == PIX      # the ladder off: the living cell is left alone
 
+def test_the_living_pick_never_goes_below_the_living_model_in_use(ladder, setting, monkeypatch):
+    _december(monkeypatch); setting("CLIP_MODELS", json.dumps(_rows(hey={"elo": 1100}))); setting("FAL_LIVING_MODEL", H3)      # the living model in use ranks 1133 +-14; the hero model now only 1100
+    assert CL.choice(role="living")["row"]["id"] == H3 and CL.choice(role="hero")["row"]["id"] == HEY          # each role is held to the floor of ITS model in use
+
 def test_the_stewards_replacement_for_the_living_model_comes_from_the_market(ladder, setting, monkeypatch):
     _december(monkeypatch)
     nxt = STW.next_candidate("living", HEY); assert nxt and nxt["id"] in (H3, H3MAX) and nxt["id"] != OLD_LIVING      # the next pick by the rule, never an entry of the older ladder
@@ -129,8 +133,8 @@ def test_a_real_living_request_is_its_rows_request_at_its_rows_price(ladder, set
 def test_the_one_time_move_takes_a_live_sheet_off_the_research_only_model(ladder, setting, monkeypatch):
     _quiet(monkeypatch); _december(monkeypatch); setting("FAL_LIVING_MODEL", OLD_LIVING)
     setting("MODEL_LADDERS", json.dumps({"hero": [], "living": [{"id": OLD_LIVING, "usd": 0.02}, {"id": "code-motion", "usd": 0}]}))
-    done = MG.v12v2db_upgrade(core.store()); assert sorted(done) == ["FAL_LIVING_MODEL", "MODEL_LADDERS"] and core.S("FAL_LIVING_MODEL") == HEY
-    assert [e["id"] for e in STW.ladders()["living"]] == ["code-motion"] and "research only" in core.store().rows("Model_Changes")[-1]["why"]
+    done = MG.v12v2db_upgrade(core.store()); assert done == ["FAL_LIVING_MODEL"] and core.S("FAL_LIVING_MODEL") == HEY and float(core.S("PRICE_LIVING_USD")) == pytest.approx(0.10)
+    assert "research only" in core.store().rows("Model_Changes")[-1]["why"] and [k for k, _o, _n in MG.V12V2DB_FLIPS] == ["FAL_LIVING_MODEL", "PRICE_LIVING_USD"]
     setting("FAL_LIVING_MODEL", OLD_LIVING); assert MG.v12v2db_upgrade(core.store()) == [] and core.S("FAL_LIVING_MODEL") == OLD_LIVING      # never twice
     setting("V12V2DB_MOVE_DONE", ""); setting("FAL_LIVING_MODEL", H3); assert MG.v12v2db_upgrade(core.store()) == [] and core.S("FAL_LIVING_MODEL") == H3      # his own choice is left alone
     assert inspect.getsource(MG).count("try: v12v2db_upgrade(st)") == 2                                           # both setup sites
@@ -160,6 +164,8 @@ def test_the_line_the_model_pick_may_cost_pays_the_floor_too(ladder, setting, mo
     _december(monkeypatch); with_floor = G.line_usd_s()
     setting("MOVING_SHARE_MIN_LONG", "5"); low = G.line_usd_s(); setting("MOVING_SHARE_MIN_LONG", "20")
     assert 0.02 < with_floor < low and CL.choice()["row"]["id"] == HEY and CL.choice()["fits"]                    # more seconds to pay = a lower line; today's pick still fits
+    setting("CLIP_MODELS", json.dumps(_rows(hey={"usd_s": {"480p": 0.01, "768p": 0.01, "1080p": 0.06, "2k": 0.06}}))); assert G.line_usd_s() == pytest.approx(with_floor, abs=1e-6)      # the line is what the PLAN can pay for a moving second - a living second too - whatever a model costs
+    setting("CLIP_MODELS", core.DEFAULTS["CLIP_MODELS"][0])
     setting("MOVING_SHARE_MIN_LONG", "60"); p = CL.choice(); assert G.line_usd_s() < 0.02 and p["fits"] is False and "does not fit" in p["why"]      # a floor the month cannot pay is SAID, never hidden
 
 def test_what_the_split_leaves_free_buys_more_seconds_up_to_the_target(ladder, setting, monkeypatch):
@@ -337,6 +343,7 @@ def test_a_cutaway_of_a_character_is_planned_only_with_approved_art(ladder, sett
     assert LV.has_art("SKEPTIC") is False and SPL.reaction_shots(mk(), units)[1] == 0                              # no approved art: nobody is shown
     _sheets(tmp_path, ("GRIMM",)); out, n = SPL.reaction_shots(mk(), units)
     assert LV.has_art("SKEPTIC") and not LV.has_art("JUDGE") and n == 1 and [s["type"] for s in out] == ["still", "reaction", "still"]      # only the character that is drawn
+    assert out[2] == {"type": "still", "prompt": "A fifth."}                                                       # the undrawn character's line stays a picture line like any other: nobody is shown
     setting("LIVING_CHARACTERS_ON", "FALSE"); assert LV.has_art("SKEPTIC") is False and SPL.reaction_shots(mk(), units)[1] == 0
 
 def test_check_living_characters_passes_drawn_or_absent_and_nothing_else(ladder, setting, tmp_path):
@@ -375,7 +382,7 @@ def test_the_stock_rules_on_the_shot_list(ladder, setting):
     assert "STK.shape(shots, units, vo.duration)" in inspect.getsource(EP.produce)
 
 def test_a_clip_whose_own_title_names_a_person_is_recognised(ladder):
-    for t in ("Astronaut on a spacewalk outside the station", "a-man-walking-on-the-beach-854321", "Crew interview before launch", "people crossing a street", "Portrait of Dr. Smith", "kids playing"):
+    for t in ("Astronaut on a spacewalk outside the station", "a-man-walking-on-the-beach-854321", "a_woman_at_the_sea_22", "Crew interview before launch", "people crossing a street", "Portrait of Dr. Smith", "kids playing"):
         assert STK.names_person(t), t
     for t in ("Ocean waves at sunset", "moon-surface-flyover-12", "Saturn's rings in infrared", "lava flowing into the sea", "humanity's home planet", "manhattan skyline at night", "a personal best: storm clouds"):
         assert not STK.names_person(t), t
@@ -458,7 +465,8 @@ def test_the_renderer_changes_real_footage_and_never_loops_it(ladder, tmp_path):
         cap = cv2.VideoCapture(p); cap.set(cv2.CAP_PROP_POS_FRAMES, int(t * (cap.get(cv2.CAP_PROP_FPS) or 30))); ok, f = cap.read(); cap.release(); assert ok; return f
     a = OPEN.alike(frame(plain, 2.0), frame(src, 2.0)); b = OPEN.alike(frame(st, 2.0), frame(src, 2.0))
     assert a > 0.8 and b < a - 0.1, (a, b)                                                                        # cropped in and slowed: at the same second the film no longer shows the file's own picture
-    assert RN.STOCK_CROP > 1.05 and RN.STOCK_SLOW > 1.05
+    pre = RN.stock_pre(640, 360, 3.0); assert RN.STOCK_CROP > 1.05 and RN.STOCK_SLOW > 1.05
+    assert f"scale={int(640 * RN.STOCK_CROP)}:{int(360 * RN.STOCK_CROP)}" in pre and "crop=640:360" in pre and f"setpts={RN.STOCK_SLOW:.4f}*PTS" in pre and "stop_mode=clone" in pre and "loop" not in pre
     long_ = RN.clip_segment(src, str(tmp_path / "long.mp4"), 6 * fps, stock=True); fr, dur = MOT._read(long_, MOT.REGION)      # a clip that runs out is HELD, never started again
     assert max(c for _, c in MOT._cells(fr, 4.0, dur, MOT.GAP_LONG)) < core.S("MOVING_CHANGE_MIN", float) < min(c for _, c in MOT._cells(fr, 0.0, 3.0, MOT.GAP_LONG))
     src_ = inspect.getsource(EP._render); assert 'RN.clip_segment(files["clips"][i], path, nf, stock=True)' in src_
@@ -520,9 +528,9 @@ def test_a_whole_long_video_moves_as_it_paid_shows_its_stock_under_the_rules_and
     assert j["paid"]["hero_clip"] == 15 == j["lines"]["hero_clip"] and a["clip"] <= next(l for l in CG.lines("ladder", living_s=d["living_s"]) if l["key"] == "living_clips")["calls"]["clip"]
     ok, words = money_of(core, [A, sid]); assert ok, words
     ok, words = motion_of(core, A, [sid]); assert ok and words.startswith("the ladder's rules held: ") and "s move =" in words, words
-    assert "real footage" in led["stock_share"][1] and ("credited: NASA" in led["stock_share"][1] or led["stock_share"][1] == "no real footage in this video")
-    if "credited: NASA" in led["stock_share"][1]:
-        e = next(x for x in core.store().rows("Episodes") if x["episode_id"] == A); assert glob_stock(out) and "Real footage: NASA." in open_desc(A)
+    assert "clip(s) of real footage" in led["stock_share"][1] and "credited: NASA" in led["stock_share"][1] and glob_stock(out), led["stock_share"]      # real footage STAYED in this film: found on it, with its record, credited
+    assert any("motion ladder:" in str(x.get("message")) and "stills brought to life" in str(x.get("message")) for x in core.store().rows("Run_Log") if x.get("episode_id") == A)      # the living seconds were placed by code
+    assert {float(x["units"]) for x in core.store().rows("Cost_Log") if x["episode_id"] == A and x["item"] == "living_clip"} <= {5.0, 6.0, 7.0, 8.0}      # each clip bought at the whole seconds of its line, eight at most
     assert _led(sid)["short_moving"][0] == "PASS" and _led(sid)["short_sound"][0] == "PASS" and ("D8", "short_file_gate", "ok") in _runs(sid)
     for i in OWN_IDS: shutil.rmtree(os.path.join(core.WORK, i), ignore_errors=True)                                # GitHub runs every test file in ONE process with one work folder: leave nothing behind
 

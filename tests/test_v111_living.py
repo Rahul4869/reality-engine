@@ -14,7 +14,7 @@ def _sheet(tmp_path, char="VALE", expr="neutral"):
 def test_no_locked_sheet_means_fallback_and_honest_na(tmp_path, setting):
     assert LV.expression_for("DIRECTOR", "hi") == (None, None)
     assert LV.render("DIRECTOR", "hi", [], 0, str(tmp_path / "x.mp4"), 30, "E") is None
-    assert CON.p_living({"shots": [{"type": "reaction"}]})[0] == CON.NA
+    assert CON.p_living({"shots": [{"type": "reaction", "speaker": "DIRECTOR"}]})[0] == CON.FAIL and CON.p_living({"shots": [{"type": "still"}]})[0] == CON.PASS      # v12 V2d-b: drawn or absent - a planned cutaway without approved art fails; nobody on screen passes
 
 def test_a_living_shot_blinks_talks_and_only_moves_eyes_and_mouth(tmp_path, setting):
     pytest.importorskip("cv2"); import cv2
@@ -26,7 +26,7 @@ def test_a_living_shot_blinks_talks_and_only_moves_eyes_and_mouth(tmp_path, sett
     assert os.path.exists(out) and len(LV.USED) == 1
     ev = [x for x in core.store().rows("Character_Sheets") if x["expression"] == "neutral+eyes"][0]["file"]
     m, _ = LV.change_mask(cv2.imread(base), cv2.imread(ev)); assert 0 < m.mean() < 0.08          # only a small area changes (no flicker)
-    assert CON.p_living({"shots": [{"type": "reaction"}]})[0] == "PASS"
+    assert CON.p_living({"shots": [{"type": "reaction", "speaker": "DIRECTOR"}]})[0] == "PASS"
 
 def test_a_variant_that_changes_everything_is_never_used(tmp_path, setting):
     import cv2
@@ -35,5 +35,5 @@ def test_a_variant_that_changes_everything_is_never_used(tmp_path, setting):
 
 def test_fallback_to_silhouette_fails_the_contract_once_sheets_are_locked(tmp_path, setting):
     _sheet(tmp_path); LV.USED.clear()
-    st, ev = CON.p_living({"shots": [{"type": "reaction"}, {"type": "reaction"}]})
-    assert st == "FAIL" and "silhouette" in ev
+    st, ev = CON.p_living({"shots": [{"type": "reaction", "speaker": "DIRECTOR"}, {"type": "reaction", "speaker": "DIRECTOR"}], "absent": 1})      # v12 V2d-b: the art was gone when one was rendered - nothing is drawn in its place
+    assert st == "FAIL" and "1 of 2 reaction cutaways could not show the approved character" in ev

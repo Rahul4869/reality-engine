@@ -419,7 +419,7 @@ def _render(job):
     micro_ = _V91.on("MICRO_CUTS_ON", ep)                                      # v9.3: computed once per render
     MERGED_UNITS.clear()                                                         # v11.1: a still line under UNIT_MERGE_SEC (own picture or not)
     for i in range(1, len(units)):                                               # continues the previous shot (no sub-second picture flash = no overload)
-        if (bounds[i + 1] - bounds[i]) < S("UNIT_MERGE_SEC", float) and shots[i].get("type") != "kling" \
+        if ((bounds[i + 1] - bounds[i]) < S("UNIT_MERGE_SEC", float)) and shots[i].get("type") != "kling" \
                 and i - 1 not in MERGED_UNITS:
             bounds[i] = bounds[i + 1]; MERGED_UNITS.add(i)
     from whatifs import motion as MOT, stock as STK                              # v12 V2d-b: A PAID CLIP IS SHOWN WHOLE - a clip longer than its line runs on into

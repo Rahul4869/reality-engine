@@ -56,7 +56,7 @@ def test_a_failed_check_holds_and_a_waiver_needs_the_owner(monkeypatch, setting)
 def test_every_feature_has_a_probe_and_a_promise():
     assert len(CON.FEATURES) >= 25
     for fid, stage, probe, what in CON.FEATURES:
-        assert stage in ("script", "final", "short", "release") and callable(probe) and len(what) > 8, fid          # v12 V2c: + the short gate of a standalone Short; V2c-b2: + its release gate
+        assert stage in ("script", "final", "short", "short_file", "release") and callable(probe) and len(what) > 8, fid          # v12 V2c: + the short gate of a standalone Short; V2c-b2: + its release gate
 
 def test_review_gate_keeps_the_video_private_until_approved(monkeypatch, setting):
     _quiet(monkeypatch); setting("CREATIVE_REVIEW_FIRST_N", "3")

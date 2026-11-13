@@ -140,7 +140,7 @@ def test_a_promise_flag_does_not_stay_on_a_scene_the_animation_director_turned_i
     units = [{"start": 0, "end": 4, "text": "you wake up"}, {"start": 43.7, "end": 48, "text": "the pillow floats"}, {"start": 60, "end": 64, "text": "later"}]
     shots = [{"type": "still", "prompt": "a"}, {"type": "kling", "prompt": "b", "promise": True, "hero": True}, {"type": "still", "prompt": "c"}]
     assert BRK.promise_start(shots, units) == 43.7                                                  # the state the room leaves behind
-    monkeypatch.setattr(ANIM, "pick_slots", lambda sh, un, n=None: [0])
+    monkeypatch.setattr(ANIM, "pick_slots", lambda sh, un, n=None, **kw: [0])
     ANIM.apply(shots, units, {"kling": 1})
     assert shots[1]["type"] == "still" and "promise" not in shots[1] and shots[0]["type"] == "kling" and BRK.promise_start(shots, units) is None
     out = ROOM.promise_shot(shots, units, {"thumb_prompt": "a floating pillow"})

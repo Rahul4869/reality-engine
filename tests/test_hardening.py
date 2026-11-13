@@ -56,7 +56,7 @@ def test_mode_follows_the_settings_cell_and_the_env_var_wins(monkeypatch, settin
     monkeypatch.setenv("WHATIFS_PRESENTATION_FORMAT", "reality_engine"); assert FE.mode() == "reality_engine"
 
 def test_the_format_text_forbids_realistic_presenter_faces():
-    assert "NEVER SHOWN AS REALISTIC FACES" in FE.instructions("writer").upper()
+    assert "A PRESENTER IS DRAWN OR ABSENT" in FE.instructions("writer").upper()          # v12 V2d-b: no face, and no shape in its place either
 
 def test_speaker_blends_are_always_two_different_recipes(setting):
     from whatifs import episode as EP
