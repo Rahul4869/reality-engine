@@ -90,8 +90,9 @@ minutes, the serial suite 56, the sweep 38; GitHub's 56 run beside the write-up)
 sweep side by side is a lesson already paid for (HOW TO RUN: false failures under load), and item 21 says that what a batch is
 judged by is never replaced or weakened; fewer tests, a smaller sweep, fewer breaks, a shorter reading, bigger batches or a lower
 effort each cost something - none was offered. FREE, and only these: (1) HIS WAITS between batches (2 h 11 min that night) - he was
-offered that the session which started a batch starts the next one once the last is verified ACCEPTED, up to the pilot; HIS YES IS
-NEEDED, and until it is on record in `02_OWNER_VERBATIM.md` one batch per owner "continue" stands; (2) HIS PART OF THE PILOT made
+offered that the session which started a batch starts the next one once the last is verified ACCEPTED, up to the pilot; HE ANSWERED
+"Yes, until the pilot" on 13 Nov 2026 - in force as worded in item 22 of `02_OWNER_VERBATIM.md` (the session that started a
+batch verifies ACCEPTED and starts the next; a batch session never starts its successor; it ends before V3); (2) HIS PART OF THE PILOT made
 ready before V3 - first of all the channel's feature access, which is more than the phone (open issue 149). THE PAUSE: he set PAUSED
 to TRUE on the live Sheet himself. It replaces the "not paused" half of item 19; the rejected video stays public (he did not say
 otherwise). Nobody asks him about it and no session touches the cell; what the cell does and what V3 must do BEFORE it turns back

@@ -724,7 +724,7 @@ channels reach 10 million views; any measured reach effect of Meta's AI label; a
   which of them the channel still wants.
 - THE OWNER'S DESK: ITEM 22, ANSWERED (13 Nov 2026, after V2c-b2b2; his words are item 22 of `02_OWNER_VERBATIM.md`). (1) "save
   some time ... without ... any molecular worth of quality or compromise": ADOPTED for the waiting only - his own waits between
-  batches (an automatic start of the next batch once the last is verified ACCEPTED was offered; it needs his yes) and his part of
+  batches (an automatic start of the next batch once the last is verified ACCEPTED was offered; he said "Yes, until the pilot" the same day - in force as worded in item 22 of `02_OWNER_VERBATIM.md`) and his part of
   the pilot made ready before V3. REFUSED for everything a batch is built from or judged by (the reading, the research, the
   tests, the deliberate breaks, the rehearsals, the serial suite, the sweep, GitHub's Checks, the size of a batch, the effort):
   measured on V2c-b2b2 the proving is about half of a batch and it found two real faults, and running its parts side by side
