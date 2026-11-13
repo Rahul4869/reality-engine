@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 13 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026, V2c-b2a THE PLATFORMS ACCEPTED on 12 Nov 2026 - V2c-b2 was split at its start, V2c-b2b was split at its start too: V2c-b2b1 THE OPENING ACCEPTED on 12 Nov 2026, V2c-b2b2 THE CUT-DOWNS ACCEPTED on 13 Nov 2026 - V2c is complete; V2d was split at its start: V2d-a THE MONEY AND THE MODEL ACCEPTED on 13 Nov 2026 - the hero clip model is picked by value, every estimate is one table of cost lines; V2d-b THE LADDER'S RULES is next; the owner's items 23 to 25 of 13 Nov 2026: the week's Fable allowance is a hard limit and building is Fable's - open issue 163; THE LIVE CHANNEL IS PAUSED BY THE OWNER'S OWN HAND since 13 Nov 2026 - item 22 below, open issue 148). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 13 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026, V2c-b2a THE PLATFORMS ACCEPTED on 12 Nov 2026 - V2c-b2 was split at its start, V2c-b2b was split at its start too: V2c-b2b1 THE OPENING ACCEPTED on 12 Nov 2026, V2c-b2b2 THE CUT-DOWNS ACCEPTED on 13 Nov 2026 - V2c is complete; V2d was split at its start: V2d-a THE MONEY AND THE MODEL ACCEPTED on 13 Nov 2026 - the hero clip model is picked by value, every estimate is one table of cost lines; V2d-b THE LADDER'S RULES is next; the owner's items 23 to 25 of 13 Nov 2026: the week's Fable allowance is a hard limit and building is Fable's - open issue 163; his items 26 and 27 of the same day: FROM V2d-b ON A BATCH IS TWO FABLE SESSIONS, THE BUILDER AND THEN THE PROVER - the rule is under NEXT, and V2d-b's builder is started by the session that built V2d-a, no other session starts it; THE LIVE CHANNEL IS PAUSED BY THE OWNER'S OWN HAND since 13 Nov 2026 - item 22 below, open issue 148). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -119,6 +119,48 @@ or the sweep's `money_of` makes the id bad: "paid with no line"), `costguard.rec
 `short_inr` / `month_room_inr`; `shorts2.plan` (every shot carries `buy` and `slow`), `shorts2.slow_of`;
 `tools/sweep.py:money_of`; the rehearsal's line "money:". The living model (`FAL_LIVING_MODEL`, USD 0.02 a 5-second clip,
 read 13 Nov 2026) has NO row in the table yet: V2d-b decides whether the living tier is picked by the same rule.
+**A BATCH IS TWO FABLE SESSIONS FROM V2d-b ON - THE BUILDER, THEN THE PROVER (the owner's "Yes, split it", 13 Nov 2026,
+item 27 of `02`; the offer is item 26 (e)).** Why: measured on V2d-a, about 4 of the last 7 points of the week's Fable
+allowance went on WAITING for the hour-long runs inside a context of 860,000 to 950,000 tokens - every wait sends it again.
+What a batch is judged by does not change by one run, one id or one test (items 21 (b), 22 (a)); only WHICH session waits.
+Both sessions are Fable at Effort High; a session on another model has no part in it beyond the list below.
+THE BUILDER: the whole reading order; loop steps 1 to 5; the BUILDING half of step 6 - the batch's tests both ways, the
+deliberate breaks (the script verifies green first), Plan Guard, Truth, the Palace, the Organisation, docs without drift,
+the rehearsals GREEN in the format pairs the batch touches, every new whole-production test once in ONE process with the
+files after it (GitHub runs so), and last the parallel pre-check GREEN on its final code commit: code that has not seen
+the whole suite green is not built. It writes the record as far as it stands (steps 1 to 6a, corrected by the build, the
+open issues, the takeaway's draft; the founding Palace items are code and belong to the final code commit), rewrites NEXT
+for the batch after it under the words NOT ACCEPTED YET, pushes the FINAL CODE COMMIT and writes
+`<batch>_BUILT_handover_note.md` into the shared notes folder: the commit, what was built in ten lines, THIS batch's
+acceptance block (the format pairs of the rehearsals, the sweep's modes and id counts, the number of tests to expect),
+what its judge must look at, the pitfalls. It reports "BUILT - not accepted" and STOPS: no serial suite, no sweep, no
+waiting on GitHub, never the word ACCEPTED as its own verdict in a head line or a commit subject, no other session started.
+THE PROVER (a fresh session, started by the session that started the builder once it has checked the BUILT report against
+the record): reads `CLAUDE.md`, `06`, the whole of `02`, and in this file the head line, the standing rules, NEXT, the
+batch's record, the newest ACCEPTED record before it (the model for its own), the batch's open issues and HOW TO RUN whole;
+the redesign's end note of the batch; the builder's hand-over note. That is the reading its work needs - it builds nothing;
+the whole reading order is the builder's. Then it runs the batch's WHOLE acceptance block on the final code commit, ONE RUN
+AFTER ANOTHER and never two side by side: the parallel pre-check, the rehearsals in every format pair the hand-over names,
+the serial suite on a frozen copy (`git worktree` in its own scratchpad), the sweep on the same frozen copy with the
+batch's id counts, and GitHub's Checks run OF THAT COMMIT read on the public page. It judges by the standing rules (the
+totals, no skip, the first pass, the money agreed on every id), writes steps 6b and 7 of the record, the batch log row,
+the head line and NEXT (the words NOT ACCEPTED YET go), commits ACCEPTED (text only: it changes no file a test reads),
+pushes, removes its frozen copy, writes `<batch>_ACCEPTED_handover_note.md`, reports and STOPS.
+A RED OR STRANGE RESULT is never run again until it passes (standing rule 2). The prover reproduces it alone first (the
+test in one process, the id by itself), measures, and writes `<batch>_RED_<n>.md` into the notes folder: the command, the
+output, what it measured - no guess at a repair. Unless the fault makes the later runs meaningless it FINISHES the block,
+so every red of this commit is known at once. It changes no code. THE REPAIR IS THE BUILDER'S: its session is kept and is
+sent the red note (it knows the code; if it cannot be woken, a fresh Fable session that first does the WHOLE reading and
+reads the batch's record) - fixed at the cause, proven both ways, a new FINAL CODE COMMIT that passed the pre-check, BUILT
+again - and the prover runs the WHOLE block again on that commit, from its first run.
+THE SAVING IS AN ESTIMATE FROM ONE BATCH (a third less of the week's allowance a batch) UNTIL V2d-b HAS MEASURED IT: both
+sessions read the app's usage figure (weekly Fable) at their start and at their end and write the four figures into the
+record; the owner is told the measured figure, whatever it is. The cost in machine time: the pre-check runs twice (about
+half an hour a batch).
+V2d-b: its BUILDER is started on 13 Nov 2026 by the session that built V2d-a, at the owner's word "continue in new
+session" (item 26 of `02`; the automatic start of item 22 had not happened: the session that started V2d-a is woken only
+by a turn he did not drive himself). NO OTHER SESSION STARTS V2d-b. That session is V2d-b's dispatcher under item 22: it
+starts the prover at BUILT, checks ACCEPTED on the record, and STOPS BEFORE V3 - the pilot waits for him.
 **WHAT A SESSION ON ANOTHER MODEL MAY DO (the owner, 13 Nov 2026, item 25 of `02`: building is Fable's; he does not trust
 another model with code).** Only this, and nothing that could need a repair afterwards: (1) read this file, the redesign
 and `docs/CURRENT/` and answer his questions from them; (2) START a mechanical run that a Fable session prepared - the
