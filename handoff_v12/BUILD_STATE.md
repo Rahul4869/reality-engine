@@ -188,6 +188,9 @@ against the record, starts the prover, checks ACCEPTED on the record, and starts
 V2d-b - without waiting for the owner. NO OTHER SESSION STARTS A BATCH. It stops before V3, which is now the LAST step
 and needs his own sitting. If the week's Fable allowance runs out, the note `WHEN_FABLE_RUNS_OUT.md` in the shared notes
 folder says what happens (building stops; nothing is built by another model).
+V2d-b's PROVER WAS STARTED BY THE BUILDER'S SESSION (13 Nov 2026, about 11:35 UTC): the dispatcher had not been woken by the
+BUILT report, no prover existed, and the owner wrote "continue" in the builder's session (item 32 of `02`). ONE prover, no
+second: the dispatcher was told in one line. The builder's session judges nothing; a red note goes to it for the repair.
 **WHAT A SESSION ON ANOTHER MODEL MAY DO (the owner, 13 Nov 2026, item 25 of `02`: building is Fable's; he does not trust
 another model with code).** Only this, and nothing that could need a repair afterwards: (1) read this file, the redesign
 and `docs/CURRENT/` and answer his questions from them; (2) START a mechanical run that a Fable session prepared - the
