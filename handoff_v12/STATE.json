@@ -4,6 +4,7 @@
  "audit_queue": [],
  "base_commit": "22fb8fd2117e17353630ed46914ed93864f07da6",
  "batch": "V2d-b",
+ "fable_design_gate": true,
  "final_code_commit": "60d948375f2f207128117ac6926acb47f6b1d90b",
  "history": [
   {
@@ -23,6 +24,15 @@
    "from": "PROVING",
    "to": "RED",
    "why": "the sweep 55 of 58 ids: EP209901010900 held by moving_share (V2d-b_RED_1.md)"
+  },
+  {
+   "at": "2026-11-13T15:04:41Z",
+   "batch": "V2d-b",
+   "by": "the repairer (Opus 5.5, fresh session)",
+   "commit": "60d9483",
+   "from": "RED",
+   "to": "REPAIR",
+   "why": "red round 1: EP209901010900 held by moving_share (V2d-b_RED_1.md); the owner's 'continue'"
   }
  ],
  "order": [
@@ -39,10 +49,10 @@
   "B10",
   "V3"
  ],
- "phase": "RED",
+ "phase": "REPAIR",
  "red_notes": [
   "V2d-b_RED_1.md"
  ],
  "red_rounds": 1,
- "updated": "2026-11-13T15:00:00Z"
+ "updated": "2026-11-13T15:04:41Z"
 }
