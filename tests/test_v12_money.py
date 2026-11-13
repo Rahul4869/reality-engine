@@ -74,6 +74,7 @@ def test_the_rule_takes_the_best_rank_the_plan_can_pay_and_a_tie_goes_to_the_che
     assert CL.pick(apart, 0.0526)["row"]["id"] == HEY                                                                                 # ... unless the plan cannot pay it
     p = CL.pick(rows, 0.01); assert p["row"]["id"] == HEY and p["fits"] is False and p["under"] == [] and "does not fit" in p["why"]       # nothing under the line: quality is kept, the plan shrinks
     assert CL.pick(_rows(hey={"usd_s": {"768p": 0.09}}), 0.01)["row"]["id"] == H3                                                     # ... on the cheapest ranked model
+    assert CL.pick(apart, 0.01)["row"]["id"] == HEY and CL.pick(apart, 0.01)["tied"] == [HEY]                                           # ... never on the best rank at any price (a deliberate break showed the gap)
     assert CL.pick([r for r in rows if r["id"] in (KLING, PIX)], 1.0) is None                                                          # no rank / no word on the clip's shape: never picked
 
 def test_points_per_dollar_is_not_the_rule_and_a_lower_rank_never_wins_by_price(market):
@@ -106,6 +107,8 @@ def test_the_stewards_replacement_for_the_hero_follows_the_same_rule(market, set
     p = CL.choice(); assert p["row"]["id"] == H3 and p["fits"] is False                                              # a dead model sets no floor and is not eligible
     assert STW.ensure("hero") == H3 and core.S("FAL_HERO_MODEL") == H3 and core.S("PRICE_KLING_USD", float) == pytest.approx(0.30)
     assert [r["to"] for r in core.store().rows("Model_Changes")] == [H3] and any(r["kind"] == "model_switch" for r in core.store().rows("Owner_Actions"))
+    STW._save({H3: {"status": "dead"}}); setting("CLIP_MODELS", json.dumps(_rows(hey={"elo": 1000}, max={"elo": 1001})))      # now the model in use (H3) is dead and everything left ranks far below it:
+    assert CL.choice()["row"]["id"] == HEY and CL.pick(CL.table(), 0.07, floor=CL.floor_of(H3), dead={H3}) is None      # a dead model sets NO floor - the best that is left is taken (its floor would leave nothing)
     setting("CLIP_VALUE_ON", "FALSE"); setting("FAL_HERO_MODEL", KLING); setting("PRICE_KLING_USD", "0.42")
     assert STW.next_candidate("hero", after=KLING)["id"] == json.loads(core.S("MODEL_LADDERS"))["hero"][1]["id"]       # the market off: the ladder's order, as before
 
@@ -119,9 +122,10 @@ def _listing(monkeypatch, status=None, price=0.07, schema=None, ranks=None):
 def _doc(**props): return {"components": {"schemas": {"SomethingInput": {"properties": dict({"prompt": {"type": "string"}}, **props)}}}}
 
 def test_the_listing_is_read_for_what_a_program_can_know_and_its_price_is_never_taken(market, monkeypatch):
+    writes = []; real_set = CL.set_setting; monkeypatch.setattr(CL, "set_setting", lambda k, v: (writes.append(k), real_set(k, v))[1])
     _listing(monkeypatch); rows = CL.refresh(); assert all(r["base"] == 0.07 and not r.get("stale") for r in rows)          # first sight: the listing's base price is KEPT beside the row
-    assert CL.usd_s(CL.row(HEY)) == 0.02 and json.loads(core.S("CLIP_MODELS"))[0]["base"] == 0.07                       # ... and the price we estimate with is still the page's
-    before = core.S("CLIP_MODELS"); assert CL.refresh() and core.S("CLIP_MODELS") == before                              # nothing changed: the cell is not written again
+    assert CL.usd_s(CL.row(HEY)) == 0.02 and json.loads(core.S("CLIP_MODELS"))[0]["base"] == 0.07 and writes == ["CLIP_MODELS"]      # ... and the price we estimate with is still the page's
+    before = core.S("CLIP_MODELS"); assert CL.refresh() and core.S("CLIP_MODELS") == before and writes == ["CLIP_MODELS"]      # nothing changed: the cell is not written again
     _listing(monkeypatch, price=lambda i: 0.14 if i == HEY else 0.07, status={PIX: "deprecated"}, ranks={"minimax h3 (768p)": 1150},
              schema={H3: _doc(first_frame={}, duration={"minimum": 5, "maximum": 12}, resolution={"enum": ["480P", "768P"]}),
                      H3MAX: _doc(image_url={}, duration={"minimum": 5, "maximum": 10}, resolution={"enum": ["480P", "1080P"]})})
@@ -145,8 +149,10 @@ def test_the_weekly_review_switches_through_the_steward_once_and_tells_once_abou
     ch = core.store().rows("Model_Changes"); assert len(ch) == 1 and ch[0]["from"] == KLING and ch[0]["to"] == HEY and "picked by value" in ch[0]["why"]
     assert sum(1 for r in core.store().rows("Owner_Actions") if r["kind"] == "model_switch") == 1
     assert CL.review()["pick"] == HEY and len(core.store().rows("Model_Changes")) == 1                                    # the pick is the model in use: nothing happens twice
+    keys = []; real_send = NT.send; monkeypatch.setattr(NT, "send", lambda kind, *a, **k: (keys.append((kind, k.get("dedupe_key"))), real_send(kind, *a, **k))[1])
     _listing(monkeypatch, price=lambda i: 0.2 if i == H3 else 0.07); CL.review(); CL.review()
     told = [r for r in core.store().rows("Owner_Actions") if r["kind"] == "clip_price"]; assert len(told) == 1 and "MiniMax H3" in told[0]["text"] and "nothing was switched" in told[0]["text"]
+    ck = [k for kind, k in keys if kind == "clip_price"]; assert len(ck) == 2 and ck[0] == ck[1] and H3 in ck[0]          # the message is keyed by the EVENT (the model and what moved): a repeat is the same message, dropped
     setting("PRICE_KLING_USD", "0.33"); CL.review(); assert core.S("PRICE_KLING_USD", float) == pytest.approx(0.10)       # the price cell follows the row of the model in use
 
 def test_the_weekly_scout_runs_the_review_and_no_longer_writes_the_listings_price_into_the_estimate(market, setting, monkeypatch):
@@ -319,7 +325,8 @@ def test_the_cadence_makes_what_fits_spread_over_the_month_and_the_owner_is_told
     fit["fit"] = 3; due, why = SH.cadence(now); assert not due and "this month's money pays 3 Shorts" in why and "12 were planned" in why
     fit.update(fits=True, fit=12); assert SH.cadence(now)[0]                                              # the plan fits: the cadence of three a week, 48 hours apart
     fit.update(fits=False, fit=5); setting("SPLIT_ON", "FALSE"); assert SH.cadence(now)[0]                # the switch off: as before this batch
-    setting("SPLIT_ON", "TRUE"); assert SH.made_this_month(now) == 3 and SH.made_this_month(now.replace(month=11)) == 0
+    core.store().append("Specials", [{"ts": core.iso(now - dt.timedelta(hours=200)), "id": "BRK202612020900", "kind": "short", "format": "S1", "status": "POSTED", "made": "x", "premise": "w"}])
+    setting("SPLIT_ON", "TRUE"); assert SH.made_this_month(now) == 3 and SH.made_this_month(now.replace(month=11)) == 0          # a winner's follow-up (a BRK id) is outside the cadence and outside its count
     assert G.split_tell(now) is True and G.split_tell(now) is False and core.S("SPLIT_TOLD_MONTH") == "2026-12"
     told = [r for r in core.store().rows("Owner_Actions") if r["kind"] == "split"]; assert len(told) == 1 and "pays 5 Shorts, not the 12 planned" in told[0]["text"] and "no quality check was lowered" in told[0]["text"]
     fit.update(fits=True); setting("SPLIT_TOLD_MONTH", ""); assert G.split_tell(now) is False             # the plan fits: nobody is told
