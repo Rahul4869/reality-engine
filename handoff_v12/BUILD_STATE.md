@@ -99,13 +99,35 @@ is open issue 148.
 That turn was the DESIGN step for the whole programme (research, designs, decisions, records). Built since: V1a, V1b, V2a and V2c-a (the records are under DONE).
 
 ## NEXT
-**V2d WAS SPLIT AT ITS START (13 Nov 2026, token discipline rule 6), by dependency, as recommended below: V2d-a THE MONEY AND THE
-MODEL (the hero clip model chosen by value from the provider's pages and listing, clips bought by the second, the cost model as
-one table of lines the paid-call counter checks, the month's split) is IN WORK - its record is the first entry under DONE and
-says where it stands; V2d-b THE LADDER'S RULES (the living tier L3 widened, `moving_share` measured on the finished file, a
-character drawn or absent, the stock rules, the first-second sound of a Short) comes after it, before V3.** Why this order: (b)
-spends what (a) frees - "AI-moving seconds per long video" can only be raised once every paid second is a priced line and the
-price per second is known; (a) needs nothing of (b).
+**V2d-b - THE LADDER'S RULES** is next (the second half of V2d; `handoff_v12/BREAKOUT_REDESIGN.md` 11.5, the rows "Long:
+motion", "Characters" and "Stock" of 11.9, the end notes of 11.10 - the newest is V2d-a's). Full seven-step MANDATORY BATCH
+LOOP. Effort: High. V2d was SPLIT AT ITS START (13 Nov 2026, rule 6) by dependency: V2d-a THE MONEY AND THE MODEL is the
+first record under DONE - check there and in `git log -5` that it says ACCEPTED before building on it. V2d-b's scope: the
+living tier widened (L3: stills brought to life by a cheap model, as many as the month's money buys - set from
+`governor.split()["free_inr"]`, open issue 155), `moving_share` MEASURED ON THE FINISHED FILE (a Short 100%; a long video
+about 40% as a lever; open issues 86 and 130 - part of a paid scene is never seen when micro-cuts split it), a character
+drawn or absent in every format (no silhouette fallback; open issue 75), the stock rules for NASA and Pexels (10% at most,
+never first, never two in a row, changed, no people, credited; none in a Short; check `stock_share`), the first-second sound
+of a Short (open issue 91). If it is too large for one session, split it again at its start (motion first, then stock and sound).
+What V2d-a leaves ready (use it, do not rebuild it): `whatifs/clips.py` (D6) - `table` / `row` / `hero` (a model is a ROW
+of cell `CLIP_MODELS`), `usd_s` / `secs` / `usd` / `buy` / `longest` (a clip is bought by the second), `args` (the request
+from the row), `pick` / `choice` / `review` (the rule; weekly inside the tool scout), `refresh` / `schema_issues` /
+`preflight` (the live listing), `shape_ok`; `media.animate(..., hero=True, seconds=)`; `costguard.lines(kind)` - THE
+estimate (a new paid second or call of V2d-b - a living clip, a stock clip - is a LINE there with its `item` and `calls`,
+or the sweep's `money_of` makes the id bad: "paid with no line"), `costguard.reconcile`, `governor.split` / `line_usd_s` /
+`short_inr` / `month_room_inr`; `shorts2.plan` (every shot carries `buy` and `slow`), `shorts2.slow_of`;
+`tools/sweep.py:money_of`; the rehearsal's line "money:". The living model (`FAL_LIVING_MODEL`, USD 0.02 a 5-second clip,
+read 13 Nov 2026) has NO row in the table yet: V2d-b decides whether the living tier is picked by the same rule.
+**WHAT A SESSION ON ANOTHER MODEL MAY DO (the owner, 13 Nov 2026, item 25 of `02`: building is Fable's; he does not trust
+another model with code).** Only this, and nothing that could need a repair afterwards: (1) read this file, the redesign
+and `docs/CURRENT/` and answer his questions from them; (2) START a mechanical run that a Fable session prepared - the
+serial suite on a frozen copy, a sweep, a rehearsal (the commands are under HOW TO RUN) - and write its TOTAL / SUMMARY
+line and the first failure of each failed file, word for word, into a note in the shared notes folder; (3) read GitHub's
+public Checks page and copy the run number, "N passed" and the rehearsal's line; (4) tidy scratch folders OUTSIDE the
+repo. It never edits, adds or deletes a file of the repo or of the handoff folder, never commits, pushes or installs,
+never repairs or re-runs a red result until it is green, never judges a result, never writes "ACCEPTED" and never talks
+to a real service. A red or strange result is written down and left for Fable.
+(The next paragraph was written for the WHOLE of V2d before the split; its half (a) is built.)
 **V2d - THE MOTION LADDER AND THE MONEY** (`handoff_v12/BREAKOUT_REDESIGN.md`: 11.5, the rows "Long: motion", "Characters", "Stock"
 and "Money" of 11.9, 11.10 with its end notes; R13, R30, R31, R38). Full seven-step MANDATORY BATCH LOOP. Effort: High. V2c is
 COMPLETE (five batches; the last, V2c-b2b2 THE CUT-DOWNS, is the first record under DONE: check there and in `git log -5` that it
@@ -188,7 +210,16 @@ the stuck worker's stack with py-spy, HOW TO RUN); NEVER LOG WHILE HOLDING A LOC
 IDS ARE THE MINUTE - a red one is a new id, reproduce it on the ACCEPTED code too before calling it this batch's (V2c-b2b2: a
 hold of V2c-b2b1 showed up three batches of rehearsals later); a `wait for a line in a log` must not match the line a PREVIOUS
 run left in the same file (V2c-b2b2: I read two old rehearsal logs as new); a script pasted through a shell here-document
-lost its backslashes a THIRD time - the file tool, always.
+lost its backslashes a THIRD time - the file tool, always (V2d-a: a FOURTH time). READ A PRICE ON THE MODEL'S OWN PAGE (V2d-a:
+the provider's listing shows a base figure, wrong for our setting twice by a factor of ten - the weekly scout would have
+written it into the estimate); COUNT THE CALLS BEHIND EVERY ALLOWANCE (V2d-a: Rs 55 a video was held back for a round the
+room in use never runs, and four paid pictures were in no estimate); AN ESTIMATE SAID BEFORE THE THING EXISTS MUST ERR
+UPWARD - count the first real ones against it (V2d-a: 21 seconds said, 23 bought); SET WHAT WAS PAID AGAINST THE ESTIMATE
+BY ID (V2d-a: it found a picture booked to an episode that does not exist); A NEW PAID SECOND OR CALL IS A LINE of
+`costguard.lines` or the sweep makes the id bad; NEVER RUN A DELIBERATE BREAK WHILE A TEST IT SELECTS IS RED FOR ANOTHER
+REASON (V2d-a: four breaks looked caught and were not - the break script must verify green first, and a verdict "caught by
+another test" is run again); a founding item for the Shorts Studio needs the writing stage or belongs to another department
+(V2c-b1's lesson, paid again); READ THE APP'S USAGE FIGURE before a batch and while it runs (the owner, item 23).
 ORDER AFTER V2d (redesign 11.10): V3 PILOT ON REAL SERVICES AND GO LIVE (three Shorts and one long video; the human kit: his
 voice recording with the consent sentence, five photos, three sentences, the secrets typed by HIM; the release sheet's one-time
 switches - phone verification FIRST, open issue 112, AND ADVANCED FEATURE ACCESS, which is more than the phone: open issue 149;
@@ -500,6 +531,70 @@ E. (ORIGINAL, CHOSEN) THE BEST MODEL THE PLAN CAN PAY, BOUGHT BY THE SECOND, IN 
 | What a run paid is set against its lines | `costguard.reconcile` in `episode` and `shorts2.run` | tests (a paid item without a line and an exceeded line are named); the sweep's `money_of` makes the id bad; the rehearsal asserts it |
 | The month's split says how many Shorts fit; the cadence makes that many, spread; a Short whose real plan cannot be paid is not made | `governor.split`, `shorts2.cadence`, `shorts2.run`, `governor.split_tell` in the learning job | tests (fit at three prices; the spread; told once; nothing paid for an unpayable plan) |
 | A live Sheet is moved once | `manage.v12v2d_upgrade` at both setup sites | tests (the pick, the allowance, the retired note, never twice, his own value left alone) |
+| A picture's cost is booked to the video that ordered it | `art.thumbnail(episode, seed=)`, `episode.py` (the runner-up and a re-made thumbnail) | a test (the same picture, booked to the episode); the whole production (two key-art pictures on the episode's record) |
+#### Step 6 PROVE
+- `tests/test_v12_money.py`: **33 tests** (the commit message of step 6a says 34; counted: 33), each rule both ways - the table as data (five rows as read, no model named in the
+  module, the cell wins, an unreadable cell falls back); whole seconds inside a model's limits; the market off = everything as
+  before; the request built from the row (another row for the same name gives another request); THE RULE (the pick at the
+  plan's line; a tie by error band to the cheaper; no overlap: the higher rank; nothing under the line: the cheapest ranked
+  model and "does not fit"; no rank or no word on the shape: never) and the case built to defeat it (a model ranked lowest
+  and a hundred times cheaper wins every points-per-dollar ratio and is never picked; the floor of the model in use); every
+  reason a row cannot be the hero; the line (it follows the plan, the reserve, the cap and the writing's cost, not the
+  hero's price); the Steward's replacement by the same rule and a dead model that sets no floor; the listing (status,
+  schema, clip lengths, rank; a moved base price marks the row and never changes the estimate; the cell written only when
+  something changed; a listing that does not answer changes nothing); the weekly review (one switch through the Steward,
+  the owner told once by a key that names the event, the price cell following); the scout (no price written); pre-flight;
+  a hero clip offline as long as it was bought with its seconds on record; the real request path (the row's request, the
+  cost = seconds times the row's price); a clip of another shape (on real files, and raised on the request path with the
+  Steward counting it); a Short's plan (one clip a shot as long as the shot, none slowed, the loop no longer than its
+  clip, a beat over ten seconds split, the seat naming a shot one clip cannot cover); the market off and an older Short;
+  the one table behind every estimate; the table read only where it runs; the ladder's kind and an episode's own draw;
+  start pictures, stills and the voice at what is paid (the 2027 price doubles the line); a Short's own lines; `reconcile`
+  and the sweep's verdict on a paid item without a line, an exceeded line and a missing summary; the thumbnail booked to
+  its video and still the same picture; the split at three prices; the cadence that follows it and the owner told once; a
+  Short whose real plan cannot be paid (not made, nothing paid, on record); the one-time move; and **FIVE WHOLE
+  PRODUCTIONS** with the paid-call counter - a Short in each Short format (the seconds paid = the seconds its plan said =
+  its lines; the estimate said before its script covers it) and two long videos on two Sheets (about a promoted Short: 3
+  scenes, 3 start pictures, 2 key-art pictures, 1 voice job, no hook lab, 15 of 15 seconds; under an override: 4, 4, 2, 1,
+  the lab, 20 of 20 seconds) - on which every counted call has its line, and a planted fifth clip or an unknown paid item is named.
+- Tests changed by design (7 older files): `test_v101` (the hero's default is a row of the table; a retired model is
+  replaced by it), `test_v87` and `test_v89` (the cost goldens moved by exactly the corrections of the cost model, each
+  named in the test: - 55 the objections round that never runs, + the start pictures, + the stills' real price, - the voice
+  allowance against the voice by the second, - 6 the cut-downs' call, + 0.5 the line-up, + 3 two community lines),
+  `test_v810` and `test_v12_creative` (the voice, the thinking, the room's extra calls and the Palace are lines),
+  `test_v12_short` (the loop's seconds; the older tests' clip limit), `tests/conftest.py` (`OLD_CLIPS`).
+- Fails correctly: **145 deliberate one-place breaks** on the real repo, each applied alone and put back by the script (a
+  copy of every file kept before the first break, restored at every start, the hashes compared; the fast tests verified
+  GREEN before every part; nothing else reading the code meanwhile; `git status` after every part) - **each failed at least
+  one test**: 139 seen by the tests written for them, 1 by its own older test, 5 only by a whole production. Among them: a
+  clip shorter or longer than the model allows; seconds rounded down; the start picture always in one field; the size or a
+  row's extra fields not sent; a model without a word on its shape, without a start picture, without a price, delisted,
+  with changed inputs or failing taken as the hero; the floor, the line, the tie ignored; points per dollar as the rule;
+  the best rank at any price; "fits" always true; a dead model keeping its floor; a moved price not noticed, or TAKEN as
+  the price; status, schema, clip lengths, rank not read; the cell never or always written; no switch; told every week; the
+  price cell not following; the review or the hero's row with the market off; each pre-flight answer; every shape right;
+  offline no record of a clip, a still or a start picture; the request from a name match; a flat cost; one unit a clip;
+  the wrong-shape clip accepted; the table read under the room in use; no re-take; a free voice charged; four scenes for
+  a ladder video; no line for the start pictures, the line-up; the old still price; the hook lab twice; the last beat free
+  again; a Short's plan ignored; the loop paid; `reconcile` blind, counting stills as exact, reading text calls, writing
+  no row or a row that is spend; each term of the line, the month's room and the split; told daily, or when it fits; a
+  Short's clip always five seconds, slowed, its loop longer than its clip or bought; an older Short forgetting how it was
+  played; the cadence ignoring the split, not spreading, not stopping; an unpayable Short made, or unrecorded; the month's
+  count taking other months or a follow-up; the seat's old limit; the Steward's price ratio; the scout writing the
+  listing's price; the move twice, unmarked, overwriting his value, not picking, at one site only; an episode's estimate
+  ignoring its kind or its tier; the long video reconciled as the wrong kind; no pre-flight line; either switch off by
+  default; a default hero that is no row; the sweep's verdict blind, or not making the id bad; a thumbnail booked by its
+  seed again. A FIRST pass had shown five rules without an assertion (written, then all 145 run again) and one lesson: a
+  test that is red for another reason makes every break that selects it look caught - the first pass of four breaks was
+  void for that, and the script now runs nothing unless the tests are green.
+- Fake rehearsal on the working tree of the final code: **GREEN three times** - F1 with Shorts in S1 (EP202611130231), F2
+  with S2 (EP202611130233), F1 with S3 (EP202611130236): every long format and every Short format. Each: a long video
+  refused first (nothing spent), two Shorts made and released on three platforms, their numbers read, one promoted, the
+  long video about it opening on its Short's footage, released in one step - and the new line "money: HeyGen Video 1 at USD
+  0.02 a second (the plan can pay 0.047) ... 12 of 12 Shorts fit this month | every paid picture and clip had its line":
+  the long video 15 of 15 estimated seconds of hero clip (Rs 377 to 381 estimated at its own tier), its Shorts 17 to 22
+  of 17 to 22 seconds (Rs 76 to 83); 54 checks on the long video (F1: 42 pass, 12 not applicable; F2: 49 pass, 5 not applicable).
+  (The rehearsal's month is November 2026, whose cap is Rs 5,226 by the owner's one-month override: hence 0.047, not 0.042.)
 
 ### V2c-b2b2 - THE CUT-DOWNS (12-13 Nov 2026) - ACCEPTED (final code commit 1d3a77a GREEN in GitHub Checks run 131: 1457 passed; sweep 58 of 58 ids)
 The owner's "continue" for this batch is the start of this session. The whole binding reading order was read first (handoff `CLAUDE.md`,
@@ -4315,6 +4410,57 @@ Rehearsal asserts `docs_current` ran and passed.
    the channel does not have yet must say so (`hand` / not available), never fail as if the upload were wrong. The dated row
    for `docs/CURRENT/PLATFORM_FACTS.md` goes in with the batch that touches `release.py` (no code and no current doc changed
    on 13 Nov).
+
+150. (V2d-a -> V3, TELL THE OWNER AT THE PILOT, BEFORE THE FIRST SHORT) THE PICKED MODEL HAS NEVER BEEN SEEN. The pick rests
+   on a ranking measured at 1080p, 16:9 and 10 seconds; we buy upright clips at 768p. The pilot's first paid step is the
+   bake-off that exists (`bakeoff.run`: two scenes on upright pictures, each model side by side, one message with the
+   clips): set `BAKEOFF_CLIP_MODELS` to the next model in line and the model this batch replaced (about Rs 35 of clips at
+   the page prices; the cap `BAKEOFF_CAP_INR` is 400). NOT BUILT: his choice against the pick - `bakeoff._answer` sets the
+   two cells by hand and the next weekly review would switch back to the rule's pick. Until a cell for "his eye decides"
+   exists (V3), his choice is kept by `CLIP_VALUE_ON` = FALSE, or by correcting the losing row (its `shape` or `elo`).
+151. (V2d-a -> V3) Two things no page says about the picked model: that fal's "HeyGen Video" is the ranking's "HeyGen
+   Video 1" (the same maker and family), and where its clip takes its shape from (the page of the model it is "built on"
+   says: from the start picture). The shape is measured on every real clip (`clips.shape_ok`): three clips of another
+   shape cost about Rs 30 and switch the hero to MiniMax H3 - at whose price eight Shorts fit a month, not twelve.
+152. (V2d-a -> V3, the price) Every price is a reading of a page on 13 Nov 2026. `costguard.reconcile` sets UNITS against
+   the estimate (seconds, pictures), not rupees: a wrong price per second is invisible to it, and fal's answers carry no
+   cost. After the first real Short read fal's own usage page and correct the row's `usd_s` (and `PRICE_KLING_USD` follows).
+153. (V2d-a -> V5 / R&D) The table is refreshed by code for status, schema, clip lengths and - with the ranking's key - the
+   rank. A NEW model enters only as a row written by hand from its page; the Steward's older `discover` still looks at three
+   old model families and queues them for the old test. A row's price has no expiry: only a move of the listing's base
+   price is noticed. R&D's "new models" gap should propose rows (a tool fact with its page), the Board accept them.
+154. (V2d-a -> V4) The lever that carries the split is still `SHORTS_PER_MONTH` of the Shorts Studio; the redesign gives the
+   split to Strategy (D1), unwired until V4. `MONTH_RESERVE_INR`, `TTS_RETAKES`, `SPLIT_ON`, `CLIP_VALUE_ON` and the size a
+   row buys (`res`: 1080p costs three times a second) are nobody's levers: only the owner turns them. V4 decides.
+155. (V2d-a -> V2d-b) About Rs 1,000 of a month is NOT PLANNED at the pick's price (`governor.split()["free_inr"]`). It is
+   not saved and not spent by this batch: the re-planner offers one more Short a week (his tap); V2d-b raises the moving
+   seconds of a long video with it (the redesign's 40% of 540 seconds at USD 0.02 is about Rs 430 a video - four videos
+   need more than what is free, so that lever must be set from the split, not from a share).
+156. (V2d-a, the text lines) The writing, thinking, room and Palace allowances of a long video (Rs 170 + 40 + 20 + 15) and
+   the writing of a Short (Rs 36) are still allowances no real run of the new code has met; the lines name the calls they
+   stand for but price them as a lump, and a long video's text calls are checked for coverage, not counted one by one.
+   After the first real videos: read `ai_per_video_summary` and set the cells.
+157. (V2d-a -> B7 / V4) `reconcile` writes one summary row and a warning; nothing escalates an overrun (no memo, no message):
+   Finance (D11) is not wired. The weekly "estimate against measured" mail exists and now compares real lines.
+158. (V2d-a, the proof) The offline clip maker still ignores its start picture's shape (open issue 123): no rehearsal and
+   no sweep id meets an upright clip, and offline the shape guard is not reached at all - it is proven on test clips and
+   on the request path with the provider replaced.
+159. (V2d-a, 1 Jan 2027) The voice's price doubles and its estimate follows by itself; the Flash text price cells
+   (`PRICE_GEM_FLASH_IN` / `OUT`) do NOT: re-read Google's price page on that day (the row is in PLATFORM_FACTS).
+160. (V2d-a, found, not this batch's) `specials.est_inr` and `pilots.est_inr` - both tracks are paused - still count a hero
+   clip at the flat `PRICE_KLING_USD` and a still at the old `PRICE_STILL_USD`; they are not lines of the cost model.
+   Decide with open issue 136 (rebuild the older doors on the release sheet or delete them).
+161. (V2d-a, the proof) NOT covered by the sweep: a model that fails over, a clip of another shape, a moved listing price,
+   a month whose plan does not fit, an unpayable Short (unit tests and deliberate breaks only). Covered on every id: the
+   lines of the estimate against what the run paid - the long video and its Short, both Shorts of a Shorts id.
+162. CLOSED / narrowed in V2d-a: issue 72 (the line-up has its line), 83 (a Short has lines of its own: about Rs 100,
+   twelve fit), 126 (a long video about a promoted Short is its own kind), 141 (the writing lost the cut-downs' call, the
+   voice is by the second), the first point of 82 (no clip is slowed while the market is on; the chain of clips and the
+   backwards loop still wait for the pilot's eye). The redesign's O2 and O10: answered - the pages were read on 13 Nov
+   2026, and the "live listing" cannot give the price of our setting.
+163. (the owner, 13 Nov 2026; items 23, 24 and 25 of `02_OWNER_VERBATIM.md`) THE WEEK'S FABLE ALLOWANCE IS A HARD LIMIT of
+   the work, building is Fable's, and a session on another model gets only the short list under NEXT. Read the app's
+   usage figure before a batch and while it runs; stop with a "WHERE THE SESSION STOPPED" note rather than die of it.
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`

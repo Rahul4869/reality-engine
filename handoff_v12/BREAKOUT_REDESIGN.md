@@ -4,7 +4,7 @@ rejected the first live video (item 16). This page OVERRIDES `01` section 1 ("co
 the department list in `01` section 2 wherever they differ. The budget is unchanged: Rs 5,000 a month for everything.
 Status: DESIGN (research + designs + decisions). Built so far: V1a (11 Nov 2026). The batches in section 6 build the rest, one per owner
 "continue". SECTION 10 (the owner's item 19, same day) amends sections 4-7. SECTION 11 (his item 20, same night) amends them again -
-Shorts first, the motion ladder, the human kit, the release sheet, a new order of batches: READ SECTION 11 FIRST. Built so far: V1a, V1b, V2a, V2c-a (the Short as a product), V2c-b1 (the ladder), V2c-b2a (the platforms), V2c-b2b1 (the opening), V2c-b2b2 (the cut-downs: none is made - `BUILD_STATE.md` says whether it is accepted); their end notes are the last entries of 11.10.
+Shorts first, the motion ladder, the human kit, the release sheet, a new order of batches: READ SECTION 11 FIRST. Built so far: V1a, V1b, V2a, V2c-a (the Short as a product), V2c-b1 (the ladder), V2c-b2a (the platforms), V2c-b2b1 (the opening), V2c-b2b2 (the cut-downs: none is made), V2d-a (the money and the model: the hero clip model picked by value, one table of cost lines, the month's split - `BUILD_STATE.md` says whether it is accepted); their end notes are the last entries of 11.10.
 
 ## 0. THE HONEST FRAME
 - Nobody can make a channel a sure shot. Of 137,355 new long-video channels, 30.8% got even ONE video past 10,000 views in their first ten (R1).
@@ -734,3 +734,58 @@ channels reach 10 million views; any measured reach effect of Meta's AI label; a
   The phone gives custom thumbnails; the Short-to-video link, the pinned comment, the thumbnail A/B test, chapters and the
   multi-language features need ADVANCED access - channel history, or identity verification by video or ID (YouTube Help
   9890437, read 13 Nov 2026; BUILD_STATE open issue 149). The pilot's first step is the page "Feature eligibility".
+- ORDER UPDATE (V2d-a, 13 Nov 2026): V2d was split at its start. V2d-a built THE MONEY AND THE MODEL (the hero clip model
+  picked by value, clips bought by the second, every estimate one table of cost lines, the month's split computed);
+  V2d-b builds THE LADDER'S RULES (the living tier, the share of time that really moves measured on the finished file, a
+  character drawn or absent, the stock rules, the first-second sound of a Short). Then V3 (go live), V2b, V1c, V4, V5,
+  B6b-B10: eleven batches remain; the channel runs the new code after the second (V2d-b, V3).
+  WHAT THE BUILD CHANGED IN THIS SECTION, with reasons (the record is in `BUILD_STATE.md`): (1) 11.5 "chosen BY VALUE (rank
+  per dollar ...)" and 4.5 "arena points per dollar" are NOT a ratio: a ratio rewards cheapness and picks the lowest-ranked
+  model that qualifies - below the one in use. The rule that is built: the month's plan (4 long videos, 12 Shorts, the
+  fixed parts, a reserve) gives the highest price per second it can pay; at or under that line the best rank wins; models
+  whose error bands on the ranking overlap are tied and the cheaper wins (what it frees buys moving seconds); a model
+  without a rank, or whose page does not say that its clip takes the start picture's shape, is never picked. (2) "on the
+  live listing": the provider's listing can be read live for whether a model exists, what it takes and how long a clip
+  may be; the PRICE it shows is a base figure that was wrong for our setting in four of five models (R61) - so the price
+  per second is a dated reading of the model's own page, kept as data, and the listing only raises the alarm when it
+  moves. (3) 11.5's L4 "USD 0.02-0.06 a second" holds: the pick costs 0.02, the next in line 0.06; the model the code
+  paid cost 0.084 on its own page (0.14 on the provider's list) and its tier is not on the ranking at all. (4) 11.10's
+  month by the code's own lines, replacing "12 Shorts about Rs 150 each" and "4 long videos about Rs 510 each": a Short
+  about Rs 100 (Rs 93 to 111 by format; twelve Rs 1,214), a long video about a promoted Short Rs 381 (Rs 402 under an
+  override; four with the safety margin Rs 1,769), a reserve of Rs 300 - Rs 3,283 of the Rs 4,280 a month has for
+  production; about Rs 1,000 is NOT planned and is what V2d-b's moving seconds are bought with. At the next model's
+  price (0.06) eight Shorts fit beside four long videos, at the replaced model's five: then the code says so, makes that
+  many spread over the month, and tells the owner - no check is lowered. (5) V2c-a's point (5) is over: a clip is bought
+  by the second at the length of its shot (5 to 15 seconds); no clip is played slower. (6) Found by counting, not
+  planned: every long video's estimate held Rs 55 for calls that never run, four paid pictures were in no estimate, and
+  a runner-up thumbnail was booked to an episode that does not exist.
+  NEW EVIDENCE (read by the build session, 13 Nov 2026): R58 E - Artificial Analysis, image-to-video leaderboard (35
+  models; the anchor at 1000 points): MiniMax H3 (768p) 1133 +-14 (rank 4), HeyGen Video 1 1124 +-14 (rank 6), PixVerse
+  V6 959; the tier the code paid is not listed (its dearer tier: 1002, rank 22). R59 E - its methodology (a change of
+  October 2026): every model at 1080p where offered, 16:9, 10 seconds, from a wide start picture; the price shown is the
+  maker's own service. R60 E - fal, the model pages and API schemas of the candidates: HeyGen Video image-to-video USD
+  0.02 a second at 480p and 768p (0.06 at 1080p and 2k; a half-price offer ended 31 Oct 2026), 5 to 15 whole seconds,
+  "built on MiniMax H3", nothing on the clip's shape; MiniMax H3 0.05 / 0.06 / 0.13 / 0.16 by size, "the output canvas
+  follows this image"; H3 Max 0.08 at 768p from 16 Nov 2026. R61 E - fal, the price list against those pages and the
+  API reference: the listed figure is a "Base price per billing unit" - 0.14 against 0.084, 0.01 against 0.14, 0.005
+  against 0.045; the estimate call takes a number of units and no size or length. R62 E - Google, Gemini API pricing:
+  the voice's audio costs USD 9 a million tokens through 31 Dec 2026 and 18 from 1 Jan 2027; a start picture 0.067.
+  R63 O - TeamDay, 2 Nov 2026 (a third party): "The base price in fal's billing data is not always what you pay".
+  NOT FOUND: any rank for an upright clip or for 768p; a sentence that fal's "HeyGen Video" is the ranking's "HeyGen
+  Video 1"; where that model takes its clip's shape from; a way for a program to read what a request really cost.
+  New H25 (the picked model's upright clips look at least as good to the owner as the replaced model's) and H26 (a
+  Short's real cost is within a fifth of its estimate). O17 - the pick has never been seen on our pictures: the pilot's
+  first paid step is the bake-off of the pick, the next in line and the replaced model, and his eye decides
+  (BUILD_STATE open issue 150). O18 - every price is a page reading; the first real clips and fal's own usage page are
+  the only proof (152).
+- THE OWNER'S DESK: ITEMS 23, 24 AND 25, ANSWERED (13 Nov 2026, during V2d-a; his words are in `02_OWNER_VERBATIM.md`).
+  (1) "completed within this week's fable allowance": ADOPTED as a hard limit of the work - the app's usage figure is read
+  before and during a batch, and a batch is finished or stopped with a note before the allowance is gone. NOT PROMISED: the
+  whole remaining build inside one week - eleven batches at the proving he ordered do not fit, and the pilot needs his own
+  sitting. (2) Four token-saving ideas of another AI: two are rules of this build since its first day (output to a file
+  and only its last lines read; a fresh session per batch), one has nothing to gain here (every output already lives
+  outside the repo), one would cut rules the batches are checked against (the builders' rulebook) - none changes
+  anything. (3) "all the fable worthy task ... only few basic task ... for opus": ADOPTED - building, judging and every
+  "ACCEPTED" are Fable's; the short list of what a session on another model may do (start a prepared run and copy its
+  totals, read the records, tidy scratch folders - never edit, commit, repair or judge) is in BUILD_STATE under NEXT.
+  Said plainly: almost everything left IS building, so that list is short by nature.
