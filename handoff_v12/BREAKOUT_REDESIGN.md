@@ -4,7 +4,7 @@ rejected the first live video (item 16). This page OVERRIDES `01` section 1 ("co
 the department list in `01` section 2 wherever they differ. The budget is unchanged: Rs 5,000 a month for everything.
 Status: DESIGN (research + designs + decisions). Built so far: V1a (11 Nov 2026). The batches in section 6 build the rest, one per owner
 "continue". SECTION 10 (the owner's item 19, same day) amends sections 4-7. SECTION 11 (his item 20, same night) amends them again -
-Shorts first, the motion ladder, the human kit, the release sheet, a new order of batches: READ SECTION 11 FIRST. Built so far: V1a, V1b, V2a, V2c-a (the Short as a product), V2c-b1 (the ladder), V2c-b2a (the platforms), V2c-b2b1 (the opening), V2c-b2b2 (the cut-downs: none is made), V2d-a (the money and the model: the hero clip model picked by value, one table of cost lines, the month's split - `BUILD_STATE.md` says whether it is accepted); their end notes are the last entries of 11.10.
+Shorts first, the motion ladder, the human kit, the release sheet, a new order of batches: READ SECTION 11 FIRST. Built so far: V1a, V1b, V2a, V2c-a (the Short as a product), V2c-b1 (the ladder), V2c-b2a (the platforms), V2c-b2b1 (the opening), V2c-b2b2 (the cut-downs: none is made), V2d-a (the money and the model: the hero clip model picked by value, one table of cost lines, the month's split - accepted 13 Nov 2026), V2d-b (the ladder's rules: licensed models only, moving seconds with a floor, the finished film measured, drawn or absent, real footage as an anchor, a Short's first sound - `BUILD_STATE.md` says whether it is accepted); their end notes are the last entries of 11.10. THE ORDER OF THE REMAINING BATCHES IS THE OWNER'S OF 13 NOV 2026 (the last desk note of 11.10): V2b, V1c, V4, V5, DRAWN BY CODE, B6b-B10, and going live (V3) LAST.
 
 ## 0. THE HONEST FRAME
 - Nobody can make a channel a sure shot. Of 137,355 new long-video channels, 30.8% got even ONE video past 10,000 views in their first ten (R1).
@@ -789,3 +789,65 @@ channels reach 10 million views; any measured reach effect of Meta's AI label; a
   "ACCEPTED" are Fable's; the short list of what a session on another model may do (start a prepared run and copy its
   totals, read the records, tidy scratch folders - never edit, commit, repair or judge) is in BUILD_STATE under NEXT.
   Said plainly: almost everything left IS building, so that list is short by nature.
+- ORDER UPDATE (V2d-b, 13 Nov 2026): V2d-b built THE LADDER'S RULES (one market of licensed models for every moving
+  second; the month's money as moving seconds with a floor; the seconds placed by code and every paid clip shown whole;
+  the share that really moves measured on the finished film; a Short's file with a gate of its own; a character drawn or
+  absent; real footage as a short anchor with a record; a Short that sounds from its first frame). `BUILD_STATE.md` says
+  whether it is accepted. THE ORDER AFTER IT IS THE OWNER'S OF 13 NOV 2026 (items 29 and 30 of `02_OWNER_VERBATIM.md`; the
+  desk note below): V2b, V1c, V4, V5, DRAWN BY CODE, B6b, B7, B8, B9, B10, and V3 - the pilot and going live - LAST.
+  Eleven batches remain; the channel runs the new code after the last of them.
+  WHAT THE BUILD CHANGED IN THIS SECTION, with reasons (the record is in `BUILD_STATE.md`): (1) 11.5's L3 "an open-weight
+  model, USD 0.005-0.01 a second" (R30): the cheap model the code paid for living stills is licensed FOR RESEARCH ONLY on
+  its provider's own page and listing (R64) - not for a channel that wants to earn. No commercially licensed model costs
+  less per second than the hero's pick (R65, R66), so the living rung is bought from the same table by the same rule,
+  today from the same model at USD 0.02 a second (Rs 1.98; the research-only one cost Rs 0.40). What separates L3 from
+  L4 is what is bought: gentle motion on a still the video owns, or a staged scene with a start picture of its own.
+  (2) 11.5 "about 40% of its time at L3 or L4": 40% is the TARGET (a lever), 20% is the FLOOR that holds a video; the
+  floor is a line of every estimate (a long video about a promoted Short about Rs 535, Rs 381 before), and what the
+  month's split leaves free buys more. In a full month at today's price that is about 29% - the target is not reached,
+  the code says the share it bought, nothing is lowered. (3) 11.9 names ONE check `moving_share` for both products: a
+  long video is judged at the final gate (`moving_share`: the share against the floor AND the seconds paid found again on
+  the film), a Short's finished file at a gate of its own after it is made (`short_moving`, `short_sound`) - its clips
+  are paid by then, so a Short that fails is made, kept and waits for his one tap; it is never dropped and never posted
+  by itself. (4) 11.9 "Stock ... no people": neither library can be asked for that (R68, R69); code refuses a clip
+  whose own title names a person and keeps a record of every clip; a person nobody named is not recognised (open issue
+  166). (5) 11.4's "sound + motion onset in frame 1": the Short's older sound DID start at second 0 and a phone played
+  none of it (an 80 Hz thump; -62 dBFS above 400 Hz) - the measure hears like a phone, and the first frame gets a sound
+  a phone can play. (6) L1 (code-rendered explaining animation, "tried in V2d") was not built here: it is part of the
+  batch DRAWN BY CODE (the desk note below).
+  NEW EVIDENCE (read by the build session, 13 Nov 2026): R64 E - fal, the page and the listing of the model paid for
+  living stills: "Research only" / `license_type` "research", USD 0.02 a 5-second clip. R65 E - fal, the listing of
+  image-to-video models (the first 100): every one "commercial" - a program can read the licence live. R66 E - fal,
+  the pages of the cheapest candidates (USD 0.02 to 0.094 a second at their smallest size) against Artificial Analysis
+  (35 models): the cheapest commercial models are the lowest ranked; the pick is the cheapest AND ranked 6th. R67 E -
+  YouTube Help 1311392 (newest dated entry 15 Jul 2025): not monetisable - "Image slideshows ... with minimal or no
+  narrative", mass-produced templates, reused content without a meaningful difference; stock footage and the public
+  domain are not named. R68 E - Pexels, the licence and the API documentation: attribution not required by the licence,
+  a prominent link asked by the API; nothing about people in the request or the answer. R69 E - NASA, media guidelines
+  (updated 27 Oct 2026): acknowledge NASA as the source, no insignia, permission for an identifiable person in
+  commercial use. R70 E - FFmpeg's own help for `freezedetect`: a picture is frozen when the mean difference between
+  frames stays under a noise floor FOR A DURATION. R71 E / O - arXiv 2508.02516 (Aug 2025; a model that also hears the
+  audio predicts five-second retention better) and reviews of phone speakers (next to nothing under about 400 Hz).
+  NOT FOUND: a commercially licensed image-to-video model under USD 0.02 a second; a rank for gentle motion on a still;
+  a way to ask a stock library for "no people"; a measured effect of a Short's first second of sound; whether more
+  moving seconds hold viewers (H2 and H10 test it).
+  New H27 (a Short whose first fifth of a second carries its place's sound is swiped away less than the same format
+  with a rising drone). O19 - the limits of the motion measure were set on held pictures, the renderer's own push-in
+  and offline clips; a real model's GENTLE clip has never been measured (BUILD_STATE open issue 165: the pilot measures
+  its first living clips before the gate's verdict counts). O20 - a person in real footage is recognised only by the
+  clip's own title (166). O21 - the target of 40% waits for a price or the cap to move (167).
+- THE OWNER'S DESK: ITEMS 28, 29 AND 30, ANSWERED (13 Nov 2026, while V2d-b was built; his words are in
+  `02_OWNER_VERBATIM.md`). (1) Item 28, animation written as code by the text model, "only if it helps": TESTED - a
+  batch of its own, DRAWN BY CODE, built as an experiment his eye and the viewers' retention judge, never adopted on a
+  belief. It holds, as ONE batch: the L1 renderer trial this section ordered for V2d (11.5, row L1; R31 - not dropped,
+  moved), a house kit written once so that every scene looks like one show, and scenes whose animation the pipeline's
+  model writes for one explaining moment of a long video, rendered by a closed renderer with measured checks, a blind
+  judge, a still as the fall-back and a line in the cost model. Said to him plainly: "free" is false (a scene written
+  from nothing costs as much as the video model or more; with a kit about Rs 10 to 20 a scene - estimates, not a bill),
+  and its benefit cannot be measured before viewers exist. (2) Item 29, "i want to launch only after full build of full
+  pipeline": ADOPTED. It REPLACES "live after three" of 11.10 and V3's place in the batch table: going live is the last
+  step, after B10. (3) Item 30, "make the whole pipeline build now ... don't stop until full build done", and his "no"
+  to an early private test on real services: ADOPTED - no real service is met before V3; the batches start one after
+  another without waiting for him, each as two Fable sessions; a session on another model does only the short list in
+  BUILD_STATE under NEXT. Said to him plainly: eleven batches at the proving he ordered are days of machine time, the
+  week's Fable allowance is a hard limit, and what reality breaks is found last.

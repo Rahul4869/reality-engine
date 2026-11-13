@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 13 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026, V2c-b2a THE PLATFORMS ACCEPTED on 12 Nov 2026 - V2c-b2 was split at its start, V2c-b2b was split at its start too: V2c-b2b1 THE OPENING ACCEPTED on 12 Nov 2026, V2c-b2b2 THE CUT-DOWNS ACCEPTED on 13 Nov 2026 - V2c is complete; V2d was split at its start: V2d-a THE MONEY AND THE MODEL ACCEPTED on 13 Nov 2026 - the hero clip model is picked by value, every estimate is one table of cost lines; V2d-b THE LADDER'S RULES is next; the owner's items 23 to 25 of 13 Nov 2026: the week's Fable allowance is a hard limit and building is Fable's - open issue 163; his items 26 and 27 of the same day: FROM V2d-b ON A BATCH IS TWO FABLE SESSIONS, THE BUILDER AND THEN THE PROVER - the rule is under NEXT, and V2d-b's builder is started by the session that built V2d-a, no other session starts it; THE LIVE CHANNEL IS PAUSED BY THE OWNER'S OWN HAND since 13 Nov 2026 - item 22 below, open issue 148). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 13 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026, V2c-b2a THE PLATFORMS ACCEPTED on 12 Nov 2026 - V2c-b2 was split at its start, V2c-b2b was split at its start too: V2c-b2b1 THE OPENING ACCEPTED on 12 Nov 2026, V2c-b2b2 THE CUT-DOWNS ACCEPTED on 13 Nov 2026 - V2c is complete; V2d was split at its start: V2d-a THE MONEY AND THE MODEL ACCEPTED on 13 Nov 2026 - the hero clip model is picked by value, every estimate is one table of cost lines; V2d-b THE LADDER'S RULES is BUILT AND NOT ACCEPTED YET - its prover is next, then V2b; the owner's items 28 to 30 of 13 Nov 2026: THE CHANNEL GOES LIVE ONLY AFTER THE WHOLE BUILD, V3 is the last step, the order is under NEXT; the owner's items 23 to 25 of 13 Nov 2026: the week's Fable allowance is a hard limit and building is Fable's - open issue 163; his items 26 and 27 of the same day: FROM V2d-b ON A BATCH IS TWO FABLE SESSIONS, THE BUILDER AND THEN THE PROVER - the rule is under NEXT, and V2d-b's builder is started by the session that built V2d-a, no other session starts it; THE LIVE CHANNEL IS PAUSED BY THE OWNER'S OWN HAND since 13 Nov 2026 - item 22 below, open issue 148). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -100,27 +100,50 @@ is open issue 148.
 That turn was the DESIGN step for the whole programme (research, designs, decisions, records). Built since: V1a, V1b, V2a and V2c-a (the records are under DONE).
 
 ## NEXT
-V2d-b IS IN BUILD (13 Nov 2026, the builder's session; its record is the first under DONE and says how far it stands). It is
-built WHOLE - no further split; the fall-back is written in that record.
-**V2d-b - THE LADDER'S RULES** is next (the second half of V2d; `handoff_v12/BREAKOUT_REDESIGN.md` 11.5, the rows "Long:
-motion", "Characters" and "Stock" of 11.9, the end notes of 11.10 - the newest is V2d-a's). Full seven-step MANDATORY BATCH
-LOOP. Effort: High. V2d was SPLIT AT ITS START (13 Nov 2026, rule 6) by dependency: V2d-a THE MONEY AND THE MODEL is the
-first record under DONE - check there and in `git log -5` that it says ACCEPTED before building on it. V2d-b's scope: the
-living tier widened (L3: stills brought to life by a cheap model, as many as the month's money buys - set from
-`governor.split()["free_inr"]`, open issue 155), `moving_share` MEASURED ON THE FINISHED FILE (a Short 100%; a long video
-about 40% as a lever; open issues 86 and 130 - part of a paid scene is never seen when micro-cuts split it), a character
-drawn or absent in every format (no silhouette fallback; open issue 75), the stock rules for NASA and Pexels (10% at most,
-never first, never two in a row, changed, no people, credited; none in a Short; check `stock_share`), the first-second sound
-of a Short (open issue 91). If it is too large for one session, split it again at its start (motion first, then stock and sound).
-What V2d-a leaves ready (use it, do not rebuild it): `whatifs/clips.py` (D6) - `table` / `row` / `hero` (a model is a ROW
-of cell `CLIP_MODELS`), `usd_s` / `secs` / `usd` / `buy` / `longest` (a clip is bought by the second), `args` (the request
-from the row), `pick` / `choice` / `review` (the rule; weekly inside the tool scout), `refresh` / `schema_issues` /
-`preflight` (the live listing), `shape_ok`; `media.animate(..., hero=True, seconds=)`; `costguard.lines(kind)` - THE
-estimate (a new paid second or call of V2d-b - a living clip, a stock clip - is a LINE there with its `item` and `calls`,
-or the sweep's `money_of` makes the id bad: "paid with no line"), `costguard.reconcile`, `governor.split` / `line_usd_s` /
-`short_inr` / `month_room_inr`; `shorts2.plan` (every shot carries `buy` and `slow`), `shorts2.slow_of`;
-`tools/sweep.py:money_of`; the rehearsal's line "money:". The living model (`FAL_LIVING_MODEL`, USD 0.02 a 5-second clip,
-read 13 Nov 2026) has NO row in the table yet: V2d-b decides whether the living tier is picked by the same rule.
+**V2d-b IS BUILT - NOT ACCEPTED YET (13 Nov 2026).** Its record is the first under DONE; its final code commit, the totals
+line of the builder's parallel pre-check and THIS batch's acceptance block are in the hand-over note
+`V2d-b_BUILT_handover_note.md` (the shared notes folder). A PROVER (a fresh Fable session, Effort High) runs that block and
+writes ACCEPTED; until the record's head line says so, nothing is built on V2d-b and the paragraph below is not in force.
+**V2b - INSIDE THE FORMAT** is next, once V2d-b is ACCEPTED (`handoff_v12/BREAKOUT_REDESIGN.md` 10.7, the rows of 11.9
+that name V2b, 11.10 with its end notes - the newest is V2d-b's, and the owner's desk note on items 28 to 30 after it).
+Full seven-step MANDATORY BATCH LOOP as TWO FABLE SESSIONS (the builder, then the prover: below). Effort: High.
+**THE ORDER CHANGED ON 13 NOV 2026 - THE CHANNEL GOES LIVE ONLY WHEN THE WHOLE PIPELINE IS BUILT** (the owner's items 29 and
+30 of `02`: "i want to launch only after full build of full pipeline / i can wait till then"; "make the whole pipeline
+build now ... don't stop until full build done"). This replaces "live after three" of the redesign's section 11 and V3's
+place in its batch table. The order: **V2b -> V1c -> V4 -> V5 -> DRAWN BY CODE -> B6b -> B7 -> B8 -> B9 -> B10 -> V3 (the
+pilot on real services and going live, LAST).** NO early private test on real services (offered in item 29 (b); his "no"
+is item 30): everything real - the first paid clip, the first real voice, the first bill - waits for V3. So every batch
+until then is proven in fake mode alone, and what reality breaks is found last (open issues 150 to 163, 165, 166, 173).
+The build runs WITHOUT WAITING FOR HIM (item 30): the session that starts a builder starts its prover and then the next
+builder; nobody asks him anything a record already answers. PAUSED stays as he set it; nobody asks him about it.
+**DRAWN BY CODE** (a batch of its own, the owner's item 28; verdict on his desk: TESTED - an experiment his eye and the
+viewers' retention judge, never adopted on a belief) holds THREE things as one batch: (1) THE L1 RENDERER TRIAL the
+redesign ordered for V2d (11.5, row L1: "code-rendered animation - one open-source renderer, tried ... against today's own
+drawing code"; R31) - it was NOT in the scope list written for V2d-b and was moved there on 13 Nov 2026 (the messages
+reached V2d-b's builder after its design memo was committed; nothing of L1 is dropped); (2) a HOUSE KIT of shapes,
+colours and timing written once, so that every scene looks like one show; (3) scenes whose animation the pipeline's
+text model WRITES for one explaining moment of a long video, rendered by a CLOSED renderer, with measured checks on the
+rendered frames, a strong blind judge, a still as the fall-back, its LINE in the one cost model (about Rs 10 to 20 a
+scene with the kit - estimates of item 29 (e), not a bill) and a share that is a lever and starts small. Whoever chooses
+the renderer chooses one that can render a scene a model wrote.
+V2b's scope (the redesign's 10.7; split it at its start by dependency if it is too large for one builder, rule 6): the
+voice speaks to "you" in the present tense as a MEASURED rule (a share of sentences, a lever) and SHOW, THEN TELL; the
+camera path on the shot list (eye level, one place per act, each shot beginning where the last one ended; a jump to
+another place is an act break, and they are counted); F1's OWN ENDING instead of the three asks, the tease and the
+emotion beat that the writer's base prompt still asks for and code still inserts (`CTA.ensure`, `room.ensure_tease`:
+open issue 74); the speaker chip of F1 ("THE DIRECTOR" / "THE CURIOUS ONE", `overlay.name_of`: the open half of issue
+75 - the drawn-or-absent half is V2d-b's); F3 "THE WALK" as a format row and an experiment arm; the line-up's
+same-subject titles (open issue 69).
+What V2d-b leaves ready (use it, do not rebuild it): `whatifs/motion.py` (D6) - `place` (WHICH stills are brought to life:
+a camera-path rule that wants a say goes through it or runs before it), `carry` / `cuts` (the ONE rule for a line that
+carries a clip), `lines_of`, `room_s`, `scene_fit`, `long_report` / `short_report` (the finished file, measured);
+`job.segmeta` -> `ctx["states"]` / `ctx["moving"]` (what the render REALLY showed: type, clip, short - a check about the
+picture reads this, never the plan); `whatifs/stock.py` (`shape`, the records, `credits`, `report`); `living.has_art`
+and `shotplan.reaction_shots` (a cutaway only where approved art exists; `job.absent`); `sound.short_bed` /
+`sound.first_second` (hears like a phone); the contract stage `short_file` (`shorts2.run`: D8's run `short_file_gate`,
+`_file_hold`); `governor.moving_floor` / `moving_plan`, `costguard.lines(living_s=)`; `clips.living` / `ladder`;
+`tools/sweep.py:motion_of` (the summary's `ladder_rules_held`); the rehearsal's line "motion:". The older tests run with
+the ladder off (`tests/conftest.py`, `OLD_MOTION` with `OLD_CLIPS`).
 **A BATCH IS TWO FABLE SESSIONS FROM V2d-b ON - THE BUILDER, THEN THE PROVER (the owner's "Yes, split it", 13 Nov 2026,
 item 27 of `02`; the offer is item 26 (e)).** Why: measured on V2d-a, about 4 of the last 7 points of the week's Fable
 allowance went on WAITING for the hour-long runs inside a context of 860,000 to 950,000 tokens - every wait sends it again.
@@ -159,10 +182,12 @@ THE SAVING IS AN ESTIMATE FROM ONE BATCH (a third less of the week's allowance a
 sessions read the app's usage figure (weekly Fable) at their start and at their end and write the four figures into the
 record; the owner is told the measured figure, whatever it is. The cost in machine time: the pre-check runs twice (about
 half an hour a batch).
-V2d-b: its BUILDER is started on 13 Nov 2026 by the session that built V2d-a, at the owner's word "continue in new
-session" (item 26 of `02`; the automatic start of item 22 had not happened: the session that started V2d-a is woken only
-by a turn he did not drive himself). NO OTHER SESSION STARTS V2d-b. That session is V2d-b's dispatcher under item 22: it
-starts the prover at BUILT, checks ACCEPTED on the record, and STOPS BEFORE V3 - the pilot waits for him.
+V2d-b: its BUILDER was started on 13 Nov 2026 by the session that built V2d-a, at the owner's word "continue in new
+session" (item 26 of `02`). That session is the DISPATCHER of the chain under items 22 and 30: it checks a BUILT report
+against the record, starts the prover, checks ACCEPTED on the record, and starts the next batch's builder - V2b after
+V2d-b - without waiting for the owner. NO OTHER SESSION STARTS A BATCH. It stops before V3, which is now the LAST step
+and needs his own sitting. If the week's Fable allowance runs out, the note `WHEN_FABLE_RUNS_OUT.md` in the shared notes
+folder says what happens (building stops; nothing is built by another model).
 **WHAT A SESSION ON ANOTHER MODEL MAY DO (the owner, 13 Nov 2026, item 25 of `02`: building is Fable's; he does not trust
 another model with code).** Only this, and nothing that could need a repair afterwards: (1) read this file, the redesign
 and `docs/CURRENT/` and answer his questions from them; (2) START a mechanical run that a Fable session prepared - the
@@ -172,7 +197,7 @@ public Checks page and copy the run number, "N passed" and the rehearsal's line;
 repo. It never edits, adds or deletes a file of the repo or of the handoff folder, never commits, pushes or installs,
 never repairs or re-runs a red result until it is green, never judges a result, never writes "ACCEPTED" and never talks
 to a real service. A red or strange result is written down and left for Fable.
-(The next paragraph was written for the WHOLE of V2d before the split; its half (a) is built.)
+(The next paragraph was written for the WHOLE of V2d before the split; both halves are built - (b) is V2d-b, not accepted yet.)
 **V2d - THE MOTION LADDER AND THE MONEY** (`handoff_v12/BREAKOUT_REDESIGN.md`: 11.5, the rows "Long: motion", "Characters", "Stock"
 and "Money" of 11.9, 11.10 with its end notes; R13, R30, R31, R38). Full seven-step MANDATORY BATCH LOOP. Effort: High. V2c is
 COMPLETE (five batches; the last, V2c-b2b2 THE CUT-DOWNS, is the first record under DONE: check there and in `git log -5` that it
@@ -213,9 +238,9 @@ on the record), `queue` (the hand-over is a record), `short` (D9's run `short_pu
 What V2c-b1 leaves ready: `whatifs/ladder.py` (D10) and tab `Ladder` - `enter` / `keep`, `read`, `rank`, `promote`, `gate` / `refuse` /
 `override`, `pitch` / `claim` / `use`, `topic_report` (check `topic_ladder`), the follow-up orders; `brain.ingest_shorts` by processed
 day; `breakout.monitor`; `shorts2.cadence`; the rehearsal that walks the ladder (`run(ep_id=...)`) and `tools/sweep.py:climb`.
-Totals other tests and the rehearsal print today: 60 hard checks (36 script, 18 final, 5 short, 1 release), 71 levers, 188 founding Palace
-items (180 before V2d-a), 1491 tests in 77 files, SHOW_CHECKS 49 (pinned in `tests/test_v12_exec.py`, `test_v12_rnd.py`, `test_v12_release.py` and `test_v12_cutdowns.py`), 84 tabs, 16 retired
-rules, 4 older doors - count them again before pinning one. The older tests run with LADDER_ON FALSE.
+Totals other tests and the rehearsal print today: 64 hard checks (36 script, 20 final, 5 short, 2 short_file, 1 release), 75 levers, 197 founding Palace
+items (188 before V2d-b), 1544 tests in 78 files, SHOW_CHECKS 53 (pinned in `tests/test_v12_exec.py`, `test_v12_rnd.py`, `test_v12_release.py`, `test_v12_cutdowns.py` and `test_v12_motion.py`), 84 tabs, 17 retired
+rules, 4 older doors, 5 contract stages (`test_v102.py`) - count them again before pinning one. The older tests run with LADDER_ON FALSE, and with the clip market and the motion ladder off.
 Remember (every lesson paid for so far): every new contract check must be classified (`rnd.ORG_CHECKS` or raise `rnd.SHOW_CHECKS`, now 48);
 a department run that returns `Out` must say what it did with EVERY inbound memo; a check that can hold a video must RECOGNISE what is
 wrong (V1b: four ordinary words; V2c-a: a three-letter word); break the code on purpose and make sure a test fails - write the break list
@@ -264,18 +289,35 @@ BY ID (V2d-a: it found a picture booked to an episode that does not exist); A NE
 `costguard.lines` or the sweep makes the id bad; NEVER RUN A DELIBERATE BREAK WHILE A TEST IT SELECTS IS RED FOR ANOTHER
 REASON (V2d-a: four breaks looked caught and were not - the break script must verify green first, and a verdict "caught by
 another test" is run again); a founding item for the Shorts Studio needs the writing stage or belongs to another department
-(V2c-b1's lesson, paid again); READ THE APP'S USAGE FIGURE before a batch and while it runs (the owner, item 23).
-ORDER AFTER V2d (redesign 11.10): V3 PILOT ON REAL SERVICES AND GO LIVE (three Shorts and one long video; the human kit: his
-voice recording with the consent sentence, five photos, three sentences, the secrets typed by HIM; the release sheet's one-time
-switches - phone verification FIRST, open issue 112, AND ADVANCED FEATURE ACCESS, which is more than the phone: open issue 149;
-PAUSED set back to FALSE by HIS hand, only after the held rows were shown to him: open issue 148; the one-minute release card with the Short-to-video link as its first line,
-open issue 135; the older doors decided, open issue 136; the bounded ffmpeg install in every workflow, open issue 94; then the
-new code replaces the old) -> V2b INSIDE THE FORMAT (first person and the camera path as measured rules, F1's own ending
-instead of the asks code still inserts - open issue 74, the speaker chip - 75, F3 "The walk", same-subject line-up titles -
-69) -> V1c THE FLOOR, HIS VERDICT AND THE MAKER'S LINE -> V4 the CEO and the ladder (+ his input tab, the scoreboard, the
-format and Short shares, long-video views against the Shorts count - 138) -> V5 the Breakout Observatory (Shorts first) and
-the aspect map with the release sheet -> B6b -> B7 -> B8 (+ every run names its scoreboard number) -> B9 -> B10. Eleven
-batches remain; the channel runs the new code after the second (V2d, V3).
+(V2c-b1's lesson, paid again); READ THE APP'S USAGE FIGURE before a batch and while it runs (the owner, item 23). READ A MODEL'S LICENCE, not only
+its price and its rank (V2d-b: a rung of the redesign stood on a model licensed for research only - a program can read
+the licence live); JUDGE A SOUND AS THE DEVICE PLAYS IT (V2d-b: a hit at second 0 measured -22 dBFS and a phone played
+-62 of it); A LIMIT INSIDE THE ENCODER'S NOISE HOLDS EVERY VIDEO - measure a HELD picture under the real render, at
+both sizes, before a motion limit is set, and measure an idea before building on it (V2d-b: "noise does not grow
+with the gap" was false); A RULE ABOUT THE PICTURE IS JUDGED ON THE FINISHED FILE AND ON WHAT THE RENDER RECORDED,
+never on the plan (V2d-b: half of every paid scene was never shown and the plan could not know); A SECOND GUARD HIDES
+A BROKEN FIRST ONE and a rule tested only where another rule already refuses is not tested (V2d-b: 6 of 108 breaks);
+A SAVING THAT TURNS AN OLDER TEST RED AND IS NOT UNDERSTOOD IN THREE ATTEMPTS IS TAKEN BACK and written as an open
+issue (V2d-b: issue 164); A ONE-TIME MOVE CHANGES ONLY CELLS NAMED IN ITS `..._FLIPS` LIST (`test_v91_matrix`); THE
+BUILDER WRITES "WHERE THE BUILDER STANDS" INTO THE RECORD BEFORE ITS CONTEXT IS FULL (V2d-b: the reading alone
+filled two thirds of the window; the note carried the batch across).
+ORDER AFTER V2d-b (the owner's items 29 and 30 of 13 Nov 2026 - it replaces the order of the redesign's 11.10): V2b INSIDE
+THE FORMAT (first person and the camera path as measured rules, F1's own ending instead of the asks code still inserts -
+open issue 74, the speaker chip - 75, F3 "The walk", same-subject line-up titles - 69) -> V1c THE FLOOR, HIS VERDICT AND
+THE MAKER'S LINE -> V4 the CEO and the ladder (+ his input tab, the scoreboard, the format and Short shares, long-video
+views against the Shorts count - 138; the levers of the moving share move to D1 / D11 - 168) -> V5 the Breakout
+Observatory (Shorts first) and the aspect map with the release sheet -> DRAWN BY CODE (item 28: the L1 renderer trial,
+the house kit, model-written explaining scenes for long videos; above) -> B6b -> B7 -> B8 (+ every run names its
+scoreboard number) -> B9 -> B10 (+ the click-by-click runbook for setup, the pilot and the launch that a session on
+another model at Effort Medium can carry out, item 30 (f)) -> V3 PILOT ON REAL SERVICES AND GO LIVE, LAST (three Shorts
+and one long video; the human kit: his voice recording with the consent sentence, five photos, three sentences, the
+secrets typed by HIM; the release sheet's one-time switches - phone verification FIRST, open issue 112, AND ADVANCED
+FEATURE ACCESS, which is more than the phone: open issue 149; PAUSED set back to FALSE by HIS hand, only after the held
+rows were shown to him: open issue 148; the one-minute release card with the Short-to-video link as its first line,
+open issue 135; the older doors decided, open issue 136; the bounded ffmpeg install in every workflow, open issue 94;
+the bake-off of the clip model and the first measured living clips BEFORE any gate's verdict counts, open issues 150,
+165, 173; his eye on the first real footage, 166; then the new code replaces the old). Eleven batches remain after
+V2d-b; the channel runs the new code after the last.
 The notes below (what B5 / B6a leave ready for the Council) stay valid for B6b:
 **B6b - The Council (C)** (01 sections 2 (C), 4, 5, 7 `council_held`; 03 "B6", second bullet). Full seven-step MANDATORY BATCH LOOP. Effort: High.
 Gathers open research / assessment / creative / owner / performance / problem memos; diverge -> blind cross-family jury -> converge -> decision
@@ -325,7 +367,7 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
-### V2d-b - THE LADDER'S RULES (13 Nov 2026) - IN BUILD, NOT ACCEPTED (the builder's record; the prover writes steps 6b and 7)
+### V2d-b - THE LADDER'S RULES (13 Nov 2026) - BUILT, NOT ACCEPTED (the builder's record; the prover writes steps 6b and 7)
 The builder's session (the first batch under "A BATCH IS TWO FABLE SESSIONS", item 27 of `02`). THE WEEK'S FABLE ALLOWANCE AT THE
 BUILDER'S START: 35% used (13 Nov 2026, about 07:05 UTC; weekly all models 18%; the 5-hour window 23%; reset 19 Nov 2026 18:00 UTC).
 FIRST CHECK before any work: V2d-a ACCEPTED on the record (`git log`: ACCEPTED commit 8f40a1b, final code commit 22fb8fd, head
@@ -521,31 +563,177 @@ D. (ORIGINAL, CHOSEN) THE MOVING SECONDS ARE A BUDGET THAT IS BOUGHT, PLACED, SH
   (Rs 381 before), under an override Rs 570; the line the model pick may cost falls from USD 0.042 to 0.026 a second (the
   pick at 0.02 still fits; the next model in line at 0.06 does not); a December of Rs 5,000 leaves about Rs 400 free after
   four long videos at the floor, twelve Shorts and the reserve: about 47 more living seconds a video = about 29% of it moves.
-#### WHERE THE BUILDER STANDS (13 Nov 2026, about 10:40 UTC; the session's context was at 90%, the week's Fable allowance at 47%, so this is written before anything else)
-BUILT AND COMMITTED: all six parts (the market and the licence, the money, the placing and the cutting, the measure, the
-characters, the stock rules, the Short's sound), the docs (8 matrix rows, the ledger, 6 platform facts, the concept page,
-4 builders' recipes), 9 founding items (197), `tests/test_v12_motion.py` (43 unit tests GREEN; 4 whole productions were
-running when this was written), one rehearsal GREEN (F1, the motion block walked: 74.7% of that small film moves, 94% of
-its paid seconds found). Plan Guard, Palace, Organisation GREEN.
-UPDATE (about 11:45 UTC): the whole productions of `test_v12_motion.py` are GREEN (6 of 6 tests with "whole" in their name,
-4:19). THE FIRST PARALLEL RUN OF THE WHOLE SUITE on checkpoint 10301e9: **13 failed, 1529 passed in 35:47** - every one read,
-none re-run in the hope of green. By design (a test pinned what the batch changes): `test_v111_living` (3 tests: the
-fall-back shape and "not applicable"), `test_hardening` (the format text's old sentence about presenters), `test_v102`
-(the list of stages: `short_file` is new), `test_v12_cutdowns`, `test_v12_exec` (2), `test_v12_release` (the pinned counts:
-64 checks, SHOW_CHECKS 53, the levers), `test_v111_enforce` (a stand-in for `anim.pick_slots` that does not take `fit`).
-STILL TO READ before they are touched: `test_v91_matrix` (the upgrade of an old Sheet "additive and idempotent" - a changed
-default of a living cell?), `test_v91_e2e` and `test_v91_paidcalls` (the paid-call baseline: with no approved cast art a
-tiny line is no longer a free cutaway, so a picture may be bought for it - count it and write it into `tests/paid_calls.py`
-as V2d-b's change, or find the fault). In the scratch folder, not yet applied to the repo: `e17_prove.py` (a redundant
-guard removed, the stock filter as a pure function, six assertions the break list asked for) and `breaks.py` (113
-deliberate one-place breaks; it keeps copies, verifies the fast tests green first, runs in parts).
-STILL OWED BY THE BUILDER, in this order: (1) the four whole-production tests of `test_v12_motion.py` green; (2) the older
-tests that pin what the batch changed by design - 64 hard checks (36 script, 20 final, 5 short, 2 short_file, 1 release),
-`SHOW_CHECKS` 53, 75 levers, 197 founding items, 17 retired rules, the enforcement meta-test; (3) the break list and the
-break script (the pattern of V2d-a: copies, hashes, the fast tests GREEN before every part); (4) the rehearsals GREEN in
-F1 / S1, F2 / S2 and F1 / S3; (5) the new whole-production tests once in ONE process with the files after them; (6) the
-parallel pre-check GREEN on the final code commit; (7) steps 4 to 6a of this record, the open issues from 164 on, NEXT
-rewritten under NOT ACCEPTED YET, the redesign's end note, the hand-over note `V2d-b_BUILT_handover_note.md`.
+  (11) THE ONE-TIME MOVE CHANGED CELLS NOBODY HAD WRITTEN DOWN (found by `test_v91_matrix`, "the upgrade of an old Sheet is
+  additive"): my first move also rewrote the older ladder of living models. That ladder is not read while the motion ladder
+  is on, so the rewrite is gone; what the move may change on a live Sheet is data, `manage.V12V2DB_FLIPS` (the living model,
+  its price cell), and the older test reads that list.
+  (12) THE PAID-CALL BASELINE MOVED BY TEN PICTURES A VIDEO AT MOST, each counted and explained before the number was
+  written (`tests/paid_calls.py`, `V12V2DB_ADDED = {"image": 10}`; 26 before, 36 now in the offline episode, which has no
+  approved cast): a shot of real footage that breaks the stock rules becomes a picture of our own (up to 3), and the tiny
+  line of a character without approved art is no longer a free cutaway with a drawn shape - it is a picture line like any
+  other (up to 7). Under Rs 1 each, about Rs 6 a video; inside the stills line's ceiling. Every other count is unchanged.
+  (13) TRIED AND TAKEN BACK: letting such a tiny line RE-USE the picture before it (no picture bought: 29 instead of 36).
+  One older whole production (`test_v91_e2e`, id EP202611050930) was then HELD by the flash-safety check `red_flash`.
+  Reproduced alone (red on the working tree, green on a frozen copy of the checkpoint); taking back the render half alone
+  did not cure it; the cause was not found inside three attempts, so the variant is out completely and the Rs 6 stay:
+  open issue 164.
+  (14) THE BREAK LIST FOUND SIX RULES WITHOUT AN ASSERTION, each closed by a new assertion and its break run again: a target
+  under the floor is the floor in every field the plan reads (a second guard hid it in one); the promise picture, the
+  Short's footage and a scene's slot are never brought to life EVEN WHERE A WHOLE CLIP FITS (the older case was too short
+  to buy anyway, and its `anim` mark was an empty one the code reads as none); a line too long or too short for an anchor
+  ALONE (the share rule hid it); the hit on a Short's first frame (measured: the first tenth of a second is 7 times the
+  bed with it, 1.1 times without); the sweep's own condition, not only its words; the asset step buying each living clip
+  at the seconds code placed (the whole production's lines are all five seconds long: it could not see it).
+#### Step 4 BUILD (what changed)
+- NEW `whatifs/motion.py` (D6; on `tools/repair.py` PROTECTED): `on`, `lines_of`, `plain`, `room_s`, `covers`, `cap_s`,
+  `scene_fit`, `place`, `carry`, `cuts`, `long_report`, `short_report` (and the readers `_read`, `_cells`, `_quiet`); the
+  constants of the measure (`READ_FPS` 8, the gaps of 0.75 s and 0.5 s, `RUN` 2, `TAIL_MIN_S` 1).
+- NEW `whatifs/stock.py` (D6; PROTECTED): `on`, `names_person`, `shape`, `seconds`, `write_record`, `record_of`,
+  `record_issues`, `credits`, `credit_names`, `report`.
+- `whatifs/clips.py`: a row carries `lic`; `LICENSED`, `ROLE_CELL`, `ladder`, `living`; `issues` refuses a row that is not
+  "commercial"; `choice(role=)`; `refresh` reads the licence (`scout.fal_licence`); `review` picks the living model through
+  the Steward and keeps `PRICE_LIVING_USD` with it; `preflight` names a living model that cannot be bought.
+  `whatifs/steward.py`: the living role's replacement is the market's. `whatifs/scout.py`: `fal_licence`.
+- `whatifs/media.py`: `animate` buys a living clip from its row by the second (cost units = seconds); `_fal_video(market=)`;
+  the offline clip travels at one steady speed for 16 seconds (`FAKE_DRIFT_S`); `stock(need_s=)` writes a record beside
+  the clip, `_nasa` / `_pexels` return records and refuse a title that names a person and a clip shorter than its line.
+- `whatifs/governor.py`: `OPENING_EST_S`, `living_usd_s`, `moving_floor`, `moving_plan`; `tier_saving` and
+  `plan_for_episode` in living SECONDS, never under the floor; `line_usd_s` counts living seconds among the flexible ones.
+  `whatifs/costguard.py`: `lines(..., living_s=)` - the line `living_clips` is seconds (unit `s`) and the stills line
+  carries one picture per living clip; `reconcile` knows `living_clip`.
+- `whatifs/episode.py`: the estimate and the plan stage carry `living_s` (`governor.moving_plan(mine=True)`); `produce`
+  runs `stock.shape` before the viewer's seat and `motion.place` as the last step before the script gate; `_assets` buys
+  each living clip at `buy`, fetches real footage at the length of its line and keeps its record; `_render` cuts by
+  `motion.carry` / `motion.cuts`, plays real footage through `render.clip_segment(stock=True)`, continues the picture
+  before when a character's art is gone (`job.absent`), and writes what it really showed into `job.segmeta` (type, clip,
+  short); `_finish` hands the film's states, its moving spans, the paid seconds, the stock spans and records to the gate;
+  the description carries `stock.credits`. `whatifs/anim.py`: `pick_slots(fit=)` - a scene takes the nearest line that can
+  show it whole. `whatifs/render.py`: `stock_pre`, `clip_segment(stock=)`.
+- `whatifs/shotplan.py`: `reaction_frame` and `reaction_segment` are DELETED; `reaction_shots` plans a cutaway only where
+  `living.has_art(speaker)` (new). `whatifs/format_engine.py`, `whatifs/qc.py`: three prompts say "a presenter is drawn or
+  absent". `whatifs/truth.py`: retired rule `presenter_silhouette` (17 retired rules).
+- `whatifs/sound.py`: `short_bed`, `first_second`, `PHONE_HZ`, `LOW_KINDS`. `whatifs/shorts2.py`: `make` lays `short_bed`;
+  `run` has D8's run `short_file_gate` after `make`; `_file_hold` (the Short is made, kept, not handed over, status
+  `FILE_HELD (...)` or `AWAITING_APPROVAL` with one message when publishing).
+- `whatifs/contract.py`: `p_moving_share`, `p_stock_share` (final), `p_short_moving`, `p_short_sound` (new stage
+  `short_file`); `p_living` judges every format (drawn or absent); `p_visual_change` reads the rendered states;
+  `p_motion` judges the scenes. 64 hard checks: 36 script, 20 final, 5 short, 2 short_file, 1 release.
+- `whatifs/org/registry.py`, `levers.py`, `rnd.py`: D6 wraps the two new modules; four levers (`MOVING_SHARE_LONG`,
+  `MOVING_SHARE_MIN_LONG`, `STOCK_SHARE_MAX_PCT` with D6, `SHORT_SOUND_BY_S` with D7: 75 levers); the run
+  `short_file_gate`; the checks' owners (D6, D6, D6, D7); `SHOW_CHECKS` 53.
+- `whatifs/core.py`: 14 new cells (`MOTION_LADDER_ON`, `MOVING_SHARE_LONG` 40, `MOVING_SHARE_MIN_LONG` 20,
+  `MOVING_CHANGE_MIN` 0.32, `SHORT_CHANGE_MIN` 0.015, `MOVING_SEEN_MIN_PCT` 90, `STOCK_ON`, `STOCK_SHARE_MAX_PCT` 10,
+  `STOCK_MIN_S` 2, `STOCK_MAX_S` 4, `SHORT_SOUND_BY_S` 0.1, `SHORT_SOUND_MIN_DB` -40, `SHORT_VOICE_BY_S` 1,
+  `V12V2DB_MOVE_DONE`); the rows of `CLIP_MODELS` carry `lic`; 3 defaults changed (`FAL_LIVING_MODEL` to the pick,
+  `PRICE_LIVING_USD` 0.02 -> 0.10 = five seconds of it, `MODEL_LADDERS` without the research-only model).
+  `whatifs/manage.py`: `v12v2db_upgrade` at both setup sites, `V12V2DB_FLIPS`.
+- `tools/sweep.py`: `motion_of` - every long-video id must have PASSED `moving_share`, `stock_share` and
+  `living_characters`, every Short `short_moving` and `short_sound` ("not applicable" or a missing row makes the id bad);
+  the summary counts `ladder_rules_held`. `tools/rehearsal.py`: the Short's file gate in its asserts, the line "motion:".
+  `tests/conftest.py`: `OLD_MOTION` (the older tests keep the cutting, the living clip and the sound they were written
+  for). `tests/paid_calls.py`: `V12V2DB_ADDED`.
+- Seeds (`whatifs/org/seed/build.json`): `v2db.a_model_must_be_licensed_to_earn`, `v2db.one_market_for_every_moving_second`,
+  `v2db.a_paid_clip_is_shown_whole`, `v2db.measure_the_film_with_both_kinds_of_pairs`, `v2db.drawn_or_absent`,
+  `v2db.real_footage_is_an_anchor`, `v2db.takeaway` (D6), `v2db.the_money_becomes_moving_seconds` (D11, D6),
+  `v2db.a_short_sounds_as_a_phone_plays_it` (D7): 197 founding items; the Palace's note on limits that do not fit a
+  playbook is unchanged. (Three summaries were over 400 characters and one item's kind pushed a limit out of D6's
+  playbook: shortened, re-typed.)
+- Docs: 8 matrix rows, the ledger's paragraph, 6 dated platform facts, the concept page's section "What moves, and who is
+  on screen", four builders' recipes in `CLAUDE.md` (the motion ladder, characters, real footage, a Short's sound),
+  `SYSTEM.md` regenerated.
+#### Step 5 ENFORCE (rule -> executing code -> fails when broken)
+| Rule | Executed by | Fails when broken |
+|---|---|---|
+| Every moving second is bought from a model licensed for commercial use; the licence is read live with the status | `clips.issues`, `clips.refresh`, `scout.fal_licence`, `clips.preflight`; `manage.v12v2db_upgrade` | tests (a research-only row is never picked, never bought, named by pre-flight; the old Sheet leaves it once); the rehearsal names the pick |
+| The living tier is a row of the same table, picked by the same rule, bought by the second | `clips.living`, `clips.choice(role="living")`, `steward.next_candidate`, `media.animate(seconds=)` | tests on the rule, the request path (the row's request at the row's price) and the cost row's units; the paid-call counter |
+| A long video's moving seconds have a floor every estimate counts; what the month leaves free buys more, up to the target | `governor.moving_floor`, `moving_plan`, `costguard.lines` (line `living_clips`), `episode._stage_plan` | tests (every estimate equals the lines; a floor the month cannot pay is said; the tiers stop at the floor); the sweep's `money_of` on every id |
+| Code places the seconds on lines that can show a whole clip; a paid clip is shown whole | `motion.place` in `episode.produce`; `motion.carry` / `cuts` in `episode._render`; `anim.pick_slots(fit=)` | tests (never a second no line can show, the budget binds, the marks are skipped, a clip runs on into the stills after it); check `visual_change` on the rendered states |
+| The finished long video is measured: at least the floor really moves, and the seconds paid are found again on the film | `motion.long_report`, check `moving_share` (final gate, D6) | tests on real files (a held picture under grain does not count; a film under the floor or one that lost a paid clip is held); a whole production; the sweep's `motion_of` |
+| A Short's finished file moves in every half second | `motion.short_report`, check `short_moving` (stage `short_file`, D8's run `short_file_gate`) | tests on real files both ways; a whole Short with one held second waits for the owner and is not posted |
+| A Short that fails its file gate is made, kept and waits - never dropped, never posted by itself | `shorts2._file_hold` | a whole production (status, one message, no upload, `made` on record) |
+| A character is drawn or absent | `shotplan.reaction_shots` + `living.has_art`; `episode._render` (`job.absent`); check `living_characters`; retired rule `presenter_silhouette` | tests (no cutaway without art; the deleted functions stay gone; a prompt that asks for a silhouette fails Plan Guard); a whole production whose art is gone is HELD and shows nobody |
+| Real footage is a short anchor: never first, never two in a row, 2 to 4 seconds, a tenth of the film at most, changed, no named person, credited; none in a Short | `stock.shape` in `episode.produce`, `media.stock` (the record, the refusals), `render.clip_segment(stock=True)`, `stock.credits`, check `stock_share` (final) | tests on the shot list and on the film (each rule alone); a whole production in which real footage STAYED (found, with its record, credited) |
+| A Short sounds from its first frame, as a phone plays it; the guide speaks inside the first second | `sound.short_bed`, `sound.first_second`, check `short_sound` (stage `short_file`, D7) | tests on real files (the new bed passes; the older drone fails: -62 dBFS above 400 Hz; a late voice, no timeline, a silent file fail) |
+| Every new paid second is a line | `costguard.lines(living_s=)`, `costguard.reconcile` | whole productions with the paid-call counter; the sweep's `money_of` |
+| A live Sheet is moved once; what the move may change is data | `manage.v12v2db_upgrade`, `V12V2DB_FLIPS` | tests (the research-only model leaves, his own value stays, never twice); `test_v91_matrix` |
+| The sweep walks the new rules on every id | `tools/sweep.py:motion_of`, the summary's `ladder_rules_held` | a test ("not applicable" or a missing row makes the id bad) |
+#### Step 6 PROVE
+**6a - THE BUILDER'S HALF (this session; nothing below is an acceptance - the prover writes 6b).**
+- `tests/test_v12_motion.py`: **52 tests**, each rule both ways - a research-only model is never picked, never bought and
+  named by pre-flight; the living tier as a row of the table (and the market off = the older clip); the Steward's
+  replacement and the weekly review; a living clip bought by the second with its seconds on record, and the real request
+  path (the row's request at the row's price); the offline clip never stands still; the floor in seconds that every
+  estimate counts (a target under the floor, a floor of 30%, the ladder off); the line the model pick may cost with the
+  floor in it, and a floor the month cannot pay SAID; the plan that spends what the month leaves free, never over the
+  target; the tiers that stop at the floor; THE PLACING (the Director's shots kept where a whole clip fits, farthest
+  first, the budget binding, never a second no line can show, the promise picture, the Short's footage and a scene's slot
+  never touched, a plan saved before the ladder); a paid clip that runs on into the stills after it; the cutting; a scene
+  on the nearest line that can show it whole; the asset step buying each clip at the seconds code placed; THE MEASURE ON
+  REAL FILES - both kinds of pairs before a limit (a held picture under grain, a slow push-in, a moving clip), a film
+  that moves, a film under the floor, a film that lost a paid clip, a Short with a held second, the run of two half
+  seconds; the checks `moving_share`, `stock_share`, `short_moving`, `short_sound` and `living_characters` each PASS and
+  FAIL for the reason they name; a cutaway only where approved art exists, and the two deleted drawing functions stay
+  gone; no prompt asks for a silhouette (the retired rule both ways); the stock rules on the shot list (each alone) and
+  on the film; a title that names a person (seven that do, seven that do not); a clip with its record, its credit in the
+  description; the Short's bed (the place's own sound, one id one sound, a hit on the first frame) against the older
+  drone (loud on a studio speaker, silent on a phone); a held Short that is not published; the one-time move; the
+  sweep's verdict; the wiring (stages, owners, levers, PROTECTED, docs); and **THREE WHOLE PRODUCTIONS** with ids no other
+  test file uses (a test proves it) - a long video about a promoted Short with a real cast sheet on which real footage
+  STAYED (its moving share and stock share PASS, every living second had its line, the paid seconds found again, the
+  clips bought at the seconds placed, the credit in the description); a long video whose cast art is gone when it is
+  rendered (nobody is shown, the video is HELD by `living_characters`); a Short that passes the gate of its file, one
+  whose clips come back two seconds short (MADE, kept, not handed to Publishing, one message, a problem memo to D6, his
+  Approve posts it, the cadence does not pay for it again) and a third that closes the memo.
+- Tests changed BY DESIGN (10 older files, each read before it was touched - the first parallel run of the whole suite
+  on checkpoint 10301e9 said **13 failed, 1529 passed in 35:47**, and none was run again in the hope of green):
+  `test_v111_living` (3: the fall-back shape and "not applicable" are gone - a planned cutaway without art FAILS, nobody
+  on screen PASSES), `test_hardening` (the format text's sentence about presenters), `test_v102` (the list of stages),
+  `test_v12_cutdowns`, `test_v12_exec` (2), `test_v12_release` (the pinned counts: 64 checks, 20 final, 75 levers,
+  `SHOW_CHECKS` 53), `test_v111_enforce` (a stand-in that did not take `fit`), `test_v91_matrix` (correction 11),
+  `test_v91_e2e` and `test_v91_paidcalls` (the baseline, correction 12), `test_v92_shots` and `test_docs_current` (the
+  deleted functions, the retired rule's strings). `tests/conftest.py`: `OLD_MOTION`.
+- DELIBERATE BREAKS: **108 one-place breaks of the real code in 20 files**, the list written as "what would fail if this
+  line went?" before the last test run; run by a script that keeps a copy of every file, restores from the copies and
+  compares hashes at every start and end, and verifies the fast tests GREEN before every part (never while another run
+  read the code; `git status` clean after every part). First pass: 102 CAUGHT, 6 MISSED - each a rule without an
+  assertion of its own (correction 14); the six assertions were added and their breaks run again: **108 of 108 caught**.
+- Plan Guard GREEN; Truth GREEN; the Palace GREEN (197 founding items; its note on limits that do not fit a playbook
+  unchanged); the Organisation GREEN; `python tools/gen_docs.py`: no drift.
+- REHEARSALS, one after another on the code of the final code commit, each GREEN (56 checks on the ledger, the Short's
+  gate 5 of 5, its finished file 2 of 2, the release sheet 1 of 1 on 3 platforms):
+  F1 / S1 - "50.5 of 76 s move = 66.4% (floor 20%; the lever asks 40%, this month's money planned 40.1%): footage 15 s,
+  living 20.5 s, scene 15 s; 101.4% of the 35 s paid are seen moving | no real footage in this video | 2 Short(s): every
+  half second of the file moves, sound from the first frame"; F2 / S2 - "72 of 100.7 s move = 71.5% ... footage 13.5 s,
+  living 45.5 s, scene 13 s; 97.5% of the 60 s paid are seen moving"; F1 / S3 - "52.5 of 80.8 s move = 65% ... footage
+  14 s, living 26.5 s, scene 12 s; 93.9% of the 41 s paid are seen moving". Money on each: the pick at USD 0.02 a second
+  (the plan can pay 0.026), a long video Rs 570 at the floor, a Short Rs 101, 12 of 12 Shorts fit; every paid picture and
+  clip had its line. READ THESE NUMBERS FOR WHAT THEY ARE: a rehearsal's film is 76 to 101 seconds long and is made of
+  offline clips - its share says that the path works, not what a nine-minute video will show (about 29%, open issue 167).
+- THE NEW WHOLE PRODUCTIONS IN ONE PROCESS with every test file after them (41 files, GitHub's way): **878 passed in 42:25**, 0 failed, 0 skipped (`pytest tests/test_v12_motion.py <the 40 files after it>` without `-n`, strict).
+- THE PARALLEL PRE-CHECK on the final code commit `60d9483`: **1544 passed in 34:41**, 0 failed, 0 skipped (`-n 6`, strict; the code is that of `60d9483` - the record's text in
+  `handoff_v12/` was already in the working tree and no test reads it). 1544 tests in 78 files.
+- THE WEEK'S FABLE ALLOWANCE: 35% used at the builder's start, 47% when its context was full and compacted (about 10:40
+  UTC), 51% at the rehearsals, 54% (about 11:25 UTC; the figure is the ACCOUNT'S - the dispatcher's session worked beside this one - so the batch's builder cost at most 19 points) at its end. The builder read 658,000 tokens of its window before the first
+  line of code; the batch's long waits are the prover's.
+- NOT RUN BY THE BUILDER, by the rule of the two-session batch: the serial suite on a frozen copy, the sweep, GitHub's
+  Checks run. NOT PROVEN BY ANYTHING YET, said plainly: a real living clip against the motion limit (165), a person in
+  real footage whom no title names (166), any real fetch from NASA or Pexels, the look of the pick on our own stills (173).
+**6b - THE PROVER'S HALF: NOT WRITTEN YET.** (The acceptance block is in `V2d-b_BUILT_handover_note.md`.)
+#### Step 7 TAKEAWAY - THE BUILDER'S DRAFT (the prover completes it; also Palace item `v2db.takeaway`)
+- WORKED: reading the provider's own page for the model the code already paid for - it found a licence nobody had read,
+  and the finding shaped the whole design (one market, one rule). Measuring before setting a limit, three times: the
+  motion limit (inside the encoder's noise at first), the Short's sound (loud on the whole signal, silent on a phone),
+  the first-frame hit (7 times the bed with it, 1.1 without). Judging the finished film against what was PAID - the
+  share alone would have passed a video that lost half of every scene. The break list again: 6 of 108 rules had no
+  assertion of their own, each hidden behind a second guard or tested only where another rule already refused.
+- FAILED: the builder's context filled before the proving began (the reading order alone took two thirds of it) and was
+  compacted mid-batch - the note "WHERE THE BUILDER STANDS", written at 90%, carried the work across; write it earlier.
+  One script went through a shell here-document again (no backslash in it, it worked; the rule is the file tool). A
+  saving (no picture for an undrawn character's tiny line) was built before its effect on older productions was known
+  and had to come out after three attempts (issue 164). The first upgrade rewrote a cell no list named.
+- NOT REACHED: the 40% of the redesign (about 29% in a full month at today's price); "no people" as more than a word list.
+- FOR THE NEXT BATCH: a rule about the picture reads what the render recorded (`job.segmeta`), never the plan; a new
+  measure gets both kinds of pairs under the REAL render at both sizes; a second guard is removed or tested alone.
 
 ### V2d-a - THE MONEY AND THE MODEL (13 Nov 2026) - ACCEPTED (final code commit 22fb8fd GREEN in GitHub Checks run 139: 1491 passed; sweep 58 of 58 ids)
 The owner's "continue" for this batch is the start of this session (item 22 of `02`). V2d was SPLIT AT ITS START (the note is at
@@ -4823,6 +5011,61 @@ Rehearsal asserts `docs_current` ran and passed.
 163. (the owner, 13 Nov 2026; items 23, 24 and 25 of `02_OWNER_VERBATIM.md`) THE WEEK'S FABLE ALLOWANCE IS A HARD LIMIT of
    the work, building is Fable's, and a session on another model gets only the short list under NEXT. Read the app's
    usage figure before a batch and while it runs; stop with a "WHERE THE SESSION STOPPED" note rather than die of it.
+164. (V2d-b, TRIED AND TAKEN BACK - about Rs 6 a long video) The tiny line of a character WITHOUT approved art is a picture
+   line like any other and may get a picture of its own (up to 7 more paid stills in the offline episode, which has no
+   approved cast; with an approved cast the cutaway is free as before). Letting such a line re-use the picture before it
+   (a mark on the shot, no anchor, the render merging it) saved those pictures and made one older whole production
+   (`tests/test_v91_e2e.py::test_every_v91_feature_failing_still_schedules`, id EP202611050930) HELD by check `red_flash`.
+   Reproduced alone; not understood inside three attempts (taking back the render half alone did not cure it), so the
+   whole variant is out. To do it properly: reproduce that id with the variant, read which frames flash, then decide.
+165. (V2d-b -> the pilot, IMPORTANT) THE LIMITS OF THE MOTION MEASURE HAVE NEVER MET A REAL LIVING CLIP. `MOVING_CHANGE_MIN`
+   (0.32 grey levels over 0.75 s) was set from held pictures under the real renderer's grain (0.04 to 0.27) and from the
+   renderer's own slow push-in (0.37 and more) and the offline clips (2.6 and more). A real model asked for GENTLE motion
+   on a still may move less than a push-in: then `moving_share` would not count its seconds and would hold the video
+   ("shows less than it paid for", `MOVING_SEEN_MIN_PCT` 90). Before the first real long video is judged: measure the
+   pilot's first paid living clips with `motion.long_report` and set the cell from them (both kinds of pairs). The same
+   for `SHORT_CHANGE_MIN` on a real Short, and for `opening.alike` between a film's frame and its clip at full size.
+166. (V2d-b, by design, said plainly) "NO PEOPLE" IN REAL FOOTAGE IS A WORD LIST, NOT AN EYE. Neither library can be asked
+   for clips without people (research 6, 7); code refuses a clip whose own title, key words or page address NAMES a person
+   (`stock.PEOPLE_RX`) and nothing else. A person nobody named in the title passes. No paid vision check was built (not
+   in the cost model). Until one is: the pilot's first real clips are looked at by the owner's eye (the release card),
+   and `STOCK_ON` FALSE switches real footage off without touching anything else. NASA's own rule (permission for an
+   identifiable person in commercial use) is the risk this leaves.
+167. (V2d-b, the money) THE TARGET OF 40% MOVING IS NOT REACHED IN A FULL MONTH AT TODAY'S PRICE: the floor is 20%, and a
+   December of four long videos and twelve Shorts leaves about Rs 400 free = about 29% of a 9-minute video. (A rehearsal
+   plans 40% because its empty month has more free money.) Nothing is lowered: the code says the share it bought, and the
+   share rises by itself when a price falls or the cap moves. A living second costs Rs 1.98 where the research-only model
+   cost Rs 0.40 - a long video about a promoted Short is about Rs 535 at the floor (Rs 381 before this batch).
+168. (V2d-b -> V4 / B9) The four new levers sit with the departments that are wired: `MOVING_SHARE_LONG`,
+   `MOVING_SHARE_MIN_LONG`, `STOCK_SHARE_MAX_PCT` with D6, `SHORT_SOUND_BY_S` with D7. The redesign gives "animated seconds
+   per video" to D1 Strategy and the split to D11 Finance: move them when those are wired. Lowering the floor needs the owner.
+169. (V2d-b, the proof) NOT covered by a run that starts from an empty Sheet: real footage that STAYS in a film (the
+   rehearsals' videos show none - their lines break the rules and become pictures of our own; one whole-production test
+   and the unit tests walk the kept clip, its record and its credit), a fetch from the real NASA or Pexels service (never
+   run: no network path in fake mode), a living model that fails over, a licence that changes on the live listing, a
+   Short held by its file gate (one whole-production test with a planted held second). Covered on every sweep id:
+   `moving_share`, `stock_share`, `living_characters` PASSED for the long video, `short_moving` and `short_sound` for
+   every Short (`ladder_rules_held`).
+170. (V2d-b, by design) A Short's picture that stands for LESS than about a second is not found (two half seconds in a row
+   must not change - the first rehearsal held a Short for one flat half second of an offline picture); the loop of a Short
+   stays a report, not a gate (issue 86 stays open for that half).
+171. (V2d-b -> V3) A Short held by its file gate is MADE and waits for his one tap with the reason; his Approve posts the
+   file AS IT IS. A paid re-make at one tap (new clips for the held second) is not built: it would be a paid call that
+   needs its own line and his yes. With `publish` off (the tests, a dry run) the status is `FILE_HELD (...)` - a status
+   text other code may meet: it is checked nowhere else today.
+172. (V2d-b, by design) Check `real_motion` judges the animated SCENES only (the bar of an acted scene would hold every
+   video with twenty gentle clips); a living clip is judged on the film by `moving_share` and nowhere else.
+173. (V2d-b -> the pilot) The living rung is bought from the SAME model as the hero (nothing licensed is cheaper, research
+   3 and 4). Nobody has seen that model bring one of our stills to life with a gentle prompt: part of the pilot's
+   bake-off (open issue 150) - his eye on a living still, a scene and a Short's shot of the same model.
+174. CLOSED / narrowed in V2d-b: issue 75's second half (no shape stands in for a character in any format; the speaker
+   chip of F1 stays for V2b), 91 (a Short has a sound of its own, measured as a phone plays it), 130 (a paid clip is
+   shown whole; the check reads what was rendered), 155 (what the split leaves free buys living seconds), 86 narrowed
+   (every half second of a Short's file is measured; the loop is still a report). The redesign's L1 rung (code-rendered
+   explaining animation, "tried in V2d", R31) was NOT in this batch's scope list and is not dropped: it is built in the
+   batch DRAWN BY CODE (the owner's items 28 to 30 of 13 Nov 2026; NEXT says where).
+175. (laptop) `git worktree remove` of a frozen copy in the scratch folder left `.git/worktrees/wt` behind ("Permission
+   denied": the folder syncs); `git worktree prune` clears the entry once the lock is gone. Nothing in the tree.
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`
@@ -4844,6 +5087,10 @@ Rehearsal asserts `docs_current` ran and passed.
   `--org off` = the old path; `--mode rehearsal --ids <id,...>` = the full rehearsal with a forced id; `--one <id> --work <dir>` = one id, folder kept.
   Read only the `TOTAL` and `SUMMARY` lines; per-id logs are in `<work>/_logs/`. Afterwards `git worktree remove --force <scratch>/wt` and, if git then
   complains about `.git/worktrees/<name>`, delete that folder by hand (OneDrive can hold it for a minute).
+- A new whole-production test in ONE process with every test file after it (GitHub's way; V2d-b: 41 files, 42 minutes, detached):
+  `FILES=$(ls tests/test_*.py | sort | sed -n '/<the new file>/,$p'); PYTHONPATH= WI_NO_SKIPS=1 ../.venv/Scripts/python.exe -m pytest $FILES -q -p no:cacheprovider > <log> 2>&1`.
+- A rehearsal in one format pair: `WI_FORMAT=F1 WI_SHORT_FORMAT=S3` before the rehearsal command; its line "motion:" says what the finished files measured.
+- The motion measure by hand: `motion.long_report(master, spans, paid_s, duration)` / `motion.short_report(path)`; a Short's first second: `sound.first_second(path)` (hears like a phone).
 - Real pytest for single files (same runner as GitHub): `PYTHONPATH= ../.venv/Scripts/python.exe -m pytest tests/<file>.py -q -p no:cacheprovider`;
   add `WI_NO_SKIPS=1` to run strict like GitHub's Checks.
 - Truth registry by hand: `../.venv/Scripts/python.exe -m whatifs.truth` (retired concepts, unread cells, unused tabs, uncalled functions).
@@ -4911,10 +5158,11 @@ Rehearsal asserts `docs_current` ran and passed.
 | V2c-b2b1 | done 12 Nov 2026 | 1416 / 0 / 0 on 22103cb (laptop); GitHub 1416 passed (run 126) | GREEN in F1 / F2 with Shorts in S1 / S2 / S3 (56 + 5 + 1 checks) | The opening: a long video about a promoted Short opens on that Short's kept footage (new `whatifs/opening.py`, D6) - the archive of its ladder row fetched and measured, the Short's picture track laid by code under the first sentences, one clip a shot cut through ONE window whose width follows the clip's real sharpness (a setting and a lever; a blurred copy of the picture as ground), the first spoken line the Short's own hook (no hook lab), three paid scenes instead of four; a video under an override opens on its own promise scene; checks `opening_footage` (before picture money) and `opening_shown` (frames of the finished film against the footage): 62 hard checks; 2 levers (72). V2c-b2b was split at its start. Found and fixed: a hash of a tiny copy could not recognise its own footage under a grade; the cut-downs lost every shot; a still after the opening re-used a frame of the footage; a reaction effect drawn over the footage; and - by the SWEEP, twice, after a green suite, green rehearsals and a green GitHub run - a false hold by the new check on 1 long video in 20 (it compared a frame where two clips meet; first misread, then reproduced and fixed). 83 deliberate breaks, each failed a test. No paid call added, four removed (about Rs 45-50 a long video). GitHub run 126 GREEN on 22103cb (124 and 125 GREEN on the two commits before the sweep's fixes; 121-123 RED = tests that pinned counts changed by design); sweep 58 of 58 ids on the third pass (57 of 58 on the first two). |
 | V2c-b2b2 | done 13 Nov 2026 | 1457 / 0 / 0 on 1d3a77a (laptop); GitHub 1457 passed (run 131) | GREEN in F1 / F2 with Shorts in S1 / S2 / S3 (54 + 5 + 1 checks) | The cut-downs: a long video makes NO cut-down reels any more - the paid planning call, two paid covers, four re-voiced reels, the old upload, releases 2 to 4 and the checks `shorts` and `short_covers` are gone (60 hard checks; 71 levers); its topic already has the Short real viewers chose and the pull from that Short is YouTube's related-video link, a hand step (V3's release card); the long video's release is one step. Counted from the code, the defaults would have posted about 38 short videos a month through four uploads (12 Shorts, 16 cut-downs, 8-9 pilot Shorts, 2 special reels): now 12 - ONE door for every upright video (`release.py`; `truth.OLD_DOORS`: four older doors, off by default, may only shrink; a new door fails Plan Guard, the tests and check `docs_current`), the pilot Shorts and the special reels paused by default and moved once on a live Sheet. Found while proving and fixed at the cause, both older than this batch: a job could hang for ever in the prompt-cache bookkeeping (a warning logged inside a lock; found with a stack dump of a stuck test worker), and a long video was held for its Short's own hook 'Today you ...' (reproduced with the id on the accepted code first). 63 deliberate breaks, each failed a test. No paid call added, seven removed a long video (about Rs 27; the counter agrees). GitHub run 131 GREEN on 1d3a77a (130 GREEN; 129 RED = three test files importing the deleted module at the first build checkpoint); sweep 58 of 58 ids on the first pass. |
 | V2d-a | done 13 Nov 2026 | 1491 / 0 / 0 on 22fb8fd (laptop); GitHub 1491 passed (run 139) | GREEN in F1 / F2 with Shorts in S1 / S2 / S3 (54 + 5 + 1 checks) | The money and the model (V2d was split at its start): the hero clip model is PICKED BY VALUE from a table of what the provider's own pages say (new `whatifs/clips.py`, D6; cell `CLIP_MODELS`) - the best-ranked model the month's plan can pay, a tie by the ranking's error band to the cheaper, never the cheapest for being cheap; with the pages of 13 Nov 2026 a model ranked 6th of 35 at USD 0.02 a second where the code paid 0.084 for a tier the ranking does not list. A clip is bought by the second at the length of its shot (no slowed clip); the provider's listing is read live for status, inputs and clip lengths and its price - a base figure, wrong for our setting - is only watched. Every estimate is ONE table of lines (`costguard.lines`) that the paid-call counter checks call by call and that every run is set against (`reconcile`; the sweep's `money_of`). The month's split is computed (`governor.split`) and the cadence follows it: four long videos and twelve Shorts fit Rs 5,000 with about Rs 1,000 not planned (before: seven Shorts, none after the third week). Found by counting and fixed at the cause, all older than this batch: Rs 55 of every long video's estimate for calls that never run, four paid pictures in no estimate, a runner-up thumbnail booked to an episode that does not exist, a test that depended on a 45-second clock. 145 deliberate breaks, each failed a test. No paid call added or removed; 60 hard checks, 71 levers, 188 founding Palace items. The final code commit moved once: GitHub's one process showed that a new test reused another test's episode id (runs 136-138 RED, read and reproduced). GitHub run 139 GREEN on 22fb8fd; sweep 58 of 58 ids on the first pass, the money agreed on every id. |
-| V2d-b | next | | | The ladder's rules: the living tier widened, the share of time that really moves measured on the finished file, a character drawn or absent, stock rules (NASA / Pexels), the first-second sound of a Short |
-| V3 | after V2d | | | Pilot on real services (3 Shorts + 1 long video), the human kit, the release sheet's one-time switches, then GO LIVE with the new code |
-| V2b | after V3 | | | Inside the format: first person and camera continuity as measured rules, F1's own ending, F3 "The walk" |
+| V2d-b | BUILT 13 Nov 2026 - NOT ACCEPTED (the prover's verdict is owed) | the builder's parallel pre-check on 60d9483 (laptop): 1544 passed, 0 failed, 0 skipped; the serial suite, the sweep and GitHub are the prover's | GREEN in F1 / S1, F2 / S2, F1 / S3 (56 + 5 + 2 + 1 checks) | The ladder's rules: ONE market of commercially licensed models for every moving second (the model paid for "living stills" was licensed for research only: found on its own page, gone by a one-time move); the month's money as MOVING SECONDS with a floor of 20% in every estimate and a target of 40% that today's price does not reach (about 29% in a full month); the seconds placed by code and every paid clip shown whole (new `whatifs/motion.py`, D6); the finished film MEASURED - the share that really moves and the paid seconds found again (check `moving_share`); a Short's finished file with a gate of its own (`short_moving`, `short_sound`: a Short that fails is made, kept and waits for one tap); a character DRAWN OR ABSENT (the code that drew the black shape is deleted); real footage as a short anchor with a record and a credit (new `whatifs/stock.py`, check `stock_share`); a Short that sounds from its first frame as a phone plays it. 64 hard checks, 75 levers, 197 founding items, 53 new tests (52 in `tests/test_v12_motion.py`, one more case of the test that runs once per retired rule), 108 deliberate breaks. A long video about a promoted Short costs about Rs 535 at the floor (Rs 381 before). Not proven by anything: a real living clip against the motion limit, a person in real footage whom no title names (open issues 165, 166). |
+| V2b | after V2d-b | | | Inside the format: first person and camera continuity as measured rules, F1's own ending, the speaker chip, F3 "The walk" |
 | V1c | after V2b | | | The judged floor with the canary (the owner's rejected video must lose), his verdict tab, the maker's line |
 | V4 | after V1c | | | The CEO and the ladder: D1 Strategy wired, the portfolio, decide-inform-implement; the owner's input tab and the scoreboard |
 | V5 | after V4 | | | The Breakout Observatory (hits against siblings, three rings, patterns counted by code, one trial each) and the aspect map (item 19) |
-| B6b | after V5 | | | The Council |
+| DRAWN BY CODE | after V5 | | | The owner's item 28 (13 Nov 2026): the L1 renderer trial the redesign ordered for V2d, a house kit, explaining scenes whose animation a model writes, rendered by a closed renderer - an experiment, a lever that starts small |
+| B6b | after DRAWN BY CODE | | | The Council |
+| V3 | LAST, after B10 (the owner, 13 Nov 2026, items 29 and 30) | | | Pilot on real services (3 Shorts + 1 long video), the human kit, the release sheet's one-time switches, then GO LIVE with the new code |
