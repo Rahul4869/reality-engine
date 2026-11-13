@@ -100,6 +100,8 @@ is open issue 148.
 That turn was the DESIGN step for the whole programme (research, designs, decisions, records). Built since: V1a, V1b, V2a and V2c-a (the records are under DONE).
 
 ## NEXT
+V2d-b IS IN BUILD (13 Nov 2026, the builder's session; its record is the first under DONE and says how far it stands). It is
+built WHOLE - no further split; the fall-back is written in that record.
 **V2d-b - THE LADDER'S RULES** is next (the second half of V2d; `handoff_v12/BREAKOUT_REDESIGN.md` 11.5, the rows "Long:
 motion", "Characters" and "Stock" of 11.9, the end notes of 11.10 - the newest is V2d-a's). Full seven-step MANDATORY BATCH
 LOOP. Effort: High. V2d was SPLIT AT ITS START (13 Nov 2026, rule 6) by dependency: V2d-a THE MONEY AND THE MODEL is the
@@ -323,6 +325,170 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
+### V2d-b - THE LADDER'S RULES (13 Nov 2026) - IN BUILD, NOT ACCEPTED (the builder's record; the prover writes steps 6b and 7)
+The builder's session (the first batch under "A BATCH IS TWO FABLE SESSIONS", item 27 of `02`). THE WEEK'S FABLE ALLOWANCE AT THE
+BUILDER'S START: 35% used (13 Nov 2026, about 07:05 UTC; weekly all models 18%; the 5-hour window 23%; reset 19 Nov 2026 18:00 UTC).
+FIRST CHECK before any work: V2d-a ACCEPTED on the record (`git log`: ACCEPTED commit 8f40a1b, final code commit 22fb8fd, head
+3b73e39 text only - the diff 22fb8fd..3b73e39 touches two files of `handoff_v12/` and nothing else), GitHub's Checks run 139
+GREEN on 22fb8fd read on the public Actions page (runs 140 to 142, the three text-only commits, still running), a clean tree.
+The whole binding reading order was read first (handoff `CLAUDE.md`, `00`, `02` in full with items 16 to 27, `01`, `03`, `06`,
+`04`, `05`, all of the redesign - section 11 with every end note first - this file's head, the standing rules, the owner's
+verdict section, NEXT, the V2d-a record, every open issue 1-163, HOW TO RUN, the batch log, the repo's `CLAUDE.md`, all five
+pages of `docs/CURRENT/`, the hand-over note of V2d-a), then the code the batch touches: all of `media.py`, `costguard.py`,
+`governor.py`, `clips.py`, `shorts2.py`, `shortseat.py`, `living.py`, `render.py`, `shotplan.py`, `anim.py`, `breakout.py`,
+`tools/sweep.py`, `tests/paid_calls.py`; `episode.py` from the estimate to the end of `_finish`; the motion, character, opening
+and Short checks of `contract.py` with the table of checks; `room.plan_shots` / `normalise_shots` / `front_load`; the Steward's
+fail-over; the listing readers of `scout.py`; `opening.detail` / `alike` / `spots`; `specials._sound` / `_mix`.
+V2d-b IS BUILT WHOLE, NOT SPLIT AGAIN (decided at its start, after the reading): its five parts are small beside the clip market
+of V2d-a, a further split would cost a whole second reading order and a second acceptance block for two parts of about a
+hundred lines each, and the two-session batch already takes the long waits out of the builder's session. It is built in the
+order of its dependencies - the model and the money, the placing and the renderer, the measure, the characters, the stock
+rules, the Short's sound - with a checkpoint commit after each. THE FALL-BACK, written here before it could be needed: if this
+session's context passes about 70% before the stock rules and the Short's sound are built, those two become V2d-c and the
+split is written at the top of NEXT at that checkpoint.
+
+#### Step 1 RESEARCH (E = the provider's, the platform's or the tool's own page, O = practice / a vendor; every page below was read by the build session itself on 13 Nov 2026; the redesign's R26, R30, R31, R33, R38 and V2d-a's research are the base)
+1. E read - fal, the page of the model the code pays for "living stills" (https://fal.ai/models/fal-ai/ltx-video/image-to-video):
+   "LTX Video 0.9.1 ... transforms static images into 5-second video clips"; "Your request will cost $0.02 per video"; one fixed
+   length of 5 seconds; and under the model's title and in its specifications: licence "Research only". fal's own listing says
+   the same (https://api.fal.ai/v1/models?endpoint_id=fal-ai/ltx-video/image-to-video, no key needed): `license_type`
+   "research", display name "LTX Video (preview)", status active, updated 19 Oct 2026. -> THE FINDING THAT SHAPES THE DESIGN: the
+   cheap model the redesign built its "living" rung on (R30: "an open-weight model costs USD 0.005-0.01 a second") is not
+   licensed for a channel that wants to earn money. Not this batch's fault and not V2d-a's: the cell is older than v12.
+2. E read - fal, the listing of image-to-video models (https://api.fal.ai/v1/models?category=image-to-video, the first 100 of
+   more): every one of the 100 carries `license_type` "commercial" - the hero model, MiniMax H3, H3 Max, PixVerse V6, Wan 3.0,
+   the Kling tiers and Grok Imagine Video among them. -> a program CAN read a model's licence live, as it reads its status.
+3. E read - fal, the pages of the cheapest candidates: Grok Imagine Video 1.5 Lite "480p at $0.02/sec, 720p at $0.03/sec, 1080p
+   at $0.14/sec"; PixVerse V6 USD 0.025 a second at 360p (0.035 at 540p, 0.045 at 720p); Wan 2.6 Flash 0.05 at 720p; LTX 2.5
+   Fast 0.09 at 720p (sound always in); Kling 4.0 Flash 0.094 at 720p; LTX 2.3 Fast 0.04 at 1080p (a search result of the
+   page). The price list (https://fal.ai/pricing) again shows base figures (PixVerse V6 "0.005", Grok 1.5 "0.01") - V2d-a's
+   finding, seen once more. -> NO model with a commercial licence costs less per second than the hero model itself (USD 0.02 at
+   480p and at 768p).
+4. E read - Artificial Analysis, image-to-video leaderboard "AA-Video-I2V v2.1" (35 models): HeyGen Video 1 1124 +-14 (rank 6),
+   MiniMax H3 (768p) 1133 +-14 (rank 4), Grok Imagine Video 1.5 Lite 1000 +-15 (rank 24), PixVerse V6 959 +-15 (rank 26),
+   LTX-2.5 Fast 911, LTX-2.3 Fast 832 (rank 35, the last); LTX Video 0.9 is not on the board. -> the cheapest commercial models
+   are also the lowest ranked; the model in use for the hero is the cheapest AND among the best.
+5. E read - YouTube Help 1311392, channel monetization policies (the newest dated entry 15 Jul 2025): not monetisable -
+   "Image slideshows, templated storylines, or scrolling text with minimal or no narrative, commentary, or educational
+   value" and "AI-generated content made with generic or unoriginal templates giving the impression of mass production";
+   reused content = "content that's already on YouTube or another online source without adding significant original
+   commentary, substantive modifications, or educational or entertainment value", allowed "if viewers can tell that there's
+   a meaningful difference between the original video and your video"; the page names neither stock footage nor the public
+   domain. -> real footage is safe as a short, changed part of a narrated video of our own, never as its body.
+6. E read - Pexels, the licence (https://www.pexels.com/license/) and the API documentation
+   (https://www.pexels.com/api/documentation/; changelog to 22 Nov 2023): free to use, "Attribution is not required", changes
+   allowed; "Identifiable people may not appear in a bad light or in a way that is offensive"; never sold unaltered. The API:
+   "make sure to show a prominent link to Pexels" and credit the maker where possible; 200 requests an hour, 20,000 a month;
+   video search takes `query`, `orientation`, `size`, `locale`, `page`, `per_page` - NOTHING about people, faces or a model
+   release, in the request or in the answer; a video carries `id`, `url` (its page, whose address spells its title),
+   `duration`, `user.name`, `video_files`. -> "no recognisable people" cannot be asked of Pexels: code can only recognise a
+   person by the words of a clip's own title, and a credit with a link to Pexels is the API's own rule.
+7. E read - NASA, "Guidelines for using NASA images and media" (https://www.nasa.gov/nasa-brand-center/images-and-media/,
+   updated 27 Oct 2026): "generally are not subject to copyright in the United States"; "NASA should be acknowledged as the
+   source of the material"; the insignia and logotype "are not in the public domain"; "If the commercial use includes an
+   identifiable person, permission should be obtained from the person"; no implied endorsement. -> a credit line, no logo, no
+   person - for NASA too.
+8. E read - FFmpeg 9.0.2, its own help for the filter `freezedetect` ("Detects frozen video input": noise tolerance 0.001,
+   shortest stretch 2 seconds) and `silencedetect` (noise 0.001, 2 seconds). -> the standard tool calls a picture frozen
+   when the mean difference between frames stays under a noise floor: a measure of the FILE, with no model and no opinion.
+9. E / O - sound: arXiv 2508.02516 (Aug 2025, the winning entry of a challenge on 120,651 short videos; its measure is the
+   share of viewers who stay 5 seconds): the model that also hears the audio predicts better than the one that only sees.
+   O - Kantar for TikTok, 2021 (a vendor's own study, reported by a search): 88% call sound "essential". The 9 Nov digest
+   (`04`): "sound + motion onset in frame 1" as a starting value. NOT FOUND: any measured effect of the first second of
+   sound on a Short; any study that separates the first sound from the first picture; YouTube's own words on a Short's sound.
+NOT FOUND, so nothing is built on it: a commercially licensed image-to-video model under USD 0.02 a second; a rank for gentle
+motion on a still (the board ranks whole clips); a way to ask a stock library for "no people"; whether more moving seconds
+hold viewers (R31 stands: H2 and H10 test it).
+AN EXPERIMENT BEFORE THE DESIGN (read from the accepted code): a paid clip of a long video is CUT by the renderer. A scene
+of 5 seconds on a line of 5 seconds is split by the micro-cuts into two picture states; only the first plays the clip, the
+second shows its start picture with a camera move - half of what was paid is never seen (open issue 130). A clip on a line
+shorter than itself loses the rest. And the silhouette of the owner's rejected video is one function: `shotplan.reaction_frame`
+draws "a head, shoulders, two ovals and a name" whenever a character has no approved art - the "flat black shape with two
+ovals for eyes and a name label" of item 16.
+#### Step 2 CREATIVITY (scores 1-5: what a viewer gains / enforceable / cost inside the cap / reliability / owner effort)
+A. As the redesign wrote it: raise the count of living stills on the cheap model, count moving seconds from the PLAN, keep the
+   shape as a fall-back behind a check, tell the Director the stock rules in words, keep the boom at second 0: 2 / 2 / 5 / 2 /
+   5 = 16 - a research-only licence on a channel that wants to be paid, a share that never looks at the film (130 stays
+   hidden), a rule in a prompt.
+B. Spend what is free on more staged SCENES of the hero model (each with its reference-locked start picture): 3 / 3 / 2 / 3 /
+   5 = 16 - a scene costs its start picture (USD 0.067) on top of its seconds, so the same money moves a third fewer
+   seconds, and F1 has no cast to stage.
+C. Measure only: one number from the finished file (the still detector's residual motion) as the share, no link to what was
+   bought: 2 / 3 / 5 / 2 / 5 = 17 - the particle layer counts as motion, an honest clip under a camera pan does not, and
+   nobody learns WHICH paid clip was lost.
+D. (ORIGINAL, CHOSEN) THE MOVING SECONDS ARE A BUDGET THAT IS BOUGHT, PLACED, SHOWN WHOLE AND FOUND AGAIN ON THE FILM.
+   (1) ONE market for every moving second: a still is brought to life by a model of the same table, picked by the same rule;
+   a model must be licensed for commercial use, read live from the provider's listing. (2) The month's money becomes SECONDS:
+   a floor (a fifth of the video) is part of the plan the model pick must be able to pay; what the split leaves free buys more,
+   up to the target (two fifths); below the floor no long video is made. (3) Code PLACES the seconds on lines long enough to
+   show them whole, spread over the video, and buys each clip at the length of its line. (4) The renderer plays a paid clip
+   whole - one rule says how a shot is cut, and the check reads the same rule. (5) The FINISHED FILE is compared with every
+   paid clip: a second counts as moving only where the film shows that clip AND the picture changes; the video is held under
+   the floor or when it shows less than it paid for; a Short must change in every half second. (6) A character is drawn or
+   absent: the code that draws the shape is deleted, a reaction cutaway exists only where approved art exists. (7) Real
+   footage is a short "reality anchor" with a record: placed by code (never first, never two in a row, two to four seconds,
+   a tenth of the film at most), changed by the renderer, refused when its own title names a person, credited by code.
+   (8) A Short sounds from its first frame: the place's own sound, chosen from the first picture's words, at full level from
+   the first sample, a different colour for every Short - measured on the finished file: 5 / 5 / 4 / 4 / 5 = 23.
+#### Step 3 DESIGN MEMO
+- THE MARKET (`whatifs/clips.py`): a row gets `lic` (the provider's own licence word); `clips.issues` refuses a row that is
+  not "commercial"; `clips.refresh` reads the licence live with the status. THE LIVING TIER IS PICKED BY THE SAME RULE at the
+  same line (`clips.choice(role="living")`, the Steward switches and tells him): today the same model as the hero, because
+  nothing licensed is cheaper and it is ranked 6th of 35. The request and the price of a living clip come from its row; it is
+  bought BY THE SECOND (`media.animate(seconds=)`, Cost_Log units = seconds). What separates the rungs now is not the model
+  but what is bought: L4 a staged scene with its own start picture, L3 gentle motion on a still the video already owns.
+- THE MONEY BECOMES SECONDS (`governor.moving_plan`): cells `MOVING_SHARE_LONG` (40, the target, a lever) and
+  `MOVING_SHARE_MIN_LONG` (20, the floor: lowering it needs the owner). The floor's living seconds are a line of EVERY estimate
+  of a long video (`costguard.lines`), so the month's split, the line the model pick may cost and the Shorts' protected money
+  all count them; what `governor.split()["free_inr"]` then leaves is spent on more living seconds for the video being planned,
+  up to the target. The budget tiers trim living seconds only down to the floor; a month that cannot pay the floor makes no
+  long video ("a cheaper long video is the first video again", redesign 4.7).
+- THE PLACING (`whatifs/motion.py` NEW, D6: `place`): the Director's own living shots are kept where their line can show a
+  whole clip; then the longest still lines farthest from anything that already moves are brought to life until the seconds
+  are used; each clip is bought at the whole seconds of its line (never under the model's shortest clip, never over two
+  picture states). The animated scenes are put on lines at least as long as a scene.
+- THE RENDERER (`episode._render`, `motion.states`): a shot that carries a paid clip is ONE picture state for as long as the
+  clip lasts; only what is left of a longer line is cut as a still. Check `visual_change` reads the same rule (130 closed).
+- THE MEASURE (`motion.long_report`, `motion.short_report`): the film and every paid clip are read once at two pictures a
+  second; a half second counts where the film's frame is that clip's frame (`opening.alike`) and differs from the next one.
+  Check `moving_share` (final gate): the share against the floor, the seconds found against the seconds paid. A Short: check
+  `short_moving` on its finished file - every half second changes. Both limits get BOTH kinds of pairs measured before
+  they are set (a frozen tail, an offline clip, a real pan).
+- A SHORT'S FILE HAS A GATE OF ITS OWN (stage `short_file`, D8's run `short_file_gate`, after `make`): `short_moving` and
+  `short_sound`. The clips are paid by then, so a Short that fails is MADE, kept, NOT handed to Publishing, and waits for the
+  owner's one tap with the reason (the review path that exists); the department that owns the check gets a problem memo.
+- DRAWN OR ABSENT: `shotplan.reaction_frame` / `reaction_segment` are deleted; `shotplan.reaction_shots` makes a cutaway only
+  for a speaker whose approved art exists; at render time a cutaway whose art is gone continues the previous picture; check
+  `living_characters` judges every format (pass = every character shown is the approved art, or nobody is shown); the format
+  engine no longer asks any model for "silhouettes" (a retired concept, so it cannot come back in a prompt).
+- STOCK (`whatifs/stock.py` NEW, D6): `shape` (pure, before any money: never the first picture, never two in a row, a line of
+  2 to 4 seconds, a tenth of the runtime at most - the rest become pictures of our own), `media.stock` keeps a RECORD of every
+  clip (source, id, page, maker, credit) and refuses one whose own title names a person, the renderer changes it (cropped in,
+  slowed, the show's grade) and never loops it, the description carries the credits by code. Check `stock_share` (final).
+  A Short has none (`short_shape`, unchanged).
+- A SHORT'S FIRST SECOND (`sound.short_bed`, D7): the place's own texture from sample 0 (chosen from the first picture's words),
+  one soft hit on the first frame, a hit per beat in rotating colours, seeded by the Short's id; no fade-in, no drone.
+  Check `short_sound`: sound inside `SHORT_SOUND_BY_S` (0.1 s), the first fifth of a second above `SHORT_SOUND_MIN_DB`, the
+  voice inside the first second.
+- SWITCH: `MOTION_LADDER_ON` (FALSE = living stills, the cutting of clips and the Short's sound as before this batch; the
+  older tests run so). A LIVE SHEET IS MOVED ONCE (`manage.v12v2db_upgrade`): the living model leaves the research-only one.
+- MONEY, said before the build (prices of 13 Nov 2026 at Rs 99 a dollar; NOT measured on a bill): a living second costs
+  Rs 1.98 (before: Rs 0.40 on the research-only model, 8 clips = Rs 15.8 a video). The floor of a 9-minute video is 108
+  moving seconds: about 12 of its Short's footage, 15 of its three scenes, 81 living = Rs 160. A long video about a promoted
+  Short is then about Rs 525 (Rs 381 before), four with the margin about Rs 2,310, twelve Shorts Rs 1,214, the reserve 300:
+  Rs 3,824 of the Rs 4,280 - about Rs 450 free, which buys about 50 more living seconds a video: about 150 to 160 moving
+  seconds, 28 to 30% of the video. THE TARGET OF 40% IS NOT REACHED AT TODAY'S PRICE: it would need about Rs 1,550 a month
+  where about Rs 1,000 was free. The code says the number it bought; the lever rises by itself when a price falls.
+- CHANGED FROM THE REDESIGN, with reasons: (1) 11.5's L3 "an open-weight model, USD 0.005-0.01 a second": that model is
+  licensed for research only (research 1); the living rung is bought from the hero's market at USD 0.02. (2) 11.5 "about 40%
+  of its time at L3 or L4": a target the money does not reach today; the FLOOR that holds a video is 20%. (3) 11.9 names one
+  check `moving_share` for both products: a Short's file is judged at a gate of its own, so its check has its own name.
+- HYPOTHESES: H2 and H10 stand (more moving seconds hold viewers; a Short animated in every second is watched to the end
+  more often). New H27: a Short whose first fifth of a second carries its place's sound is swiped away less than the same
+  format with a rising drone (the first twelve Shorts against the next twelve, by `SHORT_SOUND_BY_S`).
+- NOT IN V2d-b, on purpose: the speaker chip of F1 (open issue 75's other half: V2b); the loop of a Short as a gate (86: it
+  stays a report); a paid vision check for people in stock footage; Finance (D11) and Strategy (D1) as owners of the levers.
+
 ### V2d-a - THE MONEY AND THE MODEL (13 Nov 2026) - ACCEPTED (final code commit 22fb8fd GREEN in GitHub Checks run 139: 1491 passed; sweep 58 of 58 ids)
 The owner's "continue" for this batch is the start of this session (item 22 of `02`). V2d was SPLIT AT ITS START (the note is at
 the top of NEXT). The whole binding reading order was read first (handoff `CLAUDE.md`, `00`, `02` in full with items 21 and 22,
