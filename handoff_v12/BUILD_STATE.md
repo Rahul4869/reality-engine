@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 13 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026, V2c-b2a THE PLATFORMS ACCEPTED on 12 Nov 2026 - V2c-b2 was split at its start, V2c-b2b was split at its start too: V2c-b2b1 THE OPENING ACCEPTED on 12 Nov 2026, V2c-b2b2 THE CUT-DOWNS ACCEPTED on 13 Nov 2026 - V2c is complete; V2d was split at its start: V2d-a THE MONEY AND THE MODEL ACCEPTED on 13 Nov 2026 - the hero clip model is picked by value, every estimate is one table of cost lines; V2d-b THE LADDER'S RULES is BUILT AND NOT ACCEPTED YET - THE PROVER'S FIRST PASS ON 60d9483 WAS RED (the sweep: one id of 58, EP209901010900, held by the new check `moving_share`; everything else green; the red note is `V2d-b_RED_1.md`), the repair is the builder's, then the WHOLE block again on the new final code commit, then V2b; the owner's items 28 to 30 of 13 Nov 2026: THE CHANNEL GOES LIVE ONLY AFTER THE WHOLE BUILD, V3 is the last step, the order is under NEXT; the owner's items 23 to 25 of 13 Nov 2026: the week's Fable allowance is a hard limit and building is Fable's - open issue 163; his items 26 and 27 of the same day: FROM V2d-b ON A BATCH IS TWO FABLE SESSIONS, THE BUILDER AND THEN THE PROVER - the rule is under NEXT, and V2d-b's builder is started by the session that built V2d-a, no other session starts it; THE LIVE CHANNEL IS PAUSED BY THE OWNER'S OWN HAND since 13 Nov 2026 - item 22 below, open issue 148). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 13 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026, V2c-b2a THE PLATFORMS ACCEPTED on 12 Nov 2026 - V2c-b2 was split at its start, V2c-b2b was split at its start too: V2c-b2b1 THE OPENING ACCEPTED on 12 Nov 2026, V2c-b2b2 THE CUT-DOWNS ACCEPTED on 13 Nov 2026 - V2c is complete; V2d was split at its start: V2d-a THE MONEY AND THE MODEL ACCEPTED on 13 Nov 2026 - the hero clip model is picked by value, every estimate is one table of cost lines; V2d-b THE LADDER'S RULES is BUILT AND NOT ACCEPTED YET - THE PROVER'S FIRST PASS ON 60d9483 WAS RED (the sweep: one id of 58, EP209901010900, held by the new check `moving_share`; everything else green; the red note is `V2d-b_RED_1.md`), then the repair, then the WHOLE block again on the new final code commit, then V2b; THE OWNER'S ITEM 33 OF 13 NOV 2026: FROM NOW ON OPUS 5.5 AT THE HIGHEST EFFORT BUILDS AND PROVES, UNDER `handoff_v12/OPUS_BUILD_PLAN.md` AND THE MACHINERY IN `REALITY_ENGINE_HANDOFF/proving/` - EVERY SESSION OF ANY MODEL STARTS WITH `python proving/next.py` (its role card) AND THAT PLAN; the state of the build is `handoff_v12/STATE.json`; a script computes every verdict; Fable reviews and audits; the repair of V2d-b is the first job under the plan; the owner's items 28 to 30 of 13 Nov 2026: THE CHANNEL GOES LIVE ONLY AFTER THE WHOLE BUILD, V3 is the last step, the order is under NEXT; the owner's items 23 to 25 of 13 Nov 2026: the week's Fable allowance is a hard limit and building is Fable's - open issue 163; his items 26 and 27 of the same day: FROM V2d-b ON A BATCH IS TWO FABLE SESSIONS, THE BUILDER AND THEN THE PROVER - the rule is under NEXT, and V2d-b's builder is started by the session that built V2d-a, no other session starts it; THE LIVE CHANNEL IS PAUSED BY THE OWNER'S OWN HAND since 13 Nov 2026 - item 22 below, open issue 148). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -100,6 +100,21 @@ is open issue 148.
 That turn was the DESIGN step for the whole programme (research, designs, decisions, records). Built since: V1a, V1b, V2a and V2c-a (the records are under DONE).
 
 ## NEXT
+**FROM 13 NOV 2026 THE BUILD RUNS UNDER `handoff_v12/OPUS_BUILD_PLAN.md` (the owner's item 33 of `02`: "so that i can use opus 5.5 and
+get the fable 5.2 extra high level results ... i dont want to leave anything to chance to opus").** FIRST ACT OF EVERY SESSION: from the
+handoff folder `.venv/Scripts/python.exe proving/next.py` - the pre-flight and the session's ROLE CARD - then that plan, whole. What it
+changes: Opus 5.5 at the highest effort is the BUILDER, the DESIGN REVIEWER, the PROVER and the REPAIRER (one role a session); the
+verdict of every acceptance block is COMPUTED by `proving/verdict.py` (the parts, the totals, every sweep counter, the deliberate breaks,
+GitHub's run read from the public API); a commit with a red verdict is never run again; what a batch changed in its own judges is listed
+by `proving/judge_guard.py` and must be named in its record; the deliberate breaks are run by `proving/breaks.py`; the state of the build
+is `handoff_v12/STATE.json`, moved only by `next.py` (guarded); git hooks refuse code outside the phases BUILD and REPAIR, the word of
+acceptance without a green verdict, `last_error.txt`, a push to main and a force-push; a Fable session audits when the owner opens one
+(the plan's chapter 14). What it does NOT change: the product, the order (V2d-b's repair, V2b, V1c, V4, V5, DRAWN BY CODE, B6b, B7, B8,
+B9, B10, V3 last with his own sitting), the mandatory loop, the standing rules, the size of the proving, fake mode only, PAUSED as he set
+it. The two paragraphs below that say who builds ("A BATCH IS TWO FABLE SESSIONS", "WHAT A SESSION ON ANOTHER MODEL MAY DO") are REPLACED
+by the plan and kept as the history of how V2d-b was run; everything else under NEXT stands - the scope of V2b, "what V2d-b leaves
+ready", the paragraph "Remember (every lesson paid for so far)" and the order are binding reading for every builder. THE STATE NOW:
+batch V2d-b, phase RED, red commit 60d9483, red round 1; the next session is its REPAIRER (the plan's 12.1 is its brief).
 **V2d-b IS BUILT - NOT ACCEPTED YET (13 Nov 2026).** Its record is the first under DONE; its final code commit, the totals
 line of the builder's parallel pre-check and THIS batch's acceptance block are in the hand-over note
 `V2d-b_BUILT_handover_note.md` (the shared notes folder). A PROVER (a fresh Fable session, Effort High) runs that block and
@@ -155,6 +170,8 @@ and `shotplan.reaction_shots` (a cutaway only where approved art exists; `job.ab
 `_file_hold`); `governor.moving_floor` / `moving_plan`, `costguard.lines(living_s=)`; `clips.living` / `ladder`;
 `tools/sweep.py:motion_of` (the summary's `ladder_rules_held`); the rehearsal's line "motion:". The older tests run with
 the ladder off (`tests/conftest.py`, `OLD_MOTION` with `OLD_CLIPS`).
+(REPLACED on 13 Nov 2026 by `handoff_v12/OPUS_BUILD_PLAN.md`, the owner's item 33 - the next paragraphs, down to "V2d - THE MOTION LADDER
+AND THE MONEY", are the history of how V2d-b was run; who builds, who proves and who starts whom is the plan's chapter 3.)
 **A BATCH IS TWO FABLE SESSIONS FROM V2d-b ON - THE BUILDER, THEN THE PROVER (the owner's "Yes, split it", 13 Nov 2026,
 item 27 of `02`; the offer is item 26 (e)).** Why: measured on V2d-a, about 4 of the last 7 points of the week's Fable
 allowance went on WAITING for the hour-long runs inside a context of 860,000 to 950,000 tokens - every wait sends it again.
@@ -796,6 +813,17 @@ used at the prover's start (about 11:35 UTC), **68%** at its end (about 14:15 UT
 pass whose context stayed under 310,000 tokens. With the builder's at most 19 points the batch has cost at most 33
 points and is not accepted; the estimate of "a third less a batch" (item 27 (b) of `02`) is NOT confirmed by this
 measurement. 32 points are left until 19 Nov 2026 18:00 UTC; a repair and a second whole pass come out of them.
+AFTER THE VERDICT, THE SAME SESSION AT THE OWNER'S ORDER (item 33 of `02`, written to this session right after its RED report): it wrote
+`handoff_v12/OPUS_BUILD_PLAN.md`, `handoff_v12/STATE.json` and the proving machinery in `REALITY_ENGINE_HANDOFF/proving/` (outside the
+repo), proved each tool both ways (the plan's chapter 16 says on what, and what is NOT proven: a whole block through `accept_block.py`
+and `built_gate.py` on a real batch), and changed NO code and no test. THE GIT HOOKS ARE WRITTEN AND PROVEN (13 cases in a throwaway
+clone) BUT NOT INSTALLED IN THIS CHECKOUT: the app refused the session's `git config core.hooksPath` as a persistent change only the
+owner may make; he was given the one command. Until he runs it, laws L2, L3 and L6 of the plan rest on `next.py`'s guards and the audit.
+The first pass's verdict is on file as the machinery computes it - `proving/verdicts/V2d-b_60d9483_1.json`, RED, its logs archived under
+`proving/logs/V2d-b_60d9483_1/` and verified from them (`verdict.py --verify`); the judges' report of 22fb8fd..60d9483 lists 8 changes
+to the batch's own judges, all named in this record (`V2d-b_60d9483_judges.json`). The red note, its dump and the builder's hand-over
+note now also lie at their fixed place, `proving/notes/` (`V2d-b_RED_1.md`, `V2d-b_BUILT.md`). The week's Fable allowance when the plan
+was written: 73% used (about 16:20 UTC) - the prover's pass 14 points at most, the plan and its machinery 5.
 #### Step 7 TAKEAWAY - THE BUILDER'S DRAFT (the prover completes it; also Palace item `v2db.takeaway`)
 - WORKED: reading the provider's own page for the model the code already paid for - it found a licence nobody had read,
   and the finding shaped the whole design (one market, one rule). Measuring before setting a limit, three times: the
@@ -5165,8 +5193,30 @@ Rehearsal asserts `docs_current` ran and passed.
    of a result that has none and ends in `KeyError: 'master'` instead of an assertion that names the failed check
    (seen in the sweep's part C on EP209901010900). The ledger still names the check; the rehearsal's own last line
    does not.
+180. (the owner's item 33, 13 Nov 2026 - THE OPUS BUILD PLAN; said plainly) WHAT THE NEW ARRANGEMENT DOES NOT COVER. (a) The
+   verdict, the breaks, the judges' report and the hooks keep a builder honest about what is GREEN; none of them can tell whether
+   a DESIGN is the best one for a breakout - that rests on the designs already decided in the redesign, the plan's briefs, an
+   independent review by a second session of the SAME model, and a Fable audit that runs only when the owner opens it. (b) A
+   session that set out to cheat could write a verdict file by hand: the logs are archived and the audit recomputes every verdict
+   from them (`verdict.py --verify`); GitHub's run cannot be forged from here; the sweep has no such outside witness. (c)
+   `proving/accept_block.py` has not run a whole block yet in its present form and `proving/built_gate.py` has not met a real
+   batch (the plan's chapter 16): their first use is watched, and a failure of the tool is said as such, never as a verdict on
+   the code. (d) The app may refuse a session started by a session: then one tap or the word "continue" from the owner is
+   needed - the chain can stand still while he is away. (e) An Opus session cannot start a Fable session: the audit and a
+   Fable repair after three red rounds are always his click. (f) THE GIT HOOKS ARE NOT INSTALLED until the owner runs, once:
+   `git -C "C:/Users/rrahu/OneDrive/Desktop/REALITY_ENGINE_HANDOFF/reality-engine" config core.hooksPath "C:/Users/rrahu/OneDrive/Desktop/REALITY_ENGINE_HANDOFF/proving/hooks"`
+   (the app refused it to a session on 13 Nov 2026). Without them nothing STOPS a commit of code in a text phase, a false word
+   of acceptance in a subject line, or a push to main - the laws, `next.py` and the audit are then the only guards.
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
+- SINCE 13 NOV 2026 (the owner's item 33): the acceptance block, its verdict, the deliberate breaks and the moves of the state are
+  run through `REALITY_ENGINE_HANDOFF/proving/` exactly as `handoff_v12/OPUS_BUILD_PLAN.md` says (chapters 5.8, 5.9, 6, 8 and 16; the
+  first command of every session, from the handoff folder: `.venv/Scripts/python.exe proving/next.py`). The lines below are still true
+  and are what those scripts do; use them by hand only for a single file, a single id or a measurement. MEASURED on 13 Nov 2026:
+  a wait started as ONE background command of the session ran 43 and then 80 minutes and was not ended by the tool (the older note
+  below says about ten minutes: that was a command started in the foreground) - start a long run DETACHED and wait with
+  `proving/wait_block.py` in the background. The whole block on 60d9483 took 2 h 23 min (pre-check 35, three rehearsals 8, the
+  serial suite 61, the sweep 40).
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`
 - Suite: `bash ../shim/runall.sh . <outdir outside repo>` (~35 min; run it in the background). Some files: `bash ../shim/runseq.sh . <outdir> test_a test_b`.
 - Rehearsal: `WI_SMALL=1 WI_WORK=<dir outside repo> ../.venv/Scripts/python.exe -m whatifs.cli rehearsal > <log outside repo>` (~3 min); delete the work dir after.
