@@ -37,6 +37,20 @@ def fal_prices(ids):
     h = {"Authorization": f"Key {env('FAL_KEY')}"}
     return {p["endpoint_id"]: p for p in _get(f"{FAL}/models/pricing", [("endpoint_id", i) for i in ids[:50]], h).get("prices", [])}
 
+def fal_schema(endpoint_id):
+    """The model's whole OpenAPI document from fal's listing (no key needed), or None when the listing has none. Offline: a document that says what
+    the model's own row in CLIP_MODELS says (nothing is proven offline; the tests hand in their own documents)."""
+    if FAKE:
+        from whatifs import clips as CL
+        r = CL.row(endpoint_id) or {}; props = {"prompt": {"type": "string"}, str(r.get("start") or "image_url"): {"type": "string"},
+                                                "duration": {"type": "integer", "minimum": int(r.get("min_s") or 5), "maximum": int(r.get("max_s") or 5)}}
+        if r.get("res_field"): props[str(r["res_field"])] = {"type": "string", "enum": list((r.get("usd_s") or {}).keys())}
+        return {"components": {"schemas": {"Input": {"properties": props}}}}
+    h = {"Authorization": f"Key {env('FAL_KEY')}"} if env("FAL_KEY") else {}
+    j = _get(f"{FAL}/models", [("endpoint_id", endpoint_id), ("expand", "openapi-3.0")], h)
+    doc = next(((m.get("openapi") or None) for m in j.get("models", []) if m.get("endpoint_id") == endpoint_id), None)
+    return None if not isinstance(doc, dict) or doc.get("error") else doc
+
 def aa_ranking():
     key = env("AA_API_KEY")
     if FAKE or not key: return {}
@@ -56,8 +70,11 @@ def weekly(now=None):
             NT.send("scout_deprecated", "URGENT: a model the pipeline uses is " + ", ".join(f"{i} ({s})" for i, s in res["deprecated"])
                     + ". The Steward will fall back down the ladder; tell me if you want a replacement chosen now.",
                     [("OK", "OK")], tier="now", urgent=True, default="ok", expires_h=72, dedupe_key="dep|" + ",".join(i for i, _ in res["deprecated"]))
+        from whatifs import clips as CL
+        if CL.on():                                                            # v12 V2d: the listing's price is a BASE figure, wrong for our setting in four of five models read on 13 Nov 2026 -
+            res["clips"] = CL.review(now)                                      # it is watched (a move marks the row stale and tells the owner) and never written into the estimate
         hero = str(S("FAL_HERO_MODEL") or "")                                 # v11: the real price of our animated-scene model, from fal's pricing API
-        p = fal_prices([hero]).get(hero) if hero else None
+        p = fal_prices([hero]).get(hero) if (hero and not CL.on()) else None
         if p and str(p.get("unit", "")).lower().startswith("second"):
             real5 = round(float(p["unit_price"]) * 5, 4); cur = S("PRICE_KLING_USD", float)
             res["price_check"] = {"model": hero, "usd_per_5s": real5, "was": cur}

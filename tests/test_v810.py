@@ -289,8 +289,11 @@ def test_cap_is_4000_and_estimates_include_tts_and_thinking(setting):
     _legacy_budget(setting)
     assert core.DEFAULTS["BUDGET_CEILING_INR"][0] == "5000" and core.DEFAULTS["BUDGET_FLOOR_INR"][0] == "5000"      # v10: the owner's ₹5,000 (incl. ₹300 specials)
     assert not any("3,500" in v[1] and "was" not in v[1] for v in core.DEFAULTS.values())
-    base = G.min_episode_cost_inr(); assert G.voice_think_inr() == 90 + G.palace_prompt_inr() and G.palace_prompt_inr() == 15          # v8.11: THINK_EST_INR 30 -> 40; v12 B6a: + the Palace in the creative prompts
-    setting("TTS_ENGINE", "kokoro"); assert G.min_episode_cost_inr() == pytest.approx(base - 30)
+    from whatifs import costguard as CG                                              # v12 V2d: the voice, the thinking, the room's extra calls and the Palace are LINES of the one cost model
+    L = {l["key"]: l["inr"] for l in CG.lines("long")}; voice = CG.voice_inr(core.S("RUNTIME_MAX_SEC", float))
+    base = G.min_episode_cost_inr(); assert (L["thinking"], L["room_extras"], L["palace"]) == (40, 20, 15) and L["voice"] == pytest.approx(voice, abs=0.01) and G.palace_prompt_inr() == 15
+    assert voice == pytest.approx(2 * T.est_inr(core.S("RUNTIME_MAX_SEC", float)))                          # the narration and one re-take, by the second at the price of the day
+    setting("TTS_ENGINE", "kokoro"); assert G.min_episode_cost_inr() == pytest.approx(base - voice, abs=0.02)
     assert EP.est_cost_inr({"stills": 50, "living": 8, "kling": 3, "episode_id": "E"}) > 300
 
 def test_headroom_and_fourth_kling_only_when_it_fits(monkeypatch, setting):

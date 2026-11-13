@@ -67,10 +67,11 @@ def blend():
     return Blend(v, BLENDS.get(v, BLENDS["A"]))
 
 def est_cost_inr(d):
-    u = S("USD_INR", float)
-    return u * (d["stills"] * S("PRICE_STILL_USD", float) + G.premium_images() * S("PRICE_THUMB_USD", float) + d["living"] * S("PRICE_LIVING_USD", float)
-                + d["kling"] * S("PRICE_KLING_USD", float)) + S("LLM_EST_INR", float) + G.voice_think_inr() \
-        + (S("TABLE_READ_EXTRA_INR", float) if TR.active_arm(d.get("episode_id", ""))[0] == "on" else 0.0)
+    """v12 V2d: the estimate of THIS episode - the lines of the one cost model (costguard.lines) at its own tier. A video about a promoted Short
+    is its own kind (one scene and one start picture fewer, no hook lab); the table read is counted only where it runs."""
+    from whatifs import costguard as CG, opening as OPEN
+    kind = ("ladder" if OPEN.source(d)[0] == "short" else "long") if d.get("ladder") else G.long_kind()
+    return CG.total(CG.lines(kind, kling=d["kling"], stills=d["stills"], living=d["living"], table_read=TR.active_arm(d.get("episode_id", ""))[0] == "on"))
 
 def chapters(timeline, beats_at):
     ch = [("0:00", "Intro")]
@@ -791,6 +792,11 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     from whatifs.models import write_ai_summary
     write_ai_summary(ep)                                          # v8.11: measured vs estimated AI spend for this video (Cost_Log + Cache_Stats)
     from whatifs import costguard as CG
+    try:                                                          # v12 V2d: what this video really paid for pictures and clips against the lines of its estimate (one summary row in Cost_Log)
+        from whatifs import opening as _OP
+        _kind = ("ladder" if _OP.source(d)[0] == "short" else "long") if d.get("ladder") else "long"
+        CG.reconcile(ep, CG.lines(_kind, kling=d.get("kling"), stills=d.get("stills"), living=d.get("living")), _kind)
+    except Exception as e: log(f"cost lines not reconciled: {scrub(e)[:120]}", "WARN", ep)
     CG.ladder_mail(ep)                                            # v9: one email if the AI-side overrun ladder was used
     try:
         k = CG.kids_check(vid, ep)                                # v9: YouTube's own made-for-kids value (email at once if TRUE)

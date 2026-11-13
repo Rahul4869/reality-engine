@@ -120,7 +120,8 @@ def gemini_image(prompt, refs, path, ep, aspect="16:9"):
     """One picture from Google's image model with reference images. Returns path or raises."""
     if FAKE:
         from PIL import Image
-        Image.new("RGB", (1280, 720) if aspect == "16:9" else (720, 1280), (40, 30, 60)).save(path); return path
+        Image.new("RGB", (1280, 720) if aspect == "16:9" else (720, 1280), (40, 30, 60)).save(path)
+        cost("image_ref", "google", 1, 0.0, ep); return path          # v12 V2d: offline, what WOULD be paid is on record without a rupee (costguard.reconcile)
     import requests
     from whatifs.models import model
     mid = model("gem_image")

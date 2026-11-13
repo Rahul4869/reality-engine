@@ -144,7 +144,7 @@ def test_the_plan_is_an_animated_clip_in_every_second_and_ends_on_the_first_clip
         sc = good(fmt); t = tl(sc); pl = SH.plan(sc, t, fmt); shots = pl["shots"]
         assert shots[0]["start"] == 0.0 and shots[0]["src"] == "picture" and shots[-1]["end"] == pl["seconds"] == t["duration"]
         assert all(abs(a["end"] - b["start"]) < 0.011 for a, b in zip(shots, shots[1:])) and all(s["type"] == "kling" for s in shots)
-        assert all(0.5 < s["end"] - s["start"] <= SEAT.CLIP_S * SEAT.STRETCH_MAX + 0.01 for s in shots)
+        assert all(0.5 < s["end"] - s["start"] <= SEAT.clip_max() + 0.01 for s in shots) and SEAT.clip_max() == SEAT.CLIP_S * SEAT.STRETCH_MAX      # the older tests: 5-second clips, slowed (the clip market is tested in test_v12_money)
         assert shots[-1]["src"] == "loop" and shots[-1]["loop"] and shots[-1]["picture"] == shots[0]["picture"] and [s["src"] for s in shots].count("loop") == 1
         firsts = [s for i, s in enumerate(shots[:-1]) if i == 0 or s["beat"] != shots[i - 1]["beat"]]
         if FMT.SHORTS[fmt]["camera"] == "cut": assert all(s["src"] == "picture" for s in firsts) and len(firsts) == 3          # every beat opens on its own picture
@@ -338,7 +338,8 @@ def test_the_loop_is_closed_on_the_finished_file_and_an_open_loop_is_seen(monkey
             wd = str(tmp_path / (fmt + name)); os.makedirs(wd); monkeypatch.setattr(SH, "_reverse", fn)
             v = SH.voice(sc, "SHL1", wd); pl = SEAT.shape(SH.plan(sc, v["timeline"], fmt), sc, fmt); m = SH.make(sc, v, pl, "SHL1", wd)
             out[(fmt, name)] = m; assert m["clips"] == len(pl["shots"]) - 1                                   # the loop shot is no paid clip
-            if name == "closed": assert rev[-1] == ("c0.mp4", round(pl["shots"][-1]["end"] - pl["shots"][-1]["start"], 2))          # it IS the first clip, played backwards
+            lp = pl["shots"][-1]
+            if name == "closed": assert rev[-1] == ("c0.mp4", round((lp["end"] - lp["start"]) / SH.slow_of(lp), 2))          # it IS the first clip, played backwards: as many of its seconds as the loop shot plays (v12 V2d)
     for fmt in ("S1", "S3"):
         assert out[(fmt, "closed")]["loop_diff"] <= SH.LOOP_MAX < out[(fmt, "open")]["loop_diff"], {k: v["loop_diff"] for k, v in out.items()}
         assert SH.make_lessons(out[(fmt, "closed")]) == [] and SH.make_lessons(out[(fmt, "open")])[0][0] == "loop_open"          # an open loop is reported to the organisation

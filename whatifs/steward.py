@@ -48,6 +48,11 @@ def _price_ok(role, frm, cand_usd):
 def next_candidate(role, after=None):
     """The best usable ladder entry other than `after` that passes the price rule (ladder order = preference)."""
     frm = after or current(role)
+    if role == "hero":                                             # v12 V2d: the hero is picked by VALUE - the same rule that chose it (whatifs/clips.py), never a price ratio
+        from whatifs import clips as CL
+        if CL.on():
+            p = CL.choice(dead={frm} if frm else ())
+            return {"id": p["row"]["id"], "usd": CL.usd(p["row"], CL.SCENE_S)} if p and p["row"]["id"] != frm else None
     for e in ladders().get(role, []):
         mid = e.get("id")
         if mid == frm or not usable(mid): continue

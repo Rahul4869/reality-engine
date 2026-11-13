@@ -212,7 +212,8 @@ TIERS = (("full", 600, 52, 8), ("lean", 600, 48, 4), ("slim", 570, 44, 0), ("flo
 def tier_saving(tier, full=TIERS[0]):
     """Rupees a tier saves against the full tier (living stills, stills, a small share of the AI-writing cost for the shorter script)."""
     u = S("USD_INR", float)
-    return (u * ((full[2] - tier[2]) * S("PRICE_STILL_USD", float) + (full[3] - tier[3]) * S("PRICE_LIVING_USD", float))
+    from whatifs import media as MD                          # v12 V2d: a still at the price the code really pays (megapixels rounded up), as the cost lines count it
+    return (u * ((full[2] - tier[2]) * MD.still_usd(S("STILL_W", int), S("STILL_H", int)) + (full[3] - tier[3]) * S("PRICE_LIVING_USD", float))
             + S("LLM_EST_INR", float) * 0.15 * (full[1] - tier[1]) / max(1, full[1]))
 
 def plan_for_episode(est_full_inr, eps_left):
@@ -258,36 +259,103 @@ def premium_images():
     """Premium (key-art) images per long video: the thumbnail, + the B thumbnail of the packaging rescue (v12 V2c-b2b: no reel covers - a long video makes no cut-down reels)."""
     return 1 + (1 if S("PKG_RESCUE_ON", bool) else 0)
 
-def min_episode_cost_inr():
-    """Cheapest honest cost of ONE episode with the minimum Kling clips (used before an episode row is even created)."""
-    u = S("USD_INR", float)
-    usd = S("KLING_MIN_CLIPS", int) * S("PRICE_KLING_USD", float) + premium_images() * S("PRICE_THUMB_USD", float) + S("STILLS_MIN", int) * S("PRICE_STILL_USD", float)
-    extra = S("TABLE_READ_EXTRA_INR", float) if S("TABLE_READ_MODE").strip().lower() in ("on", "true", "yes", "1") else 0.0
-    return u * usd + S("LLM_EST_INR", float) + extra + voice_think_inr() + v91_extra_inr()
-
-def v91_extra_inr():
-    """v9.1: the small paid v9.1 lines per video (comment mining, AI drafts, the variety rewrite; their flags decide) so the budget sees them. 0 in safe mode."""
+def long_kind():
+    """Which long video the NEXT one is, for the estimate: 'ladder' = a promoted Short waits for it and it will open on that Short's footage (one
+    scene and one start picture fewer, no hook lab); else 'long' (an override, or the ladder off: it opens on its own pictures)."""
     try:
-        from whatifs import costguard as CG
-        return float(sum(CG.v91_lines().values()))
-    except Exception: return 0.0
+        from whatifs import ladder as LAD, opening as OP
+        return "ladder" if (LAD.on() and OP.on() and LAD.waiting() and not str(S("OWNER_NEXT_PREMISE") or "").strip()) else "long"
+    except Exception: return "long"
 
-def voice_think_inr():
-    """v8.10: the allowances the v8.9 estimate did not have: Gemini TTS (when it is the engine), model thinking tokens (billed as output) and the new
-    room calls (two premise judges, Immersion Director, Owner's Cut)."""
-    tts = S("TTS_EST_INR", float) if str(S("TTS_ENGINE") or "").strip().lower() == "gemini" else 0.0
-    return tts + S("THINK_EST_INR", float) + S("ROOM_EXTRA_EST_INR", float) + palace_prompt_inr()
+def min_episode_cost_inr():
+    """Cheapest honest cost of ONE episode with the minimum animated scenes (used before an episode row is even created). v12 V2d: the lines of
+    the one cost model (costguard.lines)."""
+    from whatifs import costguard as CG
+    return CG.total(CG.lines(long_kind(), kling=S("KLING_MIN_CLIPS", int), stills=S("STILLS_MIN", int), living=0))
 
 def palace_prompt_inr():
     """v12 B6a: the Palace playbook inside the creative model prompts (about 2,000 input tokens at the end of about 15 creative calls, outside the cached layers, plus the citations)."""
     return S("PALACE_PROMPT_EST_INR", float) if (S("ORG_PROMPT_INJECT", bool) and S("ORG_ON", bool) and S("PALACE_ON", bool)) else 0.0
 
-def full_episode_inr(kling=None):
-    """Honest cost of one FULL-tier episode at the current settings (pictures, clips, premium art, writing, table read, TTS, thinking)."""
-    u = S("USD_INR", float); k = S("KLING_CLIPS", int) if kling is None else kling; full = TIERS[0]
-    usd = k * S("PRICE_KLING_USD", float) + premium_images() * S("PRICE_THUMB_USD", float) + full[2] * S("PRICE_STILL_USD", float) + min(full[3], S("LIVING_STILLS", int)) * S("PRICE_LIVING_USD", float)
-    extra = S("TABLE_READ_EXTRA_INR", float) if S("TABLE_READ_MODE").strip().lower() in ("on", "true", "yes", "1") else 0.0
-    return u * usd + S("LLM_EST_INR", float) + extra + voice_think_inr() + v91_extra_inr()
+def full_episode_inr(kling=None, kind=None):
+    """Honest cost of one FULL-tier long video at the current settings. v12 V2d: the sum of the lines of the one cost model (costguard.lines) -
+    every paid second and call; kind None = the next long video's own kind (long_kind)."""
+    from whatifs import costguard as CG
+    return CG.total(CG.lines(kind or long_kind(), kling=kling))
+
+def short_inr():
+    """What one Short costs as the month's plan counts it: the estimate of each Short format, weighted by the formats' shares."""
+    from whatifs import costguard as CG, formats as FMT
+    sh = FMT.short_shares(); tot = sum(sh.values()) or 1
+    return sum(CG.total(CG.lines("short", fmt=f)) * w for f, w in sh.items()) / tot
+
+def _org_caps_inr():
+    """The monthly caps of the wired departments that think for money (their whole caps: the month's plan is made before anything is spent)."""
+    if budget_mode() == "runway": return 0.0
+    try:
+        from whatifs.org import runner as ORG, registry as REG
+        if not ORG.on(): return 0.0
+        caps = REG.caps(); res = S("RESEARCH_ON", bool)
+        return float(sum(float(caps[d]) for d in caps if d in REG.ENTRY and (res or d not in ("D2", "D3"))))
+    except Exception: return 0.0
+
+def month_room_inr():
+    """What a whole month has for production BEFORE anything is spent: the cap less the breakout fund (it has its own use), the maintenance
+    reserve, the owner's earmarks and the organisation's thinking caps."""
+    run = budget_mode() == "runway"
+    return (cap_inr() - breakout_fund_inr() - max(0.0, S("BUDGET_MAINT_RESERVE_INR", float)) - (0.0 if run else S("BUDGET_EARMARK_INR", float))
+            - (0.0 if run or not S("SPECIALS_ON", bool) else S("SPECIALS_EARMARK_INR", float)) - _org_caps_inr())
+
+def line_usd_s():
+    """THE LINE (v12 V2d): the highest price, in USD for one second of hero clip, at which the month's whole plan still fits - the long videos
+    with the safety margin, SHORTS_PER_MONTH Shorts, everything that is not a hero clip at its own price, and MONTH_RESERVE_INR kept free. The clip
+    market picks the best-ranked model at or under it (whatifs/clips.py). It does not depend on the PRICE of the model in use."""
+    from whatifs import costguard as CG, formats as FMT
+    u = S("USD_INR", float) or 99.0; m = S("BUDGET_SAFETY_MARGIN", float); n_long = max_long_videos(); n_short = max(0, S("SHORTS_PER_MONTH", int)) if S("SHORTS_TRACK_ON", bool) else 0
+    def split_of(L):
+        hero = next((l for l in L if l["key"] == "hero_clips"), None)
+        return (CG.total(L) - (hero["inr"] if hero else 0.0)), (float(hero["n"]) if hero else 0.0)
+    lo, ls = split_of(CG.lines("long")); sh = FMT.short_shares(); tot = sum(sh.values()) or 1; so = ss = 0.0
+    for f, w in sh.items():
+        o, s_ = split_of(CG.lines("short", fmt=f)); so += o * w / tot; ss += s_ * w / tot
+    secs = n_long * ls * m + n_short * ss
+    if secs <= 0: return 0.0
+    return max(0.0, (month_room_inr() - max(0.0, S("MONTH_RESERVE_INR", float)) - n_long * lo * m - n_short * so) / secs / u)
+
+def split(now=None):
+    """THE MONTH'S SPLIT as the money sees it NOW: what production may still spend, what the long videos still to come need (with the safety
+    margin), the part of MONTH_RESERVE_INR that belongs to the days left, what one Short costs - and how many Shorts FIT beside the long videos:
+    this month in all (`fit`) against what SHORTS_PER_MONTH asks (`plan`). `fits` False = the plan is larger than the money: the cadence makes
+    `fit` Shorts, spread over the month, and the owner is told once (split_tell)."""
+    import calendar
+    from whatifs import shorts2 as SH
+    now = now or now_utc(); days = calendar.monthrange(now.year, now.month)[1]; left_days = days - now.day + 1
+    plan = max(0, S("SHORTS_PER_MONTH", int)); made = SH.made_this_month(now)
+    long_left = max(0, min(episodes_left_this_month(), max_long_videos() - long_videos_this_month()))
+    need_long = long_left * full_episode_inr() * S("BUDGET_SAFETY_MARGIN", float)
+    reserve = max(0.0, S("MONTH_RESERVE_INR", float)) * left_days / days
+    room = production_room_inr(); one = max(1.0, short_inr())
+    more = max(0, int((room - need_long - reserve) // one))
+    fit = made + min(max(0, plan - made), more)
+    return {"room_inr": round(room, 0), "long_left": long_left, "long_inr": round(full_episode_inr(), 1), "need_long_inr": round(need_long, 0), "reserve_inr": round(reserve, 0),
+            "short_inr": round(one, 1), "made": made, "plan": plan, "fit": fit, "more": more, "fits": fit >= plan, "days_left": left_days,
+            "free_inr": round(room - need_long - reserve - max(0, fit - made) * one, 0)}
+
+def split_tell(now=None):
+    """Once a month, when fewer Shorts fit the money than SHORTS_PER_MONTH asks: one message with both numbers and why. True = sent now."""
+    now = now or now_utc(); mk = now.strftime("%Y-%m")
+    if not S("SHORTS_TRACK_ON", bool) or str(S("SPLIT_TOLD_MONTH") or "") == mk: return False
+    sp = split(now)
+    if sp["fits"]: return False
+    set_setting("SPLIT_TOLD_MONTH", mk)
+    try:
+        from whatifs import notify as NT
+        NT.send("split", f"This month's money pays {sp['fit']} Shorts, not the {sp['plan']} planned: a Short costs about Rs {sp['short_inr']:.0f}, the {sp['long_left']} long "
+                f"video(s) still to come keep Rs {sp['need_long_inr']:.0f}, and Rs {sp['room_inr']:.0f} is left for production. The Shorts are spread over the rest of the "
+                "month; no quality check was lowered. More Shorts need a cheaper clip model or a higher cap.", [("OK", "OK")], tier="week", default="ok", expires_h=24 * 6,
+                dedupe_key=f"split|{mk}")
+    except Exception as e: log(f"the owner was not told about the month's split: {str(e)[:100]}", "WARN")
+    return True
 
 def headroom():
     """v8.10: what is left this month after every remaining video is made at the full tier (+ the safety margin). Positive = room for more."""

@@ -50,7 +50,7 @@ def manifest(meta, wd):
         if pr["w"] <= 0 or pr["h"] <= 0 or pr["sec"] <= 0: raise RuntimeError(f"clip {name} cannot be read")
         clips[name] = {"sha": REL.sha(p), "w": pr["w"], "h": pr["h"], "sec": pr["sec"]}
         a, b = float(s["start"]), float(s["end"])
-        if b - a >= 0.05: track.append({"clip": name, "start": round(a, 3), "end": round(b, 3), "slow": round(SH._slow(b - a), 4)})
+        if b - a >= 0.05: track.append({"clip": name, "start": round(a, 3), "end": round(b, 3), "slow": round(SH.slow_of(s), 4)})      # v12 V2d: how the Short really played it - on its own plan since clips are bought by the second
     if not track: raise RuntimeError("the archive holds no clip of the Short's plan")
     units = (meta.get("timeline") or {}).get("units") or []
     hook = " ".join(re.sub(r"\[[^\]]*\]", " ", str((units[0] if units else {}).get("text") or "")).split())

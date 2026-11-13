@@ -18,9 +18,8 @@ def days_left(now=None):
 
 def short_inr():
     """What one more Short really costs: the Shorts Studio's own estimate, weighted by the shares of the Short formats (every second is a paid clip)."""
-    from whatifs import shorts2 as SH2, formats as FMT
-    sh = FMT.short_shares(); tot = sum(sh.values()) or 1
-    return sum(SH2.est_inr(f) * w for f, w in sh.items()) / tot
+    from whatifs import governor as G                          # v12 V2d: one arithmetic - the month's split counts a Short the same way (governor.short_inr)
+    return G.short_inr()
 
 def proposals(now=None):
     """What truly free money could buy: ONE more Short a week for the rest of the month (more topics tested with real viewers), up to

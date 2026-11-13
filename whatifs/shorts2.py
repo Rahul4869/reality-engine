@@ -45,11 +45,23 @@ def cadence(now=None):
     week = sum(1 for t in made if 0 <= (now - t).total_seconds() < 7 * 86400); month = sum(1 for t in made if t.strftime("%Y-%m") == now.strftime("%Y-%m"))
     if week >= per_w: return False, f"{week} of {per_w} Shorts were made in the last 7 days"
     if month >= per_m: return False, f"{month} of {per_m} Shorts were made this month"
-    if made and (now - max(made)).total_seconds() < gap_h() * 3600: return False, f"the last Short is {(now - max(made)).total_seconds() / 3600:.0f} hours old (they are made {gap_h()} hours apart)"
+    apart = float(gap_h())
+    if S("SPLIT_ON", bool):                                  # v12 V2d: the month's split - when the money pays fewer Shorts than SHORTS_PER_MONTH asks, that many are made,
+        from whatifs import governor as G                    # spread over the days left (before: three a week until the long slots' money would be touched, then none)
+        sp = G.split(now)
+        if not sp["fits"]:
+            if month >= sp["fit"]: return False, f"this month's money pays {sp['fit']} Shorts beside the long videos ({per_m} were planned) and {month} are made"
+            apart = max(apart, 24.0 * sp["days_left"] / max(1, sp["fit"] - month))
+    if made and (now - max(made)).total_seconds() < apart * 3600: return False, f"the last Short is {(now - max(made)).total_seconds() / 3600:.0f} hours old (they are made {apart:.0f} hours apart)"
     held = [t for t, h in mine if h]
     if held and (now - max(held)).total_seconds() < HELD_WAIT_H * 3600 and (not made or max(held) > max(made)):
         return False, f"a Short was held or failed {(now - max(held)).total_seconds() / 3600:.0f} hours ago (the next try comes {HELD_WAIT_H} hours after it)"
     return True, ""
+
+def made_this_month(now=None):
+    """How many Shorts of the cadence were MADE this calendar month (a follow-up of a winner is outside the cadence)."""
+    now = now or now_utc(); mk = now.strftime("%Y-%m")
+    return sum(1 for r in _rows() if not _followup(r) and _made(r) and parse_iso(r.get("ts")) and parse_iso(r["ts"]).strftime("%Y-%m") == mk)
 
 def _order_premise(q):
     st = store(); key = q.get("video_key")
@@ -139,13 +151,12 @@ def _still_size():
     """A vertical 9:16 picture as large as the long side of the long video's stills (multiples of 16)."""
     h = S("STILL_W", int) // 16 * 16; return int(h * 9 / 16) // 16 * 16, h
 
-def est_inr(fmt):
-    """What one Short of this format costs, said BEFORE anything is paid: every second but the loop's is a paid clip of the hero model."""
-    from whatifs import media as MD
-    fx = S("USD_INR", float) or 92.0; lo, hi = FMT.short_len(fmt); sec = (lo + hi) / 2; nb = max(1, len(FMT.SHORTS[fmt]["beats"]) - 1)
-    clips = nb * max(1, math.ceil(max(0.0, sec - SEAT.CLIP_S) / nb / (SEAT.CLIP_S * SEAT.STRETCH_MAX) - 1e-6))          # the last beat is the loop: the first clip again, free
-    pictures = nb if FMT.SHORTS[fmt]["camera"] == "cut" else 1
-    return round(clips * S("PRICE_KLING_USD", float) * fx + pictures * MD.still_usd(*_still_size()) * fx + S("REPLAN_SHORT_INR", float), 1)
+def est_inr(fmt, pl=None):
+    """What one Short of this format costs, said BEFORE anything is paid: every second but the loop's is a paid clip of the hero model. v12 V2d: the
+    sum of the Short's lines in the one cost model (costguard.lines) - the hero seconds, the pictures, the writing, the voice by the second; with
+    `pl` (its real plan, once the voice exists) the exact seconds its clips will buy."""
+    from whatifs import costguard as CG
+    return round(CG.total(CG.lines("short", fmt=fmt, shots=(pl or {}).get("shots"), seconds=(pl or {}).get("seconds"))), 1)
 
 # ------------------------------------------------------------------ D14 write: three scripts in the format, judged blind, one fix
 def valid(sc):
@@ -225,18 +236,29 @@ def plan(sc, tl, fmt):
     for i, l in enumerate(lines):                                            # where each beat begins on the real timeline (the voice job makes one unit per sentence)
         starts.append(0.0 if i == 0 else float(units[min(k, len(units) - 1)]["start"]) if units else 0.0)
         k += len(parse_script(f"[{FMT.SHORT_VOICE}] {l}"))
-    cam = FMT.SHORTS[fmt]["camera"] if fmt in FMT.SHORTS else "cut"; C = SEAT.CLIP_S * SEAT.STRETCH_MAX          # the longest shot one clip can cover
-    loop_at = round(min(max(starts[-1] if len(starts) > 1 else 0.0, total - C), max(0.0, total - 1.5)), 2)      # the loop shot: the last beat, or its last seconds when it is long
-    bounds = starts + [total]; shots = []
+    from whatifs import clips as CL
+    cam = FMT.SHORTS[fmt]["camera"] if fmt in FMT.SHORTS else "cut"; C = SEAT.clip_max()          # the longest shot one clip can cover
+    bounds = starts + [total]
+    first = bounds[1] - bounds[0] if len(bounds) > 1 else total; first = first / max(1, math.ceil(first / C - 1e-6))      # how long the first clip is on screen ...
+    back = min(C, float(CL.buy(first)[1])) if CL.hero() else C          # ... and how much of it can return as the loop: no more than was bought of it (v12 V2d: nothing is slowed)
+    loop_at = round(min(max(starts[-1] if len(starts) > 1 else 0.0, total - back), max(0.0, total - 1.5)), 2)      # the loop shot: the last beat, or its last seconds when it is long
+    shots = []
     def pic(i): return str(beats[i].get("picture") or lines[i]).strip() if i < len(beats) else ""
+    def paid(sec):
+        """What is BOUGHT for a shot of `sec` seconds and how it is played: clips by the second = the whole seconds the shot needs at its own speed;
+        the older way = a 5-second clip, played slower when the shot is longer."""
+        n = CL.buy(sec)[1]; return {"buy": n, "slow": round(max(1.0, sec / n), 4)}
     for bi in range(len(lines)):
         a = bounds[bi]; b = min(bounds[bi + 1], loop_at)
         if b - a < 0.05: continue
         n = max(1, math.ceil((b - a) / C - 1e-6)); step = (b - a) / n
         for j in range(n):
             src = "picture" if (not shots or (j == 0 and cam == "cut")) else "chain"
-            shots.append({"i": len(shots), "beat": bi, "type": "kling", "src": src, "start": round(a + j * step, 2), "end": round(a + (j + 1) * step, 2), "picture": pic(bi)})
-    if shots: shots.append({"i": len(shots), "beat": len(lines) - 1, "type": "kling", "src": "loop", "loop": True, "start": shots[-1]["end"], "end": total, "picture": pic(0)})
+            shots.append(dict({"i": len(shots), "beat": bi, "type": "kling", "src": src, "start": round(a + j * step, 2), "end": round(a + (j + 1) * step, 2), "picture": pic(bi)}, **paid(step)))
+    if shots:
+        ln = total - shots[-1]["end"]; have = float(shots[0]["buy"])          # the loop is the FIRST clip played backwards: as many of its bought seconds as the loop shot needs
+        shots.append({"i": len(shots), "beat": len(lines) - 1, "type": "kling", "src": "loop", "loop": True, "start": shots[-1]["end"], "end": total, "picture": pic(0),
+                      "buy": 0, "slow": round(max(1.0, ln / max(0.1, min(ln, have))), 4)})
     return {"format": fmt, "seconds": total, "shots": shots, "captions": {"on": True, "margin": S("REEL_CAPTION_MARGIN_PCT", float)},
             "promise": {"text": " ".join(str(sc.get("promise") or "").split()), "at": 0.0}}
 
@@ -258,13 +280,15 @@ def _frame_at(clip, t, out):
     if not ok: raise RuntimeError("the clip before has no readable frame to continue from")
     cv2.imwrite(out, fr); return out
 
-def _slow(sec):
-    """How much slower a clip is played to cover a shot of `sec` seconds (1.0 = as made)."""
-    return max(1.0, float(sec) / SEAT.CLIP_S)
+def slow_of(shot):
+    """How much slower a shot's clip is played than it was made (1.0 = as made). v12 V2d: the plan says it on every shot (`slow`); a Short planned
+    before clips were bought by the second has no such field - its clips were 5 seconds long and slowed to cover the shot."""
+    sec = float(shot.get("end") or 0) - float(shot.get("start") or 0)
+    return float(shot["slow"]) if shot.get("slow") else max(1.0, sec / SEAT.CLIP_S)
 
 def _reverse(src, out, sec):
-    """The first seconds of the first clip, played backwards (as many as the loop shot needs): it ENDS on the Short's first frame."""
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-t", f"{min(sec, SEAT.CLIP_S):.3f}", "-i", src, "-vf", f"fps={FPS},reverse", "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", out],
+    """The first `sec` seconds of the first clip, played backwards: it ENDS on the Short's first frame."""
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-t", f"{sec:.3f}", "-i", src, "-vf", f"fps={FPS},reverse", "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", out],
                    check=True, timeout=300)
     return out
 
@@ -325,15 +349,16 @@ def make(sc, v, pl, ep, wd):
     loop shot is the first clip played backwards (free); captions and the promise text are burned in; no plate at either end. Returns
     {path, seconds, clips, pictures, loop_diff, cover}."""
     from whatifs import specials as SP, media as MD
-    W, H = SP._vsize(); sw, sh = _still_size(); shots = pl["shots"]; clips = []; paid = pics = 0
+    W, H = SP._vsize(); sw, sh = _still_size(); shots = pl["shots"]; clips = []; paid = pics = paid_s = 0
     for s in shots:
         clip = os.path.join(wd, f"c{s['i']}.mp4"); sec = float(s["end"]) - float(s["start"])
-        if s.get("src") == "loop": _reverse(clips[0], clip, sec)
+        if s.get("src") == "loop": _reverse(clips[0], clip, sec / slow_of(s))
         else:
-            img = os.path.join(wd, f"f{s['i']}.png")
+            img = os.path.join(wd, f"f{s['i']}.png"); prev = shots[s["i"] - 1] if s["i"] else None
             if s.get("src") == "picture" or not clips: MD.still(_picture_prompt(s.get("picture") or ""), img, ep, seed=f"{ep}|{s['i']}", w=sw, h=sh); pics += 1
-            else: _frame_at(clips[-1], min(SEAT.CLIP_S, float(shots[s["i"] - 1]["end"]) - float(shots[s["i"] - 1]["start"])), img)
-            MD.animate(None, img, _motion_prompt(s.get("picture") or "", s.get("src")), clip, ep, hero=True); paid += 1
+            else: _frame_at(clips[-1], (float(prev["end"]) - float(prev["start"])) / slow_of(prev), img)      # the frame the clip before was showing when its shot ended
+            MD.animate(None, img, _motion_prompt(s.get("picture") or "", s.get("src")), clip, ep, hero=True, seconds=sec); paid += 1      # v12 V2d: bought as long as its shot
+            paid_s += int(s.get("buy") or SEAT.CLIP_S)
         clips.append(clip)
     tl = v["timeline"]; total = float(pl["seconds"])
     ass = _ass(tl, os.path.join(wd, "captions.ass"), str((pl.get("promise") or {}).get("text") or ""), W, H, float((pl.get("captions") or {}).get("margin") or SEAT.CAPTION_MIN))
@@ -349,7 +374,7 @@ def make(sc, v, pl, ep, wd):
     for k, (s, c) in enumerate(zip(shots, clips)):
         inputs += ["-i", c]
         sec = float(s["end"]) - float(s["start"])
-        filt.append(f"[{k}:v]setpts={_slow(sec):.4f}*PTS,scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1,fps={FPS},tpad=stop_mode=clone:stop_duration=6,"
+        filt.append(f"[{k}:v]setpts={slow_of(s):.4f}*PTS,scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1,fps={FPS},tpad=stop_mode=clone:stop_duration=6,"
                     f"trim=0:{sec:.3f},setpts=PTS-STARTPTS,format=yuv420p[v{k}]")
     filt.append("".join(f"[v{k}]" for k in range(len(clips))) + f"concat=n={len(clips)}:v=1:a=0[body]")
     filt.append(f"[body]ass={ass}:fontsdir={fd}[vout]")
@@ -359,10 +384,10 @@ def make(sc, v, pl, ep, wd):
     cov = ""
     try: cov = cover(os.path.join(wd, "f0.png"), str((pl.get("promise") or {}).get("text") or sc.get("title") or ""), os.path.join(wd, "cover.jpg"))
     except Exception as e: log(f"the cover of Short {ep} was not drawn ({scrub(e)[:100]}): the platforms pick a frame", "WARN", ep)
-    return {"path": out, "seconds": round(total, 2), "clips": paid, "pictures": pics, "loop_diff": _loop_diff(out), "cover": cov}
+    return {"path": out, "seconds": round(total, 2), "clips": paid, "paid_s": paid_s, "pictures": pics, "loop_diff": _loop_diff(out), "cover": cov}
 
 def m_make(r):
-    return {k: (r or {}).get(k, 0) for k in ("seconds", "clips", "pictures", "loop_diff")}
+    return {k: (r or {}).get(k, 0) for k in ("seconds", "clips", "paid_s", "pictures", "loop_diff")}
 
 def make_lessons(r):
     """What the Shorts Studio must learn from a finished Short: a loop that did not close is reported as a failure of its own (the plan asked for it)."""
@@ -439,7 +464,17 @@ def run(force=False, publish=True, now=None, episode_id=None):
                 log(f"Short {ep} ({fmt}) HELD at the short gate, not made, no picture paid: " + "; ".join(f"{f}: {str(e)[:90]}" for f, e in g["failed"][:4]), "WARN", ep)
                 if brk: LAD.order_tried(topic["follow_of"], "held at the short gate (" + ", ".join(failed) + ")", now)
                 return {"ok": False, "held": True, "id": ep, "kind": "short", "format": fmt, "failed": failed, "premise": topic["premise"]}
+            est2 = est_inr(fmt, pl)                                  # v12 V2d: the plan exists - the exact seconds its clips will buy are known BEFORE any picture is paid
+            if est2 > est + 0.05:
+                ok, why = G.extras_allowed(est2, kind="breakout") if brk else _budget_ok(est2)
+                if not ok:
+                    store().append("Specials", [dict(rec, status=("FAILED (money: " + str(why)[:80] + ")")[:120])])
+                    if brk: LAD.order_tried(topic["follow_of"], f"no money for its plan ({str(why)[:100]})", now)
+                    log(f"Short {ep}: its plan costs Rs {est2:.0f} (Rs {est:.0f} was estimated) and the month cannot pay it - not made, no picture paid ({why})", "WARN", ep)
+                    return {"ok": False, "skipped": "budget", "why": why, "id": ep}
             made = ORG.work("D14", "make", ep, lambda b: make(sc, v, pl, ep, wd), measure=m_make, lesson=make_lessons)
+            from whatifs import costguard as CG
+            CG.reconcile(ep, CG.lines("short", fmt=fmt, shots=pl["shots"], seconds=pl.get("seconds")), "short " + fmt)      # what was really paid against the lines said before
         out = made["path"]
         footage = LAD.keep(ep, wd, sc, pl, v["timeline"])          # v12 V2c-b: what the Short was made of is kept - the opening of the long video its topic may earn
         BR.tag(ep, "short", title=sc["title"], premise=topic["premise"], hook=arch, sec=made["seconds"], lead=fmt, origin=topic.get("origin", "ai"),

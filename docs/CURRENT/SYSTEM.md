@@ -8,9 +8,9 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Money: hard cap Rs 5,000 a month, everything included (`BUDGET_CEILING_INR`); extras pause at 90% of the cap; breakout fund carries over at most Rs 1,000. One month can be overridden in `MONTH_CAP_OVERRIDES`.
 - Quality: 60 HARD contract checks (36 at the script stage and 18 on the final video of an episode, 5 at the short gate of a standalone Short and 1 at its release gate, after the uploads). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway); a held Short is simply not made; a release row a platform did not keep is a problem memo to Publishing (the Short is public by then). No upload below Breakout Score 80.
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
-- Animated scenes: 4 per long video on `fal-ai/kling-video/o3/standard/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
+- Animated scenes: 4 per long video on `heygen/heygen-video/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 3 standalone Shorts a week, 12 a month at most - every topic starts as a Short and the promote rule picks the long video's topic (`whatifs/ladder.py`); spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 124 code modules, 765 settings, 84 Sheet tabs, 24 GitHub workflows.
+- Size: 125 code modules, 773 settings, 84 Sheet tabs, 24 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -39,8 +39,8 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Retired concepts (16 rules). Naming one in a current doc, a module docstring or a prompt fails Plan Guard, the tests and check `docs_current`:
   - `brand_what_ifs`: the brand is Reality Engine and the show is Reality on Trial.
   - `old_month_cap`: the cap is Rs 5,000 a month all-in (November 2026 only: Rs 5,226).
-  - `kling_v3_path`: the hero clip model id is fal-ai/kling-video/o3/standard/image-to-video (Kling 3.0 Standard).
-  - `kling_25_hero`: the hero clip model is Kling 3.0 Standard; older Kling models exist only as fallback rungs of MODEL_LADDERS.
+  - `kling_v3_path`: the hero clip model is the cell FAL_HERO_MODEL, picked by value from the table CLIP_MODELS (whatifs/clips.py); that old path was never a model fal lists.
+  - `kling_25_hero`: the hero clip model is picked by value from the table CLIP_MODELS (whatifs/clips.py): the best-ranked model the month's plan can pay; older Kling models exist only as fallback rungs of MODEL_LADDERS.
   - `table_read_room`: the writers' room is v2 (diverse drafts + blind cross-family jury + one checklist revision); the table read belongs to the optional room v1.
   - `life_layer_active`: the breathing warp is OFF (measured ineffective); the world particle layer replaced it.
   - `technique_library_core`: Technique_Library is the outlier-video library; the learning core uses Technique_Evidence.
@@ -50,7 +50,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
   - `kernel_rule_number`: the numbered kernel rules are history; current rules are the checks listed in docs/CURRENT/ENFORCEMENT_MATRIX.md.
   - `old_version_tag`: current docs describe what the code does now, without the history of versions 7 to 10.
   - `old_long_cadence`: the plan is 4 long videos a month, one a week (STANDARD_MAX_LONG_PER_MONTH, PUBLISH_DAYS); lines for viewers say 'every week'.
-  - `no_kling_statement`: every long video has animated Kling scenes (ANIM_SHOTS) plus the ffmpeg/OpenCV render.
+  - `no_kling_statement`: every long video has animated scenes of the hero clip model (ANIM_SHOTS) plus the ffmpeg/OpenCV render.
   - `daily_shorts_cadence`: the Shorts cadence is set in weeks: SHORTS_PER_WEEK (3) and SHORTS_PER_MONTH (12); every topic starts as a Short (whatifs/ladder.py).
   - `cutdown_reels`: a long video makes no cut-down reels: the channel's short videos are the standalone Shorts (whatifs/shorts2.py), each sent through whatifs/release.py; the pull from a Short to its long video is the related-video link, set by hand.
 - Every Settings cell must be read by code. 8 cells are read by NO code (their notes start with 'NOT ACTIVE'); changing one changes nothing. The list may only shrink (limit 8); a new unread cell fails Plan Guard, the tests and check `docs_current`:
@@ -189,7 +189,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | setting | default | meaning |
 |---|---|---|
 | ART_STYLE | toybox_noir | the look of animated scenes, masters and the intro: toybox_noir (owner-approved 9 Nov 2026), photoreal (matches the first locked portraits) or illustrated. STYLE words only; faces and costumes always come from Characters.visual |
-| FAL_HERO_MODEL | fal-ai/kling-video/o3/standard/image-to-video | animated scenes (Kling 3.0 Standard on fal, $0.084/s audio off = $0.42 per 5 s; the Steward falls back along MODEL_LADDERS) |
+| FAL_HERO_MODEL | heygen/heygen-video/image-to-video | the hero clip model: every second of a Short and the animated scenes of a long video (v12 V2d: picked by value from the table CLIP_MODELS - the best-ranked model the month's plan can pay, bought by the second; whatifs/clips.py makes the pick again every week and the Model Steward switches and tells you) |
 | FAL_STILL_MODEL | fal-ai/flux/schnell | cheap stills |
 | ANIM_SHOTS | 4 | animated scenes per long video (~20 s) |
 | PARTICLES_ON | TRUE | world particle layer on every still (dust in court/case, embers in the lab, rain in the office, wind outdoors) - independent motion that reads as alive |
@@ -385,6 +385,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | whatifs/charts.py | Charts as PNG images for WhatsApp and the digests (real numbers only; no data = no chart). |
 | whatifs/checkpoint.py | Saves and restores an episode's expensive state (plan, assets) in the owner's Drive so a retry never pays twice. |
 | whatifs/cli.py | Entry point for every GitHub workflow: python -m whatifs.cli <command>. |
+| whatifs/clips.py | The clip market (D6): the clip models as the provider's own pages state them, the rule that picks the best-ranked model the month's plan can pay, the request built from a model's row, and clips bought and priced by the second. |
 | whatifs/community.py | The jury outside the video: the in-character jury comment, the keyword-parsed jury tally and viewer finds fed to the next episode. |
 | whatifs/contract.py | Feature Contract: every promised feature is a named HARD check at a stage, judged from real evidence; a FAIL holds the episode and sends the owner a decision message. |
 | whatifs/core.py | Settings, storage (Google Sheet or local rehearsal store), logging, cost log and Google sign-in. |

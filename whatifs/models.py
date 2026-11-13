@@ -343,7 +343,8 @@ class CacheManager:
 def ai_estimate_inr():
     """The per-video AI-writing allowance the budget plans with (to compare with the measured spend in Cache_Stats / Cost_Log)."""
     from whatifs.core import S as _S
-    tr = _S("TABLE_READ_EXTRA_INR", float) if str(_S("TABLE_READ_MODE") or "").strip().lower() in ("on", "true", "yes", "1") else 0.0
+    from whatifs import costguard as _CG
+    tr = _S("TABLE_READ_EXTRA_INR", float) if _CG.table_read_runs() else 0.0          # v12 V2d: only where the table read RUNS (never under ROOM_MODE v2)
     return _S("LLM_EST_INR", float) + _S("THINK_EST_INR", float) + _S("ROOM_EXTRA_EST_INR", float) + tr
 
 def write_ai_summary(episode):

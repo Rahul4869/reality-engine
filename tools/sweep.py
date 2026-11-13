@@ -82,6 +82,21 @@ def release_of(core, ep, r):
     if [k for k in kinds if k != "short"]: bad.append(f"a short video went out that is not a standalone Short: {kinds}")
     return (not bad), ("; ".join(bad) if bad else "no cut-down made or uploaded; released in one step" + (f"; short videos out: {len({x.get('id') for x in st.rows('Release_Sheet')})} standalone Short(s)" if kinds else ""))
 
+def money_of(core, ids):
+    """v12 V2d: (ok, words) - THE SWEEP WALKS THE MONEY. For every id made in this run (a long video and the Short it climbed from; a Short and the one
+    before it) the cost model's summary row must exist on tab Cost_Log and say: no picture or clip was paid that the estimate has no line for, and no
+    counted line (the seconds of hero clip, the start pictures, the key art) was exceeded."""
+    rows = {r.get("episode_id"): r for r in core.store().rows("Cost_Log") if r.get("item") == "cost_lines_summary"}; bad = []; said = []
+    for i in ids:
+        r = rows.get(i)
+        if not r: bad.append(f"{i}: no estimate was set against what was paid"); continue
+        try: kind, _, body = str(r.get("role") or "").partition(": "); j = json.loads(body)
+        except ValueError: bad.append(f"{i}: the summary row cannot be read"); continue
+        if j.get("unlisted"): bad.append(f"{i}: paid with no line in the estimate: {', '.join(j['unlisted'])}")
+        if j.get("over"): bad.append(f"{i}: more paid than estimated: {'; '.join(j['over'])}")
+        hero = (j.get("paid") or {}).get("hero_clip", 0); said.append(f"{i} ({kind}): {hero:g} of {(j.get('lines') or {}).get('hero_clip', 0):g} estimated seconds of hero clip, Rs {float(r.get('est_inr') or 0):.0f} estimated")
+    return (not bad), ("; ".join(bad) if bad else "every paid picture and clip had its line: " + "; ".join(said))
+
 # ------------------------------------------------------------------ one id (runs in its own process: module state never leaks between ids)
 def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
     os.environ.update(WI_FAKE="1", WI_SMALL="1", WI_WORK=os.path.join(work, "work"), PYTHONUTF8="1")
@@ -127,6 +142,9 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
                 said = SPW.approve(ep); r = dict(r, **next((x for x in core.store().rows("Specials") if x.get("id") == ep), {}))
                 if not str(said).startswith("posted"): late.append(f"the approved Short did not go out: {str(said)[:120]}")
             okr, whyr = REL.report(ep) if r.get("ok") else (False, "not made")
+            if r0.get("ok") and r.get("ok"):                                             # v12 V2d: THE SWEEP WALKS THE MONEY - both Shorts' estimates against what their runs paid
+                ok_m, res["money"] = money_of(core, [r0["id"], ep])
+                if not ok_m: late.append("the cost model: " + res["money"][:240])
             res["problems"] = [f"the first Short: {x}" for x in (r0.get("failed") or ([r0.get("why")] if not r0.get("ok") else []))] + [str(x) for x in (r.get("failed") or [])] + late + ([] if okr or not r.get("ok") else [f"release sheet: {whyr[:200]}"])
             if r0.get("ok") and r.get("ok") and os.path.exists(str(r.get("path") or "")) and okr and not late and r.get("status") == "POSTED":
                 res["outcome"] = "ok"; res["short"] = f"{r0.get('format')}>{r.get('format')}"; res["release"] = ("approved:" if approve else "") + "+".join(x["state"] for x in REL.records(ep))
@@ -156,6 +174,9 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
             if res["outcome"] == "ok":                                              # v12 V2c-b2b: THE SWEEP WALKS THE RELEASE - no cut-down reel, one step to LIVE, nothing short out but the Shorts
                 ok_r, res["release"] = release_of(core, ep, r)
                 if not ok_r: res["outcome"] = "odd"; res["problems"].append("cut-downs or the release step: " + res["release"]); res["error"] = res["release"][:300]
+            if res["outcome"] == "ok":                                              # v12 V2d: THE SWEEP WALKS THE MONEY - the long video's estimate (and its Short's) against what the runs really paid
+                ok_m, res["money"] = money_of(core, [ep] + (["SH" + ep[2:]] if res.get("ladder") == "climbed" else []))
+                if not ok_m: res["outcome"] = "odd"; res["problems"].append("the cost model: " + res["money"]); res["error"] = res["money"][:300]
         res.update(evidence(core, ep, org))
     except BaseException as e:                                                      # a crash is a result too: the last line of the traceback names it
         if isinstance(e, KeyboardInterrupt): raise
@@ -226,7 +247,8 @@ def summary(results):
         for k in r.get("owner", []): own.setdefault(k, []).append(r["id"])
         for b in r.get("runs_bad", []) + r.get("memos_open", []): fails.setdefault("org:" + b, []).append(r["id"])
     return {"n": len(results), "outcomes": by, "opened_on_footage": sum(1 for r in results if r.get("opening") and r["outcome"] == "ok"),
-            "released_without_cutdowns": sum(1 for r in results if str(r.get("release") or "").startswith("no cut-down") and r["outcome"] == "ok"), "bad_ids": sorted(r["id"] for r in results if r["outcome"] != "ok"), "fail_classes": {k: sorted(set(v)) for k, v in sorted(fails.items())},
+            "released_without_cutdowns": sum(1 for r in results if str(r.get("release") or "").startswith("no cut-down") and r["outcome"] == "ok"),
+            "money_agreed": sum(1 for r in results if str(r.get("money") or "").startswith("every paid picture") and r["outcome"] == "ok"), "bad_ids": sorted(r["id"] for r in results if r["outcome"] != "ok"), "fail_classes": {k: sorted(set(v)) for k, v in sorted(fails.items())},
             "warn_classes": {k: len(v) for k, v in sorted(warn.items())}, "degraded_classes": {k: len(v) for k, v in sorted(deg.items())}, "owner_message_kinds": {k: len(v) for k, v in sorted(own.items())}}
 
 def main(argv=None):

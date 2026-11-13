@@ -3,17 +3,115 @@ from __future__ import annotations
 import json
 from whatifs.core import S, log, store, iso, now_utc, month_spend, set_setting, JOB
 
-# ---------------------------------------------------------------- estimator (per video, INR)
+# ---------------------------------------------------------------- the cost model: ONE table of lines (v12 V2d)
+TEXT = ("text:", "vision", "batch")          # what the writing lines stand for in the paid-call counter: every text call, vision check and batch submission
+
+def _line(key, what, n, unit_inr, stage, unit="", item=None, calls=None):
+    return {"key": key, "what": what, "n": n, "unit": unit, "unit_inr": round(float(unit_inr), 4), "inr": round(float(n) * float(unit_inr), 2), "stage": stage,
+            "item": item, "calls": dict(calls or {})}
+
+def total(L): return round(sum(l["inr"] for l in L), 2)
+
+def table_read_runs(arm_on=None):
+    """Does the table read (the objections round and the Director's read) really RUN? Only in the older writers' room: under ROOM_MODE v2 the room
+    switches it off for every episode, so its allowance is money for calls that are never made."""
+    if str(S("ROOM_MODE") or "v1").strip().lower() == "v2": return False
+    return str(S("TABLE_READ_MODE") or "").strip().lower() in ("on", "true", "yes", "1") if arm_on is None else bool(arm_on)
+
+def voice_inr(seconds):
+    """The voice of `seconds` of narration at the price of the day, the re-takes of TTS_RETAKES included (0 when the engine is not the paid one)."""
+    if str(S("TTS_ENGINE") or "").strip().lower() != "gemini": return 0.0
+    from whatifs import tts_gemini as T
+    return T.est_inr(float(seconds)) * (1 + max(0, S("TTS_RETAKES", int)))
+
+def short_shots(fmt):
+    """(paid hero clips, seconds each clip covers, pictures, seconds of the Short) for a Short of this format BEFORE it is written: the middle of the
+    format's band; a beat longer than one clip can cover is split. With clips bought by the second EVERY beat is counted as paid: the loop (the
+    first clip again, free) is no longer than that first clip, so part of the last beat is usually a paid clip too - the estimate may only err
+    upward (the first whole Shorts showed it: a plan bought 23 seconds where 'the last beat is free' had said 21)."""
+    import math
+    from whatifs import formats as FMT, clips as CL
+    lo, hi = FMT.short_len(fmt); sec = (lo + hi) / 2; beats = max(2, len(FMT.SHORTS[fmt]["beats"])); cut = FMT.SHORTS[fmt]["camera"] == "cut"
+    if CL.hero(): per = sec / beats; nb = beats
+    else: nb = beats - 1; per = max(0.0, sec - CL.OLD_CLIP_S) / nb      # the older way: 5-second clips, the loop is one of them and the last beat is free
+    each = max(1, math.ceil(per / CL.longest() - 1e-6))
+    return nb * each, per / each, (nb if cut else 1), sec
+
+def lines(kind="long", kling=None, stills=None, living=None, table_read=None, fmt=None, shots=None, seconds=None):
+    """THE estimate: every paid second and call of one video as a line - {key, what, n, unit, unit_inr, inr, stage, item, calls}. `n` times the price
+    cell is the line; `item` is the Cost_Log item that pays it (reconcile); `calls` is what the paid-call counter must see for it. Kinds: 'long' (a
+    long video that opens on its own pictures: an override, or the ladder off), 'ladder' (a long video about a promoted Short: its opening is that
+    Short's footage, already paid - one scene and one start picture fewer, no hook lab), 'short' (fmt = its Short format; shots = its real plan once
+    it exists; seconds = its real length). Every gate reads this one table (governor, episode, shorts2)."""
+    from whatifs import governor as G, clips as CL, media as MD
+    u = S("USD_INR", float); hero_inr = CL.hero_usd_s() * u
+    if kind == "short":
+        from whatifs import shorts2 as SH
+        if shots is not None:
+            paid = [s for s in shots if s.get("src") != "loop"]; n_clips = len(paid); pics = sum(1 for s in paid if s.get("src") == "picture") or (1 if paid else 0)
+            hero_s = sum(int(s.get("buy") or CL.buy(float(s["end"]) - float(s["start"]))[1]) for s in paid)
+            sec = float(seconds or (shots[-1]["end"] if shots else 0))
+        else:
+            n_clips, per, pics, sec = short_shots(fmt); hero_s = CL.paid_s(per, n_clips)
+        n_var = max(1, S("SHORTS_VARIANTS", int))
+        return [_line("hero_clips", "every second of the Short but the loop's: clips of the hero model", hero_s, hero_inr, "visuals", "s", "hero_clip", {"clip_kling": n_clips}),
+                _line("pictures", "the start picture of each beat", pics, MD.still_usd(*SH._still_size()) * u, "visuals", "", "image", {"image": pics}),
+                _line("writing", f"{n_var} scripts, the blind jury, one fix", 1, S("REPLAN_SHORT_INR", float), "ai_writing", "", None, {"text:short_writer": n_var + 1}),
+                _line("voice", "the guide's voice, by the second", 1, voice_inr(sec), "tts", "", "gemini_tts", {"voice_job": 1})]
+    ladder = kind == "ladder"; full = G.TIERS[0]
+    k = S("KLING_CLIPS", int) if kling is None else int(kling)
+    if ladder: k = max(0, k - 1)                                          # the scene at second 0 is the Short's footage: paid when the Short was made
+    st_n = full[2] if stills is None else int(stills); lv = min(full[3], S("LIVING_STILLS", int)) if living is None else int(living)
+    L = [_line("hero_clips", "animated scenes of the hero model", CL.paid_s(CL.SCENE_S, k), hero_inr, "visuals", "s", "hero_clip", {"clip_kling": k}),
+         _line("start_frames", "the reference-locked start picture of each animated scene", k, S("PRICE_GEM_IMAGE_USD", float) * u, "visuals", "", "image_ref", {"image_ref": k}),
+         _line("stills", "pictures", st_n, MD.still_usd(S("STILL_W", int), S("STILL_H", int)) * u, "visuals", "", "image", {"image": st_n}),
+         _line("living_clips", "living stills", lv, S("PRICE_LIVING_USD", float) * u, "visuals", "", "living_clip", {"clip": lv}),
+         _line("key_art", "the thumbnail and its runner-up", G.premium_images(), S("PRICE_THUMB_USD", float) * u, "visuals", "", "image_premium", {"image_premium": G.premium_images()}),
+         _line("voice", "the narration, by the second", 1, voice_inr(S("RUNTIME_MAX_SEC", float)), "tts", "", "gemini_tts", {"voice_job": 1}),
+         _line("writing", "the writers' room, the juries and every edit of the script", 1, max(0.0, S("LLM_EST_INR", float) - S("HOOK_LAB_EST_INR", float)), "ai_writing", "", None, {t: None for t in TEXT}),
+         _line("thinking", "thinking tokens of the text models", 1, S("THINK_EST_INR", float), "thinking"),
+         _line("room_extras", "the premise judges, the Immersion Director, the Owner's Cut", 1, S("ROOM_EXTRA_EST_INR", float), "ai_writing")]
+    if not ladder: L.append(_line("hook_lab", "the hook lab: ten opening lines and their judge", 1, S("HOOK_LAB_EST_INR", float), "ai_writing", "", None, {"text:hooks": 1}))
+    if table_read_runs(table_read): L.append(_line("table_read", "the older room's objections round and the Director's read", 1, S("TABLE_READ_EXTRA_INR", float), "ai_writing"))
+    if G.palace_prompt_inr(): L.append(_line("palace", "the Palace playbook inside the creative prompts", 1, G.palace_prompt_inr(), "ai_writing"))
+    if S("LAYMAN_PROBE_ON", bool): L.append(_line("probe", "the promise line-up: two cheap readers", 1, S("PROBE_EST_INR", float), "ai_writing", "", None, {"text:probe_gemini": 1, "text:probe_claude": 1}))
+    return L + [_line(k_, "a small community line", 1, v, k_) for k_, v in v91_lines().items() if v]
+
 def estimate_lines():
-    """{stage: INR} for one full video. Stage names match Cost_Log item prefixes (see stage_of)."""
-    from whatifs import governor as G
-    u = S("USD_INR", float)
-    tr = S("TABLE_READ_EXTRA_INR", float) if str(S("TABLE_READ_MODE") or "").strip().lower() in ("on", "true", "yes", "1") else 0.0
-    vis = G.full_episode_inr() - G.voice_think_inr() - S("LLM_EST_INR", float) - tr - G.v91_extra_inr()      # v9.1 lines are listed on their own
-    return {"visuals": round(vis, 1), "ai_writing": round(S("LLM_EST_INR", float) + tr + S("ROOM_EXTRA_EST_INR", float) + G.palace_prompt_inr(), 1),
-            "thinking": round(S("THINK_EST_INR", float), 1), "tts": round(S("TTS_EST_INR", float), 1),
-            "show_devices": 0.0, "community": round(S("COMMENT_AGENT_EST_INR", float) / max(1, S("VIDEOS_PER_MONTH_EST", int)), 1),
-            **v91_lines()}
+    """{stage: INR} for one full long video (the weekly deviation report and the Script Preview read it). Stage names match Cost_Log item prefixes
+    (see stage_of); the sums come from the one table of lines."""
+    L = lines("long"); by = {}
+    for l in L: by[l["stage"]] = by.get(l["stage"], 0.0) + l["inr"]
+    return {"visuals": round(by.get("visuals", 0.0), 1), "ai_writing": round(by.get("ai_writing", 0.0), 1), "thinking": round(by.get("thinking", 0.0), 1),
+            "tts": round(by.get("tts", 0.0), 1), "show_devices": 0.0, "community": round(S("COMMENT_AGENT_EST_INR", float) / max(1, S("VIDEOS_PER_MONTH_EST", int)), 1),
+            **{k: round(by.get(k, 0.0), 1) for k in v91_lines()}}
+
+COUNTED = ("hero_clip", "image_ref", "image_premium")          # lines whose count is exact: more paid than estimated is an overrun (stills and living clips are ceilings)
+
+def reconcile(episode, L, kind=""):
+    """After a video or a Short is made: what was really paid for pictures and clips (tab Cost_Log, by item: seconds of hero clip, start pictures,
+    stills, living clips, key art) against the lines of its estimate. Writes ONE summary row (inr 0: the spend is in the measured rows) and returns
+    {paid, lines, unlisted, over}: `unlisted` = a paid item no line covers; `over` = a counted line that was exceeded. Never raises."""
+    try:
+        from whatifs.core import flush_costs
+        flush_costs(); paid = {}
+        for r in store().rows("Cost_Log"):
+            if r.get("episode_id") != episode or r.get("basis") == "summary" or stage_of(r.get("item"), r.get("provider")) != "visuals": continue
+            try: paid[r["item"]] = paid.get(r["item"], 0.0) + float(r.get("units") or 0)
+            except (TypeError, ValueError): pass
+        want = {}
+        for l in L:
+            if l.get("item") and l["stage"] == "visuals": want[l["item"]] = want.get(l["item"], 0.0) + float(l["n"])
+        unlisted = sorted(i for i in paid if i not in want and paid[i] > 0)
+        over = sorted(f"{i}: {paid[i]:g} paid, {want[i]:g} estimated" for i in paid if i in want and i in COUNTED and paid[i] > want[i] + 1e-6)
+        out = {"paid": paid, "lines": want, "unlisted": unlisted, "over": over, "est_inr": total(L)}
+        store().append("Cost_Log", [{"ts": iso(), "episode_id": episode, "item": "cost_lines_summary", "provider": "summary", "units": 0, "inr": 0, "basis": "summary",
+                                     "est_inr": out["est_inr"], "role": (f"{kind}: " + json.dumps({"paid": paid, "lines": want, "unlisted": unlisted, "over": over}, sort_keys=True))[:900]}])
+        if unlisted or over:
+            log(f"cost lines of {episode}: " + "; ".join(([f"paid with no line in the estimate: {', '.join(unlisted)}"] if unlisted else []) + over), "WARN", episode)
+        return out
+    except Exception as e:
+        log(f"cost lines not reconciled: {str(e)[:160]}", "WARN", episode); return None
 
 def v91_lines():
     """v9.1 estimator lines per video (INR). Atmosphere, retention map, role ROI, grammar and hero-still reels are code-only (0). The small paid ones

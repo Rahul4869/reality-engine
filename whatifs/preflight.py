@@ -40,6 +40,9 @@ def run(need_voice=True):
             left = (int(q["limit"]) - int(q.get("usage", 0))) / 1e9
             add("drive space", left >= 3.0, f"{left:.1f} GB free in Drive (need 3)", critical=False)
     except Exception: pass
+    try:                                               # v12 V2d: the hero clip model is on fal's listing, active, and still takes what its row says; a warning, never a block (the Steward's next model stands ready)
+        from whatifs import clips as CL; cok, cwhy = CL.preflight(); add("clip model", cok, cwhy, critical=False)
+    except Exception as e: add("clip model", False, scrub(e)[:120], critical=False)
     add("fonts", os.path.exists("fonts/Anton-Regular.ttf") or os.path.exists("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"), "headline font (falls back to a plain font)", critical=False)
     return r
 

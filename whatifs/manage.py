@@ -219,7 +219,7 @@ def tick():
             from whatifs import replan as RPL, scout as SCT; RPL.month_restore(); RPL.weekly(); SCT.weekly()
         except Exception as x: log(f"re-plan / tool scout skipped: {scrub(x)}", "WARN")
         try:                                                    # v11: month rollover (breakout fund) + month close records
-            from whatifs import governor as GVR; GVR.rollover_month(); GVR.record_month_close()
+            from whatifs import governor as GVR; GVR.rollover_month(); GVR.record_month_close(); GVR.split_tell()      # v12 V2d: once a month, when fewer Shorts fit the money than planned
         except Exception as x: log(f"month records skipped: {scrub(x)}", "WARN")
         try:                                                    # v10.3 (K153): the daily / weekly WhatsApp briefs with a chart
             from whatifs import digests as DGS; DGS.tick()
@@ -509,6 +509,8 @@ def learn():
     except Exception as x: log(f"v12 V2c-b2 move skipped: {scrub(x)}", "WARN")
     try: v12v2cb2b_upgrade(st)                                   # v12 V2c-b2b: no cut-down reels; the pilot Shorts and the special reels are paused; the dead cells are marked
     except Exception as x: log(f"v12 V2c-b2b move skipped: {scrub(x)}", "WARN")
+    try: v12v2d_upgrade(st)                                      # v12 V2d: the hero clip model picked by value; the writing allowance without the cut-downs' call; the flat voice allowance retired
+    except Exception as x: log(f"v12 V2d move skipped: {scrub(x)}", "WARN")
     try:
         from whatifs import craft as CRF; CRF.seed_techniques()       # v9.3.2: the owner's pre-judged technique cards, filed once
     except Exception as x: log(f"technique seeding skipped: {scrub(x)}", "WARN")
@@ -807,6 +809,32 @@ def v12v2cb2b_upgrade(st):
             st.update("Settings", "key", k, {"value": "FALSE", "note": f"PAUSED by the v12 V2c-b2b move (it was TRUE): {why}. TRUE switches it back on - through the old upload, nothing read back"}); done.append(k)
     set_setting("V12V2CB2B_MOVE_DONE", iso() + " " + (",".join(done) or "none"))
     if done: log("v12 V2c-b2b: a long video makes no cut-down reels any more; the pilot Shorts and the special reels are paused; marked on the Sheet: " + ", ".join(done))
+    return done
+
+V12V2D_FLIPS = (("LLM_EST_INR", "176", "170"),)          # the cut-downs' planning call is gone: the writing allowance loses it
+V12V2D_RETIRED = ("TTS_EST_INR",)                        # the voice is estimated by the second at the price of the day
+
+def v12v2d_upgrade(st):
+    """ONE time on a live Sheet (v12 V2d, the money and the model): (1) the hero clip model is picked by value NOW - the rule of the clip market on
+    the table CLIP_MODELS, switched by the Model Steward, who writes tab Model_Changes and tells the owner with 'Discuss' - instead of waiting for
+    the weekly tool scout; (2) the writing allowance loses the planning call the cut-downs took with them, where it still holds the old default;
+    (3) the flat voice allowance is marked RETIRED in its note. Never runs twice. Returns what it changed."""
+    if str(S("V12V2D_MOVE_DONE") or "").strip(): return []
+    have = {r.get("key"): r for r in st.rows("Settings")}; done = []
+    for k, old, new in V12V2D_FLIPS:
+        if str((have.get(k) or {}).get("value", "")).strip() == old: set_setting(k, new); done.append(k)
+    for k in V12V2D_RETIRED:
+        if k in have and not str(have[k].get("note") or "").startswith("RETIRED"):
+            st.update("Settings", "key", k, {"note": "RETIRED (v12 V2d): no code reads this cell any more - the voice is estimated by the second at the price of the day (TTS_RETAKES)"}); done.append(k)
+    try:
+        from whatifs import clips as CL, steward as STW
+        if CL.on():
+            p = CL.choice(); cur = str(S("FAL_HERO_MODEL") or "")
+            if p and p["row"]["id"] != cur:
+                STW.switch("hero", {"id": p["row"]["id"], "usd": CL.usd(p["row"], CL.SCENE_S)}, "picked by value: " + p["why"], tier="week"); done.append("FAL_HERO_MODEL")
+    except Exception as x: log(f"v12 V2d: the hero clip model was not picked now ({scrub(x)[:120]}); the weekly tool scout picks it", "WARN")
+    set_setting("V12V2D_MOVE_DONE", iso() + " " + (",".join(done) or "none"))
+    if done: log("v12 V2d: the hero clip model is picked by value and bought by the second; the estimates are one table of lines; changed on the Sheet: " + ", ".join(done))
     return done
 
 V12V1_FLIPS = (("RUNTIME_MAX_SEC", "600", "540"), ("PROMISE_BY_SEC", "30", "5"))
@@ -1254,6 +1282,8 @@ def setup():
     except Exception as x: log(f"v12 V2c-b2 move skipped: {scrub(x)}", "WARN")
     try: v12v2cb2b_upgrade(st)                                   # v12 V2c-b2b: no cut-down reels; the pilot Shorts and the special reels are paused; the dead cells are marked
     except Exception as x: log(f"v12 V2c-b2b move skipped: {scrub(x)}", "WARN")
+    try: v12v2d_upgrade(st)                                      # v12 V2d: the hero clip model picked by value; the writing allowance without the cut-downs' call; the flat voice allowance retired
+    except Exception as x: log(f"v12 V2d move skipped: {scrub(x)}", "WARN")
     try:                                                         # v12: the founding knowledge is in the Palace from the first run
         from whatifs.org import palace as PAL, runner as ORGR; PAL.maintain(st); ORGR.install(st)
     except Exception as x: log(f"palace seed skipped: {scrub(x)}", "WARN")

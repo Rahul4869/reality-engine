@@ -5,8 +5,13 @@ from whatifs.core import S, log
 from whatifs import formats as FMT
 from whatifs.org import audience as AUD, layman as LAY
 
-CLIP_S = 5.0               # one clip of the hero model
-STRETCH_MAX = 1.3          # a clip may be played up to this much slower to cover its shot (a beat of 6.5 s is ONE paid clip, not two)
+CLIP_S = 5.0               # with the clip market off (CLIP_VALUE_ON FALSE): one clip of the hero model is this long ...
+STRETCH_MAX = 1.3          # ... and may be played up to this much slower to cover its shot. v12 V2d: with the market on a clip is bought as long as its shot
+
+def clip_max():
+    """The longest shot ONE paid clip covers: the hero model's longest clip (at most 10 s) while clips are bought by the second, else 5 s played 30% slower."""
+    from whatifs import clips as CL
+    return CL.longest()
 LEAD_S = 0.35              # the voice job starts speaking this long after the first frame
 CAPTION_MIN = 0.30         # captions sit at least this share of the height above the bottom edge (the platform's buttons and title cover the lowest part)
 ANIMATED = ("kling",)      # the one shot type a Short is made of: a made picture animated by the hero model
@@ -114,7 +119,7 @@ def shape_report(sc, fmt, units=None, plan=None):
             if s.get("type") == "stock": p.append(f"stock footage at {a:.0f} s: a Short is made of our own animated pictures")
             elif s.get("type") not in ANIMATED: p.append(f"a {s.get('type')} at {a:.0f} s is not animated")
             if a - at > 0.05: p.append(f"nothing is on screen from {at:.1f} to {a:.1f} s")
-            if b - a > CLIP_S * STRETCH_MAX + 0.05: p.append(f"one clip is asked to cover {b - a:.1f} s (a clip is {CLIP_S:g} s and may be slowed to {CLIP_S * STRETCH_MAX:g} s)")
+            if b - a > clip_max() + 0.05: p.append(f"one clip is asked to cover {b - a:.1f} s (one clip covers at most {clip_max():g} s)")
             at = max(at, b)
         if shots and sec is not None and at < sec - 0.05: p.append(f"the pictures end at {at:.1f} s, the Short at {sec:.1f} s")
         if not (shots and shots[-1].get("loop") and shots[-1].get("src") == "loop"): p.append("the last shot is not the first picture returning: the Short does not loop")

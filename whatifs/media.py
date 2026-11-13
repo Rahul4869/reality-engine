@@ -96,7 +96,9 @@ def still(prompt, path, episode, seed=None, w=None, h=None, premium=False, model
                 from whatifs.anim import style_words as _sw; sw_len = len(_sw()) + 2      # v10.2: room for the show's look words
             except Exception: sw_len = 0
             prompt = with_directive(prompt, S("IMAGE_PROMPT_MAX_CHARS", int) - (len(lock_) + 2 if lock_ and not premium else 0) - sw_len, vertical=h > w)
-    if FAKE: return fake_image(path, w, h, seed or prompt, prompt), None
+    if FAKE:
+        cost("image_premium" if premium else "image", "fal", 1, 0.0, episode)      # v12 V2d: offline, what WOULD be paid is on record without a rupee - the estimate is checked against it (costguard.reconcile)
+        return fake_image(path, w, h, seed or prompt, prompt), None
     if not fal_allowed(): raise RuntimeError("fal credit exhausted")
     model = model or (S("FAL_PREMIUM_MODEL") if premium else S("FAL_STILL_MODEL"))      # v10: an explicit model only for the bake-off
     lock = str(S("STYLE_LOCK") or "").strip()
@@ -124,8 +126,14 @@ def _data_uri(image_path):
     mime = "image/png" if str(image_path).lower().endswith(".png") else "image/jpeg"
     return f"data:{mime};base64," + base64.b64encode(b).decode("ascii")
 
-def animate(image_url, image_path, prompt, path, episode, hero=False, model=None, price_usd=None):
-    if FAKE: return fake_clip(path, S("STILL_W", int), S("STILL_H", int), prompt, 5)
+def animate(image_url, image_path, prompt, path, episode, hero=False, model=None, price_usd=None, seconds=None):
+    """One clip from a picture. v12 V2d: a hero clip is bought BY THE SECOND - `seconds` is what its shot needs (None = a scene of a long video); the
+    clip market (whatifs/clips.py) rounds it up inside the model's shortest and longest clip, and the cost row says the seconds."""
+    from whatifs import clips as CL
+    n = CL.buy(seconds)[1] if hero else int(CL.OLD_CLIP_S)
+    if FAKE:
+        cost("hero_clip" if hero else "living_clip", "fal", n if hero else 1, 0.0, episode)      # offline: the seconds that WOULD be paid, without a rupee (costguard.reconcile reads them)
+        return fake_clip(path, S("STILL_W", int), S("STILL_H", int), prompt, n)
     if not image_url:              # v8.9.1 (fix): a missing URL in production used to return the offline TEST clip; now the real picture is sent, or it fails loudly
         if not image_path or not os.path.exists(image_path): raise RuntimeError("no picture to animate (no URL and no file)")
         image_url = _data_uri(image_path)
@@ -139,7 +147,10 @@ def animate(image_url, image_path, prompt, path, episode, hero=False, model=None
     if not explicit and S("MODEL_STEWARD_ON", bool): model = STW.ensure(role, model)
     if model == STW.CODE_MOTION: return _code_motion(image_path, path)
     try:
-        out = _fal_video(model, image_url, image_path, prompt, path, episode, hero, price_usd)
+        out = _fal_video(model, image_url, image_path, prompt, path, episode, hero, price_usd, seconds)
+        if hero and not explicit and CL.on() and image_path and os.path.exists(image_path):      # v12 V2d: a measured guard - one model's page does not say where its clip's shape comes from
+            same, words = CL.shape_ok(out, image_path)
+            if not same: raise RuntimeError(f"the clip came back in another shape than its start picture ({words})")
         STW.report_success(model); return out
     except Exception as e:
         if explicit or not S("MODEL_STEWARD_ON", bool): raise
@@ -147,7 +158,7 @@ def animate(image_url, image_path, prompt, path, episode, hero=False, model=None
         if not nxt or nxt == model: raise
         log(f"retrying with {nxt} after: {str(e)[:120]}", "WARN", episode)
         if nxt == STW.CODE_MOTION: return _code_motion(image_path, path)
-        return _fal_video(nxt, image_url, image_path, prompt, path, episode, hero, None)
+        return _fal_video(nxt, image_url, image_path, prompt, path, episode, hero, None, seconds)
 
 def _code_motion(image_path, path, sec=5.0):
     """v10.1 (K150): the ₹0 last rung for living stills: a slow push-in on the picture we already own."""
@@ -156,12 +167,19 @@ def _code_motion(image_path, path, sec=5.0):
     W, H = S("STILL_W", int), S("STILL_H", int)
     return _portrait_motion(image_path, path, sec, W - W % 2, H - H % 2)
 
-def _fal_video(model, image_url, image_path, prompt, path, episode, hero, price_usd):
+def _fal_video(model, image_url, image_path, prompt, path, episode, hero, price_usd, seconds=None):
     if not image_url:
         image_url = _data_uri(image_path)
-    args = video_args(model, image_url, prompt, hero)
+    from whatifs import clips as CL
+    r = CL.row(model) if (hero and CL.on()) else None              # v12 V2d: the request and the price come from the MODEL'S OWN ROW (after a fail-over that is another row than the hero's)
+    if r is not None and CL.usd_s(r) is not None:
+        n = CL.secs(r, CL.SCENE_S if seconds is None else seconds); args = CL.args(r, image_url, prompt, n)
+        usd = CL.usd_s(r) * n if price_usd is None else price_usd
+    else:
+        n = int(CL.OLD_CLIP_S); args = video_args(model, image_url, prompt, hero)
+        usd = price_usd if price_usd is not None else (S("PRICE_KLING_USD", float) if hero else S("PRICE_LIVING_USD", float))
     out = fal_run(model, args, timeout=1500)
-    cost("hero_clip" if hero else "living_clip", "fal", 1, price_usd if price_usd is not None else (S("PRICE_KLING_USD", float) if hero else S("PRICE_LIVING_USD", float)), episode)      # v8.3: logged before the download
+    cost("hero_clip" if hero else "living_clip", "fal", n if hero else 1, usd, episode)      # v8.3: logged before the download; v12 V2d: a hero clip's units are its SECONDS
     url = (out.get("video") or {}).get("url")
     if not url: raise RuntimeError(f"no video in fal reply: {str(out)[:200]}")
     _dl(url, path)

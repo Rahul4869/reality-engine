@@ -9,7 +9,9 @@ def test_video_args_follow_each_models_schema():
     b = MD.video_args("fal-ai/kling-video/v2.5-turbo/pro/image-to-video", "u", "p", True); assert b["image_url"] == "u" and b["cfg_scale"] == 0.5 and b["duration"] == "5"
     c = MD.video_args("wan/v2.6/image-to-video/flash", "u", "p"); assert c["resolution"] == "720p"
     assert MD.video_args("fal-ai/minimax/hailuo-2.3-fast/standard/image-to-video", "u", "p")["duration"] == "6"
-    assert core.DEFAULTS["FAL_HERO_MODEL"][0] == "fal-ai/kling-video/o3/standard/image-to-video" and core.DEFAULTS["PRICE_KLING_USD"][0] == "0.42"   # v10.2
+    from whatifs import clips as CL                                 # v12 V2d: the hero is picked by value from the table; the cell's default IS that pick and its price cell the pick's 5 seconds
+    rows = CL.table(); hero = CL.row(core.DEFAULTS["FAL_HERO_MODEL"][0], rows)
+    assert hero is not None and hero.get("elo") and float(core.DEFAULTS["PRICE_KLING_USD"][0]) == pytest.approx(CL.usd_s(hero) * 5)
 
 def test_still_price_rounds_up_megapixels_and_new_size_costs_the_same():
     assert MD.still_usd(1872, 1056) == pytest.approx(0.006) and MD.still_usd(1632, 918) == pytest.approx(0.006) and MD.still_usd(720, 1280) == pytest.approx(0.003)
@@ -21,7 +23,7 @@ def test_retired_model_is_replaced(monkeypatch, setting):
     monkeypatch.setattr(MD, "fal_run", lambda model, args, timeout=0: seen.append((model, args)) or {"video": {"url": "x"}})
     monkeypatch.setattr(MD, "_dl", lambda url, path: path)
     MD.animate("https://img", None, "p", "/tmp/x.mp4", "EP", hero=True)
-    assert seen[0][0] == "fal-ai/kling-video/o3/standard/image-to-video" and seen[0][1]["image_url"] == "https://img" and "start_image_url" not in seen[0][1] and seen[0][1]["generate_audio"] is False
+    assert seen[0][0] == core.DEFAULTS["FAL_HERO_MODEL"][0] and seen[0][1]["image_url"] == "https://img" and "start_image_url" not in seen[0][1]      # v12 V2d: a retired model is replaced by the hero the code ships with
 
 def test_upload_readback_does_not_refix_an_omitted_label_but_flags_kids(monkeypatch, setting):
     monkeypatch.setattr(PUB, "FAKE", False); monkeypatch.setattr(NT, "in_quiet_hours", lambda now=None: False); monkeypatch.setattr(PUB, "email", lambda *a, **k: True)
