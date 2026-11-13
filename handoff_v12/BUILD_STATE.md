@@ -867,7 +867,12 @@ THE REPAIR'S DESIGN NOTE (scores 1-5: what a viewer gains / enforceable / cost /
      renderer never merges a line that carries a paid clip (one rule, `motion.merge`, for the renderer and the tests); (5) the measure
      tiles each stretch - the last half second as long as what is left - and counts each clip's moving seconds up to its own length;
      (6) the check's words and the sweep say the scene seconds on screen of the scene seconds paid: 5 / 5 / 5 / 4 / 5 = 24.
-  MEASURED EFFECT on the 28 long-video ids of sweep parts A, B and C, each run alone with `--one` during the build: written below when run.
+  MEASURED EFFECT on the 28 long-video ids of sweep parts A, B and C, each run ALONE with `--one` on a frozen copy of 8f2a6d7 (one after
+  another, 21:09 to 22:00 laptop time): **28 of 28 ok**; on EVERY id 100% of the paid seconds are seen moving (60d9483: 88.5 to 103.3) and
+  the scenes are on screen **15 of 15 s**; the share that moves 60.5 to 79.5% (floor 20%); `EP209901010900` good in A, B and C (A: 50 s paid,
+  64.2% of the film moves). WHAT IT COST: fewer living seconds are bought on these short offline films, because the lines after the scenes
+  now hold the scenes' seconds - 15 to 40 living seconds an id (the red film: 35 s in 7 clips where 60d9483 bought 50 s in 10); what a living
+  clip is not bought for is not paid (the plan's living seconds are a ceiling, `costguard.reconcile`). Nothing else changed in any part.
   FORBIDDEN AND NOT DONE (the plan's 12.1): no cell changed (`MOVING_SEEN_MIN_PCT`, `MOVING_SHARE_MIN_LONG`, `MOVING_CHANGE_MIN`,
   `SHORT_CHANGE_MIN`); the share is never computed from `played_s` or the plan; `paid_s` stays the clip files' seconds; the scenes stay in
   what was paid; no "not applicable"; the block's floor stays; no id is special-cased.

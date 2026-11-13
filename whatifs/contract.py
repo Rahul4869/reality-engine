@@ -592,7 +592,7 @@ def p_moving_share(ctx):
           + (f", this month's money planned {plan.get('bought_pct'):g}%" if plan.get("bought_pct") is not None else "") + "): "
           + (", ".join(f"{k} {v:g} s" for k, v in r["by"].items()) or "nothing") + (f"; {r['seen_pct']:g}% of the {r['paid_s']:g} s paid are seen moving" if r["seen_pct"] is not None else ""))
     sc_paid = round(sum(_dur(c) for c in (ctx.get("scenes") or []) if c and os.path.exists(c)), 1)      # v12 V2d-b red 1: the peaks - the scenes' seconds on screen (as the render recorded them) of those paid
-    if sc_paid > 0: ev += f"; the scenes on screen {r.get('scene_shown_s', 0):g} of {sc_paid:g} s"
+    if sc_paid > 0: ev += f"; the scenes on screen {r.get('scene_shown_s', 0):g} of {sc_paid:g} s ({round(100.0 * float(r.get('scene_shown_s') or 0) / sc_paid, 1):g}%)"
     return (FAIL, ("; ".join(p) + " | " + ev)[:380]) if p else (PASS, ev[:380])
 
 def p_stock_share(ctx):

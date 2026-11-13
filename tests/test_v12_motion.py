@@ -723,7 +723,7 @@ def test_check_moving_share_says_the_scene_seconds_on_screen_of_those_paid(ladde
     from tools import sweep as SW
     film = _film(str(tmp_path / "f.mp4"), [("move", 5), ("move", 3), ("hold", 2)]); sc = MD.fake_clip(str(tmp_path / "sc.mp4"), 320, 180, "sc", 5)
     ctx = {"master": film, "moving": [(0.0, 5.0, "scene", 5.0), (5.0, 8.0, "scene", 5.0)], "moving_paid_s": 10.0, "scenes": [sc, sc], "d": {"moving": {"bought_pct": 34.0}}}
-    s, ev = CON.p_moving_share(ctx); assert s == CON.FAIL and ev.endswith("; the scenes on screen 8 of 10 s") and "80% of the 10 s paid are seen moving" in ev, ev
+    s, ev = CON.p_moving_share(ctx); assert s == CON.FAIL and ev.endswith("; the scenes on screen 8 of 10 s (80%)") and "80% of the 10 s paid are seen moving" in ev, ev
     core.store().append("Feature_Ledger", [{"ts": core.iso(), "episode_id": "EPSC1", "stage": "final", "feature": f, "status": "PASS", "evidence": (ev if f == "moving_share" else "e")} for f in ("moving_share", "stock_share", "living_characters")])
     words = SW.motion_of(core, "EPSC1")[1]; assert "seen moving" in words and "the scenes on screen 8 of 10 s" in words, words      # the sweep's RESULT carries them
 
