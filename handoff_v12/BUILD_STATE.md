@@ -99,6 +99,13 @@ is open issue 148.
 That turn was the DESIGN step for the whole programme (research, designs, decisions, records). Built since: V1a, V1b, V2a and V2c-a (the records are under DONE).
 
 ## NEXT
+**V2d WAS SPLIT AT ITS START (13 Nov 2026, token discipline rule 6), by dependency, as recommended below: V2d-a THE MONEY AND THE
+MODEL (the hero clip model chosen by value from the provider's pages and listing, clips bought by the second, the cost model as
+one table of lines the paid-call counter checks, the month's split) is IN WORK - its record is the first entry under DONE and
+says where it stands; V2d-b THE LADDER'S RULES (the living tier L3 widened, `moving_share` measured on the finished file, a
+character drawn or absent, the stock rules, the first-second sound of a Short) comes after it, before V3.** Why this order: (b)
+spends what (a) frees - "AI-moving seconds per long video" can only be raised once every paid second is a priced line and the
+price per second is known; (a) needs nothing of (b).
 **V2d - THE MOTION LADDER AND THE MONEY** (`handoff_v12/BREAKOUT_REDESIGN.md`: 11.5, the rows "Long: motion", "Characters", "Stock"
 and "Money" of 11.9, 11.10 with its end notes; R13, R30, R31, R38). Full seven-step MANDATORY BATCH LOOP. Effort: High. V2c is
 COMPLETE (five batches; the last, V2c-b2b2 THE CUT-DOWNS, is the first record under DONE: check there and in `git log -5` that it
@@ -242,6 +249,175 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
+### V2d-a - THE MONEY AND THE MODEL (13 Nov 2026) - IN WORK (steps 1-3 recorded; not built, not accepted)
+The owner's "continue" for this batch is the start of this session (item 22 of `02`). V2d was SPLIT AT ITS START (the note is at
+the top of NEXT). The whole binding reading order was read first (handoff `CLAUDE.md`, `00`, `02` in full with items 21 and 22,
+`01`, `03`, `06`, `04`, `05`, all of the redesign - section 11 with every end note first, then sections 0 to 10 - this file's
+head, the standing rules, the owner's verdict section with item 22, NEXT, the V2c-b2b2, V2c-b2b1, V2c-b2a, V2c-b1 and V2c-a
+records, every open issue 1-149, HOW TO RUN, the batch log, the repo's `CLAUDE.md`, `docs/CURRENT/` - `SYSTEM.md` to the end of
+its tab list - and the hand-over note), then the code the half touches: all of `costguard.py`, `governor.py`, `shorts2.py`,
+`preflight.py`, `steward.py`, `scout.py`, `media.py`, `replan.py`, `bakeoff.py`, `tests/paid_calls.py`; the price and model cells
+of `core.py`; `episode.est_cost_inr` and the plan stage; `shortseat.shape_report` / `shape`; `opening.manifest`; `anim.start_frame`.
+
+#### Step 1 RESEARCH (E = the provider's or the ranking's own page, O = practice / a third party; every page below was read by the build session itself on 13 Nov 2026; the redesign's R13, R30, R31 and O2, O10 are the base)
+1. E read - Artificial Analysis, image-to-video leaderboard "AA-Video-I2V v2.1" (https://artificialanalysis.ai/video/leaderboard/image-to-video;
+   no date on the page, ratings "recomputed hourly"): 35 models. The board's anchor is Kling 3.0 1080p (Pro) = 1000 points (rank
+   23); Kling 3.0 Omni 1080p (Pro) 1002 (rank 22) - the STANDARD tier we pay is not on the board at all. Above them, with the
+   error band of each: Seedance 2.5 1161 +-15 (USD 34.12 a minute on its maker's own service), MiniMax H3 (768p) 1133 +-14 (rank
+   4; 4.80 a minute), HeyGen Video 1 1124 +-14 (rank 6; 2.40 a minute), MiniMax H3 Max 1115 +-14 (9.60), Pika H3 Flex 1114 (2.10),
+   Wan 3.0 1108 (12.00); below: PixVerse V6 959 +-15 (6.90).
+2. E read - Artificial Analysis, methodology (https://artificialanalysis.ai/video/methodology; a change dated October 2026): blind
+   pairs fitted with a Bradley-Terry model; error bands "may be slightly narrow"; EVERY model is tested at 1080p where offered,
+   24 frames, 10 seconds, 16:9, from a 1920 x 1080 start picture; the price is "on the model creator's API at the settings we
+   benchmark". -> the rank says nothing about an UPRIGHT clip at 768p, and the board's price is not the price on fal.
+3. E read - fal, the model page and schema of the model we pay (https://fal.ai/models/fal-ai/kling-video/o3/standard/image-to-video):
+   "For every second of video you generated, you will be charged $0.084 (audio off) or $0.112 (audio on)"; 3 to 15 seconds; no
+   field for a clip's shape. fal's own price list (https://fal.ai/pricing) shows the SAME endpoint at 0.14 a second.
+4. E read - fal, the price list (https://fal.ai/pricing, 36 video rows, no date) against the model pages: Grok Imagine Video 1.5
+   is listed at 0.01 a second and its model page charges 0.08 / 0.14 / 0.25 by size; PixVerse V6 is listed at 0.005 and its page
+   charges 0.025 to 0.115; H3 Max is listed at 0.05, which is its 480p price from 16 Nov. fal's own API reference
+   (https://fal.ai/docs/platform-apis/v1/models/pricing) calls the figure a "Base price per billing unit" with "proportional
+   adjustments for resolution/length". -> THE FINDING THAT SHAPES THE DESIGN: the price a program can read from fal's listing is
+   a base figure, wrong for our setting in four of the five models compared (twice by a factor of ten). Today's weekly tool scout
+   (`scout.weekly`) writes exactly that figure times five into `PRICE_KLING_USD` when it differs by a tenth: on the live channel
+   it would have set the hero clip to USD 0.70 (the list's 0.14) against the model page's 0.42.
+5. E read - fal, model pages and API schemas of the candidates: MiniMax H3 (`minimax/h3/image-to-video`): "$0.05 per second at
+   480p, $0.06 per second at 768p, $0.13 ... at 2K and $0.16 ... at 4K"; `duration` an integer of 5 to 15; "the output canvas
+   follows this image". HeyGen Video (`heygen/heygen-video/image-to-video`): "animates your image as the first frame of a 5 to 15
+   second clip ... built on MiniMax H3"; regular price "$0.02 and $0.06 per second" (480p and 768p / 1080p and 2K; a half-price
+   offer ended 31 Oct 2026); `image_url` required, `duration` an integer of 5 to 15, sizes 480p / 768p / 1080p / 2k; the page
+   does NOT say where the clip's shape comes from. H3 Max: 0.056 a second at 768p until 15 Nov, 0.08 from 16 Nov 2026. H3 Max
+   Turbo: 0.04 at 768p from 16 Nov (not on the board). PixVerse V6: 0.045 at 720p, 1 to 15 seconds. Wan 3.0: 0.05 / 0.10 / 0.20.
+   Grok Imagine Video 1.5: 0.14 at 720p. The living-still model in use: USD 0.02 a 5-second clip, unchanged.
+6. E read - fal, platform API reference (https://fal.ai/docs/platform-apis/v1/models, .../pricing, .../pricing/estimate): the
+   listing needs no key and returns a model's status and, with `expand=openapi-3.0`, its whole input schema; the estimate
+   endpoint takes only a number of billing units - "The request has no fields for parameters such as resolution or duration".
+   -> a program CAN read live whether a model exists, what it takes and how long a clip may be; it can NOT read the price of
+   our setting. That price is on the model's page only, and the bill is the only proof.
+7. E read - Google, Gemini API price page (https://aistudio.google.com/docs/pricing): the voice model's audio output costs USD 9
+   a million tokens "through December 31, 2026" and 18 from 1 Jan 2027 (the code already switches on that day:
+   `tts_gemini.price_out`); a reference-locked start picture USD 0.067 (the cell is right); the Flash text models double on
+   1 Jan 2027 too. Anthropic's price page (https://platform.claude.com/docs/en/about-claude/pricing): the three text price cells
+   are right.
+8. O read - TeamDay, "fal.ai pricing 2026", 2 Nov 2026 (https://www.teamday.ai/blog/fal-ai-pricing-2026; a third party): "The
+   base price in fal's billing data is not always what you pay" - with the same example (0.01 listed, 0.14 charged); server
+   errors are not billed, a request refused for its input can be. -> confirms 4; a wrong request body is not free.
+NOT FOUND, so nothing is built on it: a rank for an upright clip or for 768p; whether fal's "HeyGen Video" is the board's "HeyGen
+Video 1" (the same maker and model family; nobody says so in one sentence); where that model takes its clip's shape from; a
+price for Pika H3 Flex on fal; any way for a program to read what a request really cost (fal's queue answers carry no cost; the
+usage reports need another kind of key); the real cost of the text calls of the NEW code (never run for real).
+AN EXPERIMENT BEFORE THE DESIGN (the accepted code, fake mode, a fresh store, December's Rs 5,000; counted, not guessed):
+(1) What the code estimates TODAY - a long video Rs 560.7: 4 hero clips Rs 166.3, 52 stills 23.7, 8 living clips 15.8, 2 key-art
+pictures 15.8, writing 176, the table read 55, thinking 40, the room's extra calls 20, the Palace in the prompts 15, the voice 30,
+two small community lines 3. A Short Rs 287 (6 hero clips Rs 249.5, 3 pictures 0.9, writing and voice 36). The month: Rs 5,000
+less the maintenance reserve 100, the owner's earmark 200 and the organisation's thinking caps 420 = Rs 4,280 for production.
+Four long videos take Rs 2,243; what is left pays 7 Shorts, not 12 - and the cadence makes three a week until the money for the
+long slots would be touched, so the 7 fall into the first sixteen days and then no Short is made for two weeks.
+(2) FOUND, A FAULT OF THE OLDER CODE: Rs 55 of every long video's estimate is money for calls that are never made. The table
+read (an objections round and the Director's read) belongs to the older writers' room; under the room in use (`ROOM_MODE` v2)
+`room.run_room` sets it off for every episode - while `governor.full_episode_inr`, `min_episode_cost_inr`,
+`costguard.estimate_lines`, `models.ai_estimate_inr` and `episode.est_cost_inr` all still add `TABLE_READ_EXTRA_INR` because the
+cell `TABLE_READ_MODE` says "on". Rs 220 a month held back for nothing: three of the five missing Shorts' worth of writing.
+(3) FOUND: four paid calls of every long video are in NO estimate - the reference-locked start pictures of the animated scenes
+(`anim.gemini_image`, USD 0.067 each: Rs 26.5 a video). And a still is estimated at the old flat USD 0.0046 while the code pays
+0.006 (two megapixels): Rs 7 a video too little.
+(4) A Short's clip is five seconds because the request says "5", whatever the shot needs: a beat of 6.5 seconds is one clip
+played 30% slower, a beat of 3 seconds pays for 5.
+#### Step 2 CREATIVITY (scores 1-5: what a viewer or the channel gains / enforceable / cost / reliability / owner effort)
+A. Type the best-value model of today and its price into the two cells: 3 / 2 / 4 / 2 / 5 = 16 - right this week; no rule, so
+   the next price move is again a session's job, and the estimate stays lumps nobody can check.
+B. "Arena points per dollar" as written in the redesign, computed weekly from fal's listing: 1 / 3 / 5 / 1 / 5 = 15 - the ratio
+   rewards cheapness: with today's page prices it picks PixVerse V6 (959 points - ranked BELOW the model in use), and with the
+   listing's own prices (research 4) it picks whatever has the smallest placeholder.
+C. The cheapest model above a fixed rank: 3 / 4 / 5 / 3 / 5 = 20 - enforceable, but the floor is a number somebody types and
+   nobody moves, and it treats saving as the goal ("savings never the goal").
+D. A strong text model reads the pages and chooses: 2 / 1 / 4 / 2 / 5 = 14 - a taste call without eyes (redesign R9), paid, not
+   reproducible, and it would read the listing's placeholder like the scout does.
+E. (ORIGINAL, CHOSEN) THE BEST MODEL THE PLAN CAN PAY, BOUGHT BY THE SECOND, IN AN ESTIMATE THE COUNTER CAN CHECK. (1) The
+   clip market is DATA: a table of models, each row what the provider's own page says - the price per second at each size, how
+   long a clip may be, the field its start picture goes in, where the clip's shape comes from, its rank with its error band,
+   the page and the day it was read. (2) The month's plan - four long videos, twelve Shorts, the fixed parts, a reserve - gives
+   THE LINE: the highest price per second of animation the plan can pay. (3) Among the models that take a start picture, give
+   an upright clip and cost no more than the line, the highest rank wins; models whose error bands overlap the best one's are
+   tied, and among the tied the cheaper wins (what it frees buys moving seconds). A model without a rank is never picked; a
+   model ranked below the one in use is never picked by code. (4) When no ranked model is under the line the plan does not fit:
+   the code keeps quality, says how many Shorts DO fit, and the cadence spreads that number over the month. (5) A clip is bought
+   BY THE SECOND at the length of its shot - no slowed clip, no second paid and thrown away beyond the model's shortest clip.
+   (6) The estimate is ONE table of lines - every paid second and call, its count and its price cell - that every gate reads,
+   and each line names the paid calls it stands for, so the paid-call counter checks the estimate call by call: 5 / 5 / 5 / 4 / 5 = 24.
+#### Step 3 DESIGN MEMO
+- THE CLIP MARKET (`whatifs/clips.py` NEW, Visual Production D6; on `tools/repair.py` PROTECTED; cell `CLIP_MODELS`, a JSON
+  table): a row = the model's id, its name on the ranking, `usd_s` (price per second by size), `res` (the size we buy), `min_s` /
+  `max_s`, `start` (the field of the start picture), `dur` (a whole number or a word), `shape` (follows the picture / stated
+  where), `elo` and `ci`, `page`, `read`. Six rows as read on 13 Nov 2026. No model name is typed in code: the table is a
+  Settings cell, and the request body is built from the row (`clips.args`), not from a name match.
+- THE RULE (`clips.pick`, pure code): described in E (3). The line comes from the cost model (`governor.line_usd_s`). With
+  the pages of 13 Nov 2026 the pick is HeyGen Video at 768p: rank 6 of 35 (1124 +-14, tied with MiniMax H3's 1133 +-14 by
+  their error bands), USD 0.02 a second against 0.06 for H3 and 0.084 for the model in use, which the board does not rank (its
+  dearer tier stands at 1002, rank 22). Next in line when it fails: MiniMax H3 at 768p.
+- WHEN (`clips.review`, inside the weekly tool scout; the Model Steward makes the switch, writes tab `Model_Changes` and tells
+  the owner with "Discuss"): the table's rows are checked against fal's live listing - is the model still listed and active,
+  does its schema still have the start-picture field, the size and the clip lengths the row says (`clips.refresh`) - and the
+  pick is made again. The listing's base price is KEPT with the row and only watched: when it moves, the row is marked stale
+  and the owner gets one message that the model's page must be read again. It is never written into the estimate (research 4).
+  The Steward's fail-over for the hero asks `clips.pick` (a dead model's row is not eligible), so a replacement is chosen by
+  the same rule and never by a price ratio.
+- BOUGHT BY THE SECOND (`media.animate(seconds=)`): a clip is asked for at the whole seconds its shot needs, inside the model's
+  shortest and longest clip; the cost row says the seconds and the price per second. `shorts2.plan` gives every shot ONE clip
+  as long as the shot (a beat longer than the model's longest clip is split); nothing is slowed (closes open issue 82's first
+  point). A Short made before this batch keeps its record: the plan of each shot carries how it was played, and the opening of
+  a long video reads that.
+- A MEASURED GUARD: a hero clip whose shape is not its start picture's is a failed clip of that model - reported to the
+  Steward like any failure (three in a row: the next model in line). Needed because one page does not say (research 5).
+- THE COST MODEL (`costguard.lines(kind, ...)`, kinds `long` / `ladder` / `short`): one list of lines - the hero seconds, the
+  start pictures, the stills at the real megapixel price, the living clips, the key art, the voice by the second at the price
+  of the day, the writing, the thinking, the room's extra calls, the hook lab, the promise line-up, the Palace in the prompts,
+  the community lines - each with its count, its unit price, its rupees and the paid calls it covers (`calls`).
+  `governor.full_episode_inr`, `min_episode_cost_inr`, `episode.est_cost_inr`, `shorts2.est_inr`, `costguard.estimate_lines`
+  and `models.ai_estimate_inr` all read it: one arithmetic. A long video about a promoted Short is its own kind (three scenes,
+  three start pictures, no hook lab - open issue 126); a Short has its own lines (83); the line-up has its line (72); the
+  writing and the voice lose what the cut-downs took with them (141); the table read is counted only where it runs (the fault
+  above). After a video or a Short is made, `costguard.reconcile` sets what was really paid (tab `Cost_Log`) against the lines
+  and writes one summary row; a paid item no line covers, or a counted line that was exceeded, is named in the log.
+- THE SPLIT (`governor.split`): the month as a table - the cap, the fixed parts, the reserve (`MONTH_RESERVE_INR`: failed
+  tries and a winner's follow-up), the long videos with the safety margin, the Shorts by the shares of their formats - and how
+  many Shorts FIT. `shorts2.cadence` makes at most that many this month and spaces them over the month instead of running dry
+  in the third week; when fewer fit than `SHORTS_PER_MONTH` asks, the owner is told once a month with both numbers. The lever
+  that carries the plan stays `SHORTS_PER_MONTH` (the Shorts Studio's since V2c-b1): the redesign gives the split to Strategy
+  (D1), which is not wired before V4 - a lever on a department that cannot run cannot be turned by anybody, so the number that
+  binds is computed by code now and the lever moves to D1 when D1 exists (a new open issue).
+- PRE-FLIGHT (`preflight.run`): the hero model is on fal's listing, active, and its schema matches the row - a warning, never a
+  block (the Steward's next model stands ready). SWITCH: `CLIP_VALUE_ON` (FALSE = everything as before this batch: the hero is
+  what `FAL_HERO_MODEL` says, five-second clips at `PRICE_KLING_USD`, slowed up to 30%).
+- A LIVE SHEET IS MOVED ONCE (`manage.v12v2d_upgrade`): `FAL_HERO_MODEL` and `PRICE_KLING_USD` go to the picked model where
+  they still hold the old defaults; `TABLE_READ_MODE` is left alone (the estimate now asks whether the table read RUNS).
+- AT THE PILOT (V3, said here so that it is not lost): the first real step is the bake-off that exists (`bakeoff.run`, two
+  scenes, capped): the picked model, the next in line and the model in use side by side on UPRIGHT pictures - the owner's eye
+  decides, and the first clips' real cost is read on fal's own usage page.
+- CHANGED FROM THE REDESIGN, with reasons: (1) "rank per dollar" / "arena points per dollar" is not a ratio: a ratio picks the
+  cheapest model, below the one in use (design B). The rule is the best rank the plan can pay; ties by error band go to the
+  cheaper. (2) "from the live listing": the listing gives existence, inputs and clip lengths; its price is a base figure that
+  is wrong for our setting (research 4, 6), so the price per second is a dated reading of the model's page in the table and
+  the listing only raises the alarm when it moves. (3) Half (b) of V2d spends what this frees: "AI-moving seconds per long
+  video" is not raised here.
+- MONEY, said before the build (prices from the pages of 13 Nov 2026 at Rs 99 a dollar; NOT measured on a real bill; the
+  text lines are allowances no real run of the new code has met):
+  | | today (the code's own estimate) | after this batch (planned) |
+  |---|---|---|
+  | A Short (S1, the middle of its band) | Rs 287: 6 clips of 5 s at USD 0.084 a second 249.5; 3 pictures 0.9; writing and voice 36 | about Rs 80: 21 paid seconds at USD 0.02 = 41.6; 3 pictures 0.9; writing 36; voice (27.5 s and one re-take) 1.3 |
+  | A long video about a promoted Short | Rs 560.7 (counted as if it bought 4 scenes, a hook lab and a table read) | about Rs 385: 3 scenes of 5 s 29.7; 3 start pictures 19.9; 52 stills 30.9; 8 living clips 15.8; 2 key-art pictures 15.8; writing 170; thinking 40; the room's extra calls 20; the Palace 15; the line-up 0.5; the voice (540 s and one re-take) 24.8; community 3 |
+  | A long video under an override | Rs 560.7 | about Rs 406: one scene, one start picture and the hook lab more |
+  | The month (Rs 4,280 for production) | 4 long videos and 7 Shorts; the Shorts stop in the third week | 4 long videos (Rs 1,694 with the 10% margin) + 12 Shorts (about Rs 1,000) + the reserve 300 = about Rs 3,000; about Rs 1,300 not planned |
+  What is not planned is not saved: the re-planner that exists offers it as one more Short a week (the owner's tap), and half
+  (b) raises the moving seconds of a long video with it. If the pilot's bake-off sends the owner to MiniMax H3 (USD 0.06):
+  a Short is about Rs 163, a long video about Rs 444, the month about Rs 4,200 - twelve Shorts still fit, with nothing left.
+  At the price of the model in use (0.084) they do not: 9 fit.
+- HYPOTHESES: H25 the picked model's upright clips at 768p look at least as good to the owner as the model in use (the pilot's
+  bake-off, his eye). H26 a Short's real cost is within a fifth of its estimate (the first three real Shorts; `reconcile`).
+- NOT IN V2d-a, on purpose: the living tier and the moving seconds of a long video, `moving_share`, the micro-cuts that hide
+  part of a paid scene (130), a character drawn or absent, the stock rules, the first-second sound of a Short (all V2d-b); an
+  offline clip that follows its start picture's shape (the offline clips stay wide: open issue 123); wiring Finance (D11).
+
 ### V2c-b2b2 - THE CUT-DOWNS (12-13 Nov 2026) - ACCEPTED (final code commit 1d3a77a GREEN in GitHub Checks run 131: 1457 passed; sweep 58 of 58 ids)
 The owner's "continue" for this batch is the start of this session. The whole binding reading order was read first (handoff `CLAUDE.md`,
 `00`, `02` in full, `01`, `03`, `06`, `04`, `05`, all of the redesign with section 11 and its end notes first, this file's head, the
