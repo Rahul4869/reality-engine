@@ -642,6 +642,82 @@ def test_the_batch_is_wired_protected_and_documented():
     for ref in ("contract:moving_share", "contract:stock_share", "contract:short_moving", "contract:short_sound", "fn:whatifs.motion.place", "fn:whatifs.motion.carry", "fn:whatifs.motion.long_report",
                 "fn:whatifs.governor.moving_plan", "fn:whatifs.clips.living", "fn:whatifs.stock.shape", "fn:whatifs.sound.short_bed", "fn:whatifs.shorts2._file_hold"): assert ref in mx, ref
 
+# ------------------------------------------------------------------ 10. THE REPAIR OF RED 1 (EP209901010900): every paid clip shown whole, the measure without a grid loss
+RED1_S = [0.35, 1.97, 3.003, 4.455, 7.375, 11.759, 14.244, 18.057, 21.549, 23.981, 28.681, 30.145, 32.294, 33.535, 34.904, 38.375, 41.362, 43.276, 45.806, 48.131, 51.166,
+          54.951, 58.792, 61.725, 65.186, 67.53, 68.433, 70.628, 73.989, 78.333, 80.995, 86.046, 88.767, 92.23, 96.585]
+RED1_E = [1.753, 2.736, 4.174, 6.496, 11.329, 13.684, 17.039, 21.258, 23.533, 27.24, 29.214, 31.432, 32.714, 33.954, 37.409, 40.416, 41.954, 45.432, 47.558, 50.462, 53.149,
+          57.804, 60.891, 64.463, 66.648, 67.95, 70.3, 73.366, 77.944, 80.258, 83.906, 87.334, 91.563, 95.895, 100.193]
+RED1_T = "kFkFkFkFkFkFksssssssssslsksklksssssssslls"      # the shot list the Director was given (k a scene, l a living shot, s a still; F = the Short's footage), measured on 60d9483
+RED1_TOTAL = 101.392
+
+def _red1():
+    units = [{"i": k, "start": s, "end": e, "text": f"line {k} of the story", "tag": "none", "speaker": "DIRECTOR"} for k, (s, e) in enumerate(zip(RED1_S, RED1_E))]
+    shots, k = [], 0
+    while k < len(RED1_T):
+        s = {"type": {"k": "kling", "l": "living", "s": "still"}[RED1_T[k]], "prompt": f"p{len(shots)}"}
+        if RED1_T[k + 1:k + 2] == "F": s["short"] = {"id": "SHRED1", "parts": [len(shots)]}; k += 1
+        shots.append(s); k += 1
+    shots[0]["promise"] = True
+    return shots, units
+
+def test_ep209901010900_every_paid_clip_of_the_red_film_is_shown_whole(ladder):
+    """THE NAMED REGRESSION OF RED 1: the red film's own lines through the Director, the placing and the cutting. On 60d9483 the three scenes were
+    shown for 1.46, 3.46 and 4.36 of their 5 s (a living clip took the line each had to run on into) and two living clips lost a quarter second."""
+    shots, units = _red1(); plan = {"kling": 4, "living": 29, "living_s": 148}
+    AN.apply(shots, units, plan); out = MOT.place(shots, units, RED1_TOTAL, plan)
+    clip = {i: float(s["buy"]) if s["type"] == "living" else float(CL.SCENE_S) for i, s in enumerate(out) if s["type"] in MOT.MOVING and not s.get("short")}
+    b = [0.0] + [u["start"] for u in units[1:]] + [RED1_TOTAL]; MOT.carry(b, out, clip, set())
+    lost = {i: (round(b[i + 1] - b[i], 3), c) for i, c in clip.items() if b[i + 1] - b[i] < c - 1e-6}
+    assert sum(1 for i in clip if out[i]["type"] == "kling") == 3 and plan["living_bought_s"] >= 40, (plan, [s["type"] for s in out])
+    assert lost == {}, lost                                                                                        # {line: (seconds on screen, seconds paid)}
+
+def test_a_scene_is_bought_only_where_it_is_shown_whole_and_its_room_is_kept_for_it(ladder):
+    units, total = _units([2, 1.5, 1.5, 3, 6, 6])                                                                 # the promise scene at second 0 (a video under an override): an anchor of real footage and a cutaway sit inside its five seconds
+    shots = [{"type": "kling", "anim": {"slot": 0}, "promise": True}, {"type": "stock", "search": "x", "stock_s": 1.5, "prompt": "p1"}, {"type": "reaction", "speaker": "SKEPTIC"}, {"type": "still"}, {"type": "still"}, {"type": "graphic"}]
+    plan = {"living_s": 30, "kling": 1}; out = MOT.place(shots, units, total, plan)
+    assert [s["type"] for s in out] == ["kling", "still", "still", "still", "living", "graphic"] and out[0].get("promise") and plan["kling"] == 1, [s["type"] for s in out]
+    assert "search" not in out[1] and "stock_s" not in out[1] and out[1]["prompt"] == "p1" and "speaker" not in out[2] and out[2]["prompt"] == units[2]["text"]      # they become plain stills the scene runs over
+    b = [0.0] + [u["start"] for u in units[1:]] + [total]; MOT.carry(b, out, {0: 5.0, 4: float(out[4]["buy"])}, set()); assert b[1] - b[0] >= 5.0 and b[5] - b[4] >= out[4]["buy"], b
+    units, total = _units([2, 2, 6]); plan = {"living_s": 0, "kling": 1}                                          # a graphic inside its five seconds: the scene cannot be shown whole and is NOT BOUGHT
+    out = MOT.place([{"type": "kling", "anim": {"slot": 0}, "promise": True}, {"type": "graphic"}, {"type": "still"}], units, total, plan)
+    assert out[0]["type"] == "still" and "anim" not in out[0] and "promise" not in out[0] and plan["kling"] == 0, out[0]
+
+def test_a_line_that_carries_a_paid_clip_is_never_merged_away(ladder):
+    units, total = _units([3, 0.8, 4.5, 3]); shots = [{"type": "graphic"}, {"type": "still"}, {"type": "still"}, {"type": "graphic"}]
+    out = MOT.place(shots, units, total, {"living_s": 5}); assert [s.get("buy") for s in out] == [None, 5, None, None]      # a clip on a line under a second, running on into the still after it
+    b = [0.0] + [u["start"] for u in units[1:]] + [total]; merged = set(); MOT.merge(b, out, merged); MOT.carry(b, out, {1: 5.0}, merged)
+    assert 1 not in merged and b[2] - b[1] >= 5.0 - 1e-6, (b, merged)                                             # before: the renderer merged that line into the graphic before it, the clip began 0.8 s late and lost half a second at its end
+    b = [0.0, 3.0, 3.8, 8.3, 11.3]; merged = set(); MOT.merge(b, [{"type": "graphic"}, {"type": "still"}, {"type": "still"}, {"type": "graphic"}], merged); assert merged == {1} and b[1] == 3.8      # a still line under a second continues the picture before it, as before
+    b = [0.0, 3.0, 3.8, 8.3, 11.3]; MOT.merge(b, out, set(), keep=("kling",)); assert b[1] == 3.8                  # the older rule (the ladder off) spares only scenes
+    assert "MOT.merge(bounds, shots, MERGED_UNITS" in inspect.getsource(EP._render)
+
+def test_the_measure_counts_each_stretch_whole_and_each_clip_up_to_its_own_seconds(ladder, monkeypatch, tmp_path):
+    lens = [1.47, 3.47, 4.37, 4.77, 5.9, 2.0]                                                                     # the red film's stretches: each lost what was left after its last whole half second (2.7 s of that film)
+    film = _film(str(tmp_path / "f.mp4"), [("move", x) for x in lens]); t = 0.0; spans = []
+    for x in lens: spans.append((round(t, 3), round(t + x, 3), "living")); t += x
+    r = MOT.long_report(film, spans); assert r["frozen"] == [] and abs(r["moving_s"] - sum(lens)) <= 0.5, r        # nothing is frozen: what the render recorded and what is counted agree within half a second for the whole film
+    film2 = _film(str(tmp_path / "g.mp4"), [("move", 5.9), ("move", 4.1)])                                        # a clip played slower over 5.9 s next to a scene cut to 4.1 s
+    r = MOT.long_report(film2, [(0.0, 5.9, "living", 5.0), (5.9, 10.0, "scene", 5.0)], paid_s=10.0)
+    assert r["seen_pct"] == pytest.approx(91.0, abs=0.6) and r["scene_shown_s"] == pytest.approx(4.1, abs=0.05), r      # before: 5.9 + 4.1 = 100% - the slowed clip paid for the scene's lost second
+    for small in (True, False):                                                                                   # BOTH KINDS OF PAIRS AGAIN, at both render sizes: a picture HELD under the renderer's grain never counts, not even a short last piece
+        monkeypatch.setattr(RN, "SMALL", small)
+        seg = RN.clip_segment(MD.fake_clip(str(tmp_path / f"c{small}.mp4"), 640, 360, "c", 2), str(tmp_path / f"h{small}.mp4"), 6 * RN.fps())      # played (2 s, slowed to 2.5), then held
+        r = MOT.long_report(seg, [(0.0, 2.4, "living"), (2.7, 6.0, "scene"), (5.2, 5.9, "footage")])
+        assert r["by"].get("living", 0) >= 2.3 and "scene" not in r["by"] and "footage" not in r["by"], (small, r)
+
+def test_check_moving_share_says_the_scene_seconds_on_screen_of_those_paid(ladder, setting, tmp_path):
+    from tools import sweep as SW
+    film = _film(str(tmp_path / "f.mp4"), [("move", 5), ("move", 3), ("hold", 2)]); sc = MD.fake_clip(str(tmp_path / "sc.mp4"), 320, 180, "sc", 5)
+    ctx = {"master": film, "moving": [(0.0, 5.0, "scene", 5.0), (5.0, 8.0, "scene", 5.0)], "moving_paid_s": 10.0, "scenes": [sc, sc], "d": {"moving": {"bought_pct": 34.0}}}
+    s, ev = CON.p_moving_share(ctx); assert s == CON.FAIL and ev.endswith("; the scenes on screen 8 of 10 s") and "80% of the 10 s paid are seen moving" in ev, ev
+    core.store().append("Feature_Ledger", [{"ts": core.iso(), "episode_id": "EPSC1", "stage": "final", "feature": f, "status": "PASS", "evidence": (ev if f == "moving_share" else "e")} for f in ("moving_share", "stock_share", "living_characters")])
+    words = SW.motion_of(core, "EPSC1")[1]; assert "seen moving" in words and "the scenes on screen 8 of 10 s" in words, words      # the sweep's RESULT carries them
+
+def test_a_rehearsal_whose_long_video_is_held_names_the_held_checks():
+    from tools import rehearsal as RH
+    src = inspect.getsource(RH.run); after = src[src.index("r = EP.produce(slot, episode_id=epid)"):].splitlines()[1].strip()
+    assert after.startswith('assert r.get("ok")') and 'r.get("problems")' in after, after                         # before: KeyError 'master' on a held video (open issue 179)
+
 def test_with_the_ladder_switched_off_a_short_sounds_and_is_gated_as_before(setting, monkeypatch):
     from tests.test_v12_short import _quiet as q2, _bench
     q2(monkeypatch); _bench("What if the Moon left tonight?"); assert not MOT.on()                                # the older tests' cells (tests/conftest.py)
