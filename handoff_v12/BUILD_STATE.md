@@ -876,7 +876,10 @@ TESTS CHANGED BY DESIGN (named before they are changed; each read first): `tests
   (16); `test_code_places_the_living_seconds_on_lines_that_can_show_a_whole_clip`: the last line of 6 s buys 5, not 6, and 23 of the 24
   seconds are bought (17: a clip of 6 s on a room of exactly 6 s is the case SPARE_S exists for); `test_placing_never_buys_a_second_no_line_can_show`:
   a line of exactly 6 s before a graphic buys 5, not 6 (17), and in the same test "the budget binds" is shown with a budget of 10, not 11
-  (with SPARE_S three lines of 6 s buy 6 + 5 = 11 - the budget still binds, at 10 the second clip no longer fits; found by the first run). The sweep's `motion_of` keeps 300 characters of the check's words, not 210,
+  (with SPARE_S three lines of 6 s buy 6 + 5 = 11 - the budget still binds, at 10 the second clip no longer fits; found by the first run);
+  `tests/test_v111_enforce.py::test_sub_second_lines_without_their_own_picture_continue_the_previous_shot` read the merge rule's text in
+  `episode.py` - the rule now lives in `motion.merge` (one rule for the renderer and the tests, finding 18): the test reads it there and the
+  renderer's call (found by the first run; the behaviour it pins with the ladder off is unchanged). The sweep's `motion_of` keeps 300 characters of the check's words, not 210,
   so that the scene seconds fit (a judge's wording, no verdict changed).
 #### Step 7 TAKEAWAY - THE BUILDER'S DRAFT (the prover completes it; also Palace item `v2db.takeaway`)
 - WORKED: reading the provider's own page for the model the code already paid for - it found a licence nobody had read,

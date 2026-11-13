@@ -129,8 +129,8 @@ def test_sub_second_lines_without_their_own_picture_continue_the_previous_shot(s
     shots = [{"type": "still"}] * 5
     assert "V5" in CON.p_visual_change({"units": units, "shots": shots, "ep": "E", "merged_units": [99]})[1]      # every flash a new picture: overload
     assert CON.p_visual_change({"units": units, "shots": shots, "ep": "E", "merged_units": [1, 3]})[0] == "PASS"   # folded as the renderer does
-    src = open("whatifs/episode.py", encoding="utf-8").read()
-    assert "MERGED_UNITS.add(i)" in src and 'S("UNIT_MERGE_SEC", float)' in src
+    src = open("whatifs/motion.py", encoding="utf-8").read(); ep_src = open("whatifs/episode.py", encoding="utf-8").read()      # v12 V2d-b red 1: the merge is ONE rule, motion.merge, that the renderer calls
+    assert "merged.add(i)" in src and 'S("UNIT_MERGE_SEC", float)' in src and "MOT.merge(bounds, shots, MERGED_UNITS" in ep_src
 
 def test_a_promise_flag_does_not_stay_on_a_scene_the_animation_director_turned_into_a_still(setting, monkeypatch):
     """v12 fix (found by a held rehearsal episode): the room put the promise on its own first animated scene at 43.7 s; the Animation Director moved
