@@ -118,7 +118,7 @@ def place(shots, units, total, plan):
     for i in asked:
         if can(i): take(i)
     while budget - used >= lo:
-        cand = [i for i in range(n) if can(i) and room_s(i, out, sp, busy) >= lo + SPARE_S - 1e-6]
+        cand = [i for i in range(n) if can(i)]                            # take() alone decides whether a line's room shows a whole clip (a second filter here hid a broken one: red 1)
         if not cand: break
         def far(i):
             t = (sp[i][0] + sp[i][1]) / 2

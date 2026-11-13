@@ -851,6 +851,11 @@ CORRECTED BY THE BUILD, numbered on (each written here before the edit that fixe
   compared with every paid clip" are NOT what `motion.long_report` does and are corrected: a half second counts where the RENDER'S RECORD
   (`job.segmeta`) says a paid clip played there AND the film's picture changes there (the film is read; the clip files are not opened -
   their lengths are what was paid). A clip's place taken by another moving picture would count; only the renderer writes that record.
+  (23) THE BREAK RUN FOUND TWO GUARDS HIDING EACH OTHER (39 breaks on 3ba7417: 37 caught, R11 and R13 MISSED): the candidate filter
+  (`room >= lo + SPARE_S`) and `take()`'s own check refused the same short room, so breaking either changed nothing. The filter is gone
+  (`take()` is the one rule, for the Director's own shots and the candidates alike); `take()` is now tested where it stands alone - the
+  Director's own living shot on a line of 4.9 s, which no filter guards - and R13 breaks what is left of the candidates' line (a reserved line
+  is never one).
   (22) OPEN ISSUE 179: a rehearsal whose long video is held ends with `KeyError: 'master'` (`tools/rehearsal.py:86`) - it must end on an
   assertion that names the held checks.
 THE REPAIR'S DESIGN NOTE (scores 1-5: what a viewer gains / enforceable / cost / reliability / owner effort):

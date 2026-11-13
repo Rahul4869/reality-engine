@@ -692,6 +692,8 @@ def test_a_clips_spare_quarter_second_is_kept_free(ladder):
     units, total = _units([7, 2, 4, 3]); plan = {"living_s": 20}
     out = MOT.place([{"type": "still"}, {"type": "still"}, {"type": "still"}, {"type": "graphic"}], units, total, plan)
     assert [s.get("buy") for s in out] == [7, None, None, None] and plan["living_bought_s"] == 7, [s.get("buy") for s in out]      # the line after a clip that fills its own line is kept for its SPARE_S: no next clip cuts a file a few frames longer than bought
+    units, total = _units([4.9, 3]); out = MOT.place([{"type": "living"}, {"type": "graphic"}], units, total, {"living_s": 10})
+    assert out[0]["type"] == "still" and "buy" not in out[0], out[0]                                              # the Director's own living shot on 4.9 s: no clip of 5 s fits with its spare - not bought (a quarter second LESS was allowed before)
 
 def test_a_line_that_carries_a_paid_clip_is_never_merged_away(ladder):
     units, total = _units([3, 0.8, 4.5, 3]); shots = [{"type": "graphic"}, {"type": "still"}, {"type": "still"}, {"type": "graphic"}]
