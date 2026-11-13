@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 13 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026, V2c-b2a THE PLATFORMS ACCEPTED on 12 Nov 2026 - V2c-b2 was split at its start, V2c-b2b was split at its start too: V2c-b2b1 THE OPENING ACCEPTED on 12 Nov 2026, V2c-b2b2 THE CUT-DOWNS ACCEPTED on 13 Nov 2026 - V2c is complete; V2d was split at its start: V2d-a THE MONEY AND THE MODEL ACCEPTED on 13 Nov 2026 - the hero clip model is picked by value, every estimate is one table of cost lines; V2d-b THE LADDER'S RULES is BUILT AND NOT ACCEPTED YET - its prover is next, then V2b; the owner's items 28 to 30 of 13 Nov 2026: THE CHANNEL GOES LIVE ONLY AFTER THE WHOLE BUILD, V3 is the last step, the order is under NEXT; the owner's items 23 to 25 of 13 Nov 2026: the week's Fable allowance is a hard limit and building is Fable's - open issue 163; his items 26 and 27 of the same day: FROM V2d-b ON A BATCH IS TWO FABLE SESSIONS, THE BUILDER AND THEN THE PROVER - the rule is under NEXT, and V2d-b's builder is started by the session that built V2d-a, no other session starts it; THE LIVE CHANNEL IS PAUSED BY THE OWNER'S OWN HAND since 13 Nov 2026 - item 22 below, open issue 148). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 13 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026, V2c-b2a THE PLATFORMS ACCEPTED on 12 Nov 2026 - V2c-b2 was split at its start, V2c-b2b was split at its start too: V2c-b2b1 THE OPENING ACCEPTED on 12 Nov 2026, V2c-b2b2 THE CUT-DOWNS ACCEPTED on 13 Nov 2026 - V2c is complete; V2d was split at its start: V2d-a THE MONEY AND THE MODEL ACCEPTED on 13 Nov 2026 - the hero clip model is picked by value, every estimate is one table of cost lines; V2d-b THE LADDER'S RULES is BUILT AND NOT ACCEPTED YET - THE PROVER'S FIRST PASS ON 60d9483 WAS RED (the sweep: one id of 58, EP209901010900, held by the new check `moving_share`; everything else green; the red note is `V2d-b_RED_1.md`), the repair is the builder's, then the WHOLE block again on the new final code commit, then V2b; the owner's items 28 to 30 of 13 Nov 2026: THE CHANNEL GOES LIVE ONLY AFTER THE WHOLE BUILD, V3 is the last step, the order is under NEXT; the owner's items 23 to 25 of 13 Nov 2026: the week's Fable allowance is a hard limit and building is Fable's - open issue 163; his items 26 and 27 of the same day: FROM V2d-b ON A BATCH IS TWO FABLE SESSIONS, THE BUILDER AND THEN THE PROVER - the rule is under NEXT, and V2d-b's builder is started by the session that built V2d-a, no other session starts it; THE LIVE CHANNEL IS PAUSED BY THE OWNER'S OWN HAND since 13 Nov 2026 - item 22 below, open issue 148). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -104,6 +104,17 @@ That turn was the DESIGN step for the whole programme (research, designs, decisi
 line of the builder's parallel pre-check and THIS batch's acceptance block are in the hand-over note
 `V2d-b_BUILT_handover_note.md` (the shared notes folder). A PROVER (a fresh Fable session, Effort High) runs that block and
 writes ACCEPTED; until the record's head line says so, nothing is built on V2d-b and the paragraph below is not in force.
+**THE PROVER'S FIRST PASS ON `60d9483` IS RED (13 Nov 2026, 11:37 to 14:00 UTC).** Green: the parallel pre-check (1544
+passed), the three rehearsals, the serial suite on a frozen copy (1544 / 0 / 0, 78 files), GitHub's Checks run 146
+(1544 passed, the rehearsal GREEN). RED: the sweep - 55 of 58 ids; ONE id, `EP209901010900`, is bad in every part that
+makes a long video (A held, B held, C the rehearsal ends in a KeyError on the held video); all 30 ids of Shorts are
+good. The new check `moving_share` holds that video: "of 65 s of clip this video paid for only 88.5% are on screen and
+moving (at least 90%)". Reproduced alone (deterministic) and measured on the kept film - step 6b of the record and the
+note `V2d-b_RED_1.md` with its dump (the shared notes folder of the prover's session group,
+`...\side-session-notes\local_aec9dea2-b09e-4853-ae50-20741c2c8575`). WHAT HAPPENS NOW (the rule below, "A RED OR
+STRANGE RESULT"): the BUILDER's session repairs at the cause, proves it both ways, pushes a new FINAL CODE COMMIT that
+passed the pre-check and reports BUILT again; a prover then runs the WHOLE block again on that commit, from its first
+run. Nothing is built on V2d-b before that. Open issues 176 to 179 are the prover's other findings on this commit.
 **V2b - INSIDE THE FORMAT** is next, once V2d-b is ACCEPTED (`handoff_v12/BREAKOUT_REDESIGN.md` 10.7, the rows of 11.9
 that name V2b, 11.10 with its end notes - the newest is V2d-b's, and the owner's desk note on items 28 to 30 after it).
 Full seven-step MANDATORY BATCH LOOP as TWO FABLE SESSIONS (the builder, then the prover: below). Effort: High.
@@ -370,7 +381,7 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
-### V2d-b - THE LADDER'S RULES (13 Nov 2026) - BUILT, NOT ACCEPTED (the builder's record; the prover writes steps 6b and 7)
+### V2d-b - THE LADDER'S RULES (13 Nov 2026) - BUILT, NOT ACCEPTED (the builder's record; the prover writes steps 6b and 7) - THE PROVER'S FIRST PASS ON 60d9483: RED (the sweep 55 of 58 ids: step 6b)
 The builder's session (the first batch under "A BATCH IS TWO FABLE SESSIONS", item 27 of `02`). THE WEEK'S FABLE ALLOWANCE AT THE
 BUILDER'S START: 35% used (13 Nov 2026, about 07:05 UTC; weekly all models 18%; the 5-hour window 23%; reset 19 Nov 2026 18:00 UTC).
 FIRST CHECK before any work: V2d-a ACCEPTED on the record (`git log`: ACCEPTED commit 8f40a1b, final code commit 22fb8fd, head
@@ -721,7 +732,70 @@ D. (ORIGINAL, CHOSEN) THE MOVING SECONDS ARE A BUDGET THAT IS BOUGHT, PLACED, SH
 - NOT RUN BY THE BUILDER, by the rule of the two-session batch: the serial suite on a frozen copy, the sweep, GitHub's
   Checks run. NOT PROVEN BY ANYTHING YET, said plainly: a real living clip against the motion limit (165), a person in
   real footage whom no title names (166), any real fetch from NASA or Pexels, the look of the pick on our own stills (173).
-**6b - THE PROVER'S HALF: NOT WRITTEN YET.** (The acceptance block is in `V2d-b_BUILT_handover_note.md`.)
+**6b - THE PROVER'S HALF. FIRST PASS ON `60d9483`: RED - NOT ACCEPTED (13 Nov 2026; a fresh Fable session, started by
+the builder's session at the owner's "continue", item 32 of `02`).** The acceptance block is in
+`V2d-b_BUILT_handover_note.md`. FIRST CHECK: `git diff 60d9483 HEAD --stat` touched two files of `handoff_v12/` and
+nothing else, a clean tree, no test process. The whole block ran from ONE script, one run after another (11:37 to 14:00
+UTC), on two frozen copies of `60d9483` in the prover's scratchpad (the pre-check and the rehearsals on one, the serial
+suite and then the sweep on the other; both trees clean after their runs):
+- The parallel pre-check: **1544 passed in 35:07**, 0 failed, 0 skipped, 78 files - GREEN.
+- The rehearsals, each `REHEARSAL: GREEN`: F1 / S1 "53 of 77 s move = 68.9% ... footage 13 s, living 27 s, scene 13 s;
+  97.6% of the 41 s paid are seen moving"; F2 / S2 "72 of 99.3 s move = 72.5% ... 96.7% of the 60 s paid"; F1 / S3 "58.5
+  of 77.8 s move = 75.2% ... footage 13 s, living 34 s, scene 11.5 s; **91% of the 50 s paid** are seen moving" - one
+  point over the limit of 90%. Each: "no real footage in this video | 2 Short(s): every half second of the file moves,
+  sound from the first frame"; the money line as the builder's (the pick at USD 0.02, the plan can pay 0.026; its long
+  video estimated at Rs 729 to 746 with the 40% an empty month plans, 15 of 15 seconds of hero clip).
+- The serial suite on the frozen copy: **1544 passed / 0 failed / 0 skipped**, 78 files, none without a result, 61
+  minutes, no stall - GREEN. With node on the laptop the serial runner skips nothing (HOW TO RUN had not seen it yet).
+- **THE SWEEP on the same frozen copy, after the suite: 55 of 58 ids - RED.** A (20 ids, organisation on): 19 ok, 1
+  HELD. B (4 ids, organisation off): 3 ok, 1 HELD. C (4 full rehearsals with a fixed id): 3 ok, 1 crash. D (`--mode
+  short`, 20 ids): 20 of 20. E (10 more ids forced to S3): 10 of 10. THE BAD ID IS THE SAME IN A, B AND C:
+  **`EP209901010900`**, the first fixed id. Its long video (F2, 101.4 s) is held at the final gate by the new check:
+  "moving_share: of 65 s of clip this video paid for only 88.5% are on screen and moving (at least 90%) | 69.5 of
+  101.4 s move = 68.5% (floor 20% ...): footage 12 s, living 49.5 s, scene 8 s". In C the rehearsal's video of that id
+  is held by the same check (89.2% of 60 s) and the rehearsal then ends in `KeyError: 'master'` (`rehearsal.py:86`
+  reads the master of a result that has none) instead of naming the hold.
+  NOT RUN AGAIN IN THE HOPE OF GREEN. REPRODUCED ALONE (`tools/sweep.py --one EP209901010900 --work <dir>` from the
+  frozen copy): the same hold, the same numbers - deterministic. MEASURED ON THE KEPT FILM (a second run alone with a
+  listener on `motion.long_report`; the dump is beside the red note): nothing is frozen - no half second inside a
+  recorded stretch is under `MOVING_CHANGE_MIN`. The video paid 13 clips of 5.0 s (10 living, 3 scenes) = 65 s; the
+  render recorded 60.2 s of them on screen (92.6%) and the measure counted 57.5 s (88.5%). The 4.8 s that are not on
+  screen: the three animated SCENES are shown for 1.47 s, 3.47 s and 4.37 s of their 5 s (each is directly followed by a
+  line that carries a living clip; their own lines are 0.53, 2.74 and 3.67 s long), and two living clips for 4.77 and
+  4.8 s. The other 2.7 s are the half-second grid: a stretch is counted in whole half seconds from its start (1.47 s
+  counts as 1.0, 3.47 as 3.0, 5.9 as 5.5 ...). No guess at a repair here: `V2d-b_RED_1.md`.
+- GitHub's Checks, read on the public Actions page: run **146** on `60d9483` **GREEN** - 1544 passed (1:05:28),
+  "REHEARSAL: GREEN, episode id EP202611131156; contract script: 36/36 pass; contract final: 20/20 pass"; one warning
+  and three notices, GitHub's own (open issues 37 and 46). Runs 144 (10301e9) and 145 (0ed9080) RED: 13 failed, 1529
+  passed - the 13 tests the builder's record names as changed by design at that checkpoint.
+WHAT THE JUDGE LOOKED AT, in plain words (asked of the prover by the hand-over):
+- REAL FOOTAGE THAT STAYED: 3 of the 19 good long videos of A kept one clip of real footage (EP209901032326 3.5 s =
+  4.2% of the film, EP209901061352 3.2 s = 4.1%, EP209901202115 2.8 s = 3.8%; each "never first, never two in a row"),
+  and one rehearsal of C. The first point of open issue 169 is covered by the sweep on this commit; the three
+  rehearsals of part 2 kept none.
+- THE SHARE THAT MOVES on the 19 good long videos of A (films of 73 to 107 s; the month's money planned 34%): 58.8 to
+  77.5% against the floor of 20% - far above it, and as the builder wrote, a figure of short offline films, not of a
+  nine-minute video (open issue 167). THE SECONDS PAID AND SEEN: 90.4 to 103.3% against the limit of 90% - THE MARGIN
+  IS THIN: three good ids stand at 90.4, 91 and 91, the F1 / S3 rehearsal at 91, and one id fell under it. In each of
+  them the scene seconds found are low (8 to 11.5 of the 15 paid); over all 19 the scenes show 9.5 to 15.5 of 15.
+- EVERY SHORT: 30 ids of D and E = 60 Shorts, each "every half second of the file moves, sound from the first frame",
+  each released on three platforms (DONE + DONE + DONE; half of them by the owner's Approve), 17 to 23 paid seconds
+  equal to the estimate's on every one (Rs 71 to 83). No Short was held by its file gate.
+- THE MONEY: agreed on every GOOD id (A 19, B 3, D 20, E 10; the three good rehearsals of C print it themselves): each
+  long video 15 of 15 estimated seconds of hero clip, estimated at Rs 668 to 680 (organisation on) and Rs 718 to 728
+  (off). On the HELD id nothing can be said: a held video has no summary row (open issue 178).
+- THE PAID-CALL BASELINE (corrections 12 and 13, open issue 164): the counter, run alone, shows 36 stills against a
+  ceiling of 36 in the offline episode; the test asserts "not more than". The explanation holds as a count; the split
+  "up to 3 and up to 7" was not counted apart by the prover.
+- WHETHER THE RECORD SAYS WHAT THE CODE DOES: not in three places - open issues 176 and 177, and "a paid clip is shown
+  whole", which the held film contradicts (above).
+THE VERDICT: RED. The repair is the builder's (NEXT, "A RED OR STRANGE RESULT"); the whole block runs again on the new
+final code commit, from its first run. The prover changed no code and wrote nothing but this record and the note.
+THE WEEK'S FABLE ALLOWANCE (the account's figure; the prover cannot see whether another session worked beside it): 54%
+used at the prover's start (about 11:35 UTC), **68%** at its end (about 14:15 UTC) - at most 14 points for a prover's
+pass whose context stayed under 310,000 tokens. With the builder's at most 19 points the batch has cost at most 33
+points and is not accepted; the estimate of "a third less a batch" (item 27 (b) of `02`) is NOT confirmed by this
+measurement. 32 points are left until 19 Nov 2026 18:00 UTC; a repair and a second whole pass come out of them.
 #### Step 7 TAKEAWAY - THE BUILDER'S DRAFT (the prover completes it; also Palace item `v2db.takeaway`)
 - WORKED: reading the provider's own page for the model the code already paid for - it found a licence nobody had read,
   and the finding shaped the whole design (one market, one rule). Measuring before setting a limit, three times: the
@@ -5069,6 +5143,28 @@ Rehearsal asserts `docs_current` ran and passed.
    batch DRAWN BY CODE (the owner's items 28 to 30 of 13 Nov 2026; NEXT says where).
 175. (laptop) `git worktree remove` of a frozen copy in the scratch folder left `.git/worktrees/wt` behind ("Permission
    denied": the folder syncs); `git worktree prune` clears the entry once the lock is gone. Nothing in the tree.
+176. (V2d-b, found by the PROVER on 60d9483 - the record against the code; the builder settles it with the repair of
+   `V2d-b_RED_1.md`) THE MEASURE DOES NOT COMPARE THE FILM WITH THE PAID CLIPS. Step 3 of the record ("a half second
+   counts where the film's frame is that clip's frame (`opening.alike`) and differs from the next one"; design D (5):
+   "the FINISHED FILE is compared with every paid clip") describes more than `motion.long_report` does: the code never
+   opens a paid clip - it counts a half second where the RENDER'S OWN RECORD says a clip played and the film's picture
+   changes there, and "found again" is those seconds divided by the summed length of the clip files. A clip's place
+   taken by another moving picture would count. Either the record's sentences are corrected or the measure does what
+   they say. And "a paid clip is shown whole" is not true on every id: on EP209901010900 three scenes of 5 s are shown
+   for 1.47, 3.47 and 4.37 s (that is the red result itself).
+177. (older than V2d-b, found by the prover while checking "no prompt asks for a silhouette") TWO PLACES STILL ASK FOR A
+   SILHOUETTE, outside the retired rule's narrow pattern: the cast row of the trial's surprise witness
+   (`whatifs/show.py`: "visual": "never fully seen: a silhouette behind shelves" - the text goes into the portrait
+   prompts of `sheets.py` and `specials.py`, so that character's APPROVED ART would itself be a dark shape) and the
+   thumbnail template `T3_silhouette` of `whatifs/data.py` ("Silhouetted person, rim-lit ..."). Neither is the drawn
+   stand-in this batch deleted; both are what the owner's item 16 calls a shape without a face. To decide in V2b (the
+   characters of the formats) or V1c: keep as a designed look, or redraw.
+178. (V2d-b, the sweep) A HELD long video has no `cost_lines_summary` row (`costguard.reconcile` runs after the video is
+   finished), so on a held id the sweep cannot say whether the money agreed - its pictures and clips are paid by then.
+179. (V2d-b, the rehearsal) When the rehearsal's long video is HELD, `tools/rehearsal.py` line 86 reads `r["master"]`
+   of a result that has none and ends in `KeyError: 'master'` instead of an assertion that names the failed check
+   (seen in the sweep's part C on EP209901010900). The ledger still names the check; the rehearsal's own last line
+   does not.
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - Env: `export PYTHONUTF8=1 WI_FAKE=1 PY=../.venv/Scripts/python.exe`
@@ -5161,7 +5257,7 @@ Rehearsal asserts `docs_current` ran and passed.
 | V2c-b2b1 | done 12 Nov 2026 | 1416 / 0 / 0 on 22103cb (laptop); GitHub 1416 passed (run 126) | GREEN in F1 / F2 with Shorts in S1 / S2 / S3 (56 + 5 + 1 checks) | The opening: a long video about a promoted Short opens on that Short's kept footage (new `whatifs/opening.py`, D6) - the archive of its ladder row fetched and measured, the Short's picture track laid by code under the first sentences, one clip a shot cut through ONE window whose width follows the clip's real sharpness (a setting and a lever; a blurred copy of the picture as ground), the first spoken line the Short's own hook (no hook lab), three paid scenes instead of four; a video under an override opens on its own promise scene; checks `opening_footage` (before picture money) and `opening_shown` (frames of the finished film against the footage): 62 hard checks; 2 levers (72). V2c-b2b was split at its start. Found and fixed: a hash of a tiny copy could not recognise its own footage under a grade; the cut-downs lost every shot; a still after the opening re-used a frame of the footage; a reaction effect drawn over the footage; and - by the SWEEP, twice, after a green suite, green rehearsals and a green GitHub run - a false hold by the new check on 1 long video in 20 (it compared a frame where two clips meet; first misread, then reproduced and fixed). 83 deliberate breaks, each failed a test. No paid call added, four removed (about Rs 45-50 a long video). GitHub run 126 GREEN on 22103cb (124 and 125 GREEN on the two commits before the sweep's fixes; 121-123 RED = tests that pinned counts changed by design); sweep 58 of 58 ids on the third pass (57 of 58 on the first two). |
 | V2c-b2b2 | done 13 Nov 2026 | 1457 / 0 / 0 on 1d3a77a (laptop); GitHub 1457 passed (run 131) | GREEN in F1 / F2 with Shorts in S1 / S2 / S3 (54 + 5 + 1 checks) | The cut-downs: a long video makes NO cut-down reels any more - the paid planning call, two paid covers, four re-voiced reels, the old upload, releases 2 to 4 and the checks `shorts` and `short_covers` are gone (60 hard checks; 71 levers); its topic already has the Short real viewers chose and the pull from that Short is YouTube's related-video link, a hand step (V3's release card); the long video's release is one step. Counted from the code, the defaults would have posted about 38 short videos a month through four uploads (12 Shorts, 16 cut-downs, 8-9 pilot Shorts, 2 special reels): now 12 - ONE door for every upright video (`release.py`; `truth.OLD_DOORS`: four older doors, off by default, may only shrink; a new door fails Plan Guard, the tests and check `docs_current`), the pilot Shorts and the special reels paused by default and moved once on a live Sheet. Found while proving and fixed at the cause, both older than this batch: a job could hang for ever in the prompt-cache bookkeeping (a warning logged inside a lock; found with a stack dump of a stuck test worker), and a long video was held for its Short's own hook 'Today you ...' (reproduced with the id on the accepted code first). 63 deliberate breaks, each failed a test. No paid call added, seven removed a long video (about Rs 27; the counter agrees). GitHub run 131 GREEN on 1d3a77a (130 GREEN; 129 RED = three test files importing the deleted module at the first build checkpoint); sweep 58 of 58 ids on the first pass. |
 | V2d-a | done 13 Nov 2026 | 1491 / 0 / 0 on 22fb8fd (laptop); GitHub 1491 passed (run 139) | GREEN in F1 / F2 with Shorts in S1 / S2 / S3 (54 + 5 + 1 checks) | The money and the model (V2d was split at its start): the hero clip model is PICKED BY VALUE from a table of what the provider's own pages say (new `whatifs/clips.py`, D6; cell `CLIP_MODELS`) - the best-ranked model the month's plan can pay, a tie by the ranking's error band to the cheaper, never the cheapest for being cheap; with the pages of 13 Nov 2026 a model ranked 6th of 35 at USD 0.02 a second where the code paid 0.084 for a tier the ranking does not list. A clip is bought by the second at the length of its shot (no slowed clip); the provider's listing is read live for status, inputs and clip lengths and its price - a base figure, wrong for our setting - is only watched. Every estimate is ONE table of lines (`costguard.lines`) that the paid-call counter checks call by call and that every run is set against (`reconcile`; the sweep's `money_of`). The month's split is computed (`governor.split`) and the cadence follows it: four long videos and twelve Shorts fit Rs 5,000 with about Rs 1,000 not planned (before: seven Shorts, none after the third week). Found by counting and fixed at the cause, all older than this batch: Rs 55 of every long video's estimate for calls that never run, four paid pictures in no estimate, a runner-up thumbnail booked to an episode that does not exist, a test that depended on a 45-second clock. 145 deliberate breaks, each failed a test. No paid call added or removed; 60 hard checks, 71 levers, 188 founding Palace items. The final code commit moved once: GitHub's one process showed that a new test reused another test's episode id (runs 136-138 RED, read and reproduced). GitHub run 139 GREEN on 22fb8fd; sweep 58 of 58 ids on the first pass, the money agreed on every id. |
-| V2d-b | BUILT 13 Nov 2026 - NOT ACCEPTED (the prover's verdict is owed) | the builder's parallel pre-check on 60d9483 (laptop): 1544 passed, 0 failed, 0 skipped; the serial suite, the sweep and GitHub are the prover's | GREEN in F1 / S1, F2 / S2, F1 / S3 (56 + 5 + 2 + 1 checks) | The ladder's rules: ONE market of commercially licensed models for every moving second (the model paid for "living stills" was licensed for research only: found on its own page, gone by a one-time move); the month's money as MOVING SECONDS with a floor of 20% in every estimate and a target of 40% that today's price does not reach (about 29% in a full month); the seconds placed by code and every paid clip shown whole (new `whatifs/motion.py`, D6); the finished film MEASURED - the share that really moves and the paid seconds found again (check `moving_share`); a Short's finished file with a gate of its own (`short_moving`, `short_sound`: a Short that fails is made, kept and waits for one tap); a character DRAWN OR ABSENT (the code that drew the black shape is deleted); real footage as a short anchor with a record and a credit (new `whatifs/stock.py`, check `stock_share`); a Short that sounds from its first frame as a phone plays it. 64 hard checks, 75 levers, 197 founding items, 53 new tests (52 in `tests/test_v12_motion.py`, one more case of the test that runs once per retired rule), 108 deliberate breaks. A long video about a promoted Short costs about Rs 535 at the floor (Rs 381 before). Not proven by anything: a real living clip against the motion limit, a person in real footage whom no title names (open issues 165, 166). |
+| V2d-b | BUILT 13 Nov 2026 - NOT ACCEPTED: THE PROVER'S FIRST PASS ON 60d9483 IS RED (sweep 55 of 58 ids - one id, EP209901010900, held by `moving_share` at 88.5% of the paid seconds against 90%; `V2d-b_RED_1.md`); the repair is the builder's, then the whole block again | 60d9483 (laptop): the parallel pre-check 1544 passed, 0 failed, 0 skipped (the builder's and the prover's); the serial suite on a frozen copy 1544 / 0 / 0; GitHub 1544 passed (run 146) | GREEN in F1 / S1, F2 / S2, F1 / S3 (56 + 5 + 2 + 1 checks) | The ladder's rules: ONE market of commercially licensed models for every moving second (the model paid for "living stills" was licensed for research only: found on its own page, gone by a one-time move); the month's money as MOVING SECONDS with a floor of 20% in every estimate and a target of 40% that today's price does not reach (about 29% in a full month); the seconds placed by code and every paid clip shown whole (new `whatifs/motion.py`, D6); the finished film MEASURED - the share that really moves and the paid seconds found again (check `moving_share`); a Short's finished file with a gate of its own (`short_moving`, `short_sound`: a Short that fails is made, kept and waits for one tap); a character DRAWN OR ABSENT (the code that drew the black shape is deleted); real footage as a short anchor with a record and a credit (new `whatifs/stock.py`, check `stock_share`); a Short that sounds from its first frame as a phone plays it. 64 hard checks, 75 levers, 197 founding items, 53 new tests (52 in `tests/test_v12_motion.py`, one more case of the test that runs once per retired rule), 108 deliberate breaks. A long video about a promoted Short costs about Rs 535 at the floor (Rs 381 before). Not proven by anything: a real living clip against the motion limit, a person in real footage whom no title names (open issues 165, 166). |
 | V2b | after V2d-b | | | Inside the format: first person and camera continuity as measured rules, F1's own ending, the speaker chip, F3 "The walk" |
 | V1c | after V2b | | | The judged floor with the canary (the owner's rejected video must lose), his verdict tab, the maker's line |
 | V4 | after V1c | | | The CEO and the ladder: D1 Strategy wired, the portfolio, decide-inform-implement; the owner's input tab and the scoreboard |
