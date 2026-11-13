@@ -42,6 +42,15 @@
    "from": "REPAIR",
    "to": "BUILT",
    "why": "red 1 repaired at the cause; built_gate GREEN (1551 passed, 3 rehearsals GREEN, 39 of 39 breaks); code = d8101c8"
+  },
+  {
+   "at": "2026-11-13T23:58:23Z",
+   "batch": "V2d-b",
+   "by": "",
+   "commit": "5827d97",
+   "from": "BUILT",
+   "to": "PROVING",
+   "why": ""
   }
  ],
  "order": [
@@ -58,10 +67,10 @@
   "B10",
   "V3"
  ],
- "phase": "BUILT",
+ "phase": "PROVING",
  "red_notes": [
   "V2d-b_RED_1.md"
  ],
  "red_rounds": 1,
- "updated": "2026-11-13T18:11:09Z"
+ "updated": "2026-11-13T23:58:23Z"
 }
