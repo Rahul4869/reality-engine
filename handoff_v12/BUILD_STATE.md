@@ -477,6 +477,27 @@ E. (ORIGINAL, CHOSEN) THE BEST MODEL THE PLAN CAN PAY, BOUGHT BY THE SECOND, IN 
   because this batch sets what was paid against the estimate line by line. Fix at the cause: the seed and the cost id are
   two arguments (`art.thumbnail(..., episode, seed=)`), so the pictures stay exactly what they were and the cost goes to
   the video that ordered it; a test on the seed and the booking, the whole production's assertion, two deliberate breaks.
+  (7) **GITHUB'S CHECKS WERE RED ON A COMMIT THE LAPTOP HAD PASSED WITH 1490 - ONE OF MY NEW TESTS BROKE AN OLDER ONE, ONLY
+  WHERE ALL FILES RUN IN ONE PROCESS.** Run 136 (5fd90c8): 1 failed, 1489 passed - `test_v12_opening_e2e.py`, "a long video
+  whose footage is gone is held": the production it expected to be HELD came back finished. Read on the public run page,
+  then REPRODUCED on the laptop before it was explained (the two tests in one process, in GitHub's order: 1 failed, the
+  same assertion). Cause: my whole-production test used the episode id EP209903010900 - the id that older test uses - and
+  keeps its work folder; GitHub runs every test file in ONE process with one work folder, so the older test found a
+  finished video under its own id. The laptop's two runners never see it: the parallel one gives every worker its own
+  folder, the serial one starts a process per file. Not a fault of the product (an id is never used twice there). The
+  final code commit ab94c09 carried the same test, so its GitHub run (137) would be red too and the serial suite already
+  running on its frozen copy was stopped as void. Fix at the cause: my test uses ids of its own and removes its work
+  folders; a new test fails when a whole-production id of that file appears in another test file. THE FINAL CODE COMMIT
+  MOVES: the parallel pre-check, the serial suite, the sweep and GitHub are run on the new one.
+  (8) THE SECOND PARALLEL PRE-CHECK (after the fix of 7) HAD ONE FAILURE IN A FILE NOBODY TOUCHED: 1 failed, 1490 passed -
+  `tests/test_v811.py`, "the second call reads the cache": `assert (0 > 0)`. Not re-run in the hope of green: read, explained,
+  REPRODUCED, then fixed. The test makes two model calls and reads the unsent cost rows (`core._cost_buf`) between them; the
+  cost log sends its rows by itself whenever the last sending in that PROCESS is more than 45 seconds old - then the first
+  call's row is gone and the test judges the second row as the first. The tests reset the buffer before every test, not
+  that clock: whether it bites depends on what ran before in the same worker and how long ago. A latent fault of the test
+  set-up since v8.11; adding a test file changed which tests share a worker. Reproduced alone by making the clock 100
+  seconds old (1 failed, the same assertion); fixed at the cause - every test starts with a fresh clock as it starts with an
+  empty buffer (`tests/conftest.py`); the same reproduction then passes. No product code involved.
   (5) THE BREAK LIST, written before the last test run ("what would fail if this line went?"), showed six rules without an
   assertion: the start pictures and the key art on a whole production's summary, the writing line plus the hook lab equal
   to the writing allowance, a Short's estimate from its real plan, an episode's estimate when its draw names a promoted

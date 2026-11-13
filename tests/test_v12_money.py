@@ -1,6 +1,6 @@
 """v12 V2d-a THE MONEY AND THE MODEL: the hero clip model is picked by value from a table of what the provider's pages say, a clip is bought by the
 second, every estimate is one table of lines the paid-call counter can check, and the month's split says what fits. Each rule both ways. No keys, no network."""
-import datetime as dt, inspect, json, os, subprocess
+import datetime as dt, inspect, json, os, shutil, subprocess
 import pytest
 from whatifs import core, clips as CL, costguard as CG, governor as G, media as MD, steward as STW, scout as SC, shorts2 as SH, formats as FMT, manage as MG, episode as EP, models as M
 from whatifs import tts_gemini as T, preflight as PF, notify as NT, publish as PUB, ladder as LAD, opening as OPEN, replan as RP
@@ -13,6 +13,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HEY, H3, H3MAX, PIX, KLING = (r["id"] for r in json.loads(core.DEFAULTS["CLIP_MODELS"][0]))
 DEC = dt.datetime(2026, 12, 1, 6, 0, tzinfo=dt.timezone.utc)
 REAL_SCHEMA = SC.fal_schema          # the offline listing: a schema that says what the model's own row says
+OWN_IDS = ("EP209904050900", "EP209904120900", "SH209904050900")          # the whole productions of this file: ids no other test file uses (a test proves it)
 
 @pytest.fixture
 def market(setting):
@@ -337,7 +338,8 @@ def test_a_short_whose_real_plan_the_month_cannot_pay_is_not_made_and_no_picture
     q2(monkeypatch); _bench("What if the Moon left tonight?"); calls = []
     monkeypatch.setattr(MD, "animate", lambda *a, **k: calls.append("clip")); real = SH.est_inr
     monkeypatch.setattr(SH, "est_inr", lambda fmt, pl=None: real(fmt, pl) + (5000 if pl else 0))          # the plan turns out far dearer than the format's estimate
-    r = SH.run(force=True, publish=False, now=DEC); assert r == {"ok": False, "skipped": "budget", "why": r["why"], "id": r["id"]} and calls == []
+    r = SH.run(force=True, publish=False, now=DEC + dt.timedelta(hours=5)); assert r == {"ok": False, "skipped": "budget", "why": r["why"], "id": r["id"]} and calls == []
+    shutil.rmtree(os.path.join(core.WORK, r["id"]), ignore_errors=True)
     row = next(x for x in core.store().rows("Specials") if x["id"] == r["id"]); assert row["status"].startswith("FAILED (money:") and not SH._made(row) and SH._failed(row)
 
 # ------------------------------------------------------------------ a live Sheet is moved once
@@ -381,12 +383,12 @@ def test_whole_shorts_pay_exactly_the_seconds_their_plan_said(market, setting, m
         assert j["unlisted"] == [] and j["over"] == [] and j["paid"]["hero_clip"] == j["lines"]["hero_clip"] == mk["paid_s"] and j["paid"]["image"] == j["lines"]["image"] == mk["pictures"]
         assert c["clip_kling"] == mk["clips"] and c["voice_job"] == 1 and c["text:short_writer"] <= core.S("SHORTS_VARIANTS", int) + 1 and row["role"].startswith(f"short {fmt}: ")
         assert float(row["est_inr"]) <= SH.est_inr(fmt) + 0.05 and mk["paid_s"] >= float(r["sec"]) - 6.6, (fmt, row["est_inr"], SH.est_inr(fmt))      # the estimate said before the script covers what the plan bought
-        monkeypatch.undo(); q2(monkeypatch)
+        shutil.rmtree(os.path.join(core.WORK, r["id"]), ignore_errors=True); monkeypatch.undo(); q2(monkeypatch)          # nothing is left behind for a later test (one process, one work folder on GitHub)
 
 def test_whole_long_videos_the_counter_and_the_lines_agree_call_by_call(market, setting, monkeypatch, tmp_path):
     from tools.sweep import climb, money_of
     from tests import test_v12_opening_e2e as E2E
-    E2E._start(monkeypatch, setting); A, B, sid = "EP209903010900", "EP209903080900", "SH209903010900"
+    E2E._start(monkeypatch, setting); A, B, sid = OWN_IDS
     assert climb(core, A) is True; c = watch(monkeypatch); r = EP.produce(E2E._slot(10), episode_id=A); a = dict(c); assert r.get("ok"), r
     L = CG.lines("ladder"); assert _covered(a, L) == [], (_covered(a, L), a)
     assert (a["clip_kling"], a["image_ref"], a["image_premium"], a["voice_job"], a.get("text:hooks", 0)) == (3, 3, 2, 1, 0), a
@@ -403,6 +405,15 @@ def test_whole_long_videos_the_counter_and_the_lines_agree_call_by_call(market, 
     assert float(row2["est_inr"]) > float(row["est_inr"]) > 300                                     # each at its own tier; what the two kinds differ by is pinned in the kind's own test
     extra = dict(b, clip_kling=5); assert _covered(extra, L2) == ["clip_kling: 5 paid, 4 in the estimate"]
     assert _covered(dict(b, stock=1), L2) == ["stock: paid 1 time(s), no line in the estimate"]
+    for i in OWN_IDS: shutil.rmtree(os.path.join(core.WORK, i), ignore_errors=True)                  # GitHub runs every test file in ONE process with one work folder: leave nothing behind
+
+def test_the_whole_production_ids_of_this_file_are_used_by_no_other_test_file():
+    """Paid for on GitHub's run 136: this file's long video carried the id an older test uses, kept its work folder, and that test - run later in
+    the same process - found a finished video under its own id. A whole production's id belongs to one test file."""
+    import glob
+    for f in glob.glob(os.path.join(ROOT, "tests", "*.py")):
+        if os.path.basename(f) == os.path.basename(__file__): continue
+        src = open(f, encoding="utf-8").read(); assert not [i for i in OWN_IDS if i in src], (os.path.basename(f), OWN_IDS)
 
 # ------------------------------------------------------------------ wiring
 def test_the_batch_is_wired_protected_and_documented():
