@@ -527,6 +527,18 @@ characters, the stock rules, the Short's sound), the docs (8 matrix rows, the le
 4 builders' recipes), 9 founding items (197), `tests/test_v12_motion.py` (43 unit tests GREEN; 4 whole productions were
 running when this was written), one rehearsal GREEN (F1, the motion block walked: 74.7% of that small film moves, 94% of
 its paid seconds found). Plan Guard, Palace, Organisation GREEN.
+UPDATE (about 11:45 UTC): the whole productions of `test_v12_motion.py` are GREEN (6 of 6 tests with "whole" in their name,
+4:19). THE FIRST PARALLEL RUN OF THE WHOLE SUITE on checkpoint 10301e9: **13 failed, 1529 passed in 35:47** - every one read,
+none re-run in the hope of green. By design (a test pinned what the batch changes): `test_v111_living` (3 tests: the
+fall-back shape and "not applicable"), `test_hardening` (the format text's old sentence about presenters), `test_v102`
+(the list of stages: `short_file` is new), `test_v12_cutdowns`, `test_v12_exec` (2), `test_v12_release` (the pinned counts:
+64 checks, SHOW_CHECKS 53, the levers), `test_v111_enforce` (a stand-in for `anim.pick_slots` that does not take `fit`).
+STILL TO READ before they are touched: `test_v91_matrix` (the upgrade of an old Sheet "additive and idempotent" - a changed
+default of a living cell?), `test_v91_e2e` and `test_v91_paidcalls` (the paid-call baseline: with no approved cast art a
+tiny line is no longer a free cutaway, so a picture may be bought for it - count it and write it into `tests/paid_calls.py`
+as V2d-b's change, or find the fault). In the scratch folder, not yet applied to the repo: `e17_prove.py` (a redundant
+guard removed, the stock filter as a pure function, six assertions the break list asked for) and `breaks.py` (113
+deliberate one-place breaks; it keeps copies, verifies the fast tests green first, runs in parts).
 STILL OWED BY THE BUILDER, in this order: (1) the four whole-production tests of `test_v12_motion.py` green; (2) the older
 tests that pin what the batch changed by design - 64 hard checks (36 script, 20 final, 5 short, 2 short_file, 1 release),
 `SHOW_CHECKS` 53, 75 levers, 197 founding items, 17 retired rules, the enforcement meta-test; (3) the break list and the
