@@ -5,7 +5,7 @@
  "base_commit": "22fb8fd2117e17353630ed46914ed93864f07da6",
  "batch": "V2d-b",
  "fable_design_gate": true,
- "final_code_commit": "60d948375f2f207128117ac6926acb47f6b1d90b",
+ "final_code_commit": "5827d97dc5aa948c27ae7f77832013a11108a3c7",
  "history": [
   {
    "at": "2026-11-13T11:25:00Z",
@@ -33,6 +33,15 @@
    "from": "RED",
    "to": "REPAIR",
    "why": "red round 1: EP209901010900 held by moving_share (V2d-b_RED_1.md); the owner's 'continue'"
+  },
+  {
+   "at": "2026-11-13T18:11:09Z",
+   "batch": "V2d-b",
+   "by": "the repairer (Opus 5.5)",
+   "commit": "5827d97",
+   "from": "REPAIR",
+   "to": "BUILT",
+   "why": "red 1 repaired at the cause; built_gate GREEN (1551 passed, 3 rehearsals GREEN, 39 of 39 breaks); code = d8101c8"
   }
  ],
  "order": [
@@ -49,10 +58,10 @@
   "B10",
   "V3"
  ],
- "phase": "REPAIR",
+ "phase": "BUILT",
  "red_notes": [
   "V2d-b_RED_1.md"
  ],
  "red_rounds": 1,
- "updated": "2026-11-13T15:04:41Z"
+ "updated": "2026-11-13T18:11:09Z"
 }
