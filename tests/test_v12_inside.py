@@ -178,6 +178,12 @@ def test_the_seat_and_the_beat_repair_turn_a_shot_into_a_still_with_one_helper(s
     s = AUD.shape([{"type": "graphic", "prompt": "a graph"}], [{"text": "x", "start": 0}], {"thumb_prompt": "the promise"})
     assert s[0]["type"] == "still" and s[0]["prompt"] == "the promise. LOCKSTYLE" and s[0]["seat"] == "first picture"   # audience.shape does what it did
 
+def test_produce_opens_every_beat_on_a_picture_after_the_seat_and_before_the_animation_director():
+    import inspect
+    src = inspect.getsource(EP.produce)
+    a, b, c = src.index("AUD.shape(S_[\"shots\"]"), src.index("S_[\"shots\"] = shots = INS.open_acts(shots, units)"), src.index("ANIM.apply(shots, units, plan)")
+    assert a < b < c                                                                                                   # D13's seat, then every beat on a picture, then the scenes are placed
+
 # ------------------------------------------------------------------ 7. the wiring
 def test_the_voice_rule_is_wired_owners_levers_protected_and_classified():
     assert REG.CHECK_OWNER["viewer_inside"] == "D13" and "whatifs/org/inside.py" in REG.DEPTS["D13"]["wraps"]

@@ -1154,6 +1154,38 @@ READ DURING THE STEP (written while this session worked): the owner's items 38 t
 sessions design ahead and RUN NOTHING; Lane A, this build, stays serial). Nothing in them changes what this builder does.
 PLAN NOTE (L15): two small edits of this step went through a Python program typed in a shell here-document (no backslash in either; each file read
 back by its own test run). From here on every script is written with the file tool.
+WHERE THE BUILD STANDS (the first Opus builder, 14 Nov 2026 about 06:05 UTC; written at 65% of its context, BEFORE the plan's 70% line, because
+step 2 - the ending - is the largest part of the memo and would cross that line half typed; the memo's own fall-back: "a fresh Opus session goes on
+in the same phase BUILD"). DONE AND PUSHED: step 0 (commit 20f00be) and step 1 (commit 08861cb; the guard of `produce`'s call and this note in the
+commit after it). The state stays BUILD; nothing was moved; `V2b_OPUS_DONE.md` is NOT written (the build is not done).
+NEXT: a FRESH Opus builder, card "BUILDER of V2b - phase BUILD" from `.venv/Scripts/python.exe proving/next.py`, does the builder's whole reading
+(the plan's chapter 4; the code file by file as each step is typed), reads THIS record's V2b part (Step 3, then this Step 4 from its first line)
+and `reviews/V2b_design.md` (round 3 first), and goes on at 3.9 STEP 2 (the ending), then 3, 4, 5, 6, 7, 8 - a checkpoint commit after each.
+WHAT IT NEEDS TO KNOW FROM HERE (facts found while typing, not decisions):
+- THE PINS each step moves (named above as changed by design; today's values): checks by stage `{"script": 37, "final": 20, ...}` and the total
+  65 (`tests/test_v12_cutdowns.py` 39; `tests/test_v12_exec.py` 493; `tests/test_v12_motion.py` 633), `SHOW_CHECKS` 54 (`whatifs/org/rnd.py`;
+  `tests/test_v12_motion.py` 636; `tests/test_v12_release.py` 436), levers 81 (`tests/test_v12_exec.py` 62). Step 2 adds `format_ending`
+  (script) and `ENDING_FREE_S`; step 4 `camera_path` (script), `camera_shown` (final), `ACT_MIN_S`, `PLACE_CHANGES_PER_MIN_MAX`; step 5
+  `FORMAT_SHARE_F3`'s rule exists already (its lever is in `levers.py`) - count again before moving a pin.
+- `tests/conftest.py` `OLD_INSIDE` holds `INSIDE_ON` FALSE only: each later switch (`ENDINGS_ON`, `CHIP_DRAWN_ONLY_ON`, `CAMERA_PATH_ON`) and the
+  shares 70 / 30 / 0 are added in the step that adds its cell (3.9).
+- `tests/test_v12_inside.py` holds the step-1 tests and ONE whole F1 production (`OWN_IDS[0]` = EP209908010900; `OWN_IDS[1]`, `[2]` are reserved
+  for the F3 video and the trial under the ladder of 3.10). Step 4 extends that F1 production's asserts (two places named, different place
+  sentences, no still of another act); step 2 adds its ending asserts (one subscribe ask, the last line a question, no tease).
+- TODAY'S F1 OFFLINE FILM, measured on `EP209901021613` forced F1 with step 1 built: `end_tease` PASS "Next simulation: What if the Moon left
+  tonight?" and `audience_asks` "3 ask(s)" - exactly what step 2 removes; `hook_lab` PASS (the Short's hook). The offline writer's stand-in lines
+  under the voice rule are `fakes._lines_inside` (DESIGN QUESTION 2): in step 2 the F1 stand-in must end on its question and F3's (step 5) on
+  its arrival.
+- WHERE THE WORDS OF STEP 2 LIVE (found by reading, line numbers of commit 08861cb): `prompts.py` line 95 holds the span "AUDIENCE ASKS (like,
+  subscribe, share): ... Do not put an ask directly before or after a reaction line." that becomes `@@ASKS@@`; line 144 (HUMANIZE) and line 266
+  (FACTFIX) say "the three audience asks"; `room.py` `oc_rewrite` (about line 345) and `retention_pass` (about line 534) too; `room._run_room`
+  has the three `CTA.ensure` call sites (about lines 332, 350, 378) and `ensure_tease` after two of them; `cta.check` / `ensure` /
+  `_safe_slot` / `kind_of_text` as the memo describes them; `contract.p_tease` is one line (line 107).
+- `proving/breaks/V2b.json` exists (outside the repo, the builder's own file): F1 of the audit exactly as its FIX says and 18 breaks of step 1
+  (S1-01 to S1-18), each anchor found exactly once and each named test present - NOT RUN. Steps 2 to 7 add theirs; step 8 runs them all.
+- NOT RUN BY THIS BUILDER: the whole suite (its parallel pre-check is part of the builder's block, step 8), any rehearsal, `breaks.py`.
+USAGE at this builder's end: the 5-hour window 33%, weekly all models 9%, weekly Fable 16% (the account's figure: Fable sessions of both lanes
+work beside this one; this session is Opus 5.5), this session's context 65%.
 
 ### V2d-b - THE LADDER'S RULES (13 Nov 2026) - ACCEPTED (final code commit 5827d97 GREEN in GitHub Checks run 159: 1551 passed; sweep 58 of 58 ids)
 (Its code is d8101c8; every later commit is text only. History: built on 60d9483; the prover's FIRST PASS on 60d9483 was RED - the sweep
