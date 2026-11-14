@@ -651,8 +651,9 @@ shares as they were - `tests/conftest.py`, a new dict `OLD_INSIDE`, named here a
   Nobody on record has ever needed a rope to stay home.` / `[JUDGE] Here's what's true: you would last one day without the pull of the
   ground.` = **9 of 15 = 60.0%, run 4**. BAD-TRIAL: the offline trial as d8101c8 writes it (26%, a run of 8).
   THE LIMITS, EACH BETWEEN ITS OWN PAIRS: F1 floor 50 (good 90.9 and 66.7, bad 33 to 35 and 0), run 4 (good 1 and 4, bad 5 to 8); F3
-  floor 60 (one voice and no foil's "I": GOOD-1 and GOOD-2 with every [SKEPTIC] line removed are its good pair - the builder measures
-  and writes the two figures; they must stand at or above 65) and run 4; F2 floor 40 (good 60, bad 26) and run 6 (good 4, bad 8: four
+  floor 60 (one voice and no foil's "I": GOOD-1 and GOOD-2 with every [SKEPTIC] line removed are its pair = **8 of 9 = 88.9%, run 1** (its good passage)
+  and **8 of 13 = 61.5%, run 4** (its EDGE passage: a walk that ends on four sentences of explanation passes the floor of 60 by 1.5
+  points and the run limit at the limit - that is what the floor is for); bad: BAD-1 (0%, run 8)) and run 4; F2 floor 40 (good 60, bad 26) and run 6 (good 4, bad 8: four
   voices talk to each other as well as to the viewer). The limits STAND only if the builder's measure gives exactly the bold figures
   above; if one differs, the measure is not what this memo defines - found and corrected before anything is built on it. If a pair no
   longer separates: `DESIGN QUESTION`, stop. LEVERS of D13 (`registry.DEPTS` and `levers.LEVERS`): the three floors (range 20 to 80,
@@ -682,7 +683,11 @@ this batch both say NA "made before the camera path".
   `motion.place`, as V2d-b's hand-over warned):
   (i) `path.mark(shots, units, total, bible, ep)` - right after `inside.open_acts` and BEFORE the Animation Director: every shot that
   belongs to an act (whatever its type: types still change) gets `path` = {"act": the act's beat number, "place": the act's place,
-  "sign": +1 or -1, "first": True on the shot of the act's FIRST unit, else False}; `sign` = `+1 if shotplan._h(ep, act) % 2 == 0 else
+  "sign": +1 or -1, "first": True on the act's first shot whose type is still, living or kling when `mark` runs (after `mark` a still
+  may become living or kling - still a picture of its own - never a graphic, footage or a cutaway), else False; an act with no such
+  shot has no `first`} (review round 2, change 1: an act may open on a reaction cutaway - `shotplan.reaction_shots` runs in the plan
+  stage - or, with `INSIDE_ON` FALSE, on a graphic or real footage; tests for both: the act's first still is in `anchors_for` and
+  `camera_shown` passes); `sign` = `+1 if shotplan._h(ep, act) % 2 == 0 else
   -1` for "path", and ONE sign for the whole video for "walk" (`shotplan._h(ep, "walk") % 2`). The plan carries `S_["path"]` =
   [{act, place, from_s, to_s, sign}]. A shot of the Short's footage gets no `path`.
   (ii) `path.lay(shots)` - AFTER `motion.place`, the last step before the script gate; it changes no type: every shot with a `path`
@@ -728,9 +733,13 @@ this batch both say NA "made before the camera path".
   the third such guarantee of that function beside the first still and the first still after the footage. `episode.anchors_for(shots,
   units, d, plan, opening)` is the ONE helper both `_assets` and the script gate call (the gate judges what the asset step will do;
   the builder gives it exactly the arguments `_assets` computes its anchors from today and names them in the record).
-  WHEN AN ACT'S FIRST PICTURE CANNOT BE MADE: `_assets` treats it as required - after its usual tries a missing one raises the
-  RuntimeError the 15% rule already raises ("... will retry (the pictures that worked are saved)"): a film is never rendered with an
-  act that would open on another act's picture.
+  WHEN AN ACT'S FIRST PICTURE CANNOT BE MADE (review round 2, change 4: a raise typed inside `_assets` would lose every picture and
+  clip of that run - the animated scenes are the dearest thing a video buys - and the retry would pay for all of them again): `_assets`
+  reports it as it reports every missing picture; in `episode.produce`, beside the 15% rule and AFTER the same `CK.save(out, ep,
+  "assets", {"assets.json": _assets_state(files)})`, a missing picture of a shot with `path.first` raises the same RuntimeError ("act
+  A's first picture could not be made - not rendering a film that opens an act on another act's picture; will retry (the pictures that
+  worked are saved)"). Test: after the raise `assets.json` holds the pictures and clips that were made, and the second
+  `_assets(have=...)` buys the one missing picture and nothing else (the paid-call counter).
 - ONE DIRECTION OF TRAVEL (`whatifs/render.py`; reviews 7 and 9). `camera_path(..., sign=None)`: `sgn = sign if sign in (-1, 1) else
   rng.choice([-1, 1])` AND `par_px = sw * par * (sign if sign in (-1, 1) else rng.choice([-1, 1]))` - today the depth parallax draws
   its side a second time, so near things would slide against the travel. With `sign` None every draw is what it was, in the same
@@ -753,7 +762,10 @@ this batch both say NA "made before the camera path".
   5-tuples `p_visual_change` unpacks and which is None when the motion ladder is off.
 - CHECK `camera_path` (script stage, owner D6, SHOW check; on the shot list, BEFORE any picture is paid): NA as said above. FAIL when
   (1) a shot of an act has no `path` mark; (2) a shot with `path.first` and type still is not in `episode.anchors_for(...)` ("act A
-  would open on a picture made for another act"); (3) a picture's `pov.angle` is not "eye level"; (4) a still or living shot without
+  would open on a picture made for another act"); (3) a picture's `pov.angle` is not "eye level" - judged only where code assigned an angle: a picture that carries no `pov.angle`
+  at all (`IMMERSION_ON` or `POV_VARIETY_ON` FALSE, or `v91.guard` switched that step off for this episode) is not failed for it
+  (the place sentence still asks for eye level) and the PASS words then say "angle not assigned by code" in place of "every picture
+  at eye level"; (4) a still or living shot without
   the marks `short`, `promise`, `anim` does not hold its act's place sentence; (5) after the joins an act is shorter than `ACT_MIN_S`
   while another act exists, or the changes of place are over the allowance (the joins did not run). PASS: "A acts in A places (C
   changes in M.M min, at most X): place 1 | place 2 ...; every picture at eye level; every act opens on its own picture".
@@ -772,20 +784,35 @@ this batch both say NA "made before the camera path".
   video uses the NEW `cta.is_ask(text)` -> "like" | "subscribe" | "share" | "comment" | None, which says yes in two cases only:
   (1) THE CODE'S OWN LINES: the words, lower-cased with runs of spaces made one, EQUAL the words of any line of `POOLS` or `TRIAL_POOLS`
   (a reply line of a two-line entry - "They will. Loudly.", "Please don't call it democracy." - is that entry's kind);
-  (2) AN IMPERATIVE: with `LEAD` = `(?:^|[.!?]\s+)(?:(?:please|so|and|then|now|okay|ok),?\s+)*` and case-blind -
-  subscribe: `LEAD` + `subscribe\b` | `\b(?:hit|tap|press|smash|ring)\s+(?:the\s+|that\s+)?(?:subscribe|bell)\b` | `\bsubscribe button\b` |
-  `\b(?:don't forget|remember|make sure)\s+(?:you\s+)?to\s+subscribe\b`;
-  like: `LEAD` + `(?:like this video|leave a like|drop a like|give (?:it|this) a like|hit like|tap like|smash like)\b` |
-  `\b(?:hit|tap|press|smash)\s+(?:the\s+|that\s+)?like\b` | `\blike button\b` | `\bthumbs?[- ]up if\b`;
-  share: `LEAD` + `(?:share (?:this|it|the video)|send (?:this|it) to|forward (?:this|it) to|text (?:this|it) to|pass (?:this|it) on|tell (?:a|one|your) friends?)\b`;
-  comment: `\bin the comments?\b` | `LEAD` + `(?:comment|leave a comment|drop a comment|follow (?:us|me|the channel|for more))\b`.
-  TEST DATA THAT MUST NOT BE AN ASK (the reviewer's eight, each an ordinary first-person sentence that `kind_of_text` takes for one):
+  (2) AN IMPERATIVE (the patterns of the design review's round 2, which typed the first set and found that it took 18 of 27 story
+  sentences for asks - "Follow me." in every walk, "You ring the bell and nobody comes."; these were tried by the reviewer on both lists
+  below: no story sentence taken for an ask, no ask missed). Case-blind, with `LEAD` = `(?:^|[.!?]\s+)(?:(?:please|so|and|then|now|okay|ok),?\s+)*`
+  and `WHO` = `(?:(?:a|the|that|your|one|some|any)\s+)?(?:friends?|person|people|someone|somebody|anyone|anybody|everyone|everybody|whoever|group chat|family)\b`:
+  subscribe: `LEAD` + `subscribe\b` | `\b(?:hit|tap|press|smash)\s+(?:the\s+|that\s+)?subscribe\b` | `\bsubscribe button\b` |
+  `\bnotification bell\b` | `\b(?:don't forget|remember|make sure)\s+(?:you\s+)?to\s+subscribe\b`;
+  like: `LEAD` + `(?:like this video|leave a like|drop a like|give (?:it|this) a like)\b` | `LEAD` + `(?:hit|tap|smash)\s+like(?=\s+if\b|\s*[.!,;]|\s*$)` |
+  `\blike button\b` | `\bthumbs?[- ]up if\b`;
+  share: `LEAD` + `share (?:this|the) video\b` | `LEAD` + `(?:share|send|forward|text|pass)\s+(?:this|it)(?:\s+video)?\s+(?:on\s+)?(?:to|with)\s+` + `WHO`;
+  comment: `\bin the comments?\b` | `LEAD` + `(?:leave a comment|drop a comment|comment (?:down )?below)\b` | `LEAD` + `follow (?:us|me) (?:on|for)\b` |
+  `\bfollow (?:the channel|for more)\b`.
+  A bell alone is never an ask (a doorbell and a bus bell are bells; the pools' own bell lines are recognised by rule 1).
+  TEST DATA THAT MUST NOT BE AN ASK - the eight of round 1 (each an ordinary first-person sentence that `kind_of_text` takes for one):
   "Nothing like this has ever happened to you." / "You have never felt anything like it." / "Would you like it to stay?" / "You send it
   spinning across the room." / "You want to tell your friend, but your phone is floating too." / "You cannot share it with anyone." /
-  "You text it to your sister." / "Your newspaper subscription is the last normal thing left." - each must survive `strip` in F1 and F3
-  and must not fail `format_ending`. MUST BE AN ASK: every line of both pools; "Subscribe for more."; "So hit the bell."; "Send this to
-  the friend who would try it."; "Tell me in the comments what you would do." A writer's ask in words code does not know stays in the
-  script: the rule errs toward the writer, and what it missed is read at the pilot (open issue 192).
+  "You text it to your sister." / "Your newspaper subscription is the last normal thing left." - and the twenty-two of round 2: "Follow
+  me to the roof." / "Follow me." / "Now follow me across the road." / "The air would hit like a wall." / "Raindrops hit like stones." /
+  "You tap like mad on the glass." / "You press like you mean it, and the door does not move." / "You hit that like a brick wall." /
+  "Hit like a hammer, the wind takes the door." / "Tell your friend to run." / "Then tell your friend and watch him laugh." / "Send it
+  to the moon and it comes back." / "Send it to your mother." / "Text it to your sister and it arrives yesterday." / "Share it with
+  nobody." / "So share the last of the water." / "Pass it on the left, the way you always do." / "Comment is useless here." / "You ring
+  the bell and nobody comes." / "Ring the bell. Nobody comes." / "You press the bell on the bus." / "Hit the bell on the counter and it
+  floats away." Each of the thirty must survive `strip` in F1 and in F3 and must not fail `format_ending`.
+  MUST BE AN ASK: every line of both pools (rule 1); "Subscribe for more." / "Please subscribe." / "Don't forget to subscribe." / "Hit
+  the subscribe button." / "So tap like." / "Hit like if you would have survived that." / "And smash that like button." / "Send this to
+  the friend who would try it." / "Send it to a friend who asks what if at dinner." / "Share this video with someone who would panic." /
+  "Share it with one person." / "Forward this to someone curious." / "Text this to your group chat." / "Tell me in the comments what you
+  would do." / "Drop a comment below." / "Follow us for more." A writer's ask in words code does not know stays in the script: the rule
+  errs toward the writer, and what it missed is read at the pilot (open issue 192).
 - THE ASKS BY KIND. `prompts.WRITER`: the sentences from "AUDIENCE ASKS (like, subscribe, share):" to "... or after a reaction line."
   become the placeholder `@@ASKS@@`, filled in `room._run_room` with `formats.asks_brief()`: for all three kinds the ORIGINAL words byte
   for byte (a test compares the filled prompt of a trial with d8101c8's); for ("subscribe",): "ONE ASK ONLY: write exactly one short
@@ -801,8 +828,9 @@ this batch both say NA "made before the camera path".
   words - T = min(100, 24.6) = 24.6: the tail is the last 24.6 words, about the last 10 seconds; a nine-minute film is 1,275 words -
   T = min(100, 153) = 100: the last 40 seconds. F1's own ask sits at 65% of the lines: outside both.
 - `cta.strip(script, keep=(), tail_from=None)` -> (script, removed): every spoken line for which `is_ask` names a kind NOT in `keep` is
-  removed; and from spoken-line index `tail_from` on, every line for which `is_ask` names ANY kind. `removed` lists the lines (they go
-  into the log and into the evidence of `format_ending`). `cta.ensure(script, seed="", last="", kinds=None, before=None)`: adds only the
+  removed; and from spoken-line index `tail_from` on, every line for which `is_ask` names ANY kind. `removed` lists the lines; the three call sites log them and
+  keep the count in the draw - `d["asks_removed"]` = {kind: count}, summed over the call sites - which is where the gate's
+  `format_ending` reads "removed by code" from. `cta.ensure(script, seed="", last="", kinds=None, before=None)`: adds only the
   missing kinds that are in `kinds` (None = all three: unchanged) and `_safe_slot` never returns a slot at or after `before` (None =
   unchanged). In `room.py` EACH of the three call sites of `CTA.ensure` becomes, when `S("ENDINGS_ON", bool)` and the format's ending
   is not "tease": `t = FMT.tail(text)`; `text, removed = CTA.strip(text, keep=FMT.asks(), tail_from=t)`; then `CTA.ensure(text, episode,
@@ -819,7 +847,8 @@ this batch both say NA "made before the camera path".
   FALSE (the older tests) a trial ends on its tease as before.
 - THE LAST LINE (review 6; `formats.ending_report(text, fmt)` -> {ending, last, removed_kinds, problems}; judged on the SCRIPT, like the
   tail). `last` = the last SPOKEN sentence of the script WHATEVER ITS LENGTH (the last sentence `layman._SENT` cuts from the last
-  spoken line). "question" (F1): `last` ends with "?" - no word is demanded inside it ("Would you?", "Keep it?", "Would you stay?",
+  spoken line), judged after its trailing spaces and closing quotes or brackets are removed (`.rstrip(" \"')]")`, as
+  `formats.short_kept_report` does: 'Would you keep it?"' ends on a question). "question" (F1): `last` ends with "?" - no word is demanded inside it ("Would you?", "Keep it?", "Would you stay?",
   "Keep it, or give it back?" all pass). "arrival" (F3): `last` does not end with "?" and `inside.YOU` matches in the last spoken
   line's last two sentences ("You're home." passes). Both: `cta.is_ask(last)` is None and no spoken line of the tail matches `is_ask`
   or `TEASE` = `\bnext (time|video|episode|simulation|case|week|one)\b|\bsee you (next|soon)\b|\bstay tuned\b` - "Subscribe for more."
@@ -863,13 +892,18 @@ this batch both say NA "made before the camera path".
   voice, no announcer." reads "The guide is the whole show: no second voice, no announcer."; the role notes "memo", "writer" and
   "critic" lose their sentences about two roles (the builder writes the three shortened notes into the record before typing them:
   each is the note minus the clause that names the second role). `prompts.WRITER`: "Banter style between the two roles = @@BANTER@@"
-  is filled with "none (one voice)". A TEST: a whole F3 production makes NO paid call of the role "format" and none of the role
-  "rewrite" asked for by a missing second voice (the paid-call counter by role), and its writer's, bible's and critic's prompts hold
-  neither "SKEPTIC" nor "two roles" nor "Curious One".
+  is filled with "none (one voice)". `growth.rhythm_brief`: in a format with one voice the clause "REACTIONS: ... Curious One
+  reaction lines." is not sent (a test). A TEST (review round 2, change 5): a whole F3 production makes NO paid call of the role
+  "format"; its writer's prompt holds F3_WRITER's sentence "Where any rule, definition or example above names the Curious One ..."
+  (3.5) and none of the lines (c) and (d) remove, nor "Curious One reaction lines".
   (e) THE BUILDER SEARCHES AGAIN before typing (`SKEPTIC`, `Curious One`, `two roles`, `both roles`, `three audience asks`, `verdict`,
   `subscribe` in every string of `whatifs/prompts.py`, `format_engine.py`, `room.py`, `room2.py`, `craft.py`, `engage.py`, `immersion.py`,
-  `growth.py`, `hooks.py`) and writes every hit into the record with one of three answers: "a trial's sentence, not sent to F1 / F3 by
-  (a) to (d)", "true of F1 and F3 too: stays", or `DESIGN QUESTION` - never a fourth.
+  `growth.py`, `hooks.py`, `data.py`, `tableread.py`) and writes every hit into the record with one of four answers: "a trial's
+  sentence, not sent to F1 / F3 by (a) to (d)"; "true of F1 and F3 too: stays"; "a strategy definition, a JSON key or an example that
+  names the second voice (`data.py`'s definitions that reach the writer through `defs` - the hook 'wrong_guess', the rhythm
+  'RB5_case_file', the engagement 'guess_first'; the bible's `presenters` and `cta` keys; `immersion.writer_rules`' guest and its
+  example line): left as it is in this batch, overruled in F3 by F3_WRITER's sentence, listed in the record and in open issue 187";
+  or `DESIGN QUESTION` - never a fifth.
 - LEVER: `ENDING_FREE_S` (D13; 20 to 90, step 10). `formats.asks` is data of the row: an arm with another set of asks is a new row or a
   later lever of Strategy (V4) - said under NOT IN THIS BATCH.
 **3.4 A NAME IS SHOWN ONLY FOR A CHARACTER WHO IS DRAWN (issue 75; `overlay.py`, `episode._render`, `contract.p_living`).**
@@ -897,7 +931,9 @@ d8101c8 does). FOR THE PILOT (open issue 191): a trial made before the cast is d
   [DIRECTOR], a guide close to your ear - calm, exact, warm - speaking to 'you' in the present tense while you walk. Nobody else speaks:
   no second voice, no interview, no quoted speech.\nONE ROUTE: you leave your front door and never go back; every beat is the next
   station of the same walk, reached on foot. Say what you pass, what is under your feet, what you hear. An explanation is said only
-  while you are looking at the thing it explains. ONE idea; whatever the idea does not need is cut.\nHUMOUR: at most two dry asides.\n
+  while you are looking at the thing it explains. ONE idea; whatever the idea does not need is cut.\nHUMOUR: at most two dry asides.\nWhere any
+  rule, definition or example above names the Curious One, a guest, a second role, banter or a reaction line, it does not apply to
+  this episode: the guide speaks alone.\n
   END ON THE ARRIVAL: the last line says, in one sentence to 'you', what you now see differently. No question is needed, no ask, and
   nothing follows it."
 - F1's texts gain two sentences: `F1_BIBLE` ends "... The `visual_world` of every beat NAMES its place in three or four words ('your
@@ -917,8 +953,10 @@ d8101c8 does). FOR THE PILOT (open issue 191): a trial made before the cast is d
 - ISSUE 129, BUILT: the Short's hook is HANDED to the writers - and the first version of this bullet was FALSE (review 12): the ladder
   row's field `hook` holds the NAME of the hook archetype ("you_pov", "countdown" - `ladder.enter` writes `rec.get("hook")`, which
   `shorts2` fills with the archetype); the SPOKEN line lives only in the footage archive, which is fetched after the room. So: (1) FROM
-  NOW ON THE ROW KEEPS THE LINE: `shorts2`, where it enters a made Short on the ladder, passes the Short's first spoken sentence
-  (`formats.short_lines(sc)[0]`) and `ladder.enter` writes it as a NEW field `hook_line` of the row (tab `Ladder` is append-only: a new
+  NOW ON THE ROW KEEPS THE LINE: `shorts2`, where it enters a made Short on the ladder, passes the Short's hook AS `opening.fetch` DEFINES IT - the FIRST UNIT
+  of the Short's own voice timeline with its brackets removed - made by ONE new function that `opening.fetch` and `shorts2` both call
+  (never `formats.short_lines(sc)[0]`: a first line may hold two sentences, the writer would be handed more than
+  `hooks.apply_to_script` compares with, and the hook would be said twice), and `ladder.enter` writes it as a NEW field `hook_line` of the row (tab `Ladder` is append-only: a new
   column at its end; a row made before this batch has none). (2) IN THE ROOM: when the pitch `ladder.pitch()` forced comes from a row
   with a non-empty `hook_line`, the writer's brief gains: "FIRST LINE (proven by real viewers; fixed): begin the narration with exactly
   this line, word for word: \"<hook_line>\" - then go on from it; do not say it again in other words." A row without the field gets no
@@ -973,12 +1011,14 @@ reader, a lever or a function before the code that reads or calls it.
    the brief, the fix, check `viewer_inside`, the stand-in writers; `audience.make_still` and `inside.open_acts`.
 2. THE ENDING (3.3): `cta.is_ask` with its test data FIRST; the row keys `ending` and `asks` with their readers, `ENDINGS_ON`,
    `ENDING_FREE_S`; `formats.tail`, `strip`, `ensure(kinds, before)`, the three call sites; the placeholder `@@ASKS@@`; `tease_on`;
-   `ending_report`, the fix, check `format_ending`; the chip of an ask; then (a) to (e) - the other places, each with its test.
+   `ending_report`, the fix, check `format_ending`; the chip of an ask; then the other places (a), (b), the asks / Shorts / chip /
+   story-engine lines of (c), and the search of (e), each with its test. NOT in this step: the `path.on()` half of (c) - the two
+   visual-grammar lines and the "director" role note - which is typed in step 4, and (d), the one-voice rules, typed in step 5.
 3. THE NAME CHIP (3.4): the row key `chips`, `CHIP_DRAWN_ONLY_ON`, the tag, the record, `p_living`.
 4. THE CAMERA PATH (3.2): the row key `camera`, `CAMERA_PATH_ON`, `ACT_MIN_S`, `PLACE_CHANGES_PER_MIN_MAX`; `path.acts`, `place_of`,
    `mark`; `motion.plain` and the merged first line; eye level; the Director's rules and the motion sentences; `anchors_for` and the
    guarantee; `lay`; the render's sign and pool (the reference frames unmoved); the record and `rerender_times`; the two checks; the
-   stills line and the paid-call count (3.8).
+   stills line and the paid-call count (3.8); the `path.on()` half of 3.3 (c).
 5. F3 (3.5): the row switched on, its three texts, the one-voice rules of 3.3 (d), the shares and the one-time move, the offline
    writer, the arm on record.
 6. THE SMALL DECISIONS (3.6): the hook's line on the ladder row and in the brief; the two texts of issue 177 and the widened retired
@@ -1034,6 +1074,11 @@ reader, a lever or a function before the code that reads or calls it.
   passages line by line, the measured figures, the beat that never shows, "8 is judged"); 15 - 3.0 (`lecture`, F2 at 40 and 6) and
   GOOD-TRIAL; 16 - 3.9 whole, 3.7's last sentence, 3.4's last sentences, `audience.make_still`, the first act's join, `teased_pitch`,
   the marks `lay` skips. The review's question 10: open issues 185 (widened), 191 and 192.
+  ROUND 2 (six changes, each with its replacement words, all taken as written): 1 - `first` is the act's first PICTURE (3.2, mark i);
+  2 - the reviewer's own `is_ask` patterns and its thirty story sentences and sixteen asks as test data (3.3); 3 - F3's pair with its
+  measured figures 88.9% and 61.5% (3.1); 4 - a missing first picture raises in `produce` AFTER the checkpoint is saved (3.2); 5 -
+  `growth.rhythm_brief`, F3_WRITER's sentence, a fourth answer in (e), the F3 test reworded (3.3 d, e; 3.5); 6 - the hook as
+  `opening.fetch` defines it, the last line's closing quotes, a picture without an assigned angle, `d["asks_removed"]`, the steps of 3.9.
 - THE WORST VIDEOS THAT MUST BE HELD (each a test and a deliberate break): a script that lectures in the third person for a paragraph
   before anything is shown (`viewer_inside`, rules b and c); a shot list whose acts jump between five places in a minute (joined by
   code; `camera_path` fails when the joins did not run); a still that shows another act's picture (`camera_shown`); an F1 video that
@@ -6115,7 +6160,11 @@ Rehearsal asserts `docs_current` ran and passed.
    him the first long video act by act; no check of this batch can.
 187. (V2b's design -> the pilot) F3 "THE WALK" IS ONE VOICE FOR NINE MINUTES, never heard: the older machinery was written for two voices
    (reactions, the joke tournament, the peaks before a reaction line). The whole-production test proves it runs; whether it holds is
-   H7 and his ear.
+   H7 and his ear. LEFT AS THEY ARE in V2b and overruled in F3 only by one sentence of its writer's brief (the design review's round
+   2, change 5): the strategy definitions of `data.py` that name the Curious One (the hook "wrong_guess", the rhythm "RB5_case_file",
+   the engagement "guess_first"), the bible's `presenters` and `cta` keys, and `immersion.writer_rules`' guest and its example line -
+   the builder lists every hit in the record; a real F3 writer may still follow one of them: read the first real F3 script for a
+   second voice (`format_kept` holds it).
 188. (V2b's design -> V4 / B8) THE ONE SUBSCRIBE ASK OF F1 AND THE NONE OF F3 are starting values from one vendor's test of 2015
    (research 7); H29 reads them. Which asks a format carries is data of its row and nobody's lever until Strategy is wired.
 189. PLAN ISSUE 3 (V2b's designer, a Fable session, 14 Nov 2026): the plan's chapter 12 says "a builder may SPLIT a batch at its start"
