@@ -4,7 +4,7 @@ rejected the first live video (item 16). This page OVERRIDES `01` section 1 ("co
 the department list in `01` section 2 wherever they differ. The budget is unchanged: Rs 5,000 a month for everything.
 Status: DESIGN (research + designs + decisions). Built so far: V1a (11 Nov 2026). The batches in section 6 build the rest, one per owner
 "continue". SECTION 10 (the owner's item 19, same day) amends sections 4-7. SECTION 11 (his item 20, same night) amends them again -
-Shorts first, the motion ladder, the human kit, the release sheet, a new order of batches: READ SECTION 11 FIRST. Built so far: V1a, V1b, V2a, V2c-a (the Short as a product), V2c-b1 (the ladder), V2c-b2a (the platforms), V2c-b2b1 (the opening), V2c-b2b2 (the cut-downs: none is made), V2d-a (the money and the model: the hero clip model picked by value, one table of cost lines, the month's split - accepted 13 Nov 2026), V2d-b (the ladder's rules: licensed models only, moving seconds with a floor, the finished film measured, drawn or absent, real footage as an anchor, a Short's first sound - `BUILD_STATE.md` says whether it is accepted); their end notes are the last entries of 11.10. THE ORDER OF THE REMAINING BATCHES IS THE OWNER'S OF 13 NOV 2026 (the last desk note of 11.10): V2b, V1c, V4, V5, DRAWN BY CODE, B6b-B10, and going live (V3) LAST.
+Shorts first, the motion ladder, the human kit, the release sheet, a new order of batches: READ SECTION 11 FIRST. Built so far: V1a, V1b, V2a, V2c-a (the Short as a product), V2c-b1 (the ladder), V2c-b2a (the platforms), V2c-b2b1 (the opening), V2c-b2b2 (the cut-downs: none is made), V2d-a (the money and the model: the hero clip model picked by value, one table of cost lines, the month's split - accepted 13 Nov 2026), V2d-b (the ladder's rules: licensed models only, moving seconds with a floor, the finished film measured, drawn or absent, real footage as an anchor, a Short's first sound - accepted 14 Nov 2026 after one red round and its repair); their end notes are the last entries of 11.10. THE ORDER OF THE REMAINING BATCHES IS THE OWNER'S OF 13 NOV 2026 (the last desk note of 11.10): V2b, V1c, V4, V5, DRAWN BY CODE, B6b-B10, and going live (V3) LAST.
 
 ## 0. THE HONEST FRAME
 - Nobody can make a channel a sure shot. Of 137,355 new long-video channels, 30.8% got even ONE video past 10,000 views in their first ten (R1).
@@ -792,8 +792,10 @@ channels reach 10 million views; any measured reach effect of Meta's AI label; a
 - ORDER UPDATE (V2d-b, 13 Nov 2026): V2d-b built THE LADDER'S RULES (one market of licensed models for every moving
   second; the month's money as moving seconds with a floor; the seconds placed by code and every paid clip shown whole;
   the share that really moves measured on the finished film; a Short's file with a gate of its own; a character drawn or
-  absent; real footage as a short anchor with a record; a Short that sounds from its first frame). `BUILD_STATE.md` says
-  whether it is accepted. THE ORDER AFTER IT IS THE OWNER'S OF 13 NOV 2026 (items 29 and 30 of `02_OWNER_VERBATIM.md`; the
+  absent; real footage as a short anchor with a record; a Short that sounds from its first frame). ACCEPTED 14 Nov 2026
+  (final code commit 5827d97, its code d8101c8; GitHub run 159: 1551 passed; sweep 58 of 58 ids; the first pass was red - one
+  film showed 88.5% of the seconds it paid - and the repair reserved the scenes' room: every paid second and every scene now
+  seen whole on every id). THE ORDER AFTER IT IS THE OWNER'S OF 13 NOV 2026 (items 29 and 30 of `02_OWNER_VERBATIM.md`; the
   desk note below): V2b, V1c, V4, V5, DRAWN BY CODE, B6b, B7, B8, B9, B10, and V3 - the pilot and going live - LAST.
   Eleven batches remain; the channel runs the new code after the last of them.
   WHAT THE BUILD CHANGED IN THIS SECTION, with reasons (the record is in `BUILD_STATE.md`): (1) 11.5's L3 "an open-weight

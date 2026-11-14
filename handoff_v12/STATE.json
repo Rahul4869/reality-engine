@@ -1,7 +1,17 @@
 {
  "_note": "THE STATE OF THE BUILD, read and moved only by `python proving/next.py` (from the handoff folder). Never edit it by hand: every move is guarded, and the git hooks read it. The plan is handoff_v12/OPUS_BUILD_PLAN.md.",
- "accepted": [],
- "audit_queue": [],
+ "accepted": [
+  {
+   "batch": "V2d-b",
+   "final_code_commit": "5827d97dc5aa948c27ae7f77832013a11108a3c7",
+   "github_run": 159,
+   "on": "2026-11-14T02:23:24Z",
+   "verdict": "V2d-b_5827d97_1.json"
+  }
+ ],
+ "audit_queue": [
+  "V2d-b"
+ ],
  "base_commit": "22fb8fd2117e17353630ed46914ed93864f07da6",
  "batch": "V2d-b",
  "fable_design_gate": true,
@@ -51,6 +61,15 @@
    "from": "BUILT",
    "to": "PROVING",
    "why": ""
+  },
+  {
+   "at": "2026-11-14T02:23:24Z",
+   "batch": "V2d-b",
+   "by": "",
+   "commit": "5827d97",
+   "from": "PROVING",
+   "to": "ACCEPTED",
+   "why": ""
   }
  ],
  "order": [
@@ -67,10 +86,10 @@
   "B10",
   "V3"
  ],
- "phase": "PROVING",
+ "phase": "ACCEPTED",
  "red_notes": [
   "V2d-b_RED_1.md"
  ],
  "red_rounds": 1,
- "updated": "2026-11-13T23:58:23Z"
+ "updated": "2026-11-14T02:23:24Z"
 }
