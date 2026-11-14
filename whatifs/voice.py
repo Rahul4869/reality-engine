@@ -59,6 +59,7 @@ class Unit:
     curve: list = None              # v8.10: delivery curve words from {braces} (slow, low, whisper...); never spoken
     events: list = None             # v8.10: vocal events from {braces} (breath, gasp, laugh...) on the FIRST piece of the line only
     show: list = None               # v9: show tags on this line ([EXHIBIT A], [METER +1 vale], [JURY], [CLIPBAIT], [/CLIPBAIT]); never spoken
+    beat: int = 0                   # v12 V2b: the script's beat this unit's line belongs to (inside.line_beats; 0 when none was handed over)
 
 # ---------- script parsing ----------
 SPEAKERS = ("DIRECTOR", "SKEPTIC", "HOST_A", "HOST_B", "JUDGE", "WITNESS")      # v9: the judge and the surprise witness
@@ -120,13 +121,15 @@ def curve_speed(u):
     for w in (u.curve or []): k *= _CURVE_SPEED.get(w, 1.0)
     return k
 
-def parse_script(script: str) -> list[Unit]:
+def parse_script(script: str, line_beats=None) -> list[Unit]:
     """Lines may start with [calm] [tension] [reveal] [aside] [callback] [pause:long] [pause:short] and, in Reality Engine mode, a speaker label
     ([DIRECTOR] or [SKEPTIC], also 'Director:' or '**Skeptic:**' or '[THE CURIOUS ONE]') in either order. A label alone on its line applies to the next line of speech.
-    Inline: '...' = hesitation, [beat] = comic micro-pause. Labels are never spoken."""
+    Inline: '...' = hesitation, [beat] = comic micro-pause. Labels are never spoken. v12 V2b: `line_beats` = the beat of every line of `script` (inside.line_beats);
+    a unit made from line j carries beat = line_beats[j] (0 when the list is None or too short)."""
     units: list[Unit] = []
     pending_gap = 0.0; para = False; prev_spk = None; carry = "none"; sticky = None; pend_show = []
-    for raw in script.splitlines():
+    for ln_j, raw in enumerate(script.splitlines()):
+        beat_j = int(line_beats[ln_j]) if line_beats is not None and ln_j < len(line_beats) else 0
         if not raw.strip():
             para = True; continue
         for chunk in [c for c in _SPLIT_SPK_RE.split(raw) if c.strip()]:     # two speakers packed on one line become two units
@@ -155,7 +158,7 @@ def parse_script(script: str) -> list[Unit]:
                     p = re.sub(r"\s+", " ", _STRAY_RE.sub(" ", p)).strip()
                     if not p: continue
                     u = Unit(text=p, tag=tag, speaker=speaker, gap_before=pending_gap, new_para=para and i == 0 and j == 0,
-                             curve=list(curve), events=list(events) if (i == 0 and j == 0) else [], show=list(show) if (i == 0 and j == 0) else [])
+                             curve=list(curve), events=list(events) if (i == 0 and j == 0) else [], show=list(show) if (i == 0 and j == 0) else [], beat=beat_j)
                     if "[/CLIPBAIT]" in show and (i, j) == (len(sentences) - 1, len(pieces) - 1): pass
                     elif "[/CLIPBAIT]" in show and (i == 0 and j == 0) and (len(sentences) > 1 or len(pieces) > 1):      # the closing tag belongs to the line's end
                         u.show = [x for x in show if x != "[/CLIPBAIT]"]; close_later = True
@@ -278,7 +281,7 @@ class NarrationResult:
 
 def narrate(script: str, blend: Blend, out_base: str, style: str = "slow_burn",
             seed: str = "lab", humanize: bool = True, breaths: bool = True,
-            backend=None, speaker_blends: dict[str, Blend] | None = None, unit_hook=None) -> NarrationResult:
+            backend=None, speaker_blends: dict[str, Blend] | None = None, unit_hook=None, line_beats=None) -> NarrationResult:
     rng = random.Random(hashlib.md5(f"{seed}|{style}".encode()).hexdigest())
     try:
         from whatifs.core import S
@@ -287,8 +290,8 @@ def narrate(script: str, blend: Blend, out_base: str, style: str = "slow_burn",
         trim, bdb, brate = 1.04, -34.0, 0.6
     st = dict(STYLES.get(style, STYLES["slow_burn"])); st["base"] *= trim
     speaker_blends = speaker_blends or {}; voice_fallback = []
-    units = parse_script(script)
-    from whatifs.org import audience as _AUD                # v12 V1 (D13): the voice breathes - a pause at a sentence start at least every BREATH_EVERY_S
+    units = parse_script(script, line_beats=line_beats)       # v12 V2b: every unit knows its beat (the episode hands the list of its stripped headings)
+    from whatifs.org import audience as _AUD               # v12 V1 (D13): the voice breathes - a pause at a sentence start at least every BREATH_EVERY_S
     units = _AUD.breathe(units)
     if unit_hook:
         try: units = unit_hook(units) or units
@@ -379,7 +382,7 @@ def narrate(script: str, blend: Blend, out_base: str, style: str = "slow_burn",
                  "start": round(start, 3), "end": round(t, 3),
                  "words": [{"w": x["w"], "s": round(start + x["s"], 3), "e": round(start + x["e"], 3)} for x in words],
                  "pause_before": round(pause_before, 3), "pause_before_reasons": why_before + (["breath"] if breath_here else []),
-                 "pause_after": 0.0, "pause_after_reasons": []}
+                 "pause_after": 0.0, "pause_after_reasons": [], "beat": int(getattr(u, "beat", 0) or 0)}
         timeline.append(entry)
         if humanize:
             tail = ga + ((pacer.hesitation() if natural else rng.uniform(0.35, 0.60)) if u.hesitate_after else 0.0)

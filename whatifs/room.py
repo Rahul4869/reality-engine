@@ -78,6 +78,11 @@ def _format_block(role):
     from whatifs import formats as FMT
     return FMT.block(role)
 
+def _inside_brief():
+    """v12 V2b (D13): the voice rule of the format in the making for the writer - its floor and its run limit ('' when off or without a format)."""
+    from whatifs.org import inside as INS
+    return INS.brief()
+
 def _show_block():
     """v9: the Show Plan request inside the existing Showrunner call ('' when SHOW_MODE = off, so the prompt is exactly v8.11's)."""
     from whatifs import show as SHOW
@@ -272,7 +277,7 @@ def _run_room(draw, episode):
     wbrief = GR.insert_before_json(wbrief, "\n".join(x for x in (                      # v8.7: the promise, this episode's rhythm and the research-graded rules
         "THE PROMISE (packaging first: the title and thumbnail were decided before you write; pay them off ON SCREEN and IN WORDS within the first 30 s): " + GR.promise_text(spine.get("promise")),
         GR.rhythm_brief(d.get("rhythm_plan"), defs), PB.text_for("writer", d.get("playbook")), guest_brief(d), tease_brief(spine), _writer_extra(episode),
-        _show_writer(spine), _format_block("writer")) if x))
+        _show_writer(spine), _format_block("writer"), _inside_brief()) if x))
     if S("EFFORT_AB_ON", bool):                           # v9: medium vs high effort for the script, alternating by episode (the A/B machinery records the arm)
         from whatifs import models as _M
         arm = "medium" if int(hashlib.md5(episode.encode()).hexdigest(), 16) % 2 else "high"

@@ -27,6 +27,9 @@ LEVERS = {
     "GRAPHICS_FREE_SEC": _n("int", 0, 180, 30, "down", GATE, ("viewer_numbers",)), "BREATH_EVERY_S": _n("int", 15, 60, 10, "up", GATE, ("viewer_breath",)),
     "PLAIN_HARD_PER_MIN_MAX": _n("float", 1, 5, 1, "up", GATE, ("viewer_plain",)), "PLAIN_OPENING_HARD_MAX": _n("int", 0, 3, 1, "up", GATE, ("viewer_plain",)),
     "PLAIN_HARD_PER_SENTENCE_MAX": _n("int", 1, 4, 1, "up", GATE, ("viewer_plain",)),
+    "INSIDE_MIN_PCT_F1": _n("int", 20, 80, 5, "down", GATE, ("viewer_inside",)), "INSIDE_MIN_PCT_F2": _n("int", 20, 80, 5, "down", GATE, ("viewer_inside",)),      # v12 V2b: the voice inside the scene, per format (D13)
+    "INSIDE_MIN_PCT_F3": _n("int", 20, 80, 5, "down", GATE, ("viewer_inside",)), "LECTURE_MAX_F1": _n("int", 2, 8, 1, "up", GATE, ("viewer_inside",)),
+    "LECTURE_MAX_F2": _n("int", 2, 8, 1, "up", GATE, ("viewer_inside",)), "LECTURE_MAX_F3": _n("int", 2, 8, 1, "up", GATE, ("viewer_inside",)),
     "FORMAT_SHARE_F1": _n("int", 0, 100, 20), "FORMAT_SHARE_F2": _n("int", 0, 100, 20), "FORMAT_SHARE_F3": _n("int", 0, 100, 20),      # v12 V2a: Strategy moves the mix by small steps
     "SHORT_SHARE_S1": _n("int", 0, 100, 20), "SHORT_SHARE_S2": _n("int", 0, 100, 20), "SHORT_SHARE_S3": _n("int", 0, 100, 20),         # v12 V2c: the Shorts Studio moves its own mix by small steps
     "SHORT_MIN_S": _n("int", 10, 40, 5, "down", GATE, ("short_shape",)), "SHORT_MAX_S_S1": _n("int", 20, 60, 5, "up", GATE, ("short_shape",)),

@@ -1120,6 +1120,40 @@ STEP 0 - THE OPEN FINDING OF THE V2d-b AUDIT (F1), typed exactly as its FIX says
 `test_a_paid_clip_that_never_reaches_the_screen_stays_in_what_was_paid_and_holds_the_video` word for word. No line of `whatifs/` changed for it.
 Run alone on the unchanged code: "1 passed in 93.64s". Its break (the audit's (3), id F1) is the first entry of `proving/breaks/V2b.json`; the
 finding's line is rewritten to CLOSED only once that break is CAUGHT on the final code.
+TESTS CHANGED BY DESIGN (each named here BEFORE it is changed; each pins a count that a step of 3.9 raises on purpose - the memo's 3.7 says
+64 -> 68 hard checks, `SHOW_CHECKS` 53 -> 57, 75 -> 85 levers; every step leaves the suite green, so each pin moves with the step that adds its
+item): `tests/test_v12_cutdowns.py` line 39 (the checks by stage and their total), `tests/test_v12_motion.py` lines 633 and 636 (the total of
+checks, `SHOW_CHECKS`), `tests/test_v12_release.py` line 436 (`SHOW_CHECKS`), `tests/test_v12_exec.py` line 62 (the number of levers) and line 493 (the checks by
+stage - found by the step's first test run, "assert (37 == 36)": my search for the pins had looked for "== 64" and "\"script\": 36" only).
+STEP 1 - THE VOICE (3.1). Read for it, whole or the named functions: `voice.py` (`Unit`, `_peel`, `parse_script`, `narrate`), `episode.py`
+(`_stage_plan`, `produce`, `_strip_beats`), `org/audience.py` whole, `org/layman.py` (`_SENT`, `_TOK`), `enforce.fix_all`, `formats.py` whole,
+`room._run_room`, `reactions.ensure_units`, `contract.py` (`p_viewer_plain`, `p_format_kept`, the table, `run`), `org/registry.py` (D13, the
+owners), `org/levers.py` (the rules), `org/rnd.py` (`SHOW_CHECKS`), `fakes.py` (the writer's reply), `tests/conftest.py`, `tools/repair.py`.
+Built as written: NEW `whatifs/org/inside.py` (D13; PROTECTED) - `on`, `line_beats`, `sentences`, `past`, `is_inside`, `report`, `issues`, `brief`,
+`open_acts`, the regexes `YOU`, `ME`, `EXPLAIN`, `MIN_WORDS` 4, `PAST`, `NOT_PAST`; `voice.Unit.beat`, `parse_script(line_beats=)`,
+`narrate(line_beats=)` and the timeline's `beat`; `episode._strip_beats` -> (clean, marks, beats) and both `narrate` calls of `_stage_plan` pass
+`line_beats=beats` (`preview.py` unpacks the third value: the only other caller); `audience.make_still` lifted out of `shape` (the same lines);
+`inside.open_acts` in `produce` right after D13's seat run; the row keys `inside` / `lecture` and `formats.inside_min` / `lecture_max`; seven
+cells (`INSIDE_ON`, three floors, three run limits); check `viewer_inside` (script, D13, `SHOW_CHECKS` 54); the brief in the writer's brief
+beside the format's text (`room._inside_brief`); the fix in `enforce.fix_all` (tag INSIDE FIX); six levers of D13; `OLD_INSIDE` in
+`tests/conftest.py` ({"INSIDE_ON": "FALSE"}); the offline writer (`fakes._lines_inside`, used only while `inside.on()`).
+THE PASSAGES, MEASURED BEFORE ANYTHING WAS BUILT ON THEM (a read-only script with the new `inside.report`): GOOD-1 10 of 11 = 90.9%, run 1;
+GOOD-2 10 of 15 = 66.7%, run 4; GOOD-2 and the fifth 10 of 16 = 62.5%, run 5 (fails rule (b) alone); BAD-1 0 of 8, run 8 (and "beat 0 explains
+and never shows"); GOOD-TRIAL 9 of 15 = 60.0%, run 4; F3 good 8 of 9 = 88.9%, run 1; F3 edge 8 of 13 = 61.5%, run 4 - EXACTLY the bold figures:
+the limits stand. The offline stand-in under the switch: a whole F1 production (`EP209901021613`, forced F1, alone) "15 of 19 sentences (78.9%)
+inside the scene (floor 50%); the longest run from outside 1 (limit 4)"; a whole trial (`EP209901010900`) "16 of 24 sentences (66.7%) ... (floor
+40%); the longest run from outside 2 (limit 6)" - both PASS, both ended LIVE.
+DESIGN QUESTION 1 (a choice the memo did not make; the reading that changes LESS of what a viewer sees was taken): `inside.open_acts` runs only
+while `inside.on()` AND the episode has a format (`formats.current()`), as `issues` and `brief` do - a video without a format keeps its graphics.
+DESIGN QUESTION 2: the words of the offline writer's lines under the switch are the memo's to set and it set none: `fakes._lines_inside` says the
+SAME ten stand-in lines to "you" (one or two words added a line; the callback line no longer says "next time"), so that the hook lab's candidates
+still overlap the script as before. A test proves the reply is the older one byte for byte with the switch off.
+STEP 1'S RUN (real pytest, parallel, strict; the new file and the 20 older files the step touches): "1 failed, 691 passed in 818.02s" - the one
+failure the pin of `test_v12_exec.py` line 493 named above (read, explained, the pin moved, that test then "1 passed" alone).
+READ DURING THE STEP (written while this session worked): the owner's items 38 to 42 of `02` and the plan's AMENDMENT 3 (two lanes: Lane B
+sessions design ahead and RUN NOTHING; Lane A, this build, stays serial). Nothing in them changes what this builder does.
+PLAN NOTE (L15): two small edits of this step went through a Python program typed in a shell here-document (no backslash in either; each file read
+back by its own test run). From here on every script is written with the file tool.
 
 ### V2d-b - THE LADDER'S RULES (13 Nov 2026) - ACCEPTED (final code commit 5827d97 GREEN in GitHub Checks run 159: 1551 passed; sweep 58 of 58 ids)
 (Its code is d8101c8; every later commit is text only. History: built on 60d9483; the prover's FIRST PASS on 60d9483 was RED - the sweep

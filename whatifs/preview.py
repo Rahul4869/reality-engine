@@ -60,7 +60,7 @@ def run(mode="preview"):
     except (PR.SkipSlot, CR.BelowBar) as e:
         if not pre: PUB.email("Script Preview: nothing reached the bar", f"<p>No draft was saved. {html.escape(str(e))}</p><p>Every pitch and score is in the Premise_Scores tab.</p>")
         log(f"preview: {e}", "WARN"); flush_log(); return {"ok": False, "why": str(e)[:300]}
-    clean, _ = _strip_beats(room["script"]["script"]); units = approx_units(clean)
+    clean, _, _b = _strip_beats(room["script"]["script"]); units = approx_units(clean)      # v12 V2b: _strip_beats also returns the beat of every line
     import time as _t9; t_sp = _t9.time()
     try: shots = ROOM.plan_shots(room, units, d, plan, draft)
     except Exception as e: log(f"preview shot list failed: {scrub(e)[:160]}", "WARN"); shots = []

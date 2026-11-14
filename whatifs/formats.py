@@ -11,9 +11,12 @@ RULES = ("must", "advisory", "never")
 _TRIAL = ("verdict_style", "time_ladder", "exhibits", "grimm_prototype", "verdict_line")          # the trial's own grammar: meaningless outside a trial
 FORMATS = {
     "F1": {"name": "The day it changed", "status": "on", "show": False, "voices": ("DIRECTOR", "SKEPTIC"), "share": "FORMAT_SHARE_F1",
+           "inside": "INSIDE_MIN_PCT_F1", "lecture": "LECTURE_MAX_F1",
            "devices": dict({k: "never" for k in _TRIAL}, joke_density="advisory", send_and_awe="advisory", emotion_beat="advisory", audience_asks="advisory", end_tease="advisory")},
-    "F2": {"name": "The trial", "status": "on", "show": True, "voices": ("DIRECTOR", "SKEPTIC", "JUDGE", "WITNESS"), "share": "FORMAT_SHARE_F2", "devices": {}},
-    "F3": {"name": "The walk", "status": "later", "show": False, "voices": ("DIRECTOR",), "share": "FORMAT_SHARE_F3", "devices": {k: "never" for k in DEVICES}},
+    "F2": {"name": "The trial", "status": "on", "show": True, "voices": ("DIRECTOR", "SKEPTIC", "JUDGE", "WITNESS"), "share": "FORMAT_SHARE_F2", "devices": {},
+           "inside": "INSIDE_MIN_PCT_F2", "lecture": "LECTURE_MAX_F2"},
+    "F3": {"name": "The walk", "status": "later", "show": False, "voices": ("DIRECTOR",), "share": "FORMAT_SHARE_F3", "devices": {k: "never" for k in DEVICES},
+           "inside": "INSIDE_MIN_PCT_F3", "lecture": "LECTURE_MAX_F3"},
 }
 F1_SHOWRUNNER = ("FORMAT OF THIS EPISODE - F1 \"THE DAY IT CHANGED\" (not a trial: no court, no charge, no exhibits, no jury, no judge; return no show_plan). Choose and "
                  "phrase the premise as ONE day in which one law of nature is different, and it happens to the VIEWER, at home first. The thumbnail scene is the "
@@ -66,6 +69,16 @@ class using:
 def show_allowed():
     """May the trial layer (whatifs/show.py) run for the episode in the making? Yes when no format is set, else what its format says."""
     k = current(); return True if not k else bool(FORMATS[k]["show"])
+
+def inside_min(fmt=None):
+    """v12 V2b: the floor (percent) of counted sentences inside the scene for a format (default: the format in the making); 0 without a format."""
+    k = current() if fmt is None else str(fmt or "")
+    return S(FORMATS[k]["inside"], float) if k in FORMATS else 0.0
+
+def lecture_max(fmt=None):
+    """v12 V2b: the longest run of counted sentences from outside a format allows (default: the format in the making); 0 without a format."""
+    k = current() if fmt is None else str(fmt or "")
+    return S(FORMATS[k]["lecture"], int) if k in FORMATS else 0
 
 def rule(check, fmt=None):
     """'must' | 'advisory' | 'never' for a contract check in a format (default: the format in the making). Anything that is not a DEVICE is always 'must'."""

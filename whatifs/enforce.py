@@ -193,10 +193,12 @@ def fix_all(script, wbrief, spine, episode, fmt="long"):
     pl = LAY.plain_issues(text, spine.get("promise")) if fmt == "long" else []
     from whatifs import formats as FMT                      # v12 V2a: a script that sounds like a trial in a format that is not one is fixed by the same single rewrite
     fo = FMT.format_issues(text) if fmt == "long" else []
-    issues = ret + mk + nm + pl + fo
+    from whatifs.org import inside as INS                   # v12 V2b (D13): a voice from outside the scene is fixed by the same single rewrite
+    ins = INS.issues(text) if fmt == "long" else []
+    issues = ret + mk + nm + pl + fo + ins
     if not issues: return script, []
     from whatifs.models import ask
-    tags = (["RETENTION FIX"] if ret else []) + (["MARKER FIX"] if mk else []) + (["NUMBERS FIX"] if nm else []) + (["PLAIN WORDS FIX"] if pl else []) + (["FORMAT FIX"] if fo else [])
+    tags = (["RETENTION FIX"] if ret else []) + (["MARKER FIX"] if mk else []) + (["NUMBERS FIX"] if nm else []) + (["PLAIN WORDS FIX"] if pl else []) + (["FORMAT FIX"] if fo else []) + (["INSIDE FIX"] if ins else [])
     rev = ask("rewrite", wbrief, f"MANDATORY FIX ({' + '.join(tags)}; keep every label, tag, [PUNCH]/[SEND]/[AWE] marker and fact; change only what fixes these): "
               + " | ".join(issues) + "\nNARRATION:\n" + text + "\nRewrite the full narration.", episode=episode, fake_key="writer", max_tokens=16000)
     if str(rev.get("script", "")).strip(): script = rev

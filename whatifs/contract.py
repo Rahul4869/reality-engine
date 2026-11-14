@@ -464,6 +464,21 @@ def p_viewer_probe(ctx):
     if st == "fail": return FAIL, why
     return NA, (f"the line-up was void and is not counted ({why})" if st == "void" else why or st)
 
+def p_viewer_inside(ctx):
+    """v12 V2b (inside the scene, D13): the voice speaks to the viewer as something happening to him now - a floor for the share of counted sentences
+    that do, no run of sentences from outside longer than the format's limit, and no beat that explains before it shows. Counted by code
+    (whatifs/org/inside.py), judged on the script; the format's row says the floor and the limit. Never a device: no format can loosen it."""
+    from whatifs.org import inside as INS
+    from whatifs import formats as FMT
+    if not INS.on(): return NA, "the voice rule is switched off (INSIDE_ON / VIEWER_SEAT_ON)"
+    d = ctx.get("d") if isinstance(ctx.get("d"), dict) else {}
+    fmt = str(d.get("format") or "")
+    if fmt not in FMT.FORMATS: return NA, "no format on this episode (written before formats existed, or FORMATS_ON is off)"
+    r = INS.report(_script_text(ctx), fmt)
+    if r["problems"]: return FAIL, "; ".join(r["problems"])[:380]
+    return PASS, (f"{r['inside']} of {r['n']} sentences ({r['share_pct']:g}%) inside the scene (floor {r['min_pct']:g}%); the longest run from outside {r['run']} "
+                  f"(limit {r['run_max']}); no act explains before it shows")
+
 def p_format_kept(ctx):
     """v12 V2a: the script is what its FORMAT says - a format that is not a trial does not sound like one (no name of the court's cast, no courtroom
     furniture, only its own voices); a trial has its Show Plan."""
@@ -746,6 +761,7 @@ FEATURES = [
     ("viewer_plain", "script", p_viewer_plain, "everyday words: a budget for the expert words a layman would not know - in the narration, in the first 30 s, in one sentence (the layman test)"),
     ("viewer_probe", "script", p_viewer_probe, "the promise line-up: from the first 30 s alone two first-time readers pick this video's title, and give none to a planted opening (the layman test)"),
     ("format_kept", "script", p_format_kept, "the script is what its format says: a format that is not a trial does not sound like one, a trial has its Show Plan (formats as data)"),
+    ("viewer_inside", "script", p_viewer_inside, "the voice speaks to YOU, now: at least the format's share of sentences put the viewer inside the scene, never a run of sentences from outside longer than its limit, and no beat explains before it shows (inside the format)"),
     ("topic_ladder", "script", p_topic_ladder, "every topic starts as a Short: this long video is about the topic of a Short the promote rule took, or was made under an override on record (the ladder)"),
     ("opening_footage", "script", p_opening_footage, "a long video about a promoted Short opens on that Short's own footage, laid by code under its first sentences - or was made under an override, which has none (the opening)"),
     ("palace_injected", "script", p_palace_injected, "the Knowledge Palace playbook was inside the model prompt of every creative run's key call (the writer, the packager, the director), and the exact text is stored"),

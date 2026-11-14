@@ -9,6 +9,20 @@ def _lines(n):
             "[reveal] By the end of the hour, the coastline has moved.", "[tension] And the strangest part is what happens to you.", "[callback] So next time, maybe just... don't."]
     return [pool[i % len(pool)] for i in range(n)]
 
+def _lines_inside(n):
+    """v12 V2b: the same stand-in lines as a writer who obeys the voice rule says them - to 'you', now (whatifs/org/inside.py; used only while it is on)."""
+    pool = ["[calm] Right now, you and about eight billion people are doing something ordinary.", "[tension] But at exactly noon, all of you do it at once.",
+            "[reveal] That adds up to a number nobody has ever written down for you.", "[aside] And somewhere, you still reply 'k' to a long text... [beat] classic.",
+            "[tension] The first ten seconds look harmless to you.", "[calm] Then the water in front of you starts to change colour.", "[pause:short]",
+            "[reveal] By the end of the hour, the coastline you know has moved.", "[tension] And the strangest part is what happens to you.", "[callback] So you keep both feet on the floor... just in case."]
+    return [pool[i % len(pool)] for i in range(n)]
+
+def _inside_on():
+    try:
+        from whatifs.org import inside as _IN
+        return _IN.on()
+    except Exception: return False
+
 FAKE_SOURCES = (   # v12 B5: what a fake web search "returns" (url, title, age in days, quoted text) - an official page, a paper and a practitioner page
     ("https://support.google.com/youtube/answer/1311392", "YouTube channel monetization policies - YouTube Help", 40, "Inauthentic content: content that is mass-produced or repetitive is not eligible."),
     ("https://arxiv.org/abs/2506.20803", "The Ideation-Execution Gap", 300, "LLM-generated ideas scored higher before execution and dropped significantly more after it."),
@@ -231,7 +245,8 @@ def fake_reply(key, prompt):
         k = 0
         from whatifs import formats as _FMT
         f1 = not _FMT.show_allowed()          # v12 V2a: a format that is not a trial is answered like a compliant writer - without the trial's devices
-        for b, chunk in enumerate([_lines(n)[i:i + 4] for i in range(0, n, 4)], 1):
+        pool_ = _lines_inside(n) if _inside_on() else _lines(n)          # v12 V2b: with the voice rule on, the stand-in speaks to 'you' (off: byte for byte as before)
+        for b, chunk in enumerate([pool_[i:i + 4] for i in range(0, n, 4)], 1):
             body.append(f"## BEAT {b}")
             for ln in chunk:          # v8.1: Reality Engine dialogue; three label styles are mixed on purpose to exercise the tolerant parser
                 if ln.startswith("[pause"): body.append(ln); continue

@@ -75,6 +75,15 @@ def number_issues(text):
             "into something a viewer can picture (a comparison, a size, a wait), never two numbers in one sentence, and cut the rest"]
 
 # ------------------------------------------------------------------ the shot list: the promise is the first picture, numbers on screen are rare
+def make_still(out, units, i, why, hero=False, prompt=""):
+    """Shot i of the shot list `out` becomes a still of its own line (the prompt it had, else its line's words; the style lock added), carrying 'seat' = why.
+    One helper for every repair by code that turns a graphic or real footage into a picture (audience.shape, inside.open_acts)."""
+    lock = str(S("STYLE_LOCK") or "").strip()
+    def text(i): return str((units[i] if i < len(units or []) else {}).get("text") or "")
+    s = out[i]; p = (prompt or str(s.get("prompt") or "").strip() or text(i)).strip()
+    if lock and lock not in p: p = p.rstrip(". ") + ". " + lock
+    s.update(type="still", prompt=p, hero=bool(hero), seat=why); s.pop("graphic", None); s.pop("search", None)
+
 def shape(shots, units, pkg=None):
     """Repairs by code before any picture is paid (D13's run, right before the Animation Director): the first shot is a made picture (so that the
     animated promise scene can open the video), no number graphic inside the first GRAPHICS_FREE_SEC seconds, at most GRAPHICS_MAX_LONG in the video.
@@ -83,12 +92,8 @@ def shape(shots, units, pkg=None):
     carries 'seat' = why."""
     out = [dict(s) for s in shots or []]
     if not on() or not out: return out
-    lock = str(S("STYLE_LOCK") or "").strip(); thumb = str((pkg or {}).get("thumb_prompt") or "").strip()
-    def text(i): return str((units[i] if i < len(units or []) else {}).get("text") or "")
-    def still(i, why, hero=False, prompt=""):
-        s = out[i]; p = (prompt or str(s.get("prompt") or "").strip() or text(i)).strip()
-        if lock and lock not in p: p = p.rstrip(". ") + ". " + lock
-        s.update(type="still", prompt=p, hero=bool(hero), seat=why); s.pop("graphic", None); s.pop("search", None)
+    thumb = str((pkg or {}).get("thumb_prompt") or "").strip()
+    def still(i, why, hero=False, prompt=""): make_still(out, units, i, why, hero=hero, prompt=prompt)
     if out[0].get("type") not in PICTURES: still(0, "first picture", hero=True, prompt=thumb)
     free = S("GRAPHICS_FREE_SEC", float); gmax = max(0, S("GRAPHICS_MAX_LONG", int)); kept = 0
     for i, s in enumerate(out):

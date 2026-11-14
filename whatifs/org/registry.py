@@ -44,9 +44,10 @@ DEPTS = {
     "D12": {"mission": "reliability, the watchdog, model ladders, deprecations, incidents, build requests", "cadence": "tick", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/steward.py", "whatifs/builds.py", "tools/repair.py"), "levers": ("PREFLIGHT_ON",), "takes": ("build_request",)},
     "D13": {"mission": "the viewer's seat: what a first-time viewer meets is measured and repaired before any picture is paid - the promise first, a voice that breathes, few numbers", "cadence": "episode", "cap_inr": None, "inject": "brief",
-            "wraps": ("whatifs/org/audience.py", "whatifs/org/layman.py", "whatifs/org/shortseat.py"),
+            "wraps": ("whatifs/org/audience.py", "whatifs/org/layman.py", "whatifs/org/shortseat.py", "whatifs/org/inside.py"),
             "levers": ("NUMBERS_PER_MIN_MAX", "GRAPHICS_MAX_LONG", "GRAPHICS_FREE_SEC", "BREATH_EVERY_S", "PLAIN_HARD_PER_MIN_MAX", "PLAIN_OPENING_HARD_MAX", "PLAIN_HARD_PER_SENTENCE_MAX",
-                       "SHORT_HOOK_WORDS_MAX", "SHORT_HOOK_BY_S", "SHORT_NUMBERS_MAX", "SHORT_EXPERT_MAX", "SHORT_PROMISE_WORDS_MAX"), "takes": ()},
+                       "SHORT_HOOK_WORDS_MAX", "SHORT_HOOK_BY_S", "SHORT_NUMBERS_MAX", "SHORT_EXPERT_MAX", "SHORT_PROMISE_WORDS_MAX",
+                       "INSIDE_MIN_PCT_F1", "INSIDE_MIN_PCT_F2", "INSIDE_MIN_PCT_F3", "LECTURE_MAX_F1", "LECTURE_MAX_F2", "LECTURE_MAX_F3"), "takes": ()},
     "D14": {"mission": "the short video as a product of its own: its formats, its brief, three scripts judged blind, every second animated, the loop - built to win alone, never a cut-down", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/shorts2.py",),
             "levers": ("SHORT_SHARE_S1", "SHORT_SHARE_S2", "SHORT_SHARE_S3", "SHORT_MIN_S", "SHORT_MAX_S_S1", "SHORT_MAX_S_S2", "SHORT_MAX_S_S3",
@@ -109,7 +110,7 @@ CHECK_OWNER = {
     "visual_change": "D6", "living_characters": "D6", "aliveness": "D6", "promise_paid": "D6", "thumbnails": "D5", "titles": "D5", "chapters": "D5",
     "self_review": "D8", "breakout_bar": "D1", "dept_contract": "D8", "takeaways_written": "D8",
     "decisions_executed": "C", "lever_verified": "D12", "research_cadence": "D2", "palace_injected": "D4", "palace_cited": "D4", "canon_in_brief": "D4",
-    "viewer_numbers": "D13", "viewer_breath": "D13", "viewer_promise": "D13", "viewer_plain": "D13", "viewer_probe": "D13", "format_kept": "D4",
+    "viewer_numbers": "D13", "viewer_breath": "D13", "viewer_promise": "D13", "viewer_plain": "D13", "viewer_probe": "D13", "viewer_inside": "D13", "format_kept": "D4",
     "short_open": "D13", "short_plain": "D13", "short_shape": "D13", "short_kept": "D14", "short_contract": "D8", "topic_ladder": "D10", "release_sheet": "D9",
     "moving_share": "D6", "stock_share": "D6", "short_moving": "D6", "short_sound": "D7",      # v12 V2d-b: the motion ladder, real footage, a Short's first second
     "opening_footage": "D6", "opening_shown": "D6",                                       # v12 V2c-b2b: the long video opens on its Short's footage

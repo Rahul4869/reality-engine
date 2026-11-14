@@ -147,18 +147,18 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     script, hook_rec = HOOKS.run_hooks(script, room["spine"], ep, out, proven=OPEN.proven(opn))
     room["script"]["script"] = script
     beat_names = [b.get("purpose", f"Part {b.get('n')}") for b in room["bible"].get("beats", [])]
-    clean, beat_marks = _strip_beats(script)
+    clean, beat_marks, beats = _strip_beats(script)
     hook = RX.ensure_units if FE.mode() != "classic" else None
     vkw = dict(style=d["strategies"]["voice"] or "slow_burn", seed=ep, speaker_blends=speaker_blends(d.get("guest"), d.get("cast")), unit_hook=hook)
-    vo = ORG.work("D7", "voice", ep, lambda b: narrate(clean, blend(), os.path.join(out, "voice"), **vkw), measure=WR.m_voice)
+    vo = ORG.work("D7", "voice", ep, lambda b: narrate(clean, blend(), os.path.join(out, "voice"), line_beats=beats, **vkw), measure=WR.m_voice)      # v12 V2b: every unit knows its beat
     floor = 20 if SMALL else S("RUNTIME_MIN_SEC", int) + 3
     for attempt in range(2):
         if vo.duration >= floor: break
         short = floor - vo.duration; add_words = int(short / 60 * S("WPM_ESTIMATE", float) * 1.25) + 40
         log(f"narration {vo.duration:.0f}s is under {floor}s - asking the writer for ~{add_words} more words (free step)", "WARN")
         longer = ROOM.extend(room, script, add_words, ep)
-        if longer: script = longer; clean, beat_marks = _strip_beats(script)
-        vo = narrate(clean, blend(), os.path.join(out, "voice"), **vkw)
+        if longer: script = longer; clean, beat_marks, beats = _strip_beats(script)
+        vo = narrate(clean, blend(), os.path.join(out, "voice"), line_beats=beats, **vkw)
     if vo.duration < floor:
         raise RuntimeError(f"narration {vo.duration:.0f}s still under {floor}s - not spending on visuals; will retry")
     room["script"]["script"] = script
@@ -613,6 +613,8 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
         S_["shots"] = shots = STK.shape(shots, units, vo.duration)
         from whatifs.org import audience as AUD                 # v12 V1 (D13): the viewer's seat - free repairs BEFORE the Animation Director places its scenes
         shots = ORG.work("D13", "seat", ep, lambda b: AUD.shape(S_["shots"], units, S_.get("pkg") or {}), measure=AUD.m_shape); S_["shots"] = shots
+        from whatifs.org import inside as INS                   # v12 V2b (D13): SHOW, THEN TELL - every beat opens on a picture (a graphic or real footage that opens one becomes a still)
+        S_["shots"] = shots = INS.open_acts(shots, units)
         if S_.get("probe") is None: S_["probe"] = _probe(S_, ep, units)          # v12 V1b: a plan saved before the layman test carries no line-up yet
         from whatifs import anim as ANIM                        # v10.2 (K152): exactly ANIM_SHOTS animated scenes, at the retention cliffs
         ANIM.apply(shots, units, plan); S_["shots"] = shots
@@ -956,13 +958,17 @@ def _review_files(out, ep):
     return ids
 
 def _strip_beats(script):
+    """(clean, marks, beats): the script without its '##' headings (never spoken), where each heading stood (counted in lines, for the chapters) and - v12
+    V2b - the beat of every line of `clean` (inside.line_beats: the one convention for the whole batch), which the voice hands to every unit."""
     lines, marks = [], []
     for raw in script.splitlines():
         if raw.strip().startswith("##"):
             marks.append(len([l for l in lines if l.strip() and not l.strip().startswith("[pause")])); continue
         lines.append(raw)
     clean = "\n".join(lines)
-    return clean, marks
+    from whatifs.org import inside as INS
+    clean_, beats = INS.line_beats(script)
+    return clean, marks, beats
 
 def _description(desc, chs, room, ep="", nxt=None, credits=""):
     chapters = "\n".join(f"{t} {n}" for t, n in chs) if len(chs) >= 3 else ""
