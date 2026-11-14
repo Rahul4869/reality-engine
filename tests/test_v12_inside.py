@@ -954,3 +954,41 @@ def test_the_format_is_picked_before_the_writers_run_loads_its_playbook():
     p = inspect.getsource(PV)
     assert p.index('if "format" not in d: d["format"] = FMT.pick(draft, d)') < p.index('with FMT.using(d["format"]):') < p.index('room = ORG.work("D4", "draft"')
     assert 'if "format" not in draw: draw["format"] = FMT.pick(episode, draw)' in inspect.getsource(ROOM.run_room)          # the room keeps a format it is given
+
+# ------------------------------------------------------------------ 14. THE SWEEP AND THE REHEARSAL WALK THE INSIDE OF THE FORMAT (3.10)
+def _sweep_case(ep, fmt, rows):
+    """A long video's row and its ledger as the gate writes them: rows = {check: (status, evidence)}."""
+    core.store().append("Episodes", [{"episode_id": ep, "status": "SCHEDULED", "draw_json": json.dumps({"format": fmt})}])
+    core.store().append("Feature_Ledger", [{"ts": "t", "episode_id": ep, "stage": "script", "feature": k, "status": s, "evidence": e} for k, (s, e) in rows.items()])
+
+GOOD_F1 = {"viewer_inside": ("PASS", "14 of 16 sentences (87.5%) inside the scene (floor 50%); the longest run from outside 1 (limit 4); no act explains before it shows"),
+           "format_ending": ("PASS", "ends on its question: 'would you keep it?'; no ask and no pointer in the tail; asks in this video: subscribe 1; removed by code: 0"),
+           "camera_path": ("PASS", "2 acts in 2 places (1 changes in 1.2 min, at most 3): your bathroom | your street; every picture at eye level; every act opens on its own picture"),
+           "camera_shown": ("PASS", "9 still states in 2 acts: each showed a picture of its own act, at eye level, travelling one way (drift 9)")}
+
+def test_the_sweeps_judge_says_the_inside_of_the_format_held_and_holds_an_id_where_it_was_not_walked():
+    from tools import sweep as SW
+    _sweep_case("EPSW1", "F1", GOOD_F1); ok, w = SW.inside_of(core, "EPSW1")
+    assert ok and w == ("inside the format held: F1; 87.5% of 16 sentences inside (floor 50%); 2 acts in 2 places (1 changes in 1.2 min, at most 3): your bathroom | your street; "
+                        "ends on its question: 'would you keep it?'"), w
+    assert re.search(r"([\d.]+)% of \d+ sentences inside", w).group(1) == "87.5"                                       # the block's watch line reads it
+    _sweep_case("EPSW2", "F1", {k: v for k, v in GOOD_F1.items() if k != "camera_shown"}); ok, w = SW.inside_of(core, "EPSW2"); assert not ok and "camera_shown missing" in w, w
+    _sweep_case("EPSW3", "F1", dict(GOOD_F1, camera_path=(CON.NA, "format F1 cuts between its pictures"))); ok, w = SW.inside_of(core, "EPSW3"); assert not ok and "camera_path N/A" in w, w      # 'not applicable' outside a trial is a failure
+    _sweep_case("EPSW4", "F2", dict(GOOD_F1, format_ending=(CON.NA, "format F2 ends on a tease"), camera_path=(CON.NA, "format F2 cuts between its pictures"),
+                                    camera_shown=(CON.NA, "format F2 cuts between its pictures")))
+    ok, w = SW.inside_of(core, "EPSW4"); assert ok and w.endswith("; the trial cuts between its pictures; ends on a tease") and w.startswith("inside the format held: F2;"), w
+    _sweep_case("EPSW5", "F2", dict(GOOD_F1, viewer_inside=(CON.NA, "INSIDE_ON is FALSE"))); ok, w = SW.inside_of(core, "EPSW5"); assert not ok and "viewer_inside N/A" in w, w      # a trial's voice is judged too
+    _sweep_case("EPSW6", "F2", dict(GOOD_F1, format_ending=(CON.NA, "ENDINGS_ON is FALSE"))); assert not SW.inside_of(core, "EPSW6")[0]                         # only 'ends on a tease' is a trial's N/A
+    _sweep_case("EPSW7", "", GOOD_F1); ok, w = SW.inside_of(core, "EPSW7"); assert not ok and "has no format" in w, w
+    s = SW.summary([{"id": "a", "outcome": "ok", "inside": "inside the format held: F1"}, {"id": "b", "outcome": "odd", "inside": "inside the format held: F1"}, {"id": "c", "outcome": "ok"}])
+    assert s["format_inside_held"] == 1                                                                                   # the counter: held AND the id good
+
+def test_the_sweep_judges_every_long_video_and_every_rehearsal_and_the_rehearsal_asserts_and_prints_it():
+    import inspect
+    from tools import sweep as SW, rehearsal as RH
+    src = inspect.getsource(SW.one)
+    assert src.count('ok_i, res["inside"] = inside_of(core, ep)') == 2                                                     # the produce mode and the rehearsal mode
+    assert 'if res["outcome"] == "ok":                                              # v12 V2b: THE SWEEP WALKS THE INSIDE OF THE FORMAT' in src
+    assert 'if res["outcome"] == "ok":                                              # v12 V2b: the rehearsal\'s long video judged by the sweep\'s own words too' in src
+    r = inspect.getsource(RH.run)
+    assert 'ok12, said12 = inside12(core12, epid); assert ok12, ("the inside of the format did not hold", said12)' in r and 'print("inside the format:", said12[:420])' in r

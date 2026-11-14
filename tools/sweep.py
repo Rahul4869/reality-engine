@@ -110,6 +110,33 @@ def motion_of(core, ep, shorts=()):
     said = ([str(led[(ep, "moving_share")].get("evidence"))[:300], str(led[(ep, "stock_share")].get("evidence"))[:90]] if ep else []) + [f"{len(list(shorts))} Short(s): every half second of the file moves, sound from the first frame"]
     return True, "the ladder's rules held: " + " | ".join(said)
 
+def inside_of(core, ep):
+    """v12 V2b: (ok, words) - THE SWEEP WALKS THE INSIDE OF THE FORMAT. The long video of this id must have PASSED viewer_inside and format_ending - a trial
+    only may say format_ending N/A 'ends on a tease' - and camera_path and camera_shown in a format whose camera travels (F1, F3) - a trial only may say
+    N/A 'cuts between its pictures'. A missing row or any other 'not applicable' is a failure here: it would mean the new path was not walked."""
+    from whatifs import formats as FMT, contract as CON
+    st = core.store(); led = {}
+    for r in st.rows("Feature_Ledger"):
+        if r.get("episode_id") == ep: led[r.get("feature")] = r                      # the latest verdict per check
+    row = next((r for r in st.rows("Episodes") if r.get("episode_id") == ep), None) or {}
+    try: dj = json.loads(row.get("draw_json") or "{}") if isinstance(row.get("draw_json"), str) else (row.get("draw_json") or {})
+    except ValueError: dj = {}
+    fmt = str(dj.get("format") or ""); trial = fmt in FMT.FORMATS and bool(FMT.FORMATS[fmt]["show"])
+    def status(k): return str((led.get(k) or {}).get("status") or "missing")
+    def words(k): return str((led.get(k) or {}).get("evidence") or "")
+    bad = [] if fmt in FMT.FORMATS else [f"the episode has no format ('{fmt}'): the inside of a format was not walked"]
+    for k in ("viewer_inside", "format_ending", "camera_path", "camera_shown"):
+        s = status(k)
+        if s == "PASS": continue
+        if trial and s == CON.NA and ((k == "format_ending" and "ends on a tease" in words(k)) or (k in ("camera_path", "camera_shown") and "cuts between its pictures" in words(k))): continue
+        bad.append(f"{k} {s}: {words(k)[:140]}")
+    if bad: return False, "; ".join(bad)
+    m = re.search(r"(\d+) of (\d+) sentences \(([\d.]+)%\) inside the scene \(floor (\d+)%\)", words("viewer_inside"))
+    share = f"{m.group(3)}% of {m.group(2)} sentences inside (floor {m.group(4)}%)" if m else words("viewer_inside")[:90]
+    acts = "the trial cuts between its pictures" if trial else words("camera_path").split("; every picture")[0][:160]
+    end = "ends on a tease" if trial else words("format_ending").split("; no ask")[0][:120]
+    return True, f"inside the format held: {fmt}; {share}; {acts}; {end}"
+
 # ------------------------------------------------------------------ one id (runs in its own process: module state never leaks between ids)
 def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
     os.environ.update(WI_FAKE="1", WI_SMALL="1", WI_WORK=os.path.join(work, "work"), PYTHONUTF8="1")
@@ -169,6 +196,9 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
             from tools.rehearsal import run
             try: run(ep_id=ep); res["outcome"] = "ok"                                # v12 V2c-b: the rehearsal takes the fixed id itself (its Shorts' ids are derived from it)
             except AssertionError as e: res["outcome"] = "assert"; res["error"] = (str(e) or traceback.format_exc().strip().splitlines()[-2].strip())[:300]
+            if res["outcome"] == "ok":                                              # v12 V2b: the rehearsal's long video judged by the sweep's own words too (its counter format_inside_held)
+                ok_i, res["inside"] = inside_of(core, ep)
+                if not ok_i: res["outcome"] = "odd"; res["problems"].append("inside the format: " + res["inside"]); res["error"] = res["inside"][:300]
         else:                                                                       # the recipe of the end-to-end test in tests/test_v12_org.py
             core._store = core.LocalStore(os.path.join(work, "sheet.json")); core._store.ensure_tabs(); core._settings_cache = None
             for k, v in TEST_SETTINGS.items(): core.set_setting(k, v)
@@ -195,6 +225,9 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
             if res["outcome"] == "ok":                                              # v12 V2d-b: THE SWEEP WALKS THE LADDER'S RULES - the finished film (and its Short's file) measured: what moves, real footage, characters
                 ok_x, res["motion"] = motion_of(core, ep, ["SH" + ep[2:]] if res.get("ladder") == "climbed" else [])
                 if not ok_x: res["outcome"] = "odd"; res["problems"].append("the ladder's rules: " + res["motion"]); res["error"] = res["motion"][:300]
+            if res["outcome"] == "ok":                                              # v12 V2b: THE SWEEP WALKS THE INSIDE OF THE FORMAT - the voice, the ending, the camera path, judged on the script and the render's record
+                ok_i, res["inside"] = inside_of(core, ep)
+                if not ok_i: res["outcome"] = "odd"; res["problems"].append("inside the format: " + res["inside"]); res["error"] = res["inside"][:300]
         res.update(evidence(core, ep, org))
     except BaseException as e:                                                      # a crash is a result too: the last line of the traceback names it
         if isinstance(e, KeyboardInterrupt): raise
@@ -267,7 +300,8 @@ def summary(results):
     return {"n": len(results), "outcomes": by, "opened_on_footage": sum(1 for r in results if r.get("opening") and r["outcome"] == "ok"),
             "released_without_cutdowns": sum(1 for r in results if str(r.get("release") or "").startswith("no cut-down") and r["outcome"] == "ok"),
             "money_agreed": sum(1 for r in results if str(r.get("money") or "").startswith("every paid picture") and r["outcome"] == "ok"),
-            "ladder_rules_held": sum(1 for r in results if str(r.get("motion") or "").startswith("the ladder's rules held") and r["outcome"] == "ok"), "bad_ids": sorted(r["id"] for r in results if r["outcome"] != "ok"), "fail_classes": {k: sorted(set(v)) for k, v in sorted(fails.items())},
+            "ladder_rules_held": sum(1 for r in results if str(r.get("motion") or "").startswith("the ladder's rules held") and r["outcome"] == "ok"),
+            "format_inside_held": sum(1 for r in results if str(r.get("inside") or "").startswith("inside the format held") and r["outcome"] == "ok"), "bad_ids": sorted(r["id"] for r in results if r["outcome"] != "ok"), "fail_classes": {k: sorted(set(v)) for k, v in sorted(fails.items())},
             "warn_classes": {k: len(v) for k, v in sorted(warn.items())}, "degraded_classes": {k: len(v) for k, v in sorted(deg.items())}, "owner_message_kinds": {k: len(v) for k, v in sorted(own.items())}}
 
 def main(argv=None):

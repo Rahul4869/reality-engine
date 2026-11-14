@@ -117,6 +117,14 @@ def run(ep_id=None):
         assert lv12 and lv12.get("lic") == "commercial" and lv12["id"] == S("FAL_LIVING_MODEL"), ("the living model is not a licensed row of the clip market", lv12)
         assert ok12, ("the motion ladder, the stock rules or the character rule did not hold", said12)
         print("motion:", said12[:420])
+        # v12 V2b: INSIDE THE FORMAT - the voice speaks to YOU now (viewer_inside), the ending is the format's (format_ending) and, where the camera travels
+        # (F1, F3), one place per act, eye level, one direction, judged on the render's own record (camera_path, camera_shown) - as the sweep judges them.
+        from tools.sweep import inside_of as inside12
+        ok12, said12 = inside12(core12, epid); assert ok12, ("the inside of the format did not hold", said12)
+        fmt2b = str(json.loads(e12["draw_json"]).get("format") or "")                 # the long video's format: what the older asserts below expect follows it
+        own2b = S("ENDINGS_ON", bool) and FMT12.ending(fmt2b) != "tease"               # a format with its own ending carries its own asks (3.3)
+        voices2b = set(FMT12.FORMATS[fmt2b]["voices"]) if fmt2b in FMT12.FORMATS and len(FMT12.FORMATS[fmt2b]["voices"]) == 1 else {"DIRECTOR", "SKEPTIC"}      # F3: one voice
+        print("inside the format:", said12[:420])
         # v7.2 independent checks on the real rendered files
         from whatifs import qc as QC
         from whatifs.render import probe_dur
@@ -190,23 +198,29 @@ def run(ep_id=None):
         import glob
         from whatifs import format_engine as FE
         tl81 = json.load(open(glob.glob(os.path.join(d74, "voice*timeline*.json"))[0])); who = {u.get("speaker") for u in tl81["units"]}
-        assert {"DIRECTOR", "SKEPTIC"} <= who, f"both roles must speak: {who}"
+        assert voices2b <= who, f"both roles must speak (F3: its one voice): {who}"                                   # v12 V2b: one voice in F3 (changed by design)
         assert not tl81.get("voice_fallback"), "a character voice fell back to the narrator"
         assert not any("[" in u["text"] or u["text"].upper().startswith(("DIRECTOR", "SKEPTIC")) for u in tl81["units"]), "a speaker label was spoken"
-        assert FE.check_script(open(os.path.join(d74, "captions.srt")).read() and "\n".join(f"[{u['speaker']}] {u['text']}" for u in tl81["units"] if u["speaker"] != "NARRATOR"))["ok"]
+        with FMT12.using(fmt2b):                                                       # v12 V2b: checked in the long video's own format (F3: one voice - changed by design)
+            assert FE.check_script(open(os.path.join(d74, "captions.srt")).read() and "\n".join(f"[{u['speaker']}] {u['text']}" for u in tl81["units"] if u["speaker"] != "NARRATOR"))["ok"]
         print("v8.1 checks ok")
         # v8.2 checks: final QC passed with its sync numbers, reactions were placed and recorded, checkpoints were removed after scheduling
         st82 = store(); ep82 = [e for e in st82.rows("Episodes") if e.get("yt_id")][0]
         assert ep82["status"] in ("SCHEDULED", "LIVE1", "LIVE") and not CK.has(ep82), ep82["status"]
-        assert st82.rows("Reaction_Map"), "no reaction moment was recorded"
+        assert st82.rows("Reaction_Map") or "SKEPTIC" not in voices2b, "no reaction moment was recorded"            # v12 V2b: a reaction is the foil's line - F3 has none (changed by design)
         from whatifs.core import flush_log; flush_log(); runlog = " ".join(str(r.get("message", "")) for r in st82.rows("Run_Log"))
         assert "QC long video: PASS" in runlog and "audio_offsets" in runlog, "final QC did not run or did not pass"
         print("v8.2 checks ok")
         # v8.3 checks: no third voice, all three audience asks spoken, the segments were cleaned up, the first line is the Director's, the fact check ran
         from whatifs import cta as CTA83
         assert "NARRATOR" not in who, f"a third voice was used: {who}"
-        asks = {CTA83.kind_of_text(u["text"]) for u in tl81["units"]} - {None}
-        assert asks == {"like", "subscribe", "share"}, f"audience asks missing or doubled: {asks}"
+        if own2b:                                                                     # v12 V2b: a format with its own ending - its row's asks, recognised by code on the script (changed by design)
+            sc2b = json.load(open(os.path.join(d74, "plan.json")))["room"]["script"]["script"]
+            asks = [CTA83.is_ask(CTA83._peel(l)[3]) for l in sc2b.split("\n") if l.strip() and not l.startswith("##")]; asks = [k for k in asks if k]
+            assert set(asks) == set(FMT12.asks(fmt2b)), f"the asks of format {fmt2b} are not its own: {asks}"      # its KINDS: a two-line ask is one ask of one kind
+        else:
+            asks = {CTA83.kind_of_text(u["text"]) for u in tl81["units"]} - {None}
+            assert asks == {"like", "subscribe", "share"}, f"audience asks missing or doubled: {asks}"
         assert tl81["units"][0]["speaker"] == "DIRECTOR", "the opening line must be the Director's"
         assert "fact check" in runlog, "the fact check did not run"
         assert not glob.glob(os.path.join(d74, "seg*_*.mp4")), "big intermediate segments were not removed"
@@ -272,15 +286,18 @@ def run(ep_id=None):
         lock89 = S("STYLE_LOCK")
         assert all(lock89 in (s_.get("prompt") or "") for s_ in sh87 if s_.get("type") in ("still", "living", "kling")), "style lock missing on a paid shot"
         assert d87.get("guest") and d87.get("tier") == "public", "guest / tier missing from the draw"
-        assert (d87.get("next_tease") or {}).get("line") and np89 and json.loads(np89).get("premise") == d87["next_tease"]["premise"], "next-episode tease not set when the video was scheduled"
-        assert rr["spine"].get("teased_premise") == json.loads(np89)["premise"], "the next room (EPTABLE) must be handed the teased premise"
+        if S("ENDINGS_ON", bool) and LAD12.on():                                      # v12 V2b: under the ladder no video promises a next topic (issue 101; changed by design)
+            assert not (d87.get("next_tease") or {}).get("line") and not np89 and not rr["spine"].get("teased_premise"), ("a next topic was promised under the ladder", d87.get("next_tease"), np89)
+        else:
+            assert (d87.get("next_tease") or {}).get("line") and np89 and json.loads(np89).get("premise") == d87["next_tease"]["premise"], "next-episode tease not set when the video was scheduled"
+            assert rr["spine"].get("teased_premise") == json.loads(np89)["premise"], "the next room (EPTABLE) must be handed the teased premise"
         assert S("NEXT_PREMISE") == np89, "v8.9.1: a room alone (no saved plan) must NOT use up the teased premise"
         cams = [x.get("camera") for x in sh87 if x.get("camera")]
         from whatifs.render import CAMERA_MOVES as _CM
         assert cams and all(c in _CM for c in cams) and "spin_wildly" not in cams, "Director camera suggestions must be validated (only library moves kept)"
         print("v8.9 checks ok")
         # v8.10 checks: Gemini voice with the cast, premise scores by two judges, Owner's Cut, immersion, technique library, Script Preview round trip
-        assert tl81.get("engine") == "gemini" and {"DIRECTOR", "SKEPTIC"} <= set(tl81.get("gemini_voices", {})) <= {"DIRECTOR", "SKEPTIC", "JUDGE", "WITNESS"}, "the narration did not use the Gemini cast voices"
+        assert tl81.get("engine") == "gemini" and voices2b <= set(tl81.get("gemini_voices", {})) <= {"DIRECTOR", "SKEPTIC", "JUDGE", "WITNESS"}, "the narration did not use the Gemini cast voices"      # v12 V2b: F3's one voice
         assert all(u["words"] for u in tl81["units"]), "a Gemini line has no word timings"
         from whatifs.voice_lab import cast_samples
         cs = cast_samples(os.path.join(work, "cast_samples")) if os.makedirs(os.path.join(work, "cast_samples"), exist_ok=True) is None else []

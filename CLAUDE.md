@@ -169,6 +169,19 @@ pipeline run uses the new code. Nothing restarts.
   line-up (`layman.probe`, D13's `probe` run inside the plan stage) is an identification with an answer code knows, so its readers are cheap by design;
   its verdict is computed by code and a session whose readers name a title for the planted opening is void (check `viewer_probe` then steps aside and
   D13 reports itself). Never use a readability formula or a model's "clarity score" as a gate: they agree poorly with people.
+- **Inside the format: the voice** (`whatifs/org/inside.py`, department D13; switch `INSIDE_ON`): a script's lines know their beat (`inside.line_beats`: a "## BEAT n"
+  heading is never spoken; `episode._strip_beats` -> `voice.parse_script(line_beats=)` -> every unit and the timeline carry `beat`). `inside.report` counts sentences with
+  the VOICE'S OWN parser (never a second one): inside = "you" in the present tense, or outside a trial the foil's "I"; a past "you" only where code RECOGNISES it. Three
+  rules per format (the row's `inside` / `lecture` cells, levers of D13): the share, the longest run from outside, show before tell. The writers are told (`inside.brief`),
+  their ONE fix carries it (`enforce.fix_all`, INSIDE FIX), check `viewer_inside` holds. Every beat opens on a picture (`inside.open_acts`, after D13's seat run). The
+  offline writer must pass the rule of every format (`fakes`): run a whole production per format after touching it. The older tests run with it off (`OLD_INSIDE`).
+- **The camera path** (`whatifs/path.py`, department D6; switch `CAMERA_PATH_ON`; formats whose `camera` is "path" or "walk"): `path.acts` joins beats into acts
+  (`ACT_MIN_S`, `PLACE_CHANGES_PER_MIN_MAX`), `path.mark` runs BEFORE the Animation Director and `motion.place` (`first` = the act's first PICTURE; one sign per act, one
+  per walk), `path.lay` puts the place first in every still / living prompt AFTER `motion.place` (never on `short`, `promise`, `anim`). An act's first picture is a
+  guarantee of `episode.anchor_shots` (`firsts`) and `episode.anchors_for` is the ONE helper the asset step and the gate share; `motion.plain` is False for it (no clip
+  runs into an act). Eye level comes from `shotplan.assign_anchors`; a path still is drawn with its sign and `path.MOVES` (never `pull`, never `kb_roll`), and the render
+  RECORDS act / src / move / sign / fallback in `job.segmeta` (`rerender_times` rewrites it) -> `ctx["path_states"]` (never inside `ctx["states"]`). Checks
+  `camera_path` (the shot list) and `camera_shown` (the render's record). The reference frames must not move with `sign` None. The older tests run with it off.
 - **Creative departments and the canon** (`whatifs/org/cite.py`, `canon.py`): Palace knowledge enters a creative model call only through the runner's
   ask tap and its proof leaves only through the reply tap (`models.REPLY_TAPS`) - never paste a playbook into a brief by hand and never count an id a
   model typed: only `cite.verify` (the quote is found in the final output) makes an item "applied". A new creative call gets the playbook by adding its

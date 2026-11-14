@@ -15,9 +15,12 @@ Brand: **Reality Engine**. The promise is the owner's own: it happens to YOU - f
 - Cheap models never make taste calls: strong judges see every candidate.
 
 ## The long video has a format (`whatifs/formats.py`; the shares are settings Strategy can move)
-- **F1 "The day it changed"** (70 of 100): no courtroom. One law of nature is different today - the impossible picture, your morning, your street, the world, the last
-  consequence, the question "would you keep it?" - told by two voices, a guide and a foil. The show's devices are optional in it.
-- **F2 "The trial"** (30 of 100, an experiment arm): the show **Reality on Trial** the owner designed on 9 Nov 2026 - a science what-if is put on trial in a
+- **F1 "The day it changed"** (60 of 100): no courtroom. One law of nature is different today - the impossible picture, your morning, your street, the world, the last
+  consequence - told by two voices, a guide and a foil, and it ENDS on its own question "would you keep it?", with nothing after it: one subscribe ask in the middle,
+  never near the end, and no tease of a next video. The show's devices are optional in it.
+- **F3 "The walk"** (20 of 100, an experiment arm): one continuous first-person walk from your own front door outward, station by station, with ONE voice - the
+  guide close to your ear - and no ask at all; it ends on the arrival: one sentence to you about what you now see differently.
+- **F2 "The trial"** (20 of 100, an experiment arm): the show **Reality on Trial** the owner designed on 9 Nov 2026 - a science what-if is put on trial in a
   **Toybox Noir** courtroom (stop-motion puppet look; Settings `ART_STYLE` = `toybox_noir`), with all its devices:
 
 | Character | Role | Must always be true in a trial |
@@ -27,7 +30,14 @@ Brand: **Reality Engine**. The promise is the owner's own: it happens to YOU - f
 | Nana Rosa | blunt grandma judge | her verdict opens with "Here's what's true" (contract check `verdict_line`) |
 | the Archivist | narrator and evidence keeper | science claims enter as Exhibits with real sources (contract check `exhibits`) |
 
-- F3 "The walk" (one continuous first-person walk) is reserved and cannot be drawn yet.
+
+## Inside every long video (`whatifs/org/inside.py` D13, `whatifs/path.py` D6; measured by code, never a model's opinion)
+- The voice speaks to YOU, now: a share of its sentences at least the format's floor say what happens to "you" in the present tense, never more than a few
+  sentences in a row from outside, and no part explains before it has shown (check `viewer_inside`); every part opens on a picture.
+- The camera stays in ONE place per act, at your own eye level, and travels one way inside it - never backwards, never tilted; no still shows a picture made
+  for another act; judged on what the render recorded (checks `camera_path`, `camera_shown`). The trial cuts between its pictures as before.
+- The ending is the format's own (check `format_ending`); under the ladder no video promises a next topic, because the next long video is the Short viewers pick.
+- A name is shown only for a character who is drawn: F1 and F3 show no name chip at all (nobody is on screen); a trial names only a character with approved art.
 
 ## The Short is a product of its own (`whatifs/shorts2.py`, the Shorts Studio D14; never a cut-down, never a trial)
 - One guide voice speaking to you; nobody on screen; every second an animated clip; no plate at either end; the last frame is the first frame (it loops).

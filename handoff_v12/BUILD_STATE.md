@@ -1521,6 +1521,107 @@ writer's prompts, `canon_in_brief` PASS "canon given: 4 cast item(s)". Run alone
 Ladder's new column). No new check, lever or cell: the counts of step 5 stand (68 checks, `SHOW_CHECKS` 57, 84 levers). Breaks S6-01 to S6-22 written into
 `proving/breaks/V2b.json` (each anchor found exactly once, each named test present; 194 in the list) - NOT RUN.
 STEP 6'S RUN (real pytest, parallel `-n 6`, strict, THE WHOLE SUITE): "1625 passed in 2057.88s (0:34:17)", 0 failed. Open issues 194 and 195 are new.
+Step 6 committed and pushed: 0480f31.
+STEP 7 - THE SWEEP, THE REHEARSAL, THE BLOCK, THE DOCS (3.10). READ WHOLE before the first edit: `tools/sweep.py`, `tools/rehearsal.py`, `proving/blocks/V2d-b.json`
+and `default.json` (the same block but its note), `docs/CURRENT/ENFORCEMENT_MATRIX.md`, `docs/CURRENT/OWNER_REQUIREMENTS_LEDGER.md`, `docs/CURRENT/CONCEPT.md`,
+`whatifs/org/seed/build.json` (its V2d-b items as the model); the repo's `CLAUDE.md` (read at the start).
+THE REHEARSAL'S OLDER ASSERTS THAT V2b CHANGES BY DESIGN (the lesson "THE REHEARSAL HAS OLDER ASSERTS OF ITS OWN"; found by reading `tools/rehearsal.py` against
+the memo, named here BEFORE they are changed; the rehearsals of step 7 confirm them): (1) v8.1 "both roles must speak" (`{"DIRECTOR", "SKEPTIC"} <= who`) -
+F3 has ONE voice (3.5): the voices asked for are the row's own when the format has one voice; (2) v8.3 "all three audience asks spoken" (`kind_of_text` of every
+unit = like, subscribe, share) - in a format with its own ending the asks of the script are its row's kinds by `cta.is_ask` (F1 subscribe, F3 none: 3.3); the
+trial keeps the old assert; (3) v8.9 "next-episode tease not set when the video was scheduled", "the next room must be handed the teased premise" - under the
+ladder with `ENDINGS_ON` no video promises a next topic (3.3, issue 101): then no tease is set, `NEXT_PREMISE` stays empty and the next room is handed none;
+(4) v8.10 "the narration did not use the Gemini cast voices" (`{"DIRECTOR", "SKEPTIC"} <=` the voices used) - as (1), the row's voices in a one-voice format.
+FOUND BY THE FIRST REHEARSALS OF STEP 7 (F1/S1, F3/S1, F2/S2, F1/S3 one after another; F2/S2 and F1/S3 "REHEARSAL: GREEN"), named before the change: (5) v8.1 "the
+format is code-checked" (`FE.check_script(...)["ok"]` on the voiced units) runs after `produce` has reset the format, so F3's one-voice rule (3.3 d) is not applied
+and "one role barely speaks" fails F3/S1 - it is run in the long video's own format (`formats.using`). And (2) as I first typed it compared the LINES of asks with the
+row's kinds: F1/S1's one subscribe ask is a two-line entry of the pool (the ask and its reply line, both of its kind by `cta.is_ask` rule 1) and failed
+"['subscribe', 'subscribe']" - it compares the KINDS now (F1 {subscribe}, F3 none); `format_ending` counts the asks themselves.
+THE SECOND ROUND (the same four pairs on the corrected rehearsal): F1/S1, F2/S2 and F1/S3 "REHEARSAL: GREEN"; F3/S1 failed (6) v8.2 "no reaction moment was recorded" -
+a reaction moment is a line of the foil (`reactions.is_reaction`: speaker SKEPTIC), and F3 has ONE voice (3.5; open issue 187 names the reactions as two-voice
+machinery): named here before the change, the assert asks for a reaction moment only where the format has the foil. THE THIRD ROUND (F3/S1 alone): "REHEARSAL:
+GREEN". On the final rehearsal file the four pairs printed: F1/S1 "inside the format held: F1; 87.5% of 16 sentences inside (floor 50%); 2 acts in 2 places (1
+changes in 1.1 min, at most 3): your bathroom | your street; ends on its question: 'would you keep it?'"; F3/S1 "... F3; 85.7% of 14 sentences inside (floor 60%);
+2 acts in 2 places ...; ends on its arrival: 'You are home, and you see your street differently.'"; F2/S2 "... F2; 62.5% of 24 sentences inside (floor 40%); the
+trial cuts between its pictures; ends on a tease"; F1/S3 "... F1; 87.5% of 16 sentences inside ...; 3 acts in 3 places ...: your bathroom | your kitchen | your
+street ...". (F1/S1, F2/S2 and F1/S3 were GREEN on the file before change (6), which touches F3 only.)
+BUILT IN STEP 7 (as written): `tools/sweep.py` - NEW `inside_of(core, ep)` (the pattern of `motion_of`): `viewer_inside` and `format_ending` PASSED, `camera_path`
+and `camera_shown` PASSED - in a trial only N/A with "ends on a tease" / "cuts between its pictures"; a missing row, any other N/A or no format makes the id bad; its
+words "inside the format held: <format>; P% of N sentences inside (floor M%); <the acts and places | the trial cuts between its pictures>; <the ending>"; called on
+every long-video id of the produce mode AND (for part C's counter, which counts the sweep's own words) on the long video of every rehearsal-mode id; `summary()`
+counts `format_inside_held`. `tools/rehearsal.py` asserts `inside_of` and prints "inside the format: ..."; its older asserts changed by design as named (1) to (6).
+`proving/blocks/V2b.json` (the builder's own file): the promoted block of V2d-b whole + `format_inside_held` on parts A, B and C + the pair ["F3", "S1"] + the
+rehearsal line "inside the format:" + the watch line "sentences inside the scene (%)" (`([\d.]+)% of \d+ sentences inside`, warned under 55, no floor) - a script
+asserted that nothing of the floor is gone; "expect_tests" is written after the builder's block (5.9 act 5). PART A'S FORMATS (counted with `formats.pick` on an
+empty Sheet - every sweep id is the first episode of its own Sheet, drawn by its id): F1 11, F2 4, F3 5 of 20 (the F3 ids EP209901050639, EP209901072105,
+EP209901101131, EP209901180649, EP209901231141); parts B and C (the first four ids) F2, F1, F1, F3 - F3 is walked, no extra part is added. TWO IDS ALONE on the
+step's code: EP209901050639 (produce, F3) "ok | inside the format held: F3; 92.9% of 14 sentences inside (floor 60%); 2 acts in 2 places ...; ends on its arrival"
+and EP209901010900 (rehearsal, a trial) "ok | inside the format held: F2; 65.2% of 23 sentences inside (floor 40%); the trial cuts between its pictures; ends on a
+tease". DOCS: twelve matrix rows (`docs/CURRENT/ENFORCEMENT_MATRIX.md`; the meta-test of `tests/test_v111_enforce.py` passes), the ledger's paragraph "V2b"
+(and V2b out of its "Not built yet"), `CONCEPT.md` (F3 real, the shares 60 / 20 / 20, F1's ending, the section "Inside every long video"), the two recipes of the
+repo's `CLAUDE.md` ("Inside the format: the voice", "The camera path"), founding Palace items `v2b.the_voice_speaks_to_you_now` (D13),
+`v2b.one_place_per_act_one_direction` (D6), `v2b.the_ending_is_the_formats` (D4), `v2b.takeaway` (D13) with real code references (Palace GREEN: 201 items),
+`SYSTEM.md` regenerated. TESTS (`tests/test_v12_inside.py`, section 14): the judge's words and the watch line's number, a missing row, N/A outside a trial, a
+trial's two allowed N/A and its voice always judged, no format, the counter (held AND good); the sweep calls it in both modes, the rehearsal asserts and prints it.
+Breaks S7-01 to S7-10 written (each anchor found exactly once; 204 in the list) - NOT RUN. Plan Guard GREEN, Truth GREEN, the Organisation GREEN,
+`tests/test_docs_current.py` "32 passed" after `gen_docs`.
+STEP 7'S RUN (real pytest, parallel `-n 6`, strict, THE WHOLE SUITE): "1627 passed in 2089.52s (0:34:49)", 0 failed.
+#### Step 5 ENFORCE (rule -> executing code -> fails when broken)
+Every row has a matrix row in `docs/CURRENT/ENFORCEMENT_MATRIX.md` (the twelve rows of V2b), a test that passes when it is kept and fails when it is broken
+(`tests/test_v12_inside.py` unless named), and deliberate breaks (`proving/breaks/V2b.json`, the ids in brackets).
+| Rule | Executed by | Fails when broken |
+|---|---|---|
+| A line knows its beat; the acts of a film are real | `inside.line_beats`, `episode._strip_beats`, `voice.parse_script(line_beats=)`, `voice.narrate`, `reactions.ensure_units` / `audience.breathe` keep it | `test_a_heading_gives_its_own_number...`, `test_a_unit_knows_the_beat...`, `test_the_reaction_tags...`, the whole F1 production (two beats) (S1-*) |
+| The voice speaks to YOU: the format's floor of sentences inside | `inside.report` (rule a), `contract.p_viewer_inside` | `test_the_six_passages...`, `test_check_viewer_inside_passes_holds_and_says_na`, `test_a_format_can_never_loosen_viewer_inside...` (S1-*) |
+| No lecture: at most the format's run from outside | `inside.report` (rule b) | `test_the_six_passages...` (GOOD-2 and a fifth), `test_check_viewer_inside...` (S1-*) |
+| Show, then tell; every beat opens on a picture | `inside.report` (rule c), `inside.open_acts` in `episode.produce`, `audience.make_still` | `test_a_beat_that_explains_before_it_shows...`, `test_a_graphic_or_real_footage_that_opens_a_beat...`, `test_produce_opens_every_beat...` (S1-*) |
+| The writers are told; their ONE fix carries it; the offline writers pass | `inside.brief`, `inside.issues`, `enforce.fix_all`, `fakes._lines_inside` | `test_the_writer_is_told...`, `test_the_one_fix_carries_the_voice...`, `test_the_offline_writer_passes...` (S1-*) |
+| One place per act: acts joined, a place each, the place first in every picture's request | `path.acts`, `path.place_of`, `path.mark`, `path.lay`, `contract.p_camera_path` | `test_the_acts_join...`, `test_the_place_of_an_act...`, `test_mark_puts_first...`, `test_lay_puts_the_place_first...`, `test_check_camera_path...`, the whole F1 production (S4-*) |
+| Every picture at eye level | `shotplan.assign_anchors`, `contract.p_camera_path` rule 3 | `test_eye_level_at_the_source...`, `test_check_camera_path...` (S4-*) |
+| Every act on its own picture | `episode.anchor_shots(firsts=)`, `episode.anchors_for`, `motion.plain`, `episode._render` (the merged first line), the raise in `episode.produce` | `test_firsts_are_served...`, `test_the_asset_step_buys...`, `test_no_clip_runs_into...`, `test_the_render_records...`, `test_an_acts_first_picture_that_cannot_be_made...` (S4-*) |
+| One direction of travel, judged on the render's record | `render.camera_path(sign=)`, `render.choose_move` / `pick_move` / `parallax_segment(pool=)`, `episode._render` (segmeta), `Job.rerender_times`, `path.shown_report`, `contract.p_camera_shown` | `test_the_render_draws_a_path_still...`, `test_a_gentle_camera...`, `test_a_fallback_state...`, `test_a_re_render...`, `test_check_camera_shown...`; `tests/test_golden_frames*` (sign None) (S4-*) |
+| The Director is told; the scenes move with the viewer | `path.director_rules`, `room._immersion_notes`, `format_engine._for_format`, `immersion.apply` | `test_the_director_is_told...` (S4-*) |
+| An ask only where code recognises one; a format's own kinds; none in its tail | `cta.is_ask`, `cta.strip`, `cta.ensure(kinds=, before=)`, `formats.tail`, `room._place_asks`, `overlay.CtaChip` | `test_thirty_story_sentences...`, `test_strip_removes_only...`, `test_the_tail_is_measured_in_words...`, `test_ensure_adds_only...`, `test_the_room_places_only...`, `test_the_ask_chip...` (S2-*) |
+| The last line is the format's own; nothing follows it | `formats.ending_report`, `formats.ending_issues` (ENDING FIX), `contract.p_format_ending` | `test_the_last_line_of_each_ending`, `test_check_format_ending...`, `test_the_one_fix_carries_the_ending...`, `test_what_strip_leaves...` (S2-*) |
+| No promise the machine cannot keep | `room.tease_on`, `contract.p_tease` | `test_no_tease_under_the_ladder...` (S2-*) |
+| Every other place that demanded an ask, a second voice or a verdict follows the format; a trial byte for byte | `prompts.WRITER` (@@ASKS@@), `room._keep_asks`, `engage.brief`, `format_engine._for_format` | `test_the_writer_gets_the_asks...`, `test_the_rewrite_orders...` (S2-*) |
+| A name chip only for a drawn character | `overlay.SpeakerTag(drawn=)`, `episode._render` (`job.chips`), `contract.p_living` | `test_the_render_draws_no_chip...`, `test_check_living_characters_holds_a_name_chip...`, `test_the_chip_rule_is_silent...`, the whole trial under the ladder (S3-*) |
+| F3 "The walk": a row, one voice, its texts, the shares and their one-time move, the arm on record | `formats.FORMATS["F3"]`, `formats.kept_report`, `format_engine.one_voice` / `check_script`, `growth.rhythm_brief`, `manage.v12v2b_upgrade`, `episode._finish` (arm) | section 12's tests and the whole F3 production (S5-*) |
+| The Short's spoken first line on its ladder row and handed to the writer | `opening.hook_of`, `shorts2.run`, `ladder.enter`, `room.first_line_brief` | `test_a_shorts_hook_is_one_function...`, `test_the_room_hands...`, `test_a_real_offline_short...` (S6-01 to S6-08) |
+| No shape for a face (issue 177) | `show.py` (the witness), `data.py` (`T3_silhouette`), `truth.RETIRED` | `test_the_witness_and_the_third_thumbnail...`, `tests/test_v12_motion.py::test_no_prompt_asks_for_a_silhouette...` (S6-09 to S6-12) |
+| The trial's cast stays in the trial (issue 77) | `canon.cast_left_out`, `palace.playbook(leave_out=)`, the runner's LOAD, `canon.required`, `contract.p_canon_in_brief`, the format picked before D4's run | `test_the_cast_is_left_out...`, `test_the_format_is_picked_before...`, the whole F1, F3 and trial productions (S6-13 to S6-22) |
+| An act's first picture is inside the money | `costguard.lines` (the stills line's ceiling) | `test_the_stills_line_carries_one_picture_an_act...` (S4-*) |
+| The sweep and the rehearsal walk the inside of the format | `tools/sweep.py:inside_of`, its counter `format_inside_held`, `tools/rehearsal.py` (asserts and the line "inside the format:") | the block (parts A, B, C, the pair F3/S1); breaks S7-* |
+| (Step 0, the V2d-b audit's F1) what was paid is every clip file bought | `episode._finish` (`moving_paid_s`) | `tests/test_v12_motion.py::test_a_paid_clip_that_never_reaches_the_screen...` (F1) |
+WHERE THE BUILD STANDS (the fourth Opus builder, 14 Nov 2026 about 09:30 UTC; written at 69% of its context, past the brief's 65% line, between two steps).
+DONE AND PUSHED: steps 0 to 5 (the three builders before: 20f00be, 08861cb, 33a8413, 5a4859c, 3f33c84, 20d575e, db68bf3), step 6 (0480f31) and step 7 (the commit
+after this note's - "v12 V2b step 7"); the Step 5 table above. The state stays BUILD; nothing was moved; `V2b_OPUS_DONE.md` is NOT written. EVERY STEP OF 3.9
+BUT 8 IS TYPED; the whole suite after step 7: 1627 passed, 0 failed; the four rehearsal pairs F1/S1, F3/S1, F2/S2, F1/S3 GREEN; two sweep ids alone good.
+NEXT: a FIFTH Opus builder (card "BUILDER of V2b - phase BUILD"), with the continuation typist's reading of the plan's A9, reads this record from "Step 4 BUILD"
+and does 3.9 STEP 8 exactly as its brief says (the plan's 5.8 and A3), its record under a new heading `#### Step 6 PROVE` / `**6a - THE BUILDER'S HALF**` after
+this note: (1) COMPLETE THE BREAK LIST BEFORE THE LAST TEST RUN - `proving/breaks/V2b.json` holds 204 (F1, S1-01..18, S2-01..50, S3-01..14, S4-01..69, S5-01..20,
+S6-01..22, S7-01..10), NONE RUN; check it against the Step 5 table above (at least one break per row, one per branch of every rule) and add what is missing;
+(2) commit the candidate final code (a clean tree), push; (3) `python proving/breaks.py V2b` in the background, ALONE, until 0 missed and 0 void on the code of
+the last commit (MISSED = write the assertion, never delete the break, commit, ALL breaks again; VOID = rewrite the break); `git status` after every run;
+(4) Plan Guard, Truth, the Palace, the Organisation, `gen_docs` without drift - GREEN; (5) the builder's block ONCE on the last commit
+(`python proving/accept_block.py V2b HEAD <a new scratch folder> --parts 12`, detached, one long wait: the plan's 5.9 act 4 and 6.2), then
+`"expect_tests": <the pre-check's total>` into `proving/blocks/V2b.json` (written by this builder WITHOUT it: 5.9 act 5); a red there is its own to repair at the
+cause - three attempts, then written down; (6) the V2d-b audit's finding F1 is rewritten to CLOSED in `reviews/V2d-b_audit.md` only once its break F1 is CAUGHT;
+(7) `proving/notes/V2b_OPUS_DONE.md` and the closing words `V2b BUILT BY OPUS - waits for the Fable finisher`; it does NOT run `built_gate.py` or `--to BUILT`.
+WHAT IT NEEDS TO KNOW FROM HERE (facts, not decisions):
+- THE PINS TODAY: checks by stage `{"script": 39, "final": 21, "short": 5, "short_file": 2, "release": 1}`, total 68; `SHOW_CHECKS` 57; levers 84 - unchanged by
+  steps 6 and 7. The suite's total: 1627 (the builder's block's pre-check gives the number for "expect_tests").
+- THE BREAKS ARE SLOW WHERE THEY NAME A WHOLE PRODUCTION (60 to 90 s each; `breaks.py` runs a break's tests with `-x` in the order listed, the green check once per
+  distinct list): the step-6 and step-7 breaks list a unit test first. Expect the whole break run to take hours: start it detached and wait with one background
+  command.
+- `tests/test_v12_inside.py`: sections 1 to 14; `OWN_IDS` holds FIVE ids (the fifth, EP209908290900, climbs a real offline Short SH209908290900 for issue 129).
+- `proving/blocks/V2b.json`: written (pairs F1/S1, F2/S2, F1/S3, F3/S1; parts A to E as the floor; `format_inside_held` on A, B, C; the watch line of the share).
+- DESIGN QUESTIONS OF THIS BUILDER: 18 (a live Sheet's tabs keep the old texts of issue 177: open issue 194), 19 (the format picked before D4's run), 20 (the cast
+  test on the playbook, the house rules' "Dr. Grimm" and a founding item: open issue 195). None stops the build.
+- A FACT OF THIS LAPTOP: git's own clean-up after a commit printed "failed to delete '.git/worktrees/fix1' ... 'wt22': Permission denied" (seven old folders that
+  OneDrive holds; `git worktree list` shows the main checkout only - none is registered). The commit and the push went through.
+USAGE: at this builder's start the 5-hour window 0%, weekly all models 16%, weekly Fable 27%, context 9%; at its end the 5-hour window 5%, weekly all models 17%,
+weekly Fable 28% (the account's figure; this session is Opus 5.5), context 69%.
 
 ### V2d-b - THE LADDER'S RULES (13 Nov 2026) - ACCEPTED (final code commit 5827d97 GREEN in GitHub Checks run 159: 1551 passed; sweep 58 of 58 ids)
 (Its code is d8101c8; every later commit is text only. History: built on 60d9483; the prover's FIRST PASS on 60d9483 was RED - the sweep
