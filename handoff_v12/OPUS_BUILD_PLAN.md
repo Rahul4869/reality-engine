@@ -11,27 +11,64 @@ FIRST ACT OF EVERY SESSION, before any reading: from the handoff folder run `.ve
 (chapter 4). The plan is long because it replaces judgement with procedure: do not skim it, and do not improve on it mid-batch - a plan that
 proves wrong is corrected in the record (chapter 15), never worked around.
 
-## AMENDMENT 1 (14 Nov 2026, the owner's item 35: "fable does the quality work and quality control while opus build") - READ BEFORE CHAPTER 3
-Written by the Fable session he set to Fable 5.2 himself (chapter 15: his words change the plan at any time). It changes WHO does the phase
-DESIGN and who is started after a review - nothing else. Wherever a chapter below disagrees with these lines, these lines win.
+## AMENDMENTS 1 AND 2 (14 Nov 2026, the owner's items 35 and 36) - READ BEFORE CHAPTER 3; WHERE A CHAPTER BELOW DISAGREES, THESE LINES WIN
+Item 35: "fable does the quality work and quality control while opus build". Item 36 (he moved to the Ultra plan): "fable should also instantly
+audit and correct and improve the file of the batches made by opus after a batch ends ... all the best work is done by fable high now and only
+the insignificant work is done by opus". Written by the Fable session he set to Fable 5.2 himself (chapter 15: his words change the plan at any
+time). They change WHO does each phase and WHO starts whom. The laws, the machinery, the proving and the order of the batches do not move.
+THE CHAIN OF ONE BATCH (F = Fable 5.2 at Effort High, O = Opus 5.5; every session runs `next.py` first and reads this plan):
+| # | Session | Phase | Does | Ends by |
+|---|---|---|---|---|
+| 1 | F DESIGNER (fresh; started by the finisher of the batch before) | DESIGN | detaches itself; the whole reading; THE AUDIT of every batch in the audit queue (chapter 14, A7); steps 1 to 3 | `--to DESIGN_REVIEW`; starts 2 (fresh, wake on) |
+| 2 | F REVIEWER (fresh; did not write the memo) | DESIGN_REVIEW | 5.4 | CHANGES REQUIRED: `--to DESIGN`, ends its turn (1 is woken, changes the memo, moves the state back and messages 2). APPROVED: `--to BUILD`, DETACHES ITSELF, starts 3 (wake on), ends its turn |
+| 3 | O BUILDER (fresh; the builder's whole reading) | BUILD | types the approved memo: steps 4, 5, 6a, the break list, the breaks all caught, the builder's block once; `proving/notes/<batch>_OPUS_DONE.md` | "BUILT BY OPUS - waits for the Fable finisher"; it does NOT run `built_gate.py` or `--to BUILT` |
+| 4 | F FINISHER (= session 2, continued by the app when 3 ends; a fresh Fable session with the memo and the diff when 2 is over 60% of its context) | BUILD | THE FINISHING PASS (A5); then the builder's last acts 5.9 from act 1 on ITS final code commit | `--to BUILT --commit`; starts 5 (wake on) |
+| 5 | O PROVER (fresh) | BUILT, PROVING | chapter 6 and 7 to the letter (or 8.1 to 8.4) | ACCEPTED or RED; it starts NOTHING; its report continues 4 |
+| 6 | F FINISHER again | ACCEPTED / RED | GREEN: checks the acceptance on the record (the commit, the head line, GitHub's run, a clean tree), starts the next batch's DESIGNER. RED: it is the REPAIRER (8.7) and starts a FRESH O prover | - |
+HOW A FABLE SESSION STARTS ANOTHER (chapter 9's call with these changes): a Fable session - `model` and `effort` omitted; an Opus session -
+`model` "claude-opus-5-5", `effort` omitted (it gets the starter's, High), then ONCE `set_session_effort` to xhigh for it (the app may ask the
+owner; refused or unanswered = it runs at High, said in the record). `wake_when_done` true. An Opus session can start no Fable session: it
+never needs to - its ending continues the Fable session that started it. If the app refuses a start: the card and the one line of chapter 9.
+AN OPUS SESSION HANDED A CARD THAT IS FABLE'S (phase DESIGN, DESIGN_REVIEW, RED / REPAIR; phase BUILD when `<batch>_OPUS_DONE.md` exists)
+does nothing and tells the owner in one line: "<batch> waits for a Fable session: open one here (Fable 5.2, Effort High) and type: continue".
+A FABLE SESSION HANDED A CARD BY THE OWNER'S "continue" is whatever the state and this table say is next (phase BUILD without the note
+`<batch>_OPUS_DONE.md` and without an Opus builder at work: it starts the Opus builder and becomes the finisher).
 - A1. PHASE DESIGN (loop steps 1 to 3: the whole reading, the research, the designs, the memo) IS A FABLE SESSION'S, at Effort High. It writes
   no code and stops at `next.py --to DESIGN_REVIEW`. The card of `next.py` still says "BUILDER - phase DESIGN": read it as THE DESIGNER.
   An Opus session that is handed that card does nothing and tells the owner in one line: "The design of <batch> is Fable's work: open a new
   session here with Fable 5.2 (Effort High) and type: continue".
-- A2. THE DESIGN REVIEW stays as item 34 has it ("gate on"): ANOTHER Fable session, one HE opens, that did not write the memo. The designer
-  starts no reviewer; it ends with the one line of item 34 (a). On CHANGES REQUIRED the designer's session changes the memo (5.4).
-- A3. PHASE BUILD IS AN OPUS SESSION'S (Opus 5.5 at the highest effort): a FRESH session that does the builder's WHOLE reading (chapter 4)
-  and then steps 4 to 6a and the last acts of 5.9 under the APPROVED memo. It is not the designer's session woken. The reviewer that
-  approved tries to start it (chapter 9, with `model` set to the Opus id); when the app refuses or cannot give it the highest effort, the
-  reviewer ends with: "V2b's design is approved: open a new session here (Opus 5.5, Extra high) and type: continue".
+- A2. THE DESIGN REVIEW ("gate on", items 34 and 35: no design is built before ANOTHER Fable session approved it) is started BY THE DESIGNER
+  (item 36 (d): the chain no longer waits for the owner's click; his words "I open the reviews" put the click back). The flag
+  `fable_design_gate` stays on: `next.py` stops every session that is not Fable at DESIGN_REVIEW.
+- A3. THE FIRST BUILD IS AN OPUS SESSION'S: a FRESH session that does the builder's WHOLE reading (chapter 4) and then TYPES THE APPROVED MEMO -
+  steps 4, 5 and 6a, a checkpoint commit after each, the break list written before the last test run, `breaks.py` until 0 missed and 0 void,
+  Plan Guard, Truth, the Palace, the Organisation and the docs GREEN, the builder's block ONCE on its last commit (a red there is its own to
+  repair at the cause: three attempts, then written down). It decides nothing the memo did not decide (A4). It ends with
+  `proving/notes/<batch>_OPUS_DONE.md` - its last commit; per part of the memo: built as written / built otherwise and why / not built
+  and why; every `DESIGN QUESTION`; every test changed by design; what it is unsure of - pushes, and stops.
 - A4. THE MEMO LEAVES NO TASTE TO THE BUILDER. Every part of Step 3 names the module and the function, the measure with its exact
   arithmetic, the starting value of every number and where it comes from, the check, the test that fails, the deliberate break, the
   writers' fix sentence where a writer is told something, and the order of the build. A builder that meets a choice the memo did not make
   writes it into the record as `DESIGN QUESTION <n>` and takes the reading that changes LESS of what a viewer sees; a question a viewer
   or the money depends on stops the build for a Fable session (one line to the owner). It is never settled silently in code.
-- A5. PROVING, REPAIR AND ACCEPTANCE are Opus sessions exactly as chapters 6 to 8 say. THE AUDIT is Fable's (chapter 14).
-- A6. THE ALLOWANCE: a Fable designer reads `get_usage` before the reading and after it; from 88% of the weekly Fable line it writes "WHERE
-  THE SESSION STANDS" and stops clean (chapter 10). A design that does not fit the week is not shortened: it waits for the reset.
+- A5. THE FINISHING PASS (Fable; the owner's "instantly audit and correct and improve"; in phase BUILD, BEFORE the batch is proven, so that
+  every change of Fable's is inside the commit the block proves). In this order: (1) read `<batch>_OPUS_DONE.md` and the WHOLE diff from the
+  base commit - code, tests, breaks, docs, the record - beside the approved memo; (2) AUDIT, part by part of the memo: does the code do
+  exactly that (the function, the arithmetic, the numbers), does each test fail for the reason it names, does each break change one place
+  that a test of its own catches, is any judge weakened (L7), is any sentence of the record untrue of the code; (3) write every finding
+  into the record under `FINISHED BY FABLE`, numbered, BEFORE its edit; (4) CORRECT what is wrong and IMPROVE what is weak in the code and
+  the tests themselves - an improvement stays INSIDE the approved memo (a truer execution of a part, a missing test, a sharper message,
+  a fault of the same family found elsewhere); a new rule or a changed design is never added at the finish: it is an open issue for a
+  later design; (5) close every OPEN finding of an audit (chapter 14); (6) the builder's last acts 5.9 from act 1 on the new final code
+  commit - all breaks again, the builder's block again, `built_gate.py` GREEN, the record, `<batch>_BUILT.md`, `--to BUILT --commit`.
+  The finisher never runs the serial suite or the sweep and never writes the word of acceptance: the Opus prover runs the scripts.
+- A6. REPAIR IS FABLE'S (the finisher's session, which knows the code; chapter 8.7 unchanged otherwise). PROVING stays an Opus session's:
+  it starts the block, waits, runs `verdict.py` and `judge_guard.py` and writes what they printed (chapters 6 to 8.4) - it decides nothing.
+- A7. THE AUDIT AFTER ACCEPTANCE (chapter 14) no longer waits for the owner's word: the NEXT batch's Fable designer does it as its first
+  act after `next.py` (it wrote none of that batch). A finding is closed in the next BUILD phase, typed by Opus from the audit's exact
+  words and checked by the finisher (code is committed only in BUILD and REPAIR).
+- A8. THE ALLOWANCE: every session reads `get_usage` at its start and end and writes the figures into the record; from 88% of a weekly
+  line a Fable session writes "WHERE THE SESSION STANDS" and stops clean (chapter 10). Nothing is shortened to fit: it waits.
 
 ## 0. THE HONEST FRAME (said to the owner; every session keeps it true)
 - A plan cannot turn one model into another. What it does: THE MODEL THAT BUILDS NEVER JUDGES ITS OWN WORK. A script computes every verdict; a
