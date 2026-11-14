@@ -26,15 +26,21 @@ def pick_emotion(episode):
     return choice
 
 def brief(episode=""):
+    """The writer's paragraphs on audience prompts and the emotion beat. v12 V2b: while ENDINGS_ON and an episode has a format, the prompts are sent only
+    to a format that carries all three asks, the beat never to a format whose row says 'never' (F3), and outside a trial its place is not 'the verdict';
+    a trial's text is byte for byte what it was."""
+    from whatifs import formats as FMT
+    fmt_on = S("ENDINGS_ON", bool) and FMT.current() in FMT.FORMATS
     out = []
-    if S("ENGAGE_RULES_ON", bool):
+    if S("ENGAGE_RULES_ON", bool) and (not fmt_on or set(FMT.asks()) == set(FMT.ALL_ASKS)):
         out.append("AUDIENCE PROMPTS (v10): use at most two in-character prompts from this library, phrased freshly in the speaker's voice, at moments "
                    "where they add suspense (never in the first 20 seconds, never two within a minute): "
                    + " | ".join(f"{k}: {v}" for k, v in LIBRARY.items())
                    + ". Never promise anything for a like, subscribe or share. Only ask viewers to comment, predict, take a side or share with a friend.")
-    if S("EMOTION_BEAT_ON", bool):
+    if S("EMOTION_BEAT_ON", bool) and not (fmt_on and FMT.rule("emotion_beat") == "never"):
         emo = pick_emotion(episode)
-        out.append(f"EMOTION BEAT (v10): include ONE earned {emo.upper()} moment, 20 seconds at most, in act 3 or just before the verdict, built from a "
+        where = "in the last third, before the ending" if fmt_on and not FMT.show_allowed() else "in act 3 or just before the verdict"
+        out.append(f"EMOTION BEAT (v10): include ONE earned {emo.upper()} moment, 20 seconds at most, {where}, built from a "
                    "concrete sensory or personal detail (not a speech about feelings). No real tragedies, no self-harm themes, no injury detail. "
                    "Keep the wit around it; never saccharine.")
     return "\n".join(out)

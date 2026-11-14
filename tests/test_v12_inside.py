@@ -207,7 +207,7 @@ def test_the_whole_productions_of_this_file_use_ids_no_other_test_file_uses():
 def _start(monkeypatch, setting, fmt):
     from tests import test_v12_opening_e2e as E2E
     from whatifs import ladder as LAD
-    E2E._start(monkeypatch, setting); setting("FORMAT_FORCE", fmt); setting("INSIDE_ON", "TRUE"); LAD.override("owner", "make it anyway")
+    E2E._start(monkeypatch, setting); setting("FORMAT_FORCE", fmt); setting("INSIDE_ON", "TRUE"); setting("ENDINGS_ON", "TRUE"); LAD.override("owner", "make it anyway")
 
 def _led(ep): return {x["feature"]: (x["status"], str(x["evidence"])) for x in core.store().rows("Feature_Ledger") if x.get("episode_id") == ep}
 
@@ -218,5 +218,199 @@ def test_a_whole_f1_production_carries_its_beats_to_the_units_and_speaks_to_you(
     tl = json.load(open(os.path.join(core.WORK, ep, "voice_timeline.json")))
     assert len({u["beat"] for u in tl["units"]}) >= 2, sorted({u["beat"] for u in tl["units"]})                       # the beats reach the units (the break: they never do)
     assert led["viewer_inside"][0] == "PASS" and "inside the scene (floor 50%)" in led["viewer_inside"][1], led["viewer_inside"]
+    script = json.load(open(os.path.join(core.WORK, ep, "plan.json")))["room"]["script"]["script"]                  # the ending is the format's (step 2)
+    asks = [CTA.is_ask(CTA._peel(l)[3]) for l in script.split("\n") if l.strip() and not l.startswith("##")]
+    assert [a for a in asks if a] == ["subscribe"], asks                                                              # one subscribe ask, nothing else
+    assert led["format_ending"][0] == "PASS" and led["format_ending"][1].startswith("ends on its question: ") and "asks in this video: subscribe 1" in led["format_ending"][1], led["format_ending"]
+    assert "next simulation" not in script.lower() and FMT.ending_report(script, "F1")["last"].endswith("?")          # no tease; the last line a question
     assert r.get("ok"), r
     shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True)
+
+# ------------------------------------------------------------------ 9. THE ENDING IS THE FORMAT'S (3.3): an ask only where code can recognise one
+from whatifs import cta as CTA, room as ROOM, prompts as P, engage as EG, format_engine as FE, overlay as OV
+NOT_ASKS = ["Nothing like this has ever happened to you.", "You have never felt anything like it.", "Would you like it to stay?", "You send it spinning across the room.",
+            "You want to tell your friend, but your phone is floating too.", "You cannot share it with anyone.", "You text it to your sister.",
+            "Your newspaper subscription is the last normal thing left.",
+            "Follow me to the roof.", "Follow me.", "Now follow me across the road.", "The air would hit like a wall.", "Raindrops hit like stones.", "You tap like mad on the glass.",
+            "You press like you mean it, and the door does not move.", "You hit that like a brick wall.", "Hit like a hammer, the wind takes the door.", "Tell your friend to run.",
+            "Then tell your friend and watch him laugh.", "Send it to the moon and it comes back.", "Send it to your mother.", "Text it to your sister and it arrives yesterday.",
+            "Share it with nobody.", "So share the last of the water.", "Pass it on the left, the way you always do.", "Comment is useless here.",
+            "You ring the bell and nobody comes.", "Ring the bell. Nobody comes.", "You press the bell on the bus.", "Hit the bell on the counter and it floats away."]
+ASKS = [("Subscribe for more.", "subscribe"), ("Please subscribe.", "subscribe"), ("Don't forget to subscribe.", "subscribe"), ("Hit the subscribe button.", "subscribe"),
+        ("So tap like.", "like"), ("Hit like if you would have survived that.", "like"), ("And smash that like button.", "like"),
+        ("Send this to the friend who would try it.", "share"), ("Send it to a friend who asks what if at dinner.", "share"), ("Share this video with someone who would panic.", "share"),
+        ("Share it with one person.", "share"), ("Forward this to someone curious.", "share"), ("Text this to your group chat.", "share"),
+        ("Tell me in the comments what you would do.", "comment"), ("Drop a comment below.", "comment"), ("Follow us for more.", "comment")]
+
+@pytest.fixture
+def endings(setting):
+    setting("ENDINGS_ON", "TRUE")
+    yield
+    FMT.use("")
+
+def test_thirty_story_sentences_are_never_asks_and_sixteen_asks_and_every_pool_line_are(endings):
+    assert [s for s in NOT_ASKS if CTA.is_ask(s)] == [] and len(NOT_ASKS) == 30
+    assert [(s, k, CTA.is_ask(s)) for s, k in ASKS if CTA.is_ask(s) != k] == [] and len(ASKS) == 16
+    for pools in (CTA.POOLS, CTA.TRIAL_POOLS):
+        for kind, entries in pools.items():
+            for entry in entries:
+                for line in entry: assert CTA.is_ask(line[2]) == kind and CTA.is_ask("  " + line[2].upper() + " ") == kind, line      # a reply line goes with its ask
+    assert CTA.kind_of_text("Nothing like this has ever happened to you.") == "like"                                   # the older recogniser stays for "is one there?" only
+    assert CTA.is_ask("So hit the bell.") is None                                                                       # a bell alone is never an ask
+
+def test_strip_removes_only_the_kinds_a_format_does_not_carry_and_every_ask_in_the_tail(endings):
+    body = [f"[DIRECTOR] Line {i} goes on about you and the floor." for i in range(12)]
+    lines = body[:4] + ["[SKEPTIC] [aside] So tap like."] + body[4:8] + ["[SKEPTIC] [aside] Please subscribe."] + body[8:] + ["[DIRECTOR] Share it with one person."]
+    text = J(lines)
+    out, gone = CTA.strip(text, keep=("subscribe",)); assert gone == ["[SKEPTIC] [aside] So tap like.", "[DIRECTOR] Share it with one person."] and "Please subscribe." in out
+    out, gone = CTA.strip(text, keep=("subscribe",), tail_from=9); assert "[SKEPTIC] [aside] Please subscribe." in gone                     # in the tail: any kind goes
+    out, gone = CTA.strip(text, keep=()); assert len(gone) == 3 and not any(CTA.is_ask(CTA._peel(l)[3]) for l in out.split("\n"))
+    assert CTA.strip(text, keep=("like", "subscribe", "share")) == (text, [])                                         # the trial keeps its three
+    two = CTA._fmt(*CTA.POOLS["subscribe"][0][0]) + "\n" + CTA._fmt(*CTA.POOLS["subscribe"][0][1])
+    assert len(CTA.strip(J(body[:6]) + "\n" + two + "\n" + J(body[6:]), keep=())[1]) == 2                            # a two-line ask leaves no reply to nothing
+
+def test_the_tail_is_measured_in_words_205_words_and_1275_words(endings):
+    w = lambda n: "\n".join("[DIRECTOR] " + " ".join(["word"] * 5) + "." for _ in range(n // 5))
+    assert FMT.tail(w(205)) == 37                       # T = min(40 s x 150 / 60 = 100, 0.12 x 205 = 24.6): the lines that begin at or after word 180.4
+    assert FMT.tail(w(1275)) == 235                     # T = min(100, 153) = 100: the lines that begin at or after word 1175 (the last 40 seconds)
+
+def test_ensure_adds_only_the_formats_kinds_never_in_the_tail_and_the_trial_as_before(endings):
+    lines = [f"[DIRECTOR] [calm] Line {i} is about you and your kitchen floor today." for i in range(20)]
+    text = J(lines)
+    with FMT.using("F1"):
+        new, added, _ = CTA.ensure(text, "EPA", "", kinds=FMT.asks(), before=FMT.tail(text)); assert added == ["subscribe"]
+        sp = [l for l in new.split("\n") if l.strip()]; k = [i for i, l in enumerate(sp) if CTA.is_ask(CTA._peel(l)[3])]
+        assert len(k) == 1 and k[0] < FMT.tail(new) and FMT.ending_report(new + "\n[DIRECTOR] Would you keep it?", "F1")["problems"] == []
+    assert CTA.ensure(text, "EPA", "") == CTA.ensure(text, "EPA", "", kinds=None, before=None) and sorted(CTA.ensure(text, "EPA", "")[1]) == ["like", "share", "subscribe"]
+    assert CTA.ensure(text, "EPA", "", kinds=(), before=3)[1] == []                                                     # F3: none
+    new, added, _ = CTA.ensure(text, "EPA", "", kinds=("subscribe",), before=12)                                         # the slot search itself stops before the tail
+    sp = [l for l in new.split("\n") if l.strip()]; assert added == ["subscribe"] and [i for i, l in enumerate(sp) if CTA.is_ask(CTA._peel(l)[3])][0] == 12      # after slot 11: the slot is never at or after `before` (DESIGN QUESTION 8)
+    assert CTA.ensure(text, "EPA", "", kinds=("subscribe",), before=5)[1] == []                                        # no calm slot before the tail: nothing added
+
+def test_the_room_places_only_the_formats_asks_counts_what_it_removed_and_leaves_a_trial_as_it_was(endings, setting):
+    lines = [f"[DIRECTOR] [calm] Line {i} is about you and your kitchen floor today." for i in range(20)]
+    text = J(lines[:5] + ["[SKEPTIC] [aside] So tap like."] + lines[5:15] + ["[DIRECTOR] [calm] Share it with one person."] + lines[15:])
+    d = {}
+    with FMT.using("F1"):
+        sc, added, _ = ROOM._place_asks({"script": text}, d, "EPR")
+        kinds = [CTA.is_ask(CTA._peel(l)[3]) for l in sc["script"].split("\n")]; assert [k for k in kinds if k] == ["subscribe"] and added == ["subscribe"]
+        assert d["asks_removed"] == {"like": 1, "share": 1} and ROOM._asks_words() == "the one subscribe ask"
+    d2 = {}
+    with FMT.using("F2"): assert ROOM._place_asks({"script": text}, d2, "EPR") == ({"script": CTA.ensure(text, "EPR", "")[0]}, *CTA.ensure(text, "EPR", "")[1:]) and d2 == {}
+
+def test_what_strip_leaves_and_ensure_adds_never_fails_the_check_on_the_offline_writer_and_the_thirty_sentences(endings, setting):
+    for fmt in ("F1", "F3"):
+        with FMT.using(fmt):
+            base = json.loads(FK.fake_reply("writer", "Write the narration. ~300 words"))["script"]
+            if fmt == "F3": base += "\n[DIRECTOR] You are home, and you see your street differently."
+            for extra in [""] + NOT_ASKS + [s for s, _ in ASKS]:
+                lines = base.split("\n"); lines.insert(len(lines) - 1, "[DIRECTOR] " + extra) if extra else None
+                text = J(lines); text, _gone = CTA.strip(text, keep=FMT.asks(), tail_from=FMT.tail(text))
+                text = CTA.ensure(text, "EPB", "", kinds=FMT.asks(), before=FMT.tail(text))[0]
+                r = FMT.ending_report(text, fmt); assert r["problems"] == [], (fmt, extra, r)
+                if extra in NOT_ASKS: assert extra in text, (fmt, extra)                                                # a story sentence survives
+
+def test_the_last_line_of_each_ending(endings):
+    pre = J(GOOD1)
+    for end in ("Would you?", "Keep it?", "Would you stay?", "Keep it, or give it back?", 'Would you keep it?"'):
+        assert FMT.ending_report(pre + "\n[DIRECTOR] " + end, "F1")["problems"] == [], end
+    for end in ("Subscribe for more.", "Next simulation: What if the Moon left tonight?"):
+        p = FMT.ending_report(pre + "\n[DIRECTOR] " + end, "F1")["problems"]; assert p and "an ask or a pointer to another video in the last seconds" in p[-1], (end, p)
+    assert FMT.ending_report(pre + "\n[DIRECTOR] Your whole street is floating.", "F1")["problems"][0].startswith("the last line is not the question to the viewer")
+    long_last = pre + "\n[DIRECTOR] You float above your bed and the whole house hums around you like a ship at sea all night long. Subscribe for more."
+    assert FMT.tail(long_last) == len(GOOD1) + 1 and any("an ask or a pointer" in x for x in FMT.ending_report(long_last, "F1")["problems"])      # the last sentence alone, no tail line
+    assert FMT.ending_report(pre + "\n[DIRECTOR] You're home.", "F3")["problems"] == []
+    assert FMT.ending_report(pre + "\n[DIRECTOR] The street is quiet now.", "F3")["problems"][0].startswith("the last line is not the arrival")
+    assert FMT.ending_report(pre + "\n[DIRECTOR] Are you home?", "F3")["problems"][0].startswith("the last line is not the arrival")
+    assert FMT.ending_report(pre + "\n[DIRECTOR] Subscribe for more.", "F2")["problems"] == []                         # a trial: its own devices judge it
+
+def test_check_format_ending_passes_holds_and_says_na(endings, setting):
+    good = J(GOOD1 + ["[SKEPTIC] So would you keep it?"])
+    c = {"room": {"script": {"script": good}}, "d": {"format": "F1", "asks_removed": {"like": 1, "share": 1}}}
+    s, ev = CON.p_format_ending(c); assert s == CON.PASS and ev == "ends on its question: 'So would you keep it?'; no ask and no pointer in the tail; asks in this video: none; removed by code: 2", ev
+    s, ev = CON.p_format_ending(ctx(J(GOOD1 + ["[DIRECTOR] Next simulation: What if the Moon left tonight?"]))); assert s == CON.FAIL and "pointer to another video" in ev, ev
+    s, ev = CON.p_format_ending(ctx(good, "F2")); assert s == CON.NA and "ends on a tease" in ev
+    assert CON.p_format_ending(ctx(good, ""))[0] == CON.NA
+    setting("ENDINGS_ON", "FALSE"); s, ev = CON.p_format_ending(ctx(J(GOOD1))); assert s == CON.NA and "ENDINGS_ON" in ev
+    setting("ENDINGS_ON", "TRUE")
+    stage = {f[0]: f[1] for f in CON.FEATURES}; assert stage["format_ending"] == "script" and "format_ending" not in FMT.DEVICES
+    for k in FMT.FORMATS: assert FMT.rule("format_ending", k) == "must"
+    r = CON.run("script", dict(ctx(J(GOOD1 + ["[DIRECTOR] Subscribe for more."])), ep="EPEN1"), "EPEN1", write=False)
+    assert "format_ending" in [f for f, _ in r["failed"]] and not r["ok"]
+
+def test_no_tease_under_the_ladder_or_in_a_format_that_does_not_end_on_one_and_the_older_promise_is_still_honoured(endings, setting):
+    setting("NEXT_TEASE_ON", "TRUE"); setting("SHORTS_TRACK_ON", "TRUE")
+    spine = {"next_tease": {"line": "Next simulation: the Moon leaves.", "premise": "the Moon leaves", "headline": "The Moon leaves"}}
+    with FMT.using("F2"):
+        setting("LADDER_ON", "FALSE"); assert ROOM.tease_on() and ROOM.tease_brief(spine)                                # a trial without the ladder ends on its tease
+        pitch = [{"premise": "The Moon leaves tonight for good", "family": "y", "headline": "The Moon leaves"}]
+        assert ROOM.clean_tease({"family": "x", "premise": "Your pillow floats"}, pitch)["premise"] == "The Moon leaves tonight for good"      # without the ladder: a tease
+        setting("LADDER_ON", "TRUE"); assert not ROOM.tease_on() and ROOM.tease_brief(spine) == "" and ROOM.clean_tease({"family": "x", "premise": "Your pillow floats"}, pitch) == {}
+        assert ROOM.ensure_tease({"script": "[DIRECTOR] Last."}, spine["next_tease"], "EPT") == {"script": "[DIRECTOR] Last."}
+        s, ev = CON.p_tease({"d": {}}); assert s == CON.NA and "under the ladder no next topic is promised" in ev
+    with FMT.using("F1"):
+        setting("LADDER_ON", "FALSE"); assert not ROOM.tease_on()                                                     # F1 ends on its question
+        setting("ENDINGS_ON", "FALSE"); assert ROOM.tease_on()                                                        # switched off: the cell alone, as before
+    setting("ENDINGS_ON", "TRUE"); setting("NEXT_PREMISE", json.dumps({"premise": "What if the Moon left?", "headline": "The Moon leaves"}))
+    with FMT.using("F1"):
+        t = ROOM.teased_pitch({"banned": [], "recent": []}, []); assert t and t["premise"] == "What if the Moon left?"   # what the video BEFORE promised is still honoured
+
+def test_the_writer_gets_the_asks_of_its_format_and_a_trial_byte_for_byte(endings, setting):
+    old = P.WRITER.replace("@@ASKS@@", P.ASKS_ALL); assert "AUDIENCE ASKS (like, subscribe, share): write exactly three" in old
+    with FMT.using("F2"): assert P.fill(P.WRITER, asks=FMT.asks_brief()) == P.fill(old)                             # the trial: the original words byte for byte
+    with FMT.using("F1"):
+        f1 = P.fill(P.WRITER, asks=FMT.asks_brief()); assert FMT.ONE_ASK in f1 and "AUDIENCE ASKS" not in f1
+    with FMT.using("F3"):
+        f3 = P.fill(P.WRITER, asks=FMT.asks_brief()); assert FMT.NO_ASK in f3 and "AUDIENCE ASKS" not in f3
+    setting("ENDINGS_ON", "FALSE")
+    with FMT.using("F1"): assert P.fill(P.WRITER, asks=FMT.asks_brief()) == P.fill(old)
+    assert P.fill(P.WRITER, words=10) == P.fill(old, words=10)                                                         # a caller that passes no asks gets the original
+    src = open(os.path.join(ROOT, "whatifs", "room.py"), encoding="utf-8").read(); assert "budget=budget_brief(d), asks=FMT.asks_brief())" in src
+
+def test_the_rewrite_orders_engage_and_the_format_block_say_the_formats_asks_and_a_trials_text_is_byte_for_byte(endings, setting):
+    setting("ENGAGE_RULES_ON", "TRUE"); setting("EMOTION_BEAT_ON", "TRUE")
+    with FMT.using("F2"):
+        assert ROOM._keep_asks(P.HUMANIZE) == P.HUMANIZE and ROOM._keep_asks(P.FACTFIX) == P.FACTFIX and ROOM._asks_words() == "the three audience asks"
+        trial_eg = EG.brief("EPG"); trial_fe = FE.instructions("director")
+    setting("ENDINGS_ON", "FALSE")
+    with FMT.using("F2"): assert EG.brief("EPG") == trial_eg and FE.instructions("director") == trial_fe              # the trial: byte for byte with the switch off
+    with FMT.using("F1"): off_eg, off_fe = EG.brief("EPG"), FE.instructions("writer")
+    setting("ENDINGS_ON", "TRUE")
+    with FMT.using("F1"):
+        assert "Keep the one subscribe ask in place" in ROOM._keep_asks(P.HUMANIZE) and "the one subscribe ask; keep" in ROOM._keep_asks(P.FACTFIX)
+        eg = EG.brief("EPG"); assert "AUDIENCE PROMPTS" not in eg and "in the last third, before the ending" in eg and "verdict" not in eg
+        fe = FE.instructions("writer"); assert FE.ASKS_ONE in fe and "\nShorts:" not in fe and "end as this format ends, with honest uncertainty" in fe and "Audience asks: exactly three" not in fe
+        assert "AUDIENCE PROMPTS" in off_eg and "Audience asks: exactly three" in off_fe                                 # F1 with the switch off: as before
+    with FMT.using("F3"):
+        assert "Keep no audience ask (there is none: add none) in place" in ROOM._keep_asks(P.HUMANIZE)
+        assert EG.brief("EPG") == "" and FE.ASKS_NONE in FE.instructions("critic")                                       # F3: no prompts, no emotion beat
+
+def test_the_ask_chip_shows_only_the_formats_kinds(endings, setting):
+    units = [{"text": "Nothing like this has ever happened to you.", "start": 0, "end": 2}, {"text": "So tap like.", "start": 3, "end": 4},
+             {"text": "Please subscribe.", "start": 5, "end": 6}]
+    with FMT.using("F1"): assert [k for _, _, k in OV.CtaChip(units, 640, 360, 25).spans] == ["subscribe"]
+    with FMT.using("F2"): assert [k for _, _, k in OV.CtaChip(units, 640, 360, 25).spans] == ["like", "subscribe"]
+    setting("ENDINGS_ON", "FALSE")
+    with FMT.using("F1"): assert [k for _, _, k in OV.CtaChip(units, 640, 360, 25).spans] == ["like", "like", "subscribe"]      # as before: 'nothing like this' too
+
+def test_the_one_fix_carries_the_ending_and_the_offline_f1_writer_ends_on_its_question(endings, monkeypatch, setting):
+    asked = []
+    monkeypatch.setattr("whatifs.models.ask", lambda *a, **k: asked.append(a[2]) or {"script": J(GOOD1 + ["[DIRECTOR] Would you keep it?"])})
+    with FMT.using("F1"):
+        iss = FMT.ending_issues(J(GOOD1 + ["[DIRECTOR] Subscribe for more."]))
+        assert len(iss) == 1 and iss[0].startswith("THE ENDING: ") and "the question to the viewer - would you keep it?" in iss[0]
+        sc, got = EN.fix_all({"script": J(GOOD1 + ["[DIRECTOR] Subscribe for more."])}, "brief", {}, "EPEF", "long"); assert iss[0] in got and "ENDING FIX" in asked[0]
+        last = json.loads(FK.fake_reply("writer", "Write the narration. ~300 words"))["script"].split("\n")[-1]; assert last == "[DIRECTOR] [close] So... would you keep it?"
+        assert "END ON THE QUESTION" in FMT.block("writer")
+    with FMT.using("F2"): assert FMT.ending_issues(J(GOOD1 + ["[DIRECTOR] Subscribe for more."])) == [] and "would you keep it" not in json.loads(FK.fake_reply("writer", "Write the narration. ~300 words"))["script"]
+    setting("ENDINGS_ON", "FALSE")
+    with FMT.using("F1"): assert FMT.ending_issues(J(GOOD1 + ["[DIRECTOR] Subscribe for more."])) == [] and "would you keep it" not in json.loads(FK.fake_reply("writer", "Write the narration. ~300 words"))["script"]
+
+def test_the_ending_is_wired_owner_lever_classified_and_f3_has_no_emotion_beat(endings, setting):
+    assert REG.CHECK_OWNER["format_ending"] == "D4" and "format_ending" not in RND.ORG_CHECKS and "format_ending" in RND.metrics()
+    lv = LV.LEVERS["ENDING_FREE_S"]; assert REG.may_change("D13", "ENDING_FREE_S") and (lv["lo"], lv["hi"], lv["step"], lv["owner"], lv["checks"]) == (20, 90, 10, "down", ("format_ending",))
+    assert [FMT.ending(k) for k in ("F1", "F2", "F3")] == ["question", "tease", "arrival"] and FMT.ending("") == "tease"
+    assert [FMT.asks(k) for k in ("F1", "F2", "F3")] == [("subscribe",), ("like", "subscribe", "share"), ()] and FMT.asks("") == FMT.ALL_ASKS
+    setting("ENDINGS_ON", "FALSE"); assert FMT.asks("F3") == FMT.ALL_ASKS
+    src = open(os.path.join(ROOT, "whatifs", "room.py"), encoding="utf-8").read()
+    assert 'if S("EMOTION_BEAT_ON", bool) and not (S("ENDINGS_ON", bool) and FMT.rule("emotion_beat") == "never"):' in src and FMT.rule("emotion_beat", "F3") == "never"

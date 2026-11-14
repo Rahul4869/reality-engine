@@ -105,6 +105,8 @@ def p_similarity(ctx):
     return (PASS, f"{s:.0%} vs the last 10") if float(s) <= S("SCRIPT_SIMILARITY_MAX", float) else (FAIL, f"{s:.0%} similar to an earlier script")
 
 def p_tease(ctx):
+    from whatifs import ladder as LAD
+    if S("ENDINGS_ON", bool) and LAD.on(): return NA, "under the ladder no next topic is promised: the next long video is the Short viewers pick"      # v12 V2b (issue 101)
     t = (ctx.get("d") or {}).get("next_tease")
     return (PASS, str(t.get("line") or t.get("premise") or "set")[:80] if isinstance(t, dict) else str(t)[:80]) if t else (FAIL, "no end tease for the next case")
 
@@ -479,6 +481,21 @@ def p_viewer_inside(ctx):
     return PASS, (f"{r['inside']} of {r['n']} sentences ({r['share_pct']:g}%) inside the scene (floor {r['min_pct']:g}%); the longest run from outside {r['run']} "
                   f"(limit {r['run_max']}); no act explains before it shows")
 
+def p_format_ending(ctx):
+    """v12 V2b (the ending is the format's, D4): F1 ends on the question to the viewer, F3 on the arrival; no ask and no pointer to another video in the
+    last seconds (formats.tail, on the script's words); only the asks the format carries (code removed the others: d['asks_removed']). Never a device."""
+    from whatifs import formats as FMT
+    if not S("ENDINGS_ON", bool): return NA, "the format's own ending is switched off (ENDINGS_ON)"
+    d = ctx.get("d") if isinstance(ctx.get("d"), dict) else {}
+    fmt = str(d.get("format") or "")
+    if fmt not in FMT.FORMATS: return NA, "no format on this episode (written before formats existed, or FORMATS_ON is off)"
+    if FMT.ending(fmt) == "tease": return NA, f"format {fmt} ends on a tease (its own devices judge it)"
+    r = FMT.ending_report(_script_text(ctx), fmt, d.get("asks_removed"))
+    if r["problems"]: return FAIL, "; ".join(r["problems"])[:380]
+    asks = ", ".join(f"{k} {n}" for k, n in sorted(r["asks"].items())) or "none"
+    return PASS, (f"ends on its {r['ending']}: '{r['last'][:90]}'; no ask and no pointer in the tail; asks in this video: {asks}; "
+                  f"removed by code: {sum(int(v) for v in r['removed_kinds'].values())}")
+
 def p_format_kept(ctx):
     """v12 V2a: the script is what its FORMAT says - a format that is not a trial does not sound like one (no name of the court's cast, no courtroom
     furniture, only its own voices); a trial has its Show Plan."""
@@ -762,6 +779,7 @@ FEATURES = [
     ("viewer_probe", "script", p_viewer_probe, "the promise line-up: from the first 30 s alone two first-time readers pick this video's title, and give none to a planted opening (the layman test)"),
     ("format_kept", "script", p_format_kept, "the script is what its format says: a format that is not a trial does not sound like one, a trial has its Show Plan (formats as data)"),
     ("viewer_inside", "script", p_viewer_inside, "the voice speaks to YOU, now: at least the format's share of sentences put the viewer inside the scene, never a run of sentences from outside longer than its limit, and no beat explains before it shows (inside the format)"),
+    ("format_ending", "script", p_format_ending, "the video ends as its format ends - F1 on the question to the viewer, F3 on the arrival - with no ask and no pointer to another video in its last seconds, and carries only the asks of its format (inside the format)"),
     ("topic_ladder", "script", p_topic_ladder, "every topic starts as a Short: this long video is about the topic of a Short the promote rule took, or was made under an override on record (the ladder)"),
     ("opening_footage", "script", p_opening_footage, "a long video about a promoted Short opens on that Short's own footage, laid by code under its first sentences - or was made under an override, which has none (the opening)"),
     ("palace_injected", "script", p_palace_injected, "the Knowledge Palace playbook was inside the model prompt of every creative run's key call (the writer, the packager, the director), and the exact text is stored"),

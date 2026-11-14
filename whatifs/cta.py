@@ -114,6 +114,33 @@ TRIAL_DESC_SHARE = [
     "Pass it on to one curious juror. One is plenty.",
 ]
 
+# v12 V2b: WHAT CODE CAN RECOGNISE AS AN ASK - used by whatever DELETES a line or HOLDS a video (kind_of_text stays for "is one already there?", where a
+# wrong yes costs nothing). Two cases only: (1) a line the code itself inserts (every line of POOLS / TRIAL_POOLS, a reply line as its entry's kind);
+# (2) an imperative to subscribe, like, share or comment. A bell alone is never an ask (a doorbell, a bus bell). The rule errs toward the writer.
+_LEAD = r"(?:^|[.!?]\s+)(?:(?:please|so|and|then|now|okay|ok),?\s+)*"
+_WHO = r"(?:(?:a|the|that|your|one|some|any)\s+)?(?:friends?|person|people|someone|somebody|anyone|anybody|everyone|everybody|whoever|group chat|family)\b"
+_ASK = (
+    ("subscribe", re.compile("|".join((_LEAD + r"subscribe\b", r"\b(?:hit|tap|press|smash)\s+(?:the\s+|that\s+)?subscribe\b", r"\bsubscribe button\b",
+                                        r"\bnotification bell\b", r"\b(?:don't forget|remember|make sure)\s+(?:you\s+)?to\s+subscribe\b")), re.I)),
+    ("like", re.compile("|".join((_LEAD + r"(?:like this video|leave a like|drop a like|give (?:it|this) a like)\b", _LEAD + r"(?:hit|tap|smash)\s+like(?=\s+if\b|\s*[.!,;]|\s*$)",
+                                   r"\blike button\b", r"\bthumbs?[- ]up if\b")), re.I)),
+    ("share", re.compile("|".join((_LEAD + r"share (?:this|the) video\b", _LEAD + r"(?:share|send|forward|text|pass)\s+(?:this|it)(?:\s+video)?\s+(?:on\s+)?(?:to|with)\s+" + _WHO)), re.I)),
+    ("comment", re.compile("|".join((r"\bin the comments?\b", _LEAD + r"(?:leave a comment|drop a comment|comment (?:down )?below)\b", _LEAD + r"follow (?:us|me) (?:on|for)\b",
+                                     r"\bfollow (?:the channel|for more)\b")), re.I)),
+)
+def _norm(t): return " ".join(str(t or "").lower().split())
+_OWN = {_norm(line[2]): kind for pools in (POOLS, TRIAL_POOLS) for kind, entries in pools.items() for entry in entries for line in entry}
+
+def is_ask(text):
+    """'like' | 'subscribe' | 'share' | 'comment' | None for one spoken line: yes only for a line the code inserts (its words equal a pool line's) or an
+    imperative code recognises (_ASK)."""
+    t = str(text or "")
+    k = _OWN.get(_norm(t))
+    if k: return k
+    for kind, rx in _ASK:
+        if rx.search(t): return kind
+    return None
+
 def _trial():
     """v9.3: the trial cast's lines are used when CTA_JURY_ON and the show format is on (SHOW_MODE = auto)."""
     try:
@@ -147,14 +174,27 @@ def check(script):
         if k: have[k] = True
     return have
 
-def _safe_slot(lines, spoken, target):
-    """The spoken-line number nearest to `target` after which an ask can sit without stepping on a reaction, a reveal or a peak."""
+def strip(script, keep=(), tail_from=None):
+    """v12 V2b: (script, removed) - every spoken line that is_ask names a kind NOT in `keep` is removed; and from spoken-line index `tail_from` on (the
+    format's tail, formats.tail) every line that is_ask names ANY kind. `removed` lists the removed lines."""
+    lines = str(script or "").split("\n"); drop = []
+    for pos, i in enumerate(_spoken_index(lines)):
+        k = is_ask(_peel(lines[i])[3])
+        if k and (k not in keep or (tail_from is not None and pos >= tail_from)): drop.append(i)
+    if not drop: return script, []
+    gone = set(drop)
+    return "\n".join(l for j, l in enumerate(lines) if j not in gone), [lines[i] for i in drop]
+
+def _safe_slot(lines, spoken, target, before=None):
+    """The spoken-line number nearest to `target` after which an ask can sit without stepping on a reaction, a reveal or a peak (v12 V2b: never at or
+    after `before`)."""
     info = []
     for i in spoken:
         spk, tag, _, text = _peel(lines[i]); info.append((spk, tag))
     n = len(spoken)
     def ok(p):
         if p < 1 or p >= n - 1: return False
+        if before is not None and p >= before: return False
         spk, tag = info[p]; nspk, ntag = info[p + 1]
         if tag not in _CALM_TAGS or ntag in _REACTION_TAGS or ntag in ("reveal",): return False
         if kind_of_text(_peel(lines[spoken[p]])[3]) or kind_of_text(_peel(lines[spoken[p + 1]])[3]): return False
@@ -164,23 +204,27 @@ def _safe_slot(lines, spoken, target):
             if ok(p): return p
     return max(1, min(n - 2, target))
 
-def ensure(script, seed="", last=""):
+def ensure(script, seed="", last="", kinds=None, before=None):
     """Add whatever of the three asks is missing. Returns (new_script, added_kinds, picked) where picked is a short code ('l2,s5,h1') to remember for variety.
+    v12 V2b: only the missing kinds that are in `kinds` (None = all three) and never at or after the spoken line `before` (the format's tail).
     Never raises; an unparsable script is returned unchanged."""
     try:
+        want = KINDS if kinds is None else tuple(k for k in KINDS if k in kinds)
         have = check(script)
-        if all(have.values()): return script, [], last
+        if all(have[k] for k in want): return script, [], last
         lines = str(script).split("\n"); spoken = _spoken_index(lines)
         if len(spoken) < 8: return script, [], last
         rng = _rng(f"{seed}|cta"); prev = {p[0]: p[1:] for p in str(last or "").split(",") if len(p) > 1}
         picks, plan = {}, []
-        for k in KINDS:
+        for k in want:
             if have[k]: continue
             pool = _pools()[k]; avoid = prev.get(CODE[k], "")
             choices = [i for i in range(len(pool)) if str(i) != avoid] or list(range(len(pool)))
-            idx = rng.choice(choices); picks[k] = idx
+            idx = rng.choice(choices)
             n = len(spoken); target = (n - 2) if k == "share" else int(n * POS[k])
-            plan.append((_safe_slot(lines, spoken, target), k, idx))
+            slot = _safe_slot(lines, spoken, target, before)
+            if before is not None and slot >= before: continue          # no calm slot before the tail: nothing is added (DESIGN QUESTION 8 of V2b)
+            picks[k] = idx; plan.append((slot, k, idx))
         added = []
         for p, k, idx in sorted(plan, key=lambda x: -x[0]):          # from the end, so earlier insert points stay valid
             new = [_fmt(*t) for t in _pools()[k][idx]]

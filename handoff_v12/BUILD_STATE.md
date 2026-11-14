@@ -1186,6 +1186,99 @@ WHAT IT NEEDS TO KNOW FROM HERE (facts found while typing, not decisions):
 - NOT RUN BY THIS BUILDER: the whole suite (its parallel pre-check is part of the builder's block, step 8), any rehearsal, `breaks.py`.
 USAGE at this builder's end: the 5-hour window 33%, weekly all models 9%, weekly Fable 16% (the account's figure: Fable sessions of both lanes
 work beside this one; this session is Opus 5.5), this session's context 65%.
+THE SECOND OPUS BUILDER (14 Nov 2026, from about 04:15 UTC; Opus 5.5 at Extra high; started by the dispatcher `local_e4e9a03f-...`). `next.py`: card
+"BUILDER of V2b - phase BUILD", base 5827d97, pre-flight clean, the hooks not installed, the audit finding F1 still printed OPEN (its test is in, step 0;
+its line is closed when its break is caught on the final code). USAGE at its start: the 5-hour window 37%, weekly all models 10%, weekly Fable 19%,
+this session's context 9%. READING: it began the builder's whole reading of chapter 4 (the plan, the handoff `CLAUDE.md`, `02` whole, `00`, `01`, `03`,
+`06`, `04`, the redesign whole, this file's head line, standing rules, the owner's verdict, NEXT whole, the record of V2b whole, the record of V2d-b
+whole, OPEN ISSUES 1 to 192, HOW TO RUN, the batch log, `reviews/V2b_design.md` whole, the repo's `CLAUDE.md`, `CONCEPT.md`, the ledger, `PLATFORM_FACTS.md`);
+then the owner's item 45 reached it (the plan's A9): from there on it did THE CONTINUATION TYPIST'S READING, A9 - before each step, the files that step
+changes, read whole where named below.
+STEP 2 - THE ENDING (3.3). READ WHOLE before the first edit: `cta.py`, `formats.py`, `engage.py`, `format_engine.py`, `overlay.py`, `org/inside.py`,
+`tests/conftest.py`, `tests/test_v12_inside.py`; `room.py` from its first line to the end of `_immersion_notes` (its last 155 lines - `normalise_shots`
+to `continuity` - neither change nor call anything of this step and were not read). READ BY THE PARTS THE STEP CHANGES OR CALLS (said plainly - the context of this session
+allowed no more; the finisher reads them whole): `prompts.py` (lines 1 to 160 and FACTFIX), `contract.py` (the helpers, `p_asks`, `p_tease`,
+`p_viewer_inside`, the table of checks, `run`), `enforce.fix_all`, `fakes.py` (the writer's reply and its pools), `core.DEFAULTS` around the V2b cells,
+`org/levers.py` (the rule helpers, the V1 and V2b rows), `org/registry.py` (D13 and the check owners), `org/rnd.py` (`SHOW_CHECKS`), `ladder.on`,
+`voice._peel`, `audience.spoken`; the callers of what changes found by search (`kind_of_text`: `contract.p_asks`, `engage.enforce`, `reactions.py`,
+`overlay.CtaChip`; `P.WRITER`: `room._run_room` and `tests/test_v811.py`; `P.HUMANIZE`: `room.humanize`, `room.extend`; `CtaChip`: `episode._render`).
+TESTS CHANGED BY DESIGN IN STEP 2 (named before they are changed): `tests/test_v83.py` line 302 asserts "AUDIENCE ASKS" in the raw template
+`P.WRITER` - the span becomes the placeholder `@@ASKS@@` (3.3), so it reads the filled template; the pins of step 1's list move by one check
+(`format_ending`, script: 37 -> 38, total 65 -> 66, `SHOW_CHECKS` 54 -> 55) and one lever (`ENDING_FREE_S`: 81 -> 82).
+DESIGN QUESTION 3: 3.3 defines `room.tease_on()` = `NEXT_TEASE_ON and FMT.ending() == "tease" and not (ENDINGS_ON and ladder.on())`; typed so, an
+F1 video loses its tease with `ENDINGS_ON` FALSE - against 3.0's "each FALSE = exactly the behaviour of d8101c8". Taken (it changes less): the format's
+ending binds only while `ENDINGS_ON` is TRUE - `NEXT_TEASE_ON and not (ENDINGS_ON and (FMT.ending() != "tease" or ladder.on()))`; with the switch on
+it is the memo's formula word for word.
+DESIGN QUESTION 4: (c) says the line "Shorts:" is "never sent in a format" and the paragraph above it "each keeps a trial's text byte for byte - a test
+per place compares". Taken: the line is left out in a format that is NOT a trial; the trial's block stays byte for byte.
+DESIGN QUESTION 5: (c)'s sentence about the speaker tag needs `formats.chips()`, which 3.9 adds in step 3: it is typed in step 3, with its reader.
+DESIGN QUESTION 6: F1_WRITER's last sentence "END ON THE QUESTION ..." is written in 3.5 (step 5) but it is the ending's: it is typed in step 2 with the
+check that judges it; F1_BIBLE's sentence about `visual_world` (the camera path's) in step 4. The code at the end is the same.
+DESIGN QUESTION 7: the lever `ENDING_FREE_S` (D13; 20 to 90, step 10) has no direction that needs the owner in the memo. Taken: LOWERING needs him
+(a shorter ask-free ending loosens the rule; the pattern of every other D13 lever), judged by check `format_ending`.
+DESIGN QUESTION 8: `cta.ensure(before=)`: "`_safe_slot` never returns a slot at or after `before`". Typed literally (the slot = the spoken line the ask
+goes after), and the rare fallback slot that would still sit at or after `before` adds nothing; the test of 3.3 ("never fails `format_ending`") proves it.
+DESIGN QUESTION 9: the offline F1 writer's last line under `ENDINGS_ON` (the memo sets no words): "[DIRECTOR] [close] So... would you keep it?" is
+appended - the brief's own question, nothing else of the stand-in changes.
+CORRECTED BY THE BUILD (step 2), numbered on in this batch: (1) THE MEMO'S OWN FAILING ENDING PASSED: "Next simulation: What if the Moon left tonight?"
+was judged as "What if the Moon left tonight?" - `audience.spoken` removes any "Word word:" at the start of a line as a speaker label (`_LABEL`),
+while the voice (`voice._peel`) removes only the speakers it knows and SPEAKS "Next simulation:". Measured: `_peel` -> 'Next simulation: What if ...',
+`audience.spoken` -> ' What if ...'. So `formats.ending_report` reads each line as the voice says it (`cta._peel(line)[3]` with the tags removed by
+`audience._TAGS`) for the last sentence, the asks and the pointer; the tail's word count stays on `audience.spoken` as 3.3 says. `audience.spoken` itself
+is not changed (older measures read it): open issue 193.
+THE SEARCH OF 3.3 (e) (`SKEPTIC`, `Curious One`, `two roles`, `both roles`, `three audience asks`, `verdict`, `subscribe` in every string of the eleven
+files; 14 Nov 2026, after step 2's code), every hit with its answer - (1) "a trial's sentence, not sent to F1 / F3 by (a) to (d)"; (2) "true of F1
+and F3 too: stays"; (3) "a strategy definition, a JSON key or an example that names the second voice: left as it is, overruled in F3 by F3_WRITER's
+sentence (step 5), listed in open issue 187"; (4) `DESIGN QUESTION`:
+- `prompts.py`: `ASKS_ALL` / `ASKS3` - the asks by kind, this step; BIBLE's `presenters` and `cta` keys ("spoken by the Curious One or the Director") -
+  (3); WRITER "Banter style between the two roles" - (2) for F1, F3's "none (one voice)" is 3.3 (d), step 5; HUMANIZE and FACTFIX "speaker label
+  ([DIRECTOR] or [SKEPTIC])" - (2) (they keep the labels a script has), their "three audience asks" - (b), this step; CRITIC's JSON "verdict":
+  "PASS|REVISE" (the critic's own word) - (2); HOOKS "never use court words (trial, jury, charge, verdict ...)" - (2); PLAYBOOK_RESEARCH "turning
+  viewers into subscribers" - (2).
+- `format_engine.py` (26 hits): the lines 3.3 (c) and (d) name - the asks, Shorts and story-engine lines in this step; the speaker-tag sentence in step 3
+  (DESIGN QUESTION 5); the two visual-grammar lines and the director note in step 4; the one-voice lines in step 5.
+- `room.py`: `guest_brief` "TODAY'S GUEST (the Curious One ...)" - not sent in any format while the cast leads (`show.leads_on()`, every format today),
+  else (3); `format_pass`'s fix words "label [DIRECTOR] or [SKEPTIC] ... make the Curious One question assumptions" - DESIGN QUESTION 10 (below); the
+  critic's `verdict` variables, comments - code, never sent: (2).
+- `room2.py`: the trial room's draft rubric "(6) a verdict that lands" - (1) (F1 and F3 get `formats.rubric`); the rest is code.
+- `craft.py`: `INTAKE_PROMPT` "a recurring cast (Inspector Vale, Dr. Grimm, Nana Rosa) and a courtroom verdict act" - DESIGN QUESTION 11 (below); the
+  seed technique card's "one Grimm line, a subscribe cue" - (3).
+- `engage.py`: LIBRARY "subscribe_identity: Jury duty ..." and the paragraph "AUDIENCE PROMPTS" - (1), (a) of this step.
+- `immersion.py`: the VOICE ACTING example "[SKEPTIC] [tension] {slow, low, whisper, breath}" - (3).
+- `growth.py`: the court-word pattern - code, (2); `rhythm_brief` "Curious One reaction lines" - 3.3 (d), step 5.
+- `data.py`: the banter definitions B1 to B4 (they fill "Banter style between the two roles") - (2) for F1, F3 is step 5; the strategy definitions
+  "wrong_guess", "RB5_case_file", "guess_first" - (3); the rotating guests "for the Curious One" (read only by `guest_brief`) - (3); an evidence row's
+  address and a voice catalogue's "skeptical" - data, never a brief: (2).
+- `tableread.py`: the table read's own `verdict` field - code: (2). `hooks.py`: no hit.
+DESIGN QUESTION 10 (for step 5's typist, said now): in F3 3.3 (d) stops `check_script` asking for a second role, but `room.format_pass` still runs when
+its 45%-label rule alone fails, and its fix words ask to "make the Curious One question assumptions". Not changed here (the reading that changes less:
+a one-voice script that labels its lines does not meet that rule); a Fable session may decide it.
+DESIGN QUESTION 11: `craft.INTAKE_PROMPT` describes the channel to the head of craft (who judges a proposed technique) as a courtroom show. No viewer and
+no episode's writer reads it; none of the four answers fits; left as it is (the reading that changes less), for a later design of D4's technique intake.
+BUILT IN STEP 2 (as written, except where a DESIGN QUESTION or correction 1 says otherwise): `cta.is_ask` (the code's own lines of both pools - a reply
+line as its entry's kind - and the imperatives of review round 2, character for character), `cta.strip`, `cta.ensure(kinds=, before=)` and
+`_safe_slot(before)`; the row keys `ending` / `asks` and `formats.ending`, `asks`, `asks_brief`, `asks_keep`, `tail`, `ending_report`, `ending_issues`,
+`ONE_ASK`, `NO_ASK`, `TEASE`; F1_WRITER's "END ON THE QUESTION" (DQ 6); `prompts.WRITER`'s asks span as `@@ASKS@@` (`prompts.ASKS_ALL` holds the original
+words - a script checked them byte for byte before the swap - and `fill` defaults to them), `prompts.ASKS3`; `room.tease_on` (DQ 3) asked by
+`tease_brief`, `clean_tease`, `ensure_tease` (`teased_pitch` keeps the cell); `room._place_asks` at the three call sites (strip, count into
+`d["asks_removed"]`, ensure by kind before the tail); `room._keep_asks` / `_asks_words` in the four rewrite orders (HUMANIZE twice, FACTFIX,
+`retention_pass`, `oc_rewrite`); the emotion beat not picked where the row says "never"; `engage.brief` (a); `format_engine._for_format` - the asks,
+Shorts and story-engine lines of (c) (DQ 4, 5); `overlay.CtaChip` by `is_ask` and the format's kinds; check `format_ending` (script, D4, `SHOW_CHECKS`
+55) and `contract.p_tease` NA under the ladder; the fix in `enforce.fix_all` (tag ENDING FIX); cells `ENDINGS_ON`, `ENDING_FREE_S`; lever
+`ENDING_FREE_S` of D13 (DQ 7: 82 levers); `OLD_INSIDE` + `ENDINGS_ON` FALSE; the offline F1 writer's last line (DQ 9). 66 hard checks (38 script).
+TESTS (`tests/test_v12_inside.py`, 15 new or widened): the thirty story sentences and sixteen asks of the memo, every pool line and its reply line; strip by
+kind and in the tail, a two-line ask leaving no reply; the tail at 205 and 1,275 words; ensure by kind, the slot never at or after the tail (and the
+guard that stands alone at `before`=12, the skip at `before`=5); what strip leaves and ensure adds never fails the check, on the offline writer in F1 and
+F3 with each of the 46 sentences put in before its last line; the four short endings that pass, the two that fail, a closing quote, the arrival both
+ways, a last sentence that is an ask with no tail line; check `format_ending` PASS / FAIL / NA (off, no format, a trial "ends on a tease"); no tease
+under the ladder or in F1, one in a trial without it, the older promise still honoured, `p_tease` NA; the writer's prompt per format and a trial's byte
+for byte; the rewrite orders, `engage.brief` and the format block per format, a trial's byte for byte with the switch on and off; the ask chip; the one
+fix and the offline writer's question; the room's ask placing and its count; the wiring (owner, lever, classification, F3's emotion beat); and the
+whole F1 production: ONE subscribe ask and nothing else, `format_ending` PASS "ends on its question", no tease. Run alone: 34 passed (6.98 s) and the
+whole production "1 passed in 54.48s". Breaks S2-01 to S2-50 written into `proving/breaks/V2b.json` (each anchor found exactly once) - NOT RUN.
+STEP 2'S RUN (real pytest, parallel `-n 6`, strict; the batch's file and the 42 older files that read what the step changed - found by search for
+`cta`, `engage`, `format_engine`, `overlay`, the tease, `P.WRITER`, the counts, `fix_all`, HUMANIZE / FACTFIX, `formats`): "1176 passed in 1524.95s
+(0:25:24)", 0 failed. Plan Guard GREEN, Truth GREEN, `tools/gen_docs.py` wrote `SYSTEM.md` (committed with the step).
 
 ### V2d-b - THE LADDER'S RULES (13 Nov 2026) - ACCEPTED (final code commit 5827d97 GREEN in GitHub Checks run 159: 1551 passed; sweep 58 of 58 ids)
 (Its code is d8101c8; every later commit is text only. History: built on 60d9483; the prover's FIRST PASS on 60d9483 was RED - the sweep
@@ -6266,6 +6359,11 @@ Rehearsal asserts `docs_current` ran and passed.
    lines and a short list of imperatives; a real writer's ask in other words stays in the film (also in F3, which should have none),
    and a story sentence that happens to begin "Send this to ..." would be removed. The evidence of `format_ending` lists every line
    code removed: read it for the first real F1 and F3 scripts and widen or narrow the patterns from what is seen - never from a guess.
+193. (V2b's build, step 2; FOUND, older than this batch) `audience.spoken` removes ANY "Word word:" at the start of a line as a speaker label
+   (`_LABEL`, up to 25 characters), while the voice (`voice._peel`) removes only the speakers it knows and SPEAKS the rest: "Next simulation: What if
+   the Moon left tonight?" is heard whole and measured as "What if ...". Every measure that reads `audience.spoken` (the numbers, the expert words, the
+   pauses' text, `inside.sentences` through it, the tail's word count) misses such words. `formats.ending_report` reads the voice's own parse (step 2,
+   correction 1). Changing `audience.spoken` would move older measures: a later design decides (D13).
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - SINCE 13 NOV 2026 (the owner's item 33): the acceptance block, its verdict, the deliberate breaks and the moves of the state are

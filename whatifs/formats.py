@@ -11,13 +11,19 @@ RULES = ("must", "advisory", "never")
 _TRIAL = ("verdict_style", "time_ladder", "exhibits", "grimm_prototype", "verdict_line")          # the trial's own grammar: meaningless outside a trial
 FORMATS = {
     "F1": {"name": "The day it changed", "status": "on", "show": False, "voices": ("DIRECTOR", "SKEPTIC"), "share": "FORMAT_SHARE_F1",
-           "inside": "INSIDE_MIN_PCT_F1", "lecture": "LECTURE_MAX_F1",
+           "inside": "INSIDE_MIN_PCT_F1", "lecture": "LECTURE_MAX_F1", "ending": "question", "asks": ("subscribe",),
            "devices": dict({k: "never" for k in _TRIAL}, joke_density="advisory", send_and_awe="advisory", emotion_beat="advisory", audience_asks="advisory", end_tease="advisory")},
     "F2": {"name": "The trial", "status": "on", "show": True, "voices": ("DIRECTOR", "SKEPTIC", "JUDGE", "WITNESS"), "share": "FORMAT_SHARE_F2", "devices": {},
-           "inside": "INSIDE_MIN_PCT_F2", "lecture": "LECTURE_MAX_F2"},
+           "inside": "INSIDE_MIN_PCT_F2", "lecture": "LECTURE_MAX_F2", "ending": "tease", "asks": ("like", "subscribe", "share")},
     "F3": {"name": "The walk", "status": "later", "show": False, "voices": ("DIRECTOR",), "share": "FORMAT_SHARE_F3", "devices": {k: "never" for k in DEVICES},
-           "inside": "INSIDE_MIN_PCT_F3", "lecture": "LECTURE_MAX_F3"},
+           "inside": "INSIDE_MIN_PCT_F3", "lecture": "LECTURE_MAX_F3", "ending": "arrival", "asks": ()},
 }
+ALL_ASKS = ("like", "subscribe", "share")
+ONE_ASK = ("ONE ASK ONLY: write exactly one short moment in which the foil asks the viewer to subscribe - inside the conversation, in the show's own voice, never "
+           "begging, between 40% and 75% of the script, right after a payoff has landed, at most 24 words, clearly using the word subscribe, with a [SKEPTIC] label. "
+           "No like ask, no share ask, no ask for comments, and no ask of any kind near the end.")
+NO_ASK = "NO ASK: never ask the viewer to like, subscribe, share, comment or follow - anywhere."
+TEASE = re.compile(r"\bnext (time|video|episode|simulation|case|week|one)\b|\bsee you (next|soon)\b|\bstay tuned\b", re.I)      # a pointer to another video
 F1_SHOWRUNNER = ("FORMAT OF THIS EPISODE - F1 \"THE DAY IT CHANGED\" (not a trial: no court, no charge, no exhibits, no jury, no judge; return no show_plan). Choose and "
                  "phrase the premise as ONE day in which one law of nature is different, and it happens to the VIEWER, at home first. The thumbnail scene is the "
                  "impossible picture of that morning.")
@@ -34,7 +40,8 @@ F1_WRITER = ("FORMAT OF THIS EPISODE - F1 \"THE DAY IT CHANGED\". This episode i
              "TWO VOICES ONLY: [DIRECTOR] is the guide - calm, exact, warm, speaking to 'you' in the present tense; [SKEPTIC] is the foil - doubts, teases, asks what "
              "the viewer would ask. Neither is named in the script and nobody else speaks. If the brief gives you a cast, use only the temperaments of its two "
              "leads; if it asks for a callback to an earlier video, make it one plain line without courtroom words.\n"
-             "HUMOUR: at most three dry asides; never a joke to fill a gap.")
+             "HUMOUR: at most three dry asides; never a joke to fill a gap.\n"
+             "END ON THE QUESTION: 'would you keep it?', in your own words, is the LAST line of the video. Nothing follows it.")
 F1_DRAFTS = ("Rank these narrations for a first-person science what-if show (\"it happens to you\"), best first. Judge ONLY what a viewer would feel: (1) would a "
              "stranger keep watching after the first 10 seconds; (2) is the viewer INSIDE the scene - his home, his body, his day; (3) clear stakes and a curiosity "
              "gap that pays off; (4) escalation with 'but/therefore', no 'and then', each step bigger than the last; (5) accurate science in everyday words; "
@@ -79,6 +86,80 @@ def lecture_max(fmt=None):
     """v12 V2b: the longest run of counted sentences from outside a format allows (default: the format in the making); 0 without a format."""
     k = current() if fmt is None else str(fmt or "")
     return S(FORMATS[k]["lecture"], int) if k in FORMATS else 0
+
+def ending(fmt=None):
+    """v12 V2b: how a format ends - 'question' (F1), 'tease' (the trial), 'arrival' (F3); 'tease' when no format (default: the format in the making)."""
+    k = current() if fmt is None else str(fmt or "")
+    return FORMATS[k]["ending"] if k in FORMATS else "tease"
+
+def asks(fmt=None):
+    """v12 V2b: the kinds of audience ask a format carries (its row's data); all three when no format or ENDINGS_ON is FALSE."""
+    k = current() if fmt is None else str(fmt or "")
+    if k not in FORMATS or not S("ENDINGS_ON", bool): return ALL_ASKS
+    return tuple(FORMATS[k]["asks"])
+
+def asks_brief():
+    """v12 V2b: the writer's paragraph about asks (the placeholder @@ASKS@@ of prompts.WRITER) for the format in the making - all three kinds: the
+    original words byte for byte; ('subscribe',): one ask; (): none."""
+    from whatifs import prompts as P
+    a = asks()
+    return ONE_ASK if a == ("subscribe",) else NO_ASK if not a else P.ASKS_ALL
+
+def asks_keep(words="the three audience asks"):
+    """v12 V2b: what a rewrite order says it must keep about the asks - `words` (the original) for all three kinds; the one subscribe ask; none."""
+    a = asks()
+    return "the one subscribe ask" if a == ("subscribe",) else "no audience ask (there is none: add none)" if not a else words
+
+def tail(text):
+    """v12 V2b: the index, among the spoken lines of the script (cta._spoken_index), of the first line of the TAIL - the ending in which no ask and no
+    pointer to another video may stand. Measured on the script's WORDS (never seconds, so the room and the gate measure the same thing): W the spoken
+    words, T = min(ENDING_FREE_S * WPM_ESTIMATE / 60, 12% of W); the tail is every spoken line that BEGINS at or after word W - T (len = no tail line)."""
+    from whatifs import cta as CTA
+    from whatifs.org import audience as AUD
+    lines = str(text or "").split("\n"); sp = CTA._spoken_index(lines)
+    counts = [len(AUD.spoken(lines[i]).split()) for i in sp]; w = sum(counts)
+    t = min(S("ENDING_FREE_S", float) * S("WPM_ESTIMATE", float) / 60.0, 0.12 * w)
+    start = 0
+    for pos, c in enumerate(counts):
+        if start >= w - t: return pos
+        start += c
+    return len(sp)
+
+def ending_report(text, fmt, removed=None):
+    """v12 V2b: {ending, last, asks, removed_kinds, problems} - judged on the SCRIPT. `last` = the last spoken sentence, whatever its length; 'question'
+    (F1): it ends with '?'; 'arrival' (F3): it does not, and 'you' is in the last spoken line's last two sentences; both: the last sentence is no ask and
+    no spoken line of the tail is an ask or a pointer to another video (TEASE). 'tease' (the trial): nothing judged here. `removed` = what code removed
+    ({kind: count}, the draw's asks_removed)."""
+    from whatifs import cta as CTA
+    from whatifs.org import audience as AUD, inside as INS, layman as LAY
+    fmt = str(fmt or ""); end = ending(fmt); out = {"ending": end, "last": "", "asks": {}, "removed_kinds": dict(removed or {}), "problems": []}
+    lines = str(text or "").split("\n"); sp = CTA._spoken_index(lines)
+    said = lambda i: " ".join(AUD._TAGS.sub(" ", CTA._peel(lines[i])[3]).split())      # a line as the voice says it ('Next simulation:' is SPOKEN; audience.spoken drops it)
+    for i in sp:
+        k = CTA.is_ask(said(i))
+        if k: out["asks"][k] = out["asks"].get(k, 0) + 1
+    if end == "tease": return out
+    ss = [s.strip() for s in LAY._SENT.split(said(sp[-1])) if s.strip()] if sp else []
+    last = ss[-1] if ss else ""; out["last"] = last; judged = last.rstrip(" \"')]")
+    p = out["problems"]
+    if end == "question" and not judged.endswith("?"): p.append(f"the last line is not the question to the viewer: '{last[:90]}'")
+    if end == "arrival" and (judged.endswith("?") or not INS.YOU.search(" ".join(ss[-2:]))): p.append(f"the last line is not the arrival: '{last[:90]}'")
+    t = tail(text)
+    bad = [said(i) for pos, i in enumerate(sp) if pos >= t and (CTA.is_ask(said(i)) or TEASE.search(said(i)))]
+    if CTA.is_ask(last) and not bad: bad = [last]
+    if bad: p.append(f"an ask or a pointer to another video in the last seconds: '{' '.join(bad[0].split())[:90]}'")
+    return out
+
+def ending_issues(text):
+    """For the writers' ONE fix (enforce.fix_all, tag ENDING FIX): the ending's problems as one instruction; [] when off, without a format, in a format
+    that ends on a tease, or when the ending is the format's."""
+    k = current()
+    if not S("ENDINGS_ON", bool) or k not in FORMATS or ending(k) == "tease": return []
+    r = ending_report(text, k)
+    if not r["problems"]: return []
+    return ["THE ENDING: " + "; ".join(r["problems"]) + ". This format ends on " + ("the question to the viewer - would you keep it? - in your own words"
+            if r["ending"] == "question" else "the arrival: one sentence to 'you' saying what you now see differently")
+            + "; it is the last line and nothing follows it; no ask and no 'next time' near the end"]
 
 def rule(check, fmt=None):
     """'must' | 'advisory' | 'never' for a contract check in a format (default: the format in the making). Anything that is not a DEVICE is always 'must'."""

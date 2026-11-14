@@ -228,6 +228,7 @@ def run_room(draw, episode):
 
 def _run_room(draw, episode):
     import time as _t
+    from whatifs import formats as FMT                       # v12 V2b: the asks, the ending and the rewrite orders follow the format in the making
     ctx = context(); d = draw; stg = d["strategies"]; defs = ctx["defs"]; d["_t_last"] = _t.time(); d["stage_times"] = {}
     ctx["research"], d["research_brief"] = RS.room_research(episode, allow_run=S("BACKGROUND_IN_ROOM", bool))       # v9.2: the room only READS the brief
     _mark(d, "research (read)")
@@ -262,7 +263,7 @@ def _run_room(draw, episode):
     wmin, wmax = int(d["words"] * 0.93), int(d["words"] * 1.07)
     wbrief = P.fill(P.WRITER, words=d["words"], wmin=wmin, wmax=wmax, story=stg["story"], storydef=defs.get(stg["story"], ""),
                     hook=stg["hook"], hookdef=defs.get(stg["hook"], ""), hooksec=d["hook_sec"], humour=stg["humour"], voice=stg["voice"], bible=_j(bible, 9000),
-                    banter=defs.get(stg.get("banter") or "", "") or "natural", budget=budget_brief(d))
+                    banter=defs.get(stg.get("banter") or "", "") or "natural", budget=budget_brief(d), asks=FMT.asks_brief())
     from whatifs import enforce as EN                        # v11.1 (K166): the markers rule + the channel's own evidence, in every brief
     wbrief = GR.insert_before_json(wbrief, EN.writer_rules("long"))
     d["brain_block"] = EN.brain_block("long")
@@ -325,13 +326,12 @@ def _run_room(draw, episode):
         from whatifs import engage as EG
         new_t, n_rm = EG.enforce(script.get("script", ""), episode)
         if n_rm: script = dict(script, script=new_t)
-        if S("EMOTION_BEAT_ON", bool):
+        if S("EMOTION_BEAT_ON", bool) and not (S("ENDINGS_ON", bool) and FMT.rule("emotion_beat") == "never"):      # v12 V2b: a format without one (F3) picks none
             d["emotion_beat"] = EG.pick_emotion(episode); set_setting("EMOTION_LAST", d["emotion_beat"])
     except Exception as e: log(f"engagement check skipped: {scrub(e)}", "WARN", episode)
     if S("CTA_ON", bool):                                 # v8.3: like / subscribe / share asks: the writer's own, or a hand-written one added at a calm moment
-        new, added, code = CTA.ensure(script.get("script", ""), episode, S("CTA_LAST"))
-        if added:
-            script = dict(script, script=new); log(f"audience asks added by code: {', '.join(added)}", episode=episode)
+        script, added, code = _place_asks(script, d, episode)      # v12 V2b: in a format with its own ending, only its kinds and never in its tail
+        if added: log(f"audience asks added by code: {', '.join(added)}", episode=episode)
         if code != S("CTA_LAST"): set_setting("CTA_LAST", code)
     script = ensure_tease(script, spine.get("next_tease"), episode); d["next_tease"] = spine.get("next_tease") or {}      # v8.9: the video ends on the next episode
     try:                                                   # v10.1 (K145): repetitive-content guard (never a hold; one card when too similar)
@@ -342,12 +342,12 @@ def _run_room(draw, episode):
     imap = IM.immersion_map(script.get("script", ""), spine, episode)
     def oc_rewrite(sc, fixes):
         try:
-            out = ask("rewrite", wbrief, "OWNER'S CUT FIXES (the owner's own taste; apply all, keep every label, tag, '## BEAT' line, fact and the three audience asks): "
+            out = ask("rewrite", wbrief, "OWNER'S CUT FIXES (the owner's own taste; apply all, keep every label, tag, '## BEAT' line, fact and " + FMT.asks_keep() + "): "
                       + " ".join(f"({k + 1}) {x}" for k, x in enumerate(fixes)) + "\nNARRATION:\n" + sc.get("script", "") + "\nRewrite the full narration.",
                       episode=episode, fake_key="writer", max_tokens=16000)
             if not out.get("script") or not FE.labels_preserved(sc.get("script", ""), out["script"]): return None
             new = _fix_length(dict(sc, script=out["script"]), wbrief, wmin, wmax, episode)
-            if S("CTA_ON", bool): new = dict(new, script=CTA.ensure(new.get("script", ""), episode, S("CTA_LAST"))[0])
+            if S("CTA_ON", bool): new = dict(new, script=_place_asks(new, d, episode)[0].get("script", ""))
             return ensure_tease(new, spine.get("next_tease"), episode)
         except Exception as e:
             log(f"Owner's Cut rewrite failed: {scrub(e)[:160]}", "WARN", episode); return None
@@ -375,8 +375,7 @@ def _run_room(draw, episode):
     script, d["enforce_fix"] = EN.fix_all(script, wbrief, spine, episode, "long")   # ONE mandatory rewrite for every open retention + marker problem
     if d.get("enforce_fix"):                                 # a rewrite may drop the code-added lines: put the asks and the tease back (both idempotent)
         if S("CTA_ON", bool):
-            new, added, _code = CTA.ensure(script.get("script", ""), episode, S("CTA_LAST"))
-            if added: script = dict(script, script=new)
+            script = _place_asks(script, d, episode)[0]
         script = ensure_tease(script, spine.get("next_tease"), episode)
     d["owners_cut"] = {"mean": (oc.get("rounds") or [{}])[-1].get("mean"), "rounds": len(oc.get("rounds") or [])} if oc.get("checked") else {}
     below = [x for x in (spine.get("below_bar"), oc.get("below_bar")) if x]                     # v8.11: made below the bar = noted + ONE email
@@ -433,9 +432,39 @@ def guest_brief(d):
             "30 s (no greeting to the viewer, the show starts on the impossible thing); their everyday life shows up once as a concrete detail; same role as always "
             "(questions, doubts, honest reactions). An invented adult, never a real person, never a child.")
 
+def tease_on():
+    """v12 V2b: may this video end on a tease of the next one? NEXT_TEASE_ON - and, while ENDINGS_ON, only a format that ends on a tease and never under
+    the ladder (the next long video is the Short viewers pick: a promise the machine cannot keep is not made; open issue 101). With ENDINGS_ON FALSE the
+    cell alone decides, as before this batch (DESIGN QUESTION 3 of V2b). `teased_pitch` keeps reading the cell: it honours what the video BEFORE promised."""
+    from whatifs import formats as FMT, ladder as LAD
+    return S("NEXT_TEASE_ON", bool) and not (S("ENDINGS_ON", bool) and (FMT.ending() != "tease" or LAD.on()))
+
+def _endings_on():
+    """v12 V2b: the asks of the format in the making are its own (ENDINGS_ON, a format, an ending that is not a tease)."""
+    from whatifs import formats as FMT
+    return S("ENDINGS_ON", bool) and FMT.current() in FMT.FORMATS and FMT.ending() != "tease"
+
+def _place_asks(script, d, episode):
+    """The three call sites of cta.ensure, one rule (v12 V2b): in a format with its own ending, every ask of a kind the format does not carry and every
+    ask in the tail is removed by code (counted in d['asks_removed'] for check format_ending), then only the format's kinds are added, never in the tail.
+    Otherwise cta.ensure as before. Returns (script, added_kinds, picked_code)."""
+    text = script.get("script", "")
+    if _endings_on():
+        from whatifs import formats as FMT
+        text, removed = CTA.strip(text, keep=FMT.asks(), tail_from=FMT.tail(text))
+        if removed:
+            gone = d.setdefault("asks_removed", {})
+            for line in removed:
+                k = CTA.is_ask(CTA._peel(line)[3]); gone[k] = gone.get(k, 0) + 1
+            log(f"audience asks removed by code (not this format's, or in its last seconds): {len(removed)}", episode=episode)
+        new, added, code = CTA.ensure(text, episode, S("CTA_LAST"), kinds=FMT.asks(), before=FMT.tail(text))
+    else:
+        new, added, code = CTA.ensure(text, episode, S("CTA_LAST"))
+    return (dict(script, script=new) if new != script.get("script", "") else script), added, code
+
 def tease_brief(spine):
     t = (spine or {}).get("next_tease") or {}
-    if not S("NEXT_TEASE_ON", bool) or not t.get("line"): return ""
+    if not tease_on() or not t.get("line"): return ""
     return (f"END HOOK (the very last spoken line, after the share ask): the Director teases the NEXT simulation with this line or a sharper one that keeps its "
             f"premise: \"{t['line']}\". Make it a question or a stake the viewer wants answered. Never name a weekday or a date.")
 
@@ -461,7 +490,7 @@ def teased_pitch(ctx, recent_fams):
 def clean_tease(spine, good):
     """The NEXT episode's premise + a spoken teaser line. The Showrunner's choice if it is a different family from this episode; otherwise the best other
     pitch of a different family. {} if there is none (then the video simply ends without a tease)."""
-    if not S("NEXT_TEASE_ON", bool): return {}
+    if not tease_on(): return {}
     t = spine.get("next_tease") if isinstance(spine.get("next_tease"), dict) else {}
     fam = spine.get("family", "")
     ok = lambda x: str(x.get("premise") or "").strip() and x.get("family") != fam and not _similar(x.get("premise", ""), [spine.get("premise", "")])
@@ -479,7 +508,7 @@ def clean_tease(spine, good):
 
 def ensure_tease(script, tease, episode):
     """The tease must really be the last thing said. If the writer dropped it, code appends it as the Director's last line (free)."""
-    if not tease or not tease.get("line") or not S("NEXT_TEASE_ON", bool): return script
+    if not tease or not tease.get("line") or not tease_on(): return script
     text = script.get("script", ""); tail = " ".join(text.strip().splitlines()[-3:]).lower()
     key = {w for w in re.findall(r"[a-z]{5,}", (tease.get("headline", "") + " " + tease.get("premise", "")).lower())}
     if key and len(key & set(re.findall(r"[a-z]{5,}", tail))) >= max(1, len(key) // 3): return script
@@ -504,7 +533,7 @@ def fact_check(spine, script, episode):
     if not wrong: return script
     errs = "\n".join(f'- {str(x.get("claim", ""))[:200]} -> {str(x.get("correction", ""))[:260]}' for x in wrong[:6])
     try:
-        out = ask("factfix", P.fill(P.FACTFIX, errors=errs, script=text), "Fix the errors now.", episode=episode, fake_key="humanize", max_tokens=16000)
+        out = ask("factfix", P.fill(_keep_asks(P.FACTFIX), errors=errs, script=text), "Fix the errors now.", episode=episode, fake_key="humanize", max_tokens=16000)
         new = out.get("script", "") if isinstance(out, dict) else ""
         old_n = len(re.sub(r"\[[^\]]+\]|##.*", "", text).split()); new_n = len(re.sub(r"\[[^\]]+\]|##.*", "", new).split())
         if new and new.count("## BEAT") >= max(1, text.count("## BEAT") - 1) and abs(new_n - old_n) <= old_n * 0.08 and FE.labels_preserved(text, new):
@@ -531,7 +560,7 @@ def retention_pass(script, brief, promise, episode):
         public=f"retention gate: {len(chk['issues'])} problem(s), one targeted fix requested (details kept private)")
     try:
         out = ask("retention", brief, "Fix ONLY these retention problems, at the places named, and change nothing else: " + " ".join(f"({k + 1}) {x}" for k, x in enumerate(chk["issues"])) +
-                  " Keep every speaker label, delivery tag, '## BEAT' line, fact, number and the three audience asks; keep the length within 5 percent. Return the full narration.\nNARRATION:\n" + text,
+                  " Keep every speaker label, delivery tag, '## BEAT' line, fact, number and " + _asks_words() + "; keep the length within 5 percent. Return the full narration.\nNARRATION:\n" + text,
                   episode=episode, fake_key="retention", max_tokens=16000)
         new = out.get("script", "") if isinstance(out, dict) else ""
         old_n = len(re.sub(r"\[[^\]]+\]|##.*", "", text).split()); new_n = len(re.sub(r"\[[^\]]+\]|##.*", "", new).split())
@@ -545,6 +574,17 @@ def retention_pass(script, brief, promise, episode):
         else: log("retention fix rejected (it changed the structure) - keeping the draft", "WARN", episode)
     except Exception as e: log(f"retention fix skipped: {scrub(e)[:160]}", "WARN", episode)
     return script, rec
+
+def _keep_asks(template):
+    """v12 V2b: a rewrite order (HUMANIZE, FACTFIX) with the asks of the format in the making - 'the three audience asks (like, subscribe, share)' byte for
+    byte when the format carries all three (formats.asks_keep)."""
+    from whatifs import formats as FMT
+    return template.replace(P.ASKS3, FMT.asks_keep(P.ASKS3))
+
+def _asks_words():
+    """v12 V2b: the same for the room's own rewrite orders, whose words are 'the three audience asks'."""
+    from whatifs import formats as FMT
+    return FMT.asks_keep()
 
 def _sound_cap(draw, n):
     """How many shots in a Director chunk may carry a sound texture (the episode's sound density)."""
@@ -591,7 +631,7 @@ def format_pass(script, brief, episode):
 def humanize(script, episode):
     """Human Editor pass, repeated once if AI tells remain. Keeps the old draft if the edit breaks structure."""
     for _ in range(2):
-        out = ask("humanize", P.fill(P.HUMANIZE, script=script.get("script", ""), craft=CRAFT["humanize"]), "Edit now.", episode=episode, fake_key="humanize", max_tokens=16000)
+        out = ask("humanize", P.fill(_keep_asks(P.HUMANIZE), script=script.get("script", ""), craft=CRAFT["humanize"]), "Edit now.", episode=episode, fake_key="humanize", max_tokens=16000)
         new = out.get("script", "")
         old_n = len(script.get("script", "").split()); new_n = len(new.split())
         if new and new.count("## BEAT") >= max(1, script.get("script", "").count("## BEAT") - 1) and abs(new_n - old_n) <= old_n * 0.12 and FE.labels_preserved(script.get("script", ""), new):
@@ -602,7 +642,7 @@ def humanize(script, episode):
     return script
 
 def extend(room, script_text, add_words, episode):
-    out = ask("length", P.fill(P.HUMANIZE, script=script_text, craft=CRAFT["humanize"]),
+    out = ask("length", P.fill(_keep_asks(P.HUMANIZE), script=script_text, craft=CRAFT["humanize"]),
               f"The narration is too short. Keep everything and ADD about {add_words} words: deepen the strongest beats with one more concrete consequence each, "
               "keep the same tags and '## BEAT' lines. Return the full narration.", episode=episode, fake_key="writer", max_tokens=16000)
     s = out.get("script", "")

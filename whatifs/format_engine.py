@@ -75,8 +75,33 @@ def check_script(script: str) -> dict:
     if min(d, k) < max(3, int(0.12 * (d + k))): issues.append(f"one role barely speaks (DIRECTOR {d}, SKEPTIC {k}); both must contribute reasoning")
     return {"ok": not issues, "issues": issues, "units": len(us), "labeled": lab, "director": d, "skeptic": k}
 
+ASKS_ONE = ("Audience asks: exactly ONE short, witty, in-story moment in which the Curious One asks for a subscribe, after a payoff, never near the end; no like "
+            "ask, no share ask.")
+ASKS_NONE = "Audience asks: none, anywhere."
+
+def _for_format(block: str) -> str:
+    """v12 V2b: the block line by line for the format in the making (only while ENDINGS_ON and an episode has a format; a trial's block byte for byte):
+    the line 'Audience asks:' as the format's asks; the line 'Shorts:' left out outside a trial (a long video makes no Short of itself); the story
+    engine ends as the format ends, not on a verdict."""
+    from whatifs.core import S
+    from whatifs import formats as FMT
+    k = FMT.current()
+    if not S("ENDINGS_ON", bool) or k not in FMT.FORMATS: return block
+    trial = FMT.FORMATS[k]["show"]; a = FMT.asks(); out = []
+    for line in block.split("\n"):
+        if line.startswith("Audience asks:") and a != FMT.ALL_ASKS:
+            if a == ("subscribe",): out.append(ASKS_ONE)
+            elif not a: out.append(ASKS_NONE)
+            else: out.append(line)
+            continue
+        if line.startswith("Shorts:") and not trial: continue
+        if line.startswith("Story engine:") and not trial:
+            line = line.replace("end with a clear verdict and honest uncertainty", "end as this format ends, with honest uncertainty")
+        out.append(line)
+    return "\n".join(out)
+
 def instructions(role: str = "general") -> str:
-    base = CLASSIC if mode() == "classic" else REALITY_ENGINE
+    base = CLASSIC if mode() == "classic" else _for_format(REALITY_ENGINE)
     role_notes = {
         "showrunner": "Showrunner: include presentation_format='reality_engine', director_role, skeptic_role, scenario_rules, escalation_steps, and a payoff in the spine. Do not make the format overwhelm the premise.",
         "memo": "Department memo: keep your advice consistent with the two recurring presenter roles (Director, Skeptic) and the faceless presenter rule.",

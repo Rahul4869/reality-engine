@@ -299,7 +299,7 @@ def test_dependencies_are_bounded():
 def test_the_two_role_prompts_agree_with_each_other():
     from whatifs import prompts as P
     assert "18-34" in P.HOUSE and "13-34" not in P.HOUSE and "UNTRUSTED TEXT" in P.HOUSE
-    assert "AUDIENCE ASKS" in P.WRITER and '"cta"' in P.BIBLE and "subscribe_moment" not in P.BIBLE and "within 8%" in P.HUMANIZE
+    assert "AUDIENCE ASKS" in P.fill(P.WRITER) and "@@ASKS@@" in P.WRITER and '"cta"' in P.BIBLE and "subscribe_moment" not in P.BIBLE and "within 8%" in P.HUMANIZE
     assert FE.enrich_spine({})["skeptic_role"] == "The Curious One" and "Curious One" in FE.REALITY_ENGINE
 
 def test_old_checkpoints_of_failed_episodes_are_cleared(monkeypatch):

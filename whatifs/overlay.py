@@ -61,11 +61,14 @@ class CtaChip:
     COLOURS = {"like": (255, 96, 128), "subscribe": (255, 214, 0), "share": (80, 210, 190)}
 
     def __init__(self, units, ww, wh, fps):
-        from whatifs.cta import kind_of_text
+        from whatifs.cta import kind_of_text, is_ask
+        from whatifs.core import S
+        from whatifs import formats as FMT
+        own = S("ENDINGS_ON", bool); kinds = FMT.asks()          # v12 V2b: a chip only for a line code recognises as an ask of a kind the format carries
         self.spans = []
         for u in units:
-            k = kind_of_text(u.get("text", ""))
-            if k: self.spans.append((float(u["start"]), float(u["end"]) + 0.5, k))
+            k = is_ask(u.get("text", "")) if own else kind_of_text(u.get("text", ""))
+            if k and (not own or k in kinds): self.spans.append((float(u["start"]), float(u["end"]) + 0.5, k))
         self.W, self.H, self.fps = ww, wh, fps; self.s = wh / 1080.0; self._cache = {}
         self.f = font(max(8, int(32 * self.s))); self.m = int(ww * 0.035)
 

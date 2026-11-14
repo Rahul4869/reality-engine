@@ -23,6 +23,14 @@ def _inside_on():
         return _IN.on()
     except Exception: return False
 
+def _ending():
+    """v12 V2b: how the format in the making ends while ENDINGS_ON ('' otherwise): the stand-in writer obeys it."""
+    try:
+        from whatifs.core import S
+        from whatifs import formats as _FMT
+        return _FMT.ending() if S("ENDINGS_ON", bool) and _FMT.current() in _FMT.FORMATS else ""
+    except Exception: return ""
+
 FAKE_SOURCES = (   # v12 B5: what a fake web search "returns" (url, title, age in days, quoted text) - an official page, a paper and a practitioner page
     ("https://support.google.com/youtube/answer/1311392", "YouTube channel monetization policies - YouTube Help", 40, "Inauthentic content: content that is mass-produced or repetitive is not eligible."),
     ("https://arxiv.org/abs/2506.20803", "The Ideation-Execution Gap", 300, "LLM-generated ideas scored higher before execution and dropped significantly more after it."),
@@ -254,6 +262,7 @@ def fake_reply(key, prompt):
                 every = 1 if "MARKER FIX" in prompt else (6 if f1 else 2)                      # a marker-fix request gets a punchline on every line
                 mk = ("" if f1 else "[SEND] " if k == 2 else "[AWE] " if k == 5 else "") + ("[PUNCH] " if k % every == 0 else "")   # v11.1: markers like the real writer
                 body.append(mk + [f"[{who}] {tag} {rest}", f"{tag} [{who}] {rest}", f"{who}: {rest}"][k % 3]); k += 1
+        if _ending() == "question": body.append("[DIRECTOR] [close] So... would you keep it?")          # v12 V2b: a writer who obeys F1's ending (DESIGN QUESTION 9)
         mt = re.search(r"Title: ([^|]+?)\s*\|", prompt)                    # v11.1: a RETENTION FIX request is answered like a compliant writer:
         L = [i for i, x in enumerate(body) if not x.startswith(("## BEAT", "[pause"))]      # v9: the trial tags (never spoken; ignored when SHOW_MODE = off)
         if len(L) >= 8 and not f1:

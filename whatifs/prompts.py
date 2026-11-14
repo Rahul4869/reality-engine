@@ -15,8 +15,18 @@ def fill(t, **kw):
     kw.setdefault("sounds", "6")
     kw.setdefault("promise", "none (no packaging-first promise this time)")
     kw.setdefault("existing", "[]")
+    kw.setdefault("asks", ASKS_ALL)                  # v12 V2b: the writer's asks paragraph; room._run_room fills it with formats.asks_brief()
     for k, v in kw.items(): t = t.replace("@@" + k.upper() + "@@", str(v))
     return t
+
+# v12 V2b: the writer's paragraph about the three audience asks (the original words, byte for byte); a format with other asks gets formats.asks_brief()
+ASKS_ALL = ("AUDIENCE ASKS (like, subscribe, share): write exactly three short moments INSIDE the conversation, funny in the show's own voice, never begging, never a list "
+            "of commands, never during a death or the peak. Start from the bible's \"cta\" lines and rephrase freely so they fit the scene. LIKE: one line about 40% in, "
+            "right after the first big payoff has landed (the Curious One may ask for it as a bargain). SUBSCRIBE: about 65% in, tied to an open loop or to what is "
+            "coming next. SHARE: in the last 40 seconds, just before the final line, aimed at a specific kind of person from THIS premise (\"send it to the friend "
+            "who...\"). Each ask is at most 24 words, clearly uses the words like / subscribe / share or send, and carries a [DIRECTOR] or [SKEPTIC] label. Do not put "
+            "an ask directly before or after a reaction line.")
+ASKS3 = "the three audience asks (like, subscribe, share)"          # the words the rewrite orders HUMANIZE and FACTFIX keep (formats.asks_keep)
 
 HOUSE = """You work in the writers' room of REALITY ENGINE, a faceless YouTube channel for a US audience (18-34, curious, phone + TV).
 Product = dread, wonder and scale, with ~20% dry relatable wit. Science is the mechanism; the feeling is the product.
@@ -92,7 +102,7 @@ Story order = @@STORY@@: @@STORYDEF@@   Hook = @@HOOK@@: @@HOOKDEF@@ (hook lands
 Humour level = @@HUMOUR@@. Voice style = @@VOICE@@. Banter style between the two roles = @@BANTER@@
 BUDGET BRIEF: @@BUDGET@@
 Format: one line per sentence group. Start lines with a tag when useful: [calm] [tension] [reveal] [aside] [callback] [close] [pause:short] [pause:long]. [close] = a quiet, intimate line (1-2 per video, at the most human moment).
-Use "..." for a hesitation and [beat] for a comic micro-pause. AUDIENCE ASKS (like, subscribe, share): write exactly three short moments INSIDE the conversation, funny in the show's own voice, never begging, never a list of commands, never during a death or the peak. Start from the bible's "cta" lines and rephrase freely so they fit the scene. LIKE: one line about 40% in, right after the first big payoff has landed (the Curious One may ask for it as a bargain). SUBSCRIBE: about 65% in, tied to an open loop or to what is coming next. SHARE: in the last 40 seconds, just before the final line, aimed at a specific kind of person from THIS premise ("send it to the friend who..."). Each ask is at most 24 words, clearly uses the words like / subscribe / share or send, and carries a [DIRECTOR] or [SKEPTIC] label. Do not put an ask directly before or after a reaction line.
+Use "..." for a hesitation and [beat] for a comic micro-pause. @@ASKS@@
 Put "## BEAT n" on its own line before each beat. Every number must be plausible and stated simply.
 BIBLE: @@BIBLE@@
 Return JSON: {"title_working":"","script":"## BEAT 1\n[calm] ...","facts":[{"claim":"","reasoning":""}],"loops":[{"open":"each question you plant","closed_in_beat":4}]}"""
