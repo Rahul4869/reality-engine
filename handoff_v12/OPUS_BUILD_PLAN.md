@@ -70,6 +70,39 @@ A FABLE SESSION HANDED A CARD BY THE OWNER'S "continue" is whatever the state an
 - A8. THE ALLOWANCE: every session reads `get_usage` at its start and end and writes the figures into the record; from 88% of a weekly
   line a Fable session writes "WHERE THE SESSION STANDS" and stops clean (chapter 10). Nothing is shortened to fit: it waits.
 
+## AMENDMENT 3 (14 Nov 2026, the owner's item 38: "start all the department process so that we can finish the project now within this week ... without compromising any single bit of quality") - TWO LANES; WHERE A CHAPTER BELOW OR AMENDMENTS 1 AND 2 DISAGREE, THESE LINES WIN
+Written by the Fable session that reviewed V2b's design and that he gave these words to (chapter 15). It moves WHEN the thinking of a batch is
+done, never what a batch is built from or judged by. An Opus builder or prover at work when this was written changes nothing in what it does.
+- LANE A, THE MACHINE (unchanged; serial; one laptop - L9): build -> finish -> prove, one batch after another in the owner's order. Nothing of it
+  ever runs beside anything else.
+- LANE B, THE THINKING (Fable only; AHEAD of the machine): the design of the next batches (loop steps 1 to 3) and its review are done while Lane A
+  builds and proves an earlier batch, so that no batch waits for its design.
+  B1. A PRE-DESIGNER is a fresh Fable session with the batch's brief (chapter 12). It does the builder's whole reading (chapter 4). It reads the
+      handoff and the record from this folder and THE CODE from a plain export of the last accepted final code commit in its own scratchpad
+      (`git -C reality-engine archive <sha> | tar -x -C <scratchpad>/code` - NEVER `git worktree add`: a registered copy stops a prover's
+      pre-flight), and it reads the memo of every batch being built on top of that commit. It RUNS NOTHING of the pipeline - no test, rehearsal,
+      sweep or break, and no python process but `next.py` once at its start (a prover's block looks for running processes). It never moves the
+      state, never commits, never edits a file of the repo. It writes `PREDESIGN_<batch>.md` in the shared notes folder: steps 1 to 3 under the
+      record's headings, to the standard of amendment A4 and of `reviews/V2b_design.md` (all three rounds: what a memo is attacked for), and a
+      last part "TO VERIFY WHEN THE BATCH'S TURN COMES" - every sentence about code that a batch in between may change, and the experiment of
+      5.1 with its exact commands (it is RUN then, not now).
+  B2. A PRE-REVIEWER (another fresh Fable session) applies 5.4 and the seven attacks of V2b's review to the pre-design and writes
+      `PREREVIEW_<batch>.md` beside it; the pre-designer changes its memo; three rounds at most.
+  B3. WHEN THE BATCH'S TURN COMES (the batch before it carries the word of acceptance): the pre-designer's own session is continued - it has the
+      reading - or, when it is gone or out of room, a fresh Fable designer with the whole reading takes the pre-design as its draft. It runs
+      `next.py --to DESIGN`, does the audit of the batch before (A7), reads the WHOLE diff of every batch accepted since its export, RUNS the
+      experiment, corrects the memo wherever the code moved, writes steps 1 to 3 into the record and moves the state to DESIGN_REVIEW. The
+      reviewer (the pre-reviewer's session, or a fresh one) then reviews THE MEMO IN THE RECORD against the code as accepted, in
+      `reviews/<batch>_design.md`. The gate of items 34 and 35 does not move: nothing is built before that file says APPROVED.
+  B4. `next.py` knows Lane A only. A session started with a Lane B brief follows its brief and this amendment, NOT the card `next.py` prints -
+      that card belongs to the batch on the machine: a Lane B session never acts on it, never starts a builder, a finisher or a prover.
+- THE DISPATCHER is the Fable session the owner gave his word to (item 38): the app lets a session start another only on the owner's own words
+  in it. It starts every session of both lanes, keeps at most three Lane B sessions at work, and does no batch's own work once its context is
+  past 60% (it starts a fresh Fable finisher or repairer). A session that is refused a start leaves the card and says so in the first line of
+  its closing message; one word of the owner ("continue") in a new Fable session takes the dispatcher's place.
+- WHAT DOES NOT MOVE: every law of chapter 2; fake mode only; the owner's order of the batches; one run at a time; the whole reading; the
+  proving block; and a design is approved on the code it will be built on.
+
 ## 0. THE HONEST FRAME (said to the owner; every session keeps it true)
 - A plan cannot turn one model into another. What it does: THE MODEL THAT BUILDS NEVER JUDGES ITS OWN WORK. A script computes every verdict; a
   separate session runs it; a red result goes back for repair by a fixed loop with a limit; the word of acceptance cannot even be committed
