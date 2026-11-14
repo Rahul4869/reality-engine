@@ -88,6 +88,15 @@
    "from": "DESIGN",
    "to": "DESIGN_REVIEW",
    "why": "steps 1 to 3 of V2b are in the record; a fresh Fable session reviews (items 34 to 36)"
+  },
+  {
+   "at": "2026-11-14T03:13:06Z",
+   "batch": "V2b",
+   "by": "",
+   "commit": "",
+   "from": "DESIGN_REVIEW",
+   "to": "DESIGN",
+   "why": ""
   }
  ],
  "order": [
@@ -104,8 +113,8 @@
   "B10",
   "V3"
  ],
- "phase": "DESIGN_REVIEW",
+ "phase": "DESIGN",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-14T02:57:01Z"
+ "updated": "2026-11-14T03:13:06Z"
 }
