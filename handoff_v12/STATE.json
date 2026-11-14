@@ -12,10 +12,10 @@
  "audit_queue": [
   "V2d-b"
  ],
- "base_commit": "22fb8fd2117e17353630ed46914ed93864f07da6",
- "batch": "V2d-b",
+ "base_commit": "5827d97dc5aa948c27ae7f77832013a11108a3c7",
+ "batch": "V2b",
  "fable_design_gate": true,
- "final_code_commit": "5827d97dc5aa948c27ae7f77832013a11108a3c7",
+ "final_code_commit": "",
  "history": [
   {
    "at": "2026-11-13T11:25:00Z",
@@ -70,6 +70,15 @@
    "from": "PROVING",
    "to": "ACCEPTED",
    "why": ""
+  },
+  {
+   "at": "2026-11-14T02:34:28Z",
+   "batch": "V2b",
+   "by": "the designer (Fable 5.2, the owner's item 35)",
+   "commit": "",
+   "from": "ACCEPTED",
+   "to": "DESIGN",
+   "why": "V2d-b accepted; the owner's item 35: Fable writes V2b's research, designs and memo"
   }
  ],
  "order": [
@@ -86,10 +95,8 @@
   "B10",
   "V3"
  ],
- "phase": "ACCEPTED",
- "red_notes": [
-  "V2d-b_RED_1.md"
- ],
- "red_rounds": 1,
- "updated": "2026-11-14T02:23:24Z"
+ "phase": "DESIGN",
+ "red_notes": [],
+ "red_rounds": 0,
+ "updated": "2026-11-14T02:34:28Z"
 }
