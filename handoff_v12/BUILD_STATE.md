@@ -1622,6 +1622,60 @@ WHAT IT NEEDS TO KNOW FROM HERE (facts, not decisions):
   OneDrive holds; `git worktree list` shows the main checkout only - none is registered). The commit and the push went through.
 USAGE: at this builder's start the 5-hour window 0%, weekly all models 16%, weekly Fable 27%, context 9%; at its end the 5-hour window 5%, weekly all models 17%,
 weekly Fable 28% (the account's figure; this session is Opus 5.5), context 69%.
+#### Step 6 PROVE
+**6a - THE BUILDER'S HALF**
+THE FIFTH OPUS BUILDER (14 Nov 2026, from about 09:30 UTC; Opus 5.5 at Extra high - started at High with a first turn that only answered READY, then raised
+by the dispatcher `local_e4e9a03f-...`, the plan's B5). `next.py`: card "BUILDER of V2b - phase BUILD", base 5827d97, red rounds 0, pre-flight clean, the hooks not
+installed, the audit finding F1 printed OPEN. USAGE at its start: the 5-hour window 5%, weekly all models 17%, weekly Fable 28% (the account's figure; this session
+is Opus 5.5), this session's context 9% of 1,000,000. READING: THE CONTINUATION TYPIST'S READING, A9 (the owner's item 45) - `next.py` and its card, the plan whole
+(its three amendments first), the handoff `CLAUDE.md`, `02` whole (items 1 to 48), in this file the head line, STANDING RULES, NEXT's "Remember", HOW TO RUN whole,
+the whole record of V2b (Step 3, Step 4 from its first line with every "WHERE THE BUILD STANDS" and DESIGN QUESTIONS 1 to 20, Step 5's table) and the open issues
+they name (60, 69, 74, 75, 77, 101, 124, 125, 129, 177, 185 to 195), `reviews/V2b_design.md` whole (round 3 first), `reviews/V2d-b_audit.md` (F1), the repo's
+`CLAUDE.md` whole, `proving/breaks/V2b.json` whole (204 entries); for step 8: `proving/breaks.py` whole, `whatifs/org/inside.py` and `whatifs/path.py` whole, the
+whole V2b diff of `whatifs/` and `tools/` from 5827d97, `tests/test_v12_inside.py` whole, `tests/golden_frames.py` and the test that compares the reference frames.
+STEP 8 (1) - THE BREAK LIST AGAINST THE STEP 5 TABLE AND THE MEMO'S 3.10, BEFORE THE FIRST RUN. Every row of the table has its breaks; every worst video of 3.10
+has one (the lecture: S1-07, S1-08; five places in a minute: S4-07, S4-24 and S8-34 below; another act's picture: S4-25; "subscribe" and "Next simulation": S2-16,
+S2-17, S2-27 to S2-32); every test added after the design review has one. TWO OF THE 204 WOULD HAVE BEEN VOID (their text occurred 0 times): S3-02 and S3-09 -
+their anchors moved when step 4 added a key after them (`"camera": "walk"`, `"path_states"`); rewritten to the same one place as the code reads today. ONE PER
+BRANCH WAS NOT WHOLE: reading every function the 204 break, branch by branch, found 116 branches without a break of their own - S8-01 to S8-116, written into
+`proving/breaks/V2b.json` before the first run (each anchor found exactly once): the heading's count and beat 0, the heading never spoken, the speaker from the
+voice's parser, the past (the "if / wish / imagine" exception, the adverb, the long "-ed" word, the present verbs that only look past), the foil's "I" only, a run
+ended by an inside sentence, an explanation after the first inside sentence, the words of rule (c), the fix / brief / repair each silent when off or inside the
+rules, a beat's FIRST shot only, real footage too; the path's switch, the floor of 3 changes, the footage in no act, which neighbour an act joins (three ways),
+an empty `visual_world`, the word list, a sign per act, a living picture laid, both N/A reasons, the allowance half of rule 5, an unassigned angle, a clip state
+unjudged; the four checks' N/A branches, their stages, the gate's one helper, the PASS words; the row's own cells and readers, the endings' defaults and words,
+the asks counted, the arrival's second-last sentence, the fix silent and naming the arrival; the nine starting values of 3.7 in `core.DEFAULTS`; the seven
+patterns of `cta.is_ask` no ask of the memo reaches alone; `teased_pitch`, the room's three call sites and the five rewrite orders at their own call sites; the
+plan stage's second voice call, the budget served first, the one helper's budget and opening, a re-drawn state, `prev_i`, the save before the stop; the timeline's
+beat and the parser's; with `sign` None every draw as before (the reference frames); the format block's switch, its reaction lines, F3's "none", the base, the
+writer note's second clause; the fix tags and the long-only rule; the default asks of `prompts.fill`; the eye switch at the source; the stills line's switch;
+the one-time move marked done and its learning-job site; the run-limit lever's direction; the owners, D6's and D13's levers, D13's module; `SHOW_CHECKS`; the
+sweep's fourth check and a trial's camera words. 320 breaks in the list.
+MISSING ASSERTIONS FOUND BY THE BREAK LIST (written here BEFORE the tests that close them; each is a branch whose break no test of the batch would catch - the
+lesson "the list itself found a missing test"; all thirteen go into `tests/test_v12_inside.py`, a new section 15, and NO existing test is changed):
+ (1) `inside.past`: a word of five or more letters ending in "ed" that is not in PAST ("You climbed ...") - every past sentence of the tests is in PAST (S8-07);
+ (2) `inside.open_acts`: a timeline without beats whose FIRST shot is a graphic, and the rule switched off - the existing case opens on a still and is left
+     alone either way (S8-19, S8-21);
+ (3) both camera checks without a format: N/A for THAT reason, never a cut format's words (S8-33);
+ (4) `path.plan_report` rule 5, its second half: more changes of place than the allowance with no act shorter than ACT_MIN_S - only the first half is tested (S8-34);
+ (5) `format_ending` without a format: its words (N/A alone is also what "ends on a tease" gives) (S8-40);
+ (6) F3's arrival with its "you" in the second-last sentence of the last line ("You turn the last corner. Home.") (S8-57);
+ (7) `formats.ending_issues` silent for an ending that is the format's, and F3's fix words naming the arrival (S8-58, S8-59);
+ (8) seven of the fifteen patterns of `cta.is_ask` are reached by the sixteen asks of the memo only through a neighbouring pattern (measured by a scratch
+     script that took each pattern out in turn: "Hit the subscribe button." is also "subscribe button", "Share this video with someone ..." is also "share it with
+     someone") - seven asks, each recognised by its own pattern ALONE: "Tap subscribe.", "Click the subscribe button.", "Turn on the notification bell.", "Leave
+     a like.", "Thumbs up if you would stay.", "Share the video.", "Follow the channel." (S8-69 to S8-75);
+ (9) `episode.anchors_for`: the plan's living and kling counts in the budget and the opening's lines - every test passes empty plans (S8-87, S8-88);
+ (10) `Job.rerender_times` clears the fall-back mark of a state it re-draws whole (S8-89);
+ (11) the sweep: a trial's camera check N/A for any reason but "cuts between its pictures" makes the id bad (S8-116);
+ (12) every rewrite order that carries the asks, AT ITS OWN CALL SITE - `humanize`, `extend`, the fact fix, the retention fix, the Owner's Cut - and the room's
+     three `_place_asks` call sites: the tests read `_keep_asks`, `_asks_words` and `_place_asks` themselves, never the places that use them (S8-77 to S8-84);
+ (13) the plan stage's SECOND voice call (after the writer lengthened a short script) hands the beats on (S8-85).
+DESIGN QUESTION 21 (found while writing (10); NOT settled in code - for the Fable finisher, A5): a state that FELL BACK is recorded with `sign` 0 (DESIGN QUESTION
+15), so `Job.rerender_times` re-draws it WITHOUT its act's sign and pool (`pk_` reads the record's sign): its new move may be `pull` or `kb_roll`, the record then
+says so, and `camera_shown` would hold the video. The memo says a re-render draws "a still state of a `path` shot WITH that state's sign and pool"; typed from
+the record it cannot for a fall-back state. The reading that changes less: no code is changed by this typist; the test of (10) asserts only what holds for
+every state (the fall-back mark cleared, a move recorded). A Fable session decides whether the re-render takes the sign from the shot's `path` mark.
 
 ### V2d-b - THE LADDER'S RULES (13 Nov 2026) - ACCEPTED (final code commit 5827d97 GREEN in GitHub Checks run 159: 1551 passed; sweep 58 of 58 ids)
 (Its code is d8101c8; every later commit is text only. History: built on 60d9483; the prover's FIRST PASS on 60d9483 was RED - the sweep

@@ -992,3 +992,113 @@ def test_the_sweep_judges_every_long_video_and_every_rehearsal_and_the_rehearsal
     assert 'if res["outcome"] == "ok":                                              # v12 V2b: the rehearsal\'s long video judged by the sweep\'s own words too' in src
     r = inspect.getsource(RH.run)
     assert 'ok12, said12 = inside12(core12, epid); assert ok12, ("the inside of the format did not hold", said12)' in r and 'print("inside the format:", said12[:420])' in r
+
+# ------------------------------------------------------------------ 15. ASSERTIONS THE BREAK LIST FOUND MISSING (step 8, written before the first break run; each names its break)
+def test_a_past_you_is_also_any_long_ed_word_that_is_not_a_present_verb():
+    """S8-07: after 'you', a word of five or more letters ending in 'ed' is a memory even when it is not in the PAST list."""
+    assert "climbed" not in IN.PAST and "aimed" not in IN.PAST
+    for s in ("You climbed the stairs to the roof.", "You aimed the torch at the sky."):
+        assert IN.past(s) and not IN.is_inside(s, "DIRECTOR", "F1"), s
+
+def test_open_acts_leaves_a_timeline_without_beats_and_a_switched_off_rule_alone(inside, setting):
+    """S8-19, S8-21: a timeline saved without beats, or the voice rule switched off, leaves every shot as it was - even a graphic on the first line."""
+    units = [{"text": f"Line {i}.", "start": i * 3.0, "end": i * 3.0 + 2.5, "beat": b} for i, b in enumerate([1, 1, 2, 2])]
+    shots = [{"type": t, "prompt": f"shot {i}", "graphic": {"kind": "counter"}} for i, t in enumerate(["graphic", "still", "graphic", "still"])]
+    with FMT.using("F1"):
+        assert [s["type"] for s in IN.open_acts(shots, units)] == ["still", "still", "still", "still"]                  # the rule at work: both beats open on a picture
+        assert IN.open_acts(shots, [{k: v for k, v in u.items() if k != "beat"} for u in units]) == shots              # no beats: left alone
+        setting("INSIDE_ON", "FALSE"); assert IN.open_acts(shots, units) == shots                                       # switched off: left alone
+
+def test_both_camera_checks_say_why_they_are_not_applicable_without_a_format(camera):
+    """S8-33: an episode without a format is N/A for its own reason, never in a cut format's words."""
+    c = _path_ctx(); c["d"]["format"] = ""
+    for f in (CON.p_camera_path, CON.p_camera_shown):
+        s, ev = f(c); assert s == CON.NA and ev.startswith("no format on this episode"), (f.__name__, ev)
+
+def test_check_camera_path_fails_when_the_changes_of_place_are_over_the_allowance(camera):
+    """S8-34: five acts of 16 s in an 80-second film are four changes of place against an allowance of 3, none shorter than ACT_MIN_S - the joins did not
+    run: FAIL (the second half of rule 5; the first half, an act shorter than ACT_MIN_S, is tested above)."""
+    u, t = _lines([(b, 16) for b in range(1, 6)])
+    shots = [{"type": "still", "prompt": PATH.sentence(f"place {b}") + "x", "pov": {"angle": "eye level"}, "path": {"act": b, "place": f"place {b}", "sign": 1, "first": True}} for b in range(1, 6)]
+    assert t == 80 and PATH.allowance(t) == 3
+    s, ev = CON.p_camera_path({"d": {"format": "F1", "stills": 0}, "units": u, "shots": shots, "plan": {}, "total": t})
+    assert s == CON.FAIL and "5 acts, one shorter than 12 s or more than 3 changes of place: the joins did not run" in ev, ev
+
+def test_check_format_ending_says_why_it_is_not_applicable_without_a_format(endings):
+    """S8-40: no format on the episode is N/A for its own reason (N/A alone is also what 'ends on a tease' gives)."""
+    s, ev = CON.p_format_ending(ctx(J(GOOD1), "")); assert s == CON.NA and ev.startswith("no format on this episode"), ev
+
+def test_the_arrival_may_speak_to_you_in_the_sentence_before_the_last(endings):
+    """S8-57: F3's arrival finds 'you' in the last spoken line's LAST TWO sentences - a closing word after a 'you' sentence is an arrival too."""
+    assert FMT.ending_report(J(GOOD1) + "\n[DIRECTOR] You turn the last corner. Home.", "F3")["problems"] == []
+    p = FMT.ending_report(J(GOOD1) + "\n[DIRECTOR] The bakery is open. The street is quiet. Home.", "F3")["problems"]
+    assert p and p[0].startswith("the last line is not the arrival"), p
+
+def test_the_ending_fix_is_silent_when_the_ending_is_the_formats_and_says_the_arrival_in_the_walk(endings):
+    """S8-58, S8-59: no ENDING FIX for an ending that is the format's; F3's fix words name the arrival, never the question."""
+    with FMT.using("F1"): assert FMT.ending_issues(J(GOOD1 + ["[DIRECTOR] Would you keep it?"])) == []
+    with FMT.using("F3"):
+        assert FMT.ending_issues(J(no_foil(GOOD1) + ["[DIRECTOR] You are home, and you see your street differently."])) == []
+        iss = FMT.ending_issues(J(no_foil(GOOD1) + ["[DIRECTOR] Subscribe for more."]))
+        assert len(iss) == 1 and "the arrival: one sentence to 'you' saying what you now see differently" in iss[0] and "would you keep it" not in iss[0], iss
+
+SEVEN_ASKS = [("Tap subscribe.", "subscribe"), ("Click the subscribe button.", "subscribe"), ("Turn on the notification bell.", "subscribe"), ("Leave a like.", "like"),
+              ("Thumbs up if you would stay.", "like"), ("Share the video.", "share"), ("Follow the channel.", "comment")]
+
+def test_seven_more_asks_each_recognised_only_by_its_own_pattern(endings):
+    """S8-69 to S8-75: the sixteen asks of the memo reach eight of the fifteen patterns of cta.is_ask on their own; each of these seven reaches one of the
+    other seven ALONE (measured: with that one pattern taken out, the sentence is no ask) - so every pattern has an assertion of its own."""
+    assert [(s, k, CTA.is_ask(s)) for s, k in SEVEN_ASKS if CTA.is_ask(s) != k] == []
+
+def test_the_one_helper_counts_the_living_and_kling_budget_and_the_opening():
+    """S8-87, S8-88: episode.anchors_for hands anchor_shots EXACTLY the asset step's arguments - the budget d['stills'] + plan['living'] + plan['kling'] and
+    the opening's lines - on a shot list where either one missing gives other pictures."""
+    u = [{"start": i * 5.0, "end": i * 5.0 + 4.5, "text": f"Line {i}.", "beat": 1} for i in range(14)]
+    sh = [{"type": "still"} for _ in u]; sh[12] = {"type": "living"}; sh[13] = {"type": "kling"}
+    op = sorted(set(ROOM.opening_units(u))); want = EP.anchor_shots(sh, 5, opening=op)
+    assert want != EP.anchor_shots(sh, 3, opening=op) and want != EP.anchor_shots(sh, 5, opening=[])                   # the case tells the three apart
+    assert EP.anchors_for(sh, u, {"stills": 3}, {"living": 1, "kling": 1}) == want
+
+def test_a_re_render_clears_the_fall_back_mark_when_the_picture_is_drawn_again(camera, setting, tmp_path, monkeypatch):
+    """S8-89: a state that fell back and is re-drawn whole is no fall-back any more, and the move it was drawn with is recorded (DESIGN QUESTION 21: WHICH
+    move a fall-back state is re-drawn with is a Fable session's to decide)."""
+    real = RN.parallax_segment
+    job, shots = _render_record(tmp_path, monkeypatch, setting, fail=1)
+    fb = [m for m in job.segmeta if m["i"] == 1]; assert fb and all(m["fallback"] for m in fb), fb
+    monkeypatch.setattr(RN, "parallax_segment", real); monkeypatch.setattr(job, "rebuild_video", lambda: None)
+    job.rerender_times([fb[0]["f0"] / RN.fps() + 0.1])
+    again = [m for m in job.segmeta if m["i"] == 1]; assert again and all(not m["fallback"] and m["move"] for m in again), again
+
+def test_the_sweep_holds_a_trial_whose_camera_is_not_applicable_for_another_reason():
+    """S8-116: a trial's camera checks may say N/A only in the words 'cuts between its pictures'."""
+    from tools import sweep as SW
+    _sweep_case("EPSW8", "F2", dict(GOOD_F1, format_ending=(CON.NA, "format F2 ends on a tease"), camera_path=(CON.NA, "the camera path is switched off (CAMERA_PATH_ON)"),
+                                    camera_shown=(CON.NA, "format F2 cuts between its pictures")))
+    ok, w = SW.inside_of(core, "EPSW8"); assert not ok and "camera_path N/A" in w, w
+
+def test_each_rewrite_order_is_told_the_formats_asks_where_it_is_sent(endings, setting, monkeypatch):
+    """S8-77 to S8-84: every place that sends a rewrite order carrying the asks - the human editor, the lengthening, the fact fix, the retention fix (called
+    here) and the Owner's Cut (inside the room) - says the format's asks (F1 the one subscribe ask, F3 none); and the room places the asks at its three call sites."""
+    import inspect
+    seen = []
+    def ask(task, system, prompt, **k):
+        seen.append((task, str(system) + " " + str(prompt)))
+        return {"issues": [{"severity": "wrong", "claim": "the cup", "correction": "the mug"}]} if task == "research" else {"script": ""}
+    monkeypatch.setattr(ROOM, "ask", ask); setting("FACT_CHECK_ON", "TRUE"); setting("RETENTION_GATE_ON", "TRUE")
+    monkeypatch.setattr(ROOM.GR, "retention_issues", lambda *a, **k: {"ok": False, "issues": ["the promise is not named"], "max_gap": 0})
+    sc = {"script": "## BEAT 1\n[DIRECTOR] You wake up and your pillow is on the ceiling."}
+    for fmt, words in (("F1", "the one subscribe ask"), ("F3", "no audience ask (there is none: add none)")):
+        seen.clear()
+        with FMT.using(fmt):
+            ROOM.humanize(sc, "EPRW"); ROOM.extend({}, sc["script"], 10, "EPRW"); ROOM.fact_check({"premise": "p"}, sc, "EPRW"); ROOM.retention_pass(sc, "brief", "promise", "EPRW")
+        got = {}
+        for task, text in seen: got.setdefault(task, text)
+        for task in ("humanize", "length", "factfix", "retention"): assert task in got and words in got[task], (fmt, task, got.get(task, "")[:300])
+    src = inspect.getsource(ROOM._run_room)
+    assert src.count("_place_asks(") == 3 and '"OWNER\'S CUT FIXES (the owner\'s own taste; apply all, keep every label, tag, \'## BEAT\' line, fact and " + FMT.asks_keep() + "): "' in src
+
+def test_both_voice_calls_of_the_plan_stage_hand_the_beats_on():
+    """S8-85: the narration made again after the writer lengthened a short script carries the beats too (the plan stage's second voice call)."""
+    import inspect
+    src = inspect.getsource(EP._stage_plan); after = src.split("longer = ROOM.extend(")[1]
+    assert src.count("line_beats=beats") == 2 and "clean, beat_marks, beats = _strip_beats(script)" in after and "line_beats=beats" in after
