@@ -9,8 +9,13 @@
    "verdict": "V2d-b_5827d97_1.json"
   }
  ],
- "audit_queue": [
-  "V2d-b"
+ "audit_queue": [],
+ "audited": [
+  {
+   "at": "2026-11-14T03:18:41Z",
+   "batch": "V2d-b",
+   "verdict": "VERDICT: FINDINGS (1)"
+  }
  ],
  "base_commit": "5827d97dc5aa948c27ae7f77832013a11108a3c7",
  "batch": "V2b",
@@ -116,5 +121,5 @@
  "phase": "DESIGN",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-14T03:13:06Z"
+ "updated": "2026-11-14T03:18:41Z"
 }
