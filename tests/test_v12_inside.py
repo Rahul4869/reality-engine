@@ -1102,3 +1102,27 @@ def test_both_voice_calls_of_the_plan_stage_hand_the_beats_on():
     import inspect
     src = inspect.getsource(EP._stage_plan); after = src.split("longer = ROOM.extend(")[1]
     assert src.count("line_beats=beats") == 2 and "clean, beat_marks, beats = _strip_beats(script)" in after and "line_beats=beats" in after
+
+def test_the_asset_step_buys_an_acts_first_picture_the_repetition_guard_would_not_pick(camera, tmp_path):
+    """S4-44 (MISSED by the first break run): act 2 opens on shot 2 of 8, where the repetition guard puts no picture ([0, 4] without the act's first still)
+    - the asset step asks the one helper, so act 2's first picture is made with a budget of 0."""
+    u, t = _lines([(1, 20)] * 2 + [(2, 20)] * 6)
+    with FMT.using("F1"): shots, _ = PATH.mark([{"type": "still", "prompt": f"p{i}"} for i in range(8)], u, t, {}, "EPA2")
+    assert shots[2]["path"]["first"] and shots[2]["path"]["act"] == 2 and 2 not in EP.anchor_shots(shots, 0, opening=sorted(ROOM.opening_units(u)))      # the guard alone would not pick it
+    f = EP._assets(shots, u, str(tmp_path), "EPA2", budget=0)
+    assert 2 in f["anchors"] and 2 in f["img"], f["anchors"]
+
+def test_in_the_walk_the_45_percent_rule_counts_the_guides_labels_only(endings):
+    """S5-06 (MISSED by the first break run): a walk whose lines are mostly the foil's carries too few of the guide's labels - every other F3 script of
+    these tests has the guide alone, where both counts are the same number."""
+    s = "\n".join(["[DIRECTOR] You open your door."] * 3 + ["[SKEPTIC] Wait, what is that?"] * 5)
+    with FMT.using("F3"):
+        r = FE.check_script(s)
+        assert not r["ok"] and r["labeled"] == 3 and r["issues"] == ["only 3 of 8 spoken lines carry a [DIRECTOR] or [SKEPTIC] label (need at least 45 percent)"], r
+
+def test_with_the_endings_switched_off_the_format_block_of_every_format_is_as_before(setting):
+    """S8-96 (MISSED by the first break run): ENDINGS_ON FALSE leaves the block of F1 and F3 as it was - the Shorts line, the story engine's ending, the
+    speaker tag - not only a trial's, which is its own either way."""
+    setting("ENDINGS_ON", "FALSE")
+    for k in ("F1", "F2", "F3"):
+        with FMT.using(k): assert FE._for_format(FE.REALITY_ENGINE) == FE.REALITY_ENGINE, k

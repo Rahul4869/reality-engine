@@ -1676,6 +1676,21 @@ DESIGN QUESTION 21 (found while writing (10); NOT settled in code - for the Fabl
 says so, and `camera_shown` would hold the video. The memo says a re-render draws "a still state of a `path` shot WITH that state's sign and pool"; typed from
 the record it cannot for a fall-back state. The reading that changes less: no code is changed by this typist; the test of (10) asserts only what holds for
 every state (the fall-back mark cleared, a move recorded). A Fable session decides whether the re-render takes the sign from the shot's `path` mark.
+STEP 8 (2) - THE CANDIDATE: commit 04b8067 (the record above and section 15 of `tests/test_v12_inside.py`; its thirteen tests run alone: "13 passed, 75 deselected
+in 4.63s"), pushed, the tree clean; `proving/breaks/V2b.json` holds 320 breaks, every anchor found exactly once and every named test present (a read-only script).
+STEP 8 (3) - THE FIRST BREAK RUN (on 04b8067; `python proving/breaks.py V2b` from the handoff folder, detached, alone - no other python process - 48 minutes):
+"BREAKS V2b: 317 caught, 3 MISSED, 0 void of 320 listed" (S4-44, S5-06, S8-96); `git status` clean after it. EACH MISSED BREAK REPRODUCED ALONE before it was
+explained - on a plain export of 04b8067 in the scratchpad, the break applied and its test run as `breaks.py` runs it ("1 passed") - then MEASURED there, broken
+and unbroken (a read-only probe). MISSING ASSERTIONS FOUND BY THE FIRST RUN (written here BEFORE their tests; tests only, no production line changes):
+ (14) S4-44 (`episode._assets` asks the one helper): the test's act 2 opens on shot 4 of 8, where the repetition guard (`FREE_SHOT_MAX_RUN` 3) puts a picture
+     anyway - measured `anchors_for` [0, 4] and `anchor_shots` without the act's first still [0, 4]: the test passed for a reason other than its name (the
+     lesson "a second guard hides a broken first one"). With act 2 opening on shot 2: [0, 2, 5] against [0, 4]. A NEW test on that case; the old one is not changed.
+ (15) S5-06 (in F3 the 45-percent rule counts the guide's labels only): every F3 script of the tests has the guide alone, where the two counts are the same
+     number. Measured on an F3 script of 3 guide lines and 5 foil lines: "only 3 of 8 spoken lines carry a [DIRECTOR] or [SKEPTIC] label (need at least 45
+     percent)", ok False - with the break 8 labelled, ok True. A new test.
+ (16) S8-96 (`format_engine._for_format` leaves every block as it was while ENDINGS_ON is FALSE): the test compares only a TRIAL's block with the switch off -
+     a trial's block is its own either way - and finds in F1 the line "Audience asks: exactly three", which `formats.asks()` keeps with the switch off. Measured
+     with the switch off: the blocks of F1 and F3 equal `REALITY_ENGINE` (True); with the break False (the line "Shorts:" is gone). A new test.
 
 ### V2d-b - THE LADDER'S RULES (13 Nov 2026) - ACCEPTED (final code commit 5827d97 GREEN in GitHub Checks run 159: 1551 passed; sweep 58 of 58 ids)
 (Its code is d8101c8; every later commit is text only. History: built on 60d9483; the prover's FIRST PASS on 60d9483 was RED - the sweep
