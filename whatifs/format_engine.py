@@ -64,15 +64,23 @@ def labels_preserved(old: str, new: str) -> bool:
     o = label_count(old)
     return o == 0 or label_count(new) >= 0.85 * o
 
+def one_voice() -> bool:
+    """v12 V2b: is the episode in the making a format with ONE voice (F3: the guide alone)? Only while ENDINGS_ON (3.3: every place changes only then)."""
+    from whatifs.core import S
+    from whatifs import formats as FMT
+    k = FMT.current()
+    return bool(S("ENDINGS_ON", bool) and k in FMT.FORMATS and len(FMT.FORMATS[k]["voices"]) == 1)
+
 def check_script(script: str) -> dict:
-    """Code-side check of the two-role format. ok=False means the writer must be asked once to fix it."""
+    """Code-side check of the two-role format. ok=False means the writer must be asked once to fix it. v12 V2b: a format with one voice is never
+    asked for a second role, and its 45-percent rule counts the guide's labels."""
     if mode() == "classic": return {"ok": True, "issues": [], "units": 0, "labeled": 0, "director": 0, "skeptic": 0}
-    us = _units(script); n = max(1, len(us))
+    us = _units(script); n = max(1, len(us)); one = one_voice()
     d = sum(1 for u in us if u.speaker == "DIRECTOR"); k = sum(1 for u in us if u.speaker == "SKEPTIC")
-    lab = d + k + sum(1 for u in us if u.speaker in ("JUDGE", "WITNESS"))       # v9: the judge and the witness are labelled lines too
+    lab = d if one else d + k + sum(1 for u in us if u.speaker in ("JUDGE", "WITNESS"))       # v9: the judge and the witness are labelled lines too
     issues = []
     if lab / n < 0.45: issues.append(f"only {lab} of {len(us)} spoken lines carry a [DIRECTOR] or [SKEPTIC] label (need at least 45 percent)")
-    if min(d, k) < max(3, int(0.12 * (d + k))): issues.append(f"one role barely speaks (DIRECTOR {d}, SKEPTIC {k}); both must contribute reasoning")
+    if not one and min(d, k) < max(3, int(0.12 * (d + k))): issues.append(f"one role barely speaks (DIRECTOR {d}, SKEPTIC {k}); both must contribute reasoning")
     return {"ok": not issues, "issues": issues, "units": len(us), "labeled": lab, "director": d, "skeptic": k}
 
 ASKS_ONE = ("Audience asks: exactly ONE short, witty, in-story moment in which the Curious One asks for a subscribe, after a payoff, never near the end; no like "
@@ -91,7 +99,14 @@ def _for_format(block: str) -> str:
     trial = FMT.FORMATS[k]["show"]; a = FMT.asks(); out = []
     from whatifs import path as PATH
     path_ = PATH.on(); grammar = False                                     # v12 V2b: in a camera-path format the two visual-grammar lines become ONE line, the path's rules
+    one = len(FMT.FORMATS[k]["voices"]) == 1; reactions = False            # v12 V2b (3.3 d): a format with ONE voice is told of no second role and no reactions
     for line in block.split("\n"):
+        if one:
+            if line.startswith("Reaction rules:"): reactions = True; continue
+            if reactions and line.startswith("- "): continue
+            reactions = False
+            if line.startswith(("- [SKEPTIC] =", "- Write natural back-and-forth", "- Alternate speakers")): continue
+            line = line.replace("The two of them are the whole show: no third voice, no announcer.", "The guide is the whole show: no second voice, no announcer.")
         if path_ and (line.startswith("- The studio/control room is a recurring home base") or line.startswith("- Visualize consequences whenever")):
             if not grammar: out.append("- " + PATH.director_rules()); grammar = True
             continue
@@ -125,6 +140,10 @@ def instructions(role: str = "general") -> str:
     from whatifs import path as PATH, formats as FMT
     if S("ENDINGS_ON", bool) and FMT.current() in FMT.FORMATS and PATH.on():        # v12 V2b: a camera-path format has no studio for setup, debate and verdict
         role_notes["director"] = role_notes["director"].replace("use the studio/control room for setup, debate, and verdict; ", "")
+    if one_voice():                                                                   # v12 V2b (3.3 d): each note minus the clause that names the second role
+        role_notes["memo"] = role_notes["memo"].replace("the two recurring presenter roles (Director, Skeptic) and ", "")
+        role_notes["writer"] = role_notes["writer"].replace(" or [SKEPTIC]", "").replace("; don't force both characters into every beat", "")
+        role_notes["critic"] = role_notes["critic"].replace("the two roles contribute distinct reasoning, ", "")
     return base + "\n\nROLE-SPECIFIC REQUIREMENTS: " + role_notes.get(role,"Keep the simulation visually legible, character-driven, original, and scientifically honest.")
 
 def enrich_spine(spine: dict) -> dict:

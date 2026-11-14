@@ -325,7 +325,7 @@ def test_no_free_trial_slot_or_trials_switched_off_means_refused(setting):
 
 def test_the_long_video_records_its_arms_in_its_features():
     src = open(os.path.join(ROOT, "whatifs", "episode.py"), encoding="utf-8").read()
-    assert 'arm={"playbook": d.get("playbook") or {}}' in src and src.count("BRN.tag(") == 1
+    assert 'arm={"playbook": d.get("playbook") or {}, "format": d.get("format") or ""}' in src and src.count("BRN.tag(") == 1      # v12 V2b: the format is an arm too
 
 # ------------------------------------------------------------------ lever class E: a code build
 class Hub:

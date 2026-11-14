@@ -513,6 +513,8 @@ def learn():
     except Exception as x: log(f"v12 V2d move skipped: {scrub(x)}", "WARN")
     try: v12v2db_upgrade(st)                                     # v12 V2d-b: the living model leaves the one licensed for research only
     except Exception as x: log(f"v12 V2d-b move skipped: {scrub(x)}", "WARN")
+    try: v12v2b_upgrade(st)                                      # v12 V2b: F3 joins the mix (the shares 60 / 20 / 20, his own values stay)
+    except Exception as x: log(f"v12 V2b move skipped: {scrub(x)}", "WARN")
     try:
         from whatifs import craft as CRF; CRF.seed_techniques()       # v9.3.2: the owner's pre-judged technique cards, filed once
     except Exception as x: log(f"technique seeding skipped: {scrub(x)}", "WARN")
@@ -832,6 +834,19 @@ def v12v2db_upgrade(st):
     except Exception as x: log(f"v12 V2d-b: the living model was not moved now ({scrub(x)[:120]}); a living clip is bought from the hero's row meanwhile", "WARN")
     set_setting("V12V2DB_MOVE_DONE", iso() + " " + (",".join(done) or "none"))
     if done: log("v12 V2d-b: stills are brought to life by a model of the clip market that is licensed for commercial use; changed on the Sheet: " + ", ".join(done))
+    return done
+
+V12V2B_FLIPS = [("FORMAT_SHARE_F1", "70", "60"), ("FORMAT_SHARE_F2", "30", "20"), ("FORMAT_SHARE_F3", "0", "20")]      # v12 V2b: what the one-time move may change on a live Sheet
+
+def v12v2b_upgrade(st):
+    """ONE time on a live Sheet (v12 V2b, inside the format): F3 'The walk' is a format now and joins the mix as an arm - the shares move to 60 / 20 / 20
+    (the redesign's 10.7; levers of D1). A cell is moved only while it still holds the OLD default: a share the owner set himself stays. Never runs twice."""
+    if str(S("V12V2B_MOVE_DONE") or "").strip(): return []
+    done = []
+    for k, old, new in V12V2B_FLIPS:
+        if str(S(k) or "").strip() == old: set_setting(k, new); done.append(k)
+    set_setting("V12V2B_MOVE_DONE", iso() + " " + (",".join(done) or "none"))
+    if done: log("v12 V2b: the format shares are 60 / 20 / 20 now - F3 'The walk' joins the mix as an arm")
     return done
 
 V12V2DB_OLD_LIVING = "fal-ai/ltx-video/image-to-video"          # licensed for research only on its provider's own page and listing (read 13 Nov 2026)
@@ -1309,6 +1324,8 @@ def setup():
     except Exception as x: log(f"v12 V2d move skipped: {scrub(x)}", "WARN")
     try: v12v2db_upgrade(st)                                     # v12 V2d-b: the living model leaves the one licensed for research only
     except Exception as x: log(f"v12 V2d-b move skipped: {scrub(x)}", "WARN")
+    try: v12v2b_upgrade(st)                                      # v12 V2b: F3 joins the mix (the shares 60 / 20 / 20, his own values stay)
+    except Exception as x: log(f"v12 V2b move skipped: {scrub(x)}", "WARN")
     try:                                                         # v12: the founding knowledge is in the Palace from the first run
         from whatifs.org import palace as PAL, runner as ORGR; PAL.maintain(st); ORGR.install(st)
     except Exception as x: log(f"palace seed skipped: {scrub(x)}", "WARN")

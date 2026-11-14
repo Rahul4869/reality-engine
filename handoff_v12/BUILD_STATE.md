@@ -1395,6 +1395,44 @@ and nothing else (the paid-call counter). Run alone: 57 unit tests "57 passed in
 STEP 4'S RUN (real pytest, parallel `-n 6`, strict, THE WHOLE SUITE): "1613 passed in 2013.70s (0:33:33)", 0 failed. Plan Guard GREEN, Truth GREEN, the
 Organisation GREEN, `tools/gen_docs.py` wrote `SYSTEM.md`. Breaks S4-01 to S4-69 written into `proving/breaks/V2b.json` (each anchor found exactly once; 152 in
 the list) - NOT RUN.
+Step 4 committed and pushed: 20d575e.
+STEP 5 - F3 "THE WALK" (3.5 and 3.3 d). TESTS CHANGED BY DESIGN IN STEP 5 (found by the step's whole-suite run "2 failed, 1617 passed"; each read,
+explained and named here BEFORE it is changed): (1) `tests/test_v12_formats.py::test_the_format_of_a_new_episode` asserts "F3 is not built: it cannot be
+forced or drawn" (`FORMAT_FORCE` F3 picks F1 / F2) - 3.5 switches F3's row on, so forcing F3 gives F3: the line becomes "F3 is a format now: it can be
+forced". (2) `tests/test_v12_exec.py::test_the_long_video_records_its_arms_in_its_features` pins the source text `arm={"playbook": d.get("playbook") or {}}`
+of `episode._finish` - DESIGN QUESTION 17 adds the format to that arm: the pin reads the new text.
+READ WHOLE OR BY THE PARTS THE STEP CHANGES before the first edit: `formats.py` and `format_engine.py` (again, whole), `fakes.py` (the stand-in lines, the
+writer's and the bible's replies), `growth.rhythm_brief`, `room._run_room`'s writer brief, `manage.py` (the newest one-time move and both setup sites),
+`brain.tag`, `episode._finish` (the tag call), `tests/test_v91_matrix.py` (the flips test) and `tests/test_v12_formats.py`.
+BUILT AS WRITTEN: F3's row `status` "on"; `F3_SHOWRUNNER`, `F3_BIBLE`, `F3_WRITER` word for word, served by `formats.block` (F3 uses F1's two rubrics, as
+before); `kept_report` finds ANY speaker label outside the row's voices in a format that is not a trial (F1's findings unchanged; F3 finds [SKEPTIC]);
+3.3 (d): `format_engine.one_voice()` (the episode's format has one voice, while `ENDINGS_ON`), `check_script` without "one role barely speaks" and with the
+45-percent rule on the guide's labels, the block without "- [SKEPTIC] =", "Reaction rules:" and its four lines, "- Write natural back-and-forth" and
+"- Alternate speakers", with "The guide is the whole show: no second voice, no announcer."; THE THREE SHORTENED ROLE NOTES (each the note minus the clause
+that names the second role): memo "Department memo: keep your advice consistent with the faceless presenter rule."; writer "... Label dialogue lines
+[DIRECTOR]. ... Give each beat at least one new visual event or meaningful turn."; critic "Critic: assess whether the simulation escalates visually, the
+premise is clear immediately, and the conclusion distinguishes fact from speculation. ..."; `prompts.WRITER`'s banter filled "none (one voice)";
+`growth.rhythm_brief` without its REACTIONS clause; the shares 60 / 20 / 20 (`FORMAT_SHARE_F3`'s lever and registry entry existed already, exactly as F1's
+and F2's), cell `V12V2B_MOVE_DONE`, `manage.V12V2B_FLIPS` and `v12v2b_upgrade` at both setup sites (only a cell that still holds the OLD default moves;
+never twice); `OLD_INSIDE` gains the shares 70 / 30 / 0; the offline writer of F3 (every line the guide's; the arrival line, DESIGN QUESTION 16); the arm on
+record (DESIGN QUESTION 17).
+DESIGN QUESTION 16: the words of the offline F3 writer's last line (the memo sets none): "[DIRECTOR] [close] You are home, and you see your street
+differently." - the arrival the step-2 test already used, appended while `ENDINGS_ON` and the format ends on its arrival.
+DESIGN QUESTION 17: 3.5 says the learning core records the arm "where it records F1 and F2" and asks for a test that "a finished F3 episode's row on tab
+`Video_Features` carries the format". Found: `Video_Features.format` holds "long" / "short" (`brain.tag`'s `fmt`), and F1 / F2 are recorded in the draw
+(`Episodes.draw_json`), not in `Video_Features`. Taken (no new column - the tab is append-only - and nothing a viewer sees changes): the format goes into the
+row's `arm` JSON beside the playbook ("the video's experiment arms are in its features"), `{"playbook": ..., "format": "F3"}`; the draw keeps it as before.
+DESIGN QUESTION 10 (`room.format_pass`'s fix words in F3) needs no change: with `one_voice()` a script of the guide's labels passes `check_script`, so no
+fix is paid (the whole F3 production makes NO call of the role "format").
+TESTS (`tests/test_v12_inside.py`, section 12): the row on with its three texts and F1's rubrics, F1_BIBLE's sentence; a voice outside the row in F3 and
+F1's findings unchanged; one voice never asked for a second role and told of none (each removed line, the shortened notes, the rhythm brief), F1 keeping
+both, the room's banter fill; the shares, the one-time move (all three, never twice, his own value stays, both setup sites) and `shares()` with F3 in it;
+the offline F3 writer (the guide alone, 70% or more inside, the arrival; switched off as before); and the reserved second whole production, AN F3 VIDEO
+(`OWN_IDS[1]`): one voice on the timeline, NO paid call of the role "format", one sign for every act, `camera_shown` PASS, `format_ending` PASS "ends on its
+arrival", `viewer_inside` and `format_kept` PASS, the arm "F3" on `Video_Features`. Run alone: the step's tests "8 passed in 50.49s".
+STEP 5'S RUN (real pytest, parallel `-n 6`, strict, THE WHOLE SUITE): "2 failed, 1617 passed in 2047.70s (0:34:07)" - the two pins named above, changed
+by design; then those two files whole: "98 passed in 224.36s". Plan Guard GREEN, Truth GREEN, `tools/gen_docs.py` wrote `SYSTEM.md`. Breaks S5-01 to
+S5-20 written into `proving/breaks/V2b.json` (each anchor found exactly once; 172 in the list) - NOT RUN.
 
 ### V2d-b - THE LADDER'S RULES (13 Nov 2026) - ACCEPTED (final code commit 5827d97 GREEN in GitHub Checks run 159: 1551 passed; sweep 58 of 58 ids)
 (Its code is d8101c8; every later commit is text only. History: built on 60d9483; the prover's FIRST PASS on 60d9483 was RED - the sweep

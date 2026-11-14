@@ -15,7 +15,7 @@ FORMATS = {
            "devices": dict({k: "never" for k in _TRIAL}, joke_density="advisory", send_and_awe="advisory", emotion_beat="advisory", audience_asks="advisory", end_tease="advisory")},
     "F2": {"name": "The trial", "status": "on", "show": True, "voices": ("DIRECTOR", "SKEPTIC", "JUDGE", "WITNESS"), "share": "FORMAT_SHARE_F2", "devices": {},
            "inside": "INSIDE_MIN_PCT_F2", "lecture": "LECTURE_MAX_F2", "ending": "tease", "asks": ("like", "subscribe", "share"), "chips": True, "camera": "cut"},
-    "F3": {"name": "The walk", "status": "later", "show": False, "voices": ("DIRECTOR",), "share": "FORMAT_SHARE_F3", "devices": {k: "never" for k in DEVICES},
+    "F3": {"name": "The walk", "status": "on", "show": False, "voices": ("DIRECTOR",), "share": "FORMAT_SHARE_F3", "devices": {k: "never" for k in DEVICES},
            "inside": "INSIDE_MIN_PCT_F3", "lecture": "LECTURE_MAX_F3", "ending": "arrival", "asks": (), "chips": False, "camera": "walk"},
 }
 ALL_ASKS = ("like", "subscribe", "share")
@@ -43,6 +43,28 @@ F1_WRITER = ("FORMAT OF THIS EPISODE - F1 \"THE DAY IT CHANGED\". This episode i
              "leads; if it asks for a callback to an earlier video, make it one plain line without courtroom words.\n"
              "HUMOUR: at most three dry asides; never a joke to fill a gap.\n"
              "END ON THE QUESTION: 'would you keep it?', in your own words, is the LAST line of the video. Nothing follows it.")
+F3_SHOWRUNNER = ("FORMAT OF THIS EPISODE - F3 \"THE WALK\" (not a trial: no court, no charge, no exhibits, no jury, no judge; return no show_plan). Choose and "
+                 "phrase the premise as ONE walk the VIEWER takes through a world in which one law of nature is different - from his own front door outward. "
+                 "The thumbnail scene is what he sees when he opens that door.")
+F3_BIBLE = ("FORMAT OF THIS EPISODE - F3 \"THE WALK\" (not a trial). ONE unbroken walk, told as stations along ONE route, each reached on foot from the one "
+            "before - never a jump, never a flashback: (1) THE DOOR - you open your own front door and the impossible thing is already there; (2) THE STREET - "
+            "what it has done to the first hundred steps; (3) THE OTHERS - the first people or animals you pass, living with it; (4) THE EDGE - where your town "
+            "ends and you see how far it goes, with the one real piece of science that explains it, said while you are looking at it; (5) THE TURN - the one "
+            "beautiful or terrible thing you can only see from here; (6) THE ARRIVAL - where the walk ends, and what you now see differently. The "
+            "`visual_world` of every beat NAMES its station in three or four words ('your front step', 'the main road'). No courtroom, no charge, no "
+            "exhibits, no jury in any beat.")
+F3_WRITER = ("FORMAT OF THIS EPISODE - F3 \"THE WALK\". This episode is NOT a trial: no court, no charge, no judge, no jury, no witness, no exhibits, no "
+             "prototype - never those words. ONE law of nature is different today and YOU walk through it.\n"
+             "ONE VOICE ONLY: [DIRECTOR], a guide close to your ear - calm, exact, warm - speaking to 'you' in the present tense while you walk. Nobody else "
+             "speaks: no second voice, no interview, no quoted speech.\n"
+             "ONE ROUTE: you leave your front door and never go back; every beat is the next station of the same walk, reached on foot. Say what you pass, "
+             "what is under your feet, what you hear. An explanation is said only while you are looking at the thing it explains. ONE idea; whatever the "
+             "idea does not need is cut.\n"
+             "HUMOUR: at most two dry asides.\n"
+             "Where any rule, definition or example above names the Curious One, a guest, a second role, banter or a reaction line, it does not apply to "
+             "this episode: the guide speaks alone.\n"
+             "END ON THE ARRIVAL: the last line says, in one sentence to 'you', what you now see differently. No question is needed, no ask, and nothing "
+             "follows it.")
 F1_DRAFTS = ("Rank these narrations for a first-person science what-if show (\"it happens to you\"), best first. Judge ONLY what a viewer would feel: (1) would a "
              "stranger keep watching after the first 10 seconds; (2) is the viewer INSIDE the scene - his home, his body, his day; (3) clear stakes and a curiosity "
              "gap that pays off; (4) escalation with 'but/therefore', no 'and then', each step bigger than the last; (5) accurate science in everyday words; "
@@ -54,6 +76,7 @@ F1_JOKES = ("Rank these alternative lines for ONE moment of a first-person scien
 _TRIAL_RX = re.compile(r"\b(dr\.? grimm|grimm|inspector vale|nana rosa|the archivist|exhibit [a-h]\b|your honou?r|objection[!,.]|the jury|jurors?|the court(?:room)?\b|the charge\b|"
                        r"defendant|prosecut\w*|gavel|prototype no\b)", re.I)
 _OTHER_VOICE = re.compile(r"\[(JUDGE|WITNESS)\]|(?m:^\s*(?:JUDGE|WITNESS|NANA ROSA|THE ARCHIVIST)\s*:)")
+_ANY_VOICE = re.compile(r"\[(DIRECTOR|SKEPTIC|JUDGE|WITNESS)\]|(?m:^\s*(DIRECTOR|SKEPTIC|JUDGE|WITNESS)\s*:)")      # v12 V2b: every speaker label of the show
 _CUR = {"key": ""}          # the format of the episode being made in this process (one job makes one episode at a time)
 
 def on():
@@ -225,7 +248,8 @@ def pick(episode, draw=None, st=None):
 # ------------------------------------------------------------------ what a format tells the writers and the juries
 def block(role):
     """The format's own text for one room role ('showrunner' | 'bible' | 'writer'); '' for the trial (whatifs/show.py speaks for it) and when no format is set."""
-    return {"showrunner": F1_SHOWRUNNER, "bible": F1_BIBLE, "writer": F1_WRITER}.get(role, "") if current() == "F1" else ""
+    texts = {"F1": {"showrunner": F1_SHOWRUNNER, "bible": F1_BIBLE, "writer": F1_WRITER}, "F3": {"showrunner": F3_SHOWRUNNER, "bible": F3_BIBLE, "writer": F3_WRITER}}      # v12 V2b: F3's own
+    return texts.get(current(), {}).get(role, "")
 
 def rubric(kind):
     """What the blind jury is asked to rank by ('drafts' | 'jokes') in the format in the making; '' = the room's own rubric (the trial)."""
@@ -242,7 +266,8 @@ def kept_report(text, fmt, d=None):
         if not (d or {}).get("show_plan"): p.append("the trial has no Show Plan")
     else:
         words = list(dict.fromkeys(m.group(0).lower().strip("!,. ") for m in _TRIAL_RX.finditer(AUD.spoken(text))))
-        voices = sorted({(m.group(1) or m.group(0)).strip(" :[]\n").upper() for m in _OTHER_VOICE.finditer(str(text or ""))})
+        voices = sorted({(m.group(1) or m.group(0)).strip(" :[]\n").upper() for m in _OTHER_VOICE.finditer(str(text or ""))}
+                        | {(m.group(1) or m.group(2)).upper() for m in _ANY_VOICE.finditer(str(text or "")) if (m.group(1) or m.group(2)).upper() not in FORMATS[fmt]["voices"]})      # v12 V2b: any label outside the row's voices (F3: a [SKEPTIC] line)
         if words: p.append(f"courtroom words in a script that is not a trial: {', '.join(words[:6])}")
         if voices: p.append(f"a voice that is not part of this format speaks: {', '.join(voices[:4])}")
     return {"format": fmt, "trial_words": words, "other_voices": voices, "problems": p}

@@ -307,6 +307,11 @@ def rhythm_plan(name, rng, recent=()):
     plan["same_as_last"] = sum(1 for k in ("blueprint", "opener", "interrupt", "arc", "reactions") if prev.get(k) == plan[k])
     return plan
 
+def _one_voice():
+    """v12 V2b (3.3 d): a format with ONE voice gets no clause about the Curious One's reactions."""
+    from whatifs import format_engine as FE
+    return FE.one_voice()
+
 def rhythm_brief(plan, defs=None):
     from whatifs.data import OPENERS, INTERRUPTS
     if not plan: return ""
@@ -314,7 +319,7 @@ def rhythm_brief(plan, defs=None):
     return ("RHYTHM BLUEPRINT for THIS episode (viewers, and YouTube's rule against templated videos, both punish episodes that all feel the same; never reuse the "
             f"last episode's shape): {plan.get('blueprint')}: {defs.get(plan.get('blueprint'), '')} COLD OPEN DEVICE: {OPENERS.get(plan.get('opener'), plan.get('opener'))} "
             f"PATTERN INTERRUPT (exactly once, in the middle third): {INTERRUPTS.get(plan.get('interrupt'), plan.get('interrupt'))} "
-            f"REACTIONS: {REACTION_COUNT.get(plan.get('reactions'), '4-5')} short Curious One reaction lines. MUSIC ARC: {plan.get('arc')}. "
+            + ("" if _one_voice() else f"REACTIONS: {REACTION_COUNT.get(plan.get('reactions'), '4-5')} short Curious One reaction lines. ") + f"MUSIC ARC: {plan.get('arc')}. "
             "Write one or two [close] lines (quiet, intimate, slower) at the most human moment; vary sentence length hard (3-word lines next to long rolling ones).")
 
 # ------------------------------------------------------------------ 10. v8.7 measurement: CTR unit, related video, the steepest drop

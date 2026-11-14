@@ -29,7 +29,7 @@ def test_the_format_of_a_new_episode(setting):
     got = [FMT.pick(f"EP{i:04d}") for i in range(300)]; share = got.count("F1") / 300
     assert set(got) == {"F1", "F2"} and 0.6 < share < 0.8 and FMT.pick("EP0007") == got[7]          # the first episode of a Sheet is drawn by its id
     setting("FORMAT_FORCE", "f1"); assert FMT.pick("EPA") == "F1"
-    setting("FORMAT_FORCE", "F3"); assert {FMT.pick(f"EP{i:04d}") for i in range(40)} == {"F1", "F2"}         # F3 is not built: it cannot be forced or drawn
+    setting("FORMAT_FORCE", "F3"); assert {FMT.pick(f"EP{i:04d}") for i in range(40)} == {"F3"}               # v12 V2b: F3 is a format now: it can be forced
     setting("FORMAT_FORCE", ""); assert FMT.pick("EPA", {"deep_trial": True}) == "F2"
     os.environ["WI_FORMAT"] = "F1"
     try: setting("FORMAT_FORCE", "F2"); assert FMT.pick("EPA") == "F1"                 # the env var wins (a rehearsal or a sweep of one format)

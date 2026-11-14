@@ -256,15 +256,18 @@ def fake_reply(key, prompt):
         from whatifs import formats as _FMT
         f1 = not _FMT.show_allowed()          # v12 V2a: a format that is not a trial is answered like a compliant writer - without the trial's devices
         pool_ = _lines_inside(n) if _inside_on() else _lines(n)          # v12 V2b: with the voice rule on, the stand-in speaks to 'you' (off: byte for byte as before)
+        from whatifs import format_engine as _FE
+        one_ = _FE.one_voice()                                          # v12 V2b: in a format with ONE voice (F3) every line is the guide's
         for b, chunk in enumerate([pool_[i:i + 4] for i in range(0, n, 4)], 1):
             body.append(f"## BEAT {b}")
             for ln in chunk:          # v8.1: Reality Engine dialogue; three label styles are mixed on purpose to exercise the tolerant parser
                 if ln.startswith("[pause"): body.append(ln); continue
-                who = "DIRECTOR" if k % 2 == 0 else "SKEPTIC"; tag = ln[:ln.index("]") + 1]; rest = ln[len(tag):].strip()
+                who = "DIRECTOR" if (k % 2 == 0 or one_) else "SKEPTIC"; tag = ln[:ln.index("]") + 1]; rest = ln[len(tag):].strip()
                 every = 1 if "MARKER FIX" in prompt else (6 if f1 else 2)                      # a marker-fix request gets a punchline on every line
                 mk = ("" if f1 else "[SEND] " if k == 2 else "[AWE] " if k == 5 else "") + ("[PUNCH] " if k % every == 0 else "")   # v11.1: markers like the real writer
                 body.append(mk + [f"[{who}] {tag} {rest}", f"{tag} [{who}] {rest}", f"{who}: {rest}"][k % 3]); k += 1
         if _ending() == "question": body.append("[DIRECTOR] [close] So... would you keep it?")          # v12 V2b: a writer who obeys F1's ending (DESIGN QUESTION 9)
+        if _ending() == "arrival": body.append("[DIRECTOR] [close] You are home, and you see your street differently.")      # ... and F3's arrival (DESIGN QUESTION 16)
         mt = re.search(r"Title: ([^|]+?)\s*\|", prompt)                    # v11.1: a RETENTION FIX request is answered like a compliant writer:
         L = [i for i, x in enumerate(body) if not x.startswith(("## BEAT", "[pause"))]      # v9: the trial tags (never spoken; ignored when SHOW_MODE = off)
         if len(L) >= 8 and not f1:

@@ -263,7 +263,7 @@ def _run_room(draw, episode):
     wmin, wmax = int(d["words"] * 0.93), int(d["words"] * 1.07)
     wbrief = P.fill(P.WRITER, words=d["words"], wmin=wmin, wmax=wmax, story=stg["story"], storydef=defs.get(stg["story"], ""),
                     hook=stg["hook"], hookdef=defs.get(stg["hook"], ""), hooksec=d["hook_sec"], humour=stg["humour"], voice=stg["voice"], bible=_j(bible, 9000),
-                    banter=defs.get(stg.get("banter") or "", "") or "natural", budget=budget_brief(d), asks=FMT.asks_brief())
+                    banter="none (one voice)" if FE.one_voice() else (defs.get(stg.get("banter") or "", "") or "natural"), budget=budget_brief(d), asks=FMT.asks_brief())      # v12 V2b: F3 has one voice
     from whatifs import enforce as EN                        # v11.1 (K166): the markers rule + the channel's own evidence, in every brief
     wbrief = GR.insert_before_json(wbrief, EN.writer_rules("long"))
     d["brain_block"] = EN.brain_block("long")

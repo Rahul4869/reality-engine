@@ -798,7 +798,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         from whatifs import brain as BRN
         hk = (hook_rec or {}).get("archetype") or (pkg.get("hook_shape") if isinstance(pkg, dict) else "") or "unknown"
         BRN.tag(ep, "long", title=title, premise=room["spine"].get("premise", ""), hook=hk, sec=vo.duration, lead=((d.get("show_plan") or {}).get("lead") or ""),
-                origin="owner_idea" if d.get("owner_brief") else "ai", yt_id=vid, arm={"playbook": d.get("playbook") or {}})      # v12: the video's experiment arms are in its features (the Execution Engine verifies an arm there)
+                origin="owner_idea" if d.get("owner_brief") else "ai", yt_id=vid, arm={"playbook": d.get("playbook") or {}, "format": d.get("format") or ""})      # v12: the video's experiment arms are in its features (the Execution Engine verifies an arm there); V2b: its format is an arm (DESIGN QUESTION 17)
         BRN.forecast(ep, "long", hook=hk)
     except Exception as e: log(f"brain tag skipped: {scrub(e)}", "WARN", ep)
     try:

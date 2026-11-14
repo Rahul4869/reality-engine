@@ -783,3 +783,74 @@ def test_an_acts_first_picture_that_cannot_be_made_stops_the_render_and_the_retr
     c = PC.watch(monkeypatch); f = real(got["shots"], got["units"], got["out"], ep, budget=got["k"]["budget"], have=have, footage=got["k"].get("footage"))
     assert got["lost"] in f["img"] and c.get("image", 0) == 1 and not c.get("clip") and not c.get("clip_kling") and not c.get("image_ref"), dict(c)      # the retry buys that one picture and nothing else
     shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True)
+
+# ------------------------------------------------------------------ 12. F3 "THE WALK" AS A ROW AND AN ARM (3.5) and the one-voice rules (3.3 d)
+from whatifs import growth as GR, manage as MG
+WALK = "[DIRECTOR] You open your door.\n[DIRECTOR] The street is full of floating cups.\n[DIRECTOR] You walk on past the bakery.\n[DIRECTOR] You are home."
+
+def test_f3_is_a_row_that_is_on_with_its_own_texts_and_f1s_rubrics(endings):
+    assert FMT.FORMATS["F3"]["status"] == "on" and FMT.FORMATS["F3"]["voices"] == ("DIRECTOR",)
+    with FMT.using("F3"):
+        assert (FMT.block("showrunner"), FMT.block("bible"), FMT.block("writer")) == (FMT.F3_SHOWRUNNER, FMT.F3_BIBLE, FMT.F3_WRITER)
+        assert FMT.rubric("drafts") == FMT.F1_DRAFTS and FMT.rubric("jokes") == FMT.F1_JOKES
+    assert "Where any rule, definition or example above names the Curious One, a guest, a second role, banter or a reaction line, it does not apply" in FMT.F3_WRITER
+    assert FMT.F3_WRITER.endswith("END ON THE ARRIVAL: the last line says, in one sentence to 'you', what you now see differently. No question is needed, no ask, and nothing follows it.")
+    with FMT.using("F1"): assert FMT.block("writer") == FMT.F1_WRITER and "NAMES its place in three or four words ('your bathroom', 'your street')." in FMT.F1_BIBLE
+    with FMT.using("F2"): assert FMT.block("writer") == ""
+
+def test_a_voice_outside_the_row_is_found_in_every_format_that_is_not_a_trial():
+    assert FMT.kept_report(WALK + "\n[SKEPTIC] Wait, what?", "F3")["other_voices"] == ["SKEPTIC"]
+    assert FMT.kept_report(WALK + "\nSKEPTIC: Wait.", "F3")["problems"] == ["a voice that is not part of this format speaks: SKEPTIC"]
+    assert FMT.kept_report(WALK + "\n[SKEPTIC] Wait, what?", "F1")["other_voices"] == [] and FMT.kept_report(WALK + "\n[JUDGE] Order.", "F1")["other_voices"] == ["JUDGE"]
+
+def test_one_voice_is_never_asked_for_a_second_role_and_is_told_of_none(endings, setting):
+    f1_fe = None
+    with FMT.using("F1"):
+        assert any("one role barely speaks" in x for x in FE.check_script(WALK)["issues"]) and not FE.one_voice()
+        f1_fe = {r: FE.instructions(r) for r in ("writer", "memo", "critic")}; f1_rb = GR.rhythm_brief({"blueprint": "b", "reactions": "few", "arc": "a"})
+    with FMT.using("F3"):
+        assert FE.one_voice() and FE.check_script(WALK)["ok"]
+        w = FE.instructions("writer")
+        for gone in ("- [SKEPTIC] =", "Reaction rules:", "- Delivery tags for the Curious One", "- Write natural back-and-forth", "- Alternate speakers", "The two of them are the whole show"):
+            assert gone not in w, gone
+        assert "The guide is the whole show: no second voice, no announcer." in w and "Label dialogue lines [DIRECTOR]. Use unlabelled" in w and "don't force both characters" not in w
+        assert "Department memo: keep your advice consistent with the faceless presenter rule." in FE.instructions("memo")
+        assert "Critic: assess whether the simulation escalates visually," in FE.instructions("critic")
+        rb = GR.rhythm_brief({"blueprint": "b", "reactions": "few", "arc": "a"}); assert "Curious One reaction lines" not in rb and "MUSIC ARC: a." in rb
+    assert all(x in f1_fe["writer"] for x in ("- [SKEPTIC] =", "Reaction rules:")) and "Curious One reaction lines" in f1_rb      # F1 keeps both voices
+    setting("ENDINGS_ON", "FALSE")
+    with FMT.using("F3"): assert not FE.one_voice()
+    src = open(os.path.join(ROOT, "whatifs", "room.py"), encoding="utf-8").read(); assert 'banter="none (one voice)" if FE.one_voice() else' in src
+
+def test_the_shares_are_60_20_20_and_a_live_sheet_is_moved_once_keeping_his_own_value(setting):
+    assert [core.DEFAULTS[f"FORMAT_SHARE_F{k}"][0] for k in (1, 2, 3)] == ["60", "20", "20"]
+    for k, v in (("FORMAT_SHARE_F1", "70"), ("FORMAT_SHARE_F2", "30"), ("FORMAT_SHARE_F3", "0"), ("V12V2B_MOVE_DONE", "")): setting(k, v)
+    assert MG.v12v2b_upgrade(core.store()) == ["FORMAT_SHARE_F1", "FORMAT_SHARE_F2", "FORMAT_SHARE_F3"] and [core.S(f"FORMAT_SHARE_F{k}") for k in (1, 2, 3)] == ["60", "20", "20"]
+    setting("FORMAT_SHARE_F1", "70"); assert MG.v12v2b_upgrade(core.store()) == [] and core.S("FORMAT_SHARE_F1") == "70"      # never twice
+    setting("V12V2B_MOVE_DONE", ""); setting("FORMAT_SHARE_F1", "50"); setting("FORMAT_SHARE_F3", "0")
+    assert MG.v12v2b_upgrade(core.store()) == ["FORMAT_SHARE_F3"] and core.S("FORMAT_SHARE_F1") == "50"                    # his own value stays
+    import inspect; assert inspect.getsource(MG).count("try: v12v2b_upgrade(st)") == 2                                  # both setup sites
+    assert [x[0] for x in MG.V12V2B_FLIPS] == ["FORMAT_SHARE_F1", "FORMAT_SHARE_F2", "FORMAT_SHARE_F3"]
+    setting("FORMAT_SHARE_F1", "60"); setting("FORMAT_SHARE_F2", "20"); setting("FORMAT_SHARE_F3", "20"); assert FMT.shares() == {"F1": 60, "F2": 20, "F3": 20}
+
+def test_the_offline_writer_of_f3_is_the_guide_alone_inside_the_scene_and_ends_on_its_arrival(inside, endings, setting):
+    with FMT.using("F3"): text = json.loads(FK.fake_reply("writer", "Write the narration. ~300 words"))["script"]
+    us = VO.parse_script(IN.line_beats(text)[0]); assert {u.speaker for u in us} == {"DIRECTOR"}
+    r = IN.report(text, "F3"); assert r["share_pct"] >= 70 and r["problems"] == [], r
+    assert FMT.ending_report(text, "F3")["problems"] == [] and text.endswith("[DIRECTOR] [close] You are home, and you see your street differently.")
+    setting("ENDINGS_ON", "FALSE")
+    with FMT.using("F3"): assert "SKEPTIC" in json.loads(FK.fake_reply("writer", "Write the narration. ~300 words"))["script"]      # switched off: as before
+
+def test_a_whole_f3_production_is_one_voice_one_direction_ends_on_its_arrival_and_pays_no_format_call(monkeypatch, setting):
+    from tests import test_v12_opening_e2e as E2E, paid_calls as PC
+    _start(monkeypatch, setting, "F3"); ep = OWN_IDS[1]; marked = []; real_mark = PATH.mark
+    monkeypatch.setattr(PATH, "mark", lambda *a, **k: (marked.append(real_mark(*a, **k)), marked[-1])[1])
+    c = PC.watch(monkeypatch); r = EP.produce(E2E._slot(10), episode_id=ep); led = _led(ep)
+    tl = json.load(open(os.path.join(core.WORK, ep, "voice_timeline.json"))); assert {u["speaker"] for u in tl["units"]} == {"DIRECTOR"}      # one voice
+    assert not c.get("text:format"), dict(c)                                                                               # no paid fix asks for a second role
+    assert marked and len({p["sign"] for p in marked[-1][1]}) == 1 and led["camera_shown"][0] == "PASS", (marked[-1][1] if marked else None, led["camera_shown"])      # one direction
+    assert led["format_ending"][0] == "PASS" and led["format_ending"][1].startswith("ends on its arrival: "), led["format_ending"]
+    assert led["viewer_inside"][0] == "PASS" and led["format_kept"][0] == "PASS", (led["viewer_inside"], led["format_kept"])
+    feats = [f for f in core.store().rows("Video_Features") if f["video_key"] == ep]; assert feats and json.loads(feats[0]["arm"])["format"] == "F3"      # the arm is on record
+    assert r.get("ok"), r
+    shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True)
