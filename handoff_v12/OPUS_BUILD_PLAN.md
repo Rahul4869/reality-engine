@@ -104,6 +104,13 @@ done, never what a batch is built from or judged by. An Opus builder or prover a
       session's NEXT turn): the dispatcher starts the session with a first turn that only answers READY, calls `set_session_effort` "xhigh"
       (the app may ask the owner), then sends the real brief as a message - that turn runs at Extra high. A session already at work is
       stopped between two steps, raised, and told to go on. If the app refuses the raise: the session runs at High and its file says so.
+      WIDENED THE SAME HOUR (item 41: "the design work of other best departments also ... while wisely using tokens between high and extra
+      high and ensuring work completion"): the designer and the design reviewer of EVERY remaining batch run at Extra high - PACED BY THE
+      ALLOWANCE, read at every start (`get_usage`, the weekly Fable line): under 60% every design and review is Extra high; from 60% only
+      the brain's batches keep it and the others are designed at High; from 80% everything is at High and no NEW Lane B session is started -
+      what is left belongs to Lane A's finishing passes and repairs (a batch that is built and cannot be finished stops the chain); the
+      stop at 88% stands (A8). Extra high is spent ONLY on the design memo and its review: the dispatcher, the launch kit, the finishing
+      pass, a repair and the audit are at High.
 - THE DISPATCHER is the Fable session the owner gave his word to (item 38): the app lets a session start another only on the owner's own words
   in it. It starts every session of both lanes, keeps at most three Lane B sessions at work, and does no batch's own work once its context is
   past 60% (it starts a fresh Fable finisher or repairer). A session that is refused a start leaves the card and says so in the first line of
