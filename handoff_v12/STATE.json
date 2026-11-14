@@ -79,6 +79,15 @@
    "from": "ACCEPTED",
    "to": "DESIGN",
    "why": "V2d-b accepted; the owner's item 35: Fable writes V2b's research, designs and memo"
+  },
+  {
+   "at": "2026-11-14T02:57:01Z",
+   "batch": "V2b",
+   "by": "the designer (Fable 5.2)",
+   "commit": "",
+   "from": "DESIGN",
+   "to": "DESIGN_REVIEW",
+   "why": "steps 1 to 3 of V2b are in the record; a fresh Fable session reviews (items 34 to 36)"
   }
  ],
  "order": [
@@ -95,8 +104,8 @@
   "B10",
   "V3"
  ],
- "phase": "DESIGN",
+ "phase": "DESIGN_REVIEW",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-14T02:34:28Z"
+ "updated": "2026-11-14T02:57:01Z"
 }
