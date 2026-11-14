@@ -1,5 +1,5 @@
 # BUILD_STATE - Reality Engine v12 "Organisation"
-Updated: 14 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026, V2c-b2a THE PLATFORMS ACCEPTED on 12 Nov 2026 - V2c-b2 was split at its start, V2c-b2b was split at its start too: V2c-b2b1 THE OPENING ACCEPTED on 12 Nov 2026, V2c-b2b2 THE CUT-DOWNS ACCEPTED on 13 Nov 2026 - V2c is complete; V2d was split at its start: V2d-a THE MONEY AND THE MODEL ACCEPTED on 13 Nov 2026 - the hero clip model is picked by value, every estimate is one table of cost lines; V2d-b THE LADDER'S RULES ACCEPTED on 14 Nov 2026 (final code commit 5827d97, its code d8101c8: GitHub run 159 1551 passed, the laptop's serial suite 1551 / 0 / 0, the sweep 58 of 58 ids on the first pass; the prover's first pass on 60d9483 was RED - one id of 58, EP209901010900, held by the new check `moving_share`, `V2d-b_RED_1.md` - and the repair reserved the scenes' room: every paid second and every scene now seen whole on every id); NEXT IS V2b INSIDE THE FORMAT, whose design waits for a Fable review the owner opens (item 34); open issue 183: the verdict's log archive must be restored by the Fable audit; THE OWNER'S ITEM 33 OF 13 NOV 2026: FROM NOW ON OPUS 5.5 AT THE HIGHEST EFFORT BUILDS AND PROVES, UNDER `handoff_v12/OPUS_BUILD_PLAN.md` AND THE MACHINERY IN `REALITY_ENGINE_HANDOFF/proving/` - EVERY SESSION OF ANY MODEL STARTS WITH `python proving/next.py` (its role card) AND THAT PLAN; the state of the build is `handoff_v12/STATE.json`; a script computes every verdict; Fable reviews and audits; the repair of V2d-b is the first job under the plan; the owner's items 28 to 30 of 13 Nov 2026: THE CHANNEL GOES LIVE ONLY AFTER THE WHOLE BUILD, V3 is the last step, the order is under NEXT; the owner's items 23 to 25 of 13 Nov 2026: the week's Fable allowance is a hard limit and building is Fable's - open issue 163; his items 26 and 27 of the same day: FROM V2d-b ON A BATCH IS TWO FABLE SESSIONS, THE BUILDER AND THEN THE PROVER - the rule is under NEXT, and V2d-b's builder is started by the session that built V2d-a, no other session starts it; THE LIVE CHANNEL IS PAUSED BY THE OWNER'S OWN HAND since 13 Nov 2026 - item 22 below, open issue 148). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
+Updated: 14 Nov 2026 (B6a ACCEPTED; the owner rejected the first live video and ordered a redesign - read the next section and BREAKOUT_REDESIGN.md first; V1a ACCEPTED, V1b ACCEPTED, V2a ACCEPTED, V2c-a ACCEPTED, V2c-b1 THE LADDER ACCEPTED on 12 Nov 2026, V2c-b2a THE PLATFORMS ACCEPTED on 12 Nov 2026 - V2c-b2 was split at its start, V2c-b2b was split at its start too: V2c-b2b1 THE OPENING ACCEPTED on 12 Nov 2026, V2c-b2b2 THE CUT-DOWNS ACCEPTED on 13 Nov 2026 - V2c is complete; V2d was split at its start: V2d-a THE MONEY AND THE MODEL ACCEPTED on 13 Nov 2026 - the hero clip model is picked by value, every estimate is one table of cost lines; V2d-b THE LADDER'S RULES ACCEPTED on 14 Nov 2026 (final code commit 5827d97, its code d8101c8: GitHub run 159 1551 passed, the laptop's serial suite 1551 / 0 / 0, the sweep 58 of 58 ids on the first pass; the prover's first pass on 60d9483 was RED - one id of 58, EP209901010900, held by the new check `moving_share`, `V2d-b_RED_1.md` - and the repair reserved the scenes' room: every paid second and every scene now seen whole on every id); V2b INSIDE THE FORMAT IS DESIGNED (14 Nov 2026, a Fable session: steps 1 to 3 in its record - not built, not accepted) and waits for its design review by another Fable session; THE OWNER'S ITEMS 35 AND 36 OF 14 NOV 2026 (the Ultra plan): FABLE HIGH DOES EVERYTHING THAT DECIDES QUALITY - design, review, the finishing pass on what Opus built, repair, audit - AND OPUS ONLY TYPES THE FIRST BUILD AND WAITS ON THE PROVING BLOCK, the chain is AMENDMENTS 1 AND 2 of the plan; open issue 183: the verdict's log archive must be restored by the Fable audit; THE OWNER'S ITEM 33 OF 13 NOV 2026: FROM NOW ON OPUS 5.5 AT THE HIGHEST EFFORT BUILDS AND PROVES, UNDER `handoff_v12/OPUS_BUILD_PLAN.md` AND THE MACHINERY IN `REALITY_ENGINE_HANDOFF/proving/` - EVERY SESSION OF ANY MODEL STARTS WITH `python proving/next.py` (its role card) AND THAT PLAN; the state of the build is `handoff_v12/STATE.json`; a script computes every verdict; Fable reviews and audits; the repair of V2d-b is the first job under the plan; the owner's items 28 to 30 of 13 Nov 2026: THE CHANNEL GOES LIVE ONLY AFTER THE WHOLE BUILD, V3 is the last step, the order is under NEXT; the owner's items 23 to 25 of 13 Nov 2026: the week's Fable allowance is a hard limit and building is Fable's - open issue 163; his items 26 and 27 of the same day: FROM V2d-b ON A BATCH IS TWO FABLE SESSIONS, THE BUILDER AND THEN THE PROVER - the rule is under NEXT, and V2d-b's builder is started by the session that built V2d-a, no other session starts it; THE LIVE CHANNEL IS PAUSED BY THE OWNER'S OWN HAND since 13 Nov 2026 - item 22 below, open issue 148). Branch: `v12-organisation` (never main). Resume: read this file + `git log -5`.
 
 ## STANDING RULES ADDED DURING THE BUILD (rule 1: owner approved, 10 Nov 2026; rules 2-4: B0b, they follow from his rule "hard enforcement or it does not exist")
 1. A batch is ACCEPTED only when its FINAL commit is green in GitHub's own `Checks` workflow (Ubuntu, real pytest, then the fake rehearsal) - the
@@ -100,6 +100,14 @@ is open issue 148.
 That turn was the DESIGN step for the whole programme (research, designs, decisions, records). Built since: V1a, V1b, V2a and V2c-a (the records are under DONE).
 
 ## NEXT
+**14 NOV 2026 - WHO DOES WHAT CHANGED BY THE OWNER'S OWN WORDS (items 35 and 36 of `02`; he moved to the Ultra plan): FABLE 5.2 AT
+EFFORT HIGH DOES EVERYTHING THAT DECIDES QUALITY - a batch's design, the review of that design, THE FINISHING PASS that audits, corrects
+and improves every line Opus built before it is proven, every repair, the audit after acceptance; OPUS only types the first build from
+the approved memo and waits on the proving block.** The chain of one batch and who starts whom is the table of AMENDMENTS 1 AND 2 at
+the top of `handoff_v12/OPUS_BUILD_PLAN.md` - read it before that plan's chapter 3; where a sentence below says "Opus builds and
+proves", "the V2b builder" or "a Fable review the owner opens", the amendments win. THE STATE NOW: **V2b INSIDE THE FORMAT IS DESIGNED
+(steps 1 to 3, the first record under DONE) and waits for its design review by another Fable session, started by the designer.**
+V2d-b's audit is a Fable session's, running beside it; its findings are the first work of V2b's build (the memo's 3.9, step 0).
 **FROM 13 NOV 2026 THE BUILD RUNS UNDER `handoff_v12/OPUS_BUILD_PLAN.md` (the owner's item 33 of `02`: "so that i can use opus 5.5 and
 get the fable 5.2 extra high level results ... i dont want to leave anything to chance to opus").** FIRST ACT OF EVERY SESSION: from the
 handoff folder `.venv/Scripts/python.exe proving/next.py` - the pre-flight and the session's ROLE CARD - then that plan, whole. What it
@@ -401,6 +409,434 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
+### V2b - INSIDE THE FORMAT (14 Nov 2026) - DESIGNED, NOT BUILT, NOT ACCEPTED (the designer's record: steps 1 to 3; the Opus builder writes steps 4 to 6a, the Fable finisher `FINISHED BY FABLE`, the prover 6b and 7)
+THE DESIGNER'S SESSION (Fable 5.2, Effort High). HOW IT CAME TO BE ONE: the app started it as V2b's builder on Opus 5.5; within its first
+seconds the owner set it to Fable 5.2 in the model menu; it stopped before spending Fable allowance on building and asked him once; he
+answered with item 35 of `02` ("fable does the quality work and quality control while opus build") and, three hours later, with item 36
+(the Ultra plan: "all the best work is done by fable high now and only the insignificant work is done by opus"). Both are recorded word
+for word, the plan carries them as AMENDMENTS 1 AND 2 (commits b79292b, 4ee63b4), and the state moved to V2b DESIGN (48d676b).
+FIRST CHECK: V2d-b accepted on the record (acceptance commit 7db8b83, final code commit 5827d97, its code d8101c8); GitHub's Checks run
+of 5827d97 read through `proving/github_run.py` (green, the rehearsal GREEN); a clean tree; no test process. USAGE at the start: the
+5-hour window 9%, weekly all models 40%, weekly Fable 74% (plan Max), context 13%; after the reading: weekly Fable 76%, context 38%;
+after his move to the Ultra plan the card reads weekly Fable 0%, weekly all models 0% (reset 19 Nov 2026 18:00 UTC), context 54%.
+THE WHOLE BINDING READING WAS DONE FIRST (the plan's chapter 4): the plan whole, the handoff `CLAUDE.md`, `02` whole (items 1 to 34, then
+35 and 36 as they were written), `00`, `01`, `03`, `06`, `04`, all of the redesign (section 11 with every end note first), this file's
+head line, standing rules, the owner's verdict section, NEXT whole, the whole record of V2d-b, every open issue 1 to 184, HOW TO RUN, the
+batch log, the repo's `CLAUDE.md`, `CONCEPT.md`, `PLATFORM_FACTS.md` and the ledger whole; then the code: all of `formats.py`,
+`org/audience.py`, `org/layman.py`, `enforce.py`, `cta.py`, `shotplan.py`, `immersion.py`; `room.py` from `run_room` to `ensure_tease`
+and from `plan_shots` to its end; `motion.py` to `cuts`; `overlay.py` (the speaker tag); `prompts.py` HOUSE to DIRECTOR; `contract.py`
+(the asks, the tease, the viewer's seat, `format_kept`, the table of checks, `run`); `episode.py` `produce`, `anchor_shots`, `_render`
+to the segment record; `render.py` the camera library; `tools/sweep.py` (`motion_of`, the summary); `tests/conftest.py`; the block of
+V2d-b. NOT READ WHOLE, said plainly (the Opus builder reads them whole before its first edit): `voice.py`, `fakes.py`, `canon.py` /
+`cite.py`, `hooks.py`, `opening.py`, `tools/rehearsal.py`, `tests/paid_calls.py`, `tests/test_v12_formats.py`, `showfx.py`.
+V2b IS DESIGNED WHOLE, NOT SPLIT: its six parts hang on four new fields of the format row and are built in the order of 3.9 with a
+checkpoint commit after each; and the state machine cannot split a batch at all (open issue 189, PLAN ISSUE 3). THE FALL-BACK: when the
+Opus builder's context passes 70% before parts 5 and 6 are built, it writes "WHERE THE BUILD STANDS" and a fresh Opus session goes on in
+the same phase BUILD.
+
+#### Step 1 RESEARCH (E = measured: a study, a platform's own page; O = practice, a vendor; every page below was read by this session itself on 14 Nov 2026; the redesign's R15, R16 and R19 are the base)
+1. E read - Brunyé, Ditman, Mahoney, Augustyn and Taylor, "When You and I Share Perspectives: Pronouns Modulate Perspective Taking During
+   Narrative Comprehension", Psychological Science 20(1), 2009, as reported by the Association for Psychological Science on 19 Feb 2009
+   (https://www.sciencedaily.com/releases/2009/02/090218135124.htm): readers of "You are ..." sentences "pictured the scene through their
+   own eyes"; with "He is ..." they took "an outsider's perspective"; readers "only embody an actor's perspective when directly addressed
+   as the subject of a sentence". And a warning for a second voice: after three first-person ("I am") sentences in a row readers saw the
+   scene from OUTSIDE. -> "you" is the word that puts a viewer inside; a character's long "I" passage pushes him out. The foil may say
+   "I" in a line, never for a paragraph. A lab reading task (sentences and pictures), not a video.
+2. E read - Peng, Sun, Gong, Jia and Ding, "A Video with A Viewpoint: How Visual Perspective Shapes Consumer Evaluations and Drives Video
+   Virality", Proceedings of the European Marketing Academy 2025 (https://proceedings.emac-online.org/pdfs/A2025-126236.pdf; the two-page
+   abstract is all the file holds): four studies - YouTube Shorts data (views, likes, comments), a controlled experiment, a mediation
+   study, Facebook ad experiments - "first-person perspective significantly enhances feelings of immersion, leading to higher consumer
+   engagement and more favorable video evaluations compared to second- and third-person perspectives". NO number is in the abstract, and
+   it is about SHORT videos. -> the camera at the viewer's own eyes is the measured side of his item 19; how much it is worth is not said.
+3. E read - Mayer, "Research-Based Principles for Designing Multimedia Instruction" (a review of his 2021 meta-analysis;
+   https://www.unh.edu/teaching-learning-resource-hub/sites/default/files/media/2023-06/itow-research-based-principles-for-designing-multimedia-instruction-mayer.pdf):
+   TEMPORAL CONTIGUITY - "Present spoken words at same time as corresponding graphics": 8 of 8 tests, median effect size 1.31;
+   PERSONALIZATION - "People learn more deeply when the words in a multimedia presentation are in conversational style rather than formal
+   style": 13 of 15 tests, median d = 1.00, with the limit that it "may not apply for experienced learners or long lessons"; SIGNALING 26
+   of 28, 0.70; PRE-TRAINING 10 of 10, 0.78. All measured on short lessons and on LEARNING (transfer tests), not on staying. -> an
+   explanation belongs in the same breath as its picture (SHOW, THEN TELL as "never a paragraph of explanation ahead of its picture"),
+   and "you" in a conversational voice is the best-supported writing rule there is - with an honest limit for a nine-minute video.
+4. E read (the abstract and the record; the full text sat behind a robot check) - Magliano and Zacks, "The Impact of Continuity Editing in
+   Narrative Film on Event Segmentation", Cognitive Science 35(8), Nov 2011
+   (https://profiles.wustl.edu/en/publications/the-impact-of-continuity-editing-in-narrative-film-on-event-segme/): "Discontinuities in
+   action had the biggest impact on behavioral event segmentation", breaks in space and time alone had minor effects; "commercial film
+   editing is shaped to support the comprehension of meaningful events". -> a viewer feels a new "act" where the ACTION breaks, not at
+   every cut: a change of place that follows the story is free; a change of place INSIDE one action is the break a viewer feels. So the
+   rule is not "never cut" - it is: a place lasts as long as its act, and the camera's travel does not reverse inside it.
+5. E read - YouTube Help 6388789, "Add end screens to videos" (https://support.google.com/youtube/answer/6388789; (c) 2026, undated):
+   "End screens can be added to the last 5-20 seconds of a video", the video must be "at least 25 seconds long", up to four elements
+   (video, playlist, subscribe, channel, link); viewers can hide them; they are set in Studio - no upload field. -> the PULL to the next
+   video and the subscribe button belong to the end screen (the owner's release card, V3), not to the last spoken line.
+6. E read - YouTube Help 9314415, key moments for audience retention (https://support.google.com/youtube/answer/9314415): "Dips mean that
+   viewers are abandoning or skipping at that specific part of your video"; the page says NOTHING about endings or asks. -> every rule of
+   this batch can be read back from the retention curve at the second it sits (the ask, each act break): H28 to H30.
+7. O read - Cast from Clay (a UK agency's own test "on a few popular YouTube channels", 3 Aug 2015, no sample size, no retention figure;
+   https://castfromclay.co.uk/how-to/increase-youtube-subscription-rates-by-200x): without an ask "fewer than one in 1,500 viewers pressed
+   subscribe", with a text ask one in 950, with a SPOKEN ask "an average of one in 115". The only measured figure found on asks: old, a
+   vendor, about subscribing only. A search of 14 Nov 2026 for a study of what an ask does to retention found claims without a method
+   (for example "a 15-20% drop within 30 seconds" on a blog). -> a long video keeps ONE spoken ask (subscribers are half of the Partner
+   Program's bar) - away from the ending - and nothing is built on the claims about retention.
+NOT FOUND, so nothing is built on it: any measured share of second-person sentences that holds viewers; any study of narration tense on
+video; any measurement that one place per act or one direction of camera travel raises retention on YouTube (the redesign's O7 stands);
+any comparison of an ending on a question with an ending on a tease; anything on name chips. Every number below is therefore a STARTING
+VALUE and a lever, set between measured pairs of our own (3.1), never from a study.
+AN EXPERIMENT BEFORE THE DESIGN (the accepted code d8101c8, three fixed sweep ids run ALONE one after another through the unchanged fake
+pipeline with a listener on `contract.run` that only wrote down what the script gate saw - `EP209901010900` (F2), `EP209901021613` and
+`EP209901032326` (both forced F1); the first try of the listener imported the code before the small mode was set and stopped at the
+voice length - my tool, not the code; run again, all three ended LIVE). COUNTED:
+- THE VOICE DOES NOT SPEAK TO THE VIEWER: 8 of 31 sentences (26%) in the trial and 8 of 24 and 8 of 23 (33%, 35%) in "The day it
+  changed" contain a "you" at all; the longest run of sentences in a row WITHOUT the viewer is 8, 6 and 5 ("Right now, about eight
+  billion people are doing something ordinary ... That adds up to a number nobody has ever written down"). These are the offline
+  stand-in writers, so the figure says what the MEASURE sees and what the stand-ins must learn - a real model has never written one.
+- THE CAMERA IS TURNED AWAY ON PURPOSE: `shotplan.assign_anchors` (switch `POV_VARIETY_ON`, older than v12) gives every picture a lens
+  and an angle that "never repeat on two consecutive pictures". Counted: eye level on 5 of 35, 6 of 28 and 4 of 26 pictures (14 to 21%);
+  the rest is "low angle looking up", "high angle looking down", "tilted, off balance", "over your own shoulder"; two pictures in a row
+  share an angle 2, 2 and 1 times in 25 to 34. A first-person video whose viewer's head sits at five heights. And the code-made camera
+  move of every still draws its side at random (`render.camera_path`: `sgn = rng.choice([-1, 1])`) and may travel backwards (`pull`) or
+  roll (`kb_roll`): no rule keeps a direction. THIS IS THE FINDING THAT SHAPES THE DESIGN: the redesign's 10.7 cannot be added beside
+  today's rule - today's rule is its opposite and must change where it stands.
+- A PLACE IS A GUESS: the only "place" on a shot is `pov.scene`, a word list matched against the line and the prompt and carried forward
+  when nothing matches (2 to 4 places a video, one of them for a single last line). A still without a picture of its own shows "the
+  nearest earlier picture" (`episode._render`: `img = own or prev_img`) - whatever act that picture belongs to. The script carries
+  "## BEAT" headings (3 in the offline scripts, 6 beats in the bible, each with a `visual_world`), but a voice unit does not know its beat.
+- THE ENDING OF "THE DAY IT CHANGED" IS NOT ITS OWN: the last seven lines of both F1 scripts hold a subscribe ask, a share ask, and as the
+  very last spoken line "Next simulation: What if the Moon left tonight?" - a topic the ladder never promised (open issue 101). The
+  brief's last beat, "the question: would you keep it?", is not the end of either. The asks are demanded by the writer's base prompt
+  (`prompts.WRITER`, "AUDIENCE ASKS ... exactly three") and put back by code after the last rewrite (`CTA.ensure`, three call sites in
+  `room.py`), the tease by `room.tease_brief` and `room.ensure_tease`; F1's device rule "advisory" only stops them HOLDING a video.
+- THE CHIP: with `SPEAKER_TAG_ON` every line of F1 is spoken under a chip "THE DIRECTOR" or "THE CURIOUS ONE" (`overlay.NAMES`) - two
+  names of people nobody ever sees; in a trial without approved cast art the chip says "INSPECTOR VALE" over a picture with nobody in it.
+#### Step 2 CREATIVITY (scores 1-5: what a viewer gains / enforceable / cost inside the cap / reliability / owner effort)
+A. As the redesign wrote it (10.7): a sentence in the briefs asking for "you" and a share counted on the script; the Director asked to
+   keep one place per act and to write a camera path into each shot's JSON; F1's ending by a new sentence in its brief; F3 as a row.
+   3 / 2 / 5 / 2 / 5 = 17 - it leaves `assign_anchors` rotating the angle against it, a place stays a word in a prompt that nothing
+   reads back, and the asks are still put back by code after the last rewrite.
+B. A strong model as the judge of "immersion": one cross-family jury call that scores the script and the shot list for presence and
+   continuity and holds under a bar. 3 / 1 / 3 / 2 / 5 = 14 - a model's opinion as a gate (forbidden: `01` N6, the brief's first
+   constraint), scores squeezed to the middle (redesign R9), a paid call, and nobody can say what a 6 means.
+C. Measure everything on the finished film with a picture model: a paid look at sampled frames ("is this the same place?", "is the camera
+   at eye level?"). 4 / 2 / 2 / 2 / 5 = 15 - the truest measure of what a viewer sees and exactly the kind of judgement a cheap model
+   must not make and a strong one makes dearly; no line in the cost model; nothing to repair with when it says no.
+D. (ORIGINAL, CHOSEN) THE INSIDE OF A FORMAT IS DATA THE CODE EXECUTES, AND EVERY RULE IS JUDGED WHERE CODE CAN SEE IT.
+   (1) A format row says four more things: how much of its voice is INSIDE THE SCENE, how its camera travels (cut / path / walk), how it
+   ENDS and what it may ASK, whether it shows name chips. (2) THE VOICE is counted sentence by sentence: inside = it speaks to "you" now
+   (or, where the foil stands where the viewer stands, in the foil's own "I"); three rules - a floor for the share, a ceiling for the
+   longest run of sentences from outside ("a lecture"), and no act that explains before it shows; the writers are told, their ONE fix
+   carries it, the gate holds. (3) THE CAMERA PATH is executed by code, not asked of a model: a voice unit knows its act; an act has ONE
+   place, written into every prompt of the act; the first picture of an act is always a new picture and no still ever shows a picture
+   made for another act; every picture is at eye level; one direction of travel per act for the code-made moves, never backwards, never
+   rolled - and the RENDER RECORD is judged, not the plan. (4) THE ENDING is the format's: asks by kind, removed and added by the row;
+   no tease of a topic the ladder may never make; the last line is the format's own, with nothing after it. (5) A NAME IS SHOWN ONLY FOR
+   A CHARACTER WHO IS DRAWN - "drawn or absent" carried to the chip. (6) F3 "The walk" is those same fields set to their end: one
+   voice, one route, one direction for the whole video. 5 / 5 / 5 / 4 / 5 = 24.
+THE CASE AGAINST D, built before it was chosen: (i) a script can say "you" in every sentence and still bore - true: D measures whether
+the viewer is ADDRESSED, not whether he cares; that is the judged floor's and real viewers' (V1c, H28), and D says so instead of calling
+its share "immersion"; (ii) a place sentence in a prompt is not a place in a picture - true: what code CAN guarantee is that no picture
+of another act is shown and that the head stays level and travels one way; whether the model draws the same street twice only his eye
+at the pilot can say (open issue 186); (iii) an ending without the three asks may cost subscribers (research 7) - so F1 keeps one, away
+from the ending, as data, and F3 has none: the two formats are the first comparison. Why the losers lose: A asks a model for what code
+can do itself; B and C put an opinion in the judge's chair.
+#### Step 3 DESIGN MEMO (written for an Opus builder that decides nothing - amendment A4: every part names the function, the arithmetic, the starting value and where it comes from, the check, the test that fails, the break; a choice this memo did not make is a `DESIGN QUESTION` in the record, never settled in code)
+**3.0 THE FORMAT ROW (`whatifs/formats.py`, `FORMATS`) - four new keys on every row, read through four small functions; nothing else decides them.**
+| key | F1 "The day it changed" | F2 "The trial" | F3 "The walk" | read by |
+|---|---|---|---|---|
+| `inside` (the cell of its floor) | `INSIDE_MIN_PCT_F1` (50) | `INSIDE_MIN_PCT_F2` (30) | `INSIDE_MIN_PCT_F3` (60) | `formats.inside_min(fmt)` |
+| `camera` | "path" | "cut" | "walk" | `formats.camera(fmt)` ("cut" when no format) |
+| `ending` | "question" | "tease" | "arrival" | `formats.ending(fmt)` ("tease" when no format) |
+| `asks` | ("subscribe",) | ("like", "subscribe", "share") | () | `formats.asks(fmt)` (all three when no format or `ENDINGS_ON` is FALSE) |
+| `chips` | False | True | False | `formats.chips(fmt)` (True when no format) |
+F3's row: `status` "on", `voices` ("DIRECTOR",), every device "never" (as today). `formats.block(role)` and `formats.rubric(kind)` answer
+by the current format's key (F1 and F3 have their own texts, 3.5; F3 uses F1's two rubrics). A test proves that no key outside
+`DEVICES` and these five can loosen a check: `formats.rule` is unchanged.
+SWITCHES (each TRUE by default, each FALSE = exactly the behaviour of d8101c8; the older tests run with all four FALSE and the format
+shares as they were - `tests/conftest.py`, a new dict `OLD_INSIDE`, named here as a change BY DESIGN): `INSIDE_ON` (the voice, 3.1),
+`CAMERA_PATH_ON` (3.2), `ENDINGS_ON` (3.3), `CHIP_DRAWN_ONLY_ON` (3.4).
+**3.1 THE VOICE (NEW `whatifs/org/inside.py`, department D13; on `tools/repair.py` PROTECTED before its first line).**
+- `on()` = `audience.on() and S("INSIDE_ON", bool)`.
+- `sentences(text)` -> [(sentence, speaker, act)]: the script line by line; a line starting with "## BEAT" raises `act` by one (act 0
+  before the first heading) and is not spoken; lines starting with "#", "[SFX", "[MUSIC", "(" are skipped; `speaker` = the label of the
+  line ("[DIRECTOR]" or "DIRECTOR:" in any place before the words; none = "DIRECTOR"); the words = `audience.spoken(line)`, cut into
+  sentences by `layman._SENT`; a sentence COUNTS when it has at least `MIN_WORDS` = 4 words (`layman._TOK`): a shorter one is a reaction
+  and carries no viewpoint.
+- `YOU` = `\b(you|your|yours|yourself|you're|you've|you'll|you'd)\b`; `ME` = `\b(i|i'm|i've|i'll|i'd|me|my|mine|myself|we|we're|we've|we'll|us|our|ours)\b`;
+  both case-blind.
+- `past(sentence)`: TRUE only for what code can RECOGNISE as a past "you": the word "you", at most one word ending in "ly", then one of
+  `were had did went woke felt saw heard thought knew got took made came said looked walked opened tried noticed reached stood sat ran
+  fell found left turned watched` or any word of five or more letters ending in "ed" that is not in `NOT_PAST` =
+  `{"exceed", "proceed", "succeed", "embed", "bleed", "breed", "speed"}` (present-tense verbs that only look past; "need" and "feed"
+  have four letters and are never matched) - and NOT when one of the three words before "you" is "if",
+  "wish" or "imagine" ("if you were" is not a memory). A sentence it cannot recognise as past is present: the rule errs toward the writer.
+- `is_inside(sentence, speaker, fmt)`: `YOU` matches and not `past(sentence)`; OR the format is not a trial (`FORMATS[fmt]["show"]` is
+  False), it has two voices, `speaker` is its second voice (the foil) and `ME` matches - the foil stands where the viewer stands
+  (research 1: one line of "I", never a paragraph - the run rule below binds it). In a trial a character's "I" is never the viewer's.
+- `EXPLAIN` = `\b(because|that's why|which is why|the reason|this means|which means|in other words|is called|are called|known as|scientists|physicists|researchers|studies show|according to|in theory|technically|by definition)\b`.
+- `report(text, fmt)` -> {n, inside, share_pct (one decimal), min_pct, run, run_max, run_at (the first eight words of the run's first
+  sentence), early ([(act, the first eight words)]), problems}. THREE RULES, each with its own words in `problems`:
+  (a) THE SHARE: `100 * inside / n >= formats.inside_min(fmt)` - "only K of N sentences (P%) speak to the viewer as something happening
+  to him now (at least M%)"; (b) NO LECTURE: the longest run of consecutive counted sentences that are not inside is at most
+  `S("LECTURE_MAX_SENTENCES", int)` (4) - "R sentences in a row explain from outside (at most 4), from: '...'"; (c) SHOW, THEN TELL: in
+  no act does a counted sentence that is NOT inside and matches `EXPLAIN` come before the act's first inside sentence - "act A explains
+  before it shows: '...'". A script with fewer than 8 counted sentences is not judged (problems empty, `n` reported).
+- `issues(text)` (for the writers' ONE fix; [] when off or inside the rules): ONE instruction - "INSIDE THE SCENE: " + the problems
+  joined by "; " + ". Rewrite those sentences as what YOU see, feel or do, now, in the present tense ('your coffee lifts out of the
+  cup'), keeping every fact; an explanation is said only after the viewer has seen the thing happen, in the same breath as it; never
+  more than " + the limit + " sentences in a row about anything but the viewer". `enforce.fix_all` adds it after the format issue with
+  the tag "INSIDE FIX" (fmt "long" only).
+- `brief()` (into the writer's brief, in `room._run_room` beside `_format_block("writer")`; "" when off): "INSIDE THE SCENE (code counts
+  it; a script under it goes back): at least M% of your sentences say what is happening to 'you' right now, in the present tense; never
+  more than L sentences in a row from outside; every beat opens on what the viewer sees, and an explanation comes in the same breath as
+  the thing it explains." (M and L from the cells of the format in the making.)
+- CHECK `viewer_inside` (script stage, owner D13, tier 2: never a device; classified by raising `rnd.SHOW_CHECKS`): NA when off or when
+  the episode has no format; else PASS "K of N sentences (P%) inside the scene (floor M%); the longest run from outside R (limit L); no
+  act explains before it shows" or FAIL with the problems. THE PICTURE HALF OF "SHOW" (repair by code, `inside.open_acts(shots, units)`
+  called in `episode.produce` right after D13's seat run and before the Animation Director): the shot of the first unit of every act
+  whose type is "graphic" or "stock" becomes a still of its own line exactly as `audience.shape` makes one (`seat` = "an act opens on a
+  picture"); a marked shot (`short`, `promise`, `anim`) is never touched. It needs each voice unit's act: `voice.py` - where the script
+  is cut into units, a counter of the "## BEAT" headings passed so far is written onto every unit as `beat` and into the timeline
+  (a timeline saved before this batch has none: every unit is beat 0).
+- THE STARTING VALUES AND THEIR PAIRS (BOTH kinds measured by the builder BEFORE the cells are trusted; the four passages go into the
+  test file as data and their measured figures into the record). GOOD-1, written by the designer: "[DIRECTOR] Your coffee lifts out of
+  the cup. You watch it hang there, a brown ball the size of a plum. You poke it and it wobbles. [SKEPTIC] Okay, I am not cleaning that
+  up. [DIRECTOR] You don't have to, because nothing in your kitchen falls any more. You let go of the spoon and it stays where your hand
+  left it. You push off the counter by accident and your feet leave the floor. The ceiling arrives slowly. You put a hand up and stop
+  yourself against the lamp. [SKEPTIC] So my whole flat is a fish tank now? [DIRECTOR] Your whole street is." - by hand 10 of 10
+  counted sentences inside ("The ceiling arrives slowly." has three words and is not counted). GOOD-2 = GOOD-1 followed by "[DIRECTOR]
+  Gravity is the pull between any two things that have mass. It is weak, and it never switches off. Today it has switched off.
+  Nobody knows for how long." - by hand 10 of 14 = 71.4%, a run of exactly 4: it PASSES at the limit, and a fifth outside sentence
+  after it ("The last time anything like it was measured was never.") must FAIL rule (b) alone. BAD-1: "[DIRECTOR] Gravity is one of the
+  four fundamental forces. It was described by Newton and later by Einstein. Every object with mass attracts every other object. The
+  force gets weaker with distance. Astronauts in orbit are not weightless because gravity is absent. They are falling around the Earth
+  all the time. Without gravity the atmosphere would drift into space. Nothing on the ground would stay there." - 0 of 8, a run of 8.
+  BAD-2: the offline F1 script as d8101c8 writes it (the experiment: 33 to 35%, runs of 5 and 6). The floors 50 (F1), 60 (F3: one
+  voice, no foil's "I") and 30 (F2: a trial talks about the case; the offline trial stands at 26%) and the run limit 4 STAND only if
+  every good passage measures at or above 65 and every bad one at or below 40; if a measured figure differs from the hand count above,
+  the hand count is wrong or the measure is - the builder finds which and writes it down; if the pairs do not separate: `DESIGN
+  QUESTION`, stop. LEVERS of D13 (`registry.DEPTS` and `levers.LEVERS`): the three floors (range 20 to 80, largest step 5, LOWERING needs
+  the owner) and `LECTURE_MAX_SENTENCES` (2 to 8, step 1, RAISING needs the owner); judged by check `viewer_inside`.
+- THE OFFLINE WRITERS MUST PASS (the lesson of V2c-a): `fakes` (the reply for the key "writer", its F1 branch and its trial branch) -
+  when `inside.on()` the stand-in script of every premise passes the three rules of its format (F1 at 60% or more, the trial at 40% or
+  more, no run over 4, every act opening inside); with the switch off the reply is byte for byte what d8101c8 gives (a test compares).
+**3.2 THE CAMERA PATH (NEW `whatifs/path.py`, department D6; PROTECTED first).** `path.on()` = `S("CAMERA_PATH_ON", bool)` and
+`formats.camera()` in ("path", "walk"). In a "cut" format nothing below runs and both checks say NA "format F2 cuts between its pictures".
+- THE ACTS (`path.acts(shots, units)`, pure): consecutive units with the same `beat` are one act. The shots of the Short's footage
+  (`opening.marked`) are never part of an act and are never touched by anything in this part (the lesson: a mark is skipped by every
+  later step). An act whose lines last less than `S("ACT_MIN_S", float)` (12) joins the act BEFORE it (the first act joins the next).
+  Then, while the acts' changes of place - `len(acts) - 1` - are more than `max(3, floor(S("PLACE_CHANGES_PER_MIN_MAX", float) *
+  minutes))` (1.5 a minute; minutes = the voice's length / 60), the SHORTEST remaining act joins the act before it. Arithmetic said so
+  that it can be checked: a film of 82 s with 3 beats has 2 changes, allowed 3: nothing joins; a nine-minute script with 20 headings
+  has 19, allowed 13: the six shortest acts join their neighbours. Both cells are levers of D6 (`ACT_MIN_S` 6 to 30, step 2;
+  `PLACE_CHANGES_PER_MIN_MAX` 0.5 to 3, step 0.25, raising needs the owner). Where the numbers come from: F1's brief has six beats in
+  8:10 to 9:00 = five changes, well inside; no study gives a figure (NOT FOUND) - they bind only a script that jumps.
+- THE PLACE OF AN ACT (`path.place_of(act, bible, units)`): the `visual_world` of the bible beat whose `n` equals the act's first beat
+  + 1, cut to its first 10 words and stripped of a final full stop; when the bible has none: the first name `shotplan.scene_of` finds
+  in the act's lines joined ("kitchen", "street" ...); when neither: the place of the act before it (act 0 without any: "your home").
+  The briefs tell the showrunner to NAME it (3.5: "`visual_world` of every beat names its place in three or four words").
+- THE LAY (`path.lay(shots, units, bible, ep)`, pure but for the Settings it reads; called in `episode.produce` AFTER `motion.place`,
+  the last step before the script gate - it changes no shot's type): every shot of type still, living or kling that carries no `short`
+  mark gets `path` = {"act": a, "place": the act's place, "sign": +1 or -1, "first": is it the act's first such shot}; `sign` =
+  `+1 if shotplan._h(ep, a) % 2 == 0 else -1` for "path", and ONE sign for the whole video for "walk" (`shotplan._h(ep, "walk") % 2`);
+  and its prompt gets, ONCE (idempotent: not added when the prompt already holds "ONE PLACE FOR THIS ACT"), in front of everything
+  else: "ONE PLACE FOR THIS ACT: {place}, the same light and weather as the shot before, seen at eye level. ". The plan carries
+  `path` = [{act, place, from_s, to_s, sign}] (`S_["path"]`, saved with the plan). A plan saved before this batch has no `path` marks:
+  both checks say NA "made before the camera path".
+- EYE LEVEL AT THE SOURCE (`shotplan.assign_anchors`): when `path.on()` every picture's `pov.angle` is `ANGLES[0]` ("eye level") and its
+  lens is one of `LENSES[1:4]` ("24mm wide", "35mm", "50mm natural") - the foreground anchor, the lens among those three and the
+  phrasing still never repeat on two pictures in a row. With the switch off or in a "cut" format the function does what it did.
+- A WALK MOVES FORWARD (`immersion.apply`): when `formats.camera()` is "walk" the living shot's motion sentence is "first-person
+  eye-level view, moving forward at a slow walking pace, particles drifting past the lens. " in place of the breathing sway.
+- NO PICTURE OF ANOTHER ACT (`episode.anchor_shots(shots, budget, max_run=None, opening=(), firsts=())`): `firsts` (the index of every
+  shot with `path.first`, type still) are taken from the SAME budget right after the opening's shots and before the Director's hero
+  shots (`[:left]`, `left -= ...`) - never beyond the budget: NO paid picture is added. `episode._assets` and the script gate both get
+  their anchors from ONE new helper `episode.anchors_for(S_)` (the same call with the same arguments: the gate must judge what the
+  asset step will do). Since the first still of every act then has a picture of its own, "the nearest earlier picture" of any later
+  still of that act is a picture of that act.
+- ONE DIRECTION OF TRAVEL (`whatifs/render.py`): `camera_path(..., sign=None)` - `sgn = sign if sign in (-1, 1) else rng.choice([-1, 1])`;
+  `choose_move(rng, energy, avoid, pool=None)` and `pick_move(suggested, rng, energy, avoid, pool=None)` choose only from `pool` when one
+  is given; `parallax_segment(..., sign=None, pool=None)` hands both on. `path.MOVES` = ("push_parallax", "drift", "handheld",
+  "rack_focus", "orbit", "whip_settle") - never "pull" (the camera would travel backwards) and never "kb_roll" (it rolls the horizon:
+  the head is no longer level); "whip_settle" stays a high-energy move only. In `episode._render` a still state of a shot with a `path`
+  mark is drawn with `sign=s["path"]["sign"], pool=PATH.MOVES`.
+- THE RENDER RECORD (`episode._render`, the dict appended to `job.segmeta`): three new fields - `act` (the shot's `path.act`, else None),
+  `src` (the unit index whose picture this state shows: `i` when the shot has its own picture, else the index `prev_img` came from - a
+  new variable `prev_i` set where `prev_img` is set), `move` (`RN._LAST["move"]` right after `parallax_segment` for a still state, ""
+  for a clip, a graphic, a cutaway) and `sign` (what was passed). `episode._finish` hands them to the gate inside `ctx["states"]`.
+- CHECK `camera_path` (script stage, owner D6, SHOW check; judged on the shot list BEFORE any picture is paid): NA as said above; FAIL
+  when (1) a picture shot without a `short` mark has no `path` mark, (2) a shot with `path.first` and type still is not in
+  `episode.anchors_for(S_)` ("act A would open on a picture made for another act"), (3) a picture's `pov.angle` is not "eye level",
+  (4) a picture's prompt does not hold its act's place sentence, (5) an act is shorter than `ACT_MIN_S` or the changes of place are over
+  the allowance (the joins did not run). PASS: "A acts in A places (C changes in M.M min, at most X): place 1 | place 2 ...; every
+  picture at eye level; every act opens on its own picture".
+- CHECK `camera_shown` (final stage, owner D6, SHOW check; judged on WHAT THE RENDER RECORDED, never on the plan): for every state with
+  an `act` and type still: FAIL when `src` is a unit of another act ("at T s act A showed a picture made for act B"), when `move` is not
+  in `path.MOVES` ("at T s the camera moved backwards or rolled: pull"), or when `sign` is not the act's sign. States of clips, of the
+  Short's footage, of graphics and cutaways are not judged. PASS: "N still states in A acts: each showed a picture of its own act, at
+  eye level, travelling one way (K moves: push_parallax x, drift y ...)". NA as above, and when no state carries an act.
+**3.3 THE ENDING IS THE FORMAT'S (issues 74 and 101; `formats.py`, `cta.py`, `room.py`, `prompts.py`, `contract.py`).**
+- THE ASKS BY KIND. `prompts.WRITER`: the sentences from "AUDIENCE ASKS (like, subscribe, share):" to "... or after a reaction line."
+  become the placeholder `@@ASKS@@`, filled in `room._run_room` with `formats.asks_brief()`: for all three kinds the ORIGINAL words byte
+  for byte (a test compares the filled prompt of a trial with d8101c8's); for ("subscribe",): "ONE ASK ONLY: write exactly one short
+  moment in which the foil asks the viewer to subscribe - inside the conversation, in the show's own voice, never begging, between 40%
+  and 75% of the script, right after a payoff has landed, at most 24 words, clearly using the word subscribe, with a [SKEPTIC] label.
+  No like ask, no share ask, and no ask of any kind once the last consequence has begun."; for (): "NO ASK: never ask the viewer to
+  like, subscribe, share, comment or follow - anywhere."
+- `cta.ensure(script, seed="", last="", kinds=None)`: adds only the missing kinds that are in `kinds` (None = all three: unchanged).
+  NEW `cta.strip(script, keep=(), tail_pct=0)` -> (script, removed): every spoken line whose words `kind_of_text` recognises as a kind
+  NOT in `keep` is removed; with `tail_pct` > 0 also every ask of ANY kind among the last `tail_pct` percent of the spoken lines. In
+  `room.py` each of the three call sites of `CTA.ensure` becomes: when `S("ENDINGS_ON", bool)` first `CTA.strip(text, keep=FMT.asks(),
+  tail_pct=12 if FMT.ending() != "tease" else 0)`, then `CTA.ensure(..., kinds=FMT.asks())` (for F1 the subscribe ask is placed by
+  `cta.POS` at 65% of the lines, outside the tail; for F3 nothing is added).
+- NO PROMISE THE MACHINE CANNOT KEEP (open issue 101, DECIDED): under the ladder the next long video is the topic of whichever Short
+  viewers pick - never a tease's. NEW `room.tease_on()` = `S("NEXT_TEASE_ON", bool) and FMT.ending() == "tease" and not
+  (S("ENDINGS_ON", bool) and ladder.on())`; `tease_brief`, `ensure_tease`, `clean_tease`, `teased_pitch` ask it in place of the cell
+  (`episode.consume_tease` and the description's "next" line follow from an empty `d["next_tease"]`). `contract.p_tease`: when
+  `ENDINGS_ON` and `ladder.on()` -> NA "under the ladder no next topic is promised: the next long video is the Short viewers pick".
+  With `LADDER_ON` FALSE (the older tests) a trial ends on its tease as before.
+- THE LAST LINE (`formats.ending_report(text, fmt, units=None)` -> {ending, last, late, problems}; uses `inside.sentences`, `inside.YOU`,
+  `inside.past`, `cta.kind_of_text`): THE WINDOW = the spoken lines that START inside the last `S("ENDING_FREE_S", float)` (40) seconds
+  of the real voice timeline when `units` carry times, else the last 12% of the spoken lines. "question" (F1): the last counted
+  sentence ends with "?" and matches `YOU` - else "the last line is not the question to the viewer: '...'". "arrival" (F3): the last
+  counted sentence matches `YOU`, is not `past` and does not end with "?" - else "the last line is not the arrival: '...'". Both: no
+  line in the window is an ask (`kind_of_text`) and none matches `TEASE` = `\bnext (time|video|episode|simulation|case|week|one)\b|\bsee
+  you (next|soon)\b|\bstay tuned\b` - else "an ask / a pointer to another video inside the last 40 s: '...'". "tease": nothing is
+  judged here (the trial's own devices judge it).
+- `formats.ending_issues(text)` (for the ONE fix, tag "ENDING FIX"): "THE ENDING: " + the problems + ". This format ends on " + ("the
+  question to the viewer - would you keep it? - in your own words" | "the arrival: one sentence to 'you' saying what you now see
+  differently") + "; it is the last line and nothing follows it; no ask and no 'next time' in the last 40 seconds". F1's and F3's
+  writer briefs say the same (3.5).
+- CHECK `format_ending` (script stage, owner D4, SHOW check, never a device): NA when `ENDINGS_ON` is FALSE, no format, or the format
+  ends on a tease; else PASS "ends on its question: '...'; no ask and no pointer in the last 40 s; asks in this video: subscribe 1" or
+  FAIL with the problems (judged with the units of the real voice).
+- LEVER: `ENDING_FREE_S` (D13; 20 to 90, step 10). `formats.asks` is data of the row: an arm with another set of asks is a new row or a
+  later lever of Strategy (V4) - said under NOT IN THIS BATCH.
+**3.4 A NAME IS SHOWN ONLY FOR A CHARACTER WHO IS DRAWN (issue 75; `overlay.py`, `episode._render`, `contract.p_living`).**
+`overlay.SpeakerTag(units, ww, wh, fps, drawn=None)`: with `drawn` given, only spans whose speaker is in it. In `episode._render`: when
+`S("CHIP_DRAWN_ONLY_ON", bool)` - no tag at all when `formats.chips()` is False (F1, F3: nobody is on screen, so nobody is named), else
+`drawn = {spk for spk in overlay.COLOURS if living.has_art(spk)}`. The renderer records what it really drew: `job.chips` = the tag's
+spans [(start, end, speaker)] ([] when no tag), handed to the gate as `ctx["chips"]`. `p_living` (every format) FAILS when a chip names
+a speaker for whom `living.has_art` is False ("a name chip for X, who is never seen") and its PASS words end "; no name chip for a
+character nobody sees". With the switch off: as d8101c8.
+**3.5 F3 "THE WALK" AS A ROW AND AN ARM (`formats.py`, `core.py`, `manage.py`, `fakes.py`).** The texts, word for word:
+- `F3_SHOWRUNNER`: "FORMAT OF THIS EPISODE - F3 \"THE WALK\" (not a trial: no court, no charge, no exhibits, no jury, no judge; return
+  no show_plan). Choose and phrase the premise as ONE walk the VIEWER takes through a world in which one law of nature is different -
+  from his own front door outward. The thumbnail scene is what he sees when he opens that door."
+- `F3_BIBLE`: "FORMAT OF THIS EPISODE - F3 \"THE WALK\" (not a trial). ONE unbroken walk, told as stations along ONE route, each reached
+  on foot from the one before - never a jump, never a flashback: (1) THE DOOR - you open your own front door and the impossible thing is
+  already there; (2) THE STREET - what it has done to the first hundred steps; (3) THE OTHERS - the first people or animals you pass,
+  living with it; (4) THE EDGE - where your town ends and you see how far it goes, with the one real piece of science that explains
+  it, said while you are looking at it; (5) THE TURN - the one beautiful or terrible thing you can only see from here; (6) THE ARRIVAL
+  - where the walk ends, and what you now see differently. The `visual_world` of every beat NAMES its station in three or four words
+  ('your front step', 'the main road'). No courtroom, no charge, no exhibits, no jury in any beat."
+- `F3_WRITER`: "FORMAT OF THIS EPISODE - F3 \"THE WALK\". This episode is NOT a trial: no court, no charge, no judge, no jury, no
+  witness, no exhibits, no prototype - never those words. ONE law of nature is different today and YOU walk through it.\nONE VOICE ONLY:
+  [DIRECTOR], a guide close to your ear - calm, exact, warm - speaking to 'you' in the present tense while you walk. Nobody else speaks:
+  no second voice, no interview, no quoted speech.\nONE ROUTE: you leave your front door and never go back; every beat is the next
+  station of the same walk, reached on foot. Say what you pass, what is under your feet, what you hear. An explanation is said only
+  while you are looking at the thing it explains. ONE idea; whatever the idea does not need is cut.\nHUMOUR: at most two dry asides.\n
+  END ON THE ARRIVAL: the last line says, in one sentence to 'you', what you now see differently. No question is needed, no ask, and
+  nothing follows it."
+- F1's texts gain two sentences: `F1_BIBLE` ends "... The `visual_world` of every beat NAMES its place in three or four words ('your
+  bathroom', 'your street')."; `F1_WRITER` ends "\nEND ON THE QUESTION: 'would you keep it?', in your own words, is the LAST line of the
+  video. Nothing follows it."
+- `formats.kept_report`: a speaker label that is not one of the row's `voices` is "a voice that is not part of this format" for EVERY
+  format that is not a trial (today's pattern names JUDGE and WITNESS only: in F3 a [SKEPTIC] line must be found too).
+- THE SHARES (the redesign's 10.7; levers of D1, unwired until V4): the defaults become `FORMAT_SHARE_F1` 60, `FORMAT_SHARE_F2` 20,
+  `FORMAT_SHARE_F3` 20. A live Sheet is moved ONCE (`manage.v12v2b_upgrade` at both setup sites, cell `V12V2B_MOVE_DONE`); what it may
+  change is DATA: `manage.V12V2B_FLIPS` = [("FORMAT_SHARE_F1", "70", "60"), ("FORMAT_SHARE_F2", "30", "20"), ("FORMAT_SHARE_F3", "0",
+  "20")] - a cell is moved only while it still holds the OLD default (his own value stays). `FORMAT_SHARE_F3` gets its lever rule and
+  registry entry exactly as F1's and F2's have them.
+- THE ARM IS RECORDED: the draw carries `d["format"]` = "F3" and the learning core records it where it records F1 and F2 (the builder
+  names the function and proves it with a test: a finished F3 episode's row on tab `Video_Features` carries the format).
+- THE OFFLINE WRITER: in F3 every line of the stand-in script is the guide's, and the script passes 3.1 at 60% and ends on its arrival.
+**3.6 SMALL DECISIONS OF THE BRIEF (each built, or decided with its reason).**
+- ISSUE 129, BUILT: the Short's hook is HANDED to the writers. In `room._run_room`, when the draw has a promoted Short whose hook the
+  ladder row holds (the builder reads `ladder.py` / `hooks.run_hooks(proven=)` and names the reader), the writer's brief gains: "FIRST
+  LINE (proven by real viewers; fixed): begin the narration with exactly this line, word for word: \"<hook>\" - then go on from it; do
+  not say it again in other words." The insert of `hooks.run_hooks` stays as the guard and adds nothing when the line is already first.
+- ISSUE 177, DECIDED AND BUILT (his item 16: a shape without a face is what he rejected): `show.py`, the witness's `visual` becomes "seen
+  in half light between the archive shelves: round glasses, ink-stained cuffs, a tired, kind face"; `data.py`, the text of thumbnail
+  template `T3_silhouette` becomes "Your own hands in the near foreground, first person, reaching toward the impossible scene. No
+  person is shown." (the KEY stays: it is a row of tab `Strategies` on a live Sheet); the retired rule `presenter_silhouette`
+  (`truth.py`) also matches `silhouette behind` and `Silhouetted person`.
+- ISSUE 77, BUILT: in a format that is not a trial the cast's canon items (`canon.cast_ids()`) are left out of the writer's playbook and
+  are not demanded by `canon_in_brief`; the newest aired case and its one plain callback line stay. The builder reads `canon.py` and
+  `cite.py` whole, names the function where the playbook's items are chosen, and proves both ways: an F1 writer's prompt holds none of
+  the four names; a trial's holds them as before.
+- ISSUE 60, DECIDED, no code: the story marks that are the trial's own ("Exhibit 2", "Prototype No 41") cannot be spoken in a format
+  that is not a trial (`formats._TRIAL_RX` holds the script); "hour 1" and "day 3" orient a viewer in any format. The exemptions stay.
+- ISSUE 69, HANDED to V5 with its reason: a same-subject decoy must be a title that is NOT true of our video - the runner-up titles of
+  our own package are all true of it; titles of other channels' videos on the subject are what the Observatory collects.
+- ISSUE 124, HANDED to V1c (the plan's brief 12.3 names it). ISSUE 125, NARROWED: its chip half is 3.4; whether the trial's "REC" look
+  may be laid over the footage viewers stayed for is his eye at the pilot, as the issue says.
+**3.7 WHO OWNS WHAT, AND WHAT THE NUMBERS ARE.** New cells (`core.DEFAULTS`, each with its note): `INSIDE_ON`, `INSIDE_MIN_PCT_F1` 50,
+`INSIDE_MIN_PCT_F2` 30, `INSIDE_MIN_PCT_F3` 60, `LECTURE_MAX_SENTENCES` 4, `CAMERA_PATH_ON`, `ACT_MIN_S` 12, `PLACE_CHANGES_PER_MIN_MAX`
+1.5, `ENDINGS_ON`, `ENDING_FREE_S` 40, `CHIP_DRAWN_ONLY_ON`, `V12V2B_MOVE_DONE`: twelve; three defaults changed (the shares). Levers:
+the three floors and `LECTURE_MAX_SENTENCES` and `ENDING_FREE_S` (D13), `ACT_MIN_S` and `PLACE_CHANGES_PER_MIN_MAX` (D6),
+`FORMAT_SHARE_F3` (D1): eight (75 -> 83; count again before a test pins it). Checks: `viewer_inside`, `camera_path`, `format_ending`
+(script), `camera_shown` (final): 64 -> 68 hard checks, `SHOW_CHECKS` 53 -> 57, every one classified. D13 wraps `inside.py`, D6 wraps
+`path.py` (`registry`). EVERY number above is a starting value and a lever; none comes from a study (Step 1, NOT FOUND).
+**3.8 MONEY, said before the build (by the code's own lines; NOT measured on a bill): NOTHING IS ADDED.** No new paid call: the voice
+rules ride on the ONE existing fix; an act's first picture comes out of the SAME picture budget; the camera's direction, the chip and
+the endings are code; F3 is one voice for the same seconds and the same pictures. A long video stays about Rs 535 at the floor, a
+Short about Rs 100, the month as V2d-b left it. `tests/paid_calls.py` must not move; if the counter shows one more picture, the builder
+stops and writes the count before any number is changed (`V12V2B_ADDED` only with the reason, named in the record first).
+**3.9 THE ORDER OF THE BUILD (a checkpoint commit and push after each; the finding before its edit).** 0. every OPEN finding of
+`reviews/V2d-b_audit.md`, exactly as its `FIX:` says (chapter 14). 1. The row keys, their four readers, the twelve cells, the four
+switches, `OLD_INSIDE` in `tests/conftest.py`: no behaviour changes yet; the whole older suite is green with the switches off. 2. 3.1
+(the measure with its four passages FIRST, then the brief, the fix, the check, the stand-in writers, `voice.py`'s beat, `open_acts`).
+3. 3.3. 4. 3.4. 5. 3.2 (the acts and the lay, eye level, the anchors, the render's sign and pool, the record, the two checks). 6. 3.5.
+7. 3.6. 8. The sweep, the rehearsal, the block, the docs (below). 9. The break list, then the breaks.
+**3.10 ENFORCEMENT, THE SWEEP, THE REHEARSAL, THE BLOCK.**
+- `tools/sweep.py`: NEW `inside_of(core, ep)` (the pattern of `motion_of`): on every long-video id `viewer_inside` and `format_ending`
+  must have PASSED - except that `format_ending` may be NA with the words "ends on a tease" in a trial only - and `camera_path` and
+  `camera_shown` must have PASSED in F1 and F3 and be NA with the words "cuts between its pictures" in a trial only; a missing row or
+  any other NA makes the id BAD. Its words begin "inside the format held: " and carry the format, "P% of N sentences inside (floor
+  M%)", the acts and places, and the ending. `summary()` counts `format_inside_held`.
+- `tools/rehearsal.py`: asserts the four checks as the sweep judges them and prints the line "inside the format: ...".
+- `proving/blocks/V2b.json`: the promoted block of V2d-b whole (nothing removed) + the counter `format_inside_held` on parts A, B and C's
+  long-video ids + the rehearsal pair ["F3", "S1"] beside the three there are + the rehearsal line "inside the format:" + a watch line
+  "sentences inside the scene (%)" with the regex `([\d.]+)% of \d+ sentences inside`, warned under 55 (no hard floor: the check has its
+  own). The sweep's part A draws its formats by id at 60 / 20 / 20: the builder counts how many of its 20 ids are F3 and writes it down;
+  if none is, one more part of 4 ids forced to F3 (`WI_FORMAT`) joins the block.
+- THE TEST FILE `tests/test_v12_inside.py`: every rule of 3.1 to 3.6 both ways, one fault at a time, each failing for the reason it
+  names - among them: the four passages and their figures; a "you" in the past is not inside and "if you were" is; the foil's "I"
+  counts in F1 and not in a trial; a run of 4 passes and of 5 fails; an act that explains first; a graphic that opened an act became a
+  still and a marked shot did not; a unit knows its beat; acts join by length and by the allowance (the two worked examples of 3.2);
+  the place from the bible, from the word list, from the act before; the lay is idempotent and never touches a footage shot; eye level
+  at the source and the old rotation with the switch off; `firsts` inside the budget and never beyond it; the render's sign and pool
+  (a still state of a path shot never gets `pull` or `kb_roll`, over 200 seeded draws); the record's four fields; both camera checks
+  failing for each of their reasons, on a doctored record; the asks by kind (the trial's prompt byte for byte, F1 one, F3 none; `strip`
+  and `ensure`); no tease under the ladder and one without it; the last line of each ending; a chip only for a drawn speaker and none
+  in F1; F3's briefs, its one voice, a [SKEPTIC] line found in F3; the one-time move (his own value stays, never twice); the hook
+  handed over and not doubled; the two texts of 177 and the widened retired rule; the cast items out of an F1 writer's prompt; the
+  wiring (owners, levers, PROTECTED, the matrix rows, the counts). And THREE WHOLE PRODUCTIONS with ids no other test file uses (a test
+  proves it), their work folders removed: an F1 video (all four checks PASS, one subscribe ask, the last line a question, no chip, no
+  tease); an F3 video (one voice, one sign in every still state, the arrival); a trial under the ladder (the camera checks NA for their
+  reason, no tease, a chip only where art exists).
+- THE WORST VIDEOS THAT MUST BE HELD (each a test and a deliberate break): a script that lectures in the third person for a paragraph
+  before anything is shown (`viewer_inside`, rules b and c); a shot list whose acts jump between five places in a minute (joined by
+  code; `camera_path` fails when the joins did not run); a still that shows another act's picture (`camera_shown`); an F1 video that
+  ends on "subscribe" and "Next simulation" (`format_ending`; `strip` and `tease_on` at the source).
+- DOCS: a matrix row per rule of the Step 5 table; the ledger's paragraph "V2b"; `CONCEPT.md` (F3 is real, the endings, the camera
+  path, the chip); two builders' recipes in the repo's `CLAUDE.md` ("Inside the format: the voice", "The camera path"); `SYSTEM.md`
+  regenerated; founding Palace items `v2b.*` with real code references (D13: the voice; D6: the path; D4: the endings; the takeaway).
+- HYPOTHESES (numbered on from H27): H28 a video whose inside share is higher holds a higher share viewed (the pair is on record: the
+  `viewer_inside` evidence and the video's averageViewPercentage). H29 an F1 video with its one subscribe ask wins more subscribers per
+  1,000 views than an F3 video without (confounded with the format - said; the first real figure of what an ask is worth here).
+  H30 the retention curve dips less at an act break of a path format than at a change of place in a trial. H7 stands (the walk).
+- CHANGED FROM THE REDESIGN, with reasons: (1) 10.7 "each shot begins where the last one ended, moving the same way" is built as ONE
+  direction of travel per act for the code-made moves and no picture of another act - a still cannot "begin where the last ended" and
+  the three animated scenes of a long video are never neighbours; chained clips stay what a Short's S3 does. (2) 10.7 "a jump to another
+  place is an act break, and they are counted": the act comes FIRST (the writer's beat) and its place follows; a jump inside an act
+  cannot be recognised in a model's prompt by code, so code makes it impossible on the film instead (no picture of another act) and
+  counts the changes of place against an allowance. (3) "the viewer's own hands or body where natural" exists (the foreground anchors)
+  and is kept. (4) F3 "from the second month": it starts with the others, at its 20, because the launch is after the whole build
+  (items 29 and 30). (5) The brief's "three asks" become one in F1 and none in F3, not none everywhere (research 7).
+- NOT IN THIS BATCH, on purpose: a paid look at the finished pictures (design C); chained clips in a long video; a sound bed that follows
+  the walk (D7 has no run of its own for it: a later design); format arms with other sets of asks, and the shares moved by Strategy
+  (V4); the same-subject line-up (V5); one story across title, thumbnail and first seconds (V1c).
+- WHAT ONLY REALITY CAN ANSWER (open issues 185 to 188, for the pilot): what share a REAL writer reaches and whether the fix raises it;
+  whether the picture model keeps one place when the prompt says so; nine minutes of one voice; what the one ask is worth.
+
 ### V2d-b - THE LADDER'S RULES (13 Nov 2026) - ACCEPTED (final code commit 5827d97 GREEN in GitHub Checks run 159: 1551 passed; sweep 58 of 58 ids)
 (Its code is d8101c8; every later commit is text only. History: built on 60d9483; the prover's FIRST PASS on 60d9483 was RED - the sweep
 55 of 58 ids, step 6b; repaired and built again on d8101c8; the SECOND PASS on 5827d97 is GREEN - its 6b follows the repair's 6a; accepted
@@ -5446,6 +5882,27 @@ Rehearsal asserts `docs_current` ran and passed.
    model, a changed licence and a Short held by its file gate are still covered only by tests. Issue 180 (c) narrowed: `accept_block.py`
    ran a whole block on a real batch (V2d-b's second pass) and computed a GREEN verdict; its archive was then destroyed by the plan's
    second `verdict.py` run (183). Issues 177, 178, 181, 182 stay as written.
+185. (V2b's design -> the pilot) THE LIMITS OF THE VOICE RULE HAVE NEVER MET A REAL WRITER. The floors of the inside share (50 / 30 / 60)
+   and the run limit (4) are set between four written passages and the offline stand-in writers. At the pilot read the `viewer_inside`
+   evidence of the first real F1 and F3 scripts (the share, the longest run, the act that explained first) BEFORE the gate's verdict is
+   trusted, and set the cells from them; a real writer who says "you" in every sentence and still bores is not caught by this rule at
+   all - that is the judged floor's (V1c) and the viewers' (H28).
+186. (V2b's design -> the pilot, HIS EYE) ONE PLACE PER ACT IS A SENTENCE IN A PROMPT UNTIL A PICTURE MODEL KEEPS IT. Code guarantees
+   what it can see: no still shows a picture made for another act, every picture is asked for at eye level, the code-made camera
+   travels one way inside an act. Whether two pictures of "your street" look like ONE street only an eye can say: the pilot shows
+   him the first long video act by act; no check of this batch can.
+187. (V2b's design -> the pilot) F3 "THE WALK" IS ONE VOICE FOR NINE MINUTES, never heard: the older machinery was written for two voices
+   (reactions, the joke tournament, the peaks before a reaction line). The whole-production test proves it runs; whether it holds is
+   H7 and his ear.
+188. (V2b's design -> V4 / B8) THE ONE SUBSCRIBE ASK OF F1 AND THE NONE OF F3 are starting values from one vendor's test of 2015
+   (research 7); H29 reads them. Which asks a format carries is data of its row and nobody's lever until Strategy is wired.
+189. PLAN ISSUE 3 (V2b's designer, a Fable session, 14 Nov 2026): the plan's chapter 12 says "a builder may SPLIT a batch at its start"
+   and `proving/next.py` cannot: the order of the batches is a list in `STATE.json` that only `next.py` moves, and it has no move for a
+   half ("V2b-a"). `STATE.json` is never edited by hand. Until a Fable session gives `next.py` a split (with its tests in
+   `proving/selftests/`), a batch is designed whole and built in dependency order with checkpoints (V2b: step 3.9 and its fall-back).
+190. (V2b's design) AN ACT IS WHAT THE WRITER MARKS: "## BEAT" headings. A real writer may write two or twenty; code joins acts that are
+   too short or too many (3.2) and the first shot of every act is made a picture, but a script with ONE heading is one act in one
+   place for nine minutes and nothing holds it. If the pilot's scripts show it: a floor for the number of acts per format, as data.
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - SINCE 13 NOV 2026 (the owner's item 33): the acceptance block, its verdict, the deliberate breaks and the moves of the state are
@@ -5547,7 +6004,7 @@ Rehearsal asserts `docs_current` ran and passed.
 | V2c-b2b2 | done 13 Nov 2026 | 1457 / 0 / 0 on 1d3a77a (laptop); GitHub 1457 passed (run 131) | GREEN in F1 / F2 with Shorts in S1 / S2 / S3 (54 + 5 + 1 checks) | The cut-downs: a long video makes NO cut-down reels any more - the paid planning call, two paid covers, four re-voiced reels, the old upload, releases 2 to 4 and the checks `shorts` and `short_covers` are gone (60 hard checks; 71 levers); its topic already has the Short real viewers chose and the pull from that Short is YouTube's related-video link, a hand step (V3's release card); the long video's release is one step. Counted from the code, the defaults would have posted about 38 short videos a month through four uploads (12 Shorts, 16 cut-downs, 8-9 pilot Shorts, 2 special reels): now 12 - ONE door for every upright video (`release.py`; `truth.OLD_DOORS`: four older doors, off by default, may only shrink; a new door fails Plan Guard, the tests and check `docs_current`), the pilot Shorts and the special reels paused by default and moved once on a live Sheet. Found while proving and fixed at the cause, both older than this batch: a job could hang for ever in the prompt-cache bookkeeping (a warning logged inside a lock; found with a stack dump of a stuck test worker), and a long video was held for its Short's own hook 'Today you ...' (reproduced with the id on the accepted code first). 63 deliberate breaks, each failed a test. No paid call added, seven removed a long video (about Rs 27; the counter agrees). GitHub run 131 GREEN on 1d3a77a (130 GREEN; 129 RED = three test files importing the deleted module at the first build checkpoint); sweep 58 of 58 ids on the first pass. |
 | V2d-a | done 13 Nov 2026 | 1491 / 0 / 0 on 22fb8fd (laptop); GitHub 1491 passed (run 139) | GREEN in F1 / F2 with Shorts in S1 / S2 / S3 (54 + 5 + 1 checks) | The money and the model (V2d was split at its start): the hero clip model is PICKED BY VALUE from a table of what the provider's own pages say (new `whatifs/clips.py`, D6; cell `CLIP_MODELS`) - the best-ranked model the month's plan can pay, a tie by the ranking's error band to the cheaper, never the cheapest for being cheap; with the pages of 13 Nov 2026 a model ranked 6th of 35 at USD 0.02 a second where the code paid 0.084 for a tier the ranking does not list. A clip is bought by the second at the length of its shot (no slowed clip); the provider's listing is read live for status, inputs and clip lengths and its price - a base figure, wrong for our setting - is only watched. Every estimate is ONE table of lines (`costguard.lines`) that the paid-call counter checks call by call and that every run is set against (`reconcile`; the sweep's `money_of`). The month's split is computed (`governor.split`) and the cadence follows it: four long videos and twelve Shorts fit Rs 5,000 with about Rs 1,000 not planned (before: seven Shorts, none after the third week). Found by counting and fixed at the cause, all older than this batch: Rs 55 of every long video's estimate for calls that never run, four paid pictures in no estimate, a runner-up thumbnail booked to an episode that does not exist, a test that depended on a 45-second clock. 145 deliberate breaks, each failed a test. No paid call added or removed; 60 hard checks, 71 levers, 188 founding Palace items. The final code commit moved once: GitHub's one process showed that a new test reused another test's episode id (runs 136-138 RED, read and reproduced). GitHub run 139 GREEN on 22fb8fd; sweep 58 of 58 ids on the first pass, the money agreed on every id. |
 | V2d-b | done 14 Nov 2026 (built 13 Nov on 60d9483; the prover's first pass RED - sweep 55 of 58 ids, one id, EP209901010900, held by `moving_share` at 88.5% of the paid seconds against 90%, `V2d-b_RED_1.md`; REPAIRED on d8101c8 - the scenes' room reserved, every paid clip shown whole, the measure without a grid loss, 39 of 39 breaks; the second pass on 5827d97 GREEN: 100% of the paid seconds seen and the scenes 15 of 15 s on every long-video id) | 1551 / 0 / 0 on 5827d97 (its code d8101c8; laptop, serial, frozen copy); the parallel pre-check 1551 passed; GitHub 1551 passed (run 159); sweep 58 of 58 ids on the first pass (the first pass on 60d9483: 1544 / 0 / 0, GitHub run 146, sweep 55 of 58 - RED) | GREEN in F1 / S1, F2 / S2, F1 / S3 (56 + 5 + 2 + 1 checks) | The ladder's rules: ONE market of commercially licensed models for every moving second (the model paid for "living stills" was licensed for research only: found on its own page, gone by a one-time move); the month's money as MOVING SECONDS with a floor of 20% in every estimate and a target of 40% that today's price does not reach (about 29% in a full month); the seconds placed by code and every paid clip shown whole (new `whatifs/motion.py`, D6); the finished film MEASURED - the share that really moves and the paid seconds found again (check `moving_share`); a Short's finished file with a gate of its own (`short_moving`, `short_sound`: a Short that fails is made, kept and waits for one tap); a character DRAWN OR ABSENT (the code that drew the black shape is deleted); real footage as a short anchor with a record and a credit (new `whatifs/stock.py`, check `stock_share`); a Short that sounds from its first frame as a phone plays it. 64 hard checks, 75 levers, 197 founding items, 53 new tests (52 in `tests/test_v12_motion.py`, one more case of the test that runs once per retired rule), 108 deliberate breaks. A long video about a promoted Short costs about Rs 535 at the floor (Rs 381 before). Not proven by anything: a real living clip against the motion limit, a person in real footage whom no title names (open issues 165, 166). |
-| V2b | after V2d-b | | | Inside the format: first person and camera continuity as measured rules, F1's own ending, the speaker chip, F3 "The walk" |
+| V2b | DESIGNED 14 Nov 2026 by a Fable session (steps 1 to 3 in the record; not built, not accepted); the design waits for its Fable review | | | Inside the format: the format row says how much of the voice is inside the scene, how the camera travels, how the video ends and what it asks; the voice counted sentence by sentence (a floor, no lecture, show then tell); the camera path executed by code (an act has one place, no picture of another act, eye level, one direction of travel) and judged on the render's record; the ending the format's own (one ask in F1, none in F3, no tease under the ladder); a name chip only for a drawn character; F3 "The walk" as a row and an arm (60 / 20 / 20). No paid call added |
 | V1c | after V2b | | | The judged floor with the canary (the owner's rejected video must lose), his verdict tab, the maker's line |
 | V4 | after V1c | | | The CEO and the ladder: D1 Strategy wired, the portfolio, decide-inform-implement; the owner's input tab and the scoreboard |
 | V5 | after V4 | | | The Breakout Observatory (hits against siblings, three rings, patterns counted by code, one trial each) and the aspect map (item 19) |
