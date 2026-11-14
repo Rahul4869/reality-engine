@@ -1702,6 +1702,29 @@ THE PLAN'S 5.7 AND THE V2d-b AUDIT'S F1 "DONE WHEN" (every new whole-production 
 `tests/test_v12_inside.py` and the 44 files after it (`tests/test_v12_motion.py` among them, with F1's test), real pytest, strict, detached, alone: "1052 passed in
 3106.31s (0:51:46)". THE AUDIT'S FINDING F1 IS REWRITTEN TO CLOSED in `reviews/V2d-b_audit.md` (its break CAUGHT on a32d2be; its test in 20f00be; no line of
 `whatifs/` changed for it - the finisher checks).
+STEP 8 (5) - THE BUILDER'S BLOCK, ONCE, on dc54879 (the commit of the text above; its code = a32d2be's: `whatifs/`, `tools/`, `tests/` unchanged since): `python
+proving/accept_block.py V2b HEAD <scratchpad>/block1 --parts 12`, detached, alone, one background wait (`proving/wait_block.py`). `proving/blocks/V2b.json` as
+the fourth builder wrote it (the promoted block of V2d-b whole + `format_inside_held` on parts A, B and C + the pair ["F3", "S1"] + the line "inside the format:"
++ the watch line of the share; `accept_block.py` found it not weaker than the floor). STATUS, word for word: "12:24:07 START batch=V2b commit=dc54879 parts=12
+wt2=dc54879" / "12:58:24 END 1 precheck rc=0 :: 1643 passed in 2051.84s (0:34:11) :: tree: 0 changed" / "13:00:39 END 2 rehearsal F1/S1 rc=0 :: 1 green line(s)"
+/ "13:03:34 END 2 rehearsal F2/S2 rc=0 :: 1 green line(s)" / "13:05:44 END 2 rehearsal F1/S3 rc=0 :: 1 green line(s)" / "13:07:49 END 2 rehearsal F3/S1 rc=0 :: 1
+green line(s)" / "13:07:49 wt2 tree after parts 1-2: 0 changed" / "13:07:49 ALL DONE (the builder's block: parts 1 and 2 - now python proving/built_gate.py)".
+The pairs' lines: F1/S1 "inside the format held: F1; 87.5% of 16 sentences inside (floor 50%); 2 acts in 2 places (1 changes in 1.1 min, at most 3): your
+bathroom | your street; ends on its question: 'would you keep it?'"; F2/S2 "... F2; 59.1% of 22 sentences inside (floor 40%); the trial cuts between its pictures;
+ends on a tease"; F1/S3 "... F1; 87.5% of 16 sentences inside (floor 50%); 2 acts in 2 places ..."; F3/S1 "... F3; 92.9% of 14 sentences inside (floor 60%); 2 acts
+in 2 places (1 changes in 1.0 min, at most 3): your bathroom | your street; ends on its arrival: 'You are home, and you see your street differently.'"; every
+pair's money line "a long video Rs 579.0 , a Short Rs 101.0 ; 12 of 12 Shorts fit this month", its motion line "the ladder's rules held ... 100% of the ... s paid
+are seen moving; the scenes on screen 15 of 15 s (100%)". `"expect_tests": 1643` written into `proving/blocks/V2b.json` (5.9 act 5: 1627 after step 7 + the
+sixteen tests of step 8). `proving/cleanup.py`: "frozen copies left: none; tree: clean". NOT RUN BY THIS BUILDER (A3): `built_gate.py`, `next.py --to BUILT`.
+THE OWNER WROTE TO THIS SESSION while its runs went (14 Nov 2026, about 10:50 to 12:30 UTC): items 49 to 66 of `02_OWNER_VERBATIM.md`, each answered and recorded
+word for word (no step of this batch changed for them; items 49 to 66 are not yet carried into the requirements ledger or the Palace - a Fable session's, item 63).
+USAGE at this builder's end: the 5-hour window 0% (it reset), weekly all models 18%, weekly Fable 28% (the account's figure; this session is Opus 5.5), this
+session's context 71%.
+WHERE THE BUILD STANDS (the fifth Opus builder, 14 Nov 2026 about 13:15 UTC): STEP 8 OF 3.9 IS DONE - EVERY STEP OF THE MEMO IS TYPED. Final code: a32d2be (the
+code of every run above); the last commit is this record's. Breaks: 320 caught, 0 missed, 0 void on a32d2be. The builder's block on dc54879: pre-check 1643
+passed, four pairs GREEN. The state stays BUILD; `proving/notes/V2b_OPUS_DONE.md` is written. V2b BUILT BY OPUS - waits for the Fable finisher (A5: the
+finishing pass, then the builder's last acts 5.9 from act 1 on its own final code commit, `built_gate.py`, `--to BUILT`). For the finisher first: DESIGN
+QUESTION 21 and the list "WHAT I AM UNSURE OF" in the note.
 
 ### V2d-b - THE LADDER'S RULES (13 Nov 2026) - ACCEPTED (final code commit 5827d97 GREEN in GitHub Checks run 159: 1551 passed; sweep 58 of 58 ids)
 (Its code is d8101c8; every later commit is text only. History: built on 60d9483; the prover's FIRST PASS on 60d9483 was RED - the sweep
