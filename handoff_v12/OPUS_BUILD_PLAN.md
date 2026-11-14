@@ -111,6 +111,24 @@ done, never what a batch is built from or judged by. An Opus builder or prover a
       what is left belongs to Lane A's finishing passes and repairs (a batch that is built and cannot be finished stops the chain); the
       stop at 88% stands (A8). Extra high is spent ONLY on the design memo and its review: the dispatcher, the launch kit, the finishing
       pass, a repair and the audit are at High.
+- A9. THE CONTINUATION TYPIST'S READING (the owner's "Yes, shorter list", item 45 of `02`, 14 Nov 2026; it changes chapter 4 and amendment A3 for
+  ONE case only). MEASURED: the first Opus builder of V2b used 65% of its context for the builder's whole reading and two of the memo's nine steps;
+  at that rate every batch needs four or five Opus sessions, each reading for about an hour before it types. THE CASE: a SECOND OR LATER Opus
+  builder session of a batch whose memo is APPROVED, whose FIRST builder did the whole reading of chapter 4, and whose record holds that
+  builder's "WHERE THE BUILD STANDS". Such a session types an approved memo and decides nothing (A4); every line it types is audited by Fable
+  against the memo (A5) and proven by the block. It reads THIS FIXED LIST, each item WHOLE, and nothing of it may be skipped:
+  (1) `proving/next.py` and its card; this plan whole; the handoff `CLAUDE.md`; `02_OWNER_VERBATIM.md` whole;
+  (2) in `BUILD_STATE.md`: the head line; STANDING RULES; under NEXT the paragraph "Remember (every lesson paid for so far)"; HOW TO RUN whole;
+      the batch's record whole - Step 3 (the memo), Step 4 from its first line, every "WHERE THE BUILD STANDS", every `DESIGN QUESTION`;
+      each open issue the memo or those notes name;
+  (3) `reviews/<batch>_design.md` whole (the newest round first) and every OPEN finding `next.py` prints;
+  (4) the repo's `CLAUDE.md` whole (the builders' rulebook) and, in `docs/CURRENT/ENFORCEMENT_MATRIX.md`, the rows of the parts it types;
+  (5) BEFORE THE FIRST EDIT OF EACH STEP: whole, every file that step changes, every module that calls what it changes (search the names),
+      their tests, `tests/conftest.py`, `tests/paid_calls.py`, and `tools/sweep.py` / `tools/rehearsal.py` for a step that touches them.
+  It does NOT read `00`, `01`, `03`, `04`, `06`, the redesign, the older records, the open issues not named, the batch log. It writes into the
+  record which reading it did ("the continuation typist's reading, A9"). WHAT DOES NOT CHANGE: the FIRST builder of every batch, every designer,
+  reviewer, finisher, repairer and prover read exactly what chapter 4 and their briefs say; a continuation typist that meets a choice the memo
+  did not make writes a `DESIGN QUESTION` and never settles it from what it has not read.
 - THE DISPATCHER is the Fable session the owner gave his word to (item 38): the app lets a session start another only on the owner's own words
   in it. It starts every session of both lanes, keeps at most three Lane B sessions at work, and does no batch's own work once its context is
   past 60% (it starts a fresh Fable finisher or repairer). A session that is refused a start leaves the card and says so in the first line of
