@@ -120,6 +120,15 @@
    "from": "DESIGN_REVIEW",
    "to": "DESIGN",
    "why": ""
+  },
+  {
+   "at": "2026-11-14T03:31:32Z",
+   "batch": "V2b",
+   "by": "the designer (Fable 5.2)",
+   "commit": "",
+   "from": "DESIGN",
+   "to": "DESIGN_REVIEW",
+   "why": "round 3: the memo changed for the six changes of the review's round 2"
   }
  ],
  "order": [
@@ -136,8 +145,8 @@
   "B10",
   "V3"
  ],
- "phase": "DESIGN",
+ "phase": "DESIGN_REVIEW",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-14T03:29:30Z"
+ "updated": "2026-11-14T03:31:32Z"
 }
