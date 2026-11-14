@@ -431,6 +431,12 @@ V2d-b. NOT READ WHOLE, said plainly (the Opus builder reads them whole before it
 `cite.py`, `hooks.py`, `opening.py`, `tools/rehearsal.py`, `tests/paid_calls.py`, `tests/test_v12_formats.py`, `showfx.py`.
 USAGE AT THE DESIGNER'S END (14 Nov 2026, about 05:15 UTC; plan Ultra): the 5-hour window 6%, weekly all models 2%, weekly Fable 4%,
 context 65%. On the Max plan's card the reading alone had moved the weekly Fable line from 74% to 76%.
+WHERE THE DESIGNER'S SESSION STANDS (written at 74% of its context, 14 Nov 2026 about 06:25 UTC; weekly Fable 7%): round 1 of the design
+review asked for 16 changes (`reviews/V2b_design.md`); the memo below is changed for every one (commit ce20e49; 3.10 maps each change to
+its place) and the state is DESIGN_REVIEW again; the reviewer (session `local_e4e9a03f-1daa-4c3a-9c13-ce51f9c50fdc`) has been asked
+for round 2. If a third round is needed and this session is out of room: a FRESH Fable designer does the builder's reading of the
+plan's chapter 4, reads this record and the review file, changes the memo exactly as the review says, commits (text only),
+`python proving/next.py --to DESIGN_REVIEW`, and messages that reviewer. The V2d-b audit is done (FINDINGS 1; step 0 of 3.9).
 V2b IS DESIGNED WHOLE, NOT SPLIT: its six parts hang on four new fields of the format row and are built in the order of 3.9 with a
 checkpoint commit after each; and the state machine cannot split a batch at all (open issue 189, PLAN ISSUE 3). THE FALL-BACK: when the
 Opus builder's context passes 70% before parts 5 and 6 are built, it writes "WHERE THE BUILD STANDS" and a fresh Opus session goes on in
