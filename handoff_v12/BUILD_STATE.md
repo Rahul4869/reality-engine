@@ -1691,6 +1691,17 @@ and unbroken (a read-only probe). MISSING ASSERTIONS FOUND BY THE FIRST RUN (wri
  (16) S8-96 (`format_engine._for_format` leaves every block as it was while ENDINGS_ON is FALSE): the test compares only a TRIAL's block with the switch off -
      a trial's block is its own either way - and finds in F1 the line "Audience asks: exactly three", which `formats.asks()` keeps with the switch off. Measured
      with the switch off: the blocks of F1 and F3 equal `REALITY_ENGINE` (True); with the break False (the line "Shorts:" is gone). A new test.
+THE SECOND BREAK RUN (on a32d2be - the three tests above, the three breaks unchanged and each given its new test; the three alone first, `--only
+S4-44,S5-06,S8-96`: "BREAKS V2b: 3 caught, 0 MISSED, 317 void of 320 listed" - the 317 simply not run on that code): ALL 320 again, detached, alone, 47 minutes:
+"BREAKS V2b: 320 caught, 0 MISSED, 0 void of 320 listed" (`proving/breaks/V2b_result.json`: head a32d2be, 10:41:48 to 11:28:50 UTC); `git status` clean after it.
+STEP 8 (3) IS DONE: 0 missed and 0 void on the code of a32d2be.
+STEP 8 (4) (from `reality-engine/`, one after another, on a32d2be): Plan Guard "PLAN GUARD: GREEN"; Truth "TRUTH: GREEN"; the Palace "PALACE: GREEN" (201 items, all
+accepted; its note: "limits that did not fit a playbook cap (lowest priority first out ...): D1 3, D2 1, D12 1, C 5"); the Organisation "ORGANISATION: GREEN"
+(wired 12, pending 5, breaches 0); `tools/gen_docs.py` "wrote docs/CURRENT/SYSTEM.md" and `git status` empty - no drift.
+THE PLAN'S 5.7 AND THE V2d-b AUDIT'S F1 "DONE WHEN" (every new whole-production test once in ONE process with every test file after it, GitHub's way):
+`tests/test_v12_inside.py` and the 44 files after it (`tests/test_v12_motion.py` among them, with F1's test), real pytest, strict, detached, alone: "1052 passed in
+3106.31s (0:51:46)". THE AUDIT'S FINDING F1 IS REWRITTEN TO CLOSED in `reviews/V2d-b_audit.md` (its break CAUGHT on a32d2be; its test in 20f00be; no line of
+`whatifs/` changed for it - the finisher checks).
 
 ### V2d-b - THE LADDER'S RULES (13 Nov 2026) - ACCEPTED (final code commit 5827d97 GREEN in GitHub Checks run 159: 1551 passed; sweep 58 of 58 ids)
 (Its code is d8101c8; every later commit is text only. History: built on 60d9483; the prover's FIRST PASS on 60d9483 was RED - the sweep
