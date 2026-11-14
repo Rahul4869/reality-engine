@@ -1433,6 +1433,32 @@ arrival", `viewer_inside` and `format_kept` PASS, the arm "F3" on `Video_Feature
 STEP 5'S RUN (real pytest, parallel `-n 6`, strict, THE WHOLE SUITE): "2 failed, 1617 passed in 2047.70s (0:34:07)" - the two pins named above, changed
 by design; then those two files whole: "98 passed in 224.36s". Plan Guard GREEN, Truth GREEN, `tools/gen_docs.py` wrote `SYSTEM.md`. Breaks S5-01 to
 S5-20 written into `proving/breaks/V2b.json` (each anchor found exactly once; 172 in the list) - NOT RUN.
+WHERE THE BUILD STANDS (the third Opus builder, 14 Nov 2026 about 07:35 UTC; written at 69% of its context, past the brief's 65% line, between two
+steps). DONE AND PUSHED: steps 0 and 1 (20f00be, 08861cb, 33a8413), step 2 (5a4859c), step 3 (3f33c84), step 4 (20d575e), step 5 (db68bf3); this note in the
+commit after it. The state stays BUILD; nothing was moved; `V2b_OPUS_DONE.md` is NOT written. NEXT: a FOURTH Opus builder (card "BUILDER of V2b - phase
+BUILD"), with the continuation typist's reading of the plan's A9, reads this record from "Step 4 BUILD" and goes on at 3.9 STEP 6 (the small decisions of
+3.6), then 7 and 8.
+WHAT IT NEEDS TO KNOW FROM HERE (facts, not decisions):
+- THE PINS TODAY: checks by stage `{"script": 39, "final": 21, "short": 5, "short_file": 2, "release": 1}`, total 68; `SHOW_CHECKS` 57; levers 84. Step 6
+  adds no check and no lever by the memo (count again before moving a pin).
+- `tests/conftest.py` `OLD_INSIDE` = all four switches FALSE and the shares 70 / 30 / 0 - complete for the memo's cells.
+- `tests/test_v12_inside.py`: `OWN_IDS` holds FOUR ids now (the fourth, EP209908220900, is the production whose act's first picture is lost); all four are
+  used. Its `_start` switches on INSIDE_ON, ENDINGS_ON and CAMERA_PATH_ON; the F1 production also CHIP_DRAWN_ONLY_ON. The sections run 1 to 12.
+- STEP 6 (3.6) by the memo: issue 129 (the Short's spoken first line kept on the ladder row as `hook_line` - ONE function that `opening.fetch` and
+  `shorts2` both call - and the room's brief sentence; a test that builds the row through a real offline `shorts2.run`); issue 177 (the witness's `visual`
+  in `show.py`, the text of `T3_silhouette` in `data.py` with its KEY kept, the retired rule `presenter_silhouette` in `truth.py` widened); issue 77 (the
+  cast's canon items out of an F1 / F3 writer's playbook and not demanded by `canon_in_brief` - read `canon.py` and `cite.py` whole first). Step 7: the
+  sweep's `inside_of` and `format_inside_held`, the rehearsal's asserts and line, `proving/blocks/V2b.json` (with the pair ["F3", "S1"]; F3 is now on at
+  20%: count part A's F3 ids), the matrix rows, the ledger, `CONCEPT.md`, the two recipes of the repo's `CLAUDE.md`, the founding items `v2b.*`. Step 8: the
+  break list is 172 entries long (F1, S1 to S5) - steps 6 and 7 add theirs; then `breaks.py` and the builder's block.
+- MONEY measured in step 4 (by the code's lines): a long video Rs 570.48 -> 578.79 with the camera path, one about a promoted Short Rs 535.49 -> 543.81;
+  the paid-call count of the offline episode unchanged (image 25 both ways): nothing in `tests/paid_calls.py`.
+- DESIGN QUESTIONS OF THIS BUILDER: 12 to 17 above (the merged first line only under the path; no direction for `ACT_MIN_S`; the offline bible's places;
+  `first` False and the recorded sign; the F3 stand-in's arrival; the format in `Video_Features.arm`). None stops the build: none changes what a viewer
+  sees beyond the memo or what money is spent.
+- NOT RUN BY THIS BUILDER: a rehearsal, the sweep, `breaks.py`, the builder's block.
+USAGE: at this builder's start the 5-hour window 54%, weekly all models 15%, weekly Fable 26%, context 9%; at its end the 5-hour window 0% (it reset at
+07:30 UTC), weekly all models 16%, weekly Fable 27% (the account's figure; this session is Opus 5.5), context 69%.
 
 ### V2d-b - THE LADDER'S RULES (13 Nov 2026) - ACCEPTED (final code commit 5827d97 GREEN in GitHub Checks run 159: 1551 passed; sweep 58 of 58 ids)
 (Its code is d8101c8; every later commit is text only. History: built on 60d9483; the prover's FIRST PASS on 60d9483 was RED - the sweep
