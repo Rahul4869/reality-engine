@@ -111,6 +111,15 @@
    "from": "DESIGN",
    "to": "DESIGN_REVIEW",
    "why": "round 2: the memo changed for the 16 changes of reviews/V2b_design.md"
+  },
+  {
+   "at": "2026-11-14T03:29:30Z",
+   "batch": "V2b",
+   "by": "",
+   "commit": "",
+   "from": "DESIGN_REVIEW",
+   "to": "DESIGN",
+   "why": ""
   }
  ],
  "order": [
@@ -127,8 +136,8 @@
   "B10",
   "V3"
  ],
- "phase": "DESIGN_REVIEW",
+ "phase": "DESIGN",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-14T03:22:19Z"
+ "updated": "2026-11-14T03:29:30Z"
 }
