@@ -429,6 +429,8 @@ and from `plan_shots` to its end; `motion.py` to `cuts`; `overlay.py` (the speak
 to the segment record; `render.py` the camera library; `tools/sweep.py` (`motion_of`, the summary); `tests/conftest.py`; the block of
 V2d-b. NOT READ WHOLE, said plainly (the Opus builder reads them whole before its first edit): `voice.py`, `fakes.py`, `canon.py` /
 `cite.py`, `hooks.py`, `opening.py`, `tools/rehearsal.py`, `tests/paid_calls.py`, `tests/test_v12_formats.py`, `showfx.py`.
+USAGE AT THE DESIGNER'S END (14 Nov 2026, about 05:15 UTC; plan Ultra): the 5-hour window 6%, weekly all models 2%, weekly Fable 4%,
+context 65%. On the Max plan's card the reading alone had moved the weekly Fable line from 74% to 76%.
 V2b IS DESIGNED WHOLE, NOT SPLIT: its six parts hang on four new fields of the format row and are built in the order of 3.9 with a
 checkpoint commit after each; and the state machine cannot split a batch at all (open issue 189, PLAN ISSUE 3). THE FALL-BACK: when the
 Opus builder's context passes 70% before parts 5 and 6 are built, it writes "WHERE THE BUILD STANDS" and a fresh Opus session goes on in
