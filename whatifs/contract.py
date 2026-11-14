@@ -501,6 +501,33 @@ def p_format_ending(ctx):
     return PASS, (f"ends on its {r['ending']}: '{r['last'][:90]}'; no ask and no pointer in the tail; asks in this video: {asks}; "
                   f"removed by code: {sum(int(v) for v in r['removed_kinds'].values())}")
 
+def p_camera_path(ctx):
+    """v12 V2b (the camera path, D6): on the shot list, BEFORE any picture is paid - every shot of an act carries its mark, every act opens on a picture of
+    its own (episode.anchors_for: what the asset step will make), every picture whose angle code assigned is at eye level, every still and living prompt
+    holds its act's place, and the acts were joined (none shorter than ACT_MIN_S beside another, no more changes of place than the allowance)."""
+    from whatifs import path as PATH, episode as EP
+    d = ctx.get("d") if isinstance(ctx.get("d"), dict) else {}; units = ctx.get("units") or []; shots = ctx.get("shots") or []
+    why = PATH.why_na(str(d.get("format") or ""), units)
+    if why: return NA, why
+    total = float(ctx.get("total") or (units[-1].get("end") if units else 0) or 0)
+    r = PATH.plan_report(shots, units, total, EP.anchors_for(shots, units, d, ctx.get("plan") or {}))
+    if r["problems"]: return FAIL, "; ".join(r["problems"])[:380]
+    return PASS, (f"{r['acts']} acts in {len(set(r['places']))} places ({r['changes']} changes in {r['minutes']:.1f} min, at most {r['allow']}): " + " | ".join(r["places"])[:200]
+                  + ("; every picture at eye level" if r["angles"] else "; angle not assigned by code") + "; every act opens on its own picture")
+
+def p_camera_shown(ctx):
+    """v12 V2b (the camera path, D6): on what the RENDER recorded (ctx['path_states']), never the plan - every still state of an act showed a picture of
+    its own act, moved one of the path's moves (never backwards, never rolled, always recorded) and travelled in its act's direction."""
+    from whatifs import path as PATH
+    d = ctx.get("d") if isinstance(ctx.get("d"), dict) else {}
+    why = PATH.why_na(str(d.get("format") or ""), ctx.get("units") or [])
+    if why: return NA, why
+    r = PATH.shown_report(ctx.get("path_states") or [], ctx.get("shots") or [])
+    if not r["states"]: return NA, "no still state carries an act"
+    if r["problems"]: return FAIL, "; ".join(r["problems"])[:380]
+    return PASS, (f"{r['states']} still states in {r['acts']} acts: each showed a picture of its own act, at eye level, travelling one way ("
+                  + ", ".join(f"{k} {v}" for k, v in sorted(r["moves"].items())) + ")")
+
 def p_format_kept(ctx):
     """v12 V2a: the script is what its FORMAT says - a format that is not a trial does not sound like one (no name of the court's cast, no courtroom
     furniture, only its own voices); a trial has its Show Plan."""
@@ -784,7 +811,8 @@ FEATURES = [
     ("viewer_probe", "script", p_viewer_probe, "the promise line-up: from the first 30 s alone two first-time readers pick this video's title, and give none to a planted opening (the layman test)"),
     ("format_kept", "script", p_format_kept, "the script is what its format says: a format that is not a trial does not sound like one, a trial has its Show Plan (formats as data)"),
     ("viewer_inside", "script", p_viewer_inside, "the voice speaks to YOU, now: at least the format's share of sentences put the viewer inside the scene, never a run of sentences from outside longer than its limit, and no beat explains before it shows (inside the format)"),
-    ("format_ending", "script", p_format_ending, "the video ends as its format ends - F1 on the question to the viewer, F3 on the arrival - with no ask and no pointer to another video in its last seconds, and carries only the asks of its format (inside the format)"),
+    ("camera_path",   "script", p_camera_path,   "one place per act, seen from where the viewer stands: every act opens on a picture of its own, every picture at eye level holds its act's place, the acts are joined to an allowance (inside the format)"),
+    ("format_ending", "script", p_format_ending,"the video ends as its format ends - F1 on the question to the viewer, F3 on the arrival - with no ask and no pointer to another video in its last seconds, and carries only the asks of its format (inside the format)"),
     ("topic_ladder", "script", p_topic_ladder, "every topic starts as a Short: this long video is about the topic of a Short the promote rule took, or was made under an override on record (the ladder)"),
     ("opening_footage", "script", p_opening_footage, "a long video about a promoted Short opens on that Short's own footage, laid by code under its first sentences - or was made under an override, which has none (the opening)"),
     ("palace_injected", "script", p_palace_injected, "the Knowledge Palace playbook was inside the model prompt of every creative run's key call (the writer, the packager, the director), and the exact text is stored"),
@@ -823,7 +851,8 @@ FEATURES = [
     ("living_characters", "final", p_living,   "a character is drawn or absent: every reaction cutaway shows the approved character, blinking, breathing and talking - and where no art is approved nobody is shown, never a shape"),
     ("breakout_bar",  "final",  p_breakout_bar, "Breakout Score >= BREAKOUT_HARD_BAR (no upload below it)"),
     ("aliveness",     "final",  p_alive,        "no stretch of the video looks like a still photo"),
-    ("opening_shown", "final",  p_opening_shown, "the finished film opens on its Short's footage: the opening clips are the files cut from that Short's archive and the frames of the film match them (the opening)"),
+    ("camera_shown",  "final",  p_camera_shown, "what the render recorded keeps the camera path: every still state of an act showed a picture of its own act, never moved backwards or rolled, and travelled one way (inside the format)"),
+    ("opening_shown", "final",  p_opening_shown,"the finished film opens on its Short's footage: the opening clips are the files cut from that Short's archive and the frames of the film match them (the opening)"),
     ("moving_share",  "final",  p_moving_share, "the share of the finished film that really moves - measured on the file where the renderer played a clip made by a model - is at least MOVING_SHARE_MIN_LONG, and the seconds of clip the video paid for are on screen and moving (the motion ladder)"),
     ("stock_share",   "final",  p_stock_share,  "real footage (NASA, Pexels) is a short anchor: STOCK_SHARE_MAX_PCT of the film at most, never the first picture, never two in a row, changed, no clip whose title names a person, every credit in the description"),
     ("takeaways_written", "final", p_takeaways_written, "every department run of this episode finished its six steps and wrote a valid takeaway"),

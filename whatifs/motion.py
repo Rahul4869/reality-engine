@@ -32,8 +32,9 @@ def lines_of(units, total):
     return [(b[i], max(b[i], b[i + 1])) for i in range(len(units))]
 
 def plain(shot):
-    """A still a clip may run into: a made picture with nothing of its own that must be seen at its first frame."""
-    return shot.get("type") == "still" and not shot.get("short") and not shot.get("promise") and not shot.get("anim")
+    """A still a clip may run into: a made picture with nothing of its own that must be seen at its first frame. v12 V2b: never an act's first picture
+    (the camera path's `path.first`): no scene and no living clip covers the first line of the next act."""
+    return shot.get("type") == "still" and not shot.get("short") and not shot.get("promise") and not shot.get("anim") and not (shot.get("path") or {}).get("first")
 
 def cap_s(row=None):
     """The longest ONE clip of a still brought to life: the model's longest clip, and never longer than two picture states may hold (check visual_change)."""

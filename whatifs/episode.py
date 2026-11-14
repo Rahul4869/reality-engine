@@ -222,16 +222,18 @@ def _load_assets(out):
             "clips": {int(i): os.path.join(out, n) for i, n in a["clips"].items() if os.path.exists(os.path.join(out, n))}, "anchors": a.get("anchors", []),
             "urls": {int(i): u for i, u in (a.get("urls") or {}).items() if u}, "opening": a.get("opening") or {}, "stock": {int(i): r for i, r in (a.get("stock") or {}).items()}}
 
-def anchor_shots(shots, budget, max_run=None, opening=()):
+def anchor_shots(shots, budget, max_run=None, opening=(), firsts=()):
     """Which shots get a NEW picture. Kling and living clips always do; then the Director's hero shots (consequences, new places, peaks); then the rest of the
     budget spread evenly. Finally a repetition guard: if more than FREE_SHOT_MAX_RUN consecutive shots would share one picture, a fresh picture is added in the middle
-    of the run (a still costs under Rs 1, so a few extra beat any visible repetition). Every other shot re-uses the nearest earlier picture with its own crop and grade."""
+    of the run (a still costs under Rs 1, so a few extra beat any visible repetition). Every other shot re-uses the nearest earlier picture with its own crop and grade.
+    v12 V2b: `firsts` (every act's first still, the camera path) are served from the budget right after the opening and added WHATEVER THE BUDGET SAYS."""
     max_run = max_run or S("FREE_SHOT_MAX_RUN", int)
     own = [i for i, s in enumerate(shots) if s["type"] in ("living", "kling")]
     stills = [i for i, s in enumerate(shots) if s["type"] == "still"]
     left = max(0, budget - len([i for i in own if not shots[i].get("short")])); a = set(own)      # v12 V2c-b2b: a shot of the Short's footage is paid already - it takes nothing from this video's picture budget
     if opening and S("OPENING_FRESH_ON", bool):               # v8.5: every opening shot gets its own picture (fast, fresh cuts while viewers decide); taken from the same budget
         op = [i for i in stills if i in set(opening)][:left]; a |= set(op); left -= len(op)
+    new_ = [i for i in firsts if i not in a]; a |= set(firsts); left = max(0, left - len(new_))      # v12 V2b: an act's first picture is a guarantee (the third, beside the two below)
     heroes = [i for i in stills if shots[i].get("hero") and i not in a][:left]; a |= set(heroes); left -= len(heroes)
     rest = [i for i in stills if i not in a]
     if rest and left > 0:
@@ -252,10 +254,19 @@ def anchor_shots(shots, budget, max_run=None, opening=()):
         a.add((worst[1] + worst[2]) // 2 if shots[(worst[1] + worst[2]) // 2]["type"] == "still" else worst[1]); extra += 1
     return sorted(a)
 
+def anchors_for(shots, units, d, plan, opening=None):
+    """v12 V2b: THE ONE HELPER that says which shots get a new picture - the asset step and the script gate (check camera_path) both call it. Its
+    arguments are exactly what the asset step computed its anchors from: the budget d['stills'] + plan['living'] + plan['kling'], the opening's
+    lines (ROOM.opening_units of the units when None), and every act's first still (`path.first`)."""
+    budget = int((d or {}).get("stills") or 0) + int((plan or {}).get("living") or 0) + int((plan or {}).get("kling") or 0)
+    op = sorted(set(ROOM.opening_units(units))) if opening is None else sorted(opening)
+    firsts = [i for i, s in enumerate(shots) if (s.get("path") or {}).get("first") and s.get("type") == "still"]
+    return anchor_shots(shots, budget, opening=op, firsts=firsts)
+
 def _assets(shots, units, out, ep, budget=56, have=None, footage=None):
     """Pictures only for anchor shots, then clips. Each failed asset is retried (a Kling clip KLING_RETRY_MAX times); what still fails is reported in files['missing'] /
     files['delivered'] and judged by final QC. have = assets restored from a checkpoint: only what is missing is made (and paid for)."""
-    opening = set(ROOM.opening_units(units)); anchors = anchor_shots(shots, budget, opening=sorted(opening))
+    opening = set(ROOM.opening_units(units)); anchors = anchors_for(shots, units, {"stills": budget}, {}, sorted(opening))
     img_paths = dict((have or {}).get("img", {})); clips = dict((have or {}).get("clips", {})); img_urls = {i: u for i, u in ((have or {}).get("urls") or {}).items() if i in img_paths}
     from whatifs import opening as OPEN                         # v12 V2c-b2b: the opening shots are cut from the Short's footage FIRST (free). A shot that cannot be cut raises here,
     oc = OPEN.cut(shots, units, out, footage, have)             # before any picture is paid - otherwise the lines below would buy a new clip for it
@@ -322,12 +333,14 @@ class Job:
         RN.set_overlay(self.overlay)
         for m in hit:
             img = m.get("img") or next((p for _, p in sorted(self.files["img"].items())), None); RN.set_cursor(m["f0"])
+            from whatifs import path as PATH
+            pk_ = {"sign": m["sign"], "pool": PATH.MOVES} if m.get("act") is not None and m.get("sign") in (-1, 1) else {}      # v12 V2b: a camera-path state is re-drawn with ITS sign and pool
             try:
-                if img: RN.parallax_segment(img, m["path"], m["nf"], seed=f"{self.ep}fix{self.fixn}{m['i']}", detail=True, focus="center", look=RN.LOOKS[self.fixn % len(RN.LOOKS)])
-                else: RN.graphic_segment({"label": "", "from": 0, "to": 0}, None, m["path"], m["nf"])
-                m["clip"] = False                               # v12 V2d-b: whatever played here before, it is a still picture now (the moving-share record follows)
+                if img: RN.parallax_segment(img, m["path"], m["nf"], seed=f"{self.ep}fix{self.fixn}{m['i']}", detail=True, focus="center", look=RN.LOOKS[self.fixn % len(RN.LOOKS)], **pk_); m["move"] = RN._LAST["move"] or ""
+                else: RN.graphic_segment({"label": "", "from": 0, "to": 0}, None, m["path"], m["nf"]); m["move"] = ""
+                m["clip"] = False; m["fallback"] = False                # v12 V2d-b: whatever played here before, it is a still picture now (the moving-share record follows); V2b: the record says the move it was re-drawn with
             except Exception as e:
-                log(f"segment {m['i']} re-render failed: {e} -> plain fallback", "WARN"); RN.graphic_segment({"label": "", "from": 0, "to": 0}, img, m["path"], m["nf"])
+                log(f"segment {m['i']} re-render failed: {e} -> plain fallback", "WARN"); RN.graphic_segment({"label": "", "from": 0, "to": 0}, img, m["path"], m["nf"]); m["move"] = ""; m["fallback"] = True
         RN.set_overlay(None); return self.rebuild_video()
     def repair_assets(self, codes, idx, cap_inr):
         """Paid repair, capped in rupees: re-make missing pictures, failed Kling clips and the pictures a vision check flagged; then one free re-render."""
@@ -430,13 +443,19 @@ def _render(job):
                 try: clip_s_[i] = RN.probe_dur(files["clips"][i])
                 except Exception: pass
         MOT.carry(bounds, shots, clip_s_, MERGED_UNITS)
+    from whatifs import path as PATH
+    path_ = PATH.on(); prev_i = None                                             # v12 V2b: which line's picture each state shows (the camera path's record)
     for i, u in enumerate(units):
         s = shots[i]; a, b = bounds[i], bounds[i + 1]; dur = b - a
         n_total = int(round(b * fps)) - int(round(a * fps))
-        if n_total <= 0: continue
-        own = files["img"].get(i); img = own or prev_img
+        own = files["img"].get(i)
+        if n_total <= 0:
+            if own and path_: prev_img = own; prev_i = i                         # v12 V2b: A MERGED FIRST LINE STILL HANDS ITS PICTURE ON (no sub-second flash, and no picture of the act before after it)
+            continue
+        img = own or prev_img; src_ = i if own else prev_i
         reuse = 0 if own else reuse + 1
-        if own: prev_img = own
+        if own: prev_img = own; prev_i = i
+        pm_ = s.get("path") if path_ else None
         from whatifs.shotplan import pieces_for as _pieces_for
         opening_ = a < S("OPENING_WINDOW_SEC", float)
         pieces = 1 if (s.get("short") and i in files["clips"]) else _pieces_for(dur, s["type"], opening_, ep)      # v12 V2c-b2b: a clip cut from the Short's footage plays whole | v9.3: micro-cuts (MICRO_CUTS_ON); OFF = the v9.2 rule (1 / 2 / 3 pieces)
@@ -455,6 +474,7 @@ def _render(job):
             nf = cut[k + 1] - cut[k]; p = os.path.join(out, f"seg{i:03d}_{k}.mp4"); f0 = int(round(a * fps)) + cut[k]
             RN.set_overlay(job.overlay); RN.set_cursor(f0)
             fxk = s.get("pov_fx") if k == 0 else None                  # v8.10: the POV camera effect (every shot type), locked to the sound event at this unit's start
+            mv_ = {"m": "", "s": 0}                                             # v12 V2b: the move a still state was really drawn with ("" for a clip, a graphic, a cutaway)
             def draw(path, ovl):
                 RN.set_overlay(RN.with_fx(ovl, fxk, nf, f"{ep}{i}{k}", f0)); RN.set_cursor(f0)
                 if k == 0 and i in files["clips"] and s["type"] == "stock" and STK.on(): RN.clip_segment(files["clips"][i], path, nf, stock=True)      # v12 V2d-b: real footage is CHANGED (cropped in, slowed) and never looped
@@ -472,7 +492,9 @@ def _render(job):
                 elif img:
                     RN.parallax_segment(img, path, nf, seed=f"{ep}{i}{k}", detail=((k + reuse) % 2 == 1), focus=s.get("focus"), look=None if own else RN.LOOKS[reuse % len(RN.LOOKS)], energy="high" if (i in strong and k == 0) else "calm",
                                        move=s.get("camera") if k == 0 else None,      # v8.9: the Director's suggested move (validated in render.pick_move)
-                                       world=_world_of_unit(units[i] if i < len(units) else {}))   # v11 (K161b): the particle look follows the scene
+                                       world=_world_of_unit(units[i] if i < len(units) else {}),   # v11 (K161b): the particle look follows the scene
+                                       **({"sign": pm_["sign"], "pool": PATH.MOVES} if pm_ else {}))      # v12 V2b: the camera path - one direction of travel, never backwards or rolled
+                    mv_["m"] = RN._LAST["move"] or ""; mv_["s"] = pm_["sign"] if pm_ else 0
                 else: RN.graphic_segment({"label": "", "from": 0, "to": 0}, None, path, nf)
             drawn_ = True
             try: draw(p, job.overlay)
@@ -480,7 +502,8 @@ def _render(job):
                 log(f"segment {i}.{k} failed: {e} -> fallback", "WARN"); drawn_ = False
                 RN.set_overlay(job.overlay); RN.set_cursor(f0); RN.graphic_segment({"label": "", "from": 0, "to": 0}, img, p, nf)
             segs.append(p); job.segmeta.append({"path": p, "i": i, "k": k, "f0": f0, "nf": nf, "img": img, "type": s["type"], "short": bool(s.get("short")),
-                                                "clip": bool(drawn_ and k == 0 and i in files["clips"])})      # v12 V2d-b: what this segment really shows - the checks read the render, never the plan
+                                                "clip": bool(drawn_ and k == 0 and i in files["clips"]),      # v12 V2d-b: what this segment really shows - the checks read the render, never the plan
+                                                "act": (pm_ or {}).get("act"), "src": src_, "move": mv_["m"] if drawn_ else "", "sign": mv_["s"] if drawn_ else 0, "fallback": not drawn_})      # v12 V2b: the camera path's record
     RN.set_overlay(None)
     job.video = RN.concat(segs, os.path.join(out, "video.mp4"))
     events = []
@@ -618,6 +641,8 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
         shots = ORG.work("D13", "seat", ep, lambda b: AUD.shape(S_["shots"], units, S_.get("pkg") or {}), measure=AUD.m_shape); S_["shots"] = shots
         from whatifs.org import inside as INS                   # v12 V2b (D13): SHOW, THEN TELL - every beat opens on a picture (a graphic or real footage that opens one becomes a still)
         S_["shots"] = shots = INS.open_acts(shots, units)
+        from whatifs import path as PATH                        # v12 V2b (D6): THE MARKS COME FIRST - every shot of an act knows its act, place and direction before the scenes and the living seconds are placed
+        S_["shots"], S_["path"] = PATH.mark(shots, units, vo.duration, (S_.get("room") or {}).get("bible") or {}, ep); shots = S_["shots"]
         if S_.get("probe") is None: S_["probe"] = _probe(S_, ep, units)          # v12 V1b: a plan saved before the layman test carries no line-up yet
         from whatifs import anim as ANIM                        # v10.2 (K152): exactly ANIM_SHOTS animated scenes, at the retention cliffs
         ANIM.apply(shots, units, plan); S_["shots"] = shots
@@ -625,8 +650,10 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
             shots = ROOM.promise_shot(shots, units, S_.get("pkg") or {}); S_["shots"] = shots       # flag (v8.6) - re-aim the opening scene again
         from whatifs import motion as MOT                       # v12 V2d-b: the living seconds are placed by code on the lines that can show a whole clip (the last step before the gate)
         if MOT.on(): S_["shots"] = shots = MOT.place(shots, units, vo.duration, plan); S_["plan"] = plan
+        S_["shots"] = shots = PATH.lay(shots)                   # v12 V2b: ... and THE WORDS LAST - the act's place sentence in front of every picture's prompt (no type changes)
         from whatifs import contract as CON                     # v10.2 (K151): every script-stage promise checked BEFORE any picture is paid for
-        g = ORG.work("D8", "script_gate", ep, lambda b: CON.run("script", {"d": d, "room": S_["room"], "hook_rec": S_.get("hook_rec"), "ep": ep, "shots": shots, "units": units, "pkg": S_.get("pkg") or {}, "probe": S_.get("probe"), "opening": S_.get("opening")}, ep),
+        g = ORG.work("D8", "script_gate", ep, lambda b: CON.run("script", {"d": d, "room": S_["room"], "hook_rec": S_.get("hook_rec"), "ep": ep, "shots": shots, "units": units, "pkg": S_.get("pkg") or {}, "probe": S_.get("probe"), "opening": S_.get("opening"),
+                                                                           "plan": plan, "total": vo.duration}, ep),
                      measure=WR.m_gate, lesson=WR.gate_lessons, emit=WR.gate_memos(ep, "script"), settle=WR.gate_settle(ep, "script"))
         if not g["ok"]:
             st.update("Episodes", "episode_id", ep, {"status": "HOLD_QC", "notes": CK.set_attempts("contract hold (script): " + ", ".join(f for f, _ in g["failed"]), 1), "updated": iso()})
@@ -644,6 +671,10 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
         if need_img and len(miss) / len(need_img) > 0.15:
             CK.save(out, ep, "assets", {"assets.json": _assets_state(files)})        # keep what was made: the retry only makes the rest
             raise RuntimeError(f"{len(miss)} of {len(need_img)} images failed - not publishing a weak video; will retry (the pictures that worked are saved)")
+        first_miss = [i for i in miss if (shots[i].get("path") or {}).get("first")]            # v12 V2b: an act never opens on another act's picture
+        if first_miss:
+            CK.save(out, ep, "assets", {"assets.json": _assets_state(files)})        # keep what was made: the retry only makes the rest
+            raise RuntimeError(f"act {shots[first_miss[0]]['path']['act']}'s first picture could not be made - not rendering a film that opens an act on another act's picture; will retry (the pictures that worked are saved)")
         if stage not in ("assets", "hold") or (have and len(files["img"]) + len(files["clips"]) > len(have["img"]) + len(have["clips"])):
             CK.save(out, ep, "assets", {"assets.json": _assets_state(files)})
         res = _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage)
@@ -744,7 +775,9 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
             "moving": moving_, "moving_paid_s": sum(cs_.values()), "scenes": [files["clips"][i] for i in own_ if shots[i].get("type") == "kling"],
             "states": [t_(m_) + (m_.get("type"), bool(m_.get("clip")), bool(m_.get("short"))) for m_ in sm_] if MOT.on() else None,
             "stock": {"spans": stock_, "records": files.get("stock") or {}, "description": desc}, "absent": getattr(job, "absent", 0),          # v11: the promise check reads the shot plan; v12 V2c-b2b: and check opening_shown the opening's record
-            "chips": list(getattr(job, "chips", None) or [])}                                                                            # v12 V2b: the name chips the render drew
+            "chips": list(getattr(job, "chips", None) or []),                                                                            # v12 V2b: the name chips the render drew
+            "path_states": [{"t0": t_(m_)[0], "t1": t_(m_)[1], "i": m_["i"], "type": m_.get("type"), "act": m_.get("act"), "src": m_.get("src"), "move": m_.get("move", ""),
+                             "sign": m_.get("sign", 0), "fallback": bool(m_.get("fallback"))} for m_ in sm_]}                                 # v12 V2b: the camera path as the render recorded it (a key of its own: ctx['states'] stays as it is)
     pre = CON.run("final", dict(cctx, critique={"hook": 10, "clarity": 10, "humour": 10, "visual_variety": 10, "audio": 10, "accuracy": 10}), ep, write=False)   # measured checks first (not logged)
     cctx["ledger_rows"] = pre["rows"]; cctx["critique"] = CON.critique(cctx, ep)
     g = ORG.work("D8", "final_gate", ep, lambda b: CON.run("final", cctx, ep), measure=WR.m_gate, lesson=WR.gate_lessons, emit=WR.gate_memos(ep, "final"), settle=WR.gate_settle(ep, "final"))

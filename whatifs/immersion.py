@@ -127,12 +127,18 @@ def apply(shots, units, imap, plan, episode=None):
         if out[i].get("type") == "kling":
             out[i]["hero"] = True; out[i]["opening_hook"] = True
             if S("POV_CAMERA_ON", bool) and not out[i].get("impact"): out[i]["pov_fx"] = "pov_rush"
+    from whatifs import path as PATH, formats as FMT
+    path_ = PATH.on(); walk_ = path_ and FMT.camera() == "walk"           # v12 V2b: in a camera-path format the scenes move WITH the viewer, at eye level
     for i, s in enumerate(out):
         if s.get("type") in ("still", "living", "kling"):
             s["prompt"] = pov_prompt(s, units[i].get("text", "") if i < len(units) else "")
-            if s.get("type") == "kling" and "camera mounted" not in str(s.get("motion") or ""):
+            if s.get("type") == "kling" and path_:
+                if PATH.KLING_MOTION.strip() not in str(s.get("motion") or ""): s["motion"] = PATH.KLING_MOTION + str(s.get("motion") or "")
+            elif s.get("type") == "kling" and "camera mounted" not in str(s.get("motion") or ""):
                 s["motion"] = "first-person camera mounted on the moving object, accelerating, shaking, debris streaking past the lens. " + str(s.get("motion") or "")
-            if s.get("type") == "living" and "breathing sway" not in str(s.get("motion") or ""):
+            if s.get("type") == "living" and walk_:
+                if PATH.WALK_LIVING.strip() not in str(s.get("motion") or ""): s["motion"] = PATH.WALK_LIVING + str(s.get("motion") or "")
+            elif s.get("type") == "living" and "breathing sway" not in str(s.get("motion") or ""):
                 s["motion"] = "first-person eye-level view, slow breathing sway, particles drifting close to the lens. " + str(s.get("motion") or "")
         cam = str(s.get("camera") or "").lower()
         if cam in POV_MOVES:                            # a Director suggestion of a POV move works on every shot type

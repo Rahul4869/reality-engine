@@ -698,7 +698,8 @@ def plan_shots(room, units, draw, plan, episode):
 def _immersion_notes(room):
     from whatifs import immersion as IM, craft as CR
     if not IM.on(): return ""
-    return ("\n" + IM.director_rules() + "\nIMMERSION MAP (from the Immersion Director: vantage, body, senses, camera and sound per moment): " + _j(room.get("immersion") or {}, 3500)
+    from whatifs import path as PATH                     # v12 V2b: in a camera-path format the Director is told one place per beat, seen from where the viewer stands
+    return ("\n" + (PATH.director_rules() if PATH.on() else IM.director_rules()) + "\nIMMERSION MAP (from the Immersion Director: vantage, body, senses, camera and sound per moment): " + _j(room.get("immersion") or {}, 3500)
             + "\n" + CR.brief("director"))
 
 def normalise_shots(shots, units, plan, look, peaks=()):

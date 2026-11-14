@@ -67,6 +67,9 @@ def lines(kind="long", kling=None, stills=None, living=None, table_read=None, fm
         ls = int(G.moving_floor(kind)["living_s"] if living_s is None else living_s); lc = ls // max(1, int(lr.get("min_s") or CL.SCENE_S)); st_n += lc
         live = _line("living_clips", "stills brought to life: seconds of a clip model of the market", ls, CL.usd_s(lr) * u, "visuals", "s", "living_clip", {"clip": lc})
     else: live = _line("living_clips", "living stills", lv, S("PRICE_LIVING_USD", float) * u, "visuals", "", "living_clip", {"clip": lv})
+    if S("CAMERA_PATH_ON", bool):                                       # v12 V2b: one picture an act beyond the budget (an act's first picture is a guarantee), at most the allowance + 1
+        from whatifs import path as PATH
+        st_n += PATH.allowance(S("RUNTIME_MAX_SEC", float)) + 1
     L = [_line("hero_clips", "animated scenes of the hero model", CL.paid_s(CL.SCENE_S, k), hero_inr, "visuals", "s", "hero_clip", {"clip_kling": k}),
          _line("start_frames", "the reference-locked start picture of each animated scene", k, S("PRICE_GEM_IMAGE_USD", float) * u, "visuals", "", "image_ref", {"image_ref": k}),
          _line("stills", "pictures", st_n, MD.still_usd(S("STILL_W", int), S("STILL_H", int)) * u, "visuals", "", "image", {"image": st_n}),

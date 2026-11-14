@@ -6,11 +6,11 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 ## 1. Facts (read from the code)
 - Channel: "Reality on Trial" (brand Reality Engine). Concept: `docs/CURRENT/CONCEPT.md`. Owner requirements: `docs/CURRENT/OWNER_REQUIREMENTS_LEDGER.md`.
 - Money: hard cap Rs 5,000 a month, everything included (`BUDGET_CEILING_INR`); extras pause at 90% of the cap; breakout fund carries over at most Rs 1,000. One month can be overridden in `MONTH_CAP_OVERRIDES`.
-- Quality: 66 HARD contract checks (38 at the script stage and 20 on the final video of an episode, 5 at the short gate of a standalone Short and 1 at its release gate, after the uploads). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway); a held Short is simply not made; a release row a platform did not keep is a problem memo to Publishing (the Short is public by then). No upload below Breakout Score 80.
+- Quality: 68 HARD contract checks (39 at the script stage and 21 on the final video of an episode, 5 at the short gate of a standalone Short and 1 at its release gate, after the uploads). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway); a held Short is simply not made; a release row a platform did not keep is a problem memo to Publishing (the Short is public by then). No upload below Breakout Score 80.
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `heygen/heygen-video/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 3 standalone Shorts a week, 12 a month at most - every topic starts as a Short and the promote rule picks the long video's topic (`whatifs/ladder.py`); spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 128 code modules, 797 settings, 84 Sheet tabs, 24 GitHub workflows.
+- Size: 129 code modules, 800 settings, 84 Sheet tabs, 24 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -99,6 +99,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | viewer_probe | script | the promise line-up: from the first 30 s alone two first-time readers pick this video's title, and give none to a planted opening (the layman test) |
 | format_kept | script | the script is what its format says: a format that is not a trial does not sound like one, a trial has its Show Plan (formats as data) |
 | viewer_inside | script | the voice speaks to YOU, now: at least the format's share of sentences put the viewer inside the scene, never a run of sentences from outside longer than its limit, and no beat explains before it shows (inside the format) |
+| camera_path | script | one place per act, seen from where the viewer stands: every act opens on a picture of its own, every picture at eye level holds its act's place, the acts are joined to an allowance (inside the format) |
 | format_ending | script | the video ends as its format ends - F1 on the question to the viewer, F3 on the arrival - with no ask and no pointer to another video in its last seconds, and carries only the asks of its format (inside the format) |
 | topic_ladder | script | every topic starts as a Short: this long video is about the topic of a Short the promote rule took, or was made under an override on record (the ladder) |
 | opening_footage | script | a long video about a promoted Short opens on that Short's own footage, laid by code under its first sentences - or was made under an override, which has none (the opening) |
@@ -137,6 +138,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | living_characters | final | a character is drawn or absent: every reaction cutaway shows the approved character, blinking, breathing and talking - and where no art is approved nobody is shown, never a shape |
 | breakout_bar | final | Breakout Score >= BREAKOUT_HARD_BAR (no upload below it) |
 | aliveness | final | no stretch of the video looks like a still photo |
+| camera_shown | final | what the render recorded keeps the camera path: every still state of an act showed a picture of its own act, never moved backwards or rolled, and travelled one way (inside the format) |
 | opening_shown | final | the finished film opens on its Short's footage: the opening clips are the files cut from that Short's archive and the frames of the film match them (the opening) |
 | moving_share | final | the share of the finished film that really moves - measured on the file where the renderer played a clip made by a model - is at least MOVING_SHARE_MIN_LONG, and the seconds of clip the video paid for are on screen and moving (the motion ladder) |
 | stock_share | final | real footage (NASA, Pexels) is a short anchor: STOCK_SHARE_MAX_PCT of the film at most, never the first picture, never two in a row, changed, no clip whose title names a person, every credit in the description |
@@ -437,6 +439,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | whatifs/owner_brief.py | Owner Brief: the owner proposes a topic on WhatsApp, the Showrunner refines it with him, and 'lock' makes it the forced premise. |
 | whatifs/owner_view.py | The owner view: one evidence-labelled data layer for WhatsApp, the dashboard, the digests and the chat brain. |
 | whatifs/packaging.py | Title and thumbnail pairs per video, the owner pick, rotation in the first 48 hours, hook shapes and the ad-risk check. |
+| whatifs/path.py | The camera path (Visual Production, D6): one place per act seen from where the viewer stands, one direction of travel inside an act, no picture of another act. |
 | whatifs/pilots.py | Pilot Shorts: cheap 12-15 s Shorts that test bench premises before a long video is written. |
 | whatifs/playbook.py | The research-based rulebook: weekly proposed practices, vetted by code (source, evidence label) and trialled on half the episodes. |
 | whatifs/preflight.py | Free health checks before any paid step; a red critical check stops the run before money is spent. |
@@ -622,7 +625,7 @@ By kind: audience_insight 8, failure_lesson 7, owner_preference 26, plan 2, poli
 | D3 | Review Board | weekly | assess (whatifs/cli.py) | brief | 120 | BOARD_MIN_EVIDENCE |
 | D4 | Creative - Ideation & Writers' Room | episode | write (whatifs/episode.py), draft (whatifs/preview.py) | brief | - | ROOM_MODE, ROOM_V2_DRAFTS, REHOOK_MAX_GAP_SEC, JOKE_EVERY_SEC_LONG, COLD_OPEN_LORE_FREE_SEC |
 | D5 | Packaging | episode | package (whatifs/episode.py) | brief | - | PROMISE_BY_SEC |
-| D6 | Visual Production | episode | plan (whatifs/episode.py), assets (whatifs/episode.py), render (whatifs/episode.py) | brief | - | ANIM_SHOTS, VISUAL_CHANGE_MAX_S, PARTICLES_ON, LIVING_CHARACTERS_ON, CAMERA_MOTION, OPENING_FIT, OPENING_ENLARGE_MAX, MOVING_SHARE_LONG, MOVING_SHARE_MIN_LONG, STOCK_SHARE_MAX_PCT |
+| D6 | Visual Production | episode | plan (whatifs/episode.py), assets (whatifs/episode.py), render (whatifs/episode.py) | brief | - | ANIM_SHOTS, VISUAL_CHANGE_MAX_S, PARTICLES_ON, LIVING_CHARACTERS_ON, CAMERA_MOTION, OPENING_FIT, OPENING_ENLARGE_MAX, MOVING_SHARE_LONG, MOVING_SHARE_MIN_LONG, STOCK_SHARE_MAX_PCT, ACT_MIN_S, PLACE_CHANGES_PER_MIN_MAX |
 | D7 | Sound | episode | voice (whatifs/episode.py), short_voice (whatifs/shorts2.py) | brief | - | SOUND_DESIGN_ON, TTS_ENGINE, SHORT_SOUND_BY_S |
 | D8 | QA & Enforcement | episode | script_gate (whatifs/episode.py), final_gate (whatifs/episode.py), short_gate (whatifs/shorts2.py), short_file_gate (whatifs/shorts2.py), release_gate (whatifs/release.py) | brief | - | CONTRACT_OFF, BREAKOUT_HARD_BAR, CRITIQUE_MIN |
 | D9 | Publishing & Distribution | episode | publish (whatifs/episode.py), short_publish (whatifs/release.py) | brief | - | REEL1_DELAY_MIN, NEXT_LINK_ON, IG_TRIAL_REELS_ON, SHORT_THUMB_ON |
@@ -652,7 +655,7 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | build_request | D12 | D12 | ask | 24 / 72 | merged_verified, owner_answer | a code change that no lever can make: the spec, the files, the tests to add and the acceptance |
 | takeaway | any | L | record | 0 / 0 | - | one atomic learning from one department run (kept in the Takeaways tab, proposed to the Palace when it is new) |
 
-**Who owns each contract check** (a failed check becomes a problem memo to that department): D1: breakout_bar; D2: research, research_cadence; D4: audience_asks, canon_in_brief, cold_open, emotion_beat, end_tease, exhibits, format_ending, format_kept, grimm_prototype, hook_lab, idea_evidence, joke_density, no_retired, originality, owners_cut, palace_cited, palace_injected, retention, send_and_awe, time_ladder, verdict_line, verdict_style; D5: chapters, thumbnails, titles; D6: aliveness, animation, impact_map, living_characters, moving_share, no_frozen_frames, opening_footage, opening_shown, promise_paid, real_motion, short_moving, slop_guard, stock_share, visual_change; D7: designed_voices, music_bed, short_sound; D8: dept_contract, self_review, short_contract, takeaways_written; D9: release_sheet; D10: brain_playbook, topic_ladder; D12: docs_current, lever_verified; D13: short_open, short_plain, short_shape, viewer_breath, viewer_inside, viewer_numbers, viewer_plain, viewer_probe, viewer_promise; D14: short_kept; C: decisions_executed; L: palace_health.
+**Who owns each contract check** (a failed check becomes a problem memo to that department): D1: breakout_bar; D2: research, research_cadence; D4: audience_asks, canon_in_brief, cold_open, emotion_beat, end_tease, exhibits, format_ending, format_kept, grimm_prototype, hook_lab, idea_evidence, joke_density, no_retired, originality, owners_cut, palace_cited, palace_injected, retention, send_and_awe, time_ladder, verdict_line, verdict_style; D5: chapters, thumbnails, titles; D6: aliveness, animation, camera_path, camera_shown, impact_map, living_characters, moving_share, no_frozen_frames, opening_footage, opening_shown, promise_paid, real_motion, short_moving, slop_guard, stock_share, visual_change; D7: designed_voices, music_bed, short_sound; D8: dept_contract, self_review, short_contract, takeaways_written; D9: release_sheet; D10: brain_playbook, topic_ladder; D12: docs_current, lever_verified; D13: short_open, short_plain, short_shape, viewer_breath, viewer_inside, viewer_numbers, viewer_plain, viewer_probe, viewer_promise; D14: short_kept; C: decisions_executed; L: palace_health.
 
 ## 12. The Execution Engine: from a decision to a change that runs (`whatifs/org/levers.py`, `execute.py`)
 - A ticket is ONE change: lever class, target, value. The engine compiles it into a typed operation with a registered way to verify and to undo it,
@@ -719,6 +722,8 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | MOVING_SHARE_LONG | D6 | int | 20 to 80 | 10 | - | moving_share |
 | MOVING_SHARE_MIN_LONG | D6 | int | 5 to 60 | 5 | down: it weakens a quality gate | moving_share |
 | STOCK_SHARE_MAX_PCT | D6 | int | 0 to 20 | 5 | up: it weakens a quality gate | stock_share |
+| ACT_MIN_S | D6 | float | 6 to 30 | 2 | - | camera_path |
+| PLACE_CHANGES_PER_MIN_MAX | D6 | float | 0.5 to 3 | 0.25 | up: it weakens a quality gate | camera_path |
 | SOUND_DESIGN_ON | D7 | bool | - | - | off: it weakens a quality gate | music_bed |
 | TTS_ENGINE | D7 | enum | gemini, kokoro | - | - | designed_voices |
 | SHORT_SOUND_BY_S | D7 | float | 0.05 to 0.5 | 0.1 | up: it weakens a quality gate | short_sound |

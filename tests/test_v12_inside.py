@@ -6,7 +6,7 @@ import pytest
 from whatifs import core, contract as CON, formats as FMT, voice as VO, enforce as EN, fakes as FK, episode as EP, reactions as RX
 from whatifs.org import inside as IN, audience as AUD, registry as REG, levers as LV, rnd as RND
 
-OWN_IDS = ("EP209908010900", "EP209908080900", "EP209908150900")      # the whole productions of this file: ids no other test file uses (a test proves it)
+OWN_IDS = ("EP209908010900", "EP209908080900", "EP209908150900", "EP209908220900")      # the whole productions of this file: ids no other test file uses (a test proves it)
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def ctx(text, fmt="F1"): return {"room": {"script": {"script": text}}, "d": {"format": fmt}}
 
@@ -207,7 +207,7 @@ def test_the_whole_productions_of_this_file_use_ids_no_other_test_file_uses():
 def _start(monkeypatch, setting, fmt):
     from tests import test_v12_opening_e2e as E2E
     from whatifs import ladder as LAD
-    E2E._start(monkeypatch, setting); setting("FORMAT_FORCE", fmt); setting("INSIDE_ON", "TRUE"); setting("ENDINGS_ON", "TRUE"); LAD.override("owner", "make it anyway")
+    E2E._start(monkeypatch, setting); setting("FORMAT_FORCE", fmt); setting("INSIDE_ON", "TRUE"); setting("ENDINGS_ON", "TRUE"); setting("CAMERA_PATH_ON", "TRUE"); LAD.override("owner", "make it anyway")
 
 def _led(ep): return {x["feature"]: (x["status"], str(x["evidence"])) for x in core.store().rows("Feature_Ledger") if x.get("episode_id") == ep}
 
@@ -223,7 +223,17 @@ def _tag_spy(monkeypatch):
 def test_a_whole_f1_production_carries_its_beats_to_the_units_and_speaks_to_you(monkeypatch, setting):
     from tests import test_v12_opening_e2e as E2E
     _start(monkeypatch, setting, "F1"); ep = OWN_IDS[0]; setting("CHIP_DRAWN_ONLY_ON", "TRUE"); tags = _tag_spy(monkeypatch)
+    bought = {}; real_still = EP.M.still; laid = []; real_lay = PATH.lay
+    monkeypatch.setattr(EP.M, "still", lambda prompt, path, *a, **k: (bought.__setitem__(os.path.basename(str(path)), str(prompt)), real_still(prompt, path, *a, **k))[1])      # the request that buys each picture
+    monkeypatch.setattr(PATH, "lay", lambda sh: (laid.append(real_lay(sh)), laid[-1])[1])
     r = EP.produce(E2E._slot(10), episode_id=ep); led = _led(ep)
+    m = re.match(r"(\d+) acts in (\d+) places", led["camera_path"][1]); assert led["camera_path"][0] == "PASS" and m and int(m.group(2)) >= 2, led["camera_path"]      # the acts are real (step 4)
+    assert led["camera_shown"][0] == "PASS" and led["visual_change"][0] == "PASS", (led["camera_shown"], led["visual_change"])      # no still of another act; ctx['states'] as it was
+    shots = laid[-1]; places = {(s_.get("path") or {}).get("act"): (s_.get("path") or {}).get("place") for s_ in shots if s_.get("path")}
+    assert len(set(places.values())) >= 2, places                                                                        # two acts, two different place sentences
+    plain_ = [i for i, s_ in enumerate(shots) if s_.get("path") and s_["type"] in ("still", "living") and not (s_.get("short") or s_.get("promise") or s_.get("anim")) and f"img{i:03d}.jpg" in bought]
+    assert plain_ and all(bought[f"img{i:03d}.jpg"].startswith(PATH.sentence(shots[i]["path"]["place"])) for i in plain_), [(i, bought[f"img{i:03d}.jpg"][:80]) for i in plain_][:4]      # the sentence is in the request that buys the picture
+    assert any(shots[i]["type"] == "living" for i in plain_) or not any(s_["type"] == "living" and s_.get("path") for s_ in shots)      # ... a living clip's own picture too, where one is bought
     assert tags == [] and led["living_characters"][0] == "PASS" and led["living_characters"][1].endswith("; no name chip for a character nobody sees"), (tags, led["living_characters"])      # F1: nobody is on screen, so nobody is named (step 3)
     tl = json.load(open(os.path.join(core.WORK, ep, "voice_timeline.json")))
     assert len({u["beat"] for u in tl["units"]}) >= 2, sorted({u["beat"] for u in tl["units"]})                       # the beats reach the units (the break: they never do)
@@ -507,5 +517,269 @@ def test_a_whole_trial_under_the_ladder_names_only_the_character_who_is_drawn(mo
     script = json.load(open(os.path.join(core.WORK, ep, "plan.json")))["room"]["script"]["script"]
     assert led["end_tease"][0] == CON.NA and "next simulation" not in script.lower(), led.get("end_tease")            # no tease under the ladder (step 2)
     assert led["format_ending"][0] == CON.NA and "ends on a tease" in led["format_ending"][1], led["format_ending"]
+    for k in ("camera_path", "camera_shown"):
+        assert led[k][0] == CON.NA and "format F2 cuts between its pictures" in led[k][1], (k, led[k])                  # the trial cuts between its pictures (step 4)
     assert r.get("ok"), r
+    shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True)
+
+# ------------------------------------------------------------------ 11. THE CAMERA PATH (3.2): one place per act, eye level, one direction, judged on the render's record
+from whatifs import path as PATH, motion as MOT, render as RN, shotplan as SPL, immersion as IM
+@pytest.fixture
+def camera(setting):
+    setting("CAMERA_PATH_ON", "TRUE"); setting("INSIDE_ON", "TRUE"); setting("ENDINGS_ON", "TRUE"); setting("IMMERSION_ON", "TRUE")
+    yield
+    FMT.use("")
+
+def _lines(spec, text="Line {i} in your kitchen."):
+    """units from [(beat, seconds)]: each line starts where the one before ended (the narration is the clock)."""
+    out, t = [], 0.0
+    for i, (b, s) in enumerate(spec): out.append({"i": i, "start": t, "end": t + s, "text": text.format(i=i), "beat": b, "speaker": "DIRECTOR", "tag": "none"}); t += s
+    return out, t
+
+def test_the_acts_join_by_length_and_by_the_allowance_the_two_worked_examples(camera):
+    with FMT.using("F1"):
+        u, t = _lines([(1, 30), (2, 26), (3, 26)]); a = PATH.acts([{"type": "still"}] * 3, u, t)
+        assert t == 82 and [x["beat"] for x in a] == [1, 2, 3] and PATH.allowance(t) == 3                           # 82 s, 3 beats: 2 changes, allowed max(3, floor(2.05)) = 3 - nothing joins
+        u, t = _lines([(b, 27) for b in range(1, 21)]); a = PATH.acts([{"type": "still"}] * 20, u, t)
+        assert t == 540 and PATH.allowance(t) == 13 and len(a) == 14                                                  # nine minutes, 20 headings: 19 changes, allowed 13 - six join
+        u, t = _lines([(1, 20), (2, 5), (3, 20)]); assert [(x["beat"], x["units"]) for x in PATH.acts([{"type": "still"}] * 3, u, t)] == [(1, [0, 1]), (3, [2])]      # too short: joins the act before
+        u, t = _lines([(1, 5), (2, 20), (3, 20)]); assert [(x["beat"], x["units"]) for x in PATH.acts([{"type": "still"}] * 3, u, t)] == [(1, [0, 1]), (3, [2])]      # the first act joins the act after, keeps its beat
+        u, t = _lines([(1, 20), (2, 12), (3, 16), (4, 12), (5, 20)]); a = PATH.acts([{"type": "still"}] * 5, u, t)
+        assert t == 80 and [x["units"] for x in a] == [[0], [1], [2, 3], [4]]                                            # 4 changes, allowed 3: the SHORTEST joins the act before - of two equally short, the later
+        u, t = _lines([(0, 10), (1, 20), (2, 20)]); sh = [{"type": "still", "short": {"id": "SH1"}}, {"type": "still"}, {"type": "still"}]
+        assert [x["units"] for x in PATH.acts(sh, u, t)] == [[1], [2]]                                                  # the Short's footage belongs to no act
+
+def test_the_place_of_an_act_from_the_bible_the_word_list_and_the_act_before(camera):
+    u, t = _lines([(1, 20), (2, 20), (3, 20)], text="Line {i} somewhere.")
+    bible = {"beats": [{"n": 1, "visual_world": "your bathroom at dawn, steam on the mirror and the cold tap running."}, {"n": 3, "visual_world": ""}]}
+    a = PATH.acts([{"type": "still"}] * 3, u, t)
+    assert PATH.place_of(a[0], bible, u) == "your bathroom at dawn, steam on the mirror and the"                        # the beat whose n EQUALS the act's: ten words
+    assert PATH.place_of(a[0], {"beats": [{"n": 1, "visual_world": "Your bathroom."}]}, u) == "Your bathroom"            # ... without a final full stop
+    u[1]["text"] = "You run down the street."; assert PATH.place_of(a[1], bible, u) == "street"                         # no such beat: the first name the word list finds
+    assert PATH.place_of(a[2], bible, u, before="street") == "street" and PATH.place_of(a[2], {}, u) == "your home"      # neither: the act before; the first act: your home
+    with FMT.using("F1"):
+        fb = json.loads(FK.fake_reply("bible", "x"))
+        assert [PATH.place_of({"beat": b, "units": []}, fb, []) for b in (1, 2, 3)] == ["your bathroom", "your kitchen", "your street"]      # the offline bible: the act under BEAT 1 gets beat 1's
+    with FMT.using("F2"): assert {b["visual_world"] for b in json.loads(FK.fake_reply("bible", "x"))["beats"]} == {"v"}      # a cut format: the older reply
+
+def test_mark_puts_first_on_the_acts_first_picture_and_one_sign_per_act_or_per_walk(camera, setting):
+    u, t = _lines([(1, 20), (1, 4), (2, 3), (2, 20), (3, 20)])
+    sh = [{"type": "still"}, {"type": "still"}, {"type": "reaction", "speaker": "SKEPTIC"}, {"type": "still"}, {"type": "graphic"}]
+    with FMT.using("F1"):
+        out, plan = PATH.mark(sh, u, t, {}, "EPM")
+        assert [s["path"]["first"] for s in out] == [True, False, False, True, False] and [s["path"]["act"] for s in out] == [1, 1, 2, 2, 3]      # an act that opens on a cutaway: its first PICTURE
+        assert "first" not in [k for s in out if s["path"]["act"] == 3 for k, v in s["path"].items() if v is True]       # an act with no picture has no first
+        assert [p["sign"] for p in plan] == [PATH.sign_of("EPM", b, "path") for b in (1, 2, 3)] == [-1, 1, 1]               # per act, from the id and the act
+        assert [s["path"]["sign"] for s in out] == [-1, -1, 1, 1, 1] and [FMT.camera(k) for k in ("F1", "F2", "F3")] == ["path", "cut", "walk"] and FMT.camera("") == "cut"
+        assert 3 in EP.anchors_for(out, u, {"stills": 0}, {})                                                           # its first still is served whatever the budget
+    with FMT.using("F3"): _, plan = PATH.mark(sh, u, t, {}, "EPM"); assert [p["sign"] for p in plan] == [PATH.sign_of("EPM", None, "walk")] * 3 == [1] * 3      # the walk: ONE direction
+    with FMT.using("F2"): assert PATH.mark(sh, u, t, {}, "EPM") == (sh, [])                                            # a cut format: nothing
+    with FMT.using("F1"): assert PATH.mark(sh, [{k: v for k, v in x.items() if k != "beat"} for x in u], t, {}, "EPM") == (sh, [])      # a timeline without beats: nothing
+    setting("INSIDE_ON", "FALSE"); sh2 = [{"type": "graphic", "graphic": {}}, {"type": "still"}] + sh[2:]
+    with FMT.using("F1"):
+        out, _ = PATH.mark(sh2, u, t, {}, "EPM"); assert out[1]["path"]["first"] and not out[0]["path"]["first"] and 1 in EP.anchors_for(out, u, {"stills": 0}, {})      # an act that opens on a graphic
+        st = [{"t0": 0, "type": "graphic", "act": 1, "src": None, "move": "", "sign": 0, "fallback": False}, {"t0": 20, "type": "still", "act": 1, "src": 1, "move": "drift", "sign": out[1]["path"]["sign"], "fallback": False}]
+        assert PATH.shown_report(st, out)["problems"] == []                                                             # ... and camera_shown passes on it
+
+def test_lay_puts_the_place_first_once_and_never_on_footage_a_promise_or_a_scene(camera):
+    pm = {"act": 1, "place": "your kitchen", "sign": 1, "first": True}
+    sh = [{"type": "still", "prompt": "a cup", "path": pm}, {"type": "living", "prompt": "a cup", "path": pm}, {"type": "still", "prompt": "p", "path": pm, "promise": True},
+          {"type": "kling", "prompt": "k", "path": pm, "anim": {}}, {"type": "still", "prompt": "f", "short": {"id": "S"}}, {"type": "graphic", "path": pm}]
+    out = PATH.lay(sh)
+    assert out[0]["prompt"] == PATH.sentence("your kitchen") + "a cup" and out[1]["prompt"].startswith("ONE PLACE FOR THIS ACT: your kitchen, the same light and weather as the shot before, seen at eye level. ")
+    assert [o["prompt"] for o in out[2:5]] == ["p", "k", "f"] and [o["type"] for o in out] == [s["type"] for s in sh] and PATH.lay(out) == out      # idempotent; no type changes
+    assert "prompt" not in out[5]                                                                                        # a graphic is no picture
+
+def test_eye_level_at_the_source_and_the_old_rotation_with_the_switch_off(camera, setting):
+    u = [{"text": f"In your kitchen {i}."} for i in range(12)]; mk = lambda: [{"type": "still", "prompt": "x"} for _ in u]
+    with FMT.using("F1"): on = SPL.assign_anchors(mk(), u, "EPE")
+    assert {s["pov"]["angle"] for s in on} == {"eye level"} and {s["pov"]["lens"] for s in on} <= set(SPL.LENSES[1:4]) and all(a["pov"]["lens"] != b["pov"]["lens"] for a, b in zip(on, on[1:]))
+    with FMT.using("F2"): old = SPL.assign_anchors(mk(), u, "EPE")
+    setting("CAMERA_PATH_ON", "FALSE")
+    with FMT.using("F1"): off = SPL.assign_anchors(mk(), u, "EPE")
+    assert off == old and len({s["pov"]["angle"] for s in off}) > 1                                                     # switched off, or a cut format: the rotation it was
+
+def test_firsts_are_served_from_the_budget_first_and_beyond_it_when_it_is_used_up():
+    sh = [{"type": "still"} for _ in range(10)]
+    assert EP.anchor_shots(sh, 2, 99, opening=[0, 1]) == [0, 1] and EP.anchor_shots(sh, 2, 99, opening=[0, 1], firsts=[6]) == [0, 1, 6]      # the opening took the budget: the first still is added anyway
+    a = EP.anchor_shots(sh, 3, 99, opening=[0], firsts=[6]); assert 6 in a and 0 in a and len(a) == 3                   # served right after the opening, from the budget
+
+def test_the_asset_step_buys_an_acts_first_picture_with_no_budget_left(camera, tmp_path):
+    u, t = _lines([(1, 20)] * 4 + [(2, 20)] * 4)
+    with FMT.using("F1"): shots, _ = PATH.mark([{"type": "still", "prompt": f"p{i}"} for i in range(8)], u, t, {}, "EPA0")
+    f = EP._assets(shots, u, str(tmp_path), "EPA0", budget=0)
+    assert 4 in f["anchors"] and 4 in f["img"]                                                                            # the asset step calls the one helper: act 2's first picture is made
+
+def test_the_stills_line_carries_one_picture_an_act_beyond_the_budget(camera, setting):
+    from whatifs import costguard as CG
+    n = lambda: [l for l in CG.lines("long") if l["key"] == "stills"][0]["n"]
+    on = n(); setting("CAMERA_PATH_ON", "FALSE"); off = n()
+    assert on - off == PATH.allowance(core.S("RUNTIME_MAX_SEC", float)) + 1 == 14                                           # at most the allowance + 1 of a nine-minute video
+
+def test_the_camera_path_is_wired_owners_levers_protected_and_classified():
+    assert REG.CHECK_OWNER["camera_path"] == "D6" and REG.CHECK_OWNER["camera_shown"] == "D6" and "whatifs/path.py" in REG.DEPTS["D6"]["wraps"]
+    from tools import repair as RP; assert "whatifs/path.py" in RP.PROTECTED
+    a, p = LV.LEVERS["ACT_MIN_S"], LV.LEVERS["PLACE_CHANGES_PER_MIN_MAX"]
+    assert REG.may_change("D6", "ACT_MIN_S") and REG.may_change("D6", "PLACE_CHANGES_PER_MIN_MAX")
+    assert (a["lo"], a["hi"], a["step"], a["checks"]) == (6, 30, 2, ("camera_path",)) and (p["lo"], p["hi"], p["step"], p["owner"], p["checks"]) == (0.5, 3, 0.25, "up", ("camera_path",))
+    assert all(k not in RND.ORG_CHECKS and k in RND.metrics() for k in ("camera_path", "camera_shown")) and RND.SHOW_CHECKS == 57
+    assert (core.DEFAULTS["CAMERA_PATH_ON"][0], core.DEFAULTS["ACT_MIN_S"][0], core.DEFAULTS["PLACE_CHANGES_PER_MIN_MAX"][0]) == ("TRUE", "12", "1.5")
+
+def test_the_render_draws_a_path_still_from_the_pool_in_its_direction_never_pull_or_roll(camera, setting):
+    import random
+    seen = set()
+    for k in range(200):
+        for e in ("calm", "high"):
+            seen.add(RN.choose_move(random.Random(k), e, avoid=random.Random(k).choice(RN.CAMERA_MOVES), pool=PATH.MOVES))
+            seen.add(RN.pick_move(random.Random(k).choice(("pull", "kb_roll", "drift", "orbit")), random.Random(k + 1), e, None, pool=PATH.MOVES))
+    assert seen <= set(PATH.MOVES) and "pull" not in seen and "kb_roll" not in seen
+    assert RN.choose_move(random.Random(1), "calm", avoid="drift", pool=("drift",)) == "drift" and RN.choose_move(random.Random(1), "high", pool=("whip_settle", "drift")) == "whip_settle"
+    assert {RN.choose_move(random.Random(k), "high", pool=("drift", "handheld", "whip_settle")[:2]) for k in range(30)} == {"drift", "handheld"}      # none of the energy's: the pool without whip_settle
+    for sg in (1, -1):
+        for k in range(30):
+            d = RN.camera_path("drift", 10, 832, 468, 640, 360, 1.0, random.Random(k), sign=sg); assert (d[-1][0] - d[0][0]) * sg > 0
+            p = RN.camera_path("push_parallax", 10, 832, 468, 640, 360, 1.0, random.Random(k), sign=sg); assert p[-1][4] * sg > 0      # the parallax follows the sign too
+    a = RN.camera_path("orbit", 6, 832, 468, 640, 360, 1.0, random.Random(5)); b = RN.camera_path("orbit", 6, 832, 468, 640, 360, 1.0, random.Random(5), sign=None); assert a == b
+
+def test_a_gentle_camera_in_a_path_format_still_draws_and_records_a_move_of_the_pool(camera, setting, tmp_path):
+    import cv2, numpy as np
+    setting("CAMERA_MOTION", "gentle"); img = str(tmp_path / "i.png"); cv2.imwrite(img, (np.random.default_rng(1).random((360, 640, 3)) * 255).astype(np.uint8))
+    signs = []; real_cp = RN.camera_path
+    import functools
+    monkeypatch_ = pytest.MonkeyPatch(); monkeypatch_.setattr(RN, "camera_path", functools.wraps(real_cp)(lambda *a, **k: (signs.append(k.get("sign")), real_cp(*a, **k))[1]))
+    try:
+        for k in range(4):
+            RN._LAST["move"] = None; RN.parallax_segment(img, str(tmp_path / f"s{k}.mp4"), 3, seed=k, energy="high", sign=-1, pool=PATH.MOVES)
+            assert RN._LAST["move"] in PATH.MOVES and RN._LAST["move"] != "whip_settle"
+    finally: monkeypatch_.undo()
+    assert signs == [-1] * 4                                                                                             # the direction reaches the camera
+    RN._LAST["move"] = None; RN.parallax_segment(img, str(tmp_path / "v87.mp4"), 3, seed=1); assert RN._LAST["move"] is None      # without a pool: the v8.7 mover, as before
+
+def test_no_clip_runs_into_an_acts_first_picture(camera, setting):
+    from tests.conftest import OLD_CLIPS, OLD_MOTION
+    for k in list(OLD_CLIPS) + list(OLD_MOTION): setting(k, core.DEFAULTS[k][0])                                         # the motion ladder as the code ships it
+    first = {"type": "still", "path": {"act": 2, "place": "p", "sign": 1, "first": True}}
+    assert not MOT.plain(first) and MOT.plain({"type": "still", "path": {"act": 2, "first": False}})
+    sp = [(0.0, 2.0), (2.0, 5.0), (5.0, 8.0)]
+    assert MOT.room_s(0, [{"type": "living"}, first, {"type": "still"}], sp) == 2.0 and MOT.room_s(0, [{"type": "living"}, {"type": "still"}, {"type": "still"}], sp) == 8.0
+    assert MOT.carry([0.0, 2.0, 5.0, 8.0], [{"type": "living"}, first, {"type": "still"}], {0: 3.0}) == [0.0, 2.0, 5.0, 8.0]      # the clip stops at the act break
+    u, t = _lines([(1, 3), (2, 6), (2, 6)])
+    out = MOT.place([{"type": "living"}, first, {"type": "still"}], u, t, {"living_s": 5})
+    assert "buy" not in out[0] and out[0]["type"] == "still"                                                              # a living clip asked on an act's last line of 3 s is not bought across the break
+    out = MOT.place([{"type": "living"}, {"type": "still"}, {"type": "still"}], u, t, {"living_s": 5}); assert out[0].get("buy") == 5      # without the break it runs on, as before
+
+def _render_record(tmp_path, monkeypatch, setting, fail=None):
+    """A real `episode._render` of four lines in two acts (stopped where the segments are joined): line 2 is a 0.6-second first line of act 2 with a
+    picture of its own; line 3 has none. Returns (job, the shots)."""
+    import cv2, numpy as np
+    setting("ACT_MIN_S", "1")                                                                                             # two short acts that stay two acts
+    u, t = _lines([(1, 2.0), (1, 2.0), (2, 0.6), (2, 2.0)])
+    files = {"img": {}, "clips": {}}
+    for i in (0, 2):
+        files["img"][i] = str(tmp_path / f"img{i}.png"); cv2.imwrite(files["img"][i], (np.random.default_rng(i).random((360, 640, 3)) * 255).astype(np.uint8))
+    with FMT.using("F1"):
+        shots, _ = PATH.mark([{"type": "still", "prompt": "x"} for _ in u], u, t, {}, "EPREC")
+        class Stop(Exception): pass
+        monkeypatch.setattr(RN, "concat", lambda segs, path: (_ for _ in ()).throw(Stop()))
+        if fail is not None:
+            real = RN.parallax_segment
+            monkeypatch.setattr(RN, "parallax_segment", lambda img, p, *a, **k: (_ for _ in ()).throw(RuntimeError("planted")) if f"seg{fail:03d}" in p else real(img, p, *a, **k))
+        job = EP.Job(files=files, shots=shots, units=u, vo=type("V", (), {"duration": t})(), out=str(tmp_path), ep="EPREC", rx=[], d={}, fps=RN.fps())
+        with pytest.raises(Stop): EP._render(job)
+    return job, shots
+
+def test_the_render_records_act_src_move_sign_and_a_merged_first_line_hands_its_picture_on(camera, setting, tmp_path, monkeypatch):
+    job, shots = _render_record(tmp_path, monkeypatch, setting)
+    by = {}
+    for m in job.segmeta: by.setdefault(m["i"], []).append(m)
+    assert 2 not in by                                                                                                    # the 0.6-second line has no state of its own (no sub-second flash)
+    assert all(m["src"] == 2 and m["act"] == 2 and m["sign"] == shots[3]["path"]["sign"] and m["move"] in PATH.MOVES and not m["fallback"] for m in by[3]), [(m["src"], m["act"], m["sign"], m["move"], m["fallback"], shots[3]["path"]) for m in by[3]]      # ... and hands its picture on
+    assert all(m["src"] == 0 and m["act"] == 1 for m in by[0] + by[1])
+    st = [{"t0": m["f0"] / RN.fps(), "type": m["type"], "act": m["act"], "src": m["src"], "move": m["move"], "sign": m["sign"], "fallback": m["fallback"]} for m in job.segmeta]
+    assert PATH.shown_report(st, shots)["problems"] == []
+
+def test_a_fallback_state_is_recorded_as_one_and_judged_for_its_picture_only(camera, setting, tmp_path, monkeypatch):
+    job, shots = _render_record(tmp_path, monkeypatch, setting, fail=1)
+    fb = [m for m in job.segmeta if m["i"] == 1]; assert fb and all(m["fallback"] and m["move"] == "" and m["src"] == 0 for m in fb), fb
+    st = [{"t0": m["f0"] / RN.fps(), "type": m["type"], "act": m["act"], "src": m["src"], "move": m["move"], "sign": m["sign"], "fallback": m["fallback"]} for m in job.segmeta]
+    assert PATH.shown_report(st, shots)["problems"] == []
+
+def test_a_re_render_draws_a_path_state_with_its_sign_and_pool_and_rewrites_the_record(camera, setting, tmp_path, monkeypatch):
+    job, shots = _render_record(tmp_path, monkeypatch, setting)
+    seen = []; real = RN.parallax_segment
+    monkeypatch.setattr(RN, "parallax_segment", lambda *a, **k: (seen.append(k), real(*a, **k))[1]); monkeypatch.setattr(job, "rebuild_video", lambda: None)
+    for m in job.segmeta: m["move"] = "pull"                                                                             # a stale record
+    job.rerender_times([job.segmeta[-1]["f0"] / RN.fps() + 0.5])
+    redrawn = [m for m in job.segmeta if m["move"] != "pull"]
+    assert redrawn and all(m["move"] in PATH.MOVES and not m["fallback"] for m in redrawn), job.segmeta
+    assert seen and all(k.get("pool") == PATH.MOVES and k.get("sign") in (1, -1) for k in seen), seen
+
+def _path_ctx(fmt="F1"):
+    u, t = _lines([(1, 20), (2, 20), (3, 20)])
+    with FMT.using(fmt):
+        shots, _ = PATH.mark([{"type": "still", "prompt": "x", "pov": {"angle": "eye level"}} for _ in u], u, t, {"beats": [{"n": n, "visual_world": w} for n, w in ((1, "your kitchen"), (2, "your street"), (3, "the hill"))]}, "EPCK")
+    shots = PATH.lay(shots)
+    return {"d": {"format": fmt, "stills": 0}, "units": u, "shots": shots, "plan": {}, "total": t}
+
+def test_check_camera_path_passes_fails_for_each_reason_and_says_na(camera, setting, monkeypatch):
+    c = _path_ctx(); s, ev = CON.p_camera_path(c)
+    assert s == CON.PASS and ev == "3 acts in 3 places (2 changes in 1.0 min, at most 3): your kitchen | your street | the hill; every picture at eye level; every act opens on its own picture", ev
+    c = _path_ctx(); c["shots"][1].pop("path"); s, ev = CON.p_camera_path(c); assert s == CON.FAIL and "shot 1 of act 2 has no camera-path mark" in ev, ev
+    c = _path_ctx(); monkeypatch.setattr(EP, "anchors_for", lambda *a, **k: []); s, ev = CON.p_camera_path(c); assert s == CON.FAIL and "act 1 would open on a picture made for another act" in ev, ev
+    monkeypatch.undo(); setting("CAMERA_PATH_ON", "TRUE")
+    c = _path_ctx(); c["shots"][0]["pov"]["angle"] = "high angle looking down"; s, ev = CON.p_camera_path(c); assert s == CON.FAIL and "not at eye level: 'high angle looking down'" in ev, ev
+    c = _path_ctx(); [x.pop("pov") for x in c["shots"]]; s, ev = CON.p_camera_path(c); assert s == CON.PASS and "angle not assigned by code" in ev, ev
+    c = _path_ctx(); c["shots"][2]["prompt"] = "a cup"; s, ev = CON.p_camera_path(c); assert s == CON.FAIL and "shot 2 does not hold the place of act 3" in ev, ev
+    c = _path_ctx(); c["units"][1]["end"] = 25.0; c["units"][2].update(start=25.0); c["shots"][2]["path"] = dict(c["shots"][2]["path"], act=9)
+    c["units"].append({"i": 3, "start": 55, "end": 60, "text": "x", "beat": 9, "speaker": "DIRECTOR", "tag": "none"}); c["shots"].append(dict(c["shots"][2])); c["total"] = 60
+    s, ev = CON.p_camera_path(c); assert s == CON.FAIL and "the joins did not run" in ev, ev                              # an act of 5 s beside others
+    setting("CAMERA_PATH_ON", "FALSE"); s, ev = CON.p_camera_path(_path_ctx()); assert s == CON.NA and "CAMERA_PATH_ON" in ev
+    setting("CAMERA_PATH_ON", "TRUE"); s, ev = CON.p_camera_path(_path_ctx("F2")); assert s == CON.NA and ev == "format F2 cuts between its pictures"
+    c = _path_ctx(); c["units"] = [{k: v for k, v in x.items() if k != "beat"} for x in c["units"]]; s, ev = CON.p_camera_path(c); assert s == CON.NA and ev == "made before the camera path"
+    stage = {f[0]: f[1] for f in CON.FEATURES}; assert stage["camera_path"] == "script" and stage["camera_shown"] == "final" and "camera_path" not in FMT.DEVICES
+
+def test_check_camera_shown_judges_what_the_render_recorded_for_each_reason(camera, setting):
+    c = _path_ctx(); sg = {s["path"]["act"]: s["path"]["sign"] for s in c["shots"]}
+    st = lambda **k: dict({"t0": 21.0, "t1": 25.0, "i": 1, "type": "still", "act": 2, "src": 1, "move": "drift", "sign": sg[2], "fallback": False}, **k)
+    c["path_states"] = [st()]; s, ev = CON.p_camera_shown(c); assert s == CON.PASS and ev == "1 still states in 1 acts: each showed a picture of its own act, at eye level, travelling one way (drift 1)", ev
+    c["path_states"] = [st(src=0)]; s, ev = CON.p_camera_shown(c); assert s == CON.FAIL and "at 21.0 s act 2 showed a picture made for act 1" in ev, ev
+    c["path_states"] = [st(move="pull")]; s, ev = CON.p_camera_shown(c); assert s == CON.FAIL and "moved backwards, rolled or was not recorded: 'pull'" in ev
+    c["path_states"] = [st(move="")]; assert CON.p_camera_shown(c)[0] == CON.FAIL                                         # not recorded
+    c["path_states"] = [st(sign=-sg[2])]; s, ev = CON.p_camera_shown(c); assert s == CON.FAIL and "against act 2's direction" in ev, ev
+    c["path_states"] = [st(move="", sign=0, fallback=True)]; assert CON.p_camera_shown(c)[0] == CON.PASS                  # a fall-back state: its picture only
+    c["path_states"] = [st(move="", sign=0, fallback=True, src=0)]; assert CON.p_camera_shown(c)[0] == CON.FAIL
+    c["path_states"] = [st(type="kling", src=0, move="")]; s, ev = CON.p_camera_shown(c); assert s == CON.NA and "no still state carries an act" in ev      # a clip is not judged
+    c2 = _path_ctx("F2"); c2["path_states"] = [st()]; assert CON.p_camera_shown(c2)[0] == CON.NA
+
+def test_the_director_is_told_the_path_and_the_scenes_move_with_the_viewer(camera, setting):
+    with FMT.using("F1"):
+        n = ROOM._immersion_notes({"immersion": {}}); assert PATH.DIRECTOR in n and IM.director_rules() not in n
+        fe = FE.instructions("director"); assert ("- " + PATH.DIRECTOR) in fe and "The studio/control room is a recurring home base" not in fe and "Visualize consequences whenever" not in fe
+        assert "use the studio/control room for setup, debate, and verdict; " not in fe and "Director: use scenario visualizations" in fe
+    with FMT.using("F3"): assert PATH.DIRECTOR in ROOM._immersion_notes({"immersion": {}})
+    with FMT.using("F2"):
+        n = ROOM._immersion_notes({"immersion": {}}); assert PATH.DIRECTOR not in n and IM.director_rules() in n; trial = FE.instructions("director")
+        assert "The studio/control room is a recurring home base" in trial and "use the studio/control room for setup, debate, and verdict; " in trial
+    setting("ENDINGS_ON", "FALSE")
+    with FMT.using("F2"): assert FE.instructions("director") == trial                                                    # the trial's block byte for byte
+    setting("ENDINGS_ON", "TRUE")
+    u = [{"text": f"Line {i}.", "start": i * 5.0, "end": i * 5.0 + 4, "tag": "reveal" if i == 2 else "none"} for i in range(6)]
+    mk = lambda: [{"type": "kling", "prompt": "k"}, {"type": "living", "prompt": "l"}] + [{"type": "still", "prompt": "s"} for _ in range(4)]
+    for fmt, kl, lv in (("F1", PATH.KLING_MOTION, "first-person eye-level view, slow breathing sway"), ("F3", PATH.KLING_MOTION, PATH.WALK_LIVING), ("F2", "first-person camera mounted", "first-person eye-level view, slow breathing sway")):
+        with FMT.using(fmt): out = IM.apply(mk(), u, {}, {"kling": 1}, "EPIM")
+        assert all(s["motion"].startswith(kl) for s in out if s["type"] == "kling") and all(s["motion"].startswith(lv) for s in out if s["type"] == "living"), (fmt, out)
+
+def test_an_acts_first_picture_that_cannot_be_made_stops_the_render_and_the_retry_buys_only_it(monkeypatch, setting):
+    from tests import test_v12_opening_e2e as E2E, paid_calls as PC
+    _start(monkeypatch, setting, "F1"); ep = OWN_IDS[3]; got = {}; real = EP._assets
+    def assets(shots, units, out, ep_, **k):
+        f = real(shots, units, out, ep_, **k); acts_ = sorted({s["path"]["act"] for s in shots if s.get("path")})
+        lost = next(i for i, s in enumerate(shots) if (s.get("path") or {}).get("first") and s["path"]["act"] != acts_[0] and s["type"] == "still" and i in f["img"])
+        f["img"].pop(lost); got.update(shots=shots, units=units, out=out, k=k, lost=lost); return f                    # that one picture failed twice
+    monkeypatch.setattr(EP, "_assets", assets)
+    with pytest.raises(RuntimeError, match=r"first picture could not be made - not rendering a film that opens an act on another act's picture"):
+        EP.produce(E2E._slot(10), episode_id=ep)
+    have = EP._load_assets(got["out"]); assert have and got["lost"] not in have["img"] and len(have["img"]) > 3 and have["clips"]      # what was made is saved
+    c = PC.watch(monkeypatch); f = real(got["shots"], got["units"], got["out"], ep, budget=got["k"]["budget"], have=have, footage=got["k"].get("footage"))
+    assert got["lost"] in f["img"] and c.get("image", 0) == 1 and not c.get("clip") and not c.get("clip_kling") and not c.get("image_ref"), dict(c)      # the retry buys that one picture and nothing else
     shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True)

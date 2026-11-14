@@ -630,10 +630,10 @@ def test_the_sweep_makes_an_id_bad_when_a_rule_was_not_walked(ladder):
 def test_the_batch_is_wired_protected_and_documented():
     prot = open(os.path.join(ROOT, "tools", "repair.py"), encoding="utf-8").read()
     assert '"whatifs/motion.py"' in prot and '"whatifs/stock.py"' in prot and {"whatifs/motion.py", "whatifs/stock.py"} <= set(REG.DEPTS["D6"]["wraps"])
-    stage = {f[0]: f[1] for f in CON.FEATURES}; assert len(stage) == len(CON.FEATURES) == 66
+    stage = {f[0]: f[1] for f in CON.FEATURES}; assert len(stage) == len(CON.FEATURES) == 68
     assert (stage["moving_share"], stage["stock_share"], stage["short_moving"], stage["short_sound"], stage["living_characters"]) == ("final", "final", "short_file", "short_file", "final")
     assert [REG.check_owner(k) for k in ("moving_share", "stock_share", "short_moving", "short_sound")] == ["D6", "D6", "D6", "D7"]
-    assert RND.SHOW_CHECKS == 55 and all(k not in RND.ORG_CHECKS and k in RND.metrics() for k in ("moving_share", "stock_share", "short_moving", "short_sound"))
+    assert RND.SHOW_CHECKS == 57 and all(k not in RND.ORG_CHECKS and k in RND.metrics() for k in ("moving_share", "stock_share", "short_moving", "short_sound"))
     assert REG.GATE_RUNS["short_file"] == ("D8", "short_file_gate") and ("whatifs/shorts2.py", "short_file_gate") in REG.ENTRY["D8"] and REG.EPISODE_RUNS["short_file"][-1] == ("D14", "make")
     for k, dept, owner, checks in (("MOVING_SHARE_LONG", "D6", "", ("moving_share",)), ("MOVING_SHARE_MIN_LONG", "D6", "down", ("moving_share",)), ("STOCK_SHARE_MAX_PCT", "D6", "up", ("stock_share",)),
                                    ("SHORT_SOUND_BY_S", "D7", "up", ("short_sound",))):

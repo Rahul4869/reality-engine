@@ -11,12 +11,12 @@ RULES = ("must", "advisory", "never")
 _TRIAL = ("verdict_style", "time_ladder", "exhibits", "grimm_prototype", "verdict_line")          # the trial's own grammar: meaningless outside a trial
 FORMATS = {
     "F1": {"name": "The day it changed", "status": "on", "show": False, "voices": ("DIRECTOR", "SKEPTIC"), "share": "FORMAT_SHARE_F1",
-           "inside": "INSIDE_MIN_PCT_F1", "lecture": "LECTURE_MAX_F1", "ending": "question", "asks": ("subscribe",), "chips": False,
+           "inside": "INSIDE_MIN_PCT_F1", "lecture": "LECTURE_MAX_F1", "ending": "question", "asks": ("subscribe",), "chips": False, "camera": "path",
            "devices": dict({k: "never" for k in _TRIAL}, joke_density="advisory", send_and_awe="advisory", emotion_beat="advisory", audience_asks="advisory", end_tease="advisory")},
     "F2": {"name": "The trial", "status": "on", "show": True, "voices": ("DIRECTOR", "SKEPTIC", "JUDGE", "WITNESS"), "share": "FORMAT_SHARE_F2", "devices": {},
-           "inside": "INSIDE_MIN_PCT_F2", "lecture": "LECTURE_MAX_F2", "ending": "tease", "asks": ("like", "subscribe", "share"), "chips": True},
+           "inside": "INSIDE_MIN_PCT_F2", "lecture": "LECTURE_MAX_F2", "ending": "tease", "asks": ("like", "subscribe", "share"), "chips": True, "camera": "cut"},
     "F3": {"name": "The walk", "status": "later", "show": False, "voices": ("DIRECTOR",), "share": "FORMAT_SHARE_F3", "devices": {k: "never" for k in DEVICES},
-           "inside": "INSIDE_MIN_PCT_F3", "lecture": "LECTURE_MAX_F3", "ending": "arrival", "asks": (), "chips": False},
+           "inside": "INSIDE_MIN_PCT_F3", "lecture": "LECTURE_MAX_F3", "ending": "arrival", "asks": (), "chips": False, "camera": "walk"},
 }
 ALL_ASKS = ("like", "subscribe", "share")
 ONE_ASK = ("ONE ASK ONLY: write exactly one short moment in which the foil asks the viewer to subscribe - inside the conversation, in the show's own voice, never "
@@ -31,7 +31,8 @@ F1_BIBLE = ("FORMAT OF THIS EPISODE - F1 \"THE DAY IT CHANGED\" (not a trial). T
             "what you see or feel in the first seconds, in your own home; (2) YOUR MORNING - the first consequences in your body and your rooms; (3) YOUR STREET - "
             "what it does to the people and things around you; (4) THE WORLD - the planet-size consequence, with the one real piece of science that explains it; "
             "(5) THE LAST CONSEQUENCE - one beautiful or terrible thing nobody saw coming; (6) THE QUESTION - the viewer's own verdict: would you keep it? "
-            "No courtroom, no charge, no exhibits, no jury in any beat.")
+            "No courtroom, no charge, no exhibits, no jury in any beat. The `visual_world` of every beat NAMES its place in three or four words ('your "
+            "bathroom', 'your street').")
 F1_WRITER = ("FORMAT OF THIS EPISODE - F1 \"THE DAY IT CHANGED\". This episode is NOT a trial: no court, no charge, no judge, no jury, no witness, no exhibits, no "
              "prototype, no verdict by anyone but the viewer - never those words. ONE law of nature is different today and it happens to YOU.\n"
              "STRUCTURE: the impossible picture FIRST (your own home, the first seconds) -> your morning -> your street -> the world, with the one real piece of "
@@ -97,6 +98,12 @@ def asks(fmt=None):
     k = current() if fmt is None else str(fmt or "")
     if k not in FORMATS or not S("ENDINGS_ON", bool): return ALL_ASKS
     return tuple(FORMATS[k]["asks"])
+
+def camera(fmt=None):
+    """v12 V2b: how a format's pictures follow each other - 'path' (F1: one place per act), 'walk' (F3: one route, one direction), 'cut' (the trial);
+    'cut' when no format (default: the format in the making)."""
+    k = current() if fmt is None else str(fmt or "")
+    return FORMATS[k]["camera"] if k in FORMATS else "cut"
 
 def chips(fmt=None):
     """v12 V2b: may a format show a name chip at all (its row's data: the trial True - its cast can be drawn; F1 and F3 False - nobody is on screen, so

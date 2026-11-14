@@ -89,7 +89,12 @@ def _for_format(block: str) -> str:
     k = FMT.current()
     if not S("ENDINGS_ON", bool) or k not in FMT.FORMATS: return block
     trial = FMT.FORMATS[k]["show"]; a = FMT.asks(); out = []
+    from whatifs import path as PATH
+    path_ = PATH.on(); grammar = False                                     # v12 V2b: in a camera-path format the two visual-grammar lines become ONE line, the path's rules
     for line in block.split("\n"):
+        if path_ and (line.startswith("- The studio/control room is a recurring home base") or line.startswith("- Visualize consequences whenever")):
+            if not grammar: out.append("- " + PATH.director_rules()); grammar = True
+            continue
         if line.startswith("- A PRESENTER IS DRAWN OR ABSENT") and not FMT.chips(): line = line.replace(TAG_SENTENCE, "")
         if line.startswith("Audience asks:") and a != FMT.ALL_ASKS:
             if a == ("subscribe",): out.append(ASKS_ONE)
@@ -116,7 +121,11 @@ def instructions(role: str = "general") -> str:
     }
     if mode() == "classic":
         return base
-    return base + "\n\nROLE-SPECIFIC REQUIREMENTS: " + role_notes.get(role, "Keep the simulation visually legible, character-driven, original, and scientifically honest.")
+    from whatifs.core import S
+    from whatifs import path as PATH, formats as FMT
+    if S("ENDINGS_ON", bool) and FMT.current() in FMT.FORMATS and PATH.on():        # v12 V2b: a camera-path format has no studio for setup, debate and verdict
+        role_notes["director"] = role_notes["director"].replace("use the studio/control room for setup, debate, and verdict; ", "")
+    return base + "\n\nROLE-SPECIFIC REQUIREMENTS: " + role_notes.get(role,"Keep the simulation visually legible, character-driven, original, and scientifically honest.")
 
 def enrich_spine(spine: dict) -> dict:
     """Add safe metadata without removing or replacing fields from the existing spine."""

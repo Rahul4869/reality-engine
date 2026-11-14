@@ -1327,6 +1327,74 @@ approved in the test): only SKEPTIC is named, the gate receives exactly the chip
 N/A, no tease in the script - step 4 adds its camera asserts. Run alone: the unit tests "7 passed in 0.63s", the two whole productions "1 passed" each.
 STEP 3'S RUN (real pytest, parallel `-n 6`, strict, THE WHOLE SUITE): "1594 passed in 1957.39s (0:32:37)", 0 failed. Plan Guard GREEN, Truth GREEN,
 `tools/gen_docs.py` wrote `SYSTEM.md`. Breaks S3-01 to S3-14 written into `proving/breaks/V2b.json` (each anchor found exactly once; 83 in the list) - NOT RUN.
+Step 3 committed and pushed: 3f33c84.
+STEP 4 - THE CAMERA PATH (3.2). READ WHOLE before the first edit: `motion.py`, `shotplan.py`, `immersion.py`, `render.py`, `costguard.py`, `anim.py`,
+`episode.py` (again), `room.py` from `_director_extra` to its end, `org/registry.py` (DEPTS, ENTRY, CHECK_OWNER), `media.still` / `animate`, `atmosphere.with_directive`,
+`tests/golden_frames.py`; by the parts: `org/levers.py` (the rule helpers and the V2b rows), `contract.py` (`p_viewer_inside`, `p_format_ending`, the table),
+`tests/test_v12_motion.py` (the ladder fixture, the placing tests, the pins), `tests/test_v91_e2e.py` (the paid-call ceiling); callers by search (`parallax_segment`:
+`episode._render` twice, `Job.rerender_times`, `tests/golden_frames.py`; `_assets`: `produce`, `tests/test_v12_motion.py`; `plain` / `room_s` / `covers` / `carry`:
+`motion.py` itself; `assign_anchors`: `immersion.apply`; `_immersion_notes`: `room.plan_shots`).
+BUILT AS WRITTEN: NEW `whatifs/path.py` (D6; PROTECTED - CORRECTED BY THE BUILD (2): the file was written a few minutes BEFORE it was put on
+`tools/repair.py` PROTECTED, inside the same step and before any commit; the memo said "PROTECTED first") - `on`, `on_units`, `allowance`, `acts` (joined by
+ACT_MIN_S, then by the allowance; a joined act keeps its first beat's number; the Short's footage in no act), `place_of`, `sign_of`, `mark`, `lay`, `sentence`,
+`director_rules` (the memo's paragraph word for word), `MOVES`, the two motion sentences, and the checks' measures `why_na`, `plan_report`, `shown_report`; the
+row key `camera` (F1 "path", F2 "cut", F3 "walk") and `formats.camera`; cells `CAMERA_PATH_ON` TRUE, `ACT_MIN_S` 12, `PLACE_CHANGES_PER_MIN_MAX` 1.5
+(`OLD_INSIDE` gains `CAMERA_PATH_ON` FALSE); levers of D6 `ACT_MIN_S` (6 to 30, step 2) and `PLACE_CHANGES_PER_MIN_MAX` (0.5 to 3, step 0.25, raising needs the
+owner); `motion.plain` False for `path.first`; eye level and the three lenses in `shotplan.assign_anchors`; the Director's paragraph in `room._immersion_notes`;
+the scenes' and the walk's motion sentences in `immersion.apply`; `render.choose_move` / `pick_move` with a pool (the memo's two expressions), `camera_path(sign=)`
+for the move AND the depth parallax (no draw moved with `sign` None: the reference frames' test is green), `parallax_segment(sign=, pool=)` and "gentle" with a
+pool at calm energy; `episode.anchor_shots(firsts=)` (served right after the opening, added whatever the budget says) and the ONE helper `episode.anchors_for(shots,
+units, d, plan, opening=None)` - its arguments are exactly what `_assets` computed its anchors from: the budget d['stills'] + plan['living'] + plan['kling'] (the
+asset step, which is handed only the sum, passes {"stills": budget}), the opening's lines (`ROOM.opening_units`), every act's first still; in `produce`
+`path.mark` right after `inside.open_acts` (before the Animation Director; `S_["path"]` = the acts), `path.lay` right after `motion.place`, the script gate's
+context gains `plan` and `total`, and beside the 15% rule and after the same checkpoint a missing first picture raises the memo's message; in `_render` the
+merged first line hands its picture on (DESIGN QUESTION 12), a path still drawn with its sign and the pool, and every `segmeta` entry gains `act`, `src`, `move`,
+`sign` (what was passed, else 0), `fallback`; `rerender_times` re-draws a path state with its sign and pool and rewrites `move` / `fallback`; `_finish` hands
+`ctx["path_states"]` (a key of its own; `ctx["states"]` unchanged); checks `camera_path` (script, D6) and `camera_shown` (final, D6), both SHOW checks
+(`SHOW_CHECKS` 57); the `path.on()` half of 3.3 (c) (the two visual-grammar lines become one, the Director's role note without the studio) and F1_BIBLE's
+sentence (DESIGN QUESTION 6); the stills line's ceiling (3.8). 68 hard checks (39 script, 21 final), 84 levers - the pins moved as named in step 1's list.
+THE STEPS AFTER `lay` THAT READ OR REBUILD A PROMPT (the memo's search of `prompt` in `episode._assets`, `episode.motion_prompt`, `media.py`, `anim.py`):
+`_assets.get_img` -> `media.still(s["prompt"])` (a scene's start picture is `anim.start_frame` / `frame_prompt`: an `anim` shot is never laid); `media.still`
+-> `atmosphere.with_directive` appends the lighting directive and cuts only from the END (`p[:mx]`), then the style lock and look words are appended - the
+place sentence in front survives; `_assets.get_clip` -> `motion_prompt` (a living clip's MOTION prompt carries the shot's prompt after its motion words) or
+`anim.acting_prompt` for a scene; `Job.repair_assets` -> `media.still(f"{prompt}. Clear, sharp ...")` keeps it at its head; `room.promise_shot` runs before
+`lay` and its shot is never laid. Proven by the whole F1 production: every laid still's and living shot's picture is bought with a prompt that BEGINS with its
+act's sentence.
+MONEY (3.8; by the code's own lines, not measured on a bill): the stills line carries `allowance(RUNTIME_MAX_SEC) + 1` = 14 pictures more while
+`CAMERA_PATH_ON` (69 -> 83): a long video's estimate Rs 570.48 -> 578.79, one about a promoted Short Rs 535.49 -> 543.81; the month's split still fits (on the
+empty test Sheet: 12 Shorts planned, 12 fit beside the long videos left, free money Rs 1,014 -> 986). THE PAID-CALL COUNT (`tests/paid_calls.count`, the
+offline episode forced F1, a scratch run outside the repo): camera path OFF image 25, ON image 25 (the log: "camera path: 2 act(s) in 2 place(s): your
+bathroom | your street") - every other count equal: NOTHING is added to `tests/paid_calls.py`.
+DESIGN QUESTION 12: "a merged first line still hands its picture on" in `_render` is typed to run only while `path.on()`: unconditional it would change what
+d8101c8 renders with the switch off (3.0: "each FALSE = exactly the behaviour of d8101c8"). The reading that changes less.
+DESIGN QUESTION 13: 3.2 says "both cells are levers of D6 (ACT_MIN_S 6 to 30, step 2; PLACE_CHANGES_PER_MIN_MAX 0.5 to 3, step 0.25, raising needs the
+owner)": read as the owner's direction for the second cell only; `ACT_MIN_S` has none (the literal reading).
+DESIGN QUESTION 14: the offline bible (`fakes`, key "bible") answered `visual_world` "v" for every beat, so every act of an offline film had ONE place and the
+memo's whole-production test ("two places named") could not pass. Taken: while `path.on()` the stand-in names one place a beat ("your bathroom", "your
+kitchen", "your street", "the town square", "the edge of town", "the hill above town" - F1_BIBLE's own examples first); otherwise "v" byte for byte (a test).
+DESIGN QUESTION 15: an act whose units hold no picture gets `first` False on every shot (the memo: "has no `first`"); `segmeta`'s `sign` is the sign passed to
+`parallax_segment`, 0 where none was passed (a clip, a graphic, a cutaway, a fall-back).
+PLAN NOTE (L15, again): three small edits of this step went through a Python program in a quoted here-document or `python -c` (the registry, levers,
+rnd, core, conftest and repair edits; the record of `sign` in `_render`); each asserted its anchor stood once and the tests read the result. From step 5 on,
+only the file tool.
+TESTS (`tests/test_v12_inside.py`, section 11, and widened): the two worked examples, a short act joining the act before, the first act joining the act after
+with its beat, the shortest and the later of two equal joining under the allowance, the footage in no act; the place from the bible (ten words, no full
+stop), the word list, the act before, "your home", the offline bible per beat and the older reply in a cut format; `first` on an act's first picture after a
+cutaway and after a graphic (INSIDE_ON FALSE), one sign an act, ONE in the walk, nothing in a cut format or without beats, the readers of `camera`; `lay`
+once, never on footage, a promise, a scene or a graphic; eye level and the three lenses at the source, the old rotation with the switch off or in a cut
+format; `firsts` served from the budget and beyond it, and the asset step buying act 2's first picture with a budget of 0; the pool expressions over 200
+seeded draws (never pull, never kb_roll), the fall-back, the move and the parallax following the sign, `sign` None unchanged; "gentle" with a pool drawing and
+recording a pool move with the sign reaching the camera, without a pool the v8.7 mover; `plain` / `room_s` / `carry` / `place` stopping at an act's first
+picture; a REAL `_render` of two acts (a 0.6-second first line handing its picture on, the record's five fields, a planted failing segment recorded as a
+fall-back) and `rerender_times` re-drawing with the sign and pool and rewriting the record; both checks failing for every reason, PASS words, N/A for each
+reason; the Director's prompt and the format block per format, a trial's byte for byte, the motion sentences per format; the stills line's ceiling; the
+wiring; and three whole productions - the F1 film (`camera_path` PASS naming two places, `camera_shown` PASS, `visual_change` PASS, two place sentences, every
+laid picture bought with its sentence), the trial under the ladder (both checks N/A "format F2 cuts between its pictures"), and NEW `OWN_IDS[3]`
+(EP209908220900): act 2's first picture lost - the render stops with the memo's message, `assets.json` holds what was made, and the retry buys that one picture
+and nothing else (the paid-call counter). Run alone: 57 unit tests "57 passed in 13.96s"; the four whole productions "4 passed in 159.49s".
+STEP 4'S RUN (real pytest, parallel `-n 6`, strict, THE WHOLE SUITE): "1613 passed in 2013.70s (0:33:33)", 0 failed. Plan Guard GREEN, Truth GREEN, the
+Organisation GREEN, `tools/gen_docs.py` wrote `SYSTEM.md`. Breaks S4-01 to S4-69 written into `proving/breaks/V2b.json` (each anchor found exactly once; 152 in
+the list) - NOT RUN.
 
 ### V2d-b - THE LADDER'S RULES (13 Nov 2026) - ACCEPTED (final code commit 5827d97 GREEN in GitHub Checks run 159: 1551 passed; sweep 58 of 58 ids)
 (Its code is d8101c8; every later commit is text only. History: built on 60d9483; the prover's FIRST PASS on 60d9483 was RED - the sweep

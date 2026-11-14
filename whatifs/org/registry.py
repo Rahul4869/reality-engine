@@ -27,8 +27,8 @@ DEPTS = {
     "D5":  {"mission": "titles, thumbnails, the promise, packaging tests", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/packaging.py", "whatifs/art.py"), "levers": ("PROMISE_BY_SEC",), "takes": ()},
     "D6":  {"mission": "stills, animated scenes, living characters, particles, micro-cuts, the render", "cadence": "episode", "cap_inr": None, "inject": "brief",
-            "wraps": ("whatifs/media.py", "whatifs/anim.py", "whatifs/living.py", "whatifs/render.py", "whatifs/shotplan.py", "whatifs/opening.py", "whatifs/clips.py", "whatifs/motion.py", "whatifs/stock.py"),
-            "levers": ("ANIM_SHOTS", "VISUAL_CHANGE_MAX_S", "PARTICLES_ON", "LIVING_CHARACTERS_ON", "CAMERA_MOTION", "OPENING_FIT", "OPENING_ENLARGE_MAX", "MOVING_SHARE_LONG", "MOVING_SHARE_MIN_LONG", "STOCK_SHARE_MAX_PCT"), "takes": ()},      # v12 V2c-b2b: the opening from the Short's footage
+            "wraps": ("whatifs/media.py", "whatifs/anim.py", "whatifs/living.py", "whatifs/render.py", "whatifs/shotplan.py", "whatifs/opening.py", "whatifs/clips.py", "whatifs/motion.py", "whatifs/stock.py", "whatifs/path.py"),
+            "levers": ("ANIM_SHOTS", "VISUAL_CHANGE_MAX_S", "PARTICLES_ON", "LIVING_CHARACTERS_ON", "CAMERA_MOTION", "OPENING_FIT", "OPENING_ENLARGE_MAX", "MOVING_SHARE_LONG", "MOVING_SHARE_MIN_LONG", "STOCK_SHARE_MAX_PCT", "ACT_MIN_S", "PLACE_CHANGES_PER_MIN_MAX"), "takes": ()},      # v12 V2c-b2b: the opening from the Short's footage
     "D7":  {"mission": "voices, sound worlds, story events, the music bed, the pause before a punchline", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/voice.py", "whatifs/tts_gemini.py", "whatifs/sound.py"), "levers": ("SOUND_DESIGN_ON", "TTS_ENGINE", "SHORT_SOUND_BY_S"), "takes": ()},
     "D8":  {"mission": "the Feature Contract, the Impact Map, the enforcement matrix, problem memos, the repair loop", "cadence": "episode", "cap_inr": None, "inject": "brief",
@@ -113,7 +113,7 @@ CHECK_OWNER = {
     "viewer_numbers": "D13", "viewer_breath": "D13", "viewer_promise": "D13", "viewer_plain": "D13", "viewer_probe": "D13", "viewer_inside": "D13", "format_kept": "D4", "format_ending": "D4",
     "short_open": "D13", "short_plain": "D13", "short_shape": "D13", "short_kept": "D14", "short_contract": "D8", "topic_ladder": "D10", "release_sheet": "D9",
     "moving_share": "D6", "stock_share": "D6", "short_moving": "D6", "short_sound": "D7",      # v12 V2d-b: the motion ladder, real footage, a Short's first second
-    "opening_footage": "D6", "opening_shown": "D6",                                       # v12 V2c-b2b: the long video opens on its Short's footage
+    "opening_footage": "D6", "opening_shown": "D6", "camera_path": "D6", "camera_shown": "D6",                                       # v12 V2c-b2b: the long video opens on its Short's footage
 }
 
 def runnable(dept):

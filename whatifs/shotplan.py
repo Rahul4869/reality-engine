@@ -54,6 +54,8 @@ def assign_anchors(shots, units, seed="ep"):
     """Sets shot['pov'] = {..., anchor, lens, angle, phrase} for every picture shot: the scene's anchors rotate; lens, angle and phrasing never repeat on
     two consecutive pictures. Deterministic per episode."""
     prev = {"anchor": None, "lens": None, "angle": None, "phrase": None}; scene_last = {}
+    from whatifs import path as PATH
+    eye = PATH.on(); lenses = LENSES[1:4] if eye else LENSES          # v12 V2b: the camera path - every picture at eye level, a lens among 24mm, 35mm, 50mm
     for i, s in enumerate(shots):
         if s.get("type") not in ("still", "living", "kling"): continue
         line = units[i].get("text", "") if i < len(units) else ""
@@ -62,8 +64,8 @@ def assign_anchors(shots, units, seed="ep"):
         pool = next((a for n, _, a in SCENES if n == sc), DEFAULT_ANCHORS)
         k = _h(seed, i)
         anchor = next((pool[(k + j) % len(pool)] for j in range(len(pool)) if pool[(k + j) % len(pool)] != prev["anchor"]), pool[0])
-        lens = next((LENSES[(k + j) % len(LENSES)] for j in range(len(LENSES)) if LENSES[(k + j) % len(LENSES)] != prev["lens"]), LENSES[0])
-        angle = next((ANGLES[(k // 7 + j) % len(ANGLES)] for j in range(len(ANGLES)) if ANGLES[(k // 7 + j) % len(ANGLES)] != prev["angle"]), ANGLES[0])
+        lens = next((lenses[(k + j) % len(lenses)] for j in range(len(lenses)) if lenses[(k + j) % len(lenses)] != prev["lens"]), lenses[0])
+        angle = ANGLES[0] if eye else next((ANGLES[(k // 7 + j) % len(ANGLES)] for j in range(len(ANGLES)) if ANGLES[(k // 7 + j) % len(ANGLES)] != prev["angle"]), ANGLES[0])
         phrase = next(((k // 13 + j) % len(POV_PHRASES) for j in range(len(POV_PHRASES)) if (k // 13 + j) % len(POV_PHRASES) != prev["phrase"]), 0)
         pv = dict(s.get("pov") or {}); pv.update(anchor=anchor, lens=lens, angle=angle, phrase=phrase, scene=sc); s["pov"] = pv
         prev = {"anchor": anchor, "lens": lens, "angle": angle, "phrase": phrase}

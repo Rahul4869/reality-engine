@@ -15,7 +15,7 @@ OLD_CLIPS = {"CLIP_VALUE_ON": "FALSE", "SPLIT_ON": "FALSE", "FAL_HERO_MODEL": "f
 OLD_MOTION = {"MOTION_LADDER_ON": "FALSE", "FAL_LIVING_MODEL": "fal-ai/ltx-video/image-to-video", "PRICE_LIVING_USD": "0.02"}
 # v12 V2b: ... and with the inside of a format as it was (no voice rule, no camera path, the asks and the tease of every format, a name chip for every voice,
 # the shares 70 / 30 / 0). Each entry is added in the step of the batch that adds its cell; the batch's own tests are tests/test_v12_inside.py.
-OLD_INSIDE = {"INSIDE_ON": "FALSE", "ENDINGS_ON": "FALSE", "CHIP_DRAWN_ONLY_ON": "FALSE"}
+OLD_INSIDE = {"INSIDE_ON": "FALSE", "ENDINGS_ON": "FALSE", "CHIP_DRAWN_ONLY_ON": "FALSE", "CAMERA_PATH_ON": "FALSE"}
 
 @pytest.fixture(autouse=True)
 def fresh_store(tmp_path):

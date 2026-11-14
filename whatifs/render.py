@@ -109,23 +109,29 @@ MOVES_HIGH = ("push_parallax", "whip_settle", "orbit", "rack_focus", "kb_roll") 
 MOVES_CALM = ("drift", "push_parallax", "pull", "handheld", "kb_roll", "orbit", "rack_focus")         # explanation lines
 CAMERA_MOVES = tuple(dict.fromkeys(MOVES_HIGH + MOVES_CALM))                                          # every move the Director may suggest (v8.9)
 
-def pick_move(suggested, rng, energy="calm", avoid=None):
+def pick_move(suggested, rng, energy="calm", avoid=None, pool=None):
     """v8.9: the Director's suggested move is used when it is in the library, allowed at this energy (whip-and-settle only on strong shots) and not a repeat
-    of the previous shot; otherwise code chooses. A suggestion is a hint, never a way around the variety rule."""
+    of the previous shot; otherwise code chooses. A suggestion is a hint, never a way around the variety rule. v12 V2b: with a `pool` (the camera
+    path's moves) a suggested move outside it is refused."""
     m = str(suggested or "").strip().lower()
-    if m in CAMERA_MOVES and m != avoid and m in (MOVES_HIGH if energy == "high" else MOVES_CALM): return m
-    return choose_move(rng, energy, avoid)
+    if m in CAMERA_MOVES and m != avoid and m in (MOVES_HIGH if energy == "high" else MOVES_CALM) and (pool is None or m in pool): return m
+    return choose_move(rng, energy, avoid, pool)
 _LAST = {"move": None}
 
-def choose_move(rng, energy="calm", avoid=None):
-    """A move for this shot: from the energy's pool, never the same as the previous shot (no visible repetition)."""
+def choose_move(rng, energy="calm", avoid=None, pool=None):
+    """A move for this shot: from the energy's pool, never the same as the previous shot (no visible repetition). v12 V2b: with a `pool` only its
+    moves - and when none of the energy's is left, the pool without whip_settle (never the calm library: it holds pull and kb_roll)."""
+    if pool is not None:
+        c = [m for m in (MOVES_HIGH if energy == "high" else MOVES_CALM) if m in pool and m != avoid] or [m for m in pool if m != "whip_settle"]
+        return rng.choice(c)
     pool = [m for m in (MOVES_HIGH if energy == "high" else MOVES_CALM) if m != avoid] or list(MOVES_CALM)
     return rng.choice(pool)
 
-def camera_path(move, nframes, sw, sh, ww, wh, base_scale, rng, energy="calm", cx0=None, cy0=None, detail=False):
+def camera_path(move, nframes, sw, sh, ww, wh, base_scale, rng, energy="calm", cx0=None, cy0=None, detail=False, sign=None):
     """Per-frame (cx, cy, zoom, rotation radians, parallax px, focus depth) for one move. The centre is CLAMPED so the rotated, zoomed viewport plus the
-    largest parallax shift always stays inside the picture (no mirrored edges ever show). Variable speed comes from the easing of each move."""
-    amp = 1.7 if energy == "high" else 1.15; sgn = rng.choice([-1, 1]); cx0 = sw / 2 if cx0 is None else cx0; cy0 = sh / 2 if cy0 is None else cy0
+    largest parallax shift always stays inside the picture (no mirrored edges ever show). Variable speed comes from the easing of each move.
+    v12 V2b: `sign` (+1 / -1, the camera path's direction of travel) sets the side of the move AND of the depth parallax; None = both drawn as before."""
+    amp = 1.7 if energy == "high" else 1.15; sgn = sign if sign in (-1, 1) else rng.choice([-1, 1]); cx0 = sw / 2 if cx0 is None else cx0; cy0 = sh / 2 if cy0 is None else cy0
     ease = _ease; z0, z1, dx, dy, r0, r1, par, hand, rack = 1.0, 1.08, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, None
     if move == "push_parallax": z0, z1, par = 1.0, 1.0 + 0.13 * amp, 0.022 * amp
     elif move == "pull": z0, z1, par = 1.0 + 0.13 * amp, 1.0, 0.016 * amp
@@ -138,7 +144,7 @@ def camera_path(move, nframes, sw, sh, ww, wh, base_scale, rng, energy="calm", c
         p_ = rng.uniform(1.4, 2.2); ease = (lambda t, p_=p_: t ** p_) if rng.random() < 0.5 else (lambda t, p_=p_: 1 - (1 - t) ** p_)
     elif move == "whip_settle": z0, z1, dx, par = 1.0, 1.0 + 0.14 * amp, sgn * 0.06, 0.02 * amp; ease = lambda t: 1 - (1 - t) ** 3
     if detail: par = 0.0
-    par_px = sw * par * rng.choice([-1, 1]); ph = [rng.uniform(0, 6.283) for _ in range(6)]; fq = [rng.uniform(0.25, 0.6), rng.uniform(0.7, 1.7), rng.uniform(0.3, 0.9)]
+    par_px = sw * par * (sign if sign in (-1, 1) else rng.choice([-1, 1])); ph =[rng.uniform(0, 6.283) for _ in range(6)]; fq = [rng.uniform(0.25, 0.6), rng.uniform(0.7, 1.7), rng.uniform(0.3, 0.9)]
     out = []
     for f in range(nframes):
         u = f / max(1, nframes - 1); t = ease(u); z = (z0 + (z1 - z0) * t) * base_scale; th = r0 + (r1 - r0) * t
@@ -219,26 +225,28 @@ class Particles:
         inv = cv2.multiply(cv2.bitwise_not(fr), cv2.bitwise_not(over), scale=1.0 / 255.0)     # screen blend in 8-bit: 255 - (255-a)(255-b)/255
         return cv2.bitwise_not(inv)
 
-def parallax_segment(img_path, path, nframes, seed, detail=False, depth=None, focus=None, look=None, energy="calm", move=None, world=None):
+def parallax_segment(img_path, path, nframes, seed, detail=False, depth=None, focus=None, look=None, energy="calm", move=None, world=None, sign=None, pool=None):
     """v8.9: one cinematic camera move per shot (push-in + depth parallax, pull, drift, subtle orbit, controlled handheld, rack-focus, variable-speed Ken Burns
     with a 1-2.5 degree roll, whip-and-settle). energy='high' (opening window, the shot before a reaction) = the strongest moves, ~45 % bigger.
-    Never the same move twice in a row. Settings CAMERA_MOTION = gentle restores the v8.7 moves exactly."""
+    Never the same move twice in a row. Settings CAMERA_MOTION = gentle restores the v8.7 moves exactly. v12 V2b: with a `pool` (the camera path) the
+    move comes from it and follows `sign`, and 'gentle' draws it from this library at calm energy (the v8.7 mover knows no direction and records nothing)."""
     if str(S("CAMERA_MOTION") or "dynamic").strip().lower() == "gentle":
-        return _parallax_v87(img_path, path, nframes, seed, detail=detail, depth=depth, focus=focus, look=look)
+        if pool is None: return _parallax_v87(img_path, path, nframes, seed, detail=detail, depth=depth, focus=focus, look=look)
+        energy = "calm"
     ww, wh = work_size(); rng = random.Random(seed)
     detail = detail or (focus in _FOCUS); pad = 1.3 if not detail else 1.6
     src = _look(_load(img_path, ww, wh, pad), look)
     sh, sw = src.shape[:2]
     if depth is None: depth = depth_map(img_path)
     D = cv2.resize(depth, (sw, sh)).astype(np.float32)
-    move = pick_move(move, rng, energy, _LAST["move"]); _LAST["move"] = move      # v8.9: a Director suggestion is validated, never trusted blindly
+    move = pick_move(move, rng, energy, _LAST["move"], pool); _LAST["move"] = move      # v8.9: a Director suggestion is validated, never trusted blindly
     if detail and focus in _FOCUS: cx0, cy0 = sw * _FOCUS[focus][0], sh * _FOCUS[focus][1]
     elif detail:
         fy, fx = np.unravel_index(np.argmax(cv2.GaussianBlur(D, (0, 0), 25)), D.shape)
         cx0, cy0 = float(np.clip(fx, sw * 0.3, sw * 0.7)), float(np.clip(fy, sh * 0.3, sh * 0.7))
     else: cx0, cy0 = sw / 2, sh / 2
     base_scale = ww / (sw / pad)
-    cam = camera_path(move, nframes, sw, sh, ww, wh, base_scale, rng, energy, cx0, cy0, detail)
+    cam = camera_path(move, nframes, sw, sh, ww, wh, base_scale, rng, energy, cx0, cy0, detail, sign=sign)
     du, dv = np.meshgrid(np.arange(ww, dtype=np.float32) - ww / 2, np.arange(wh, dtype=np.float32) - wh / 2)
     soft = cv2.GaussianBlur(src, (0, 0), max(1.5, ww * 0.0045)) if move == "rack_focus" else None
     life = S("LIFE_LAYER_ON", bool); amp = S("LIFE_AMP", float) * wh; ph = rng.uniform(0, 6.28); f_ = fps()

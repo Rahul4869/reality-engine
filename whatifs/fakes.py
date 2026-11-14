@@ -224,7 +224,9 @@ def fake_reply(key, prompt):
             "next_tease": {"premise": "What if your bones turned to glass for a day?", "headline": "Your Bones Are Glass Now", "family": "F01_body", "ptype": "body", "line": "Next time: your bones turn to glass. Who survives breakfast?"}})
     if key == "memo": return json.dumps({"big_idea": "b", "needs": "n", "risk": "r", "techniques": ["Spielberg ripple"]})
     if key == "bible":
-        return json.dumps({"conflicts": [{"issue": "i", "decision": "d"}], "beats": [{"n": i, "purpose": "p", "feeling": "f", "visual_world": "v", "sound": "s", "key_line": "k"} for i in range(1, 7)],
+        from whatifs import path as _PATH                             # v12 V2b (DESIGN QUESTION 13): in a camera-path format every beat NAMES its place, as F1_BIBLE asks; else 'v' as before
+        _vw = ("your bathroom", "your kitchen", "your street", "the town square", "the edge of town", "the hill above town") if _PATH.on() else ("v",) * 6
+        return json.dumps({"conflicts": [{"issue": "i", "decision": "d"}], "beats": [{"n": i, "purpose": "p", "feeling": "f", "visual_world": _vw[i - 1], "sound": "s", "key_line": "k"} for i in range(1, 7)],
             "look": "cinematic, deep teal shadows, single warm key light, 35mm, fine grain", "recurring_motif": "m", "cta": {"like": "Tap like if your pillow is still here.", "subscribe": "Subscribe before the next object leaves.", "share": "Send this to the friend who sleeps on three pillows."}})
     if key == "jury":                                                 # v11 (K157): a blind ranking, the reverse of the order shown (exercises position handling)
         import re as _re
