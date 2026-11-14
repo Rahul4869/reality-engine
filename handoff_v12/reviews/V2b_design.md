@@ -1,5 +1,116 @@
 VERDICT: CHANGES REQUIRED
-# V2b INSIDE THE FORMAT - design review, round 1 (14 Nov 2026)
+# V2b INSIDE THE FORMAT - design review, round 2 (14 Nov 2026; the same reviewer; round 1 is kept whole below)
+Reviewed: the record of V2b as of commit ce20e49 (state DESIGN_REVIEW in f5a27e5). All 16 changes of round 1 were answered in the memo, none argued.
+USAGE when this round was written: the 5-hour window 15%, weekly all models 4%, weekly Fable 8%, context 54%.
+CHECKED AGAINST THE CODE AND FOUND TRUE NOW: the beat travels through `_strip_beats` -> `line_beats` -> `parse_script(line_beats=)` (every caller of
+`narrate` and `parse_script` is the list the memo gives: `episode.py` 153 and 161, `format_engine._units`, `preview.py` 23, `shorts2.py` 215 and 238,
+`voice_lab.py`); the place is the bible beat whose `n` equals the beat; the marks are laid before the Animation Director and `motion.place`; the tail
+is one measure in words (205 words: 24.6; 1,275 words: 100); the last spoken sentence is judged whatever its length; `CAMERA_MOTION` "gentle" no longer
+reaches a path state; the parallax follows the sign; the record has a key of its own and `rerender_times` rewrites it; every line of
+`format_engine.REALITY_ENGINE` the memo quotes exists word for word, and so do the four rewrite orders; GOOD-TRIAL counted by hand through the voice's
+own sentence cut = 9 of 15 = 60.0%, run 4 (the sentences from outside in a row: the witness, the two of the foil, "It is not falling, Doctor.").
+WHAT IS STILL WRONG - five things in the NEW text, each small, each exact below. Two would reach a viewer or the money: the new ask patterns
+delete "Follow me." from every walk and "You ring the bell and nobody comes." from every script (change 2), and a missing first picture would
+throw away and re-buy every clip of the video (change 4).
+
+## The ten questions of 5.4, round 2
+1. Every part serves a viewer or the scoreboard? YES - the Director is now told (3.2), the sign now moves what a viewer sees.
+2. Every word of the owner honoured? YES - the emotion beat is decided (kept in F1 without the courtroom word, none in F3); items 16, 19, 20 as in round 1.
+3. Every rule enforceable as written? NO - `first` sits on the act's first UNIT, which may be a cutaway or a graphic (change 1); `is_ask` still
+   takes story sentences for asks (change 2).
+4. Taste judged by a cheap model, or a model's opinion as a gate? NO.
+5. Judged on the finished file, both kinds of pairs? YES for F1 and F2 (GOOD-TRIAL 60% and run 4 against 26% and run 8) - NO for one sentence
+   about F3: its second good passage measures 61.5%, not "at or above 65" (change 3).
+6. Money? YES for the lines (the stills line carries the guarantee's ceiling) - NO for the retry of change 4, which would pay twice.
+7. Reuse of what is ready? YES - `motion.plain` now carries the act break through `room_s`, `covers`, the reservation and `carry`.
+8. Changes to what older tests pin, each named? YES - `motion.plain`, `audience.make_still`, `parse_script` / `Unit` / the timeline, `p_living` behind its switch, `ctx["states"]` untouched.
+9. The worst video still let through? As written: a walk whose guide's "Follow me." lines are silently cut (change 2). After the changes: the two
+   the memo names itself - a "you" in every sentence of a lecture (open issue 185, V1c's floor) and a picture model that ignores the place (186).
+10. What only reality can answer is written down? YES - 185 widened to the trial, 191 (four voices and no chip), 192 (asks in words code does not know).
+
+## The changes of round 2 (each is "the memo must ..."; the words to put in are given, so that no third question is needed)
+1. `first` IS THE ACT'S FIRST PICTURE, NOT ITS FIRST UNIT (3.2, "THE MARKS COME FIRST" (i)). Typed as written, an act that opens on a three-word
+   line of a speaker with approved art (a reaction cutaway: `shotplan.reaction_shots` runs in the plan stage, before `mark`) or - with `INSIDE_ON`
+   FALSE and `CAMERA_PATH_ON` TRUE - on a graphic or real footage, carries `first` on a shot that is no still: `firsts` (type still only) is empty
+   for that act, nothing guarantees its first still a picture, the still shows the act BEFORE's picture and `camera_shown` holds the paid film.
+   Replace "`first`: True on the shot of the act's FIRST unit, else False" by: "`first`: True on the act's first shot whose type is still, living
+   or kling when `mark` runs (after `mark` a still may become living or kling - still a picture of its own - never a graphic, footage or a
+   cutaway), else False; an act with no such shot has no `first`". Tests: an act that opens on a reaction cutaway (art approved in the test);
+   an act that opens on a graphic with `INSIDE_ON` FALSE - in both the act's first still is in `anchors_for` and `camera_shown` passes.
+2. `cta.is_ask`: THE NEW PATTERNS STILL DELETE STORY LINES (3.3, rule 2). Typed exactly as the memo gives them and tried (the reviewer's
+   scratchpad, `memo_check2.py`): "Follow me." / "Follow me to the roof." / "Now follow me across the road." = comment (`follow (?:us|me|...)` -
+   the commonest line a guide on a WALK can say); "The air would hit like a wall." / "Raindrops hit like stones." / "You tap like mad on the
+   glass." / "You hit that like a brick wall." = like (the unanchored `(?:hit|tap|press|smash)\s+(?:the\s+|that\s+)?like\b`); "You ring the bell
+   and nobody comes." / "You press the bell on the bus." = subscribe (a walk starts at a front door); "Tell your friend to run." / "Send it to
+   the moon and it comes back." / "Share it with nobody." / "Pass it on the left, the way you always do." = share; "Comment is useless here." =
+   comment. The eight of round 1 are right now. Put these patterns in the memo instead (tried on both lists below: no story sentence taken for
+   an ask, no ask missed - `memo_check3.py`):
+   `LEAD` as it is; `WHO` = `(?:(?:a|the|that|your|one|some|any)\s+)?(?:friends?|person|people|someone|somebody|anyone|anybody|everyone|everybody|whoever|group chat|family)\b`;
+   subscribe: `LEAD` + `subscribe\b` | `\b(?:hit|tap|press|smash)\s+(?:the\s+|that\s+)?subscribe\b` | `\bsubscribe button\b` | `\bnotification bell\b` | `\b(?:don't forget|remember|make sure)\s+(?:you\s+)?to\s+subscribe\b`;
+   like: `LEAD` + `(?:like this video|leave a like|drop a like|give (?:it|this) a like)\b` | `LEAD` + `(?:hit|tap|smash)\s+like(?=\s+if\b|\s*[.!,;]|\s*$)` | `\blike button\b` | `\bthumbs?[- ]up if\b`;
+   share: `LEAD` + `share (?:this|the) video\b` | `LEAD` + `(?:share|send|forward|text|pass)\s+(?:this|it)(?:\s+video)?\s+(?:on\s+)?(?:to|with)\s+` + `WHO`;
+   comment: `\bin the comments?\b` | `LEAD` + `(?:leave a comment|drop a comment|comment (?:down )?below)\b` | `LEAD` + `follow (?:us|me) (?:on|for)\b` | `\bfollow (?:the channel|for more)\b`.
+   A bell alone is never an ask ("So hit the bell." leaves the MUST list: a doorbell and a bus bell are bells; the pools' own lines are
+   recognised by rule 1). TEST DATA, to be added to the eight - MUST NOT be an ask: "Follow me to the roof." / "Follow me." / "Now follow me
+   across the road." / "The air would hit like a wall." / "Raindrops hit like stones." / "You tap like mad on the glass." / "You press like
+   you mean it, and the door does not move." / "You hit that like a brick wall." / "Hit like a hammer, the wind takes the door." / "Tell your
+   friend to run." / "Then tell your friend and watch him laugh." / "Send it to the moon and it comes back." / "Send it to your mother." /
+   "Text it to your sister and it arrives yesterday." / "Share it with nobody." / "So share the last of the water." / "Pass it on the left, the
+   way you always do." / "Comment is useless here." / "You ring the bell and nobody comes." / "Ring the bell. Nobody comes." / "You press the
+   bell on the bus." / "Hit the bell on the counter and it floats away." MUST be an ask: every line of both pools (rule 1); "Subscribe for
+   more." / "Please subscribe." / "Don't forget to subscribe." / "Hit the subscribe button." / "So tap like." / "Hit like if you would have
+   survived that." / "And smash that like button." / "Send this to the friend who would try it." / "Send it to a friend who asks what if at
+   dinner." / "Share this video with someone who would panic." / "Share it with one person." / "Forward this to someone curious." / "Text
+   this to your group chat." / "Tell me in the comments what you would do." / "Drop a comment below." / "Follow us for more."
+3. F3'S GOOD PAIR: THE FIGURE THE MEMO ASKS FOR IS NOT THE FIGURE IT GETS (3.1, "THE LIMITS, EACH BETWEEN ITS OWN PAIRS"). Counted: GOOD-1 with
+   every [SKEPTIC] line removed = 8 of 9 = 88.9%, run 1; GOOD-2 with every [SKEPTIC] line removed = 8 of 13 = 61.5%, run 4. "They must stand at
+   or above 65" is false of the second, and the next sentence would stop the build on it. Replace "- the builder measures and writes the two
+   figures; they must stand at or above 65" by: "= **8 of 9 = 88.9%, run 1** (its good passage) and **8 of 13 = 61.5%, run 4** (its EDGE
+   passage: a walk that ends on four sentences of explanation passes the floor of 60 by 1.5 points and the run limit at the limit - that is
+   what the floor is for); bad: BAD-1 (0%, run 8)". The floor 60 and the run limit 4 stand between 88.9 and 0, with the edge on record.
+4. A MISSING FIRST PICTURE MUST NOT COST THE VIDEO ITS CLIPS (3.2, "WHEN AN ACT'S FIRST PICTURE CANNOT BE MADE"). "`_assets` treats it as
+   required - ... raises the RuntimeError the 15% rule already raises" - that rule does not raise inside `_assets`: it raises in
+   `episode.produce` AFTER `CK.save(out, ep, "assets", {"assets.json": _assets_state(files)})` (lines 639 to 641), which is why its message can
+   say "the pictures that worked are saved". A raise typed inside `_assets` loses every picture and every clip of that run - the animated
+   scenes are the dearest thing a video buys - and the retry pays for all of them again. Replace the sentence by: "`_assets` reports it as it
+   reports every missing picture (`files["missing"]`); in `episode.produce`, beside the 15% rule and AFTER the same `CK.save`, a missing
+   picture of a shot with `path.first` raises the same RuntimeError ('act A's first picture could not be made - not rendering a film that
+   opens an act on another act's picture; will retry (the pictures that worked are saved)')". Test: after the raise `assets.json` holds the
+   pictures and clips that were made, and the second `_assets(have=...)` buys the one missing picture and nothing else (the paid-call counter).
+5. THE F3 TEST OF 3.3 (d) ASKS FOR WHAT (a) TO (d) DO NOT BUILD. "Its writer's, bible's and critic's prompts hold neither 'SKEPTIC' nor 'two
+   roles' nor 'Curious One'" cannot pass: `prompts.BIBLE` asks every bible for `"presenters":{"director":..,"skeptic":..}` and for `"cta"` lines
+   "spoken by the Curious One or the Director"; `growth.rhythm_brief` puts "REACTIONS: n short Curious One reaction lines" into every writer's
+   brief; the definitions of `data.py` that reach the writer through `defs` name the Curious One (the hook "wrong_guess", the rhythm
+   "RB5_case_file", the engagement "guess_first"; the banter ones are answered by "none (one voice)"); `immersion.writer_rules` says "the guest
+   reacts PHYSICALLY" and gives the example line "[SKEPTIC] [tension] {slow, low, whisper, breath}". None is a trial's sentence and none is true
+   of F3, so by (e) each would be a `DESIGN QUESTION` - six of them, foreseeable today. The memo must put in: (i) `growth.rhythm_brief`: in a
+   format with one voice the clause "REACTIONS: ... Curious One reaction lines." is not sent (a test); (ii) `F3_WRITER` gains, before "END ON
+   THE ARRIVAL": "Where any rule, definition or example above names the Curious One, a guest, a second role, banter or a reaction line, it
+   does not apply to this episode: the guide speaks alone."; (iii) (e) gets a FOURTH answer: "a strategy definition, a JSON key or an example
+   that names the second voice (`data.py`, the bible's `presenters` and `cta` keys, `immersion`'s example line): left as it is in this batch,
+   overruled by F3_WRITER's sentence, listed in the record and in open issue 187", and its search list gains `data.py` and `tableread.py`;
+   (iv) the test of (d) reads: "a whole F3 production makes NO paid call of the role `format`; its writer's prompt holds F3_WRITER's sentence
+   of (ii) and none of the lines (c) and (d) remove, nor 'Curious One reaction lines'".
+6. FIVE WORDS A TYPIST CANNOT GUESS. (a) 3.6, issue 129: `hook_line` must be what `opening.fetch` calls the hook - the FIRST UNIT of the Short's
+   own timeline with its brackets removed - made by ONE function both use, never `formats.short_lines(sc)[0]` (a first line may hold two
+   sentences: the writer would be handed more than `hooks.apply_to_script` compares with, and the hook would be said twice). (b) 3.3, "THE LAST
+   LINE": `last` is judged after its trailing spaces and closing quotes or brackets are removed (`.rstrip(" \"')]")`, as `short_kept_report`
+   does): 'Would you keep it?"' ends on a question. (c) 3.2, check `camera_path` rule 3: say in words what it does with a picture that
+   carries no `pov.angle` at all (`IMMERSION_ON` or `POV_VARIETY_ON` FALSE, or `v91.guard` switched the step off for this episode): judged
+   only where an angle was assigned - the place sentence still asks for eye level - with the PASS words then "angle not assigned by code".
+   (d) 3.3: where `removed` lives between the room and the gate: `d["asks_removed"]` = {kind: count}, written by the three call sites.
+   (e) 3.9: step 2 cannot hold 3.3 (d) (F3 is not switched on before step 5) nor the `path.on()` half of 3.3 (c) (`path.py` is step 4): (d)
+   belongs to step 5 and the path half of (c) to step 4 - say so in the two steps.
+
+## What round 2 attacked hardest
+(1) The new `is_ask` - the memo's patterns typed and run on 27 story sentences and 10 asks: 18 story sentences were taken for asks (change 2).
+(2) The marks before `motion.place` - traced through `reaction_shots` (plan stage), `open_acts`, `anim.apply`, `motion.place` (`plain`, the
+reservation of a scene's lines, `covers`), `merge`, `carry` and `_render`'s `prev_img`: sound, except where `first` lands on a shot that is not a
+picture (change 1). (3) The beat's travel - `line_beats` gives one beat per line of `clean`, `parse_script` enumerates the same lines
+(`splitlines` of a text joined with "\n" from `splitlines`), a unit carries its line's beat, `inside.sentences` reads the same parser: sound.
+
+---
+# V2b INSIDE THE FORMAT - design review, round 1 (14 Nov 2026) - ITS VERDICT WAS: CHANGES REQUIRED (16 changes, all answered in round 2)
 The reviewer: a fresh Fable 5.2 session (Effort High) that did not write the memo (the plan's 5.4, AMENDMENTS 1 AND 2, session 2 of the chain).
 Reviewed: the record of V2b in `BUILD_STATE.md` (steps 1 to 3) as of commit 58c6167, base 5827d97.
 Read for it: the plan whole; the handoff `CLAUDE.md`; `02` whole; the redesign 4.1, 4.6, 10.7, 11.4, 11.10 with its end notes; in `BUILD_STATE.md` the head
