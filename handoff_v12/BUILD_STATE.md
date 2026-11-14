@@ -1279,6 +1279,28 @@ whole production "1 passed in 54.48s". Breaks S2-01 to S2-50 written into `provi
 STEP 2'S RUN (real pytest, parallel `-n 6`, strict; the batch's file and the 42 older files that read what the step changed - found by search for
 `cta`, `engage`, `format_engine`, `overlay`, the tease, `P.WRITER`, the counts, `fix_all`, HUMANIZE / FACTFIX, `formats`): "1176 passed in 1524.95s
 (0:25:24)", 0 failed. Plan Guard GREEN, Truth GREEN, `tools/gen_docs.py` wrote `SYSTEM.md` (committed with the step).
+WHERE THE BUILD STANDS (the second Opus builder, 14 Nov 2026 about 05:05 UTC; written at 68% of its context, past the brief's 65% line, between two
+steps). DONE AND PUSHED: steps 0 and 1 (the first builder: 20f00be, 08861cb, 33a8413) and step 2 (5a4859c). The state stays BUILD; nothing was moved;
+`V2b_OPUS_DONE.md` is NOT written. NEXT: a THIRD Opus builder (card "BUILDER of V2b - phase BUILD"), with the continuation typist's reading of the
+plan's A9, reads this record from "Step 4 BUILD" and goes on at 3.9 STEP 3 (the name chip), then 4, 5, 6, 7, 8.
+WHAT IT NEEDS TO KNOW FROM HERE (facts, not decisions):
+- THE PINS TODAY: checks by stage `{"script": 38, "final": 20, "short": 5, "short_file": 2, "release": 1}`, total 66 (`tests/test_v12_cutdowns.py` 39,
+  `tests/test_v12_exec.py` 493, `tests/test_v12_motion.py` 633), `SHOW_CHECKS` 55 (`whatifs/org/rnd.py`; `test_v12_motion.py` 636,
+  `test_v12_release.py` 436), levers 82 (`test_v12_exec.py` 62). Step 4 adds `camera_path` (script) and `camera_shown` (final) and two levers.
+- `tests/conftest.py` `OLD_INSIDE` = {"INSIDE_ON": "FALSE", "ENDINGS_ON": "FALSE"}: `CHIP_DRAWN_ONLY_ON`, `CAMERA_PATH_ON` and the shares 70 / 30 / 0
+  are added in the steps that add their cells.
+- CARRIED TO LATER STEPS BY DESIGN QUESTIONS OF STEP 2: step 3 types 3.3 (c)'s speaker-tag sentence ("The video marks who is speaking with a
+  code-drawn speaker tag." left out of "A PRESENTER IS DRAWN OR ABSENT" when `formats.chips()` is False) inside `format_engine._for_format`, which
+  today handles only the asks, Shorts and story-engine lines (DQ 5); step 4 types F1_BIBLE's `visual_world` sentence (DQ 6); step 5's offline F3
+  writer must end on its arrival - `fakes._ending()` already returns the format's ending while `ENDINGS_ON`, and the writer reply appends a line
+  only for "question" today (DQ 9); DQ 10 (`format_pass`'s words in F3) waits for step 5's typist or a Fable session.
+- `formats.ending_report` reads a line as the voice says it (`cta._peel` + `audience._TAGS`), not `audience.spoken` (correction 1, open issue 193).
+- `tests/test_v12_inside.py`: the whole F1 production (`OWN_IDS[0]`) now also asserts the ending (one subscribe ask, `format_ending` PASS, no tease);
+  `OWN_IDS[1]`, `[2]` stay reserved for the F3 video and the trial under the ladder. The `endings` fixture switches `ENDINGS_ON` on.
+- `proving/breaks/V2b.json`: 69 breaks (F1, S1-01 to S1-18, S2-01 to S2-50), each anchor found once on 5a4859c - NOT RUN. Steps 3 to 7 add theirs.
+- NOT RUN BY THIS BUILDER: the whole suite (its parallel pre-check is part of the builder's block, step 8), a rehearsal, `breaks.py`.
+USAGE at this builder's end: the 5-hour window 53%, weekly all models 14%, weekly Fable 26% (the account's figure; Fable sessions work beside this
+one, which is Opus 5.5), this session's context 68%.
 
 ### V2d-b - THE LADDER'S RULES (13 Nov 2026) - ACCEPTED (final code commit 5827d97 GREEN in GitHub Checks run 159: 1551 passed; sweep 58 of 58 ids)
 (Its code is d8101c8; every later commit is text only. History: built on 60d9483; the prover's FIRST PASS on 60d9483 was RED - the sweep
