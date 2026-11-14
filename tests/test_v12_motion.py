@@ -15,7 +15,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HEY, H3, H3MAX, PIX, KLING = (r["id"] for r in json.loads(core.DEFAULTS["CLIP_MODELS"][0]))
 OLD_LIVING = OLD_MOTION["FAL_LIVING_MODEL"]
 DEC = dt.datetime(2026, 12, 1, 6, 0, tzinfo=dt.timezone.utc)
-OWN_IDS = ("EP209906070900", "EP209906140900", "SH209906070900", "SH209906210900", "SH209906280900")      # the whole productions of this file: ids no other test file uses (a test proves it)
+OWN_IDS = ("EP209906070900", "EP209906140900", "SH209906070900", "SH209906210900", "SH209906280900", "EP209907050900")      # the whole productions of this file: ids no other test file uses (a test proves it)
 
 @pytest.fixture
 def ladder(setting):
@@ -740,3 +740,28 @@ def test_with_the_ladder_switched_off_a_short_sounds_and_is_gated_as_before(sett
     r = SH.run(force=True, publish=False, now=DEC, episode_id="SHOFF1"); assert r.get("ok")
     assert ("D8", "short_file_gate", "ok") not in _runs("SHOFF1") and "short_moving" not in _led("SHOFF1")
     shutil.rmtree(os.path.join(core.WORK, "SHOFF1"), ignore_errors=True)
+
+# ------------------------------------------------------------------ 11. AUDIT F1 OF V2d-b: what was PAID is the clip files bought, never only what reached the screen
+def test_a_paid_clip_that_never_reaches_the_screen_stays_in_what_was_paid_and_holds_the_video(ladder, setting, monkeypatch):
+    """The seconds PAID that check moving_share is given are the seconds of every clip file this video bought (episode._finish: `moving_paid_s`), whether
+    or not the renderer could show the clip. Here every still brought to life fails to draw in a whole production (the renderer shows its fallback
+    picture in its place): the video is HELD by moving_share, and the check's words carry every second the cost log says was paid."""
+    import re
+    from tests import test_v12_opening_e2e as E2E
+    E2E._start(monkeypatch, setting); C = OWN_IDS[5]; LAD.override("owner", "make it anyway")                      # under an override: its own scenes and living stills, no footage
+    kept = {}; real_place, real_seg = MOT.place, RN.clip_segment
+    def place(*a, **k): kept["shots"] = real_place(*a, **k); return kept["shots"]
+    def seg(clip_path, path, nframes, *a, **k):
+        m = re.match(r"clip(\d+)", os.path.basename(str(clip_path)))
+        if m and kept["shots"][int(m.group(1))].get("type") == "living": raise RuntimeError("this clip cannot be drawn (planted by the test)")
+        return real_seg(clip_path, path, nframes, *a, **k)
+    monkeypatch.setattr(MOT, "place", place); monkeypatch.setattr(RN, "clip_segment", seg)
+    r = EP.produce(E2E._slot(10), episode_id=C); led = _led(C); core.flush_costs()
+    paid = {k: sum(float(x["units"]) for x in core.store().rows("Cost_Log") if x["episode_id"] == C and x["item"] == k) for k in ("hero_clip", "living_clip")}
+    assert paid["hero_clip"] >= 5 and paid["living_clip"] >= 5, paid                                               # the video bought scenes AND living clips
+    assert r.get("held") and "contract:moving_share" in (r.get("problems") or []), r
+    m = re.search(r"of ([\d.]+) s of clip this video paid for only ([\d.]+)% are on screen and moving", led["moving_share"][1])
+    assert led["moving_share"][0] == "FAIL" and m, led["moving_share"]
+    total = paid["hero_clip"] + paid["living_clip"]
+    assert float(m.group(1)) == pytest.approx(total, abs=0.5) and float(m.group(2)) == pytest.approx(100.0 * paid["hero_clip"] / total, abs=1.5), (paid, led["moving_share"])      # every paid second is in the sum; only the scenes are seen
+    shutil.rmtree(os.path.join(core.WORK, C), ignore_errors=True)

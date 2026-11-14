@@ -1103,6 +1103,23 @@ reader, a lever or a function before the code that reads or calls it.
   (V4); the same-subject line-up (V5); one story across title, thumbnail and first seconds (V1c).
 - WHAT ONLY REALITY CAN ANSWER (open issues 185 to 188, 191 and 192, for the pilot): what share a REAL writer reaches and whether the fix raises it;
   whether the picture model keeps one place when the prompt says so; nine minutes of one voice; what the one ask is worth.
+#### Step 4 BUILD (what changed) - THE OPUS BUILDER (session 3 of the chain of AMENDMENTS 1 AND 2; it types the approved memo and decides nothing)
+THE BUILDER'S START (14 Nov 2026, about 03:35 UTC): `proving/next.py` gave the card "BUILDER of V2b - phase BUILD" (base 5827d97, red rounds
+0, pre-flight clean, the git hooks NOT installed, ONE open audit finding: `V2d-b_audit.md` F1); read as session 3 of the amendments' table: it
+types the memo, writes `proving/notes/V2b_OPUS_DONE.md` and does NOT run `built_gate.py` or `--to BUILT`. FIRST CHECK: V2d-b ACCEPTED on the
+record (final code commit 5827d97, GitHub run 159 as its 6b says), the head a8ca7c5 (text only since 5827d97), a clean tree, no test process.
+USAGE at the start (plan Ultra): the 5-hour window 17%, weekly all models 5%, weekly Fable 9% (this session is Opus 5.5: no Fable line of its
+own on the card), this session's context 13%. THE READING (the plan's chapter 4): the plan whole, the handoff `CLAUDE.md`, `02` whole (items 1
+to 37), `00`, `01`, `03`, `06`, `04`, the redesign whole (section 11 with every end note first, then 0 to 10), this file's head line, standing
+rules, the owner's verdict, NEXT whole, the whole record of V2b, the whole record of V2d-b, OPEN ISSUES 1 to 192, HOW TO RUN, the BATCH LOG,
+`reviews/V2b_design.md` (rounds 3, 2, 1), `reviews/V2d-b_audit.md`, the repo's `CLAUDE.md`, `CONCEPT.md`, `PLATFORM_FACTS.md` and the ledger
+whole. The reading filled 41% of the context before the code: THE CODE IS READ FILE BY FILE AS EACH STEP OF 3.9 IS TYPED (the plan's chapter 4,
+"item 6 file by file"); what was read for each step is named under that step.
+STEP 0 - THE OPEN FINDING OF THE V2d-b AUDIT (F1), typed exactly as its FIX says: `tests/test_v12_motion.py` - `OWN_IDS` gains the sixth id
+`EP209907050900` (appended; no other file uses it), and at the end of the file the test
+`test_a_paid_clip_that_never_reaches_the_screen_stays_in_what_was_paid_and_holds_the_video` word for word. No line of `whatifs/` changed for it.
+Run alone on the unchanged code: "1 passed in 93.64s". Its break (the audit's (3), id F1) is the first entry of `proving/breaks/V2b.json`; the
+finding's line is rewritten to CLOSED only once that break is CAUGHT on the final code.
 
 ### V2d-b - THE LADDER'S RULES (13 Nov 2026) - ACCEPTED (final code commit 5827d97 GREEN in GitHub Checks run 159: 1551 passed; sweep 58 of 58 ids)
 (Its code is d8101c8; every later commit is text only. History: built on 60d9483; the prover's FIRST PASS on 60d9483 was RED - the sweep
