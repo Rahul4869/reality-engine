@@ -11,6 +11,28 @@ FIRST ACT OF EVERY SESSION, before any reading: from the handoff folder run `.ve
 (chapter 4). The plan is long because it replaces judgement with procedure: do not skim it, and do not improve on it mid-batch - a plan that
 proves wrong is corrected in the record (chapter 15), never worked around.
 
+## AMENDMENT 1 (14 Nov 2026, the owner's item 35: "fable does the quality work and quality control while opus build") - READ BEFORE CHAPTER 3
+Written by the Fable session he set to Fable 5.2 himself (chapter 15: his words change the plan at any time). It changes WHO does the phase
+DESIGN and who is started after a review - nothing else. Wherever a chapter below disagrees with these lines, these lines win.
+- A1. PHASE DESIGN (loop steps 1 to 3: the whole reading, the research, the designs, the memo) IS A FABLE SESSION'S, at Effort High. It writes
+  no code and stops at `next.py --to DESIGN_REVIEW`. The card of `next.py` still says "BUILDER - phase DESIGN": read it as THE DESIGNER.
+  An Opus session that is handed that card does nothing and tells the owner in one line: "The design of <batch> is Fable's work: open a new
+  session here with Fable 5.2 (Effort High) and type: continue".
+- A2. THE DESIGN REVIEW stays as item 34 has it ("gate on"): ANOTHER Fable session, one HE opens, that did not write the memo. The designer
+  starts no reviewer; it ends with the one line of item 34 (a). On CHANGES REQUIRED the designer's session changes the memo (5.4).
+- A3. PHASE BUILD IS AN OPUS SESSION'S (Opus 5.5 at the highest effort): a FRESH session that does the builder's WHOLE reading (chapter 4)
+  and then steps 4 to 6a and the last acts of 5.9 under the APPROVED memo. It is not the designer's session woken. The reviewer that
+  approved tries to start it (chapter 9, with `model` set to the Opus id); when the app refuses or cannot give it the highest effort, the
+  reviewer ends with: "V2b's design is approved: open a new session here (Opus 5.5, Extra high) and type: continue".
+- A4. THE MEMO LEAVES NO TASTE TO THE BUILDER. Every part of Step 3 names the module and the function, the measure with its exact
+  arithmetic, the starting value of every number and where it comes from, the check, the test that fails, the deliberate break, the
+  writers' fix sentence where a writer is told something, and the order of the build. A builder that meets a choice the memo did not make
+  writes it into the record as `DESIGN QUESTION <n>` and takes the reading that changes LESS of what a viewer sees; a question a viewer
+  or the money depends on stops the build for a Fable session (one line to the owner). It is never settled silently in code.
+- A5. PROVING, REPAIR AND ACCEPTANCE are Opus sessions exactly as chapters 6 to 8 say. THE AUDIT is Fable's (chapter 14).
+- A6. THE ALLOWANCE: a Fable designer reads `get_usage` before the reading and after it; from 88% of the weekly Fable line it writes "WHERE
+  THE SESSION STANDS" and stops clean (chapter 10). A design that does not fit the week is not shortened: it waits for the reset.
+
 ## 0. THE HONEST FRAME (said to the owner; every session keeps it true)
 - A plan cannot turn one model into another. What it does: THE MODEL THAT BUILDS NEVER JUDGES ITS OWN WORK. A script computes every verdict; a
   separate session runs it; a red result goes back for repair by a fixed loop with a limit; the word of acceptance cannot even be committed
