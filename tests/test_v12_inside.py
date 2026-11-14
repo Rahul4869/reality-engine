@@ -211,10 +211,20 @@ def _start(monkeypatch, setting, fmt):
 
 def _led(ep): return {x["feature"]: (x["status"], str(x["evidence"])) for x in core.store().rows("Feature_Ledger") if x.get("episode_id") == ep}
 
+def _tag_spy(monkeypatch):
+    """Every speaker tag the renderer builds, with the spans it will draw (what a viewer sees as name chips)."""
+    from whatifs import overlay as OV_
+    made = []; real = OV_.SpeakerTag
+    class Spy(real):
+        def __init__(self, *a, **k): super().__init__(*a, **k); made.append(list(self.spans))
+    monkeypatch.setattr(OV_, "SpeakerTag", Spy)
+    return made
+
 def test_a_whole_f1_production_carries_its_beats_to_the_units_and_speaks_to_you(monkeypatch, setting):
     from tests import test_v12_opening_e2e as E2E
-    _start(monkeypatch, setting, "F1"); ep = OWN_IDS[0]
+    _start(monkeypatch, setting, "F1"); ep = OWN_IDS[0]; setting("CHIP_DRAWN_ONLY_ON", "TRUE"); tags = _tag_spy(monkeypatch)
     r = EP.produce(E2E._slot(10), episode_id=ep); led = _led(ep)
+    assert tags == [] and led["living_characters"][0] == "PASS" and led["living_characters"][1].endswith("; no name chip for a character nobody sees"), (tags, led["living_characters"])      # F1: nobody is on screen, so nobody is named (step 3)
     tl = json.load(open(os.path.join(core.WORK, ep, "voice_timeline.json")))
     assert len({u["beat"] for u in tl["units"]}) >= 2, sorted({u["beat"] for u in tl["units"]})                       # the beats reach the units (the break: they never do)
     assert led["viewer_inside"][0] == "PASS" and "inside the scene (floor 50%)" in led["viewer_inside"][1], led["viewer_inside"]
@@ -414,3 +424,88 @@ def test_the_ending_is_wired_owner_lever_classified_and_f3_has_no_emotion_beat(e
     setting("ENDINGS_ON", "FALSE"); assert FMT.asks("F3") == FMT.ALL_ASKS
     src = open(os.path.join(ROOT, "whatifs", "room.py"), encoding="utf-8").read()
     assert 'if S("EMOTION_BEAT_ON", bool) and not (S("ENDINGS_ON", bool) and FMT.rule("emotion_beat") == "never"):' in src and FMT.rule("emotion_beat", "F3") == "never"
+
+# ------------------------------------------------------------------ 10. A NAME IS SHOWN ONLY FOR A CHARACTER WHO IS DRAWN (3.4, issue 75)
+def _art(tmp_path, chars):
+    """Approved (LOCKED) character art, as the owner's cast sheets give it."""
+    from whatifs import media as MD
+    for c in chars:
+        f = str(tmp_path / f"{c}.png"); MD.fake_image(f, 320, 180, c)
+        core.store().append("Character_Sheets", [{"ts": "t", "character": c, "expression": "neutral", "hash": c, "prompt": "", "file": f, "status": "LOCKED", "approved_at": "t"}])
+
+@pytest.fixture
+def chips(setting):
+    setting("CHIP_DRAWN_ONLY_ON", "TRUE")
+    yield
+    FMT.use("")
+
+def test_the_format_row_says_whether_a_name_chip_may_be_shown_at_all(chips):
+    assert [FMT.chips(k) for k in ("F1", "F2", "F3")] == [False, True, False] and FMT.chips("") is True and FMT.chips() is True      # no format: True
+    assert core.DEFAULTS["CHIP_DRAWN_ONLY_ON"][0] == "TRUE"                                                             # the rule is on by default
+    with FMT.using("F1"): assert FMT.chips() is False
+    with FMT.using("F2"): assert FMT.chips() is True
+
+def test_the_speaker_tag_draws_only_the_drawn_speakers_and_every_one_without_a_list():
+    units = [{"start": 0, "end": 1, "speaker": "DIRECTOR"}, {"start": 1, "end": 2, "speaker": "SKEPTIC"}, {"start": 2, "end": 3, "speaker": "NARRATOR"}]
+    assert [s for _, _, s in OV.SpeakerTag(units, 640, 360, 25).spans] == ["DIRECTOR", "SKEPTIC"]                     # without a list: as before
+    assert [s for _, _, s in OV.SpeakerTag(units, 640, 360, 25, drawn={"SKEPTIC"}).spans] == ["SKEPTIC"]
+    assert not OV.SpeakerTag(units, 640, 360, 25, drawn=set()).active()                                                 # nobody drawn: no chip at all
+
+def test_check_living_characters_holds_a_name_chip_for_a_character_nobody_sees(chips, setting, tmp_path):
+    s, ev = CON.p_living({"shots": [{"type": "still"}], "absent": 0, "chips": [(0.0, 2.0, "DIRECTOR")]})
+    assert s == CON.FAIL and ev == "a name chip for DIRECTOR, who is never seen", ev
+    s, ev = CON.p_living({"shots": [{"type": "still"}], "absent": 0, "chips": []})
+    assert s == CON.PASS and ev.endswith("; no name chip for a character nobody sees"), ev
+    _art(tmp_path, ("VALE",)); s, ev = CON.p_living({"shots": [{"type": "still"}], "absent": 0, "chips": [(0.0, 2.0, "DIRECTOR"), (2.0, 3.0, "SKEPTIC")]})
+    assert s == CON.FAIL and ev == "a name chip for SKEPTIC, who is never seen", ev                                     # VALE (the guide) is drawn now; GRIMM is not
+    assert CON.p_living({"shots": [{"type": "still"}], "absent": 0, "chips": [(0.0, 2.0, "DIRECTOR")]})[0] == CON.PASS
+
+def test_the_chip_rule_is_silent_with_its_switch_off(setting):
+    setting("CHIP_DRAWN_ONLY_ON", "FALSE")
+    s, ev = CON.p_living({"shots": [{"type": "still"}], "absent": 0, "chips": [(0.0, 2.0, "DIRECTOR")]})
+    assert s == CON.PASS and ev == "nobody is on screen: no cutaway of a character was made (a character without approved art is absent, never a shape)", ev      # exactly as before
+
+def test_the_render_draws_no_chip_where_the_format_names_nobody_and_only_drawn_ones_elsewhere(chips, setting, tmp_path, monkeypatch):
+    """`episode._render` decides the tag BEFORE any segment is drawn: what it builds and what it records into `job.chips` (the renderer stops right after)."""
+    units = [{"start": 0.0, "end": 1.0, "speaker": "DIRECTOR", "text": "a", "tag": "none"}, {"start": 1.0, "end": 2.0, "speaker": "SKEPTIC", "text": "b", "tag": "none"}]
+    class Stop(Exception): pass
+    monkeypatch.setattr(EP, "atmosphere_layer", lambda *a, **k: (_ for _ in ()).throw(Stop()))                         # the overlays after the tag: stop there, before any segment
+    def run():
+        job = EP.Job(files={"img": {}, "clips": {}}, shots=[{"type": "still"}] * 2, units=units, vo=type("V", (), {"duration": 2.0})(), out=str(tmp_path), ep="EPCHIP", rx=[], d={})
+        with pytest.raises(Stop): EP._render(job)
+        return job
+    tags = _tag_spy(monkeypatch)
+    with FMT.using("F1"): job = run()
+    assert tags == [] and job.chips == []                                                                                 # F1: no tag is built at all
+    with FMT.using("F2"): job = run()
+    assert tags == [[]] and job.chips == []                                                                               # the trial, nobody drawn: an empty tag, no chip
+    _art(tmp_path, ("GRIMM",))
+    with FMT.using("F2"): job = run()
+    assert tags[-1] == [(1.0, 2.0, "SKEPTIC")] and job.chips == [(1.0, 2.0, "SKEPTIC")]                                   # only the drawn character is named; the record says so
+    setting("CHIP_DRAWN_ONLY_ON", "FALSE")
+    with FMT.using("F1"): job = run()
+    assert tags[-1] == [(0.0, 1.0, "DIRECTOR"), (1.0, 2.0, "SKEPTIC")] and job.chips == tags[-1]                       # switched off: every voice, as before
+
+def test_the_format_block_leaves_the_speaker_tag_sentence_out_where_no_chip_is_shown(chips, setting):
+    setting("ENDINGS_ON", "TRUE")
+    with FMT.using("F1"): assert FE.TAG_SENTENCE.strip() not in FE.instructions("director") and "A PRESENTER IS DRAWN OR ABSENT." in FE.instructions("director")
+    with FMT.using("F3"): assert FE.TAG_SENTENCE.strip() not in FE.instructions("writer")
+    with FMT.using("F2"): trial = FE.instructions("director"); assert FE.TAG_SENTENCE.strip() in trial
+    setting("ENDINGS_ON", "FALSE")
+    with FMT.using("F2"): assert FE.instructions("director") == trial                                                    # the trial's block byte for byte
+    with FMT.using("F1"): assert FE.TAG_SENTENCE.strip() in FE.instructions("director")                                  # switched off: as before
+
+def test_a_whole_trial_under_the_ladder_names_only_the_character_who_is_drawn(monkeypatch, setting, tmp_path):
+    from tests import test_v12_opening_e2e as E2E
+    _start(monkeypatch, setting, "F2"); ep = OWN_IDS[2]; setting("CHIP_DRAWN_ONLY_ON", "TRUE"); tags = _tag_spy(monkeypatch); _art(tmp_path, ("GRIMM",))
+    gate = []; real_run = CON.run
+    monkeypatch.setattr(CON, "run", lambda stage, c, *a, **k: (gate.append(c.get("chips")) if stage == "final" else None, real_run(stage, c, *a, **k))[1])
+    r = EP.produce(E2E._slot(10), episode_id=ep); led = _led(ep)
+    assert tags and all(spk == "SKEPTIC" for t in tags for _, _, spk in t) and any(t for t in tags), tags                 # only the drawn character's name, and it is shown
+    assert gate and gate[-1] and [tuple(c) for c in gate[-1]] == [tuple(c) for c in tags[-1]], (gate, tags)              # the gate is handed the chips the render drew
+    assert led["living_characters"][0] == "PASS" and led["living_characters"][1].endswith("; no name chip for a character nobody sees"), led["living_characters"]
+    script = json.load(open(os.path.join(core.WORK, ep, "plan.json")))["room"]["script"]["script"]
+    assert led["end_tease"][0] == CON.NA and "next simulation" not in script.lower(), led.get("end_tease")            # no tease under the ladder (step 2)
+    assert led["format_ending"][0] == CON.NA and "ends on a tease" in led["format_ending"][1], led["format_ending"]
+    assert r.get("ok"), r
+    shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True)

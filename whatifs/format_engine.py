@@ -78,17 +78,19 @@ def check_script(script: str) -> dict:
 ASKS_ONE = ("Audience asks: exactly ONE short, witty, in-story moment in which the Curious One asks for a subscribe, after a payoff, never near the end; no like "
             "ask, no share ask.")
 ASKS_NONE = "Audience asks: none, anywhere."
+TAG_SENTENCE = " The video marks who is speaking with a code-drawn speaker tag."
 
 def _for_format(block: str) -> str:
     """v12 V2b: the block line by line for the format in the making (only while ENDINGS_ON and an episode has a format; a trial's block byte for byte):
     the line 'Audience asks:' as the format's asks; the line 'Shorts:' left out outside a trial (a long video makes no Short of itself); the story
-    engine ends as the format ends, not on a verdict."""
+    engine ends as the format ends, not on a verdict; the speaker tag's sentence left out where the format's row shows no name chip (F1, F3)."""
     from whatifs.core import S
     from whatifs import formats as FMT
     k = FMT.current()
     if not S("ENDINGS_ON", bool) or k not in FMT.FORMATS: return block
     trial = FMT.FORMATS[k]["show"]; a = FMT.asks(); out = []
     for line in block.split("\n"):
+        if line.startswith("- A PRESENTER IS DRAWN OR ABSENT") and not FMT.chips(): line = line.replace(TAG_SENTENCE, "")
         if line.startswith("Audience asks:") and a != FMT.ALL_ASKS:
             if a == ("subscribe",): out.append(ASKS_ONE)
             elif not a: out.append(ASKS_NONE)

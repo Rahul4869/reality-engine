@@ -372,11 +372,14 @@ def _render(job):
     files, shots, units, vo, out, ep = job.files, job.shots, job.units, job.vo, job.out, job.ep
     total = vo.duration; fps = RN.fps(); bounds = [0.0] + [u["start"] for u in units[1:]] + [total]
     segs = []; prev_img = None; reuse = 0
-    parts = []
-    if S("SPEAKER_TAG_ON", bool) and FE.mode() != "classic":
+    parts = []; job.chips = []                                       # v12 V2b: the name chips the renderer really drew [(start, end, speaker)] - check living_characters reads them
+    if S("SPEAKER_TAG_ON", bool) and FE.mode() != "classic" and not (S("CHIP_DRAWN_ONLY_ON", bool) and not FMT.chips()):      # v12 V2b: no chip at all where the format names nobody (F1, F3)
         try:
-            from whatifs.overlay import SpeakerTag
-            ww, wh = RN.work_size(); tag = SpeakerTag(units, ww, wh, fps); parts.append(tag if tag.active() else None)
+            from whatifs.overlay import SpeakerTag, COLOURS as _COL
+            from whatifs import living as _LV
+            drawn_ = {spk for spk in _COL if _LV.has_art(spk)} if S("CHIP_DRAWN_ONLY_ON", bool) else None      # ... and a name only for a character who is drawn
+            ww, wh = RN.work_size(); tag = SpeakerTag(units, ww, wh, fps, drawn=drawn_); parts.append(tag if tag.active() else None)
+            if tag.active(): job.chips = list(tag.spans)
         except Exception as e: log(f"speaker tag skipped: {e}", "WARN")
     if S("CTA_ON", bool) and S("CTA_CHIP_ON", bool):
         try:
@@ -740,7 +743,8 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
             "shots": S_.get("shots"), "units": units, "opening": files.get("opening"),
             "moving": moving_, "moving_paid_s": sum(cs_.values()), "scenes": [files["clips"][i] for i in own_ if shots[i].get("type") == "kling"],
             "states": [t_(m_) + (m_.get("type"), bool(m_.get("clip")), bool(m_.get("short"))) for m_ in sm_] if MOT.on() else None,
-            "stock": {"spans": stock_, "records": files.get("stock") or {}, "description": desc}, "absent": getattr(job, "absent", 0)}          # v11: the promise check reads the shot plan; v12 V2c-b2b: and check opening_shown the opening's record
+            "stock": {"spans": stock_, "records": files.get("stock") or {}, "description": desc}, "absent": getattr(job, "absent", 0),          # v11: the promise check reads the shot plan; v12 V2c-b2b: and check opening_shown the opening's record
+            "chips": list(getattr(job, "chips", None) or [])}                                                                            # v12 V2b: the name chips the render drew
     pre = CON.run("final", dict(cctx, critique={"hook": 10, "clarity": 10, "humour": 10, "visual_variety": 10, "audio": 10, "accuracy": 10}), ep, write=False)   # measured checks first (not logged)
     cctx["ledger_rows"] = pre["rows"]; cctx["critique"] = CON.critique(cctx, ep)
     g = ORG.work("D8", "final_gate", ep, lambda b: CON.run("final", cctx, ep), measure=WR.m_gate, lesson=WR.gate_lessons, emit=WR.gate_memos(ep, "final"), settle=WR.gate_settle(ep, "final"))

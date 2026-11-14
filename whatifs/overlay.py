@@ -14,8 +14,10 @@ def name_of(speaker):
 
 class SpeakerTag:
     FADE = 0.25
-    def __init__(self, units, ww, wh, fps):
-        self.spans = [(float(u["start"]), float(u["end"]), u.get("speaker", "NARRATOR")) for u in units if u.get("speaker", "NARRATOR") in COLOURS]
+    def __init__(self, units, ww, wh, fps, drawn=None):
+        """v12 V2b: with `drawn` given (the speakers whose character is drawn), only their spans - a name is shown only for a character who is seen."""
+        self.spans = [(float(u["start"]), float(u["end"]), u.get("speaker", "NARRATOR")) for u in units if u.get("speaker", "NARRATOR") in COLOURS
+                      and (drawn is None or u.get("speaker", "NARRATOR") in drawn)]
         self.W, self.H, self.fps = ww, wh, fps; self.s = wh / 1080.0; self._cache = {}
         self.f = font(max(8, int(34 * self.s))); self.m = int(ww * 0.035)
 

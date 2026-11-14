@@ -254,15 +254,20 @@ def p_retention(ctx):
 def p_living(ctx):
     """v12 V2d-b: A CHARACTER IS DRAWN OR ABSENT, in every format (the owner's rejected video showed a flat black shape with a name: the code that
     drew it is gone). Every reaction cutaway of the plan is for a character with approved art, and the renderer showed that art in each (blinking,
-    breathing, talking). No cutaway at all = nobody is on screen: that passes - absent is the other half of the rule."""
+    breathing, talking). No cutaway at all = nobody is on screen: that passes - absent is the other half of the rule. v12 V2b (CHIP_DRAWN_ONLY_ON): and no
+    name chip the render drew (ctx['chips'], what the renderer recorded) names a character nobody sees."""
     from whatifs import living as LV
     react = [s for s in (ctx.get("shots") or []) if s.get("type") == "reaction"]
     bare = sorted({str(s.get("speaker")) for s in react if not LV.has_art(s.get("speaker"))})
     if bare: return FAIL, f"a reaction cutaway is planned for {', '.join(bare)} without approved character art: a character is drawn or absent"
     absent = int(ctx.get("absent") or 0)
     if absent: return FAIL, f"{absent} of {len(react)} reaction cutaways could not show the approved character (the picture before was continued; nothing was drawn in its place)"
-    if not react: return PASS, "nobody is on screen: no cutaway of a character was made (a character without approved art is absent, never a shape)"
-    return PASS, f"{len(react)} reaction cutaways, each the approved character ({sum(u['blinks'] for u in LV.USED)} blinks, {sum(u['mouth_frames'] for u in LV.USED)} talking frames in this job)"
+    chip_ = S("CHIP_DRAWN_ONLY_ON", bool); tail_ = "; no name chip for a character nobody sees" if chip_ else ""
+    if chip_:
+        unseen = sorted({str(c[2]) for c in (ctx.get("chips") or []) if not LV.has_art(c[2])})
+        if unseen: return FAIL, "; ".join(f"a name chip for {x}, who is never seen" for x in unseen)
+    if not react: return PASS, "nobody is on screen: no cutaway of a character was made (a character without approved art is absent, never a shape)" + tail_
+    return PASS, f"{len(react)} reaction cutaways, each the approved character ({sum(u['blinks'] for u in LV.USED)} blinks, {sum(u['mouth_frames'] for u in LV.USED)} talking frames in this job)" + tail_
 
 def p_visual_change(ctx):
     """Impact Map V2 + V5: a new picture state at least every VISUAL_CHANGE_MAX_S (graphics/reaction cutaways animate: 2x), and no 2-s window

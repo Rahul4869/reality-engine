@@ -11,12 +11,12 @@ RULES = ("must", "advisory", "never")
 _TRIAL = ("verdict_style", "time_ladder", "exhibits", "grimm_prototype", "verdict_line")          # the trial's own grammar: meaningless outside a trial
 FORMATS = {
     "F1": {"name": "The day it changed", "status": "on", "show": False, "voices": ("DIRECTOR", "SKEPTIC"), "share": "FORMAT_SHARE_F1",
-           "inside": "INSIDE_MIN_PCT_F1", "lecture": "LECTURE_MAX_F1", "ending": "question", "asks": ("subscribe",),
+           "inside": "INSIDE_MIN_PCT_F1", "lecture": "LECTURE_MAX_F1", "ending": "question", "asks": ("subscribe",), "chips": False,
            "devices": dict({k: "never" for k in _TRIAL}, joke_density="advisory", send_and_awe="advisory", emotion_beat="advisory", audience_asks="advisory", end_tease="advisory")},
     "F2": {"name": "The trial", "status": "on", "show": True, "voices": ("DIRECTOR", "SKEPTIC", "JUDGE", "WITNESS"), "share": "FORMAT_SHARE_F2", "devices": {},
-           "inside": "INSIDE_MIN_PCT_F2", "lecture": "LECTURE_MAX_F2", "ending": "tease", "asks": ("like", "subscribe", "share")},
+           "inside": "INSIDE_MIN_PCT_F2", "lecture": "LECTURE_MAX_F2", "ending": "tease", "asks": ("like", "subscribe", "share"), "chips": True},
     "F3": {"name": "The walk", "status": "later", "show": False, "voices": ("DIRECTOR",), "share": "FORMAT_SHARE_F3", "devices": {k: "never" for k in DEVICES},
-           "inside": "INSIDE_MIN_PCT_F3", "lecture": "LECTURE_MAX_F3", "ending": "arrival", "asks": ()},
+           "inside": "INSIDE_MIN_PCT_F3", "lecture": "LECTURE_MAX_F3", "ending": "arrival", "asks": (), "chips": False},
 }
 ALL_ASKS = ("like", "subscribe", "share")
 ONE_ASK = ("ONE ASK ONLY: write exactly one short moment in which the foil asks the viewer to subscribe - inside the conversation, in the show's own voice, never "
@@ -97,6 +97,12 @@ def asks(fmt=None):
     k = current() if fmt is None else str(fmt or "")
     if k not in FORMATS or not S("ENDINGS_ON", bool): return ALL_ASKS
     return tuple(FORMATS[k]["asks"])
+
+def chips(fmt=None):
+    """v12 V2b: may a format show a name chip at all (its row's data: the trial True - its cast can be drawn; F1 and F3 False - nobody is on screen, so
+    nobody is named); True when no format (default: the format in the making)."""
+    k = current() if fmt is None else str(fmt or "")
+    return bool(FORMATS[k]["chips"]) if k in FORMATS else True
 
 def asks_brief():
     """v12 V2b: the writer's paragraph about asks (the placeholder @@ASKS@@ of prompts.WRITER) for the format in the making - all three kinds: the

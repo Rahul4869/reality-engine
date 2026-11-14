@@ -1301,6 +1301,32 @@ WHAT IT NEEDS TO KNOW FROM HERE (facts, not decisions):
 - NOT RUN BY THIS BUILDER: the whole suite (its parallel pre-check is part of the builder's block, step 8), a rehearsal, `breaks.py`.
 USAGE at this builder's end: the 5-hour window 53%, weekly all models 14%, weekly Fable 26% (the account's figure; Fable sessions work beside this
 one, which is Opus 5.5), this session's context 68%.
+THE THIRD OPUS BUILDER (14 Nov 2026, from about 05:10 UTC; Opus 5.5; started by the dispatcher `local_e4e9a03f-...`, the owner's item 47). `next.py`: card
+"BUILDER of V2b - phase BUILD", base 5827d97, red rounds 0, pre-flight clean, the hooks not installed, the audit finding F1 printed OPEN (its test is in,
+step 0; its line is closed when its break is caught on the final code). USAGE at its start: the 5-hour window 54%, weekly all models 15%, weekly Fable 26%,
+this session's context 9%. READING: THE CONTINUATION TYPIST'S READING, A9 (the owner's item 45) - `next.py` and its card, the plan whole (its three
+amendments first), the handoff `CLAUDE.md`, `02` whole (items 1 to 47), in this file the head line, STANDING RULES, NEXT's "Remember", HOW TO RUN whole,
+the whole record of V2b (Step 3, Step 4 from its first line with every "WHERE THE BUILD STANDS" and DESIGN QUESTIONS 1 to 11) and the open issues they
+name (60, 69, 74, 75, 77, 101, 124, 125, 129, 177, 185 to 193), `reviews/V2b_design.md` whole (round 3 first), `reviews/V2d-b_audit.md` (F1), the repo's
+`CLAUDE.md` whole (the matrix has no V2b row yet: step 7 writes them); before each step, the files that step changes, named under that step.
+STEP 3 - THE NAME CHIP (3.4). READ WHOLE before the first edit: `overlay.py`, `living.py`, `formats.py`, `format_engine.py`, `episode.py`, `tests/conftest.py`,
+`tests/paid_calls.py`, `tests/test_v12_inside.py`; `contract.p_living`; the callers found by search (`SpeakerTag`: `episode._render`, `tests/test_hardening.py`;
+`p_living`: the table of checks, `tests/test_v111_living.py`, `tests/test_v12_motion.py`; `has_art`: `shotplan.reaction_shots`). BUILT AS WRITTEN: the row key
+`chips` (F1 False, F2 True, F3 False) and `formats.chips(fmt)` (True without a format); cell `CHIP_DRAWN_ONLY_ON` (TRUE; `OLD_INSIDE` gains it FALSE);
+`overlay.SpeakerTag(..., drawn=None)`; in `episode._render` no tag at all when the switch is on and the row says no chips, else `drawn` = every speaker of
+`overlay.COLOURS` whose art `living.has_art` finds; `job.chips` = the spans of the tag the renderer drew ([] when none), handed to the gate as `ctx["chips"]`;
+`p_living` FAILS "a name chip for X, who is never seen" and its PASS words end "; no name chip for a character nobody sees" - both only with the switch on
+(off: word for word as before, a test compares); and DESIGN QUESTION 5's sentence: `format_engine._for_format` leaves "The video marks who is speaking with
+a code-drawn speaker tag." out of the line "A PRESENTER IS DRAWN OR ABSENT" where `formats.chips()` is False (F1, F3; a trial's block byte for byte).
+No new check, lever or pin: the counts of step 2 stand (66 checks, `SHOW_CHECKS` 55, 82 levers).
+TESTS (`tests/test_v12_inside.py`, section 10, and two widened): the row and its reader; the tag with and without a list; `p_living` with chips both ways
+and with art for the guide only; silent with its switch off; `_render` itself (stopped before any segment) - no tag in F1, an empty tag in a trial with no
+art, only the drawn SKEPTIC with GRIMM's art, every voice with the switch off, `job.chips` each time; the format block per format; the whole F1 production
+(no tag built, `living_characters` PASS with the new words); and the reserved third whole production, A TRIAL UNDER THE LADDER (`OWN_IDS[2]`, GRIMM's art
+approved in the test): only SKEPTIC is named, the gate receives exactly the chips the render drew, `living_characters` PASS, `end_tease` and `format_ending`
+N/A, no tease in the script - step 4 adds its camera asserts. Run alone: the unit tests "7 passed in 0.63s", the two whole productions "1 passed" each.
+STEP 3'S RUN (real pytest, parallel `-n 6`, strict, THE WHOLE SUITE): "1594 passed in 1957.39s (0:32:37)", 0 failed. Plan Guard GREEN, Truth GREEN,
+`tools/gen_docs.py` wrote `SYSTEM.md`. Breaks S3-01 to S3-14 written into `proving/breaks/V2b.json` (each anchor found exactly once; 83 in the list) - NOT RUN.
 
 ### V2d-b - THE LADDER'S RULES (13 Nov 2026) - ACCEPTED (final code commit 5827d97 GREEN in GitHub Checks run 159: 1551 passed; sweep 58 of 58 ids)
 (Its code is d8101c8; every later commit is text only. History: built on 60d9483; the prover's FIRST PASS on 60d9483 was RED - the sweep
