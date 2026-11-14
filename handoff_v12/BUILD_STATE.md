@@ -1725,6 +1725,67 @@ code of every run above); the last commit is this record's. Breaks: 320 caught, 
 passed, four pairs GREEN. The state stays BUILD; `proving/notes/V2b_OPUS_DONE.md` is written. V2b BUILT BY OPUS - waits for the Fable finisher (A5: the
 finishing pass, then the builder's last acts 5.9 from act 1 on its own final code commit, `built_gate.py`, `--to BUILT`). For the finisher first: DESIGN
 QUESTION 21 and the list "WHAT I AM UNSURE OF" in the note.
+**FINISHED BY FABLE** (the finishing pass of amendment A5; Fable 5.2 at Effort High; the session that reviewed and approved this design, `local_e4e9a03f-...`,
+continued by the owner's "continue" of 14 Nov 2026, about 13:20 UTC - his item 67; it typed no line of the build above).
+`next.py`: batch V2b, phase BUILD, base 5827d97, red rounds 0, pre-flight clean, the hooks not installed; `proving/notes/V2b_OPUS_DONE.md` exists (the card's
+"BUILDER" is read as the finisher: the plan's table, row 4). USAGE at its start: the 5-hour window 1%, weekly all models 18%, weekly Fable 28%, context 12%
+(this session's earlier turns - the three review rounds and the dispatching - were summarised by the app; so the memo and the whole diff were READ AGAIN).
+READ FOR THE PASS, whole: `V2b_OPUS_DONE.md`; the plan's amendments 1 to 3 and chapters 5.5 to 11 and 15; `02` items 49 to 67 (written to the fifth builder);
+this record of V2b from its first line to the line above (Steps 1 to 6a, every "WHERE THE BUILD STANDS", DESIGN QUESTIONS 1 to 21); the WHOLE diff 5827d97..70c8619
+of `whatifs/`, `tools/`, the repo's `CLAUDE.md`, `docs/CURRENT/`, the redesign, `tests/` (every older test file's change and `tests/test_v12_inside.py` whole,
+1,128 lines); `reviews/V2d-b_audit.md` whole; in place: `episode.py` `Job`, `_render`, `_finish`, the asset lines of `produce`; `format_engine.py` to
+`instructions`; `costguard.lines`; `shotplan.reaction_shots`; `room.plan_shots`' end; `proving/built_gate.py` and `breaks.py` (read, not changed); open issues
+183 to 195. NOT read again whole (read by this session before its review, 14 Nov 2026): `00`, `01`, `03`, `04`, `06`, the redesign, the older records.
+A PROBE OF THE FINISHER'S OWN, BEFORE ANY FINDING WAS WRITTEN (read-only; `<scratchpad>/fin/dump_texts.py`; no pipeline run, nothing else running): the
+accepted tree (a plain export of 5827d97) and the built tree each dumped 75 texts and tables that a model or the money is given - the format block of all
+nine roles, the writer's filled prompt, HUMANIZE, FACTFIX, `engage.brief`, the rhythm brief, the stand-in writer / bible / showrunner, the Director's notes,
+the format's own texts, `cta.ensure`, the camera anchors, `immersion.apply`, the tease, the cost lines of a long video, a ladder video and the three Shorts -
+for no format, F1 and the trial. (The probe's first try asked the cost table for a Short without naming its format and stopped there: the probe's fault.)
+RESULT, WORD FOR WORD: "ACCEPTED vs BUILT, all four switches OFF: 75 keys compared, 2 differ" - F1's own two texts (the two sentences 3.5 adds are typed
+without a switch, as the memo wrote them) and the witness's `visual` (issue 177, by design); "ACCEPTED vs BUILT, switches ON - the TRIAL (F2) and no format:
+46 keys compared, 2 differ" - only the stand-in writer's lines (DESIGN QUESTION 2: `fakes._lines_inside`); the cost lines: stills 69 -> 83 (long) and 68 ->
+82 (ladder), every Short's lines equal. SO: "each FALSE = exactly the behaviour of d8101c8" and "a trial's text byte for byte" HOLD on the built code.
+THE FINDINGS (each written here BEFORE its edit; "viewer" = a viewer or the money depends on it):
+ FF1 (viewer; DESIGN QUESTION 21, SETTLED). `Job.rerender_times` takes the sign and the pool from the RECORD's `sign` - and a state that fell back, or
+     that played a clip, was recorded with 0. (a) Such a state is re-drawn WITHOUT its act's direction and pool: the move may be `pull` or `kb_roll`. (b)
+     WORSE, and not seen by the build: the re-render never rewrites the record's `sign`. A fall-back still state that the quality control re-draws well is
+     then `fallback` False with `sign` 0, and `path.shown_report` says "the camera travelled against act A's direction": THE REPAIR ITSELF MAKES check
+     `camera_shown` HOLD THE PAID VIDEO, every time. (`_finish` builds `ctx["path_states"]` AFTER `fixes.auto_fix`; read at `episode.py` lines 743 to 782.)
+     THE MEMO: "re-draws a still state of a `path` shot WITH that state's sign and pool and REWRITES the entry's `move` (and `fallback`)". THE TRUER
+     EXECUTION: the direction of a state is its ACT's - the shot's own `path` mark - whatever was recorded; the record's `sign` is rewritten with what
+     was passed (0 again when the re-draw fails). The failing tests are written first (section 16 of the test file).
+ FF2 (viewer; the same family). `episode._render`, the branch of a reaction cutaway whose character art is gone ("the picture before continues"), draws
+     that picture with `parallax_segment` WITHOUT the sign and the pool: in a path format a still of the act may travel backwards or roll. (Its type is
+     "reaction": `camera_shown` does not judge it, so no check would say so.) It is drawn with the act's sign and pool; the record stays as 3.2 says
+     ("" for a cutaway).
+ FF3 (text). Two comments say what is not true: `whatifs/org/levers.py`, the `ACT_MIN_S` line, names "DESIGN QUESTION 12" (it is 13) and carries the
+     `ENDING_FREE_S` comment run into it; `whatifs/fakes.py`, the stand-in bible, names "DESIGN QUESTION 13" (it is 14).
+ FF4 (text; "is any sentence untrue of the code"). The founding item `v2b.takeaway` says "built by four Opus sessions" (five, and this pass). The builders'
+     recipe "The motion ladder" (the repo's `CLAUDE.md`) says `motion.place` is "the last step before the script gate" - since step 4 `path.lay` is - and
+     still lacks what V2d-b's repair built (NOTE 6 of `reviews/V2d-b_audit.md`: "to be added in V2b's BUILD phase").
+ FF5 (a judge sharpened, never weakened). The memo asks for the stand-in writer "byte for byte what d8101c8 gives (a test compares)"; the test compares
+     only that the older pool's lines are IN the reply. The finisher's probe proved equality; the test now pins the reply's hash for F1 and for the trial,
+     computed by running the ACCEPTED code under the suite's own fixtures.
+ FF6 (the owner's words). Items 49 to 66 of `02` are in no current doc (item 63 (b)). They are carried into the requirements ledger in this BUILD phase;
+     items 53 and 58 change the plan (12.4, AMENDMENT 3 B5) and open issue 183 its 6.4 - in a commit of the plan's own (chapter 15). Founding Palace items
+     need real code references (`applied_in`): each is written by the batch that builds it (V1c, V4, V5, DRAWN BY CODE, B9), never ahead of its code.
+ FF7 (viewer; NOT changed at the finish - OPEN ISSUE 196 for V1c's designer). `shotplan.reaction_shots` (`room.plan_shots`) turns a tiny line into a cutaway
+     of the speaker's character wherever `living.has_art` finds approved art - in EVERY format. `living.SPEAKER_CHAR` maps DIRECTOR to VALE and SKEPTIC to
+     GRIMM: once the owner approves the cast sheets, an F1 film and an F3 walk will cut away to a drawing of the trial's Inspector or Doctor on every short
+     line of the guide or the foil - in formats whose row says nobody is on screen (3.4), with no name, in the middle of one place seen through the
+     viewer's eyes. 3.2 knew the cutaway ("an act may open on a reaction cutaway") and decided nothing about it. No art is approved and nothing is
+     published before the pilot: no viewer can meet it before a design decides. A new rule, so never added at the finish (A5).
+ FF8 (NOT changed; OPEN ISSUE 197). A state that played a clip and is re-drawn as a still keeps its type ("living", "kling") in the record, and
+     `camera_shown` judges type "still" only: after FF1 it is DRAWN in its act's direction by construction, but no check reads it. Judging it needs the
+     record's `clip` flag in `ctx["path_states"]` - a changed record, a later design's. With it: DESIGN QUESTION 11 (`craft.INTAKE_PROMPT` calls the channel
+     a courtroom show to the head of craft) had no open issue of its own.
+THE DESIGN QUESTIONS, RULED ON (A4: a Fable session's): 1 to 10, 12 to 17 and 19 STAND AS TAKEN - each is the reading that changes less, and the probe
+above shows 3, 4 and 12 keeping the switched-off film as it was; 11 -> open issue 197; 18 -> open issue 194; 20 -> open issue 195; 21 -> FF1.
+SAID PLAINLY, NOT CHANGED: (a) five of step 8's tests pin SOURCE TEXT (`inspect.getsource`), not behaviour - the room's three `_place_asks` sites, the
+Owner's Cut order, the plan stage's second voice call; each catches its break, a behaviour test would need a whole room run for each; (b) the stills line
+carries the act guarantee for a TRIAL's estimate too (Rs 8.31 it never spends: the format of a future video is not known where the month is planned);
+(c) the offline bible names F1's places in F3 (stand-in data, DESIGN QUESTION 14); (d) F1's two new sentences ("END ON THE QUESTION", the `visual_world`
+sentence) are sent with their switches off too, as 3.5 typed them - the switches are for the older tests, not for a film.
 
 ### V2d-b - THE LADDER'S RULES (13 Nov 2026) - ACCEPTED (final code commit 5827d97 GREEN in GitHub Checks run 159: 1551 passed; sweep 58 of 58 ids)
 (Its code is d8101c8; every later commit is text only. History: built on 60d9483; the prover's FIRST PASS on 60d9483 was RED - the sweep
