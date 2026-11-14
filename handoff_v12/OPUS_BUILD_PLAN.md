@@ -96,6 +96,14 @@ done, never what a batch is built from or judged by. An Opus builder or prover a
       `reviews/<batch>_design.md`. The gate of items 34 and 35 does not move: nothing is built before that file says APPROVED.
   B4. `next.py` knows Lane A only. A session started with a Lane B brief follows its brief and this amendment, NOT the card `next.py` prints -
       that card belongs to the batch on the machine: a Lane B session never acts on it, never starts a builder, a finisher or a prover.
+  B5. THE BRAIN'S BATCHES ARE DESIGNED AT EXTRA HIGH (the owner's item 40, 14 Nov 2026: "assign design of self evolution and self evolving
+      algorithm work to fable 5.2 extra high, i.e. the brains of the pipeline ... and then switch to high"). The brain = the batches that
+      decide, watch, argue, repair and learn by themselves: V4, V5, B6b, B7, B8. Their designer (B1 and B3) and their design reviewer (B2 and
+      the review in the record) are Fable 5.2 sessions at Effort EXTRA HIGH; everything after the approved design is Fable at High as
+      amendments 1 and 2 have it. HOW (the app starts a session only at the starter's effort or lower, and applies a raised effort from the
+      session's NEXT turn): the dispatcher starts the session with a first turn that only answers READY, calls `set_session_effort` "xhigh"
+      (the app may ask the owner), then sends the real brief as a message - that turn runs at Extra high. A session already at work is
+      stopped between two steps, raised, and told to go on. If the app refuses the raise: the session runs at High and its file says so.
 - THE DISPATCHER is the Fable session the owner gave his word to (item 38): the app lets a session start another only on the owner's own words
   in it. It starts every session of both lanes, keeps at most three Lane B sessions at work, and does no batch's own work once its context is
   past 60% (it starts a fresh Fable finisher or repairer). A session that is refused a start leaves the card and says so in the first line of
