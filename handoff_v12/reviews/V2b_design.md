@@ -1,5 +1,41 @@
-VERDICT: CHANGES REQUIRED
-# V2b INSIDE THE FORMAT - design review, round 2 (14 Nov 2026; the same reviewer; round 1 is kept whole below)
+VERDICT: APPROVED
+# V2b INSIDE THE FORMAT - design review, round 3 (14 Nov 2026; the same reviewer; rounds 2 and 1 are kept whole below)
+Reviewed: the record of V2b as of commit afc9596 (state DESIGN_REVIEW in 6daf11e). The whole difference from round 2's text was read line by line
+(82 lines in, 33 out, in `BUILD_STATE.md` only): each of round 2's six changes is in the memo in the words the review gave - `first` on the act's
+first picture with its two tests; the `LEAD` / `WHO` patterns of `cta.is_ask` character for character, with the thirty story sentences and the
+sixteen asks as test data; F3's pair as 88.9% and the edge passage 61.5%; the raise for a missing first picture in `episode.produce` after the
+checkpoint is saved; `growth.rhythm_brief`, F3_WRITER's sentence, the fourth answer of 3.3 (e) and the reworded F3 test; the five small gaps.
+Nothing else was changed, and the one commit between the rounds (71a36a8) is a note of where the designer stood. The 22 changes of rounds 1
+and 2 are all answered; none was argued.
+THE TEN QUESTIONS, ROUND 3: 1 yes; 2 yes; 3 yes - every rule now names a measure code computes, a check that can fail and, where code can
+repair, the repair; 4 no (no taste by a model); 5 yes - each limit stands between its own measured pairs (F1 90.9 / 66.7 against 33 to 35 / 0;
+F2 60 against 26; F3 88.9 with its edge at 61.5 against 0) and the camera is judged on the render's own record; 6 yes - no new kind of paid
+call, at most one still an act inside the stills line, a retry that buys only what is missing; 7 yes; 8 yes, each named; 9 the worst video
+still let through is one the memo names itself: a lecture with a "you" in every sentence, and pictures of one act that a picture model draws
+as two places (open issues 185 and 186: V1c's floor and his eye at the pilot); 10 yes (185 to 188, 190 to 192).
+THE THREE PLACES ATTACKED HARDEST ACROSS THE ROUNDS, AND WHAT WAS FOUND THERE: (1) what a line knows about its beat - found that the voice job
+never saw a heading, so the whole film would have been one act in one place with every check green; now one function gives every line its beat
+and a whole-production test with its own break proves two acts and two places. (2) Whatever DELETES a line or HOLDS a film for an ask - found
+twice that ordinary sentences ("Nothing like this has ever happened to you", "Follow me.", "You ring the bell and nobody comes.") were taken
+for asks; now thirty such sentences and sixteen real asks are test data, and the rule errs toward the writer. (3) An act's first picture from
+the plan to the film - found that it could be merged away, covered by a clip of the act before, sit on a cutaway, run out of budget or fail
+to be made; now each of the five has its rule, its test and its break.
+FOR THE FINISHING PASS (the same session, or a fresh Fable one; amendment A5) - where a typist is most likely to drift from the memo, to be
+read first in the diff: `episode._render` (`prev_img` / `prev_i` set BEFORE the `continue`; `move` read right after ITS OWN `parallax_segment`;
+`fallback`); `render.camera_path` (no draw of the old path moved when `sign` is None - the reference frames); `motion.plain` (only `path.first`
+added, the block's floors of paid seconds untouched); `cta.is_ask` (the patterns character for character) and `cta.strip` on the reply line
+of a two-line ask; the three call sites in `room.py`; `formats.tail` in words, never seconds; the raise in `produce`, not in `_assets`; the
+fourth answer of 3.3 (e) used only for what it names; every "byte for byte with the switch off" backed by a comparing test.
+WHAT A VIEWER GETS (unchanged since round 1, now with nothing in the design that takes it away again): a voice that talks to him, now, and
+never lectures for more than a few sentences; every picture from where he stands; a camera that never backs away or tilts and drifts one way
+through a scene; no picture left over from the scene before; one ask in the middle instead of three and no promise of a video that may never
+be made; an ending on a question to him; no name tag for people he never sees; one video in five as a walk with one voice. NOT delivered, said
+plainly: the continuous camera of item 19 (stills cannot, nine animated minutes cost four times the budget); and everything here has only met
+the offline stand-ins - a real writer, a real picture model and his own eye first meet it at the pilot.
+USAGE when this round was written: the 5-hour window 16%, weekly all models 5%, weekly Fable 8%, context 56% (at the reviewer's start: 7%, 2%, 4%, 9%).
+
+---
+# V2b INSIDE THE FORMAT - design review, round 2 (14 Nov 2026; the same reviewer; round 1 is kept whole below) - ITS VERDICT WAS: CHANGES REQUIRED (six changes, all answered in round 3)
 Reviewed: the record of V2b as of commit ce20e49 (state DESIGN_REVIEW in f5a27e5). All 16 changes of round 1 were answered in the memo, none argued.
 USAGE when this round was written: the 5-hour window 15%, weekly all models 4%, weekly Fable 8%, context 54%.
 CHECKED AGAINST THE CODE AND FOUND TRUE NOW: the beat travels through `_strip_beats` -> `line_beats` -> `parse_script(line_beats=)` (every caller of
