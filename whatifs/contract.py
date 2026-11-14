@@ -628,7 +628,7 @@ def p_canon_in_brief(ctx):
     """v12 B6a: the writer was given the show's canon (cast + the newest aired case), paid the continuity debt in a line of the final script, and wrote
     this episode's case record."""
     from whatifs.org import canon as CANON
-    r = CANON.episode_issues(ctx.get("ep"), _script_text(ctx))
+    r = CANON.episode_issues(ctx.get("ep"), _script_text(ctx), fmt=(ctx.get("d") or {}).get("format"))      # v12 V2b (issue 77): a format that is not a trial is not asked for the cast
     if r["na"]: return NA, r["na"]
     if r["problems"]: return FAIL, f"{len(r['problems'])} problem(s): " + " | ".join(r["problems"][:3])
     s = r["stats"]

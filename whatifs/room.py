@@ -83,6 +83,16 @@ def _inside_brief():
     from whatifs.org import inside as INS
     return INS.brief()
 
+def first_line_brief(spine):
+    """v12 V2b (issue 129): the Short's hook HANDED to the writer - when the room's forced pitch is a promoted Short whose ladder row keeps its spoken first
+    line (`hook_line`), the writer begins with it word for word. '' otherwise (a row made before this batch, an override, no ladder): the opening's
+    insert (`hooks.run_hooks(proven=)`) works as before, and with the line it stays the guard - it adds nothing when the line is already first."""
+    from whatifs import ladder as LAD
+    ref = str((spine or {}).get("ladder") or "")
+    line = " ".join(str((LAD.row(ref) or {}).get("hook_line") or "").split()) if ref else ""
+    if not line: return ""
+    return f"FIRST LINE (proven by real viewers; fixed): begin the narration with exactly this line, word for word: \"{line}\" - then go on from it; do not say it again in other words."
+
 def _show_block():
     """v9: the Show Plan request inside the existing Showrunner call ('' when SHOW_MODE = off, so the prompt is exactly v8.11's)."""
     from whatifs import show as SHOW
@@ -277,7 +287,7 @@ def _run_room(draw, episode):
                "\nLESSONS FROM OUR OWN VIDEOS (opening, holding, hooks, reactions; follow them unless they contradict the bible): " + ctx["lessons_writer"])
     wbrief = GR.insert_before_json(wbrief, "\n".join(x for x in (                      # v8.7: the promise, this episode's rhythm and the research-graded rules
         "THE PROMISE (packaging first: the title and thumbnail were decided before you write; pay them off ON SCREEN and IN WORDS within the first 30 s): " + GR.promise_text(spine.get("promise")),
-        GR.rhythm_brief(d.get("rhythm_plan"), defs), PB.text_for("writer", d.get("playbook")), guest_brief(d), tease_brief(spine), _writer_extra(episode),
+        first_line_brief(spine), GR.rhythm_brief(d.get("rhythm_plan"), defs), PB.text_for("writer", d.get("playbook")), guest_brief(d), tease_brief(spine), _writer_extra(episode),
         _show_writer(spine), _format_block("writer"), _inside_brief()) if x))
     if S("EFFORT_AB_ON", bool):                           # v9: medium vs high effort for the script, alternating by episode (the A/B machinery records the arm)
         from whatifs import models as _M

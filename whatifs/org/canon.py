@@ -96,11 +96,21 @@ def newest_case(rs, at=None, now=None):
     c = [r for r in rs if is_case(r) and PAL.aired(r) and (lim is None or PAL.aired(r) <= lim) and PAL.servable(r, now)]
     return max(c, key=PAL.aired) if c else None
 
-def required(rs, dept="D4", at=None, now=None):
-    """What a D4 playbook must hold: every servable cast item addressed to the department, and the newest case that was on air at that time."""
+def cast_left_out(dept, fmt=None):
+    """v12 V2b (issue 77): the cast items a department's playbook leaves out. The cast is the TRIAL's world: in a format that is not a trial the writers
+    (D4) are given no cast item and none is demanded of them (check canon_in_brief); the newest aired case and its one plain callback line stay.
+    fmt None = the format in the making ('' = none: as before formats). A set of Palace ids (empty = nothing is left out)."""
+    from whatifs import formats as FMT
+    k = FMT.current() if fmt is None else str(fmt or "")
+    if dept != "D4" or k not in FMT.FORMATS or FMT.FORMATS[k]["show"]: return set()
+    return set(cast_ids())
+
+def required(rs, dept="D4", at=None, now=None, fmt=None):
+    """What a D4 playbook must hold: every servable cast item addressed to the department (none in a format that is not a trial: `cast_left_out`), and
+    the newest case that was on air at that time."""
     from whatifs.org import DEPARTMENTS
-    now = now or now_utc(); by = {r["id"]: r for r in rs}; stage = DEPARTMENTS[dept][1]
-    cast = [i for i in cast_ids() if i in by and PAL.servable(by[i], now) and PAL._addressed(by[i], dept, stage)]
+    now = now or now_utc(); by = {r["id"]: r for r in rs}; stage = DEPARTMENTS[dept][1]; left = cast_left_out(dept, fmt)
+    cast = [i for i in cast_ids() if i in by and i not in left and PAL.servable(by[i], now) and PAL._addressed(by[i], dept, stage)]
     nc = newest_case(rs, at, now) if dept == "D4" else None
     return {"cast": cast, "case": nc["id"] if nc else ""}
 
@@ -126,9 +136,10 @@ def must_cite(dept, items, rs, now=None):
     return [nc["id"]] if nc and nc["id"] in set(items or []) else []
 
 # ------------------------------------------------------------------ the check
-def episode_issues(ep, script_text, st=None, now=None):
+def episode_issues(ep, script_text, st=None, now=None, fmt=None):
     """{'na', 'problems', 'stats'} for canon_in_brief: the D4 run that wrote this episode's script was given every required canon item, paid the
-    continuity debt with a line found in the final script, and the episode's case record exists, derived from the D4 write run."""
+    continuity debt with a line found in the final script, and the episode's case record exists, derived from the D4 write run. fmt = the episode's
+    format (None = the format in the making): a format that is not a trial is never asked for the cast (v12 V2b, issue 77)."""
     from whatifs.org import cite as CITE
     st = st or store(); now = now or now_utc(); ep = str(ep or ""); res = {"na": "", "problems": [], "stats": {}}
     runs = {(d, t): (r, how) for d, t, r, how in CITE.creative_runs(ep, st)}
@@ -145,7 +156,7 @@ def episode_issues(ep, script_text, st=None, now=None):
     try: given = {str(i).split("@")[0] for i in (json.loads(pb.get("item_ids") or "[]") if isinstance(pb.get("item_ids"), str) else pb.get("item_ids") or [])} if pb else set()
     except (TypeError, ValueError): given = set()
     if not pb: p.append(f"the D4 playbook {load.get('playbook_id') or '-'} is not stored: what the writer was given cannot be proven"); return res
-    req = required(rs, "D4", parse_iso(r.get("started")), now)
+    req = required(rs, "D4", parse_iso(r.get("started")), now, fmt=fmt)
     miss = [i for i in req["cast"] if i not in given] + ([req["case"]] if req["case"] and req["case"] not in given else [])
     if miss: p.append(f"the writer's playbook lacked {len(miss)} canon item(s) it had to hold: {', '.join(miss[:3])}")
     res["stats"] = {"cast": len(req["cast"]), "newest_case": req["case"] or "none yet", "canon_given": len([i for i in given if i in {x['id'] for x in rs if x['kind'] == 'world_canon'}])}

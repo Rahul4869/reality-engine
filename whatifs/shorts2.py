@@ -493,7 +493,8 @@ def run(force=False, publish=True, now=None, episode_id=None):
         reviewed = sum(1 for r in _rows() if not _unmade(r))
         rec.update(_keep_master(ep, out, made.get("cover"), now))      # v12 V2c-b2: MADE is a field of the record, and the master is in the owner's Drive before any platform is asked
         store().append("Specials", [rec])                          # on record at once: whatever happens to an upload, the Short was made, counts and can still go out
-        LAD.enter(rec, topic, footage)                         # v12 V2c-b: every Short is a step on the ladder - its numbers decide whether its topic gets the long video
+        from whatifs import opening as OPN                     # v12 V2b (issue 129): the row keeps the Short's SPOKEN first line, as the opening defines its hook
+        LAD.enter(rec, topic, footage, hook_line=OPN.hook_of(v["timeline"].get("units") or []))      # v12 V2c-b: every Short is a step on the ladder - its numbers decide whether its topic gets the long video
         if brk: LAD.order_done(topic["follow_of"], ep, now)     # the order is closed with the Short that paid it (an approved long-video breakout has two)
         if gf is not None and not gf["ok"]: rec.update(_file_hold(rec, gf, publish))      # v12 V2d-b: made, kept, on the ladder - and NOT handed to Publishing: it waits for the owner's one tap
         elif publish: rec.update(_hand_over(rec, sc, out, made.get("cover"), reviewed, now))

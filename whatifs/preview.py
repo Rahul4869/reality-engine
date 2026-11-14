@@ -53,7 +53,10 @@ def run(mode="preview"):
         raise RuntimeError("not enough budget left this month for a preview (nothing spent)")
     from whatifs.org import runner as ORG, wraps as WR
     try:                                                          # v12 B6a: the writing is a D4 department run (playbook in the creative prompts, citations verified)
-        room = ORG.work("D4", "draft", draft, lambda b: ROOM.run_room(d, draft), measure=WR.m_room, topic=str(d.get("ptype") or ""))
+        from whatifs import formats as FMT
+        if "format" not in d: d["format"] = FMT.pick(draft, d)      # v12 V2b (issue 77): the format is known when D4 loads its playbook (run_room finds it in the draw and picks nothing)
+        with FMT.using(d["format"]):
+            room = ORG.work("D4", "draft", draft, lambda b: ROOM.run_room(d, draft), measure=WR.m_room, topic=str(d.get("ptype") or ""))
         sid = ORG.last_session("D4", "draft", draft) if ORG.on() else ""
         if sid: room["org_session"] = sid                         # production adopts this draft only with this run's proof (runner.work adopt=)
         d["ladder"] = str(room["spine"].get("ladder") or LAD.claim() or "")      # v12 V2c-b: the draft carries where its topic comes from; production uses the row up when it adopts the draft

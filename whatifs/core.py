@@ -167,7 +167,7 @@ TABS = {
  # sent, what the platform answered and a receipt for every row of the sheet (kept, fixed, drift, sent only, waiting, refused, skipped)
  "Release_Sheet":   ["ts", "id", "platform", "kind", "native_id", "state", "sha", "sent", "got", "receipts", "tries", "checked", "note"],
  "Ladder":          ["id", "topic", "premise", "title", "format", "hook", "yt_id", "posted", "state", "evidence", "days", "views", "engaged", "watched", "shares", "subs", "first",
-                     "v24", "v48", "multiple", "score", "read_at", "promoted_at", "episode_id", "footage", "by", "note"],
+                     "v24", "v48", "multiple", "score", "read_at", "promoted_at", "episode_id", "footage", "by", "note", "hook_line"],      # v12 V2b: the Short's spoken first line (issue 129)
 }
 
 class LocalStore:

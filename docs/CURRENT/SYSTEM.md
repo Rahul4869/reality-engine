@@ -375,7 +375,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Research_Agenda | 17 | id, ts, updated, source, ref, signature ... |  |
 | Board_Log | 12 | ts, session_id, memo_ref, label, canary, judge ... |  |
 | Release_Sheet | 13 | ts, id, platform, kind, native_id, state ... |  |
-| Ladder | 27 | id, topic, premise, title, format, hook ... |  |
+| Ladder | 28 | id, topic, premise, title, format, hook ... |  |
 
 ## 9. Modules
 | module | purpose |

@@ -1459,6 +1459,68 @@ WHAT IT NEEDS TO KNOW FROM HERE (facts, not decisions):
 - NOT RUN BY THIS BUILDER: a rehearsal, the sweep, `breaks.py`, the builder's block.
 USAGE: at this builder's start the 5-hour window 54%, weekly all models 15%, weekly Fable 26%, context 9%; at its end the 5-hour window 0% (it reset at
 07:30 UTC), weekly all models 16%, weekly Fable 27% (the account's figure; this session is Opus 5.5), context 69%.
+THE FOURTH OPUS BUILDER (14 Nov 2026, from about 07:30 UTC; Opus 5.5 at Extra high - started at High with a first turn that only answered READY, then
+raised by the dispatcher `local_e4e9a03f-...`, the plan's B5). `next.py`: card "BUILDER of V2b - phase BUILD", base 5827d97, red rounds 0, pre-flight clean, the
+hooks not installed, the audit finding F1 printed OPEN (its test is in, step 0; its line is closed when its break is caught on the final code). USAGE at its
+start: the 5-hour window 0%, weekly all models 16%, weekly Fable 27% (the account's figure; this session is Opus 5.5), this session's context 9% of 1,000,000.
+READING: THE CONTINUATION TYPIST'S READING, A9 (the owner's item 45) - `next.py` and its card, the plan whole (its three amendments first), the handoff
+`CLAUDE.md`, `02` whole (items 1 to 48), in this file the head line, STANDING RULES, NEXT's "Remember", HOW TO RUN whole, the whole record of V2b (Step 3, Step 4
+from its first line with every "WHERE THE BUILD STANDS" and DESIGN QUESTIONS 1 to 17) and the open issues they name (60, 69, 74, 75, 77, 101, 124, 125, 129,
+177, 185 to 193), `reviews/V2b_design.md` whole (round 3 first), `reviews/V2d-b_audit.md` (F1), the repo's `CLAUDE.md` whole (the matrix has no V2b row yet:
+step 7 writes them); before each step, the files that step changes, named under that step.
+STEP 6 - THE SMALL DECISIONS (3.6). READ WHOLE before the first edit: `opening.py`, `shorts2.py`, `ladder.py`, `org/canon.py`, `org/cite.py`, `tests/conftest.py`,
+`tests/paid_calls.py`, `tests/test_v12_inside.py`, `tests/test_v12_opening_e2e.py`; `room.py` from its first line to `tease_brief`; by the parts the step changes or
+calls: `hooks.py` (`apply_to_script` to the end), `episode._stage_plan` (the D4 run to the voice), `preview.py` (the D4 draft run), `org/palace.py` (`servable` to
+`playbook_issues`, `sync_canon`), `org/runner.py` (the LOAD), `contract.p_canon_in_brief`, `formats.py` (`use`, `using`, `current`, `show_allowed`, `pick`),
+`show.py` (the cast rows, `characters`), `data.py` (the strategy rows), `truth.py` (`RETIRED`), `core.TABS` (Ladder), `tools/sweep.py` (`climb`),
+`tests/test_docs_current.py` (the samples), `tests/test_v12_motion.py` (the retired-rule test); callers by search (`ladder.enter`: `shorts2.run` only;
+`opening.manifest`: `fetch` only; `canon.required`: `episode_issues` only; `PAL.playbook`: the runner and the Palace's own health; `T3_silhouette` and the witness's
+`visual`: `data.py` / `show.py`, the portrait prompts of `sheets.py` and `specials.py`).
+TEST CHANGED BY DESIGN IN STEP 6 (named before it is changed): `tests/test_v12_motion.py::test_no_prompt_asks_for_a_silhouette_and_the_rule_cannot_come_back`
+line 378 asserts that the retired rule `presenter_silhouette` does NOT match "never fully seen: a silhouette behind shelves" ("the art direction and the canon keep
+the word") - 3.6 widens the rule to `silhouette behind` and `Silhouetted person` (issue 177): that one clause is turned round (the rule now catches it); the rest
+of the line ("Big readable silhouettes. Cinematic noir lighting." is not caught) stays as it is.
+DESIGN QUESTION 18: 3.6 changes the TEXT of the witness's `visual` (`show.py`) and of thumbnail template `T3_silhouette` (`data.py`, the key kept). A Sheet that was
+set up before keeps the old texts in its tabs `Characters` and `Strategies` (`show.characters()` reads the tab first; the strategy rows are written once and only
+NEW names are added later: `manage.py`), and the memo orders no one-time move for them. Taken (the reading that changes less): no move is typed - the code's own
+rows change, a written tab does not; open issue 194 (new) carries it to the pilot's runbook.
+DESIGN QUESTION 19: 3.6 (issue 77) leaves the cast items out of "an F1 / F3 writer's playbook" - but the writer's playbook is chosen in `palace.playbook` at the
+LOAD of D4's run, and the episode's format is picked INSIDE that run (`room.run_room` -> `formats.pick`): at the LOAD the format is not known yet. Taken: the
+format is picked right BEFORE D4's run where `run_room` would pick it (`episode._stage_plan` and the draft of `preview.run`; the same `formats.pick` on the same
+draw, nothing written in between; an approved draft keeps the format it was written in, as before) and made current for that run; `run_room` then finds it
+in the draw and picks nothing. The playbook is still chosen in `palace.playbook` (a new argument `leave_out`, the runner passes `canon.cast_left_out(dept)`).
+DESIGN QUESTION 20: "an F1 writer's prompt holds none of the four names" cannot be true of the WHOLE prompt by issue 77's change alone: `prompts.HOUSE` (in every
+brief of every format) says "(Dr. Grimm is theatrical, never cruel)"; and the step's first test run found that the F1 writer's PLAYBOOK itself still names
+"Dr. Grimm" after the cast is left out - in a founding item that is not cast canon (`whatifs/org/seed/breakout.json`, the Case Files compilations: "Dr. Grimm
+fails in at most 40% of the cases"). Taken: the test is typed on what 3.6 changes - the cast canon items (`canon.cast_ids()`, by their id and by their own line)
+are in no F1 / F3 writer's playbook or prompt and all four are in a trial's; the HOUSE sentence and the founding item are not changed (not in the memo) and
+are listed in open issue 195 (new) with every other place a name of the cast reaches an F1 / F3 writer.
+BUILT IN STEP 6 (as written, except where DESIGN QUESTIONS 18 to 20 say otherwise): ISSUE 129 - NEW `opening.hook_of(units)` (the first unit of a Short's own
+voice timeline, brackets removed, spaces made one), called by `opening.manifest` (in place of its own line) and by `shorts2.run`, which enters a made Short on
+the ladder with `hook_line=OPN.hook_of(...)`; `ladder.enter(..., hook_line="")` writes the NEW field `hook_line` (tab `Ladder` gains the column at its END);
+NEW `room.first_line_brief(spine)` - when the room's forced pitch names a ladder row with a `hook_line`, the writer's brief gains, right after THE PROMISE,
+word for word: "FIRST LINE (proven by real viewers; fixed): begin the narration with exactly this line, word for word: \"<hook_line>\" - then go on from it;
+do not say it again in other words."; '' otherwise; `hooks.run_hooks(proven=)` unchanged (the guard: nothing is added when the line is already first).
+ISSUE 177 - `show.py`: the witness's `visual` "seen in half light between the archive shelves: round glasses, ink-stained cuffs, a tired, kind face"; `data.py`:
+`T3_silhouette` (the key kept) "Your own hands in the near foreground, first person, reaching toward the impossible scene. No person is shown."; `truth.py`:
+`presenter_silhouette` also matches `silhouette behind` and `Silhouetted person`. ISSUE 77 - the playbook's items are chosen in `palace.playbook` (named, as
+the memo asks): it gains `leave_out`; NEW `canon.cast_left_out(dept, fmt=None)` (the cast ids for D4 in a format that is not a trial, else none); the runner's
+LOAD passes it; `canon.required(..., fmt=None)` leaves the cast out of what is demanded and `canon.episode_issues(..., fmt=None)` hands the format on;
+`contract.p_canon_in_brief` passes the episode's format (`ctx["d"]["format"]`); the format is picked before D4's run and made current for it (DESIGN QUESTION 19:
+`episode._stage_plan`, `preview.run`). ISSUES 60, 69, 124, 125: decided in the memo, no code (3.6).
+TESTS (`tests/test_v12_inside.py`, section 13, and widened): `hook_of` and its two callers, the column at the tab's end, `enter` with and without the line; the
+room's sentence word for word, nothing for a row without it, no ladder or no row; A REAL OFFLINE SHORT (`OWN_IDS[4]` = EP209908290900, NEW; its Short
+SH209908290900) through `shorts2.run` (the sweep's `climb`): its row keeps the spoken first sentence = the archive's hook, never the archetype's name, and the
+long video's writer - the production stopped right after the room - is handed it in every writer call; a script that begins with the line keeps it once,
+one that does not gets the insert; the witness, the template and the widened rule both ways, `truth` clean; the cast left out of an F1 / F3 writer's
+playbook (by id and by line) and not demanded, a trial's as before, D5 untouched, the runner's LOAD; the format picked before D4's run (both sites);
+widened: the whole F1 and F3 productions - the writer's real prompts (a listener LAST at the model doorway's taps, after the runner put the playbook in)
+carry the playbook and no cast item, `canon_in_brief` PASS "canon given: 0 cast item(s)"; the whole trial under the ladder - all four cast items in its
+writer's prompts, `canon_in_brief` PASS "canon given: 4 cast item(s)". Run alone: the unit tests "6 passed in 6.31s"; the four whole productions "4 passed in
+209.00s"; `tests/test_v12_motion.py` (the test changed by design) "1 passed". Plan Guard GREEN, Truth GREEN, `tools/gen_docs.py` wrote `SYSTEM.md` (the
+Ladder's new column). No new check, lever or cell: the counts of step 5 stand (68 checks, `SHOW_CHECKS` 57, 84 levers). Breaks S6-01 to S6-22 written into
+`proving/breaks/V2b.json` (each anchor found exactly once, each named test present; 194 in the list) - NOT RUN.
+STEP 6'S RUN (real pytest, parallel `-n 6`, strict, THE WHOLE SUITE): "1625 passed in 2057.88s (0:34:17)", 0 failed. Open issues 194 and 195 are new.
 
 ### V2d-b - THE LADDER'S RULES (13 Nov 2026) - ACCEPTED (final code commit 5827d97 GREEN in GitHub Checks run 159: 1551 passed; sweep 58 of 58 ids)
 (Its code is d8101c8; every later commit is text only. History: built on 60d9483; the prover's FIRST PASS on 60d9483 was RED - the sweep
@@ -6544,6 +6606,18 @@ Rehearsal asserts `docs_current` ran and passed.
    the Moon left tonight?" is heard whole and measured as "What if ...". Every measure that reads `audience.spoken` (the numbers, the expert words, the
    pauses' text, `inside.sentences` through it, the tail's word count) misses such words. `formats.ending_report` reads the voice's own parse (step 2,
    correction 1). Changing `audience.spoken` would move older measures: a later design decides (D13).
+194. (V2b's build, step 6, DESIGN QUESTION 18 -> B10's runbook / the pilot) A SHEET SET UP BEFORE V2b KEEPS THE SHAPES OF ISSUE 177 IN ITS TABS. V2b
+   changed the code's own texts - the surprise witness's `visual` (`show.py`) and thumbnail template `T3_silhouette` (`data.py`) - but `show.characters()`
+   reads tab `Characters` first and the strategy rows of tab `Strategies` are written once (later setups add only NEW names: `manage.py`). On the live
+   Sheet (made by the old code) the witness's portrait prompt and the third thumbnail template may still ask for a silhouette. Before the pilot: read
+   both rows on the live Sheet and replace them with the code's texts (a one-time move of DATA, or a line of the runbook) - never by a session's hand.
+195. (V2b's build, step 6, DESIGN QUESTION 20 -> a later design of D4) THE CAST'S NAMES STILL REACH AN F1 / F3 WRITER OUTSIDE THE CANON. Issue 77 is
+   built: no cast canon item is in an F1 / F3 writer's playbook or demanded by `canon_in_brief`. What is left, found while building it: `prompts.HOUSE`
+   (the house rules of every brief, every format) says "(Dr. Grimm is theatrical, never cruel)"; the founding Palace item about Case Files compilations
+   (`whatifs/org/seed/breakout.json`: "Dr. Grimm fails in at most 40% of the cases") is addressed to D4 and is served to every format's writer; the
+   newest aired case's line names the trial's verdict and its winner (`canon.summary`) - kept on purpose by 3.6 ("the newest aired case and its one plain
+   callback line stay"). A real F1 / F3 writer may so still name the cast; `format_kept` holds a courtroom word. A later design decides whether the
+   house rules and the compilation item become format-aware.
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - SINCE 13 NOV 2026 (the owner's item 33): the acceptance block, its verdict, the deliberate breaks and the moves of the state are

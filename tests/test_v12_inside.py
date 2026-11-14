@@ -6,7 +6,7 @@ import pytest
 from whatifs import core, contract as CON, formats as FMT, voice as VO, enforce as EN, fakes as FK, episode as EP, reactions as RX
 from whatifs.org import inside as IN, audience as AUD, registry as REG, levers as LV, rnd as RND
 
-OWN_IDS = ("EP209908010900", "EP209908080900", "EP209908150900", "EP209908220900")      # the whole productions of this file: ids no other test file uses (a test proves it)
+OWN_IDS = ("EP209908010900", "EP209908080900", "EP209908150900", "EP209908220900", "EP209908290900")      # the whole productions of this file: ids no other test file uses (a test proves it)
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def ctx(text, fmt="F1"): return {"room": {"script": {"script": text}}, "d": {"format": fmt}}
 
@@ -211,6 +211,18 @@ def _start(monkeypatch, setting, fmt):
 
 def _led(ep): return {x["feature"]: (x["status"], str(x["evidence"])) for x in core.store().rows("Feature_Ledger") if x.get("episode_id") == ep}
 
+def _writer_prompts(monkeypatch):
+    """Every system prompt a writer call really sends - after the department runner put its playbook into it (a listener LAST at the doorway's taps)."""
+    from whatifs import models as M_
+    seen = []
+    monkeypatch.setattr(M_, "ASK_TAPS", list(M_.ASK_TAPS) + [lambda task, system, prompt: (seen.append(str(system)) if str(task) == "writer" else None, system)[1]])
+    return seen
+
+def _cast_lines(prompts):
+    """The cast canon items (step 6, issue 77) that reached the writer's prompts, by their Palace id."""
+    from whatifs.org import canon as CANON_
+    return {i for i in CANON_.cast_ids() if any(f"[{i}]" in p for p in prompts)}
+
 def _tag_spy(monkeypatch):
     """Every speaker tag the renderer builds, with the spans it will draw (what a viewer sees as name chips)."""
     from whatifs import overlay as OV_
@@ -222,7 +234,7 @@ def _tag_spy(monkeypatch):
 
 def test_a_whole_f1_production_carries_its_beats_to_the_units_and_speaks_to_you(monkeypatch, setting):
     from tests import test_v12_opening_e2e as E2E
-    _start(monkeypatch, setting, "F1"); ep = OWN_IDS[0]; setting("CHIP_DRAWN_ONLY_ON", "TRUE"); tags = _tag_spy(monkeypatch)
+    _start(monkeypatch, setting, "F1"); ep = OWN_IDS[0]; setting("CHIP_DRAWN_ONLY_ON", "TRUE"); tags = _tag_spy(monkeypatch); wp = _writer_prompts(monkeypatch)
     bought = {}; real_still = EP.M.still; laid = []; real_lay = PATH.lay
     monkeypatch.setattr(EP.M, "still", lambda prompt, path, *a, **k: (bought.__setitem__(os.path.basename(str(path)), str(prompt)), real_still(prompt, path, *a, **k))[1])      # the request that buys each picture
     monkeypatch.setattr(PATH, "lay", lambda sh: (laid.append(real_lay(sh)), laid[-1])[1])
@@ -243,6 +255,8 @@ def test_a_whole_f1_production_carries_its_beats_to_the_units_and_speaks_to_you(
     assert [a for a in asks if a] == ["subscribe"], asks                                                              # one subscribe ask, nothing else
     assert led["format_ending"][0] == "PASS" and led["format_ending"][1].startswith("ends on its question: ") and "asks in this video: subscribe 1" in led["format_ending"][1], led["format_ending"]
     assert "next simulation" not in script.lower() and FMT.ending_report(script, "F1")["last"].endswith("?")          # no tease; the last line a question
+    assert wp and any("PALACE CITATIONS" in p for p in wp) and _cast_lines(wp) == set(), _cast_lines(wp)            # the writer's playbook is in its prompt - without the cast (step 6, issue 77)
+    assert led["canon_in_brief"][0] == "PASS" and led["canon_in_brief"][1].startswith("canon given: 0 cast item(s)"), led["canon_in_brief"]      # ... and the cast is not demanded
     assert r.get("ok"), r
     shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True)
 
@@ -507,7 +521,7 @@ def test_the_format_block_leaves_the_speaker_tag_sentence_out_where_no_chip_is_s
 
 def test_a_whole_trial_under_the_ladder_names_only_the_character_who_is_drawn(monkeypatch, setting, tmp_path):
     from tests import test_v12_opening_e2e as E2E
-    _start(monkeypatch, setting, "F2"); ep = OWN_IDS[2]; setting("CHIP_DRAWN_ONLY_ON", "TRUE"); tags = _tag_spy(monkeypatch); _art(tmp_path, ("GRIMM",))
+    _start(monkeypatch, setting, "F2"); ep = OWN_IDS[2]; setting("CHIP_DRAWN_ONLY_ON", "TRUE"); tags = _tag_spy(monkeypatch); _art(tmp_path, ("GRIMM",)); wp = _writer_prompts(monkeypatch)
     gate = []; real_run = CON.run
     monkeypatch.setattr(CON, "run", lambda stage, c, *a, **k: (gate.append(c.get("chips")) if stage == "final" else None, real_run(stage, c, *a, **k))[1])
     r = EP.produce(E2E._slot(10), episode_id=ep); led = _led(ep)
@@ -519,6 +533,9 @@ def test_a_whole_trial_under_the_ladder_names_only_the_character_who_is_drawn(mo
     assert led["format_ending"][0] == CON.NA and "ends on a tease" in led["format_ending"][1], led["format_ending"]
     for k in ("camera_path", "camera_shown"):
         assert led[k][0] == CON.NA and "format F2 cuts between its pictures" in led[k][1], (k, led[k])                  # the trial cuts between its pictures (step 4)
+    from whatifs.org import canon as CANON_
+    assert _cast_lines(wp) == set(CANON_.cast_ids()) and len(CANON_.cast_ids()) == 4, _cast_lines(wp)                  # the trial's writer is given its cast as before (step 6, issue 77)
+    assert led["canon_in_brief"][0] == "PASS" and led["canon_in_brief"][1].startswith("canon given: 4 cast item(s)"), led["canon_in_brief"]
     assert r.get("ok"), r
     shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True)
 
@@ -843,7 +860,7 @@ def test_the_offline_writer_of_f3_is_the_guide_alone_inside_the_scene_and_ends_o
 
 def test_a_whole_f3_production_is_one_voice_one_direction_ends_on_its_arrival_and_pays_no_format_call(monkeypatch, setting):
     from tests import test_v12_opening_e2e as E2E, paid_calls as PC
-    _start(monkeypatch, setting, "F3"); ep = OWN_IDS[1]; marked = []; real_mark = PATH.mark
+    _start(monkeypatch, setting, "F3"); ep = OWN_IDS[1]; marked = []; real_mark = PATH.mark; wp = _writer_prompts(monkeypatch)
     monkeypatch.setattr(PATH, "mark", lambda *a, **k: (marked.append(real_mark(*a, **k)), marked[-1])[1])
     c = PC.watch(monkeypatch); r = EP.produce(E2E._slot(10), episode_id=ep); led = _led(ep)
     tl = json.load(open(os.path.join(core.WORK, ep, "voice_timeline.json"))); assert {u["speaker"] for u in tl["units"]} == {"DIRECTOR"}      # one voice
@@ -852,5 +869,88 @@ def test_a_whole_f3_production_is_one_voice_one_direction_ends_on_its_arrival_an
     assert led["format_ending"][0] == "PASS" and led["format_ending"][1].startswith("ends on its arrival: "), led["format_ending"]
     assert led["viewer_inside"][0] == "PASS" and led["format_kept"][0] == "PASS", (led["viewer_inside"], led["format_kept"])
     feats = [f for f in core.store().rows("Video_Features") if f["video_key"] == ep]; assert feats and json.loads(feats[0]["arm"])["format"] == "F3"      # the arm is on record
+    assert wp and any("PALACE CITATIONS" in p for p in wp) and _cast_lines(wp) == set() and led["canon_in_brief"][0] == "PASS", (_cast_lines(wp), led.get("canon_in_brief"))      # no cast for the walk's writer (step 6)
     assert r.get("ok"), r
     shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True)
+
+# ------------------------------------------------------------------ 13. THE SMALL DECISIONS (3.6): the Short's hook handed to the writers (129), no shape for a face (177), no cast outside a trial (77)
+from whatifs import ladder as LAD, opening as OPEN, hooks as HOOKS, show as SH, data as DT, truth as TR, shorts2 as SH2
+from whatifs.org import palace as PAL, canon as CANON
+NAMES = ("Inspector Vale", "Dr. Grimm", "Nana Rosa", "The Archivist")
+
+def test_a_shorts_hook_is_one_function_and_its_ladder_row_keeps_the_spoken_line():
+    import inspect
+    units = [{"text": "[DIRECTOR] [tension]  Your coffee   lifts out of the cup. It hangs there."}, {"text": "[DIRECTOR] Second."}]
+    assert OPEN.hook_of(units) == "Your coffee lifts out of the cup. It hangs there." and OPEN.hook_of([]) == ""         # the FIRST unit, brackets removed, spaces made one
+    assert 'hook_of((meta.get("timeline") or {}).get("units") or [])' in inspect.getsource(OPEN.manifest)              # the opening's manifest calls it ...
+    assert 'hook_line=OPN.hook_of(v["timeline"].get("units") or [])' in inspect.getsource(SH2.run)                        # ... and so does the Short when it enters the ladder
+    assert core.TABS["Ladder"][-1] == "hook_line"                                                                            # a new column at the END of the tab (append-only)
+    assert LAD.enter({"id": "SHHK1", "premise": "p", "hook": "you_pov"}, hook_line="Your coffee lifts.") and LAD.row("SHHK1")["hook_line"] == "Your coffee lifts."
+    assert LAD.enter({"id": "SHHK2", "premise": "q", "hook": "countdown"}) and LAD.row("SHHK2")["hook_line"] == ""           # entered without it: none
+
+def test_the_room_hands_the_rows_spoken_line_to_the_writer_and_nothing_without_it():
+    LAD.enter({"id": "SHHK3", "premise": "p", "hook": "you_pov"}, hook_line="  Your coffee   lifts. "); LAD.enter({"id": "SHHK4", "premise": "q", "hook": "countdown"})
+    s = ROOM.first_line_brief({"ladder": "SHHK3"})
+    assert s == 'FIRST LINE (proven by real viewers; fixed): begin the narration with exactly this line, word for word: "Your coffee lifts." - then go on from it; do not say it again in other words.', s
+    assert "you_pov" not in s and ROOM.first_line_brief({"ladder": "SHHK4"}) == "" and ROOM.first_line_brief({}) == "" and ROOM.first_line_brief({"ladder": "NOPE"}) == ""      # a row without the line, no ladder, no such row
+    src = open(os.path.join(ROOT, "whatifs", "room.py"), encoding="utf-8").read(); assert "first_line_brief(spine), GR.rhythm_brief(" in src       # in the writer's brief, right after the promise
+
+def test_a_real_offline_short_keeps_its_spoken_first_line_and_the_long_videos_writer_is_handed_it(monkeypatch, setting, tmp_path):
+    """THE ROW AS THE CODE BUILDS IT: a whole offline Short through shorts2.run (the sweep's climb), then the room of the long video about it - stopped
+    right after the room. The writer is handed the Short's spoken first sentence, never its archetype's name; a script that begins with it does not
+    carry it twice."""
+    from tests import test_v12_opening_e2e as E2E
+    from tools.sweep import climb
+    E2E._start(monkeypatch, setting); ep = OWN_IDS[4]; sid = "SH" + ep[2:]
+    assert climb(core, ep) is True
+    row = LAD.row(sid); man = OPEN.fetch({"ladder": sid}, str(tmp_path))
+    assert row["hook_line"] and row["hook_line"] == man["hook"] and row["hook"] in FMT.SHORT_HOOKS and row["hook"] not in row["hook_line"], (row.get("hook_line"), row.get("hook"), man.get("hook"))
+    wp = _writer_prompts(monkeypatch)
+    monkeypatch.setattr(OPEN, "fetch", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("stopped after the room (test)")))
+    with pytest.raises(RuntimeError, match="stopped after the room"): EP.produce(E2E._slot(10), episode_id=ep)
+    want = f'begin the narration with exactly this line, word for word: "{row["hook_line"]}"'
+    assert wp and all(want in p for p in wp) and not any(f'"{row["hook"]}"' in p for p in wp), [p[:160] for p in wp][:2]      # every writer call is handed the line
+    script = f"## BEAT 1\n[DIRECTOR] [tension] {row['hook_line']}\n[DIRECTOR] You put the cup down and it stays in the air."
+    out, rec = HOOKS.run_hooks(script, {}, ep, str(tmp_path), proven={"line": row["hook_line"], "short": sid})
+    assert out == script and rec["applied"] and rec["status"] == "applied"                                                   # it begins with it: the guard adds nothing, the line is said once
+    out2, rec2 = HOOKS.run_hooks("## BEAT 1\n[DIRECTOR] You put the cup down.", {}, ep, str(tmp_path), proven={"line": row["hook_line"], "short": sid})
+    assert out2.count(row["hook_line"]) == 1 and rec2["applied"]                                                              # it does not: the insert, as before
+    for f in (ep, sid): shutil.rmtree(os.path.join(core.WORK, f), ignore_errors=True)
+
+def test_the_witness_and_the_third_thumbnail_show_no_shape_and_the_widened_rule_catches_one():
+    import re
+    w = next(c for c in SH.character_rows() if c["id"] == "ARCHIVIST")
+    assert w["visual"] == "seen in half light between the archive shelves: round glasses, ink-stained cuffs, a tired, kind face"
+    t3 = DT.STRATEGIES["thumb"]["T3_silhouette"]                                                                              # the KEY stays: a row of tab Strategies on a live Sheet
+    assert t3 == "Your own hands in the near foreground, first person, reaching toward the impossible scene. No person is shown."
+    rule = next(r for r in TR.RETIRED if r["id"] == "presenter_silhouette")
+    for bad in ("never fully seen: a silhouette behind shelves", "Silhouetted person, rim-lit, facing the impossible scene.", "A SILHOUETTE BEHIND the glass door"):
+        assert re.search(rule["pattern"], bad), bad
+    for ok in ("Big readable silhouettes. Cinematic noir lighting.", w["visual"], t3): assert not re.search(rule["pattern"], ok), ok
+    TR.reset(); assert TR.issues() == []                                                                                       # nothing current names such a shape
+
+def test_the_cast_is_left_out_of_a_writers_playbook_outside_a_trial_and_is_not_demanded():
+    st = core.store(); PAL.ensure_seed(st=st); CANON.ensure_cast(st); rs = PAL.rows(st); cast = set(CANON.cast_ids()); by = {r["id"]: r for r in rs}
+    assert len(cast) == 4 and all(any(n in by[i]["summary"] for n in NAMES) for i in cast)                                     # each cast item names its character
+    for fmt in ("F1", "F3"):
+        with FMT.using(fmt):
+            left = CANON.cast_left_out("D4"); assert left == cast and CANON.cast_left_out("D5") == set()                         # the writers' playbook only
+            pb = PAL.playbook("D4", rs=rs, st=st, leave_out=left, record=False)
+            assert pb["items"] and not cast & set(pb["items"]) and not [i for i in cast if f"[{i}]" in pb["text"] or by[i]["summary"] in pb["text"]], fmt      # no cast item, by id or by its line (DESIGN QUESTION 20)
+            assert CANON.required(rs, "D4")["cast"] == [] and CANON.required(rs, "D4", fmt="F2")["cast"]                         # not demanded; the format named wins
+    with FMT.using("F2"):
+        assert CANON.cast_left_out("D4") == set()
+        pb = PAL.playbook("D4", rs=rs, st=st, leave_out=CANON.cast_left_out("D4"), record=False)
+        assert cast <= set(pb["items"]) and all(n in pb["text"] for n in NAMES) and set(CANON.required(rs, "D4")["cast"]) == cast      # the trial's writer: as before
+    assert CANON.cast_left_out("D4", "") == set() and CANON.cast_left_out("D4", "F1") == cast and PAL.playbook("D4", rs=rs, st=st, record=False)["items"] == PAL.playbook("D4", rs=rs, st=st, record=False, leave_out=())["items"]
+    from whatifs.org import runner as RU
+    import inspect; assert "leave_out=CANON.cast_left_out(dept)" in inspect.getsource(RU.run)                                   # the runner's LOAD chooses the playbook with it
+
+def test_the_format_is_picked_before_the_writers_run_loads_its_playbook():
+    import inspect
+    src = inspect.getsource(EP._stage_plan)
+    assert src.index('if not took and "format" not in d: d["format"] = FMT.pick(ep, d)') < src.index('with FMT.using(d.get("format") or ""):') < src.index('room = ORG.work("D4", "write"')
+    from whatifs import preview as PV
+    p = inspect.getsource(PV)
+    assert p.index('if "format" not in d: d["format"] = FMT.pick(draft, d)') < p.index('with FMT.using(d["format"]):') < p.index('room = ORG.work("D4", "draft"')
+    assert 'if "format" not in draw: draw["format"] = FMT.pick(episode, draw)' in inspect.getsource(ROOM.run_room)          # the room keeps a format it is given

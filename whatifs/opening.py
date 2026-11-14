@@ -52,9 +52,13 @@ def manifest(meta, wd):
         a, b = float(s["start"]), float(s["end"])
         if b - a >= 0.05: track.append({"clip": name, "start": round(a, 3), "end": round(b, 3), "slow": round(SH.slow_of(s), 4)})      # v12 V2d: how the Short really played it - on its own plan since clips are bought by the second
     if not track: raise RuntimeError("the archive holds no clip of the Short's plan")
-    units = (meta.get("timeline") or {}).get("units") or []
-    hook = " ".join(re.sub(r"\[[^\]]*\]", " ", str((units[0] if units else {}).get("text") or "")).split())
-    return {"hook": hook, "seconds": track[-1]["end"], "clips": clips, "track": track}
+    return {"hook": hook_of((meta.get("timeline") or {}).get("units") or []), "seconds": track[-1]["end"], "clips": clips, "track": track}
+
+def hook_of(units):
+    """v12 V2b (issue 129): a Short's hook - the FIRST unit of its own voice timeline, its brackets removed, its spaces made one. The ONE definition:
+    the archive's manifest (the long video's inserted first line) and the Short's ladder row (`shorts2.run` -> `ladder.enter`, field `hook_line`,
+    the line the long video's writer is handed) both call it."""
+    return " ".join(re.sub(r"\[[^\]]*\]", " ", str((units[0] if units else {}).get("text") or "")).split())
 
 def fetch(d, out):
     """The footage of the Short this long video is about, in the video's working folder: the archive named on the Short's ladder row is downloaded

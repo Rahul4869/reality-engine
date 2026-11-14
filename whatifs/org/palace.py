@@ -651,15 +651,16 @@ def _line(r, now):
     lab = ("LIMIT" + (" (owner)" if r["owner_input"] else "") + (", review due" if overdue(r, now) else "")) if is_limit(r) else r["status"].upper()
     return f"- [{r['id']}] {lab}: {r['summary']}"
 
-def playbook(dept, stage=None, topic="", rs=None, record=True, cap=None, now=None, st=None):
+def playbook(dept, stage=None, topic="", rs=None, record=True, cap=None, now=None, st=None, leave_out=()):
     """The bounded block of knowledge one department gets before it acts: guard -> lanes (limits, proven, accepted, testing) -> relevance ->
-    greedy fill under the hard cap. Deterministic: the same Palace state gives byte-identical text, and playbook_id is the hash of that text."""
+    greedy fill under the hard cap. Deterministic: the same Palace state gives byte-identical text, and playbook_id is the hash of that text.
+    leave_out = ids this run is never given (v12 V2b, issue 77: the cast in a writer's playbook of a format that is not a trial - `canon.cast_left_out`)."""
     if dept not in DEPARTMENTS: raise PalaceError([f"unknown department '{dept}'"])
     stage = stage or DEPARTMENTS[dept][1]
     if stage not in STAGES: raise PalaceError([f"unknown stage '{stage}'"])
     now = now or now_utc(); st = st or store(); rs = rows(st) if rs is None else rs
-    cap = int(max(MIN_CAP, min(MAX_CAP, cap or cap_for(dept))))
-    cands = [r for r in rs if servable(r, now) and _addressed(r, dept, stage)]
+    cap = int(max(MIN_CAP, min(MAX_CAP, cap or cap_for(dept)))); leave_out = set(leave_out or ())
+    cands = [r for r in rs if servable(r, now) and _addressed(r, dept, stage) and r["id"] not in leave_out]
     q = _terms(topic); df = {}
     for r in cands:
         for t in _terms(r["title"] + " " + r["summary"] + " " + " ".join(r["topic_tags"])): df[t] = df.get(t, 0) + 1

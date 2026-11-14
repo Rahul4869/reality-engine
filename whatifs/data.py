@@ -50,7 +50,7 @@ STRATEGIES = {
   "brake": "Starts fast, slows for the reveal.", "conversational": "Like telling a friend."},
  "humour": {"none": "No jokes.", "light": "One dry aside in the cold open and one end callback.", "medium": "Cold-open aside, relief line after the peak, end callback (max 3)."},
  "thumb": {"T1_object_scale": "One ordinary object, enormous, against a dramatic landscape.", "T2_before_after": "Split frame: normal world vs aftermath.",
-  "T3_silhouette": "Silhouetted person, rim-lit, facing the impossible scene. No real person.", "T4_number": "One giant number + one tiny object.",
+  "T3_silhouette": "Your own hands in the near foreground, first person, reaching toward the impossible scene. No person is shown.", "T4_number": "One giant number + one tiny object.",
   "T5_question": "Short question in huge type over the climax frame.", "T6_macro": "Extreme macro of something familiar, gone wrong."},
  "title": {"N1_what_if": "What If [specific absurd premise]?", "N2_you": "What If You [did X] for [time]?", "N3_number": "What If 8 Billion People [did X] At Once?",
   "N4_happens": "What Actually Happens If [X]", "N5_wrong": "Everyone Is Wrong About What Happens If [X]"},

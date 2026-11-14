@@ -26,7 +26,7 @@ CHARACTERS = [
     {"id": "ARCHIVIST", "name": "The Archivist", "speaker": "WITNESS", "role": "surprise witness",
      "philosophy": "Everything that happened left a record.", "rhythm": "slow, whispered, archival", "tics": "reads dates aloud",
      "vocabulary": "the archive remembers; entry; filed", "recurring_bit": "appears only for the surprise witness", "when_wrong": "'The archive is corrected.'",
-     "relationships": "known to all three, trusted by none", "visual": "never fully seen: a silhouette behind shelves", "voice_style": "whispered, close, calm",
+     "relationships": "known to all three, trusted by none", "visual": "seen in half light between the archive shelves: round glasses, ink-stained cuffs, a tired, kind face", "voice_style": "whispered, close, calm",
      "sound": "page turn + distant reel-to-reel", "audio_chain": "highpass=f=150,lowpass=f=7000,aecho=0.7:0.5:40:0.2", "gvoice": "Enceladus"},
 ]
 BIBLE_FIELDS = ("philosophy", "rhythm", "tics", "vocabulary", "recurring_bit", "when_wrong", "relationships", "visual", "voice_style", "sound", "audio_chain")

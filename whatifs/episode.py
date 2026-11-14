@@ -130,8 +130,10 @@ def _stage_plan(ep, out, eps_left, slot_iso):
             if k in sd: d[k] = sd[k]
         d["from_preview"] = True; d["preview_room_ts"] = sd.get("_t_last")      # v10.2: when the approved draft was written
     log(f"draw: {json.dumps(d)} | spend plan: {plan['reason']}")
-    room = ORG.work("D4", "write", ep, (lambda b: took[1]) if took else (lambda b: ROOM.run_room(d, ep)), measure=WR.m_room, topic=str(d.get("ptype") or ""),
-                    adopt=(took[1] or {}).get("org_session") if took else None, legacy=(took[1] or {}).get("_legacy_draft") if took else None)      # v12: an approved Script Preview is adopted as written - with its D4 draft run's proof (B6a); an owner-approved draft from before B6a is recorded as such
+    if not took and "format" not in d: d["format"] = FMT.pick(ep, d)      # v12 V2b (issue 77): the format is known when D4 loads its playbook (run_room finds it in the draw and picks nothing)
+    with FMT.using(d.get("format") or ""):
+        room = ORG.work("D4", "write", ep, (lambda b: took[1]) if took else (lambda b: ROOM.run_room(d, ep)), measure=WR.m_room, topic=str(d.get("ptype") or ""),
+                        adopt=(took[1] or {}).get("org_session") if took else None, legacy=(took[1] or {}).get("_legacy_draft") if took else None)      # v12: an approved Script Preview is adopted as written - with its D4 draft run's proof (B6a); an owner-approved draft from before B6a is recorded as such
     FMT.use(d.get("format") or "")                          # v12 V2a: everything after the room (voice, package, shots) is made in the episode's format
     if ORG.on(): CANON.record(ep, room, ORG.last_session("D4", "write", ep))          # v12 B6a: D4's continuity takeaway - the case record (canon once it is on air)
     from whatifs import ladder as LAD                       # v12 V2c-b: where this video's topic comes from - its promoted Short, else the override on record ('' = neither: check topic_ladder holds it)

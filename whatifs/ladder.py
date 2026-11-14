@@ -54,14 +54,16 @@ def keep(ep, wd, sc, pl, tl):
     except Exception as e:
         log(f"the footage of Short {ep} was not kept ({scrub(e)[:120]}): its long video would have to open with new pictures", "WARN", ep); return ""
 
-def enter(rec, topic=None, footage=""):
-    """A Short that was made takes its step on the ladder (once per Short). A follow-up belongs to the topic of the Short it follows."""
+def enter(rec, topic=None, footage="", hook_line=""):
+    """A Short that was made takes its step on the ladder (once per Short). A follow-up belongs to the topic of the Short it follows. v12 V2b (issue 129):
+    `hook_line` = the Short's SPOKEN first line (`opening.hook_of`), kept on the row - `hook` holds the name of its hook archetype."""
     st = store(); sid = str((rec or {}).get("id") or "")
     if not sid or any(r.get("id") == sid for r in st.rows(TAB)): return False
     parent = row(str((topic or {}).get("follow_of") or "")); yt = str(rec.get("yt_id") or "")
     st.append(TAB, [{"id": sid, "topic": (parent or {}).get("topic") or sid, "premise": str(rec.get("premise") or ""), "title": str(rec.get("title") or "")[:120],
                      "format": rec.get("format", ""), "hook": rec.get("hook", ""), "yt_id": yt, "posted": (rec.get("ts") or iso()) if yt else "", "state": "POSTED" if yt else "MADE",
-                     "footage": footage, "by": "D14", "note": (f"follow-up of {parent['id']}" if parent else "") + ("" if footage else ("; " if parent else "") + "footage not kept")}])
+                     "footage": footage, "by": "D14", "note": (f"follow-up of {parent['id']}" if parent else "") + ("" if footage else ("; " if parent else "") + "footage not kept"),
+                     "hook_line": str(hook_line or "")}])
     return True
 
 def went_public(sid, yt_id, now=None):

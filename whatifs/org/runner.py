@@ -247,7 +247,7 @@ def run(dept, trigger, act, *, episode="", topic="", stage=None, context=None, m
         if not PAL.rows(st): PAL.ensure_seed(st=st, now=t0)                           # an empty Sheet gets its founding knowledge FIRST (v12 V2c: the cast used to be mirrored
         if R.mode == "prompt": CANON.ensure_cast(st, t0)                              # before this test, so a creative run that went first was handed the cast and nothing else)
         rs = PAL.rows(st)
-        pb = PAL.playbook(dept, stage, topic, rs=rs, st=st, now=t0)
+        pb = PAL.playbook(dept, stage, topic, rs=rs, st=st, now=t0, leave_out=CANON.cast_left_out(dept))      # v12 V2b (issue 77): no cast in a writer's playbook of a format that is not a trial
         if not pb["playbook_id"]: raise ContractBreach("LOAD", f"the Palace has no servable knowledge for {dept} at stage {stage}")
         R.pb_text = pb["text"]; brief = Brief(dept, trigger, episode, stage, topic, pb, inbound, sid, context)
         limits = {r["id"] for r in rs if r["id"] in set(pb["items"]) and PAL.is_limit(r)}

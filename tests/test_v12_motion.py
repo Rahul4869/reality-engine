@@ -375,7 +375,7 @@ def test_no_prompt_asks_for_a_silhouette_and_the_rule_cannot_come_back(ladder):
     assert "A PRESENTER IS DRAWN OR ABSENT" in inspect.getsource(FE) and "presenter silhouettes" not in open(os.path.join(ROOT, "whatifs", "qc.py"), encoding="utf-8").read()
     rule = next(r for r in TR.RETIRED if r["id"] == "presenter_silhouette"); import re
     assert re.search(rule["pattern"], "Show the roles only as silhouettes, hands on a console.") and re.search(rule["pattern"], "the cutaway fell back to a silhouette")
-    assert re.search(rule["pattern"], "NO realistic faces (silhouette, hands, back of head)") and not re.search(rule["pattern"], "Big readable silhouettes. Cinematic noir lighting.") and not re.search(rule["pattern"], "never fully seen: a silhouette behind shelves")      # the art direction and the canon keep the word
+    assert re.search(rule["pattern"], "NO realistic faces (silhouette, hands, back of head)") and not re.search(rule["pattern"], "Big readable silhouettes. Cinematic noir lighting.") and re.search(rule["pattern"], "never fully seen: a silhouette behind shelves")      # the art direction keeps the word; v12 V2b (issue 177, changed by design): the canon's witness drawn as a shape is caught now
 
 # ------------------------------------------------------------------ 6. real footage: a short anchor with a record
 def test_the_stock_rules_on_the_shot_list(ladder, setting):
