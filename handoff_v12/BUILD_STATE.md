@@ -2368,6 +2368,81 @@ WHAT IT NEEDS TO KNOW FROM HERE (facts, not decisions):
 - NOT RUN BY THIS BUILDER: a rehearsal, the sweep, `breaks.py`, the builder's block.
 USAGE: at this builder's start weekly all models 37%, weekly Fable 63% (the account's figure; this session is Opus 5.5), context 9%; at its end weekly all models
 38%, weekly Fable 63%, context 78%. THE READING ALONE (the A9 list and step 1's files) took about 66% of the context before the first line was typed.
+THE FOURTH OPUS BUILDER (the continuation typist of the plan's A9; 15 Nov 2026, from 14:02 UTC by `date -u` - SAID PLAINLY: the clock times the first three builders
+wrote as "UTC" are the laptop's IST clock (the commit of step 1, f576363, carries 19:30:51 +05:30 = 14:00 UTC); every time this builder writes is `date -u`; Opus 5.5,
+started fresh by the dispatcher `local_e4e9a03f-...` with a first turn that only answered READY; its brief arrived as a message). `proving/next.py`: batch V1c, phase
+BUILD, base 01e7798, red rounds 0, pre-flight clean, the git hooks NOT installed, FOUR open findings of `reviews/V2b_audit.md`. SAID AS THE BRIEF ASKS: the lines of F1 to
+F4 (lines 2 to 5 of that file) still read "OPEN", not "CLOSED" - by the first and second builders' own notes (each stays open until its breaks are caught on the final
+code by `breaks.py`: F1 = 0e2a5e3, F2 to F4 = 725459d); this builder does not go past them silently - they are closed at step 7, after the break run. The card's last
+acts are not this session's (A3). USAGE at the start (plan Ultra; the app shows no 5-hour line): weekly all models 38%, weekly Fable 63% (the account's figure; this
+session is Opus 5.5), this session's context 9% of 1,000,000.
+THE READING - THE CONTINUATION TYPIST'S READING, A9, each item whole: (1) `next.py` and its card; the plan whole (amendments 1 to 3, A9 to A11 first); the handoff
+`CLAUDE.md`; `02` whole (items 1 to 89); (2) in this file the head line, STANDING RULES, under NEXT the paragraph "Remember", HOW TO RUN whole, the record of V1c whole
+(its START, Steps 1 to 3 with the design's history, Step 4 from its first line with the three builders' "WHERE THE BUILD STANDS" and DESIGN QUESTIONS 1 to 8) and the
+open issues the memo and those notes name (167, 189, 193, 196 to 209); (3) `reviews/V1c_design.md` whole (round 2 first) and `reviews/V2b_audit.md` whole; (4) the repo's
+`CLAUDE.md` whole; in `docs/CURRENT/ENFORCEMENT_MATRIX.md` the row of the judged floor (the model for his verdict's row). The fixed list took the context from 9% to 40%.
+(5) BEFORE STEP 2's FIRST EDIT, whole: `whatifs/org/floor.py`, `whatifs/notify.py`, `tests/conftest.py`, `tests/test_v12_floor.py` (its helpers, sections and every test
+from STEP 1 on); by the parts step 2 changes or calls: `contract.py` 920 to 1030 (`run`'s end, `owner_card`, `_answer`, `review_needed`, `await_approval`, `approve`,
+`hold_review`), `manage.tick` 179 to 229, `core.py` `TABS` and `LocalStore`, the newest `DEFAULTS`, `org/memos.py` (`write`, `find`, `resolve`, `_proof_problem`),
+`org/registry.py` 40 to 232, `org/levers.py` (its forms and the D13 rows), `org/runner.py` (`Out`, `work`), `ladder.py` (its states), `episode._finish` at the floor's
+call; the callers searched by name (`review_needed`: `_finish`, `tests/test_v102.py` 69; `hold_review`: `contract._answer`; `floor._answer`: `notify`; `manage.tick`'s
+order: `test_v12_floor.py` 565 to 566; the levers' count: `tests/test_v12_exec.py` 62). `tests/paid_calls.py`: step 2 adds no paid call.
+DESIGN QUESTION 9 (a choice the memo did not make; the reading that changes LESS of what a viewer sees was taken): what `verdicts.references` and `downs` return, and what
+`record` does, while `OWNER_VERDICT_ON` is FALSE. TAKEN: 3.0's rule - "FALSE = exactly the behaviour of the code V1c is built on": no row is made or written, `record`
+does nothing (his Hold and FLOOR DROP do what they did), `references` and `downs` return [] (the floor's session is step 1's: no R and no D item), `review_needed` counts
+as before. No viewer sees a difference with the switch off.
+DESIGN QUESTION 10: the kind and the `dedupe_key` of the notices that are "told once" (3.2: an unread verdict cell; 3.3: a refused line, a late line). 3.2 gives their tier,
+their buttons (none) and their clock (72 hours), not their kind. TAKEN: kind "owner_verdict" for the unread verdict and "maker_line" for the two line notices (3.7's five
+message kinds stay five), and `dedupe_key` f"told|{ref}|{key}" - `notify.send` folds a message into an OPEN one with the same key, and the default key `<kind>|<ref>` would
+fold two different notices of one row into one; "once" itself is kept by the column `told`, as 3.2 writes. No viewer sees it.
+DESIGN QUESTION 11: the `verdict` cell he TYPED, when `record` runs for it (3.2 says `record` writes "the row's `verdict`", and 3.10 (3) says code "never rewrites words he
+typed"). TAKEN: `record` writes `verdict` only when the cell does not already read as that verdict (`verdicts.read(cell)`: lower-cased and stripped, in `UP` or `DOWN`) -
+his "Good" stays "Good", an unread "meh" is replaced by the verdict of his later tap; every reader takes the cell through `read`. No viewer sees it.
+DESIGN QUESTION 12: when D13's `floor|score` memo is closed (3.2 gives its `done_when` and not its closing). TAKEN: by D13's next `verdict` run whose score meets that
+`done_when` (fewer than `VIEW_FLOOR_MISS_MAX` misses among the last `VIEW_FLOOR_SCORE_N` scored videos), the lines `floor|miss` closes by. No viewer sees it.
+STEP 2 - HIS VERDICT (3.2).
+TESTS CHANGED BY DESIGN IN STEP 2 (each named by the memo's 3.0 / 3.9 step 2 before it is touched; each pin counted again on the code before it moved):
+`tests/conftest.py` (`OLD_VIEW` gains `OWNER_VERDICT_ON` "FALSE"); `tests/test_v12_exec.py` 62 (levers 86 -> 88: `VIEW_FLOOR_REFS_MAX`, `VIEW_FLOOR_DOWNS_MAX`, D13).
+THE FINDING OF STEP 2's WHOLE-SUITE RUN (Git Bash, `-n 6`, `WI_NO_SKIPS=1`): "1 failed, 1720 passed in 3625.28s (1:00:25)". The one red test, read whole before
+anything moved: `tests/test_v12_org.py::test_the_registry_is_honest_about_what_runs_under_the_runner` (line 471) - it builds a copy of the code tree in a work folder
+with every file `registry.ENTRY` names except `episode.py` (line 467 copies `cli.py`, `org/execute.py`, `preview.py`, `shorts2.py`, `ladder.py`, `release.py`; each
+earlier batch that named a new file added its copy there), cuts D5's call out of `episode.py` and adds an unregistered D7 call, and asserts EXACTLY those two issues.
+The memo's 3.2 (its line "`registry.ENTRY["D13"]` gains ... ("whatifs/org/verdicts.py", "verdict")") names a new file, so the copied tree lacks it and a third issue
+appears: "whatifs/org/verdicts.py does not exist". The code is right (`REG.entry_issues()` on the real tree is [] - the test's own first line passes); the test's
+copied tree is one file short. Not reproduced by rerunning: the message names its cause.
+DESIGN QUESTION 13 (a choice the memo did not make: 3.2 adds the file to `ENTRY` and does not name this test): TAKEN - line 467 copies `whatifs/org/verdicts.py`
+into the work folder as it copies the six others; nothing the test asserts moves (the same two issues, exactly two). The other reading - D13's `verdict` call
+moved out of `verdicts.py` - would rewrite 3.2's design. No viewer sees it.
+TEST CHANGED BY DESIGN (DESIGN QUESTION 13, named here before it is touched): `tests/test_v12_org.py` 467 (one more `shutil.copy`, of `whatifs/org/verdicts.py`).
+BUILT IN STEP 2 (as written, except where DESIGN QUESTIONS 9 to 13 say otherwise): NEW `whatifs/org/verdicts.py` - `on`, `read` (`UP` / `DOWN`), `made_at` (the minute in
+the id, UTC), `since`, `sync` (the first tick writes `OWNER_VERDICT_SINCE` and asks nothing; then Ladder rows past MADE with a `yt_id` and LIVE episodes made on or after
+the day, oldest first, at most `OWNER_VERDICT_ASK_MAX_PER_DAY` a day and never the last "now" place of the day - `notify.now_room() < 2` stops; a typed cell not yet
+seen is read and recorded with via "sheet" and its message answered; an unreadable one is told once), `_ask` (the one-tap message: Good / Not good, the row and column
+for the why, the warning that the mail link's title is a public page), `told` / `note` (DESIGN QUESTION 10), `record` (DESIGN QUESTION 11; the first verdict of a row
+counts, his typed words never overwritten; D13's run `verdict` through the runner), `_run` (`agree` against the floor's prediction; `floor|miss` and `floor|score`
+memos written and closed - DESIGN QUESTION 12), `score`, `references` / `downs` (the last `VIEW_FLOOR_REFS_MAX` thumbs-up and `VIEW_FLOOR_DOWNS_MAX` thumbs-down long
+videos whose floor session passed with a view, never the film itself, never an override's film for its topic), `_answer` (VERDICT <ref> UP|DOWN; words after the
+tap not stored and said so; an unreadable tap asked once more, then pointed to the tab), `register`. `core.py`: tab `Owner_Verdicts` (17 columns, `told` last) and
+the eight cells; `notify.py`: `now_room`, the handler in `_ensure_handlers`; `manage.tick`: `VERS.sync()` in a try of its own right after `NT.tick()`, BEFORE the eye's
+sweep; `contract.review_needed` counted from `OWNER_VERDICT_SINCE` (`made_at`), `hold_review` records "down" via "hold"; `floor._answer` (FLOOR DROP) records "down"
+via "drop"; `episode._finish` hands the floor `VER.references(ep), VER.downs(ep)`; `registry` (D13's two levers, ENTRY D13 + verdicts.py "verdict"), `levers.py` (the
+two rows), `tools/repair.py` PROTECTED + `whatifs/org/verdicts.py`, the matrix row "HIS VERDICT IS THE STRONGEST LABEL", `SYSTEM.md` regenerated.
+TESTS (`tests/test_v12_floor.py`, step 2's section; 15 new): `test_the_older_tests_run_with_his_verdict_off`, `test_made_at_is_the_minute_in_the_id`,
+`test_the_first_tick_sets_the_day_and_a_sheet_of_old_live_rows_is_never_asked_about`, `test_review_needed_counts_from_the_day_on_a_sheet_of_old_rows`,
+`test_one_ask_a_day_oldest_first_and_never_the_last_now_place`, `test_his_tap_is_the_label_and_words_after_it_are_not_stored`,
+`test_an_unreadable_tap_asks_once_more_then_points_to_the_tab`, `test_a_typed_verdict_is_read_closes_its_message_and_his_words_are_never_overwritten`,
+`test_agree_after_a_floor_fail_and_his_drop_and_after_a_pass_and_his_hold`, `test_the_score_and_its_memo`,
+`test_a_thumbs_up_is_a_reference_a_thumbs_down_and_a_refused_then_published_film_never`, `test_a_down_canary_fails_a_film_with_its_title_and_the_check_recomputes_it`
+(the D pairs: the cell at 1 and at 0), `test_the_tick_asks_in_a_try_of_its_own_before_the_eye_sweep_and_the_finish_hands_the_floor_his_labels`,
+`test_owner_verdicts_is_written_by_its_own_module_alone`, `test_a_second_long_video_after_his_thumbs_up_on_the_first_is_judged_beside_it` (a whole fake production:
+the second film's floor session carries the first as its reference). SAID PLAINLY: the tests were WRITTEN before the code but not RUN on the code before it; what proves
+each one fails when its rule is broken is its break. Writing the breaks found six the first tests would not catch (S2-10, S2-21, S2-30, S2-31, S2-43, S2-47); the tests
+were made stronger before any run (the now-place count, a typed text kept through a later record, a reference's own view, a pass with no view, an override's empty topic).
+BREAKS S2-01 to S2-50 written into `proving/breaks/V1c.json` (each anchor found exactly once, each named test present; 140 in the list) - NOT RUN (step 7 runs them).
+THE RUNS OF STEP 2: its tests with `test_v12_exec.py` and `test_v102.py`, run alone: "36 passed"; the whole suite: "1 failed, 1720 passed in 3625.28s (1:00:25)" - the
+one red is DESIGN QUESTION 13's test, changed as named and run alone with its neighbour pin: "2 passed in 1.88s" (the code did not change after the whole run). Plan
+Guard GREEN, Truth GREEN, Organisation GREEN, Palace GREEN (201 items), `tools/gen_docs.py` wrote `SYSTEM.md`. COUNTS AFTER STEP 2: 69 hard checks, `SHOW_CHECKS` 58,
+88 levers, 86 tabs, 201 founding items, 25 workflow files.
 ### V2b - INSIDE THE FORMAT (14-15 Nov 2026) - ACCEPTED (final code commit 01e7798 GREEN in GitHub Checks run 196: 1647 passed; sweep 58 of 58 ids)
 (its code is 7e83001; the designer's record: steps 1 to 3; five Opus builders wrote steps 4 to 6a, the Fable finisher `FINISHED BY FABLE` and the takeaway's draft;
 the prover wrote 6b and completed 7 on 15 Nov 2026)

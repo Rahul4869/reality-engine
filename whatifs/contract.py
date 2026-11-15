@@ -996,6 +996,10 @@ def critique(ctx, ep):
 def review_needed(kind="long"):
     if kind == "special": return S("SPECIALS_REVIEW_ON", bool)
     done = [e for e in store().rows("Episodes") if e.get("yt_id") and str(e.get("status")) not in ("AWAITING_APPROVAL",)]
+    if S("OWNER_VERDICT_ON", bool) and str(S("OWNER_VERDICT_SINCE") or "").strip():      # v12 V1c: "his first three" are the new code's - only videos MADE since that day count
+        from whatifs.org import verdicts as VER
+        t0 = VER.since()
+        if t0: done = [e for e in done if VER.made_at(e.get("episode_id")) >= t0]
     return len(done) <= S("CREATIVE_REVIEW_FIRST_N", int)
 
 def await_approval(ep, vid, slot_iso, summary, kind="creative_review", default="stays private", expires_h=72):
@@ -1027,4 +1031,7 @@ def approve(ep):
 
 def hold_review(ep):
     store().update("Episodes", "episode_id", ep, {"status": "HELD_BY_OWNER", "updated": iso()})
+    try:                                                          # v12 V1c: his Hold is a verdict - "I will not publish this" (D13's label)
+        from whatifs.org import verdicts as VER; VER.record(ep, "down", "", via="hold")
+    except Exception as e: log(f"his hold was not kept as a verdict: {scrub(e)[:120]}", "WARN", ep)
     return f"{ep} stays private"

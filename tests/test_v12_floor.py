@@ -218,7 +218,8 @@ def test_check_living_characters_holds_the_cast_where_the_row_shows_nobody(cast,
 # ================================================================== STEP 1 - THE JUDGED FLOOR (the memo's 3.1)
 from whatifs.org import floor as FL
 from whatifs import models as M, notify as NT, fakes as FK
-OWN_IDS = ("EP209910010900", "EP209910080900", "EP209910150900", "EP209910220900")      # the whole productions of this file: ids no other test file uses (a test proves it)
+OWN_IDS = ("EP209910010900", "EP209910080900", "EP209910150900", "EP209910220900",      # the whole productions of this file: ids no other test file uses (a test proves it)
+           "EP209910290900", "EP209911050900")                                          # step 2: a film he gave a thumbs-up, and the film judged beside it
 
 @pytest.fixture
 def floor_on(setting):
@@ -629,3 +630,217 @@ def test_a_void_session_sends_the_film_to_his_eye_with_the_clock(monkeypatch, se
     assert "The first-time-viewer check could not judge this one (no canary kit)." in card["text"] and card["default_action"] == "goes public by itself"
     NT.expire_defaults(now=core.now_utc() + dt.timedelta(hours=21))
     assert next(x for x in core.store().rows("Episodes") if x["episode_id"] == ep)["status"] == "SCHEDULED"
+
+# ================================================================== STEP 2. HIS VERDICT (3.2): one row a release, one tap, the label the floor is scored against
+import datetime as _dt
+
+def _ago(**k): return (core.now_utc() - _dt.timedelta(**k)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+@pytest.fixture
+def verdict_on(setting, monkeypatch):
+    monkeypatch.setattr(NT, "in_quiet_hours", lambda now=None: False)
+    setting("OWNER_VERDICT_ON", "TRUE"); setting("VIEW_FLOOR_ON", "TRUE"); yield setting
+
+def _VER():
+    from whatifs.org import verdicts as V
+    return V
+
+def _vrow(ref):
+    return next((r for r in core.store().rows("Owner_Verdicts") if r.get("ref") == ref), None)
+
+def _long(ep, status="LIVE", yt="ytL", title="The long one", draw=None):
+    core.store().append("Episodes", [{"episode_id": ep, "status": status, "yt_id": yt, "title": title, "slot_et": _ago(days=400), "draw_json": json.dumps(draw or {})}])
+
+def _short(sid, posted, state="POSTED", yt="ytS", title="The Short", topic="pillows"):
+    core.store().append("Ladder", [{"id": sid, "topic": topic, "title": title, "yt_id": yt, "posted": posted, "state": state}])
+
+def _judged(media, ep, new, sid, view=""):
+    """A floor session of episode `ep` on the log (the offline judges): the film `new` against the stand-in and its twin."""
+    return FL.session(sid, "sha", new, media["canary"], media["twin"], [], [], ep, view=view)
+
+def test_the_older_tests_run_with_his_verdict_off():
+    from tests.conftest import OLD_VIEW
+    V = _VER()
+    assert OLD_VIEW["OWNER_VERDICT_ON"] == "FALSE" and core.DEFAULTS["OWNER_VERDICT_ON"][0] == "TRUE" and V.on() is False
+    assert {k: core.DEFAULTS[k][0] for k in ("OWNER_VERDICT_SINCE", "OWNER_VERDICT_ASK_MAX_PER_DAY", "OWNER_VERDICT_EXPIRES_H", "VIEW_FLOOR_REFS_MAX", "VIEW_FLOOR_DOWNS_MAX",
+            "VIEW_FLOOR_SCORE_N", "VIEW_FLOOR_MISS_MAX")} == {"OWNER_VERDICT_SINCE": "", "OWNER_VERDICT_ASK_MAX_PER_DAY": "1", "OWNER_VERDICT_EXPIRES_H": "336",
+                                                          "VIEW_FLOOR_REFS_MAX": "1", "VIEW_FLOOR_DOWNS_MAX": "0", "VIEW_FLOOR_SCORE_N": "5", "VIEW_FLOOR_MISS_MAX": "3"}
+    assert V.UP == ("up", "good", "yes", "y", "+") and V.DOWN == ("down", "bad", "no", "n", "-", "not good") and V.TAB == "Owner_Verdicts"
+    assert core.TABS["Owner_Verdicts"] == ["ref", "kind", "title", "url", "topic", "asked", "verdict", "text", "maker_line", "seen", "via", "floor", "agree", "action_id",
+                                           "line_seen", "line_used", "told"]
+    _long("EP209912010900"); V.sync(); V.record("EP209912010900", "down", "", "hold")      # the switch off (DESIGN QUESTION 9): nothing is asked, kept or used
+    assert core.store().rows("Owner_Verdicts") == [] and not S("OWNER_VERDICT_SINCE") and V.references("x") == [] and V.downs("x") == []
+
+def test_made_at_is_the_minute_in_the_id():
+    V = _VER()
+    assert V.made_at("EP209901021613") == _dt.datetime(2099, 1, 2, 16, 13, tzinfo=_dt.timezone.utc)
+    assert abs((V.made_at("EPNODIGITS") - core.now_utc()).total_seconds()) < 5                 # an id without twelve digits counts as made now
+
+def test_the_first_tick_sets_the_day_and_a_sheet_of_old_live_rows_is_never_asked_about(verdict_on):
+    V = _VER()
+    for k in range(5): _long(f"EP20260101{k:02d}00", title=f"old {k}")                      # the old code's videos (made on 1 Jan 2026)
+    _short("SHOLD", _ago(days=30))
+    V.sync(); assert str(S("OWNER_VERDICT_SINCE"))[:10] == core.now_utc().strftime("%Y-%m-%d")   # (1): the day is set and nothing else happens
+    assert core.store().rows("Owner_Verdicts") == [] and not [a for a in core.store().rows("Owner_Actions") if a.get("kind") == "owner_verdict"]
+    V.sync(); assert core.store().rows("Owner_Verdicts") == []                                   # (2): nothing older than the day is ever asked about
+
+def test_review_needed_counts_from_the_day_on_a_sheet_of_old_rows(verdict_on):
+    V = _VER(); verdict_on("CREATIVE_REVIEW_FIRST_N", "3")
+    for k in range(5): _long(f"EP20260101{k:02d}00", title=f"old {k}")
+    core.store().update("Episodes", "episode_id", "EP2026010100" + "00", {"slot_et": _ago(hours=-48)})      # an old row RE-SLOTTED after the day: still not counted
+    assert CON.review_needed("long") is False                                                    # the day is not set yet: as before (5 > 3)
+    V.sync(); assert CON.review_needed("long") is True                                          # counted from the day: none of the old five
+    _long("EP209912020900", status="SCHEDULED", yt="ytNEW"); assert CON.review_needed("long") is True      # the first video of the new code IS reviewed
+    verdict_on("OWNER_VERDICT_ON", "FALSE"); assert CON.review_needed("long") is False
+
+def test_one_ask_a_day_oldest_first_and_never_the_last_now_place(verdict_on):
+    V = _VER(); verdict_on("OWNER_VERDICT_SINCE", _ago(days=3))
+    _short("SHA", _ago(days=2), title="A pillow Short"); _short("SHMADE", _ago(days=1), state="MADE", title="never public")
+    _long("EP209912030900", title="The long one", draw={"ladder": "SHA"})
+    verdict_on("NOTIFY_NOW_MAX_PER_DAY", "9"); V.sync()                                         # the "act now" places are not the limit here: the day's ask count is
+    rows = core.store().rows("Owner_Verdicts"); assert [r["ref"] for r in rows] == ["SHA"]      # the oldest first; one a day
+    r = rows[0]
+    assert (r["kind"], r["title"], r["url"], r["topic"], r["floor"]) == ("short", "A pillow Short", "https://youtu.be/ytS", "pillows", "") and r["asked"] and r["action_id"]
+    a = next(x for x in core.store().rows("Owner_Actions") if x["id"] == r["action_id"])
+    assert a["kind"] == "owner_verdict" and a["tier"] == "now" and a["episode_id"] == "SHA" and a["default_action"] == "" and a["dedupe_key"] == "verdict|SHA"
+    assert json.loads(a["buttons"]) == [["Good", "VERDICT SHA UP"], ["Not good", "VERDICT SHA DOWN"]]
+    assert a["text"] == ("Your verdict on the new Short 'A pillow Short': https://youtu.be/ytS - one tap. If you want to say why: tab Owner_Verdicts, row SHA, column text - "
+                         "your Sheet is private; the mail link's title is a public page, never type the why there.")
+    h = (core.parse_iso(a["expires_at"]) - core.parse_iso(a["created"])).total_seconds() / 3600; assert abs(h - 336) < 0.02
+    V.sync(); assert len(core.store().rows("Owner_Verdicts")) == 1                                # OWNER_VERDICT_ASK_MAX_PER_DAY = 1
+    verdict_on("OWNER_VERDICT_ASK_MAX_PER_DAY", "9"); verdict_on("NOTIFY_NOW_MAX_PER_DAY", "2")
+    assert NT.now_room() == 1; V.sync(); assert len(core.store().rows("Owner_Verdicts")) == 1     # the day's last "act now" place is never taken by an ask
+    verdict_on("NOTIFY_NOW_MAX_PER_DAY", "3"); assert NT.now_room() == 2; V.sync()
+    rows = core.store().rows("Owner_Verdicts"); assert [r["ref"] for r in rows] == ["SHA", "EP209912030900"]
+    assert (rows[1]["kind"], rows[1]["topic"], rows[1]["url"]) == ("long", "pillows", "https://youtu.be/ytL")
+    assert "SHMADE" not in [r["ref"] for r in rows]                                              # a Short that is not public is never asked about
+
+def test_his_tap_is_the_label_and_words_after_it_are_not_stored(verdict_on):
+    V = _VER(); verdict_on("OWNER_VERDICT_SINCE", _ago(days=3)); _short("SHT", _ago(days=1)); V.sync()
+    aid = _vrow("SHT")["action_id"]
+    out = NT.answer(aid, "VERDICT SHT UP I hated the voice in it")
+    r = _vrow("SHT"); assert (V.read(r["verdict"]), r["via"], r["text"]) == ("up", "tap", "") and r["seen"]
+    assert out.startswith("Kept: up on 'The Short'.") and "not stored" in out and "I hated" not in r["text"]
+
+def test_an_unreadable_tap_asks_once_more_then_points_to_the_tab(verdict_on):
+    V = _VER(); verdict_on("OWNER_VERDICT_SINCE", _ago(days=3)); verdict_on("NOTIFY_NOW_MAX_PER_DAY", "9"); _short("SHU", _ago(days=1)); V.sync()
+    a1 = _vrow("SHU")["action_id"]
+    assert NT.answer(a1, "VERDICT SHU MAYBE") == "I could not read that: tap Good or Not good on the new message"
+    a2 = _vrow("SHU")["action_id"]; asks = [x for x in core.store().rows("Owner_Actions") if x.get("kind") == "owner_verdict" and x.get("episode_id") == "SHU"]
+    assert a2 != a1 and len(asks) == 2 and asks[1]["dedupe_key"] == "verdict|SHU|2" and asks[1]["text"] == asks[0]["text"]
+    assert NT.answer(a2, "hmm") == "type up or down in tab Owner_Verdicts, row SHU"
+    assert len([x for x in core.store().rows("Owner_Actions") if x.get("kind") == "owner_verdict" and x.get("episode_id") == "SHU"]) == 2 and not _vrow("SHU")["seen"]
+
+def test_a_typed_verdict_is_read_closes_its_message_and_his_words_are_never_overwritten(verdict_on):
+    V = _VER(); verdict_on("OWNER_VERDICT_SINCE", _ago(days=3)); verdict_on("NOTIFY_NOW_MAX_PER_DAY", "9")
+    _short("SHG", _ago(days=2)); _short("SHM", _ago(days=1), title="Meh Short"); verdict_on("OWNER_VERDICT_ASK_MAX_PER_DAY", "9"); V.sync()
+    st = core.store()
+    st.update("Owner_Verdicts", "ref", "SHG", {"verdict": " Good ", "text": "the hook made me stay"})
+    st.update("Owner_Verdicts", "ref", "SHM", {"verdict": "meh", "text": "his own why"})
+    V.sync()
+    g = _vrow("SHG"); assert g["verdict"] == " Good " and g["text"] == "the hook made me stay" and g["via"] == "sheet" and g["seen"] and V.read(g["verdict"]) == "up"
+    assert next(x for x in st.rows("Owner_Actions") if x["id"] == g["action_id"])["status"] == "ANSWERED"      # a Sheet answer closes its message
+    V.record("SHG", "down", "another why", "tap"); assert V.read(_vrow("SHG")["verdict"]) == "up" and _vrow("SHG")["text"] == "the hook made me stay"      # a row with `seen`: nothing
+    m = _vrow("SHM"); assert not m["seen"] and m["verdict"] == "meh"
+    notes = [x for x in st.rows("Owner_Actions") if x.get("dedupe_key", "").startswith("told|SHM|")]
+    assert len(notes) == 1 and notes[0]["text"] == "I could not read your verdict 'meh' on 'Meh Short': type up or down" and notes[0]["tier"] == "week"
+    assert notes[0]["buttons"] == "[]" and notes[0]["kind"] == "owner_verdict" and json.loads(m["told"]) == ["unread|meh"]
+    V.sync(); assert len([x for x in st.rows("Owner_Actions") if x.get("dedupe_key", "").startswith("told|SHM|")]) == 1      # told ONCE per value
+    assert json.loads(_vrow("SHM")["told"]) == ["unread|meh"]
+    V.record("SHM", "up", "a tap's words", "tap")                                                 # his later tap: the unread word is replaced (DESIGN QUESTION 11), his why never
+    m = _vrow("SHM"); assert m["verdict"] == "up" and m["text"] == "his own why" and m["seen"]
+
+def test_agree_after_a_floor_fail_and_his_drop_and_after_a_pass_and_his_hold(verdict_on, media):
+    V = _VER(); from whatifs.org import memos as MEM
+    core.store().append("Ladder", [{"id": "OVR1", "topic": "OVR1", "state": "OVERRIDE_USED"}])
+    _long("EPAGF", status="HOLD_QC", yt="", title="Flop", draw={"ladder": "OVR1"}); _judged(media, "EPAGF", media["flop"], "S-agf")
+    assert FL._answer({"episode_id": "EPAGF"}, "FLOOR DROP EPAGF") == "EPAGF is dropped"
+    f = _vrow("EPAGF"); assert (f["kind"], V.read(f["verdict"]), f["via"], f["floor"], f["agree"]) == ("long", "down", "drop", "down", "TRUE")
+    assert (f["topic"], f["url"], f["asked"], f["action_id"]) == ("", "", "", "")                  # under an override no topic; a row made by his verdict asks nothing
+    _long("EPAGP", status="AWAITING_APPROVAL", title="Passed"); _judged(media, "EPAGP", media["film"], "S-agp", view="v")
+    assert CON.hold_review("EPAGP") == "EPAGP stays private"
+    p = _vrow("EPAGP"); assert (V.read(p["verdict"]), p["via"], p["floor"], p["agree"]) == ("down", "hold", "up", "FALSE")
+    miss = [m for m in MEM.find(core.store(), type="problem_memo", from_dept="D13") if str(m.get("dedupe_key")).startswith("floor|miss")]
+    assert len(miss) == 1 and 'the floor predicted up for EPAGP; the owner said down' in miss[0]["body"]["what_failed"]
+    _long("EPAGQ", title="Good one"); _judged(media, "EPAGQ", media["film"], "S-agq", view="v2")
+    out = V.record("EPAGQ", "up", "", "tap"); assert _vrow("EPAGQ")["agree"] == "TRUE" and "The floor had said up: it agrees." in out and "Floor so far: 2 of 3." in out
+    assert not [m for m in MEM.find(core.store(), type="problem_memo", from_dept="D13") if str(m.get("dedupe_key")).startswith("floor|miss")]      # closed by the next TRUE
+
+def test_the_score_and_its_memo(verdict_on, media):
+    V = _VER(); from whatifs.org import memos as MEM
+    def live(): return [m for m in MEM.find(core.store(), type="problem_memo", from_dept="D13") if str(m.get("dedupe_key")).startswith("floor|score")]
+    for k in range(3):
+        ep = f"EPSC{k}"; _long(ep, title=f"s{k}"); _judged(media, ep, media["film"], f"S-sc{k}", view="v"); V.record(ep, "down", "", "tap")
+    assert V.score() == (0, 3) and len(live()) == 1 and "the floor disagreed with the owner on 3 of the last 3 videos" in live()[0]["subject"] + json.dumps(live()[0]["body"])
+    assert live()[0]["done_when"] == "the floor agrees with the owner on at least 3 of his last 5 scored videos"
+    for k in range(3, 5):
+        ep = f"EPSC{k}"; _long(ep, title=f"s{k}"); _judged(media, ep, media["film"], f"S-sc{k}", view="v"); V.record(ep, "up", "", "tap")
+    assert V.score() == (2, 5) and len(live()) == 1                                               # still 3 misses among the last 5
+    ep = "EPSC5"; _long(ep, title="s5"); _judged(media, ep, media["film"], "S-sc5", view="v"); V.record(ep, "up", "", "tap")
+    assert V.score() == (3, 5) and live() == []                                                   # 2 misses of 5: its done_when holds (DESIGN QUESTION 12)
+
+def test_a_thumbs_up_is_a_reference_a_thumbs_down_and_a_refused_then_published_film_never(verdict_on, media, monkeypatch, tmp_path):
+    V = _VER()
+    _long("EPREF1", title="Approved one"); FL.plain(FL.run(None, "EPREF1", media["src"], str(tmp_path), (), ()))
+    FL.plain(FL.run(None, "EPREF1", media["src"], str(tmp_path), (), ()))                         # held by another check, fixed: answered from the log, the first view kept
+    view1 = next(r for r in core.store().rows("Floor_Log") if r["episode_id"] == "EPREF1")["view"]; assert view1
+    V.record("EPREF1", "up", "", "tap")
+    assert V.references("EPOTHER") == [("EPREF1", view1)] and V.references("EPREF1") == []        # never the episode being judged
+    _long("EPREF2", title="Refused, published"); _judged(media, "EPREF2", media["flop"], "S-ref2", view="vr2"); V.record("EPREF2", "up", "", "tap")
+    _long("EPREF4", title="Its minute was not kept"); _judged(media, "EPREF4", media["film"], "S-ref4", view=""); V.record("EPREF4", "up", "", "tap")
+    _long("EPREF3", title="Void only")
+    monkeypatch.setattr(M, "ask_watch", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("down"))); _judged(media, "EPREF3", media["film"], "S-ref3", view="v3")
+    monkeypatch.undo(); monkeypatch.setattr(NT, "in_quiet_hours", lambda now=None: False); V.record("EPREF3", "up", "", "tap")
+    assert V.references("EPOTHER") == [("EPREF1", view1)]                                          # a refused film, a film no valid session judged, a film whose minute was not kept: never
+    verdict_on("VIEW_FLOOR_REFS_MAX", "0"); assert V.references("EPOTHER") == []
+    _long("EPDN1", title='He said "no", twice'); _judged(media, "EPDN1", media["film"], "S-dn1", view="vd1"); V.record("EPDN1", "down", "", "tap")
+    _long("EPDN2", title="Refused and down"); _judged(media, "EPDN2", media["flop"], "S-dn2"); V.record("EPDN2", "down", "", "tap")
+    assert V.downs("EPOTHER") == []                                                                # the cell starts at 0
+    verdict_on("VIEW_FLOOR_DOWNS_MAX", "1"); assert V.downs("EPOTHER") == [("EPDN1", "vd1", 'He said "no", twice')]      # the floor's own MISS, never a film it refused
+    assert ("EPDN1", "vd1") not in V.references("EPOTHER")
+
+def test_a_down_canary_fails_a_film_with_its_title_and_the_check_recomputes_it(verdict_on, media):
+    d = dict(media["film"], episode="EPDN", title='He said "no", twice')
+    r = FL.session("S-down", "sha", media["film"], media["canary"], media["twin"], [], [d], "EPDOWN", view="vv")
+    assert r["status"] == "fail" and r["why"].startswith("ranked beside a video you marked not good: ") and "'He said \"no\", twice'" in r["why"]
+    rows = [x for x in core.store().rows("Floor_Log") if x["session_id"] == "S-down"]
+    assert all(json.loads(x["downs"]) == ['He said "no", twice'] for x in rows) and FL.again(rows)["why"] == r["why"]
+    assert CON.p_viewer_floor({"floor": r}) == (CON.FAIL, r["why"])                               # the check's own computation from the rows agrees
+    r0 = FL.session("S-nodown", "sha", media["film"], media["canary"], media["twin"], [], [], "EPDOWN0", view="vv")
+    assert r0["status"] == "pass" and all(json.loads(x["downs"]) == [] for x in core.store().rows("Floor_Log") if x["session_id"] == "S-nodown")
+
+def test_the_tick_asks_in_a_try_of_its_own_before_the_eye_sweep_and_the_finish_hands_the_floor_his_labels():
+    from whatifs import manage as MG
+    src = open(MG.__file__, encoding="utf-8").read(); i = src.index("NT.tick()")
+    assert i < src.index("VERS.sync()") < src.index("FLR.eye_sweep()") < src.index("SH2.due()")
+    e = open(EP.__file__, encoding="utf-8").read()
+    assert "FLOOR.run(b, ep, master, out, VER.references(ep), VER.downs(ep))" in e and "master, out, (), ())" not in e
+    n = open(NT.__file__, encoding="utf-8").read(); assert '("whatifs.org.verdicts", "register")' in n
+
+def test_owner_verdicts_is_written_by_its_own_module_alone():
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); hits = []
+    for base in ("whatifs", "tools"):
+        for dp, _dn, fn in os.walk(os.path.join(root, base)):
+            for f in fn:
+                if f.endswith(".py") and f not in ("verdicts.py", "maker.py"):
+                    t = open(os.path.join(dp, f), encoding="utf-8").read()
+                    if re.search(r"\.(append|update|replace|update_where)\(\s*([\"']Owner_Verdicts[\"']|(VER|VERS|V)\.TAB\b)", t): hits.append(f)
+    assert hits == [], hits
+    src = open(_VER().__file__, encoding="utf-8").read(); assert "assets" not in src
+
+def test_a_second_long_video_after_his_thumbs_up_on_the_first_is_judged_beside_it(monkeypatch, setting):
+    """3.10's second whole production: his thumbs-up on a film the floor passed makes it a reference; the next film's session holds it (R1) and passes."""
+    from tests import test_v12_opening_e2e as E2E
+    from tests.paid_calls import watch
+    from whatifs import ladder as LAD
+    V = _VER(); _start_e2e(monkeypatch, setting); setting("OWNER_VERDICT_ON", "TRUE"); ep1, ep2 = OWN_IDS[4], OWN_IDS[5]
+    r = EP.produce(E2E._slot(10), episode_id=ep1); assert r.get("ok"), r
+    assert _led(ep1)["viewer_floor"][0] == CON.PASS
+    core.store().update("Episodes", "episode_id", ep1, {"status": "LIVE"}); V.record(ep1, "up", "", "tap")
+    view1 = next(x for x in core.store().rows("Floor_Log") if x["episode_id"] == ep1)["view"]; assert V.references(ep2) == [(ep1, view1)]
+    setting("SCRIPT_SIMILARITY_MAX", "1")                                     # a NAMED test setting: the offline writers' one text is 62% like itself (V2b's 6b) - check `originality` has its own tests
+    LAD.override("owner", "make it anyway"); c = watch(monkeypatch)
+    r = EP.produce(E2E._slot(40), episode_id=ep2); assert r.get("ok"), r
+    led = _led(ep2); assert led["viewer_floor"][0] == CON.PASS and led["viewer_floor"][1].endswith(", and lost to 1 video(s) you approved"), led["viewer_floor"]
+    rows = [x for x in core.store().rows("Floor_Log") if x["episode_id"] == ep2]
+    assert len(rows) == 4 and all("R1" in json.loads(x["items"]).values() for x in rows) and c["watch:floor_gemini"] == 2 and c["watch:floor_claude"] == 2

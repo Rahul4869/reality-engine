@@ -171,6 +171,10 @@ TABS = {
  # v12 V1c (the judged floor, whatifs/org/floor.py): one row per LOOK of a floor session - written by floor.session alone, never updated or removed; the
  # verdict is computed again from the counted rows by floor.again wherever it is read (the run, check viewer_floor, the owner's verdicts, the sweep)
  "Floor_Log":       ["ts", "session_id", "episode_id", "sha", "family", "role", "model", "order", "items", "answers", "status", "view", "downs"],
+ # v12 V1c (his verdict, whatifs/org/verdicts.py): one row per release (a public Short, a LIVE long video made since OWNER_VERDICT_SINCE) - his one tap is
+ # the strongest label: `agree` scores the floor's prediction against it, and a long video he approved is a reference of the floor. Written by
+ # verdicts.sync / record, maker._answer / take and HIS OWN HAND (verdict, text, maker_line) - code never rewrites words he typed, never removes a row
+ "Owner_Verdicts":  ["ref", "kind", "title", "url", "topic", "asked", "verdict", "text", "maker_line", "seen", "via", "floor", "agree", "action_id", "line_seen", "line_used", "told"],
 }
 
 class LocalStore:
@@ -1015,6 +1019,14 @@ DEFAULTS = {
  "VIEW_FLOOR_MAX_PER_VIDEO": ("2", "v12 V1c: the most floor sessions one long video gets when they are all void; after that the newest void stands (a pass or a fail is never judged again)"),
  "VIEW_FLOOR_CANARY": ("", "v12 V1c: the canary's kit as JSON {file: the Drive id of the first minute of the video the channel's owner rejected, sha: its SHA-256, yt: its YouTube id or blank, made: the day} - written once by the workflow 'Floor kit' from a link he shares (three steps on a phone, B10's runbook); blank = no kit: every long video goes to his eye with the clock"),
  "VIEW_FLOOR_EYE_WAIT_H": ("20", "v12 V1c: hours a long video the floor could not judge waits for the owner's eye (private, one card: Approve / Hold) before it is approved by his silence; never past 1.5 hours before its slot, never under 1 hour - a starting value and a lever of D13 (lowering needs the owner)"),
+ "OWNER_VERDICT_ON": ("TRUE", "v12 V1c (his verdict, D13; the owner's items 50 and 51): TRUE = every public Short and every LIVE long video made since OWNER_VERDICT_SINCE gets ONE message with two taps (Good / Not good) and a row on tab Owner_Verdicts; his tap is the label the judged floor is scored against, his thumbs-up on a film the floor passed makes it a reference, his Hold and his drop are verdicts; the creative review of his first videos counts from that day. FALSE = nothing is asked, kept or used, as before (the older tests run so)"),
+ "OWNER_VERDICT_SINCE": ("", "v12 V1c: the moment his verdicts are counted from - set by the first tick (blank = set it now): no release older than it is ever asked about, and CREATIVE_REVIEW_FIRST_N counts only videos made at or after it (the minute in the episode's id, never the slot, which moves)"),
+ "OWNER_VERDICT_ASK_MAX_PER_DAY": ("1", "v12 V1c: at most this many verdict asks a UTC day (sixteen releases a month are one every second day), oldest first - and an ask never takes the day's last 'act now' place (NOTIFY_NOW_MAX_PER_DAY)"),
+ "OWNER_VERDICT_EXPIRES_H": ("336", "v12 V1c: hours a verdict ask stays open (two weeks); no default - his silence is no verdict, never a guessed one"),
+ "VIEW_FLOOR_REFS_MAX": ("1", "v12 V1c: how many videos he approved (thumbs-up on a film the floor passed) the judged floor puts beside a new film as references - each adds four answers that must all be right, so it starts at 1; a lever of D13 (raising needs the owner); the pilot's measurement of one answer's worth (open issue 201) decides whether it stays"),
+ "VIEW_FLOOR_DOWNS_MAX": ("0", "v12 V1c: how many of his thumbs-down films the floor PASSED (its own misses) a new film must also beat - 0 until the pilot shows one answer right at 98.6% with a reference in use (0.982 without; open issue 201); a lever of D13 (raising needs the owner)"),
+ "VIEW_FLOOR_SCORE_N": ("5", "v12 V1c: over how many of his last scored long videos the floor's agreement with his verdict is counted (D13's score)"),
+ "VIEW_FLOOR_MISS_MAX": ("3", "v12 V1c: this many misses of the floor among his last VIEW_FLOOR_SCORE_N scored videos write D13's memo floor|score, which climbs to him by the memo clocks"),
  "FORMATS_ON": ("TRUE", "v12 V2a: TRUE = every new episode gets a FORMAT (whatifs/formats.py): F1 'The day it changed' (it happens to you; no courtroom; the show's devices are optional) or F2 'The trial' (today's show with all its devices). FALSE = every episode is made as before formats existed"),
  "FORMAT_FORCE": ("", "v12 V2a: F1 or F2 = every new episode is made in that format (a test, the pilot); empty = the shares below decide"),
  "FORMAT_SHARE_F1": ("60", "v12 V2a: share of long videos in format F1 'The day it changed' (of the last ten episodes; a lever of Strategy, D1). v12 V2b: 70 -> 60, F3 joins the mix (the redesign's 10.7)"),

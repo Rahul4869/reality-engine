@@ -190,6 +190,9 @@ def tick():
     try:                                                        # v9.4a (WP4): queued owner messages, silence = default, the digest
         from whatifs import notify as NT
         NT.tick()
+        try:                                                    # v12 V1c (D13): one verdict ask a release - his tap is the label the judged floor is scored against
+            from whatifs.org import verdicts as VERS; VERS.sync()
+        except Exception as x: log(f"owner verdicts skipped: {scrub(x)}", "WARN")
         try:                                                    # v12 V1c (D13): a film the judged floor could not judge whose card expired - a default that failed is tried again
             from whatifs.org import floor as FLR; FLR.eye_sweep()
         except Exception as x: log(f"floor eye sweep skipped: {scrub(x)}", "WARN")

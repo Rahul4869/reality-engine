@@ -792,8 +792,8 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
             "path_states": [{"t0": t_(m_)[0], "t1": t_(m_)[1], "i": m_["i"], "type": m_.get("type"), "act": m_.get("act"), "src": m_.get("src"), "move": m_.get("move", ""),
                              "sign": m_.get("sign", 0), "fallback": bool(m_.get("fallback"))} for m_ in sm_]}                                 # v12 V2b: the camera path as the render recorded it (a key of its own: ctx['states'] stays as it is)
     pre = CON.run("final", dict(cctx, critique={"hook": 10, "clarity": 10, "humour": 10, "visual_variety": 10, "audio": 10, "accuracy": 10}), ep, write=False)   # measured checks first (not logged)
-    from whatifs.org import floor as FLOOR                      # v12 V1c (D13): the judged floor - only a film every measured check passed is paid a jury
-    if FLOOR.on() and not pre["failed"]: cctx["floor"] = FLOOR.plain(ORG.work("D13", "floor", ep, lambda b: FLOOR.run(b, ep, master, out, (), ()), measure=FLOOR.m_run))
+    from whatifs.org import floor as FLOOR, verdicts as VER     # v12 V1c (D13): the judged floor - only a film every measured check passed is paid a jury; his approved films are its references
+    if FLOOR.on() and not pre["failed"]: cctx["floor"] = FLOOR.plain(ORG.work("D13", "floor", ep, lambda b: FLOOR.run(b, ep, master, out, VER.references(ep), VER.downs(ep)), measure=FLOOR.m_run))
     cctx["ledger_rows"] = pre["rows"]; cctx["critique"] = CON.critique(cctx, ep)
     g = ORG.work("D8", "final_gate", ep, lambda b: CON.run("final", cctx, ep), measure=WR.m_gate, lesson=WR.gate_lessons, emit=WR.gate_memos(ep, "final"), settle=WR.gate_settle(ep, "final"))
     try:                                                         # v11 (K158): the Breakout Score - ranks and alerts, never holds by itself

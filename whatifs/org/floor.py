@@ -417,6 +417,9 @@ def _answer(row, choice):
     if len(parts) >= 2 and " ".join(parts[:2]).upper() == "FLOOR DROP":
         ep = parts[2] if len(parts) > 2 else str(row.get("episode_id") or "")
         store().update("Episodes", "episode_id", ep, {"kill": "KILL", "updated": iso()})
+        try:                                                      # his drop is a verdict - "I will not publish this" (3.2)
+            from whatifs.org import verdicts as VER; VER.record(ep, "down", "", via="drop")
+        except Exception as e: log(f"his drop was not kept as a verdict: {scrub(e)[:120]}", "WARN", ep)
         return f"{ep} is dropped"
     return CON._answer(row, choice)
 

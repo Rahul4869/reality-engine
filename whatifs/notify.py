@@ -12,7 +12,7 @@ DEFAULTS = {}          # kind -> callable(row) run when the row expires unanswer
 
 def _ensure_handlers():
     """Every feature's answer/default handlers are known before an answer or a default runs (any entry point: email, dashboard, WhatsApp, tick)."""
-    for mod, fn in (("whatifs.builds", "ensure_registered"), ("whatifs.visual_lab", "register"), ("whatifs.wa", "register"), ("whatifs.caretaker", "register"), ("whatifs.bakeoff", "register"), ("whatifs.steward", "register"), ("whatifs.contract", "register"), ("whatifs.specials", "register"), ("whatifs.sheets", "register"), ("whatifs.breakout", "register"), ("whatifs.ladder", "register"), ("whatifs.replan", "register"), ("whatifs.org.memos", "register"), ("whatifs.org.execute", "register"), ("whatifs.org.floor", "register")):
+    for mod, fn in (("whatifs.builds", "ensure_registered"), ("whatifs.visual_lab", "register"), ("whatifs.wa", "register"), ("whatifs.caretaker", "register"), ("whatifs.bakeoff", "register"), ("whatifs.steward", "register"), ("whatifs.contract", "register"), ("whatifs.specials", "register"), ("whatifs.sheets", "register"), ("whatifs.breakout", "register"), ("whatifs.ladder", "register"), ("whatifs.replan", "register"), ("whatifs.org.memos", "register"), ("whatifs.org.execute", "register"), ("whatifs.org.floor", "register"), ("whatifs.org.verdicts", "register")):
         try: getattr(__import__(mod, fromlist=[fn]), fn)()
         except Exception as e: log(f"handlers from {mod} not loaded: {scrub(e)[:80]}", "WARN")
 
@@ -49,6 +49,11 @@ def _sent_today(rows):
         t = parse_iso(r.get("delivered_at")) if r.get("tier") == "now" else None
         if t and t.astimezone(IST).date() == d and not str(r.get("kind", "")).startswith("digest"): n += 1
     return n
+
+
+def now_room():
+    """v12 V1c: how many 'act now' places are left today (NOTIFY_NOW_MAX_PER_DAY minus the ones sent): an ask that can wait never takes the last one."""
+    return S("NOTIFY_NOW_MAX_PER_DAY", int) - _sent_today(store().rows("Owner_Actions"))
 
 
 def open_rows(tier=None):

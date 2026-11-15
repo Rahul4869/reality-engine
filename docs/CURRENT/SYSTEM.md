@@ -10,7 +10,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `heygen/heygen-video/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 3 standalone Shorts a week, 12 a month at most - every topic starts as a Short and the promote rule picks the long video's topic (`whatifs/ladder.py`); spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 130 code modules, 809 settings, 85 Sheet tabs, 25 GitHub workflows.
+- Size: 131 code modules, 817 settings, 86 Sheet tabs, 25 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -379,6 +379,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Release_Sheet | 13 | ts, id, platform, kind, native_id, state ... |  |
 | Ladder | 28 | id, topic, premise, title, format, hook ... |  |
 | Floor_Log | 13 | ts, session_id, episode_id, sha, family, role ... |  |
+| Owner_Verdicts | 17 | ref, kind, title, url, topic, asked ... |  |
 
 ## 9. Modules
 | module | purpose |
@@ -503,6 +504,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | whatifs/org/runner.py | Department runner: the six-step contract of every department run - LOAD, ACT, EMIT, LEARN, EXECUTE, REPORT - each proven by a receipt the runner itself builds and chains. |
 | whatifs/org/schemas.py | Memo schemas: every memo type the organisation can send - sender, audience, body, clocks, statuses and legal moves as data - with the validator that runs on every write. |
 | whatifs/org/shortseat.py | Audience (D13): the viewer's seat for a Short - the first frame, the hook, plain words, the shape and the loop are measured by code and repaired by code before any picture is paid. |
+| whatifs/org/verdicts.py | His verdict (D13): one row and one tap a release on tab Owner_Verdicts - his tap is the strongest label, the judged floor is scored against it and the videos he approved are its references. |
 | whatifs/org/wraps.py | Department wrappers: what each wrapped production step reports about its own output (measures, lessons, problem memos) when it runs under the department runner. |
 | tools/atmos_bench.py | Render performance check: times one still shot through the real render path with the atmosphere layer off and on (run: python tools/atmos_bench.py [seconds]). |
 | tools/ci_report.py | CI report: turns the unit-test or rehearsal log of GitHub's Checks into annotations on the run page (readable without a sign-in), so a red run names its cause and a green run shows its totals and the rehearsal's episode id. |
@@ -636,7 +638,7 @@ By kind: audience_insight 8, failure_lesson 7, owner_preference 26, plan 2, poli
 | D10 | Growth & Learning | daily | daily (whatifs/cli.py), promote (whatifs/ladder.py) | brief | - | BRAIN_ON, BRAIN_HOLDOUT, LADDER_WINDOW_DAYS, LADDER_MIN_ENGAGED |
 | D11 | Finance | daily | pending (B9) | brief | - | BUDGET_GUARD_PCT, BREAKOUT_FUND_CAP_INR, AUTO_FIX_PAID_INR |
 | D12 | Operations | tick | operate (whatifs/org/execute.py) | brief | - | PREFLIGHT_ON |
-| D13 | Audience | episode | seat (whatifs/episode.py), probe (whatifs/episode.py), short_seat (whatifs/shorts2.py), floor (whatifs/episode.py) | brief | - | NUMBERS_PER_MIN_MAX, GRAPHICS_MAX_LONG, GRAPHICS_FREE_SEC, BREATH_EVERY_S, PLAIN_HARD_PER_MIN_MAX, PLAIN_OPENING_HARD_MAX, PLAIN_HARD_PER_SENTENCE_MAX, SHORT_HOOK_WORDS_MAX, SHORT_HOOK_BY_S, SHORT_NUMBERS_MAX, SHORT_EXPERT_MAX, SHORT_PROMISE_WORDS_MAX, INSIDE_MIN_PCT_F1, INSIDE_MIN_PCT_F2, INSIDE_MIN_PCT_F3, LECTURE_MAX_F1, LECTURE_MAX_F2, LECTURE_MAX_F3, ENDING_FREE_S, VIEW_FLOOR_WATCH_S, VIEW_FLOOR_EYE_WAIT_H |
+| D13 | Audience | episode | seat (whatifs/episode.py), probe (whatifs/episode.py), short_seat (whatifs/shorts2.py), floor (whatifs/episode.py), verdict (whatifs/org/verdicts.py) | brief | - | NUMBERS_PER_MIN_MAX, GRAPHICS_MAX_LONG, GRAPHICS_FREE_SEC, BREATH_EVERY_S, PLAIN_HARD_PER_MIN_MAX, PLAIN_OPENING_HARD_MAX, PLAIN_HARD_PER_SENTENCE_MAX, SHORT_HOOK_WORDS_MAX, SHORT_HOOK_BY_S, SHORT_NUMBERS_MAX, SHORT_EXPERT_MAX, SHORT_PROMISE_WORDS_MAX, INSIDE_MIN_PCT_F1, INSIDE_MIN_PCT_F2, INSIDE_MIN_PCT_F3, LECTURE_MAX_F1, LECTURE_MAX_F2, LECTURE_MAX_F3, ENDING_FREE_S, VIEW_FLOOR_WATCH_S, VIEW_FLOOR_EYE_WAIT_H, VIEW_FLOOR_REFS_MAX, VIEW_FLOOR_DOWNS_MAX |
 | D14 | Shorts Studio | episode | write (whatifs/shorts2.py), make (whatifs/shorts2.py) | brief | - | SHORT_SHARE_S1, SHORT_SHARE_S2, SHORT_SHARE_S3, SHORT_MIN_S, SHORT_MAX_S_S1, SHORT_MAX_S_S2, SHORT_MAX_S_S3, SHORTS_PER_WEEK, SHORTS_PER_MONTH, SHORTS_BREAKOUT_X, FOLLOWUP_WITHIN_H |
 | C | The Council | weekly | pending (B6) | brief | 150 | ORG_SLA_HOURS |
 | L | The Librarian | weekly | pending (B8) | brief | 40 | PALACE_PLAYBOOK_TOKENS, PALACE_PLAYBOOK_TOKENS_BY_DEPT, PALACE_LIMITS_SHARE, PALACE_REVIEW_DAYS, PALACE_KIND_CAPS |
@@ -767,6 +769,8 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | ENDING_FREE_S | D13 | int | 20 to 90 | 10 | down: it weakens a quality gate | format_ending |
 | VIEW_FLOOR_WATCH_S | D13 | int | 30 to 120 | 15 | down: it weakens a quality gate | viewer_floor |
 | VIEW_FLOOR_EYE_WAIT_H | D13 | int | 6 to 72 | 6 | down: it weakens a quality gate | viewer_floor |
+| VIEW_FLOOR_REFS_MAX | D13 | int | 0 to 3 | 1 | up: more references void more sessions: fewer good films are passed | viewer_floor |
+| VIEW_FLOOR_DOWNS_MAX | D13 | int | 0 to 2 | 1 | up: every down-canary adds four answers a good film must get right | viewer_floor |
 | SHORT_SHARE_S1 | D14 | int | 0 to 100 | 20 | - | the next complete run |
 | SHORT_SHARE_S2 | D14 | int | 0 to 100 | 20 | - | the next complete run |
 | SHORT_SHARE_S3 | D14 | int | 0 to 100 | 20 | - | the next complete run |
