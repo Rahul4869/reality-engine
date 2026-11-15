@@ -175,7 +175,9 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     beats_at = [(units[i]["start"], beat_names[k] if k < len(beat_names) else f"Part {k+1}") for k, i in enumerate(beat_marks) if i < len(units)]
     chs = chapters(tl, beats_at)
     d["duration_sec"] = round(vo.duration, 1); d["beat_map"] = [[round(float(t), 1), str(n)[:40]] for t, n in beats_at][:24]      # v8.7: retention dips are mapped to beats
-    pkg = tidy_pkg(ORG.work("D5", "package", ep, lambda b: ROOM.package(room, chs, d, ep), measure=WR.m_pkg, topic=str(room["spine"].get("premise") or "")))          # v8.6: title + thumbnail are decided BEFORE the shots (the opening must pay off the click)
+    pkg = tidy_pkg(ORG.work("D5", "package", ep, lambda b: ROOM.package(room, chs, d, ep, opening=opn), measure=WR.m_pkg, topic=str(room["spine"].get("premise") or "")))          # v8.6: title + thumbnail are decided BEFORE the shots (the opening must pay off the click)
+    from whatifs import story as STORY                      # v12 V1c (one story, D5): both thumbnails are the picture the film opens on, by construction (a video under an override keeps its own)
+    pkg = STORY.align(pkg, d, opn)
     su = units[:len(units) - MAKER.k(mk)]                   # v12 V1c: the Director and the continuity judge are never handed his line (the script's units alone)
     shots = ORG.work("D6", "plan", ep, lambda b: ROOM.plan_shots(room, su, d, plan, ep), measure=WR.m_shots, topic=str(room["spine"].get("premise") or ""))
     sync = ROOM.continuity({"script": clean[:20000], "shots": shots[:80], "spine": room["spine"]}, ep)
@@ -183,7 +185,7 @@ def _stage_plan(ep, out, eps_left, slot_iso):
         log(f"continuity problems: {sync['problems'][:5]} - re-planning shots once", "WARN", public=f"continuity problems ({len(sync['problems'])}) - re-planning shots once (details kept private)")
         room["bible"]["look"] = room["bible"].get("look", "") + " | fix: " + "; ".join(p.get("fix", "") for p in sync["problems"][:5])
         shots = ROOM.plan_shots(room, su, d, plan, ep)
-    shots = ROOM.promise_shot(shots, units, pkg)            # v8.6: the first opening Kling clip shows the thumbnail's scene
+    if not pkg.get("one_story"): shots = ROOM.promise_shot(shots, units, pkg)            # v8.6: the first opening Kling clip shows the thumbnail's scene - v12 V1c: never in one story (the film OPENS on it: the footage)
     shots = OPEN.mark(shots, units, opn)                    # v12 V2c-b2b: the Short's picture track is laid under the first sentences (pure code)
     shots = MAKER.mark(shots, units, mk)                    # v12 V1c: under his words, the film's last picture - one still a unit of his, marked `maker` (it buys nothing)
     if S("SOUND_DESIGN_ON", bool): shots = SD.plan_sounds(shots, units, SD.density_of(d["strategies"].get("sound")))      # v8.7: close textures under the shots that show them
@@ -667,7 +669,7 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
         if S_.get("probe") is None: S_["probe"] = _probe(S_, ep, units)          # v12 V1b: a plan saved before the layman test carries no line-up yet
         from whatifs import anim as ANIM                        # v10.2 (K152): exactly ANIM_SHOTS animated scenes, at the retention cliffs
         ANIM.apply(shots, units, plan); S_["shots"] = shots
-        if not any(s_.get("promise") for s_ in shots):                 # v11.1 fix: the Animation Director re-places the scenes and can drop the promise
+        if not any(s_.get("promise") for s_ in shots) and not (S_.get("pkg") or {}).get("one_story"):      # v11.1 fix: the Animation Director re-places the scenes and can drop the promise (v12 V1c: one story draws the opening once)
             shots = ROOM.promise_shot(shots, units, S_.get("pkg") or {}); S_["shots"] = shots       # flag (v8.6) - re-aim the opening scene again
         from whatifs import motion as MOT                       # v12 V2d-b: the living seconds are placed by code on the lines that can show a whole clip (the last step before the gate)
         if MOT.on(): S_["shots"] = shots = MOT.place(shots, units, vo.duration, plan); S_["plan"] = plan

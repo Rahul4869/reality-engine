@@ -117,6 +117,7 @@ CHECK_OWNER = {
     "opening_footage": "D6", "opening_shown": "D6", "camera_path": "D6", "camera_shown": "D6",                                       # v12 V2c-b2b: the long video opens on its Short's footage
     "viewer_floor": "D13",                                                                                                          # v12 V1c: the judged floor
     "makers_line": "D7",                                                                                                            # v12 V1c: the maker's line
+    "one_story": "D5",                                                                                                              # v12 V1c: one story (the thumbnail is the picture the film opens on)
 }
 
 def runnable(dept):

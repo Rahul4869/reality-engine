@@ -1161,9 +1161,10 @@ def test_line_used_is_written_by_take_alone_and_a_rerender_never_rewrites_what_a
     assert not re.search(r"m\[\s*[\"'](i|type|src)[\"']\s*\]\s*=", inspect.getsource(EP.Job.rerender_times))
 
 def test_a_long_video_about_a_promoted_short_ends_on_his_line_and_pays_nothing_for_it(monkeypatch, setting, tmp_path):
-    """3.10's first whole production, as far as step 3 reaches (one story is step 4): his line is taken from the promoted Short's topic, the film ends on it
+    """3.10's first whole production, as far as steps 3 and 4 reach: his line is taken from the promoted Short's topic, the film ends on it
     word for word after the short lead-in (F1 ends on its question), the Director and the continuity judge never see it, no picture, scene or clip is bought
-    for it - the same film on a Sheet without his line pays the same and has its scenes where this one has them."""
+    for it - the same film on a Sheet without his line pays the same and has its scenes where this one has them. STEP 4 (one story, changed BY DESIGN and
+    named in the record first): the thumbnail is the first picture of the Short the film opens on, the packager was told so, the opening is drawn once."""
     import shutil
     from tests import test_v12_opening_e2e as E2E
     from tests.paid_calls import watch
@@ -1175,7 +1176,8 @@ def test_a_long_video_about_a_promoted_short_ends_on_his_line_and_pays_nothing_f
         for k, v in list(OLD_CLIPS.items()) + list(OLD_MOTION.items()) + list(OLD_INSIDE.items()) + list(OLD_VIEW.items()): setting(k, v)
         for k in list(OLD_CLIPS) + list(OLD_MOTION): setting(k, core.DEFAULTS[k][0])         # ... and the clip market and the motion ladder as shipped: no living clip may land on his line
         setting("MONTH_CAP_OVERRIDES", "")
-        for k, v in (("FORMAT_FORCE", "F1"), ("INSIDE_ON", "TRUE"), ("ENDINGS_ON", "TRUE"), ("CAMERA_PATH_ON", "TRUE"), ("OWNER_VERDICT_ON", "TRUE"), ("MAKER_LINE_ON", "TRUE")): setting(k, v)
+        for k, v in (("FORMAT_FORCE", "F1"), ("INSIDE_ON", "TRUE"), ("ENDINGS_ON", "TRUE"), ("CAMERA_PATH_ON", "TRUE"), ("OWNER_VERDICT_ON", "TRUE"), ("MAKER_LINE_ON", "TRUE"),
+                     ("ONE_STORY_ON", "TRUE")): setting(k, v)
         assert climb(core, ep) is True
     E2E._start(monkeypatch, setting); go()
     core.store().append("Owner_Verdicts", [_mkrow(sid, LAD.row(sid)["topic"], line, core.iso())])
@@ -1195,9 +1197,121 @@ def test_a_long_video_about_a_promoted_short_ends_on_his_line_and_pays_nothing_f
     assert his == list(range(len(units) - k, len(units))) and all(g[i]["type"] == "still" and not (g[i].get("anim") or g[i].get("buy") or g[i].get("promise")) for i in his)
     assert all(st_[1] == "still" and st_[2] != st_[0] for st_ in gate["final"]["maker_states"]) and gate["final"]["maker_states"]
     scenes_a = [i for i, s in enumerate(g) if s.get("anim")]
+    from whatifs import story as STORY                            # ---- step 4 (3.10): ONE STORY - the thumbnail is the picture this film opens on
+    words = " ".join(str(S_["opening"].get("picture") or "").split()); pk = S_["pkg"]
+    assert words and led["one_story"][0] == CON.PASS and led["one_story"][1].startswith(f"the thumbnail is drawn from the first picture of Short {sid}, the picture this video opens on: '"), led["one_story"]
+    assert pk["thumb_prompt"] == words and pk["thumb_prompt_b"].startswith(words + "; ") and pk["one_story"] == {"short": sid, "words": words}
+    assert [t for t, p in prompts if STORY.BRIEF.format(words=words) in p]                                            # the packager was told the scene
+    assert not [i for i, s in enumerate(g) if not s.get("short") and (s.get("promise") or str(s.get("prompt") or "").startswith(words))]      # drawn once: no shot outside the footage is re-aimed at it
     # ---- the same film on a Sheet without his line
     E2E._new_sheet(tmp_path, "sheet_noline.json"); shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True); go(); paid.clear(); gate.clear()
     r2 = EP.produce(E2E._slot(10), episode_id=ep); b = dict(paid); assert r2.get("ok"), r2
     _o2, S2, units2 = E2E._plan(ep); assert S2["maker"] is None and len(units2) == len(units) - k
     assert {x: a.get(x, 0) for x in a if x.startswith(("image", "clip"))} == {x: b.get(x, 0) for x in b if x.startswith(("image", "clip"))}, (a, b)    # nothing is bought for his line
     assert scenes_a == [i for i, s in enumerate(gate["script"]["shots"]) if s.get("anim")]                           # and the scenes stand where they stand without it
+
+# ================================================================== STEP 4. ONE STORY (3.4): the thumbnail a viewer taps is the picture the film opens on
+from whatifs import story as STORY, opening as OPEN_, room as ROOM_
+
+W = "a city of floating pillows over your street"
+OPN = {"short": "SH1", "picture": "  a city of  floating pillows\nover your street "}     # the archive's words as the Short's plan wrote them; one story speaks them with their spaces made one
+D1 = {"ladder": "SH1"}
+
+@pytest.fixture
+def story_on(setting, monkeypatch):
+    setting("ONE_STORY_ON", "TRUE")
+    monkeypatch.setattr(OPEN_, "source", lambda d: ("short", {"id": "SH1"}) if str((d or {}).get("ladder") or "") == "SH1" else ("override", {"id": "OV1", "by": "owner"}))
+    yield setting
+
+def test_the_older_tests_run_with_one_story_off():
+    from tests.conftest import OLD_VIEW
+    assert OLD_VIEW["ONE_STORY_ON"] == "FALSE" and core.DEFAULTS["ONE_STORY_ON"][0] == "TRUE" and STORY.on() is False
+    assert (STORY.OTHER_LOOK, STORY.B_MAX) == ("a closer look from another angle", 160)
+    assert STORY.BRIEF.format(words="X") == ("THUMBNAIL SCENE (fixed: the picture this video opens on, the one real viewers stayed for): \"X\". Write thumb_text for THIS scene. "
+                                            "For the runner-up write thumb_prompt_b as ANOTHER LOOK AT THE SAME SCENE - closer or wider, the same place, the same impossible thing - "
+                                            "and thumb_text_b as other words for it; never another scene: whichever thumbnail a viewer taps, the video opens on what it showed.")
+
+def test_the_manifest_carries_the_words_the_shorts_first_clip_was_drawn_from(monkeypatch, tmp_path):
+    from whatifs import release as REL
+    monkeypatch.setattr(REL, "probe", lambda p: {"w": 1080, "h": 1920, "sec": 3.0}); monkeypatch.setattr(REL, "sha", lambda p: "s")
+    wd = _dir(tmp_path / "a")
+    for i in range(3): open(os.path.join(wd, f"c{i}.mp4"), "wb").close()
+    plan = {"shots": [{"i": 1, "start": 2.0, "end": 4.0, "picture": "the second picture"}, {"i": 2, "src": "loop", "start": 0.0, "end": 1.0, "picture": "the loop"},
+                      {"i": 0, "start": 0.5, "end": 2.0, "picture": "  a city of  floating pillows "}]}
+    man = OPEN_.manifest({"plan": plan, "timeline": {"units": [{"text": "[tension] What if?"}]}}, wd)
+    assert man["picture"] == "a city of  floating pillows" and STORY.first_picture(man) == man["picture"] and man["hook"] == "What if?"     # the FIRST clip of the plan, never the loop
+    plan["shots"][2]["picture"] = None; assert OPEN_.manifest({"plan": plan}, wd)["picture"] == ""
+    assert STORY.first_picture(None) == "" and STORY.first_picture({"none": "override", "why": "x"}) == ""
+
+def _pack(monkeypatch, d, opening):
+    seen = []
+    monkeypatch.setattr(ROOM_, "ask", lambda role, system, prompt, **kw: (seen.append(str(system) + " " + str(prompt)), {"titles": ["What if pillows floated?"], "thumb_prompt": "another scene", "thumb_text": "UP"})[1])
+    room = {"script": {"script": "## BEAT 1\n[calm] You wake up and your pillow is on the ceiling."}, "spine": {"premise": "every pillow floats", "promise": {}}}
+    pkg = ROOM_.package(room, [("0:00", "Intro")], dict(d, strategies={"title": "N1_what_if", "thumb": "T1_object_scale"}), "EPST1", opening=opening)
+    return seen[-1], pkg
+
+def test_the_packager_is_told_the_scene_on_a_laddered_video_and_not_under_an_override(story_on, monkeypatch):
+    s, _ = _pack(monkeypatch, D1, OPN); assert STORY.BRIEF.format(words=W) in s
+    for d, opn in (({"ladder": "OV1"}, OPN), (D1, {"short": "SH1", "picture": ""}), (D1, None)):          # an override; an archive with no picture words; no opening
+        s, _ = _pack(monkeypatch, d, opn); assert "THUMBNAIL SCENE (fixed" not in s
+    story_on("ONE_STORY_ON", "FALSE"); s, _ = _pack(monkeypatch, D1, OPN); assert "THUMBNAIL SCENE (fixed" not in s
+
+def test_align_makes_both_thumbnails_the_opening_scene_by_construction(story_on):
+    p = STORY.align({"thumb_prompt": "a pillow on the moon", "thumb_prompt_b": "  a pillow  seen from below ", "thumb_text": "UP", "titles": ["T"]}, D1, OPN)
+    assert (p["thumb_prompt"], p["thumb_prompt_b"], p["thumb_text_b"], p["one_story"]) == (W, W + "; a pillow seen from below", "UP", {"short": "SH1", "words": W})
+    assert p["titles"] == ["T"] and p["thumb_text"] == "UP"                                                  # the title and the thumbnail's words stay the packager's
+    q = STORY.align({"thumb_prompt": "a pillow on the moon", "thumb_text": "UP", "thumb_text_b": "LOOK"}, D1, OPN)
+    assert q["thumb_prompt_b"] == W + "; a pillow on the moon" and q["thumb_text_b"] == "LOOK"               # no runner-up written: its own scene becomes the other look
+    assert STORY.align({"thumb_prompt": W}, D1, OPN)["thumb_prompt_b"] == W + "; " + STORY.OTHER_LOOK        # nothing else written
+    lw = ("floating-pillows-" * 13)[:220]; r = STORY.align({"thumb_prompt": "x", "thumb_prompt_b": "y" * 300}, D1, {"picture": lw})
+    assert len(lw) == 220 and r["thumb_prompt"] == lw and r["thumb_prompt_b"] == lw + "; " + "y" * 160       # the scene's words are never cut - only what follows them
+    assert CON.p_one_story({"d": D1, "pkg": r, "opening": {"picture": lw}})[0] == CON.PASS
+    cut = dict(r, thumb_prompt_b=r["thumb_prompt_b"][:160]); assert CON.p_one_story({"d": D1, "pkg": cut, "opening": {"picture": lw}})[0] == CON.FAIL      # cut whole, as promise_shot cuts: not the scene
+
+def test_a_package_that_is_not_one_story_comes_back_as_it_came(story_on):
+    def same(d, opn):
+        pkg = {"thumb_prompt": "the packager's own scene", "thumb_prompt_b": "", "thumb_text": "UP"}; before = json.dumps(pkg, sort_keys=True)
+        out = STORY.align(pkg, d, opn); return out is pkg and json.dumps(out, sort_keys=True) == before and "one_story" not in out
+    assert same({"ladder": "OV1"}, OPN)                                                                     # under an override its own promise scene is drawn
+    assert same(D1, {"short": "SH1", "picture": "  "}) and same(D1, {"none": "broken", "short": "SH1"}) and same(D1, None)      # a Short whose archive holds no picture words
+    story_on("ONE_STORY_ON", "FALSE"); assert same(D1, OPN)                                                  # switched off
+
+def test_check_one_story_both_ways(story_on, monkeypatch):
+    from whatifs.org import registry as REG, rnd as RND
+    import tools.repair as REP
+    good = STORY.align({"thumb_prompt": "x", "thumb_prompt_b": "a pillow seen from below"}, D1, OPN)
+    def chk(pkg=good, d=D1, opn=OPN): return CON.p_one_story({"d": d, "pkg": pkg, "opening": opn})
+    assert chk() == (CON.PASS, f"the thumbnail is drawn from the first picture of Short SH1, the picture this video opens on: '{W}'")      # the archive's double space and line break are one space
+    assert chk(dict(good, thumb_prompt_b=""))[0] == CON.PASS                                                 # no runner-up at all
+    assert chk(dict(good, thumb_prompt="the packager's own scene")) == (CON.FAIL, "the thumbnail's scene is not the picture this video opens on")
+    assert chk(dict(good, one_story={"short": "SH9", "words": W}))[0] == CON.FAIL and chk({k: v for k, v in good.items() if k != "one_story"})[0] == CON.FAIL
+    assert chk(dict(good, thumb_prompt_b="a pillow on the moon")) == (CON.FAIL, "the runner-up thumbnail is not the opening's scene")
+    assert chk(d={"ladder": "OV1"}) == (CON.NA, "made under an override: its own promise scene opens it (viewer_promise, promise_paid)")
+    assert chk(opn={"short": "SH1", "picture": ""}) == (CON.NA, "the Short's archive holds no picture words")
+    for kind in ("off", "none"):
+        monkeypatch.setattr(OPEN_, "source", lambda d, k=kind: (k, None)); assert chk() == (CON.NA, OPEN_.none_words(kind))       # DESIGN QUESTION 22
+    story_on("ONE_STORY_ON", "FALSE"); assert chk() == (CON.NA, "one story is switched off (ONE_STORY_ON)")
+    assert {f[0]: f[1] for f in CON.FEATURES}["one_story"] == "script" and REG.check_owner("one_story") == "D5"
+    assert "one_story" not in RND.ORG_CHECKS and "one_story" in RND.metrics() and "whatifs/story.py" in REP.PROTECTED
+
+def test_the_opening_is_not_drawn_a_second_time():
+    import inspect
+    sp, pr = inspect.getsource(EP._stage_plan), inspect.getsource(EP.produce)
+    assert sp.index("ROOM.package(room, chs, d, ep, opening=opn)") < sp.index("pkg = STORY.align(pkg, d, opn)") < sp.index("ROOM.plan_shots(room, su, d, plan, ep)")
+    assert 'if not pkg.get("one_story"): shots = ROOM.promise_shot(shots, units, pkg)' in sp
+    assert 'if not any(s_.get("promise") for s_ in shots) and not (S_.get("pkg") or {}).get("one_story"):' in pr
+
+def test_the_rescue_swaps_to_a_runner_up_of_the_same_scene(story_on, monkeypatch, tmp_path):
+    from tests import test_v85 as T85
+    from whatifs import manage as MG, art as ART
+    from PIL import Image
+    pkg = STORY.align({"thumb_prompt": "a pillow on the moon", "thumb_prompt_b": "a pillow on Mars", "thumb_text": "UP"}, D1, OPN); drawn = []
+    def thumb(prompt, text, out_dir, ep, **kw):
+        os.makedirs(out_dir, exist_ok=True); p = os.path.join(out_dir, "up.jpg"); Image.new("RGB", (64, 36)).save(p); drawn.append(prompt); return p, p, None
+    monkeypatch.setattr(ART, "thumbnail", thumb); monkeypatch.setattr(QC, "check_thumb", lambda up, phone: (True, {}))
+    b = EP._thumb_b(pkg, {}, _dir(tmp_path / "ep"), "EPRESC", False)
+    assert b and drawn == [W + "; a pillow on Mars"]                                                          # B is drawn from the opening's scene ...
+    story_on("PKG_RESCUE_HOURS", "36")                                                                        # test_v85's timing (the shipped default is 72 h)
+    calls = T85._fakes(monkeypatch, 40 * 20, tmp_path); T85._hist(3); T85._live("EPRESC", 40)
+    monkeypatch.setattr(MG, "_fetch_some", lambda ep, a, names: {"release.json": str(tmp_path / "release.json"), "thumb_b.jpg": b})
+    assert MG.pkg_rescue() == [("EPRESC", "swapped title + thumbnail")] and calls["thumb"] == [b]           # ... and the lagging video's swap sets exactly that picture

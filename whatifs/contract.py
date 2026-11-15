@@ -580,6 +580,14 @@ def p_opening_footage(ctx):
     ok, why = OPEN.plan_report(d, ctx.get("shots") or [], ctx.get("units") or [], ctx.get("opening"))
     return (NA if ok is None else PASS if ok else FAIL), why[:380]
 
+def p_one_story(ctx):
+    """v12 V1c (one story, D5): the thumbnail a viewer taps is the picture this video opens on - the first picture of the Short whose footage opens it - and
+    its runner-up is another look at the same scene; judged on the package and the opening at the script gate, before any picture is paid."""
+    from whatifs import story as STORY
+    d = ctx.get("d") if isinstance(ctx.get("d"), dict) else {}
+    ok, why = STORY.report(d, ctx.get("pkg"), ctx.get("opening"))
+    return (NA if ok is None else PASS if ok else FAIL), why[:380]
+
 def p_opening_shown(ctx):
     """v12 V2c-b2b (the opening, D6): the FINISHED film opens on its Short's footage - the opening clips are the files cut from that Short's
     archive and frames of the master match them. A video the owner approved without its footage (opening_footage waived) is not judged again."""
@@ -862,6 +870,7 @@ FEATURES = [
     ("format_ending", "script", p_format_ending,"the video ends as its format ends - F1 on the question to the viewer, F3 on the arrival - with no ask and no pointer to another video in its last seconds, and carries only the asks of its format (inside the format)"),
     ("topic_ladder", "script", p_topic_ladder, "every topic starts as a Short: this long video is about the topic of a Short the promote rule took, or was made under an override on record (the ladder)"),
     ("opening_footage", "script", p_opening_footage, "a long video about a promoted Short opens on that Short's own footage, laid by code under its first sentences - or was made under an override, which has none (the opening)"),
+    ("one_story",     "script", p_one_story,    "one story: the thumbnail a viewer taps is the picture the video opens on - the first picture of the promoted Short whose footage opens it - and the runner-up thumbnail is another look at the same scene (one story)"),
     ("palace_injected", "script", p_palace_injected, "the Knowledge Palace playbook was inside the model prompt of every creative run's key call (the writer, the packager, the director), and the exact text is stored"),
     ("palace_cited", "script", p_palace_cited, "every creative run cited Palace knowledge it really applied: each counted citation has a quote that code found in the final output"),
     ("canon_in_brief", "script", p_canon_in_brief, "the writer was given the show's canon (cast and the newest aired case), called back to that case in a line of the final script, and wrote this episode's case record"),

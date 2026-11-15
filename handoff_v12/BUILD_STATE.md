@@ -2535,6 +2535,8 @@ during the app's restarts (two ffmpeg allocations refused; a probe that read 0 s
 `tools/gen_docs.py` wrote `SYSTEM.md`. COUNTS AFTER STEP 3: 70 hard checks (final 23), `SHOW_CHECKS` 59, 89 levers, 86 tabs, 201 founding items, 25 workflow files,
 218 breaks in `proving/breaks/V1c.json` (S3-01 to S3-78 added; each anchor found once, each named test present) - NOT RUN. From this commit on, a step's
 whole-suite evidence is GitHub's Checks run on its pushed commit (the dispatcher's order, plan A12 (f)); this step's laptop run above ENDED and stands as written.
+STEP 3'S CHECKS (read by builder E with `gh_runs.js` at 19:27 UTC): run 43746948748 on 5ec7ea1, 18:28 -> 19:26 UTC, GREEN - "Unit tests: 1743 passed in 3371.48s
+(0:56:11)"; "Rehearsal: REHEARSAL: GREEN, episode id EP202611151925; contract script: 39/39 pass; contract final: 23/23 pass".
 WHERE THE BUILD STANDS (the fourth Opus builder, 15 Nov 2026, 18:35 UTC by `date -u`; it hands on at its 60% line). BUILT AND COMMITTED: 3.9 steps 0, 0b, 1
 (earlier builders), STEP 2 (7210953, his verdict) and STEP 3 (5ec7ea1, the maker's line), each pushed. THE EXACT NEXT ACT: (1) read GitHub's Checks run on
 5ec7ea1 with `gh_runs.js` (the dispatcher's notes folder, `tools/`) and write its run id and totals here beside step 3 - a RED run is a red: stop and report;
@@ -2557,6 +2559,73 @@ runs the break list to 0 missed and 0 void but NOT the builder's block - the Fab
 USAGE AT THE END (get_usage, 18:33 UTC): weekly all models 44%, weekly Fable 67%, this session's context 55% (it was compacted once, after step 2's suite started:
 14% after the compaction). CONTEXT: the A9 reading took 31 points (9% -> 40%); step 2 about 20 points before the compaction; step 3 41 points (14% -> 55%:
 the memo's 3.3 and the code read again after the compaction, the whole production twice, three reproductions).
+STEP 4 - ONE STORY (3.4). THE FIFTH OPUS BUILDER (builder E; "go" from builder D at about 18:28 UTC: commit ecef4cb, step 4). FIRST: `git log -1` = ecef4cb,
+a clean tree; `proving/next.py` printed the builder's card (its last acts - `--to BUILT`, the prover - are the Fable finisher's: amendments 1 and 2); GitHub's
+Checks run on 5ec7ea1 (step 3) read with `gh_runs.js` at 18:29 and 18:33 UTC: run 43746948748 IN PROGRESS - its result is written here when it ends, and step 4
+is not committed before it is green. USAGE AT THE START (get_usage, 18:33 UTC): weekly all models 44%, weekly Fable 67%, this session's context 26% (the A9
+reading was done before "go"; the session was compacted while it waited).
+READ BEFORE ITS FIRST EDIT: the memo's 3.4 whole, 3.0, 3.6, 3.7, 3.9 step 4 and 3.10's test list; in the code `opening.manifest` / `source` / `fetch`, `room.package` /
+`promise_shot`, `episode._stage_plan` (140 to 196), `produce` (640 to 680), `_thumb_b`, the thumbnail A lines of `_finish`, `tidy_pkg`, `manage.pkg_rescue` / `_swap`,
+`audience.shape` (its first-picture repair reads `thumb_prompt`: untouched - the footage is the first picture of a one-story film), `contract.p_viewer_promise`,
+`p_opening_footage`, `FEATURES`; step 3's diff of the registry, `rnd`, `repair`, `conftest` and the count pins.
+THE PINS STEP 4 MOVES (named before any edit; each searched again in `tests/` on ecef4cb): (b)'s third text, `tests/test_v12_org.py` 475 -
+`"ROOM.package(room, chs, d, ep)"` becomes `"ROOM.package(room, chs, d, ep, opening=opn)"`; (c) `tests/test_v12_org.py` 468, both strings of its `src.replace`
+carry `ROOM.package(room, chs, d, ep, opening=opn)`; the counts (one script check, one SHOW check): `tests/test_v12_exec.py` 493 (script 39 -> 40),
+`tests/test_v12_cutdowns.py` 39 (script 39 -> 40, all 70 -> 71), `tests/test_v12_motion.py` 633 (70 -> 71) and 636 (`SHOW_CHECKS` 59 -> 60), `tests/test_v12_release.py`
+436 (59 -> 60), `tests/test_v12_inside.py` 649 (59 -> 60); `tests/conftest.py` (`OLD_VIEW` gains `ONE_STORY_ON` "FALSE"). PINS THAT STAY TRUE (read): `tests/test_v111_enforce.py`
+115 (the call text after `ANIM.apply`: 225 characters apart today, its limit 400 - the condition goes on the `if` in front and adds about 50); `tests/test_tableread.py`
+122 (four arguments: `opening=None` is a keyword); `tests/test_v12_inside.py` 186 and 898, `tests/test_v12_money.py` 226 (the texts `hook_of(...)` and `SH.slow_of(s)`
+of `OPEN.manifest` stay; the key is added beside them); `tests/test_v86.py` 65 to 70, `test_v89.py` 15, `test_v111_enforce.py` 121 and 146, `test_v12_seat.py` 70 (they
+call `promise_shot` itself, which is not edited). A TEST OF THIS BATCH CHANGED BY DESIGN: `tests/test_v12_floor.py::test_a_long_video_about_a_promoted_short_ends_on_his_line_and_pays_nothing_for_it`
+(step 3's whole production, "as far as step 3 reaches (one story is step 4)") gains `ONE_STORY_ON` TRUE on both Sheets and 3.10's one-story asserts (`one_story` PASS,
+the packager's sentence in the packager's prompt, no shot outside the footage begins with the thumbnail's words) - no new id is taken.
+DESIGN QUESTION 22 (a choice the memo did not make; the reading that changes LESS of what a viewer sees): check `one_story`'s NA "made under an override: ..." is
+3.4's sentence for "the opening is not a Short's footage", and `opening.source` also answers "off" (the opening switched off) and "none" (the draw names no ladder row).
+TAKEN: the memo's words for "override"; for "off" and "none" the opening's own words (`opening.none_words(kind)`). No viewer sees them; the sweep reads only the
+prefix "made under an override" on an override id. AND: the check compares the package's `thumb_prompt` with `first_picture` of the gate's own opening with its
+spaces made one - the form `align` writes (3.4: "`words` = `story.first_picture(opening)`, spaces made one"); compared raw, an archive whose words hold a double
+space would FAIL a film that is one story.
+DESIGN QUESTION 23: where `align` runs ("right after the package is made"). TAKEN: on its own line right after the `ORG.work("D5", "package", ...)` line, on the
+package `tidy_pkg` returns (it orders the titles and cuts the thumbnail TEXTS; `align` touches neither, and never the picture words) - so the pinned call text (c)
+stays as 3.4 writes it, and D5's measure (`WR.m_pkg`) still measures the packager's own reply.
+BUILT IN STEP 4 (as 3.4 writes it, except where DESIGN QUESTIONS 22 and 23 say otherwise): NEW `whatifs/story.py` (on `tools/repair.PROTECTED` before its first line) -
+`on`, `first_picture` (3.4's expression), `words_for` (the ONE condition: switched on, `opening.source(d)[0] == "short"`, picture words), `brief` (the packager's
+sentence, word for word: `BRIEF`), `align` (3.4's rules; `OTHER_LOOK`, `B_MAX` 160; the package as it came - the same object - where the condition fails), `report`
+(check `one_story`'s NA / FAIL / PASS words). `opening.manifest`: the key `picture` (the first shot of the Short's PLAN by its start, never the loop; the `hook_of(...)`
+text stays). `room.package(room, chapters, draw, episode, opening=None)`: `STORY.brief(draw, opening)` joined last with the other texts. `episode._stage_plan`:
+`ROOM.package(room, chs, d, ep, opening=opn)`, then `pkg = STORY.align(pkg, d, opn)` on its own line; `if not pkg.get("one_story"):` in front of the plan stage's
+`promise_shot`; in `produce` the same condition on the `if` in front of the second one (the call text pinned by `test_v111_enforce.py` 115 untouched: 305 characters
+after `ANIM.apply`, limit 400). `contract.p_one_story` and its FEATURES row (script stage, right after `opening_footage`); `registry.CHECK_OWNER["one_story"]` D5;
+`rnd.SHOW_CHECKS` 60; `core`: the cell `ONE_STORY_ON` (TRUE); `tests/conftest.py` `OLD_VIEW` + `ONE_STORY_ON` "FALSE"; the matrix row "ONE STORY"; `SYSTEM.md`
+regenerated. `manage.py` (`pkg_rescue`, `_swap`), `_thumb_b`, `promise_shot` itself, `audience.shape`, `opening.mark`: untouched, as 3.4 says.
+TESTS (`tests/test_v12_floor.py`, step 4's section; 8 new): `test_the_older_tests_run_with_one_story_off` (the cell, `OLD_VIEW`, the sentence word for word),
+`test_the_manifest_carries_the_words_the_shorts_first_clip_was_drawn_from` (the first clip by its start, never the loop or the first listed; none -> ""),
+`test_the_packager_is_told_the_scene_on_a_laddered_video_and_not_under_an_override` (and not with no picture words, no opening, or switched off),
+`test_align_makes_both_thumbnails_the_opening_scene_by_construction` (the three sources of the other look; 220 characters of words -> B begins with all 220 and
+`one_story` PASSES, the whole string cut at 160 FAILS), `test_a_package_that_is_not_one_story_comes_back_as_it_came` (an override, no words, a broken archive, no
+opening, switched off: the same object, byte for byte as JSON, no key), `test_check_one_story_both_ways` (every NA, both FAILs, the PASS words; DESIGN QUESTION 22;
+the wiring), `test_the_opening_is_not_drawn_a_second_time` (the order package -> align -> Director and both conditions), `test_the_rescue_swaps_to_a_runner_up_of_the_same_scene`
+(`_thumb_b` draws B from the opening's words + "; " and `manage.pkg_rescue` on a lagging video sets exactly that file - `PKG_RESCUE_HOURS` 36, test_v85's timing,
+a NAMED test setting). AND 3.10's first whole production (step 3's test, changed BY DESIGN as named above, no new id): with `ONE_STORY_ON` on both Sheets,
+`one_story` PASS naming the Short, both thumbnails the opening's words, the packager's prompt carries the sentence, and no shot outside the footage is a promise or
+begins with the thumbnail's words.
+BUILT OTHERWISE, SAID PLAINLY: 3.10's first whole production asks for "all three checks PASS" with the paid-call counter of the floor; step 3's production (and so
+this one) runs with the floor off (`VIEW_FLOOR_ON` stays `OLD_VIEW`'s FALSE) - the floor beside his line and one story in ONE film is walked by the rehearsal and the
+sweep (3.10, step 6), and the floor's own whole productions (step 1) count its looks. The tests of "no second drawing" read the source (both conditions) and the
+whole production (no re-aimed shot); no break of step 4 lists the whole production (each break's tests run twice: the laptop hours of item 94 (b)).
+BREAKS S4-01 to S4-29 written into `proving/breaks/V1c.json` (each anchor found exactly once, each named test present; 247 in the list) - NOT RUN (step 7 runs them).
+A SLIP, SAID: a one-off script to add the cell was first written with a here-document (the plan's A11: scripts are written with the file tool); it was deleted
+unrun and the cell typed with the file tool; the break list's script was written with the file tool.
+THE RUNS OF STEP 4 (the dispatcher's order of item 94 (b): the step's own file and every file that holds a pin of it or tests what it changed; the whole-suite
+evidence is GitHub's Checks run on the pushed commit): first only the 8 new tests (one red of the rescue test's own timing - `PKG_RESCUE_HOURS` is 72 h shipped, the
+test's video 40 h old - fixed in the test, then green); then, alone on the laptop (no other python running, `tasklist` read first), Git Bash, `-n 6`,
+`WI_NO_SKIPS=1`, 18:42 to 19:23 UTC: `test_v12_floor.py` whole, `test_v12_org.py`, `test_v12_exec.py`, `test_v12_cutdowns.py`, `test_v12_motion.py`,
+`test_v12_release.py`, `test_v12_inside.py`, `test_v111_enforce.py` (the pin of 115 and the matrix meta-test), `test_tableread.py`, `test_v12_money.py`,
+`test_v86.py`, `test_v89.py`, `test_v12_seat.py`, `test_v85.py`, `test_v12_opening.py`, `test_v12_opening_e2e.py` (its second Sheet starts from the SHIPPED
+defaults: one story ON), `test_v12_rnd.py`: "761 passed in 2478.35s (0:41:18)", no skip. Plan Guard GREEN, Truth GREEN, Organisation GREEN, Palace GREEN (201
+items), `tools/gen_docs.py` wrote `SYSTEM.md`. COUNTS AFTER STEP 4: 71 hard checks (script 40, final 23), `SHOW_CHECKS` 60, 89 levers, 86 tabs, 201 founding
+items, 25 workflow files, 247 breaks (NOT RUN). STEP 3'S CHECKS (5ec7ea1, run 43746948748): GREEN at 19:26 UTC, 1743 passed, the rehearsal GREEN (written beside
+step 3) - so step 4 is committed. Its own Checks run is read before step 6 is committed.
 ### V2b - INSIDE THE FORMAT (14-15 Nov 2026) - ACCEPTED (final code commit 01e7798 GREEN in GitHub Checks run 196: 1647 passed; sweep 58 of 58 ids)
 (its code is 7e83001; the designer's record: steps 1 to 3; five Opus builders wrote steps 4 to 6a, the Fable finisher `FINISHED BY FABLE` and the takeaway's draft;
 the prover wrote 6b and completed 7 on 15 Nov 2026)

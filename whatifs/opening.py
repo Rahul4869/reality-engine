@@ -52,7 +52,9 @@ def manifest(meta, wd):
         a, b = float(s["start"]), float(s["end"])
         if b - a >= 0.05: track.append({"clip": name, "start": round(a, 3), "end": round(b, 3), "slow": round(SH.slow_of(s), 4)})      # v12 V2d: how the Short really played it - on its own plan since clips are bought by the second
     if not track: raise RuntimeError("the archive holds no clip of the Short's plan")
-    return {"hook": hook_of((meta.get("timeline") or {}).get("units") or []), "seconds": track[-1]["end"], "clips": clips, "track": track}
+    first = sorted(shots, key=lambda x: float(x.get("start") or 0))[0]          # v12 V1c (one story, D5): the words the Short's first clip was REALLY drawn from - its PLAN (shorts2 writes `picture` on every shot), never the script's first beat
+    return {"hook": hook_of((meta.get("timeline") or {}).get("units") or []), "seconds": track[-1]["end"], "clips": clips, "track": track,
+            "picture": str(first.get("picture") or "").strip()}
 
 def hook_of(units):
     """v12 V2b (issue 129): a Short's hook - the FIRST unit of its own voice timeline, its brackets removed, its spaces made one. The ONE definition:

@@ -809,13 +809,14 @@ def _owner_taste():
         return taste_brief()
     except Exception: return ""
 
-def package(room, chapters, draw, episode):
+def package(room, chapters, draw, episode, opening=None):
     ctx = context(); stg = draw["strategies"]
     excerpt = room["script"].get("script", "")[:3500]
+    from whatifs import story as STORY                      # v12 V1c (one story, D5): the packager is told the thumbnail's scene is the picture this video opens on
     pkg = ask("packager", FE.inject(GR.insert_before_json(P.fill(P.PACKAGER, title=stg["title"], titledef=ctx["defs"].get(stg["title"], ""), thumb=stg["thumb"],
                thumbdef=ctx["defs"].get(stg["thumb"], ""), spine=_j(room["spine"]), excerpt=excerpt, trends=ctx["trends"][:3000],
                lessons=ctx["lessons_packager"], chapters=_j(chapters), craft=CRAFT["packager"], promise=GR.promise_text(room["spine"].get("promise"))),
-               "\n".join(x for x in (PB.text_for("packager", draw.get("playbook")), _pkg_extra(), _owner_taste()) if x)), "packager"), "Package now.", episode=episode, fake_key="packager")
+               "\n".join(x for x in (PB.text_for("packager", draw.get("playbook")), _pkg_extra(), _owner_taste(), STORY.brief(draw, opening)) if x)), "packager"), "Package now.", episode=episode, fake_key="packager")
     pt = str((room["spine"].get("promise") or {}).get("title") or "").strip()       # v8.7: the promise title is always a candidate (it wins only if the Packager's are flawed)
     if isinstance(pkg, dict) and pt and pt.lower() not in [str(t).lower() for t in pkg.get("titles") or []]: pkg["titles"] = list(pkg.get("titles") or []) + [pt]
     return pkg
