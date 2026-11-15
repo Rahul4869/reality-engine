@@ -799,6 +799,9 @@ def test_a_thumbs_up_is_a_reference_a_thumbs_down_and_a_refused_then_published_f
     assert V.downs("EPOTHER") == []                                                                # the cell starts at 0
     verdict_on("VIEW_FLOOR_DOWNS_MAX", "1"); assert V.downs("EPOTHER") == [("EPDN1", "vd1", 'He said "no", twice')]      # the floor's own MISS, never a film it refused
     assert ("EPDN1", "vd1") not in V.references("EPOTHER")
+    verdict_on("VIEW_FLOOR_REFS_MAX", "5"); verdict_on("VIEW_FLOOR_DOWNS_MAX", "5")                 # (V1c step 7) room for every film: each pool keeps ITS verdict only
+    assert V.references("EPOTHER") == [("EPREF1", view1)] and V.downs("EPOTHER") == [("EPDN1", "vd1", 'He said "no", twice')]
+    verdict_on("OWNER_VERDICT_ON", "FALSE"); assert V.references("EPOTHER") == [] and V.downs("EPOTHER") == []   # the switch off: no reference, no down-canary (DESIGN QUESTION 9)
 
 def test_a_down_canary_fails_a_film_with_its_title_and_the_check_recomputes_it(verdict_on, media):
     d = dict(media["film"], episode="EPDN", title='He said "no", twice')
@@ -1023,6 +1026,8 @@ def test_his_line_is_never_the_slot_of_a_paid_scene(line_on):
     assert AN.pick_slots(sh, u14, 4, skip={i for i in range(10, 14)}) == AN.pick_slots(sh[:10], u14[:10], 4)       # the scenes stand where the film without his line has them (DESIGN QUESTION 21)
     idx = AN.apply(sh, u14, {"kling": 4}); assert len(idx) == 4 and not [i for i in idx if sh[i].get("maker")]
     assert all(s["type"] == "still" and "anim" not in s for s in sh[10:])
+    sh2 = _mshots(2, 4); assert sorted(AN.apply(sh2, _units(6), {"kling": 4})) == [0, 1]                           # (V1c step 7) the script runs out of shots first: the later anchors stay empty, never his line
+    assert all(s["type"] == "still" and "anim" not in s for s in sh2[2:])
 
 def test_no_clip_runs_into_his_line_and_none_is_bought_on_it(line_on):
     from tests.conftest import OLD_CLIPS, OLD_MOTION

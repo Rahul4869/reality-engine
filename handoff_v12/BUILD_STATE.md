@@ -2697,6 +2697,36 @@ of 1". Plan Guard GREEN, Truth GREEN, Organisation GREEN, Palace GREEN (208 item
 ledger): DONE in section J (67 to 100). Step 4's Checks run (43752620416 on acdf9c2) was still running at 20:11 UTC: step 6 is committed only after it is green.
 STEP 4'S CHECKS (read with `gh_runs.js` at 20:43 UTC): run 43752620416 on acdf9c2, 19:28 -> 20:42 UTC, GREEN - "Unit tests: 1751 passed in 4243.34s (1:10:43)"
 (1743 + step 4's 8); "Rehearsal: REHEARSAL: GREEN, episode id EP202611152040; contract script: 40/40 pass; contract final: 23/23 pass". So step 6 is committed.
+STEP 6 COMMITTED AND PUSHED: bbd47ef (20:43 UTC); the code reader 2 and the dispatcher were each sent "step 6 pushed at bbd47ef" the same minute.
+STEP 6'S CHECKS (read with `gh_runs.js` at 22:0x UTC): run 43759694240 on bbd47ef, 20:43 -> 21:58 UTC, GREEN - "Unit tests: 1753 passed in 4248.01s (1:10:48)"
+(1751 + step 6's 2); "Rehearsal: REHEARSAL: GREEN, episode id EP202611152155; contract script: 40/40 pass; contract final: 23/23 pass".
+STEP 7 - THE LAST BUILDER'S ACTS (plan A13 (b), the dispatcher's order: the BREAK LIST to 0 missed and 0 void, NOT the builder's block - the Fable finisher runs the
+block on the final code commit; the V2b audit's lines CLOSED where their breaks are caught; his items 68 to 100 in the ledger (done in step 6); the OPUS_DONE note).
+THE BREAK RUN (from the handoff folder, `proving/breaks.py V1c`, clean tree, HEAD bbd47ef, alone, 20:44 to about 22:00 UTC): "BREAKS V1c: 251 caught, 3 MISSED, 3 void
+of 257 listed". Not run again whole. Each of the six reproduced by reading its break against today's code (A11's "reproduce first") - FINDINGS, written before any edit:
+(1) S1-50 VOID "the text to break occurs 0 times": its anchor `, ("whatifs/episode.py", "floor")),` was written when the floor was D13's LAST run; step 2 put
+`("whatifs/org/verdicts.py", "verdict")` after it. Its replacement `)),` was also one parenthesis too many (it would have left code that does not run). REWRITTEN:
+find `, ("whatifs/episode.py", "floor")`, replace "" (the run taken out of D13's tuple, the code still runs). Same test.
+(2) S2-44 VOID "the run ended as 'error'": its replacement `)),` for `, ("whatifs/org/verdicts.py", "verdict")),` leaves `"floor"))),` - a syntax error, not a
+break. REWRITTEN: find `, ("whatifs/org/verdicts.py", "verdict")`, replace "". Same test.
+(3) S2-39 VOID "occurs 0 times": its anchor `, ("whatifs.org.verdicts", "register")):` was written when verdicts was the LAST handler; step 3 put
+`("whatifs.maker", "register")` after it. REWRITTEN: find `, ("whatifs.org.verdicts", "register")`, replace "". Same test.
+(4) S2-36 MISSED (`_pool` takes ANY verdict instead of the asked one): the test's only guard, `("EPDN1", "vd1") not in V.references("EPOTHER")`, runs while
+`VIEW_FLOOR_REFS_MAX` is "0" (set two lines before), so references is [] whatever `_pool` keeps - the assert cannot fail. THE MISSING ASSERTION (added to
+`test_a_thumbs_up_is_a_reference_a_thumbs_down_and_a_refused_then_published_film_never`, no older line changed): with both cells at "5", references is exactly
+[EPREF1] and downs exactly [EPDN1] - under the break each also holds the other's film.
+(5) S2-49 MISSED (`_pool` without `not on()`): its named test runs with the switch off and NO rows, so the pool is empty either way. THE MISSING ASSERTION (added
+to the same thumbs-up test, which has a passed, kept, thumbed-up film): the switch set "FALSE" -> references and downs are [] (DESIGN QUESTION 9). The break's tests
+list gets that test beside its old one.
+(6) S3-32 MISSED (`apply` without `skip=mk`): DESIGN QUESTION 21 already keeps every anchor inside the script (`end` is the last SCRIPT line), so with ten script
+shots no anchor reaches his line - the skip only matters when the script runs out of shots before the anchors do. THE MISSING ASSERTION (added to
+`test_his_line_is_never_the_slot_of_a_paid_scene`): two script shots, four of his, four scenes asked -> `apply` picks [0, 1] only; under the break the third and
+fourth anchors take his lines 2 and 3.
+TESTS CHANGED BY THIS STEP (named before the change): `tests/test_v12_floor.py` - the two tests above get the assertions (4), (5), (6); no assertion removed.
+`proving/breaks/V1c.json` - S1-50, S2-39, S2-44 rewritten as above; S2-49's tests list gets the thumbs-up test.
+STEP 7'S RUN (`tests/test_v12_floor.py` whole - the only file changed; no line of `whatifs/` or `tools/` changed - alone, `-n 6`, `WI_NO_SKIPS=1`, 22:00 to 22:09
+UTC): "102 passed in 528.97s (0:08:48)". The V2b audit's lines 2 to 5 rewritten to CLOSED F1 to F4 (their 40 breaks S0-01 to S0-14 and S0b-01 to S0b-26 all
+CAUGHT on bbd47ef). Then: the six breaks alone (`--only`) on the new commit, then the WHOLE list again on it (a result counts only for the code it ran on).
 ### V2b - INSIDE THE FORMAT (14-15 Nov 2026) - ACCEPTED (final code commit 01e7798 GREEN in GitHub Checks run 196: 1647 passed; sweep 58 of 58 ids)
 (its code is 7e83001; the designer's record: steps 1 to 3; five Opus builders wrote steps 4 to 6a, the Fable finisher `FINISHED BY FABLE` and the takeaway's draft;
 the prover wrote 6b and completed 7 on 15 Nov 2026)
