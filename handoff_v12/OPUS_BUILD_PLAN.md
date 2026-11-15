@@ -179,6 +179,28 @@ done, never what a batch is built from or judged by. An Opus builder or prover a
   a batch's design: a measure with its arithmetic, its test, its cost line where it is paid, a switch; and as a TRIAL with a prediction where it
   claims to lift a video, never as a rule. NO TEXT OR CODE OF A SKILL IS COPIED (their folders carry no licence file; the pipeline is sold): a
   designer learns the method and writes it anew, or reads the licence on the source's page first and writes it into the record.
+  (h) THE TOOLS ARE USED ACTIVELY - WHERE THEY TAKE WORK OFF THE FABLE LINE OR FIND WHAT A READER MISSES (the owner's item 89 of 15 Nov 2026:
+  "actively make maximum best usage ... without sacrifising any quality ... in quota"). FOUR DUTIES, none a leave:
+  (h1) THE OPUS CODE READING BEFORE THE FINISH - a new step between rows 3 and 4 of the chain's table. When `<batch>_OPUS_DONE.md` exists, a
+  FRESH Opus session that typed nothing of the batch reads the batch's whole diff from its base commit beside the approved memo, with the
+  `code-review` skill at its level "high" (never "max" or "ultra"), and writes `proving/notes/<batch>_CODE_READING.md`: per suspect place
+  the file and line, what goes wrong with which input, and how sure it is. It runs NOTHING of the pipeline (no test, rehearsal, sweep or
+  break), changes no file of the repo, commits nothing and judges nothing finally. THE FABLE FINISHER (A5) reads that note AFTER its own
+  whole reading of the diff and confirms or refutes each place by name under `FINISHED BY FABLE`; A5 is not shortened by one line.
+  (h2) LOCATING GOES TO A CHEAPER MODEL, JUDGING NEVER. A Fable session hands a search that only LOCATES - every caller of a function, every
+  test that pins these words, every request that buys a picture or a clip - to an Explore sub-agent on a cheaper model, and then reads
+  ITSELF, whole, every place the list names. A sub-agent never reads FOR a judgement, its summary is never evidence, and nothing it read is
+  counted as read (a design read through readers was paid twice on 15 Nov 2026).
+  (h3) THE CODE GRAPH IS A DUTY OF THE REVIEWER, THE FINISHER AND THE AUDITOR: `code-review-graph update --repo reality-engine`, then for
+  every function the memo or the diff changes the graph's callers and tests, LISTED in the review or the record beside what the session
+  found by search (a difference between the two lists is itself read). Under (d)'s rules: a command that ends, never while a run is alive.
+  (h4) EVERY PHASE'S SESSION IS STARTED FRESH ON THE OWNER'S LATEST TURN, so that it carries the skills installed since (a session keeps the
+  skills it started with; the Bash hook reaches running sessions too). USED: test-driven-development (the plan's failing test first),
+  verification-before-completion (evidence before a claim), systematic-debugging (a red; "reproduce a bad sweep id first").
+  BARRED HERE, whatever a skill's own text says: brainstorming's and writing-plans' approval by a human partner (the chain approves);
+  dispatching-parallel-agents and subagent-driven-development for anything that RUNS a test, a rehearsal, a sweep or a break (L9: one run
+  at a time) or that edits the repo; using-git-worktrees; finishing-a-development-branch.
+  WHAT NO TOOL DOES: shorten the whole reading of a designer, a finisher, a repairer, a first builder or a prover; compute a verdict.
 - THE DISPATCHER is the Fable session the owner gave his word to (item 38): the app lets a session start another only on the owner's own words
   in it. It starts every session of both lanes, keeps at most three Lane B sessions at work, and does no batch's own work once its context is
   past 60% (it starts a fresh Fable finisher or repairer). A session that is refused a start leaves the card and says so in the first line of
