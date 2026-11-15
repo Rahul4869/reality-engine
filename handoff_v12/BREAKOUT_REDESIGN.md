@@ -857,3 +857,17 @@ channels reach 10 million views; any measured reach effect of Meta's AI label; a
   another without waiting for him, each as two Fable sessions; a session on another model does only the short list in
   BUILD_STATE under NEXT. Said to him plainly: eleven batches at the proving he ordered are days of machine time, the
   week's Fable allowance is a hard limit, and what reality breaks is found last.
+- ORDER UPDATE (V2b, 15 Nov 2026): V2b built INSIDE THE FORMAT (the format row says how much of the voice is inside the scene, how the camera travels, how
+  the video ends and what it asks; the voice counted sentence by sentence against a floor; an act has one place and one direction of travel, executed by
+  code and judged on what the render recorded, after its repair; the ending the format's own - one ask in F1, none in F3; a name chip only for a drawn
+  character; F3 "The walk" as a row and an arm). BUILT, NOT ACCEPTED when this note was written (final code commit 7e83001; the prover's block decides).
+  THE ORDER AFTER IT: V1c, V4, V5, DRAWN BY CODE, B6b, B7, B8, B9, B10, and V3 - the pilot and going live - LAST. Ten batches remain.
+  WHAT THE BUILD CHANGED IN THIS SECTION, with reasons (the record is in `BUILD_STATE.md`): (1) 10.7 "each shot begins where the last one ended, moving the
+  same way" is built as ONE direction of travel per act for the code-made moves and no picture of another act - a still cannot begin where the last one
+  ended, and a long video's three animated scenes are never neighbours. (2) 10.7 "a jump to another place is an act break, and they are counted": the act
+  comes first (the writer's beat) and its place follows; code makes a jump inside an act impossible on the film and counts the changes of place against an
+  allowance. (3) F3 "from the second month": it starts with the others at its 20, because the launch is after the whole build (the owner's items 29, 30).
+  (4) "three asks" become one in F1 and none in F3. (5) Found at the finish: a state that the quality control re-draws takes its direction from the shot's
+  own mark, and the record is rewritten - without it the repair itself would have held every repaired video. (6) NOT judged by any check: the pixels (a
+  paid look at the finished pictures was left out on purpose); a clip state re-drawn as a still (open issue 197). (7) Open for V1c's design: the trial's
+  cast in the cutaways of F1 and F3 once its art is approved (open issue 196).
