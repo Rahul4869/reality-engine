@@ -2060,6 +2060,77 @@ this laptop only: `PREDESIGN_V1c.md`, `PREREVIEW_V1c.md` and `V1c_DESIGNER2_NOTE
 - 3.10: "the rehearsal holds a flop episode" - the test file's third whole production does (the second pre-review's change 14).
 - 3.10: "the same video made again" as the test file's second production - a second film in one store is held by check `originality`
   before any jury: the named similarity setting (the turn in the record, 15 Nov 2026).
+#### Step 4 BUILD (what changed) - THE FIRST OPUS BUILDER (session 3 of the chain of AMENDMENTS 1 AND 2; it types the approved memo and decides nothing)
+THE BUILDER'S START (15 Nov 2026, 08:58 UTC by the laptop's clock; Opus 5.5, started fresh by the dispatcher `local_e4e9a03f-...` with a first turn that only
+answered READY; its brief arrived as a message). `proving/next.py`: batch V1c, phase BUILD, base 01e7798, red rounds 0, pre-flight clean, the git hooks NOT
+installed, FOUR open findings of `reviews/V2b_audit.md` (F1 to F4); the card says "BUILDER ... built_gate.py, --to BUILT, start the PROVER" - read as session 3
+of the amendments' table (A3): it types the memo, writes `proving/notes/V1c_OPUS_DONE.md` and does NOT run `built_gate.py` or `--to BUILT`, starts no session.
+FIRST CHECK: V2b ACCEPTED on the record (01e7798, its code 7e83001; GitHub run 196); HEAD f3a0dfe (text only since 7e83001: the memo, its review and the six
+corrections typed in); a clean tree; no python process. USAGE at the start (plan Ultra; the app shows no 5-hour line): weekly all models 36%, weekly Fable 62%
+(the account's figure; this session is Opus 5.5), this session's context 9% of 1,000,000.
+THE READING (the plan's chapter 4, the builder's whole reading, each item whole): the plan whole (its amendments first); the handoff `CLAUDE.md`; `02` whole
+(items 1 to 89); `00`, `01`, `03`, `06`, `04`; the redesign whole (section 11 with every end note first, then 0 to 10); in this file the head line, STANDING
+RULES, the owner's verdict, NEXT whole, the record of V1c whole (Steps 1 to 3 and the history of the design), the record of V2b whole (the batch before and the
+newest accepted), OPEN ISSUES 1 to 209, HOW TO RUN, the BATCH LOG; `reviews/V1c_design.md` whole (both rounds), `reviews/V2b_audit.md` whole; the repo's
+`CLAUDE.md`, `OWNER_REQUIREMENTS_LEDGER.md`, `CONCEPT.md`, `PLATFORM_FACTS.md` whole. The reading filled 63% of the context before the code: THE CODE IS READ
+FILE BY FILE AS EACH STEP OF 3.9 IS TYPED (the plan's chapter 4, "item 6 file by file"); what was read for each step is named under that step. NOT READ
+WHOLE, said plainly: `SYSTEM.md` and `ENFORCEMENT_MATRIX.md` (searched for the rows a step touches), `05` and the older records (by rule).
+STEP 0 - THE AUDIT OF V2b, F2, F3 AND F4 (3.11, typed as the memo decides them). READ WHOLE before the first edit: `whatifs/path.py`, `whatifs/format_engine.py`;
+by the parts the step changes: `whatifs/stock.py` 1 to 75, `whatifs/contract.py` 486 to 545 (`p_format_ending`, `p_camera_path`), `tools/sweep.py` 108 to 139
+(`inside_of`), `tests/test_v12_inside.py` (its helpers, sections 8, 9, 10, 11, 12, 14 and the tests S8-40, S8-116), `tests/test_v12_opening_e2e.py` (`_start`).
+TESTS CHANGED BY DESIGN IN STEP 0 (named in the memo's 3.11 F3 before they are touched; each asserts what the memo writes): `tests/test_v12_inside.py` line 369
+(`test_check_format_ending_passes_holds_and_says_na`), line 536 (`test_a_whole_trial_under_the_ladder_names_only_the_character_who_is_drawn`), lines 981 to 985
+(`test_the_sweeps_judge_says_the_inside_of_the_format_held_and_holds_an_id_where_it_was_not_walked`), line 1079
+(`test_the_sweep_holds_a_trial_whose_camera_is_not_applicable_for_another_reason`); and its docstring at line 1032 (no assert). A JUDGE'S FILE CHANGED BY
+DESIGN, named before it is changed (L7): `tools/sweep.py:inside_of` (lines 115, 131, 137).
+THE FAILING TESTS FIRST: the four changed tests and the two new unit tests below, run on the unchanged code: "6 failed, 93 deselected" (each for its own reason:
+the old words, no `stock.own`, no rule 6, the walk told of the Curious One).
+BUILT IN STEP 0 (as written in 3.11): F2 - NEW `stock.own(shot, unit)` (the body of `shape`'s inner `back` as ONE function; `shape` calls it, its behaviour
+unchanged); `path.mark` turns every shot of type "stock" among an act's units into a picture of the act through `stock.own`, at the top of the act's loop and
+BEFORE `first` is chosen, and logs "camera path: <n> shot(s) of real footage became pictures of their act"; rule 6 of `path.plan_report` ("a shot of real footage
+stands inside act <n>"); `path.DIRECTOR` ends "Never \"stock\" in this format: real footage is another place." F3 - NEW `contract._trial_end()` (the clause from
+the two cells alone, three forms, none holding "; ") and `p_format_ending` in a trial: N/A "format <fmt> is a trial: its own devices judge its ending; <clause>";
+`tools/sweep.py:inside_of` takes a trial's N/A when its words hold "is a trial" and prints `words("format_ending").rsplit("; ", 1)[-1][:120]` (its docstring
+follows); the dated line under V2b's 6b and the two notes named there (not edited). F4 - `format_engine._for_format` in a one-voice format leaves out "The
+Curious One is a young adult, never a child." and reads "The Director talks like a calm expert friend."; the line under V2b's search of 3.3 (e).
+TESTS (`tests/test_v12_inside.py`, section 17, and the four changed by design): `test_real_footage_inside_an_act_of_a_path_format_becomes_a_picture_of_the_act` (the
+audit's case: act 2's 3-second line that does not open its beat; the mark, the log line, the place sentence after `lay`, rule 6 when the footage stays, a trial
+untouched, the Director's sentence); `test_the_stock_rules_and_the_camera_path_turn_footage_into_a_picture_by_one_function`; the whole F1 production
+`test_a_whole_f1_production_turns_a_planted_footage_shot_inside_an_act_into_a_picture_of_its_act` (`OWN_IDS[5]` = EP209909050900, NEW: the footage shot PLANTED by
+wrapping `inside.open_acts` as the memo names it; `TAKE` = 0 - the first index its rule finds; the planted line carried no `anim` - the shot list the script gate
+is handed read by a spy on `CON.run`; the log line, a still with its act's place sentence, `camera_path` PASS, `media.stock` never called, no state of the film of
+type "stock"); the whole trial `test_a_whole_trial_without_the_ladder_says_it_ends_on_a_tease_and_its_script_holds_it` (`OWN_IDS[6]` = EP209909120900, NEW: LADDER_ON
+FALSE - "...; it ends on a tease", `end_tease` PASS and "Next simulation" in its script); F4 widened in `test_one_voice_is_never_asked_for_a_second_role_and_is_told_of_none`
+(no role of the walk - writer, bible, director, critic, showrunner, memo - names the Curious One; F1's block keeps both sentences byte for byte). Run alone after
+the code: the unit tests "11 passed, 88 deselected in 8.12s"; the file's whole productions "6 passed, 93 deselected in 582.92s".
+STEP 0'S RUN (real pytest, parallel `-n 6`, strict, THE WHOLE SUITE, alone; its first lines read 20 seconds after the start): "1651 passed in 3204.54s (0:53:24)",
+0 failed (1647 + the four new tests). Plan Guard "PLAN GUARD: GREEN", Truth "TRUTH: GREEN", `tools/gen_docs.py` "wrote docs/CURRENT/SYSTEM.md" - no drift. No
+cell, check, lever or tab moved (68 hard checks, `SHOW_CHECKS` 57, 84 levers, 201 founding items). Breaks S0-01 to S0-14 written into `proving/breaks/V1c.json`
+(a read-only script: "14 breaks, 14 ids, 0 problem(s)" - each anchor found exactly once, each named test present) - NOT RUN.
+WHERE THE BUILD STANDS (the first Opus builder, 15 Nov 2026 about 10:10 UTC; written at 71% of its context, between two steps - step 0b reads `anim.py`,
+`episode.py`'s asset and repair steps, `shotplan.py`, `formats.py` and `contract.p_living` whole and would cross the brief's 80% line half typed). DONE AND
+PUSHED: step 0 (the commit of this note). The state stays BUILD; nothing was moved; `V1c_OPUS_DONE.md` is NOT written. NEXT: a SECOND Opus builder (card
+"BUILDER of V1c - phase BUILD"), with the continuation typist's reading of the plan's A9, reads this record from "Step 4 BUILD" and goes on at 3.9 STEP 0b (the
+cast and the scenes by format: 3.5 with 3.11's F1), then 1, 2, 3, 4, 6, 7 - a checkpoint commit and push after each, the whole suite green after each.
+WHAT IT NEEDS TO KNOW FROM HERE (facts, not decisions):
+- THE AUDIT'S LINES: F2, F3 and F4 of `reviews/V2b_audit.md` STAY "OPEN" until their breaks (S0-01 to S0-14) are CAUGHT on the final code by `breaks.py` (the
+  pattern of V2b's closing of the V2d-b audit's F1); then each line becomes `CLOSED F<n>: <commit>, <how it is proven>`. F1 is step 0b. `next.py` prints all
+  four as open until then.
+- THE PINS TODAY (unchanged by step 0): checks by stage `{"script": 39, "final": 21, "short": 5, "short_file": 2, "release": 1}`, total 68
+  (`tests/test_v12_cutdowns.py` 39, `tests/test_v12_exec.py` 493, `tests/test_v12_motion.py` 633), `SHOW_CHECKS` 57 (`whatifs/org/rnd.py`; `test_v12_motion.py`
+  636, `test_v12_release.py` 436), levers 84 (`test_v12_exec.py` 62), tabs 84, founding items 201, workflow files 24 (`tests/test_safety.py` 68), the suite 1651.
+  The memo's steps move them as 3.9 says (step 1: one check, two levers, one tab, 25 workflows; ...); count again before a pin moves.
+- `tests/conftest.py` has NO `OLD_VIEW` yet: step 0b creates it with `CAST_BY_FORMAT_ON` FALSE (3.0, 3.9 0b), beside `OLD_INSIDE`, in the loop of `fresh_store`.
+- `tests/test_v12_inside.py`: sections 1 to 17; `OWN_IDS` holds SEVEN ids (indices 5 and 6 are step 0's). V1c's own file `tests/test_v12_floor.py` does not exist
+  yet: its whole productions need ids that no test file uses (the test of section 7 of `test_v12_inside.py` checks only that file's ids).
+- `proving/breaks/V1c.json` (the builder's own file, outside the repo): S0-01 to S0-14 - NOT RUN. Every later step adds its own, written before that step's run.
+- THE DISPATCHER'S TEXT TASK (the owner's items 68 to 89 into `docs/CURRENT/OWNER_REQUIREMENTS_LEDGER.md`, in the step that runs `gen_docs` with the docs, step 6) is
+  NOT done. The ledger's form: section I's numbered lines (his requirement in short, where it is applied, BUILT or "TO BUILD: <batch>"); its section I line 3 still
+  says the long-script guard "only raises one card (never a hold)" - step 6 makes it true (settled thing 1).
+- DESIGN QUESTIONS: none so far.
+- NOT RUN BY THIS BUILDER: a rehearsal, the sweep, `breaks.py`, the builder's block.
+USAGE: at this builder's start weekly all models 36%, weekly Fable 62% (the account's figure; this session is Opus 5.5), context 9%; at its end weekly all models
+36%, weekly Fable 62%, context 71%.
 ### V2b - INSIDE THE FORMAT (14-15 Nov 2026) - ACCEPTED (final code commit 01e7798 GREEN in GitHub Checks run 196: 1647 passed; sweep 58 of 58 ids)
 (its code is 7e83001; the designer's record: steps 1 to 3; five Opus builders wrote steps 4 to 6a, the Fable finisher `FINISHED BY FABLE` and the takeaway's draft;
 the prover wrote 6b and completed 7 on 15 Nov 2026)
@@ -2890,6 +2961,9 @@ sentence (step 5), listed in open issue 187"; (4) `DESIGN QUESTION`:
   viewers into subscribers" - (2).
 - `format_engine.py` (26 hits): the lines 3.3 (c) and (d) name - the asks, Shorts and story-engine lines in this step; the speaker-tag sentence in step 3
   (DESIGN QUESTION 5); the two visual-grammar lines and the director note in step 4; the one-voice lines in step 5.
+  CORRECTED BY V1c's BUILD (15 Nov 2026, the audit of V2b, F4): two hits got none of the four answers - "The Curious One is a young adult, never a child." and
+  "The Director talks like a calm expert friend; the Curious One like a bright, honest friend." (`REALITY_ENGINE`); in a one-voice format the first is now left
+  out and the second reads "The Director talks like a calm expert friend." (`format_engine._for_format`; a trial's and F1's block byte for byte).
 - `room.py`: `guest_brief` "TODAY'S GUEST (the Curious One ...)" - not sent in any format while the cast leads (`show.leads_on()`, every format today),
   else (3); `format_pass`'s fix words "label [DIRECTOR] or [SKEPTIC] ... make the Curious One question assumptions" - DESIGN QUESTION 10 (below); the
   critic's `verdict` variables, comments - code, never sent: (2).
@@ -3627,6 +3701,11 @@ the redesign's status line and the note `proving/notes/V2b_ACCEPTED.md`; its scr
 USAGE: at the prover's start (04:36 UTC) the 5-hour window 17%, weekly all models 24%, weekly Fable 39%, its context 9%; when this 6b was written (about 07:50 UTC)
 weekly all models 29%, weekly Fable 49% (an Opus session: the ten Fable points are other sessions' - V1c's designers of record in Lane B and the dispatcher -
 not measured apart), the 5-hour window not shown by the app, its context 16%. Beside the others: the finisher ended at weekly all 23%, Fable 39%.
+CORRECTED BY V1c's BUILD (15 Nov 2026, the audit of V2b, F3): under the ladder a trial ends on no tease. The words of 6b above "every trial 'ends on a tease'"
+and the sweep's lines "...; ends on a tease" were the judge's constant, not what the films did; the same sentence stands in `proving/notes/V2b_ACCEPTED.md` ("the
+trial on its tease") and `proving/notes/V2b_BUILT.md` (line 5 of "What was built") - the notes are not edited (law L11). Since V1c, check `format_ending` says in a
+trial "format F2 is a trial: its own devices judge its ending; " and what it ends on (its tease; no next topic under the ladder; none while NEXT_TEASE_ON is off),
+and `tools/sweep.py:inside_of` prints that clause.
 #### Step 7 TAKEAWAY - THE BUILDER'S DRAFT (five Opus typists and the Fable finisher; the prover completes it; also Palace item `v2b.takeaway`)
 - WORKED: a memo that leaves no taste to the typist (A4). Five Opus sessions typed nine steps; the finisher's own probe found the machine with the switches off
   byte for byte the accepted one, and a trial's texts untouched; the 21 choices the memo had not made came back as DESIGN QUESTIONS, not as code. The break list

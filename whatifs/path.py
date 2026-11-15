@@ -13,7 +13,7 @@ DIRECTOR = ("ONE PLACE PER BEAT, SEEN FROM WHERE THE VIEWER STANDS (this format;
             "the place that beat's visual_world names: write each prompt as another look at THAT place - what is ahead of him, what is at his "
             "feet, what his hand touches - never a new location, never an aerial or establishing view. A consequence as big as the planet is "
             "shown as what he can see of it from where he stands: the sky, the horizon, the street. Camera moves: push_parallax, drift, handheld, "
-            "rack_focus or orbit only - never pull, never kb_roll, never pov_rush away from him.")
+            "rack_focus or orbit only - never pull, never kb_roll, never pov_rush away from him. Never \"stock\" in this format: real footage is another place.")
 PICTURES = ("still", "living", "kling")
 
 def on():
@@ -83,17 +83,22 @@ def sign_of(ep, act_beat, cam):
 def mark(shots, units, total, bible, ep):
     """THE MARKS COME FIRST (before the Animation Director and motion.place): every shot of an act gets `path` = {act, place, sign, first} - `first` True on
     the act's first shot whose type is still, living or kling now (after this a still may become living or kling, a picture of its own); an act with no
-    such shot has no `first`. Returns (shots, the plan's acts [{act, place, from_s, to_s, sign}]). Nothing when off or the units carry no beats."""
+    such shot has no `first`. v12 V1c (the audit of V2b, F2): real footage never stays inside an act - at the top of each act, BEFORE `first` is chosen,
+    a shot of type 'stock' becomes a picture of the act (stock.own, the one conversion). Returns (shots, the plan's acts [{act, place, from_s, to_s,
+    sign}]). Nothing when off or the units carry no beats."""
     if not on_units(units): return shots, []
-    from whatifs import formats as FMT
-    cam = FMT.camera(); out = [dict(s) for s in shots]; plan = []; prev = ""
+    from whatifs import formats as FMT, stock as STK
+    cam = FMT.camera(); out = [dict(s) for s in shots]; plan = []; prev = ""; owned = 0
     for a in acts(out, units, total):
         pl = place_of(a, bible, units, prev); prev = pl; sg = sign_of(ep, a["beat"], cam); first = None
+        for i in a["units"]:
+            if i < len(out) and out[i].get("type") == "stock": out[i] = STK.own(out[i], units[i]); owned += 1
         for i in a["units"]:
             if i >= len(out): continue
             if first is None and out[i].get("type") in PICTURES: first = i
             out[i]["path"] = {"act": a["beat"], "place": pl, "sign": sg, "first": i == first}
         plan.append({"act": a["beat"], "place": pl, "from_s": a["from_s"], "to_s": a["to_s"], "sign": sg})
+    if owned: log(f"camera path: {owned} shot(s) of real footage became pictures of their act")
     log(f"camera path: {len(plan)} act(s) in {len({p['place'] for p in plan})} place(s): " + " | ".join(p["place"] for p in plan)[:300])
     return out, plan
 
@@ -124,11 +129,13 @@ def plan_report(shots, units, total, anchors):
     """camera_path on the shot list, BEFORE any picture is paid: problems for (1) a shot of an act without its mark, (2) an act's first still that gets no
     picture of its own (`anchors` = what the asset step will make), (3) a picture whose angle code assigned and is not eye level, (4) a still or living
     shot without the marks short / promise / anim that does not hold its act's place sentence, (5) an act shorter than ACT_MIN_S beside another, or more
-    changes of place than the allowance (the joins did not run). Returns {acts, places, changes, allow, minutes, angles, problems}."""
+    changes of place than the allowance (the joins did not run), (6) v12 V1c: a shot of real footage inside an act (path.mark makes it a picture of the act).
+    Returns {acts, places, changes, allow, minutes, angles, problems}."""
     p = []; want = acts(shots, units, total); anchors = set(anchors or ())
     for a in want:
         for i in a["units"]:
             if i < len(shots) and not shots[i].get("path"): p.append(f"shot {i} of act {a['beat']} has no camera-path mark"); break
+        if any(i < len(shots) and shots[i].get("type") == "stock" for i in a["units"]): p.append(f"a shot of real footage stands inside act {a['beat']}")
     have = {}
     for i, s in enumerate(shots):
         pm = s.get("path")

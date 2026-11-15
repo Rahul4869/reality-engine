@@ -18,6 +18,12 @@ def names_person(text):
     return bool(PEOPLE_RX.search(re.sub(r"[-_/+.]+", " ", str(text or ""))))
 
 # ------------------------------------------------------------------ the plan: where real footage may stand (pure, before any money)
+def own(shot, unit):
+    """THE ONE CONVERSION of a shot of real footage into a picture of our own (stock.shape's rules and path.mark's act both call it): type 'still', its
+    prompt or else the line itself, `search` and `stock_s` removed; every other key kept."""
+    s = dict(shot); s["type"] = "still"; s["prompt"] = s.get("prompt") or str((unit or {}).get("text") or ""); s.pop("search", None); s.pop("stock_s", None)
+    return s
+
 def shape(shots, units, total):
     """THE STOCK RULES ON THE SHOT LIST (pure; nothing is paid or fetched): a shot of real footage stays only where it is a 'reality anchor' - never the
     first picture, never right after another one, on a line of STOCK_MIN_S to STOCK_MAX_S seconds, and all of them together at most STOCK_SHARE_MAX_PCT
@@ -29,7 +35,7 @@ def shape(shots, units, total):
     if not idx: return out
     sp = MOT.lines_of(units, total); lo, hi = S("STOCK_MIN_S", float), S("STOCK_MAX_S", float); room = S("STOCK_SHARE_MAX_PCT", float) / 100.0 * float(total); used = 0.0; why = {}
     def back(i, reason):
-        out[i]["type"] = "still"; out[i]["prompt"] = out[i].get("prompt") or str(units[i].get("text") or ""); out[i].pop("search", None); out[i].pop("stock_s", None)
+        out[i] = own(out[i], units[i])
         why[reason] = why.get(reason, 0) + 1
     for i in idx:
         d = sp[i][1] - sp[i][0]

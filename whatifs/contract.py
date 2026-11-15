@@ -486,6 +486,14 @@ def p_viewer_inside(ctx):
     return PASS, (f"{r['inside']} of {r['n']} sentences ({r['share_pct']:g}%) inside the scene (floor {r['min_pct']:g}%); the longest run from outside {r['run']} "
                   f"(limit {r['run_max']}); no act explains before it shows")
 
+def _trial_end():
+    """v12 V1c (the audit of V2b, F3): what a trial ends on, from the two cells alone (room.tease_on() reads the format IN THE MAKING; this check answers for
+    the draw's format, also outside formats.use): its tease; no next topic under the ladder; none while NEXT_TEASE_ON is off. No clause holds '; '."""
+    from whatifs import ladder as LAD
+    if S("NEXT_TEASE_ON", bool) and not LAD.on(): return "it ends on a tease"
+    if S("NEXT_TEASE_ON", bool) and LAD.on(): return "no next topic is promised under the ladder"
+    return "no next topic is promised (NEXT_TEASE_ON is off)"
+
 def p_format_ending(ctx):
     """v12 V2b (the ending is the format's, D4): F1 ends on the question to the viewer, F3 on the arrival; no ask and no pointer to another video in the
     last seconds (formats.tail, on the script's words); only the asks the format carries (code removed the others: d['asks_removed']). Never a device."""
@@ -494,7 +502,7 @@ def p_format_ending(ctx):
     d = ctx.get("d") if isinstance(ctx.get("d"), dict) else {}
     fmt = str(d.get("format") or "")
     if fmt not in FMT.FORMATS: return NA, "no format on this episode (written before formats existed, or FORMATS_ON is off)"
-    if FMT.ending(fmt) == "tease": return NA, f"format {fmt} ends on a tease (its own devices judge it)"
+    if FMT.ending(fmt) == "tease": return NA, f"format {fmt} is a trial: its own devices judge its ending; " + _trial_end()      # v12 V1c (the audit's F3): what the trial ends on
     r = FMT.ending_report(_script_text(ctx), fmt, d.get("asks_removed"))
     if r["problems"]: return FAIL, "; ".join(r["problems"])[:380]
     asks = ", ".join(f"{k} {n}" for k, n in sorted(r["asks"].items())) or "none"

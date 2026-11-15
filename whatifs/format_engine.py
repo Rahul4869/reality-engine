@@ -107,6 +107,8 @@ def _for_format(block: str) -> str:
             reactions = False
             if line.startswith(("- [SKEPTIC] =", "- Write natural back-and-forth", "- Alternate speakers")): continue
             line = line.replace("The two of them are the whole show: no third voice, no announcer.", "The guide is the whole show: no second voice, no announcer.")
+            line = line.replace(" The Curious One is a young adult, never a child.", "")                          # v12 V1c (the audit of V2b, F4): told of no second voice
+            line = line.replace("The Director talks like a calm expert friend; the Curious One like a bright, honest friend.", "The Director talks like a calm expert friend.")
         if path_ and (line.startswith("- The studio/control room is a recurring home base") or line.startswith("- Visualize consequences whenever")):
             if not grammar: out.append("- " + PATH.director_rules()); grammar = True
             continue

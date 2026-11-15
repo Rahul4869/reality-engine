@@ -112,8 +112,9 @@ def motion_of(core, ep, shorts=()):
 
 def inside_of(core, ep):
     """v12 V2b: (ok, words) - THE SWEEP WALKS THE INSIDE OF THE FORMAT. The long video of this id must have PASSED viewer_inside and format_ending - a trial
-    only may say format_ending N/A 'ends on a tease' - and camera_path and camera_shown in a format whose camera travels (F1, F3) - a trial only may say
-    N/A 'cuts between its pictures'. A missing row or any other 'not applicable' is a failure here: it would mean the new path was not walked."""
+    only may say format_ending N/A 'is a trial' (v12 V1c, the audit's F3: its words then say what the trial ends on, and the line prints that clause) - and
+    camera_path and camera_shown in a format whose camera travels (F1, F3) - a trial only may say N/A 'cuts between its pictures'. A missing row or any
+    other 'not applicable' is a failure here: it would mean the new path was not walked."""
     from whatifs import formats as FMT, contract as CON
     st = core.store(); led = {}
     for r in st.rows("Feature_Ledger"):
@@ -128,13 +129,13 @@ def inside_of(core, ep):
     for k in ("viewer_inside", "format_ending", "camera_path", "camera_shown"):
         s = status(k)
         if s == "PASS": continue
-        if trial and s == CON.NA and ((k == "format_ending" and "ends on a tease" in words(k)) or (k in ("camera_path", "camera_shown") and "cuts between its pictures" in words(k))): continue
+        if trial and s == CON.NA and ((k == "format_ending" and "is a trial" in words(k)) or (k in ("camera_path", "camera_shown") and "cuts between its pictures" in words(k))): continue
         bad.append(f"{k} {s}: {words(k)[:140]}")
     if bad: return False, "; ".join(bad)
     m = re.search(r"(\d+) of (\d+) sentences \(([\d.]+)%\) inside the scene \(floor (\d+)%\)", words("viewer_inside"))
     share = f"{m.group(3)}% of {m.group(2)} sentences inside (floor {m.group(4)}%)" if m else words("viewer_inside")[:90]
     acts = "the trial cuts between its pictures" if trial else words("camera_path").split("; every picture")[0][:160]
-    end = "ends on a tease" if trial else words("format_ending").split("; no ask")[0][:120]
+    end = words("format_ending").rsplit("; ", 1)[-1][:120] if trial else words("format_ending").split("; no ask")[0][:120]      # v12 V1c (F3): the evidence's own last clause
     return True, f"inside the format held: {fmt}; {share}; {acts}; {end}"
 
 # ------------------------------------------------------------------ one id (runs in its own process: module state never leaks between ids)

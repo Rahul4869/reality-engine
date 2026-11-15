@@ -6,7 +6,7 @@ import pytest
 from whatifs import core, contract as CON, formats as FMT, voice as VO, enforce as EN, fakes as FK, episode as EP, reactions as RX
 from whatifs.org import inside as IN, audience as AUD, registry as REG, levers as LV, rnd as RND
 
-OWN_IDS = ("EP209908010900", "EP209908080900", "EP209908150900", "EP209908220900", "EP209908290900")      # the whole productions of this file: ids no other test file uses (a test proves it)
+OWN_IDS = ("EP209908010900", "EP209908080900", "EP209908150900", "EP209908220900", "EP209908290900", "EP209909050900", "EP209909120900")      # the whole productions of this file: ids no other test file uses (a test proves it)
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def ctx(text, fmt="F1"): return {"room": {"script": {"script": text}}, "d": {"format": fmt}}
 
@@ -366,7 +366,7 @@ def test_check_format_ending_passes_holds_and_says_na(endings, setting):
     c = {"room": {"script": {"script": good}}, "d": {"format": "F1", "asks_removed": {"like": 1, "share": 1}}}
     s, ev = CON.p_format_ending(c); assert s == CON.PASS and ev == "ends on its question: 'So would you keep it?'; no ask and no pointer in the tail; asks in this video: none; removed by code: 2", ev
     s, ev = CON.p_format_ending(ctx(J(GOOD1 + ["[DIRECTOR] Next simulation: What if the Moon left tonight?"]))); assert s == CON.FAIL and "pointer to another video" in ev, ev
-    s, ev = CON.p_format_ending(ctx(good, "F2")); assert s == CON.NA and "ends on a tease" in ev
+    s, ev = CON.p_format_ending(ctx(good, "F2")); assert s == CON.NA and ev == "format F2 is a trial: its own devices judge its ending; it ends on a tease", ev      # V1c (the audit's F3): changed by design
     assert CON.p_format_ending(ctx(good, ""))[0] == CON.NA
     setting("ENDINGS_ON", "FALSE"); s, ev = CON.p_format_ending(ctx(J(GOOD1))); assert s == CON.NA and "ENDINGS_ON" in ev
     setting("ENDINGS_ON", "TRUE")
@@ -374,6 +374,10 @@ def test_check_format_ending_passes_holds_and_says_na(endings, setting):
     for k in FMT.FORMATS: assert FMT.rule("format_ending", k) == "must"
     r = CON.run("script", dict(ctx(J(GOOD1 + ["[DIRECTOR] Subscribe for more."])), ep="EPEN1"), "EPEN1", write=False)
     assert "format_ending" in [f for f, _ in r["failed"]] and not r["ok"]
+    setting("LADDER_ON", "TRUE"); setting("SHORTS_TRACK_ON", "TRUE")                                                   # V1c (the audit's F3): the clause says what the trial ends on
+    s, ev = CON.p_format_ending(ctx(good, "F2")); assert s == CON.NA and ev.endswith("; no next topic is promised under the ladder"), ev
+    setting("NEXT_TEASE_ON", "FALSE")
+    s, ev = CON.p_format_ending(ctx(good, "F2")); assert s == CON.NA and ev.endswith("; no next topic is promised (NEXT_TEASE_ON is off)"), ev
 
 def test_no_tease_under_the_ladder_or_in_a_format_that_does_not_end_on_one_and_the_older_promise_is_still_honoured(endings, setting):
     setting("NEXT_TEASE_ON", "TRUE"); setting("SHORTS_TRACK_ON", "TRUE")
@@ -533,7 +537,7 @@ def test_a_whole_trial_under_the_ladder_names_only_the_character_who_is_drawn(mo
     assert led["living_characters"][0] == "PASS" and led["living_characters"][1].endswith("; no name chip for a character nobody sees"), led["living_characters"]
     script = json.load(open(os.path.join(core.WORK, ep, "plan.json")))["room"]["script"]["script"]
     assert led["end_tease"][0] == CON.NA and "next simulation" not in script.lower(), led.get("end_tease")            # no tease under the ladder (step 2)
-    assert led["format_ending"][0] == CON.NA and "ends on a tease" in led["format_ending"][1], led["format_ending"]
+    assert led["format_ending"] == (CON.NA, "format F2 is a trial: its own devices judge its ending; no next topic is promised under the ladder"), led["format_ending"]      # V1c (F3): changed by design
     for k in ("camera_path", "camera_shown"):
         assert led[k][0] == CON.NA and "format F2 cuts between its pictures" in led[k][1], (k, led[k])                  # the trial cuts between its pictures (step 4)
     from whatifs.org import canon as CANON_
@@ -838,7 +842,12 @@ def test_one_voice_is_never_asked_for_a_second_role_and_is_told_of_none(endings,
         assert "Department memo: keep your advice consistent with the faceless presenter rule." in FE.instructions("memo")
         assert "Critic: assess whether the simulation escalates visually," in FE.instructions("critic")
         rb = GR.rhythm_brief({"blueprint": "b", "reactions": "few", "arc": "a"}); assert "Curious One reaction lines" not in rb and "MUSIC ARC: a." in rb
+        for role in ("writer", "bible", "director", "critic", "showrunner", "memo"):                                    # V1c (the audit's F4): NO role of the walk is told of a second voice
+            assert "Curious One" not in FE.instructions(role), (role, [l for l in FE.instructions(role).split("\n") if "Curious One" in l])
+        assert "The Director talks like a calm expert friend. The guide is the whole show" in w and "never a child" not in w
     assert all(x in f1_fe["writer"] for x in ("- [SKEPTIC] =", "Reaction rules:")) and "Curious One reaction lines" in f1_rb      # F1 keeps both voices
+    assert "Never claim either is a real scientist or expert. The Curious One is a young adult, never a child." in f1_fe["writer"]      # ... and both sentences of F4, byte for byte
+    assert "The Director talks like a calm expert friend; the Curious One like a bright, honest friend. The two of them are the whole show" in f1_fe["writer"]
     setting("ENDINGS_ON", "FALSE")
     with FMT.using("F3"): assert not FE.one_voice()
     src = open(os.path.join(ROOT, "whatifs", "room.py"), encoding="utf-8").read(); assert 'banter="none (one voice)" if FE.one_voice() else' in src
@@ -978,11 +987,15 @@ def test_the_sweeps_judge_says_the_inside_of_the_format_held_and_holds_an_id_whe
     assert re.search(r"([\d.]+)% of \d+ sentences inside", w).group(1) == "87.5"                                       # the block's watch line reads it
     _sweep_case("EPSW2", "F1", {k: v for k, v in GOOD_F1.items() if k != "camera_shown"}); ok, w = SW.inside_of(core, "EPSW2"); assert not ok and "camera_shown missing" in w, w
     _sweep_case("EPSW3", "F1", dict(GOOD_F1, camera_path=(CON.NA, "format F1 cuts between its pictures"))); ok, w = SW.inside_of(core, "EPSW3"); assert not ok and "camera_path N/A" in w, w      # 'not applicable' outside a trial is a failure
-    _sweep_case("EPSW4", "F2", dict(GOOD_F1, format_ending=(CON.NA, "format F2 ends on a tease"), camera_path=(CON.NA, "format F2 cuts between its pictures"),
-                                    camera_shown=(CON.NA, "format F2 cuts between its pictures")))
-    ok, w = SW.inside_of(core, "EPSW4"); assert ok and w.endswith("; the trial cuts between its pictures; ends on a tease") and w.startswith("inside the format held: F2;"), w
+    trial_cut = dict(camera_path=(CON.NA, "format F2 cuts between its pictures"), camera_shown=(CON.NA, "format F2 cuts between its pictures"))
+    _sweep_case("EPSW4", "F2", dict(GOOD_F1, format_ending=(CON.NA, "format F2 is a trial: its own devices judge its ending; no next topic is promised under the ladder"), **trial_cut))      # V1c (F3): changed by design
+    ok, w = SW.inside_of(core, "EPSW4"); assert ok and w.endswith("; the trial cuts between its pictures; no next topic is promised under the ladder") and w.startswith("inside the format held: F2;"), w
+    _sweep_case("EPSW4b", "F2", dict(GOOD_F1, format_ending=(CON.NA, "format F2 is a trial: its own devices judge its ending; it ends on a tease"), **trial_cut))
+    ok, w = SW.inside_of(core, "EPSW4b"); assert ok and w.endswith("; the trial cuts between its pictures; it ends on a tease"), w
+    _sweep_case("EPSW4c", "F2", dict(GOOD_F1, format_ending=(CON.NA, "format F2 ends on a tease"), **trial_cut))           # the OLD words are no trial's N/A any more
+    ok, w = SW.inside_of(core, "EPSW4c"); assert not ok and "format_ending N/A" in w, w
     _sweep_case("EPSW5", "F2", dict(GOOD_F1, viewer_inside=(CON.NA, "INSIDE_ON is FALSE"))); ok, w = SW.inside_of(core, "EPSW5"); assert not ok and "viewer_inside N/A" in w, w      # a trial's voice is judged too
-    _sweep_case("EPSW6", "F2", dict(GOOD_F1, format_ending=(CON.NA, "ENDINGS_ON is FALSE"))); assert not SW.inside_of(core, "EPSW6")[0]                         # only 'ends on a tease' is a trial's N/A
+    _sweep_case("EPSW6", "F2", dict(GOOD_F1, format_ending=(CON.NA, "ENDINGS_ON is FALSE"))); assert not SW.inside_of(core, "EPSW6")[0]                         # only 'is a trial' is a trial's N/A
     _sweep_case("EPSW7", "", GOOD_F1); ok, w = SW.inside_of(core, "EPSW7"); assert not ok and "has no format" in w, w
     s = SW.summary([{"id": "a", "outcome": "ok", "inside": "inside the format held: F1"}, {"id": "b", "outcome": "odd", "inside": "inside the format held: F1"}, {"id": "c", "outcome": "ok"}])
     assert s["format_inside_held"] == 1                                                                                   # the counter: held AND the id good
@@ -1029,7 +1042,7 @@ def test_check_camera_path_fails_when_the_changes_of_place_are_over_the_allowanc
     assert s == CON.FAIL and "5 acts, one shorter than 12 s or more than 3 changes of place: the joins did not run" in ev, ev
 
 def test_check_format_ending_says_why_it_is_not_applicable_without_a_format(endings):
-    """S8-40: no format on the episode is N/A for its own reason (N/A alone is also what 'ends on a tease' gives)."""
+    """S8-40: no format on the episode is N/A for its own reason (N/A alone is also what a trial's ending gives)."""
     s, ev = CON.p_format_ending(ctx(J(GOOD1), "")); assert s == CON.NA and ev.startswith("no format on this episode"), ev
 
 def test_the_arrival_may_speak_to_you_in_the_sentence_before_the_last(endings):
@@ -1076,9 +1089,9 @@ def test_a_re_render_clears_the_fall_back_mark_when_the_picture_is_drawn_again(c
 def test_the_sweep_holds_a_trial_whose_camera_is_not_applicable_for_another_reason():
     """S8-116: a trial's camera checks may say N/A only in the words 'cuts between its pictures'."""
     from tools import sweep as SW
-    _sweep_case("EPSW8", "F2", dict(GOOD_F1, format_ending=(CON.NA, "format F2 ends on a tease"), camera_path=(CON.NA, "the camera path is switched off (CAMERA_PATH_ON)"),
-                                    camera_shown=(CON.NA, "format F2 cuts between its pictures")))
-    ok, w = SW.inside_of(core, "EPSW8"); assert not ok and "camera_path N/A" in w, w
+    _sweep_case("EPSW8", "F2", dict(GOOD_F1, format_ending=(CON.NA, "format F2 is a trial: its own devices judge its ending; no next topic is promised under the ladder"),
+                                    camera_path=(CON.NA, "the camera path is switched off (CAMERA_PATH_ON)"), camera_shown=(CON.NA, "format F2 cuts between its pictures")))      # V1c (F3): changed by design
+    ok, w = SW.inside_of(core, "EPSW8"); assert not ok and "camera_path N/A" in w and "format_ending" not in w, w
 
 def test_each_rewrite_order_is_told_the_formats_asks_where_it_is_sent(endings, setting, monkeypatch):
     """S8-77 to S8-84: every place that sends a rewrite order carrying the asks - the human editor, the lengthening, the fact fix, the retention fix (called
@@ -1184,3 +1197,77 @@ def test_a_cutaway_whose_art_is_gone_continues_the_picture_in_its_acts_direction
     assert job.absent >= 1 and cut, (job.absent, sorted(seen))                                                          # nobody is drawn: the picture before continues
     assert all(k.get("pool") == PATH.MOVES and k.get("sign") == shots[1]["path"]["sign"] for k in cut.values()), cut
     rec = [m for m in job.segmeta if m["i"] == 1]; assert rec and all(m["type"] == "reaction" and m["move"] == "" and not m["fallback"] for m in rec), rec      # the record: a cutaway, as 3.2 says
+
+# ------------------------------------------------------------------ 17. V1c STEP 0 - THE AUDIT OF V2b: F2 (no real footage inside an act), F3 (a trial's ending said as it is), F4 (one voice)
+from whatifs import stock as STK
+from whatifs.org import inside as INS
+
+def test_real_footage_inside_an_act_of_a_path_format_becomes_a_picture_of_the_act(camera, monkeypatch):
+    """The audit's F2, decided (a) in V1c's 3.11: a stock shot on a 3-second line that does NOT open its beat, inside act 2 - after `mark` a still with its
+    act's mark (BEFORE `first` is chosen), after `lay` its place sentence; rule 6 of plan_report holds a footage shot that stayed inside an act."""
+    u, t = _lines([(1, 20), (2, 12), (2, 3), (2, 12)])
+    sh = [{"type": "still", "prompt": "p0"}, {"type": "still", "prompt": "p1"}, {"type": "stock", "search": "ocean waves", "stock_s": 3.0, "prompt": ""}, {"type": "still", "prompt": "p3"}]
+    said = []; real_log = PATH.log; monkeypatch.setattr(PATH, "log", lambda m, *a, **k: (said.append(str(m)), real_log(m, *a, **k))[1])
+    with FMT.using("F1"):
+        out, plan = PATH.mark(sh, u, t, {}, "EPF2")
+        assert out[2]["type"] == "still" and "search" not in out[2] and "stock_s" not in out[2] and out[2]["path"]["act"] == 2 and not out[2]["path"]["first"], out[2]
+        assert out[2]["prompt"] == u[2]["text"] and out[1]["path"]["first"]                                              # its prompt is its line; act 2 opens on its own first picture
+        assert any(m == "camera path: 1 shot(s) of real footage became pictures of their act" for m in said), said
+        laid = PATH.lay(out); assert laid[2]["prompt"].startswith(PATH.sentence(laid[2]["path"]["place"])), laid[2]["prompt"]
+        firsts = [i for i, s in enumerate(laid) if s["path"]["first"]]
+        assert PATH.plan_report(laid, u, t, firsts)["problems"] == []
+        stayed = [dict(s) for s in laid]; stayed[2] = dict(stayed[2], type="stock", search="ocean waves")              # the conversion gone: the footage stays inside act 2
+        assert "a shot of real footage stands inside act 2" in PATH.plan_report(stayed, u, t, firsts)["problems"]
+    with FMT.using("F2"): assert PATH.mark(sh, u, t, {}, "EPF2") == (sh, [])                                              # a trial: footage is the stock rules' alone (the reality anchor)
+    assert 'Never "stock" in this format: real footage is another place.' in PATH.director_rules()                      # the Director is told what code does
+
+def test_the_stock_rules_and_the_camera_path_turn_footage_into_a_picture_by_one_function(monkeypatch, setting):
+    """F2: stock.own is the ONE conversion - stock.shape's own and path.mark's (the same keys go, the prompt is its own or the line)."""
+    assert STK.own({"type": "stock", "search": "x", "stock_s": 3.0, "prompt": "", "unit": 4}, {"text": "The sea rises."}) == {"type": "still", "prompt": "The sea rises.", "unit": 4}
+    assert STK.own({"type": "stock", "search": "x", "prompt": "a harbour"}, {"text": "Line."})["prompt"] == "a harbour"
+    seen = []; real_own = STK.own; monkeypatch.setattr(STK, "own", lambda s, u: (seen.append(u.get("text")), real_own(s, u))[1])
+    u, t = _lines([(1, 3), (1, 3)]); out = STK.shape([{"type": "stock", "search": "x"}, {"type": "still"}], u, t)
+    assert seen == [u[0]["text"]] and out[0] == {"type": "still", "prompt": u[0]["text"]}                               # never the first picture: shape converts it with own
+
+def test_a_whole_f1_production_turns_a_planted_footage_shot_inside_an_act_into_a_picture_of_its_act(monkeypatch, setting):
+    """F2's whole production (V1c 3.11; the design review's change 4 and round 2's corrections 1 and 2): the offline Director's footage never reaches path.mark
+    (open issue 199), so ONE footage shot is PLANTED - a named tool of this test - by wrapping inside.open_acts, the last step before path.mark: the FIRST
+    index >= 2 whose line does not open its beat, a still without short / promise / maker. TAKE says which index the plant took (0 = the first its rule finds;
+    1 = the second, when the Animation Director took the first as a scene's slot - written down, never a changed assert)."""
+    from tests import test_v12_opening_e2e as E2E
+    TAKE = 0
+    _start(monkeypatch, setting, "F1"); ep = OWN_IDS[5]; planted = []; real_open = INS.open_acts
+    def plant(shots, units):
+        out = real_open(shots, units)
+        cand = [i for i in range(2, min(len(out), len(units))) if units[i].get("beat") == units[i - 1].get("beat") and out[i].get("type") == "still"
+                and not (out[i].get("short") or out[i].get("promise") or out[i].get("maker"))]
+        i = cand[TAKE]; out[i] = dict(out[i], type="stock", search="ocean waves", stock_s=3.0); planted.append(i)
+        return out
+    monkeypatch.setattr(INS, "open_acts", plant)
+    said = []; real_log = PATH.log; monkeypatch.setattr(PATH, "log", lambda m, *a, **k: (said.append(str(m)), real_log(m, *a, **k))[1])
+    fetched = []; monkeypatch.setattr(EP.M, "stock", lambda *a, **k: (fetched.append(a), None)[1])
+    gate = {}; real_run = CON.run
+    monkeypatch.setattr(CON, "run", lambda stage, c, *a, **k: (gate.__setitem__(stage, c), real_run(stage, c, *a, **k))[1])
+    r = EP.produce(E2E._slot(10), episode_id=ep); led = _led(ep)
+    assert planted, "nothing was planted"
+    i = planted[-1]; shots = gate["script"]["shots"]
+    assert any(re.match(r"camera path: (\d+) shot\(s\) of real footage became pictures of their act", m) and int(re.match(r"camera path: (\d+)", m).group(1)) >= 1 for m in said), said
+    assert not shots[i].get("anim"), ("the Animation Director took the planted line: set TAKE = 1 and write it down", i)
+    assert shots[i]["type"] != "stock" and "search" not in shots[i] and "stock_s" not in shots[i], shots[i]
+    assert PATH.sentence(shots[i]["path"]["place"]) in str(shots[i].get("prompt") or ""), shots[i].get("prompt")
+    assert led["camera_path"][0] == "PASS", led["camera_path"]
+    assert fetched == [], fetched                                                                                         # media.stock was never called
+    assert not [s for s in (gate["final"].get("path_states") or []) if s.get("type") == "stock"], gate["final"].get("path_states")      # no state of the film is real footage
+    assert r.get("ok"), r
+    shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True)
+
+def test_a_whole_trial_without_the_ladder_says_it_ends_on_a_tease_and_its_script_holds_it(monkeypatch, setting):
+    """The audit's F3: the judge and the record say what the film does - a trial with LADDER_ON FALSE ends on its tease, and the ledger says so."""
+    from tests import test_v12_opening_e2e as E2E
+    _start(monkeypatch, setting, "F2"); ep = OWN_IDS[6]; setting("LADDER_ON", "FALSE")
+    r = EP.produce(E2E._slot(10), episode_id=ep); led = _led(ep)
+    assert led["format_ending"] == (CON.NA, "format F2 is a trial: its own devices judge its ending; it ends on a tease"), led["format_ending"]
+    script = json.load(open(os.path.join(core.WORK, ep, "plan.json")))["room"]["script"]["script"]
+    assert led["end_tease"][0] == "PASS" and "next simulation" in script.lower(), (led.get("end_tease"), script[-300:])      # ... and its script holds its tease
+    assert r.get("ok"), r
+    shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True)
