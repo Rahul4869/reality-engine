@@ -16,20 +16,23 @@
    "verdict": "V2b_01e7798_1.json"
   }
  ],
- "audit_queue": [
-  "V2b"
- ],
+ "audit_queue": [],
  "audited": [
   {
    "at": "2026-11-14T03:18:41Z",
    "batch": "V2d-b",
    "verdict": "VERDICT: FINDINGS (1)"
+  },
+  {
+   "at": "2026-11-15T08:06:01Z",
+   "batch": "V2b",
+   "verdict": "VERDICT: FINDINGS (4)"
   }
  ],
- "base_commit": "5827d97dc5aa948c27ae7f77832013a11108a3c7",
- "batch": "V2b",
+ "base_commit": "01e77987d256b577cdd233907dc8929b39c2fc9d",
+ "batch": "V1c",
  "fable_design_gate": true,
- "final_code_commit": "01e77987d256b577cdd233907dc8929b39c2fc9d",
+ "final_code_commit": "",
  "history": [
   {
    "at": "2026-11-13T11:25:00Z",
@@ -174,6 +177,15 @@
    "from": "PROVING",
    "to": "ACCEPTED",
    "why": ""
+  },
+  {
+   "at": "2026-11-15T07:29:24Z",
+   "batch": "V1c",
+   "by": "",
+   "commit": "",
+   "from": "ACCEPTED",
+   "to": "DESIGN",
+   "why": ""
   }
  ],
  "order": [
@@ -190,8 +202,8 @@
   "B10",
   "V3"
  ],
- "phase": "ACCEPTED",
+ "phase": "DESIGN",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-15T07:24:17Z"
+ "updated": "2026-11-15T08:06:01Z"
 }
