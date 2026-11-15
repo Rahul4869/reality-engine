@@ -107,7 +107,8 @@ done, never what a batch is built from or judged by. An Opus builder or prover a
       WIDENED THE SAME HOUR (item 41: "the design work of other best departments also ... while wisely using tokens between high and extra
       high and ensuring work completion"): the designer and the design reviewer of EVERY remaining batch run at Extra high - PACED BY THE
       ALLOWANCE, read at every start (`get_usage`, the weekly Fable line): under 60% every design and review is Extra high; from 60% only
-      the brain's batches keep it and the others are designed at High; from 80% everything is at High and no NEW Lane B session is started -
+      the brain's batches AND V1c AND DRAWN BY CODE keep it (the owner's item 58, 14 Nov 2026: the floor that judges every video and the
+      scenes a viewer sees are "quality framework" too) and the others are designed at High; from 80% everything is at High and no NEW Lane B session is started -
       what is left belongs to Lane A's finishing passes and repairs (a batch that is built and cannot be finished stops the chain); the
       stop at 88% stands (A8). Extra high is spent ONLY on the design memo and its review: the dispatcher, the launch kit, the finishing
       pass, a repair and the audit are at High.
@@ -355,6 +356,10 @@ VOID = rewrite the break. Done only at: 0 missed, 0 void, on the code of the fin
     PENDING = GitHub's run of that commit is still going (about an hour after the push): wait for it in few calls and compute again. If the
     API does not answer, read the public Actions page of the repository in the browser pane (standing rule 1) and pass what it shows:
     `--github-manual "<run number>,<N passed>,<the rehearsal's line>"`.
+    NEVER COMPUTE A FINAL VERDICT TWICE (open issue 183, V2d-b: the second run of `verdict.py` emptied its own log archive on this laptop):
+    when `VERDICT.txt` already holds GREEN or RED WITH GitHub's run, it is final - read it, do not run `verdict.py` on that folder again.
+    A crash of the archive step is the machinery's fault, never a verdict on the code: the verdict stands, the crash is written word for
+    word into 6b and the open issue, and the logs are kept by copying `$SC/out` into the shared notes folder BEFORE `cleanup.py`.
 6.5 `PYTHONUTF8=1 .venv/Scripts/python.exe proving/judge_guard.py <batch> <base commit from next.py> <final commit>` -> every change the
     batch made to its own judges; an UNEXPLAINED one is red (chapter 8) even under a green verdict.
 6.6 WHAT ONLY A JUDGE CAN LOOK AT - write each into 6b in plain words, from the FACTS and WATCH lines of the verdict and the sweep's result
@@ -441,6 +446,10 @@ session for a role the state does not ask for; a session on another model is not
 - Then the usage figures at your start and end, and the last line: `Next: <the next role and batch> - set Effort: Extra high`.
 - Never report a green check as an achievement and never round a red result up: "55 of 58" is said as 55 of 58.
 - To the owner directly: answer first; short; brutal; no tables of checks; his words go into `02` before you act on them.
+- WHEN YOUR WORK ENDS INSIDE TURNS THE OWNER DROVE (he wrote to you while you worked; the owner's item 67, 14 Nov 2026): the app does NOT
+  continue the session that started you - it holds the note of a turn he began. Your closing message then says in its FIRST line where
+  his one word goes: "<batch> <state> - open the session '<title of the session that started you>' and type: continue".
+- LOST TIME IS SAID AS HOURS LOST, FIRST (items 68 and 69, 15 Nov 2026) - never "nothing was lost" because no file was damaged.
 USAGE: read `mcp__ccd_session_mgmt__get_usage` at your start and end and write the plan's figures (the 5-hour window, weekly all models,
 the per-model weekly line that applies to you) and your own context into the record. From 88% of any weekly line or 92% of the 5-hour
 window: finish the run you are in, write "WHERE THE SESSION STANDS" into the record, commit, push, tell the owner in one line, stop clean.
@@ -452,7 +461,7 @@ THE LAPTOP: Windows 11; the Bash tool is Git Bash; the venv is `REALITY_ENGINE_H
 `core.autocrlf=false`, write LF; a script goes through the file tool, never a here-document (L15); a long run is started DETACHED and waited
 for with ONE background command; a log of an OLDER run in the same folder must never be read as the new one (a new scratch folder per run);
 the venv's `python.exe` is a launcher - one script shows as two processes; the laptop's UTC date is behind the owner's (IST).
-THE TESTS: the suite is 78 files and about an hour serial, 35 minutes parallel; GitHub runs every file in ONE process with one work folder;
+THE TESTS: the suite is 79 files (V2b) and about an hour serial, 35 minutes parallel; GitHub runs every file in ONE process with one work folder;
 the older tests run in forced F2, ladder off, clip market off, motion ladder off (`tests/conftest.py`: `OLD_CLIPS`, `OLD_MOTION` - read it
 before believing that the suite covers your path: the new paths are covered by the batch's own file, the rehearsals and the sweep);
 `tests/paid_calls.py` is the paid-call baseline (a ceiling: every call you add is written there with its count and its reason);
@@ -468,6 +477,13 @@ log-flush hook takes; a rule about the picture reads `job.segmeta` (what the ren
 the encoder's noise only when a HELD picture was measured under the real render at both sizes; a second guard hides a broken first one.
 THE RECORD: `BUILD_STATE.md` is the memory - a finding is written before its fix; a number is read from the run, never from memory; never
 read a result AFTER writing it into a commit message; Plan Guard scans every text file (one flagged word; keep the record clear of it).
+A WAIT ENDS WHEN THE PROCESS ENDS (the owner's item 68, 15 Nov 2026: a Fable finisher lost THIRTEEN HOURS - its test run named a file that
+does not exist and died in one second with "no tests ran", and its wait searched the log for "passed" or "failed", which a run that never
+started does not print). So, for every run of every session: (1) every file named on a command line is checked to exist before a long run
+starts; (2) the first lines of a detached run are read about 20 seconds after its start - did it START, did it COLLECT; (3) the wait is the
+session's own background command on the run itself, or a loop on the run's PROCESS ID (`tasklist //FI "PID eq <pid>"`), never only a search
+for a line of its log - `wait_block.py` reads STATUS lines: start it, and ALSO know the driver's pid; (4) a run that ended without its
+result line is read at once - it is a finding or a slip, said as what it is.
 
 ## 12. THE BATCH BRIEFS (the scope is the source it names - read the source, not only the brief; "issue n" = OPEN ISSUES of `BUILD_STATE.md`)
 Every brief has: WHAT A VIEWER OR THE OWNER GETS - SCOPE (with its sources) - READY (use it, do not rebuild it: the lists under NEXT) -
@@ -557,7 +573,11 @@ PAIRWISE against reference videos; the canary in every session: the owner's reje
 reference and the new video must BEAT it; a jury that does not see that is VOID; LABELS: his verdict is the strongest, real retention the
 second; D13 writes a prediction per video and is scored); the owner's verdict tab; redesign 11.6 H-A and 11.9 "Maker's line" (his typed
 sentence, spoken in his voice at the end and written into the description; NEVER invented - when he gave none there is none; check
-`makers_line`: the text equals his stored line); issue 124 (one story across title, thumbnail and the first seconds).
+`makers_line`: the text equals his stored line); issue 124 (one story across title, thumbnail and the first seconds); issue 196 (V2b's
+finish: once the cast's art is approved, `shotplan.reaction_shots` cuts to the trial's Inspector and Doctor inside an F1 film and an F3
+walk - this design decides it); the owner's items 49 (no AI slop), 50 (what V1c asks of him every release), 55 to 62 (the scoreboard is
+ELIGIBLE VIEWS; every output is made as if it alone had to carry the channel; the API credits are a bonus layer - the product never
+drops without them; the viewer first; the best models, used judiciously) of 14 Nov 2026.
 READY: the Review Board's pattern (`board.py`: strong judges of one family per chain, yes/no answers, the verdict computed by code, a
 planted canary, a void session); `layman.probe` (a canary that must fail); `audience.py`; D13's runs; the memo types.
 CONSTRAINTS: the floor is a FLOOR, never a forecast (redesign R9: models rank engagement weakly) - it may refuse, it never promotes;
@@ -576,7 +596,10 @@ THE OWNER GETS: a machine that decides the month's plan by itself inside its bou
 the scoreboard as the first line of every brief; an answer to every input of his: adopted, tested or parked, and why.
 SCOPE: redesign 4.4 (D1 Strategy wired: the portfolio as levers through the Execution Engine - long videos a month, Shorts a month, uploads
 a week, format shares, the promotion bar, moving seconds, the split of the money; DECIDES ALONE inside the bounds and Rs 5,000, INFORMS,
-IMPLEMENTS; ASKS FIRST for the channel's name, leaving science, money above the cap, deleting a video; the rules for format arms; a weekly
+IMPLEMENTS; ASKS FIRST ONLY for money above the cap and deleting a video - CHANGED BY THE OWNER'S ITEMS 52, 53 AND 60 OF 14 NOV 2026 ("the
+CEO acts by itself"; the channel's NAME and its SUBJECT, science or not, are the machine's to decide BY EVIDENCE: each is an experiment arm
+with a prediction on the scoreboard, applied as a ticket the engine can roll back, and he is INFORMED in one line with one tap to undo -
+never a model's opinion, never a change without a measured reason); the rules for format arms; a weekly
 review in the first three months), 4.7 and 11.10 (D11's split; the compilation from month 2), 4.8 (the scoreboard), 4.9 (the owner's desk:
 his input tab until B9's WhatsApp desk exists), 11.4 (the split between long videos and Shorts; the risk line: long-video views against
 the Shorts count, weekly); issues 78, 103 (one rule for a long video's and a Short's breakout), 138 (count short uploads across kinds),
@@ -670,6 +693,15 @@ bounded ffmpeg install in every workflow, with a test), 110 (untrack `last_error
 rebuilt on the release sheet or deleted), 146. The pull request `v12-organisation` -> `main` is OPENED (never merged) with the cost table.
 CONSTRAINTS: the three lists of `whatifs/truth.py` end as short as they can be; nothing references a retired concept; the package holds
 CURRENT docs only; every "first-run verification" the open issues ask for is a line of the runbook with the tab and the cell to read.
+THE PIPELINE IS ALSO A PRODUCT THE OWNER SELLS (his items 70 and 71, 15 Nov 2026: "utilize this pipeline as a saleable product also to high
+level faceless channels ... prompts packs, and other things ... make the world's best pipeline for me and to sell as well"). So the package
+is written for A BUYER WHO IS NOT HIM: nothing in code or docs is tied to this laptop, his accounts, this channel's name or its subject
+(a search proves it, with a test); every setting a buyer must give is DATA with a setup that asks for it; no key, id or personal detail of
+his anywhere in the package (a scan, with a test); an installer or a setup command that a non-programmer can follow; a licence text; a
+manual; A DEMONSTRATION RUN IN FAKE MODE that makes one episode and one Short without any key. And a list, written from what the build
+REALLY made (never a promise of income, never a figure): the by-products that can be sold without his continuing work - the prompts the
+departments use, the checks, the release sheet, the runbook - each with what it is and what a buyer would need to use it. From V1c on, a
+designer who adds a setting, a name or a path asks: could a buyer who is not him run this? - and writes the answer into the memo.
 B10 ENDS THE BUILD: the prover that accepts it does NOT start a session for V3 - `next.py` stops the chain; the owner is told (chapter 13).
 
 ## 13. V3 - THE PILOT ON REAL SERVICES AND GOING LIVE (LAST; the owner's own sitting; not started by any session of this chain)
