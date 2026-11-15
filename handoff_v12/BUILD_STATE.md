@@ -2535,6 +2535,28 @@ during the app's restarts (two ffmpeg allocations refused; a probe that read 0 s
 `tools/gen_docs.py` wrote `SYSTEM.md`. COUNTS AFTER STEP 3: 70 hard checks (final 23), `SHOW_CHECKS` 59, 89 levers, 86 tabs, 201 founding items, 25 workflow files,
 218 breaks in `proving/breaks/V1c.json` (S3-01 to S3-78 added; each anchor found once, each named test present) - NOT RUN. From this commit on, a step's
 whole-suite evidence is GitHub's Checks run on its pushed commit (the dispatcher's order, plan A12 (f)); this step's laptop run above ENDED and stands as written.
+WHERE THE BUILD STANDS (the fourth Opus builder, 15 Nov 2026, 18:35 UTC by `date -u`; it hands on at its 60% line). BUILT AND COMMITTED: 3.9 steps 0, 0b, 1
+(earlier builders), STEP 2 (7210953, his verdict) and STEP 3 (5ec7ea1, the maker's line), each pushed. THE EXACT NEXT ACT: (1) read GitHub's Checks run on
+5ec7ea1 with `gh_runs.js` (the dispatcher's notes folder, `tools/`) and write its run id and totals here beside step 3 - a RED run is a red: stop and report;
+(2) 3.9 STEP 4, ONE STORY (3.4): the manifest's key `picture`, the packager's sentence, `align`, no `promise_shot` (the condition on the `if` in front of it in
+`produce`, never inside the call: `tests/test_v111_enforce.py` 115), check `one_story` (script stage, D5, a SHOW check: 71 checks, `SHOW_CHECKS` 60), the cell
+`ONE_STORY_ON` and its `OLD_VIEW` entry. THE PINS STEP 4 MOVES (3.4's "THE PINNED CALLS", read again): (b)'s THIRD text - `tests/test_v12_org.py` 475,
+`"ROOM.package(room, chs, d, ep)"` becomes `"ROOM.package(room, chs, d, ep, opening=opn)"` (its other two texts moved in step 3); (c) `tests/test_v12_org.py` 468,
+both strings of its `src.replace` carry `ROOM.package(room, chs, d, ep, opening=opn)`; the packager's `opening=None` is a KEYWORD (`tests/test_tableread.py` 122
+calls it with four arguments); and the count pins once more (`test_v12_exec.py` 493 script 39 -> 40, `test_v12_cutdowns.py` 39 script 39 -> 40 and all 70 -> 71,
+`test_v12_motion.py` 633 / 636, `test_v12_release.py` 436, `test_v12_inside.py` 649 - each read on the code before it moves). Then step 6 (with the dispatcher's
+text task: the owner's items 68 to 89 of `02` into `docs/CURRENT/OWNER_REQUIREMENTS_LEDGER.md` in the file's own form, in the step where `gen_docs.py` runs; NOT
+DONE YET) and step 7 (the break list, now 218 breaks, NOT RUN; the audit lines 2 to 5 of `reviews/V2b_audit.md` still OPEN - closed at step 7 after the break run).
+OPEN DESIGN QUESTIONS FOR THE FINISHER: 21 (`pick_slots`'s `end` - the finisher checks it first) and the FINDING under DESIGN QUESTION 20 (rule (1) of
+`path.plan_report` and an act whose only pictures are his stills). WHAT THE NEXT TYPIST MUST KNOW: (a) the app restarted twice during step 3's whole run and
+the session's wake-up was lost: wait on the pytest PROCESS, and read a log's summary line before calling a run cut; (b) under memory pressure ffmpeg refuses
+allocations - a red that names "Cannot allocate memory" or "malloc ... failed" is reproduced alone before anything else; (c) `tests/test_v12_floor.py`'s whole
+production of step 3 makes the same film on a second Sheet: a new Sheet starts from the SHIPPED defaults, so the test sets the test setup's cells again first;
+(d) `OWN_IDS` of that file now holds seven ids - a whole production of step 4 takes a new one there; (e) the plan's A13 (b): the Opus builder who ends the build
+runs the break list to 0 missed and 0 void but NOT the builder's block - the Fable finisher runs the block on the final code commit.
+USAGE AT THE END (get_usage, 18:33 UTC): weekly all models 44%, weekly Fable 67%, this session's context 55% (it was compacted once, after step 2's suite started:
+14% after the compaction). CONTEXT: the A9 reading took 31 points (9% -> 40%); step 2 about 20 points before the compaction; step 3 41 points (14% -> 55%:
+the memo's 3.3 and the code read again after the compaction, the whole production twice, three reproductions).
 ### V2b - INSIDE THE FORMAT (14-15 Nov 2026) - ACCEPTED (final code commit 01e7798 GREEN in GitHub Checks run 196: 1647 passed; sweep 58 of 58 ids)
 (its code is 7e83001; the designer's record: steps 1 to 3; five Opus builders wrote steps 4 to 6a, the Fable finisher `FINISHED BY FABLE` and the takeaway's draft;
 the prover wrote 6b and completed 7 on 15 Nov 2026)
