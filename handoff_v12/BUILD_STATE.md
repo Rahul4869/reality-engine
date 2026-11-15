@@ -1245,11 +1245,15 @@ ref, kind, title, url, topic, asked, verdict, text, maker_line, seen, via, floor
   out and named) and hands `session` each as its viewing with two more keys, `episode` and `title`. THE TITLE IS STORED WHERE THE VERDICT
   IS COMPUTED AGAIN: tab `Floor_Log` carries ONE more column, its last, `downs` - on every row of a session the JSON list of the
   down-canaries' titles in the order D1 .. Dj ("[]" while the cell is 0), written by `floor.session` alone like the rest of the row.
-  `floor.verdict(looks, refs, downs)` stays pure: of `downs` it reads its length j and, for the why, `str(downs[j - 1])` - in rule (5) of
-  `floor.run` it is handed `[v["title"] for v in downs]`; WHEREVER A VERDICT IS COMPUTED AGAIN FROM STORED ROWS (the run's rules (1) and
-  (2), check `viewer_floor`, `verdicts.sync`) it is handed `json.loads(row["downs"] or "[]")` of the session's first row - and, of the
-  references, a list as long as the kinds "R1" .. "Rk" in that row's `items` (`verdict` reads of `refs` its length k alone). So the
-  stored why and the why computed again are the same words. Test: a session with one down-canary whose title holds a quote mark and a
+  `floor.verdict(looks, refs, downs)` stays pure: of `downs` it reads its length and, for the why, the title of D_i = `str(downs[i - 1])`,
+  i counted from 1 - the down-canary the family lost to, never the list's last by default (the design review, round 2, correction 4) - in
+  rule (5) of `floor.run` it is handed `[v["title"] for v in downs]`. WHEREVER A VERDICT IS COMPUTED AGAIN FROM STORED ROWS THERE IS ONE
+  HELPER (the design review, round 2, correction 5; the name is this memo's): NEW `floor.again(rows)` - the rows of ONE session in,
+  `floor.verdict(looks, <a list as long as the kinds "R1" .. "Rk" in the first row's `items`>, json.loads(first["downs"] or "[]"))` out
+  (`looks` = those rows; `verdict` reads of `refs` its length k alone) - called by ALL FIVE that do it: the run's rules (1) and (2), check
+  `viewer_floor`, `verdicts.sync`, AND `verdicts.references` and `verdicts.downs` (each computes "pass" for another episode's newest
+  session from its rows); a test greps that no other line calls `floor.verdict` on stored rows. So the stored why and the why computed
+  again are the same words. Test: a session with one down-canary whose title holds a quote mark and a
   comma - the why names it, and the check's own computation from the rows agrees; a break (the list not written on the row: computed
   again, j is 0 and check `viewer_floor` FAILS "the stored verdict is not the code's verdict on its own looks").
   `_finish` passes `VER.downs(ep)` to `floor.run` beside the references; `session` adds the items D1 .. Dj and, after the reference
@@ -1269,7 +1273,9 @@ ref, kind, title, url, topic, asked, verdict, text, maker_line, seen, via, floor
   thumbs-up (a man may let a video go and still not like it), his Hold IS taken as a thumbs-down.
 - NOT a memo type of its own: an owner memo is the Owner Office's (D0, B9), which is not wired; until then the label is the row, the
   department run and - where a department must act - D13's problem memo.
-**3.3 THE MAKER'S LINE (NEW `whatifs/maker.py`, department D7; PROTECTED first).** `maker.on()` = `S("MAKER_LINE_ON", bool) and
+**3.3 THE MAKER'S LINE (NEW `whatifs/maker.py`, department D7; PROTECTED first).** (THE CALLS OF `_stage_plan` THAT THIS PART AND 3.4
+CHANGE ARE PINNED BY OLDER TESTS: read the bullet "THE PINNED CALLS" at the end of 3.4 BEFORE build step 3 - the design review, round 2,
+correction 6.) `maker.on()` = `S("MAKER_LINE_ON", bool) and
 S("OWNER_VERDICT_ON", bool)` (the line lives in the verdict's row).
 - ASKED AT THE SHORT, because that is where time exists: when `sync` makes a Short's row and `maker.on()`, a SECOND message (one message
   takes one answer): `notify.send("maker_line", text, [("My line", f"LINE {ref}")], episode=ref, tier="week",
@@ -1500,6 +1506,33 @@ S("OWNER_VERDICT_ON", bool)` (the line lives in the verdict's row).
   `pkg["one_story"]["short"]` is the draw's ladder row and the package's `thumb_prompt` equals `first_picture` of the gate's own
   `opening`; PASS "the thumbnail is drawn from the first picture of Short <id>, the picture this video opens on: '<words>'". The words
   to the title stay `viewer_probe`'s (V1b).
+- THE PINNED CALLS: 3.3 AND 3.4 CHANGE THREE CALLS OF `episode._stage_plan` WHOSE SOURCE TEXT OLDER TESTS PIN (the design review, round 2,
+  correction 6, found with the code graph's callers beside the search - the plan's A11 (h3); its words, typed here before the first line
+  of code; EACH IS A TEST CHANGED BY DESIGN, named before it is touched - law L7). THE CALLS' FORMS:
+  - the two voice calls (episode.py 155, 163): `narrate(voiced, blend(), os.path.join(out, "voice"), line_beats=vbeats, **vkw)`; inside
+    the too-short loop line 162 becomes `if longer: script = longer; clean, beat_marks, beats = _strip_beats(script); voiced, vbeats =
+    MAKER.attach(clean, beats, mk)`.
+  - the two Director calls (176, 181): `ROOM.plan_shots(room, su, d, plan, ep)`.
+  - the packager: `def package(room, chapters, draw, episode, opening=None)` and the call `ROOM.package(room, chs, d, ep, opening=opn)` - a
+    KEYWORD with the default None, because `tests/test_tableread.py` 122 calls `package` with four arguments and stays as it is.
+  THE PINS AND WHAT EACH ASSERTS AFTER THE CHANGE:
+  (a) `tests/test_v12_inside.py` 1105 to 1108, `test_both_voice_calls_of_the_plan_stage_hand_the_beats_on` (today: `src.count(
+    "line_beats=beats") == 2` and `"line_beats=beats" in after`) becomes `assert src.count("line_beats=vbeats") == 2 and
+    src.count("line_beats=beats") == 0 and "clean, beat_marks, beats = _strip_beats(script)" in after and "voiced, vbeats =
+    MAKER.attach(clean, beats, mk)" in after and "line_beats=vbeats" in after` - what it guards stands, one thing stronger: the second
+    voice is made from the lengthened script WITH his line attached again.
+  (b) `tests/test_v12_org.py` 473 to 479, `test_every_wrapped_call_site_still_calls_the_function_it_wraps`: the three texts become
+    `"narrate(voiced, blend()"`, `"ROOM.package(room, chs, d, ep, opening=opn)"` and `"ROOM.plan_shots(room, su, d, plan, ep)"`; the
+    other six of that test stay.
+  (c) `tests/test_v12_org.py` 468, `test_the_registry_is_honest_about_what_runs_under_the_runner`: both strings of its `src.replace`
+    carry `ROOM.package(room, chs, d, ep, opening=opn)` in place of `ROOM.package(room, chs, d, ep)`; nothing else of the test moves.
+  TWO PINS THAT STAY TRUE, said so that no typist moves them: in `produce` the call text `ROOM.promise_shot(shots, units, S_.get("pkg")
+  or {})` after `ANIM.apply(shots, units, plan)` (`tests/test_v111_enforce.py` 115) - 3.4's condition goes on the `if` in front of it
+  (line 654), never into the call; in `tools/rehearsal.py` the line right after `r = EP.produce(slot, episode_id=epid)` stays the
+  `assert r.get("ok")` line (`tests/test_v12_motion.py` 734). EVERY OTHER TEST THAT PINS SOURCE TEXT OF A FILE THIS MEMO EDITS was read
+  by the reviewer (`test_v12_inside.py` 186, 955, 993 to 998; `test_v12_money.py` 306, 425, 427; `test_v12_motion.py` 266, 397, 487, 627,
+  705; `test_v12_exec.py` 327; `test_v12_cutdowns.py` 122; `test_safety.py` 25; `test_v891.py` 97): none pins a line the memo changes, AS
+  LONG AS THE BUILDER ADDS ITS LINES AND REWRITES NONE OF THOSE.
 **3.5 NOBODY OF THE CAST IS CUT TO WHERE THE ROW SAYS NOBODY IS ON SCREEN (open issue 196; `formats.py`, `shotplan.py`, `contract.py`).**
 THE SAME KEY AND THE SAME SWITCH ALSO DECIDE WHAT AN ANIMATED SCENE SHOWS (the audit's F1: 3.11) - both are built in ONE step, 0b of 3.9.
 - A FIFTH V2b-STYLE ROW KEY: `cast` - F1 False, F2 True, F3 False - read by NEW `formats.cast(fmt=None)` (True when no format, as
@@ -1837,8 +1870,10 @@ row key and the same switch), and 3.5 moves from step 5 to the front as step 0b.
   `frame_prompt`, and asks for reference portraits only for a staged scene (`_refs([who])` as today; a place scene: `gemini_image(prompt, [],
   ...)` - THE SAME PAID CALL, the same cost row `image_ref`, the same count: no line of the cost model moves). ITS FALL-BACK IS HANDED THE SAME
   TEXT (`M.still(prompt, ...)`, anim.py 155, as today): `media.still` then finds the lock and the look words in it and adds neither again, and
-  its lighting directive goes behind the text (`atmosphere.with_directive` shortens the DIRECTIVE, never the prompt: atmosphere.py 213 to 219)
-  - ONE FUNCTION, TWO ROADS, THE SAME LOOK WORDS ONCE ON BOTH. SAID PLAINLY: on the first road (Google's picture model) a place scene carries
+  its lighting directive goes behind the text (`atmosphere.with_directive` shortens the DIRECTIVE first; a text of `mx - 42` characters or
+  more is cut at its END - atmosphere.py 216 - where `NOBODY` stands: open issue 208; the design review, round 2, correction 3 - with
+  today's cells `media.still` hands `mx` = 1800 - 161 - 83 = 1,556, so from 1,514 characters on; a place scene's text is about 1,000 by its
+  parts, ESTIMATED, not run) - ONE FUNCTION, TWO ROADS, THE SAME LOOK WORDS ONCE ON BOTH. SAID PLAINLY: on the first road (Google's picture model) a place scene carries
   no lighting directive - no staged scene ever did; whether the two picture models draw the same words alike is the pilot's eye (H33).
   (c) NEW `anim.clip_request(shot, line)` - THE ONE FUNCTION THAT SAYS WHAT A SCENE'S CLIP IS ASKED WITH: a staged scene -> `acting_prompt(shot)`,
   byte for byte; a place scene -> `m.strip().rstrip(".") + ". " + str(shot.get("prompt") or line)` with `m` = the shot's `motion`, and
@@ -1888,7 +1923,9 @@ row key and the same switch), and 3.5 moves from step 5 to the front as step 0b.
   THE LOOK (the review's change 1): the picture text of ALL THREE scenes of an F1 film and of a walk holds `anim.style_words()` and the
   cell `STYLE_LOCK` EXACTLY ONCE each, with `ART_STYLE` at its default and at "illustrated"; the text `media.still` is handed on the
   fall-back road (`gemini_image` made to raise) is the same text, and what `media.still` would send (its lines 108 to 113 applied to it)
-  still holds each once; a trial's three picture texts and three clip texts are byte for byte today's (the hash test above). A break for
+  still holds each once; the fall-back's test ALSO hands each of the production's three scene texts through
+  `atmosphere.with_directive(text, S("IMAGE_PROMPT_MAX_CHARS", int) - (len(lock) + 2) - (len(sw) + 2))` and asserts `anim.NOBODY` WHOLE in
+  what comes back (the design review, round 2, correction 3); a trial's three picture texts and three clip texts are byte for byte today's (the hash test above). A break for
   each of (a) to (f), and one more: the look words left out of `picture_request`. CORRECTED IN V2b's RECORD BY THE BUILD (text): Step 5's row "the Director is told; the scenes move with the
   viewer" and the memo's sentence that the Animation Director builds a start picture "from" its prompt. SAID PLAINLY: whether a picture model
   keeps the place, draws nobody and whether such a scene holds a viewer as a puppet scene does is the pilot's and B8's (H33); a scene state is
@@ -1910,10 +1947,17 @@ row key and the same switch), and 3.5 moves from step 5 to the front as step 0b.
   FIRST index >= 2 whose unit has the same `beat` as the unit before it (the line does not open its beat), whose shot is of type "still" and
   carries none of the marks `short`, `promise`, `maker`, sets `out[i] = dict(out[i], type="stock", search="ocean waves", stock_s=3.0)`,
   remembers `i` in a list of the test and returns the list; `media.stock` is replaced by a recorder. THE ASSERTS ARE UNCONDITIONAL: an `i`
-  was planted; the log holds "camera path: <n> shot(s) of real footage became pictures of their act" with n >= 1; in the saved plan
-  `shots[i]["type"]` is not "stock", the shot carries no `search` and no `stock_s`, and its prompt holds `path.SENTENCE` with its act's
-  place; the ledger's `camera_path` is PASS; `media.stock` was never called; no entry of the render's record for shot `i` is real footage.
-  A break for the conversion (the test then finds `camera_path` FAIL by rule 6 and a call of `media.stock`) and one for rule 6. WHAT IS LOST, SAID: real footage as a reality anchor (V2d-b) now lives in the trial
+  was planted; the log holds "camera path: <n> shot(s) of real footage became pictures of their act" with n >= 1; IN THE SHOT LIST THE
+  SCRIPT GATE IS HANDED (the design review, round 2, correction 1: `plan.json` is written ONCE, at the plan stage - `produce`, episode.py
+  633 - BEFORE `stock.shape`, the plant, `path.mark` and `path.lay`, and not again for a film that passes; so the test keeps `c["shots"]`
+  with a spy on `CON.run` at stage "script", the pattern of `tests/test_v12_inside.py` 527 to 528) `shots[i]["type"]` is not "stock", the
+  shot carries no `search` and no `stock_s`, and its prompt holds `path.SENTENCE` with its act's place; the ledger's `camera_path` is
+  PASS; `media.stock` was never called; no entry of the render's record for shot `i` is real footage. If in that list the planted shot
+  carries `anim` (the Animation Director took its line as a scene's slot), the plant takes the SECOND index its own rule finds, written
+  down in the test - never a changed assert.
+  A break for the conversion (the test then finds no log line and `camera_path` FAIL by rule 6; nothing is fetched: the film is held at
+  the script gate - `produce` 663 to 666 - so `media.stock` is not called in that break either: the design review, round 2, correction 2)
+  and one for rule 6. WHAT IS LOST, SAID: real footage as a reality anchor (V2d-b) now lives in the trial
   alone, one long video in five - whether an anchor of real footage lifts retention can be read only there; the Short's own footage at the
   opening belongs to no act and is untouched.
 - F3, AS THE AUDIT WRITES IT - THE JUDGE AND THE RECORD SAY WHAT THE FILM DOES. `contract.p_format_ending` (497), in a trial: N/A
@@ -1981,6 +2025,13 @@ this laptop only: `PREDESIGN_V1c.md`, `PREREVIEW_V1c.md` and `V1c_DESIGNER2_NOTE
   forms, not two; 4 - the production plants its footage shot through `inside.open_acts` (3.11 F2); 5 - `story.align`'s condition (3.4),
   what `verdicts.downs` returns and the title's road through a column `downs` of tab `Floor_Log` (3.2, 3.1, 3.7), the clause's place
   (3.11 F1 (f)). Usage when it was written (08:36 UTC): weekly all models 34%, weekly Fable 59% (the reviewer's reading at 08:28).
+- THE REVIEW IN THE RECORD, ROUND 2 (the same file, its last part; 15 Nov 2026): VERDICT: APPROVED (commit 1fae761; the state BUILD,
+  0076238), with SIX corrections in exact words "to be typed into the memo's text before the first line of code" - typed by the same
+  session, each at its place and marked "(the design review, round 2, correction n)": 1 and 2 - where the F2 production reads its shot
+  list, and what its break finds (3.11 F2); 3 - the fall-back's sentence, one more assert, open issue 208 (3.11 F1 (b), (g)); 4 - the
+  title of D_i (3.2); 5 - ONE helper for every verdict computed again, named `floor.again` by this memo, five callers (3.2); 6 - the
+  three calls of `_stage_plan` whose source text older tests pin, found by the code graph after the approval (the bullet "THE PINNED
+  CALLS" at the end of 3.4, a pointer at the head of 3.3). Open issue 209 written in the reviewer's words. No decision of the design moved.
 - 3.0 / 3.1: "`floorkit <file> [<id>]` on the runner with the link in `env:`, the group `produce`" - a link he shares, read from the
   event file, a group of its own (the second pre-review's change 3; the third designer's reading of the workflow tests).
 - 3.1: "ONE attempt a model; any error moves on" - an unpaid failure is asked again, a cut reply once more (the second pre-review's
@@ -8787,6 +8838,20 @@ Rehearsal asserts `docs_current` ran and passed.
    clip, which stays, still shows the old one - a rupee for nothing a viewer sees. V1c's 3.11 (d) gives both roads ONE request (the scene's
    own); it does not change which targets are bought. To be decided with the repair loop: one purchase a scene a repair, and a picture
    only where its clip is re-made too.
+208. (V1c's design review, round 2; READ, NOT RUN -> B7, with 207) ON THE FALL-BACK ROAD A PLACE SCENE'S PICTURE REQUEST LOSES ITS LAST
+   SENTENCE FROM 1,514 CHARACTERS ON (`atmosphere.with_directive`, line 216, cuts a long text at its end; `media.still` puts the lock and
+   the look words back, nothing puts `NOBODY` back). To be decided with the repair loop: where `NOBODY` stands in the text, or a request
+   that is never cut.
+209. (V1c's design review, round 2; READ, NOT RUN -> his eye at the pilot, with H33; a later design of D6) IN A CAMERA-PATH FORMAT A SHOT
+   THAT WAS A SCENE AT PLAN TIME CARRIES TWO CAMERAS IN ITS REQUEST. `immersion.apply` gives such a shot the path's motion sentence (lines
+   135 to 136: 'the camera moving forward with the viewer's own steps') and, one line above, the first-person rule written for a clip on a
+   moving object (`pov_prompt` -> `data.POV_KLING`: 'camera mounted on the moving object, accelerating, shaking, debris streaking past the
+   lens') in its PROMPT. Under V2b's defaults that prompt reached no request of a scene (the audit's F1). With V1c's 3.11 it reaches the
+   start picture and the clip of a place scene whose line was a scene at plan time - by chance in a film about a promoted Short, and the
+   promise scene of every film made under an override. A scene the Animation Director promoted from a still carries the still's rule ('the
+   camera IS the viewer's eyes') and is not touched by this. It holds nothing: the words are V2b's, the request still asks for the
+   viewer's own place, nobody in it, in the film's look; what a clip model makes of the two sentences together can be judged only on a
+   real clip.
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - SINCE 13 NOV 2026 (the owner's item 33): the acceptance block, its verdict, the deliberate breaks and the moves of the state are
   run through `REALITY_ENGINE_HANDOFF/proving/` exactly as `handoff_v12/OPUS_BUILD_PLAN.md` says (chapters 5.8, 5.9, 6, 8 and 16; the
