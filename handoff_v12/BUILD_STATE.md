@@ -1872,6 +1872,10 @@ THE OWNER WROTE TO THIS SESSION while its runs went (15 Nov 2026, 02:45 to 04:35
 recorded word for word. What they change: the plan (commit dc491df); the launch stays LAST (item 73); the pipeline is also a product he sells (items
 70, 71: the plan's 12.11).
 WHERE THE BUILD STANDS (the Fable finisher, 15 Nov 2026): V2b IS BUILT, NOT ACCEPTED. Final code commit 7e83001. The hand-over is `proving/notes/V2b_BUILT.md`.
+THE STATE'S COMMIT IS 01e7798 (`next.py --to BUILT --commit 01e7798`, 04:40 UTC: "STATE V2b: BUILD -> BUILT"): the gate is green for the commit it ran on,
+the record's text commit, and `next.py` refused 7e83001 with "no green builder's gate for 7e83001" - so, as with V2d-b (5827d97, its code d8101c8), the
+commit the prover's block runs on is 01e7798 AND ITS CODE IS 7e83001's: `git diff 7e83001 01e7798 --stat` touches only `handoff_v12/` (three text files).
+`built_gate.py` on 01e7798, the pushed tree: "BUILT GATE V2b 01e7798: GREEN".
 The record below this line is the prover's.
 **6b - THE PROVER'S HALF: NOT WRITTEN YET.**
 #### Step 7 TAKEAWAY - THE BUILDER'S DRAFT (five Opus typists and the Fable finisher; the prover completes it; also Palace item `v2b.takeaway`)
