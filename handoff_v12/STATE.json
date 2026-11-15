@@ -204,6 +204,15 @@
    "from": "DESIGN_REVIEW",
    "to": "DESIGN",
    "why": ""
+  },
+  {
+   "at": "2026-11-15T08:37:28Z",
+   "batch": "V1c",
+   "by": "",
+   "commit": "",
+   "from": "DESIGN",
+   "to": "DESIGN_REVIEW",
+   "why": ""
   }
  ],
  "order": [
@@ -220,8 +229,8 @@
   "B10",
   "V3"
  ],
- "phase": "DESIGN",
+ "phase": "DESIGN_REVIEW",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-15T08:29:32Z"
+ "updated": "2026-11-15T08:37:28Z"
 }
