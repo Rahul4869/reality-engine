@@ -236,6 +236,26 @@ done, never what a batch is built from or judged by. An Opus builder or prover a
       from those measured numbers and written beside them (item 95 (a)).
   NOT TAKEN: one Fable session for design AND finish (measured: no saving, and it runs out of room); any change to `proving/` or to the
   block's own runs; any plugin that keeps a process alive beside a prover.
+- A13 (15 Nov 2026; the owner's item 99, "26 Nov is still very far"; measured in `PARALLEL_LANES.md` of the shared notes folder). TWO BATCHES
+  ARE NEVER TYPED SIDE BY SIDE: the machinery binds one batch to one checkout, one branch and one `STATE.json`, and a design is approved on the
+  code it will be built on. WHAT OVERLAPS INSTEAD, from the next batch on (no law moved, nothing in `proving/` changed):
+  (a) THE NEXT BATCH'S DESIGN OF RECORD AND ITS REVIEW ARE FINISHED WHILE THE BATCH BEFORE IS BEING PROVEN (this replaces amendment 3's "when
+      the batch's turn comes" by "from the moment the batch before it is BUILT"). The designer of record reads the batch before's FINAL CODE
+      COMMIT (an export of it, its whole diff), corrects the memo and writes steps 1 to 3 exactly as they will stand in the record into
+      `DESIGN_<batch>_RECORD.md` of the shared notes folder; the reviewer reviews that file against that same commit and writes
+      `REVIEW_<batch>_RECORD.md` (first line `VERDICT: ...`). NOTHING ENTERS THE REPO while the batch before is in BUILT or PROVING. At its
+      acceptance (which changes no code) the designer moves the state to DESIGN, pastes, commits, moves to DESIGN_REVIEW; the reviewer commits
+      its review from its file and moves to BUILD; the first Opus builder, started ahead, is briefed the same minute. ON A RED the designer
+      reads the repair's diff and corrects, the reviewer reads the changed lines only.
+  (b) THE OPUS BUILDER RUNS ITS BREAK LIST (to 0 missed, 0 void) BUT NOT THE BUILDER'S BLOCK: the finisher's last acts run the block on the
+      final code commit as today and `built_gate.py` still asks for it; GitHub's Checks has run the whole suite and a rehearsal on the
+      builder's last push (A12 (f)). No proof of the final commit is removed.
+  (c) BEFORE A RESET OF THE FABLE LINE, OPUS PREPARES WHAT NEEDS NO JUDGMENT for the batches after it: the places (every module, caller, test
+      and pinned count a batch's brief names) and the dated web shortlists, one file a batch in the shared notes folder; a designer still
+      reads every place and every source it cites itself. No Opus session types a batch that Fable has not designed and approved.
+  (d) EVERY AUDIT STAYS ON TIME (an audit found after the last batch has no BUILD phase left to close it).
+  THE DATE THIS GIVES IS COMPUTED, NOT PROMISED: the Fable line resets Thu 19 Nov 18:00 UTC; from it the seven batches after V4 need about
+  19 hours each, and 88 points hold them only if a batch costs about 11 points or less - V4 is the first batch measured under A12 (h).
 - THE DISPATCHER is the Fable session the owner gave his word to (item 38): the app lets a session start another only on the owner's own words
   in it. It starts every session of both lanes, keeps at most three Lane B sessions at work, and does no batch's own work once its context is
   past 60% (it starts a fresh Fable finisher or repairer). A session that is refused a start leaves the card and says so in the first line of
