@@ -1,6 +1,7 @@
 VERDICT: APPROVED
 (Round 2, 15 Nov 2026: the five changes of round 1 are in the memo as of commit 8e079c2 - the part "## Round 2 in the record" at the END of
-this file holds the verdict that stands, with five small corrections for the build. Everything from the next line to that part is round 1 as
+this file holds the verdict that stands, with SIX corrections, each in exact words, to be typed into the memo's text before the first line
+of code - the sixth was found after the approval, by the code graph. Everything from the next line to that part is round 1 as
 it was written; ITS verdict was CHANGES REQUIRED.)
 # V1c THE FLOOR, HIS VERDICT AND THE MAKER'S LINE - design review, round 1 in the record (15 Nov 2026, 08:16 to 08:30 UTC)
 The reviewer: a Fable 5.2 session at Effort Extra high that wrote nothing of the memo (it wrote the second and the third pre-review of the draft:
@@ -238,7 +239,7 @@ When this file was written (08:28 UTC): weekly all models 34%, weekly Fable 59%,
 sessions worked beside this one and are not measured apart.
 
 ---
-## Round 2 in the record (15 Nov 2026, 08:38 to 08:46 UTC; the same reviewer) - VERDICT: APPROVED
+## Round 2 in the record (15 Nov 2026, 08:38 to 08:58 UTC; the same reviewer) - VERDICT: APPROVED
 Reviewed: the record as of commit 8e079c2 (the state DESIGN_REVIEW in a35b601); `proving/next.py` once (the card THE DESIGN REVIEWER of V1c,
 pre-flight clean). The five changes were applied by the dispatcher's Fable session, which wrote none of the rest of the memo - so the whole
 difference e50d6fb..8e079c2 of `BUILD_STATE.md` was read from a file (241 lines; 136 in, 25 out; nine places), each changed passage again in
@@ -246,6 +247,13 @@ its place, and the new text of 3.1 / 3.2 against 3.1 as it stands. Nothing else 
 THE FIVE CHANGES OF ROUND 1 ARE ALL IN THE MEMO, NONE ARGUED. What was found in the NEW text is five small things, none of which a viewer,
 the money or a law depends on and none of which lets a typist build the product wrong: they are listed under "TO CORRECT AT THE BUILD" with
 their exact words and do not hold the batch.
+SAID PLAINLY - A SIXTH WAS FOUND AFTER THE APPROVAL WAS COMMITTED (1fae761) AND THE STATE MOVED TO BUILD. The plan gained a duty at 08:42 UTC,
+inside this round (A11 (h3), the owner's item 89: the code graph's callers beside the search). Doing it afterwards showed that parts 3.3 and
+3.4 - which stand since the pre-reviews - change three calls of `_stage_plan` whose SOURCE TEXT older tests pin, and the memo names none of
+them: correction 6. It is of the kind round 1 made a numbered change (its change 3: law L7, question 8) and this reviewer missed it in
+three readings. No decision of the design moves and the state machine has no road back from BUILD; so the six corrections are given in exact
+words and ARE TYPED INTO THE MEMO'S TEXT, EACH AT ITS PLACE, BY A TEXT COMMIT BEFORE THE FIRST LINE OF CODE (the state stays BUILD) - a
+continuation typist reads the memo, not this file.
 
 ### The five changes of round 1
 1. CLOSED - a place scene's picture text is built as `media.still` joins it (the cell's lock when not held, then `anim.style_words()` when not
@@ -282,17 +290,18 @@ their exact words and do not hold the batch.
 1 yes. 2 yes - item 16 is now honoured where round 1 found it broken: the three scenes are the viewer's own place AND in the film's look.
 3 yes - every rule names its function, its arithmetic, its check, its failing test and its break. 4 no cheap model and no opinion without
 its fence (round 1, question 4). 5 yes, with the pilot's real pairs before the hold is trusted (open issue 201). 6 yes - one new paid kind
-with its line, bound and cap; the repair buys what the first purchase buys, at the address the first purchase uses. 7 yes. 8 yes - every
-older assert that changes is named with its words after the change (`tests/conftest.py`, `tests/test_safety.py` 68, `tests/paid_calls.py`,
-four tests of `tests/test_v12_inside.py`, `tools/sweep.py`, the rehearsal's settings). 9 THE WORST VIDEO STILL LET THROUGH is one the memo
+with its line, bound and cap; the repair buys what the first purchase buys, at the address the first purchase uses. 7 yes. 8 YES ONLY ONCE
+CORRECTION 6 IS IN THE MEMO - named today: `tests/conftest.py`, `tests/test_safety.py` 68, `tests/paid_calls.py`, four tests of
+`tests/test_v12_inside.py`, `tools/sweep.py`, the rehearsal's settings; NOT named in the memo as it stands: one more test of
+`tests/test_v12_inside.py` and two of `tests/test_v12_org.py` that pin the source text of three calls. 9 THE WORST VIDEO STILL LET THROUGH is one the memo
 names itself: until his canary file is filed every long video, and after that every video whose jury was void, goes public after twenty
 hours of his silence having passed every measured check and no first-time viewer (D13's memo names the film; his first three never go out
 without his tap); a film that dies after its first minute; a place scene in which a picture model draws a person although it was asked not
 to (H33) - and, read in this round, asked WITHOUT that sentence in one rare corner (correction 3). 10 yes - open issues 201 to 207, 208
 by correction 3 and 209 by the note under the corrections; H6, H13, H31 to H33.
 
-### TO CORRECT AT THE BUILD (five; each with its exact words; the builder types them, decides nothing, and writes each into Step 4 as
-### "CORRECTED BY THE BUILD (the design review, round 2)"; the finisher checks them first)
+### TO CORRECT AT THE BUILD (six; each with its exact words; typed into the memo's text at its place by a text commit BEFORE the first
+### line of code, marked "(the design review, round 2)"; nobody decides anything; the finisher checks them first)
 1. 3.11 F2, THE PRODUCTION'S ASSERTS READ THE WRONG PLACE. "in the saved plan `shots[i]["type"]` is not "stock" ... and its prompt holds
    `path.SENTENCE`": `plan.json` is written ONCE, at the plan stage (`produce`, episode.py 633), BEFORE `stock.shape`, the plant, `path.mark`
    and `path.lay` (644 to 658), and is not written again for a film that passes. Read there, the three asserts on the shot's type, `search`
@@ -331,9 +340,44 @@ by correction 3 and 209 by the note under the corrections; H6, H13, H31 to H33.
    rows of one session in, `floor.verdict(looks, <a list as long as the kinds "R1" .. "Rk" in the first row's `items`>,
    json.loads(first["downs"] or "[]"))` out - called by the run's rules (1) and (2), check `viewer_floor`, `verdicts.sync`,
    `verdicts.references` and `verdicts.downs`; a test greps that no other line calls `floor.verdict` on stored rows.
-WHY NONE OF THE FIVE HOLDS THE BATCH: 1 and 2 are where a test looks and how a break is described; 4 and 5 are one clause each on a cell
+6. 3.3 AND 3.4 CHANGE THREE CALLS OF `episode._stage_plan` WHOSE SOURCE TEXT OLDER TESTS PIN, AND THE MEMO NAMES NONE OF THE PINS (it
+   names one pin of this kind, the hook's: `tests/test_v12_inside.py` 889). THE PINS, read in the test files: (a)
+   `tests/test_v12_inside.py` 1105 to 1108, `test_both_voice_calls_of_the_plan_stage_hand_the_beats_on`: `src.count("line_beats=beats") ==
+   2` and `"line_beats=beats" in after` - 3.3 gives both `narrate` calls `voiced` and `line_beats=vbeats`. (b) `tests/test_v12_org.py` 473
+   to 479, `test_every_wrapped_call_site_still_calls_the_function_it_wraps`: the line of `ORG.work("D7", "voice"` must hold `narrate(clean,
+   blend()`, the line of `ORG.work("D5", "package"` must hold `ROOM.package(room, chs, d, ep)`, the line of `ORG.work("D6", "plan"` must
+   hold `ROOM.plan_shots(room, units, d, plan, ep)` - 3.3 makes the first `voiced` and the third `su`, 3.4 hands `package` the opening.
+   (c) `tests/test_v12_org.py` 468, `test_the_registry_is_honest_about_what_runs_under_the_runner`: it cuts the exact text of the package
+   call out of the source and asserts that something was cut. As the memo stands, the typist of steps 3 and 4 meets three red older tests
+   it may not touch - or keeps the old names to keep them green, and then `clean` carries his line into everything that reads the script.
+   THE WORDS (the calls' forms, then each assert after the change - TESTS CHANGED BY DESIGN, named here before they are touched):
+   - the two voice calls (episode.py 155, 163): `narrate(voiced, blend(), os.path.join(out, "voice"), line_beats=vbeats, **vkw)`; inside
+     the too-short loop line 162 becomes `if longer: script = longer; clean, beat_marks, beats = _strip_beats(script); voiced, vbeats =
+     MAKER.attach(clean, beats, mk)`.
+   - the two Director calls (176, 181): `ROOM.plan_shots(room, su, d, plan, ep)`.
+   - the packager: `def package(room, chapters, draw, episode, opening=None)` and the call `ROOM.package(room, chs, d, ep, opening=opn)` - a
+     KEYWORD with the default None, because `tests/test_tableread.py` 122 calls `package` with four arguments and stays as it is.
+   - (a) becomes `assert src.count("line_beats=vbeats") == 2 and src.count("line_beats=beats") == 0 and "clean, beat_marks, beats =
+     _strip_beats(script)" in after and "voiced, vbeats = MAKER.attach(clean, beats, mk)" in after and "line_beats=vbeats" in after` - what
+     it guards stands, one thing stronger: the second voice is made from the lengthened script WITH his line attached again.
+   - (b): the three texts become `"narrate(voiced, blend()"`, `"ROOM.package(room, chs, d, ep, opening=opn)"` and `"ROOM.plan_shots(room,
+     su, d, plan, ep)"`; the other six of that test stay.
+   - (c): both strings of its `src.replace` carry `ROOM.package(room, chs, d, ep, opening=opn)` in place of `ROOM.package(room, chs, d,
+     ep)`; nothing else of the test moves.
+   - AND TWO PINS THAT STAY TRUE, said so that no typist moves them: in `produce` the call text `ROOM.promise_shot(shots, units,
+     S_.get("pkg") or {})` after `ANIM.apply(shots, units, plan)` (`tests/test_v111_enforce.py` 115) - 3.4's condition goes on the `if` in
+     front of it (line 654), never into the call; in `tools/rehearsal.py` the line right after `r = EP.produce(slot, episode_id=epid)`
+     stays the `assert r.get("ok")` line (`tests/test_v12_motion.py` 734).
+   EVERY OTHER TEST THAT PINS SOURCE TEXT OF A FILE THE MEMO EDITS was read for this (searched `getsource(` and the files' names in
+   `tests/`): `test_v12_inside.py` 186 (the order in `produce`), 955, 993 to 998 (the sweep's and the rehearsal's calls of `inside_of`),
+   `test_v12_money.py` 306, 425, 427, `test_v12_motion.py` 266, 397, 487, 627, 705, `test_v12_exec.py` 327, `test_v12_cutdowns.py` 122,
+   `test_safety.py` 25, `test_v891.py` 97 - none pins a line the memo changes, as long as the builder ADDS its lines and rewrites none of
+   those.
+WHY NONE OF THE SIX HOLDS THE BATCH: 1 and 2 are where a test looks and how a break is described; 4 and 5 are one clause each on a cell
 that starts at 0; 3 is a corner of a corner (the fall-back road, a text half again as long as usual) on which the request still asks for
 the viewer's own place in the film's look - named as an open issue, as the memo names what a picture model does with the sentence (H33).
+6 IS THE WEIGHTIEST: a typist cannot build the PRODUCT wrong by it as long as these words are in the memo before it types - which is why
+the six are carried into the memo's text first, and why that is said in the first lines of this round.
 SEEN IN THIS ROUND, OLDER THAN V1c - THE BUILDER NAMES IT AS OPEN ISSUE 209, IN THESE WORDS, AND CHANGES NO CODE FOR IT: "(V1c's design
 review, round 2; READ, NOT RUN -> his eye at the pilot, with H33; a later design of D6) IN A CAMERA-PATH FORMAT A SHOT THAT WAS A SCENE AT
 PLAN TIME CARRIES TWO CAMERAS IN ITS REQUEST. `immersion.apply` gives such a shot the path's motion sentence (lines 135 to 136: 'the camera
@@ -344,6 +388,39 @@ the clip of a place scene whose line was a scene at plan time - by chance in a f
 film made under an override. A scene the Animation Director promoted from a still carries the still's rule ('the camera IS the viewer's
 eyes') and is not touched by this." It holds nothing: the words are V2b's, the request still asks for the viewer's own place, nobody in
 it, in the film's look; what a clip model makes of the two sentences together can be judged only on a real clip.
+
+### The code graph's callers beside the search (the plan's A11 (h3); the owner's item 89)
+`code-review-graph update --repo reality-engine` (about 08:50 UTC; no python or ffmpeg process alive; one file re-read, 5,798 nodes; the graph's
+data lies outside the repository and the tree was untouched), then `query callers_of` and `query tests_for` for the 45 existing functions
+the memo changes (a script written with the file tool; its output read from a file). WHERE THE TWO LISTS DIFFER, each difference read:
+- `anim.acting_prompt`: the graph names `specials.run` alone. THE SEARCH ADDS `episode._assets.get_clip`, line 296 - called through
+  `__import__`, which the graph cannot see - the very request the audit's F1 is about; and `tests/test_v102.py` 24 and 142 (the function
+  stays byte for byte).
+- `Job.repair_assets`: the graph names one test, `tests/test_v12_opening.py::test_the_paid_repair_never_remakes_a_shot_of_the_footage`.
+  THE SEARCH ADDS the production caller, `fixes.auto_fix` line 29 (a call on an object). The test was read: its shots carry no `anim`, so
+  its `paid == ["still"]` stands unchanged by 3.11 (d).
+- `sound.immersive`: the graph names `contract.p_impact` (line 235) - A CALLER THE MEMO DOES NOT NAME; the search adds `episode._render`
+  524 and `tests/test_v810.py` 228. Read: the check recomputes the film's sound design by the same call; 3.3's edit takes its `maker`
+  shots from `shots` inside the function, so the film and its check keep one rule. Nothing to change.
+- `room.package`: the graph names `tests/test_tableread.py::test_all_other_prompts_have_no_leftover_placeholders` alone; the search adds
+  `_stage_plan` 175 AND THE TWO TESTS THAT PIN THAT CALL'S TEXT - followed up: correction 6.
+- `sound.plan_sounds` and the five checks (`p_living`, `p_camera_path`, `p_format_ending`, `p_viewer_numbers`, `p_viewer_plain`): the
+  graph names no caller (a module alias; rows of `contract.FEATURES`). The search is the list: `_stage_plan` 184 and `tests/test_v87.py`
+  224; `tests/test_v12_inside.py` 367 to 370 for `p_format_ending` (round 1's change 3).
+WHERE THEY AGREE (the graph's callers, the same as found by search): `anim.apply` - `episode.produce`, two tests; `anim.start_frame` -
+`episode.get_img`, `specials.run`; `anim.frame_prompt` - `start_frame`, `sheets.style_samples`; `_assets`, `_finish`, `_stage_plan`,
+`path.mark`, `path.lay`, `stock.shape`, `motion.place` - `produce`; `_hold` - `_finish` (two sites; the memo edits the final gate's);
+`_render` - `Job.render_all`; `_description` - `_finish`, `tests/test_v83.py`; `anchor_shots` - `anchors_for`, `tests/test_v82.py`;
+`path.plan_report` - `p_camera_path`; `await_approval`, `review_needed` - `_finish`; `hold_review` - `contract._answer`; `inside_of` -
+`sweep.one` and the two tests of round 1's change 3; `_for_format` - `instructions`; `reaction_shots` - `room.plan_shots`; `_gemini` -
+`ask`, `ask_video`, `ask_vision`, `selftest`, one test; `_claude` - `ask`, `claude_both`, `haiku_repair`; `_claude_body` - `_claude`,
+`ask_batch`, `prewarm`, `simulate_claude` (every new argument has a default: no caller moves); `ai_estimate_inr` - `costguard.ladder_level`,
+`preview_cost_flags`, `CacheManager.rows`, `write_ai_summary` (all four read the higher estimate while the floor is on: intended, 3.8);
+`manage.tick` - `cli.main`, the rehearsal, `sweep.release_of`, two tests; `motion.plain` - `carry`, `covers`, `place`, `room_s`;
+`vision_indexes` - `vision_check`; `reuse_runs` - `full_check`; `hours.translate` - `hours.tick`; `opening.manifest` - `opening.fetch`;
+`preflight.run` - `preflight.check`; `notify._ensure_handlers` - `answer`, `expire_defaults`; `costguard.lines` - the estimate's twelve readers.
+THE GRAPH'S "tests for" lists are not a list of what pins a function (from none to 414 tests a function - 400 for `_finish`: every test
+that reaches it by any road): the pins of correction 6 were found by searching the test files for the call texts.
 
 ### The three places attacked hardest across the rounds, and what was found there
 (1) EVERY ROAD ON WHICH THE FLOOR REFUSES NOTHING (his item 73) - found, in the pre-reviews: one failed request made a session void; a
@@ -373,9 +450,13 @@ paragraph out before the model, back byte for byte); every "byte for byte with t
 The diff e50d6fb..8e079c2 of `BUILD_STATE.md` whole (from a file, never a shortened output) and each changed passage in its place; open
 issue 207; of 7e83001: `atmosphere.py` 205 to 219, `room.py` 443 to 450, `ladder.py` 14 to 16, `formats.py` 112 to 117, `episode.py` 668 to
 694 again, `checkpoint.save`, `immersion.pov_prompt`, `data.STYLE_LOCK`, the cells `IMAGE_PROMPT_MAX_CHARS` and `LIGHTING_DIRECTIVE_ON`,
-`tests/conftest.py` 15 to 35, `tests/test_v12_inside.py` at its fixtures, `_start`, `_led` and lines 524 to 530. Nothing was run but
-`next.py`.
+`tests/conftest.py` 15 to 35, `tests/test_v12_inside.py` at its fixtures, `_start`, `_led` and lines 524 to 530; the plan's A11 (h) (commit
+f1cdf0f, written during this round) and `02` item 89 whole; for the graph's duty: `tests/test_v12_org.py` 460 to 482,
+`tests/test_v12_opening.py` 280 to 287, `tests/test_v12_inside.py` 184 to 190, 953 to 960, 991 to 998 and 1098 to 1108, and the other
+source pins named under correction 6. Run: `next.py` (the card; the state's move) and the code graph's `update` and `query` - nothing of
+the pipeline.
 
 ### USAGE of round 2
 At its start (08:38 UTC): weekly all models 35%, weekly Fable 60%, this session's context 41%. When this part was written (08:43 UTC):
-weekly all models 35%, weekly Fable 60%, context 45%. The app shows no 5-hour line.
+weekly all models 35%, weekly Fable 60%, context 45%; after the code graph's duty and correction 6 (08:53 UTC): 35%, 61%, context 55%
+(one read of the graph's raw output cost about a tenth of that context: its "tests for" lists are long). The app shows no 5-hour line.
