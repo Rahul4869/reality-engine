@@ -173,6 +173,12 @@ done, never what a batch is built from or judged by. An Opus builder or prover a
   of searches, the units a session spent are said in its record. A skill run is a python process: NEVER while a block, a rehearsal, a sweep or
   a break run is alive, and never started by an Opus builder or prover. own-channel-analyzer, channel-insights and metadata-updater need his
   own sign-in and are never run before V3; the paused live channel is never touched.
+  (g) NO TOOL IS EVER CALLED BY THE PIPELINE (the owner's item 88 of 15 Nov 2026: use them in the pipeline "but only if they're actually
+  improving it"; read the item whole). A skill, a plugin and a connector work only inside a Claude session on this laptop; the pipeline runs
+  without either, and a buyer has neither (12.11). What a tool CONTAINS - a method - enters the pipeline only as the pipeline's OWN CODE through
+  a batch's design: a measure with its arithmetic, its test, its cost line where it is paid, a switch; and as a TRIAL with a prediction where it
+  claims to lift a video, never as a rule. NO TEXT OR CODE OF A SKILL IS COPIED (their folders carry no licence file; the pipeline is sold): a
+  designer learns the method and writes it anew, or reads the licence on the source's page first and writes it into the record.
 - THE DISPATCHER is the Fable session the owner gave his word to (item 38): the app lets a session start another only on the owner's own words
   in it. It starts every session of both lanes, keeps at most three Lane B sessions at work, and does no batch's own work once its context is
   past 60% (it starts a fresh Fable finisher or repairer). A session that is refused a start leaves the card and says so in the first line of
@@ -697,6 +703,15 @@ research skills and the owner's free research key - as dated evidence for the DE
 like). THE OBSERVATORY ITSELF IS BUILT AND PROVEN IN FAKE MODE with stand-in replies, and its own access to the platform's data is the
 pipeline's (its line, its quota as a lever, its key a buyer's setting - 12.11), never the session tools' key; the first real collection is
 a line of the pilot.
+THE INTAKE OF THE TOOLS' METHODS (item 88, rules (c) to (e); A11 (g)). FOUND IN THE CODE on 15 Nov 2026: the pipeline already reads the
+platform's data by itself with the owner's sign-in (`craft._yt` -> `gheaders()`; `craft.outlier_rank`: views against the channel's own
+median) - the YouTube skills add no ability, only measures. V5's designer weighs FIVE of them against redesign 10.5 in Step 1 and says of
+each in the memo: built (where, how measured), a trial, or left out and why - views PER DAY at the same age; three searches (relevance, most
+viewed, newest) against a 90-day baseline; RISING SMALL CHANNELS (views against subscribers); the share of Shorts against long videos in the
+niche; whether the niche is filling up (its publishing rate against the baseline). AND ONE THING OF MONEY THAT COSTS NOTHING: the pipeline's
+READ-ONLY research calls get a key and a daily quota OF THEIR OWN (a Settings cell with a safe default; today a search of 100 units and an
+upload draw on ONE quota of one project) - filled at the pilot, a line of B10's runbook. The skill "yt-script" (hook formulas, a score) is
+a PRACTICE SOURCE: its formulas are filed as candidates and each becomes a trial only through the Review Board.
 
 ### 12.6 DRAWN BY CODE (the owner's items 28 and 29; verdict on his desk: TESTED)
 A VIEWER GETS: in a long video's explaining moments a diagram that draws itself - exact, readable, never garbled - instead of a number card.
