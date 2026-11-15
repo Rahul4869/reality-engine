@@ -1,4 +1,7 @@
-VERDICT: CHANGES REQUIRED
+VERDICT: APPROVED
+(Round 2, 15 Nov 2026: the five changes of round 1 are in the memo as of commit 8e079c2 - the part "## Round 2 in the record" at the END of
+this file holds the verdict that stands, with five small corrections for the build. Everything from the next line to that part is round 1 as
+it was written; ITS verdict was CHANGES REQUIRED.)
 # V1c THE FLOOR, HIS VERDICT AND THE MAKER'S LINE - design review, round 1 in the record (15 Nov 2026, 08:16 to 08:30 UTC)
 The reviewer: a Fable 5.2 session at Effort Extra high that wrote nothing of the memo (it wrote the second and the third pre-review of the draft:
 `PREREVIEW2_V1c.md`, `PREREVIEW3_V1c.md`). It changed no code, no test, nothing in `proving/` and no file but this one; it ran nothing of the
@@ -233,3 +236,146 @@ were read by nobody (the record says so).
 At the start of this round (08:16 UTC): weekly all models 33%, weekly Fable 57%, this session's context 12% (the app had compacted it).
 When this file was written (08:28 UTC): weekly all models 34%, weekly Fable 59%, context 38%. The app shows no 5-hour line. Other Fable
 sessions worked beside this one and are not measured apart.
+
+---
+## Round 2 in the record (15 Nov 2026, 08:38 to 08:46 UTC; the same reviewer) - VERDICT: APPROVED
+Reviewed: the record as of commit 8e079c2 (the state DESIGN_REVIEW in a35b601); `proving/next.py` once (the card THE DESIGN REVIEWER of V1c,
+pre-flight clean). The five changes were applied by the dispatcher's Fable session, which wrote none of the rest of the memo - so the whole
+difference e50d6fb..8e079c2 of `BUILD_STATE.md` was read from a file (241 lines; 136 in, 25 out; nine places), each changed passage again in
+its place, and the new text of 3.1 / 3.2 against 3.1 as it stands. Nothing else of the memo moved; the code is still 7e83001.
+THE FIVE CHANGES OF ROUND 1 ARE ALL IN THE MEMO, NONE ARGUED. What was found in the NEW text is five small things, none of which a viewer,
+the money or a law depends on and none of which lets a typist build the product wrong: they are listed under "TO CORRECT AT THE BUILD" with
+their exact words and do not hold the batch.
+
+### The five changes of round 1
+1. CLOSED - a place scene's picture text is built as `media.still` joins it (the cell's lock when not held, then `anim.style_words()` when not
+   held, `rstrip(". ") + ". "`), then `NOBODY`: compared with media.py 108 to 113 line by line; `start_frame` hands the `anim` record's own
+   `line`; the fall-back is handed the same text; the tests on the look (each word once, at the default and at "illustrated"; a trial byte
+   for byte) and the break. One sentence about the fall-back is true only below 1,514 characters: correction 3 below.
+2. CLOSED - ONE helper `scene_picture(i)` for both roads of the repair, with the four lines asked for and the address None; read against
+   episode.py 349 to 383: on road 1 it stands in place of lines 365 and 366 for a target with `anim`, on road 2 in place of line 376, and
+   line 377 then hands None, so `media.animate` sends the picture's own file (media.py 142 to 144). The tests walk both roads in F1, F3 and a
+   trial and assert the address; three breaks; what is older is open issue 207, named and not repaired.
+3. CLOSED - the four tests are named, each with its assert after the change; checked against the test file: test (1) runs with `ENDINGS_ON`
+   TRUE (its fixture), `LADDER_ON` FALSE (`tests/conftest.py` 34) and `NEXT_TEASE_ON` at its default TRUE - the first clause; `_led` gives
+   tuples, so the equality of (2) can hold; "the evidence's own last clause" is now exact (`rsplit("; ", 1)[-1][:120]`) and no clause holds
+   "; " inside it. THE ONE THING MORE THAN ASKED - the clause decided from the two cells, in three forms - IS KEPT, and it is not a change of
+   design beyond the round: `room.tease_on()` (room.py 445 to 450) reads `FMT.ending()` of the format IN THE MAKING, while this check answers
+   for the DRAW's format and is called outside `formats.use` by its own tests; inside the branch it stands in (`ENDINGS_ON` TRUE, the draw's
+   format ends on a tease) `tease_on()` for that film IS `NEXT_TEASE_ON and not ladder.on()` - the first clause's condition, word for word;
+   the other two say WHY no tease is spoken (the ladder; the cell), which is what the audit's F3 asked of a judge's line. `ladder.on()`
+   needs both cells (ladder.py 14 to 16): the test sets both.
+4. CLOSED - the production plants its footage shot through a wrapped `inside.open_acts`, the last step before `path.mark` (episode.py 648,
+   650: the module's attribute is looked up at the call, so the wrap is taken), `media.stock` is a recorder, every assert is unconditional.
+   WHERE the test reads the shot list is wrong (corrections 1 and 2 below) - a fault of the test's wording, not of the rule.
+5. CLOSED - (a) `story.align` returns the package as it came, the same object, unless its three conditions hold; the test and the break.
+   (b) `verdicts.downs` returns [(episode, view id, title)] and the title travels in ONE new last column `downs` of the new tab `Floor_Log`
+   - ATTACKED AGAINST 3.1 AS IT STANDS, AS ASKED, AND IT HOLDS: no word of any verdict names a reference (the why says "lost to <k> video(s)
+   you approved"; `vs_refs` and `predict` count), so `verdict` needs of `refs` its length alone; a row's `items` = {label: kind} carries
+   "R1" .. "Rk", so a recomputation has k from the row itself; the titles of the down-canaries are the only words a verdict takes from
+   outside its looks, and they now stand on the row that `floor.session` alone writes - the rule "ONE writer" of 3.10 (1) is unbroken, the
+   tab is new (no older row lacks the column), 3.1's row list and 3.7's tab line carry it. The break (the list not written: the check FAILS
+   "the stored verdict is not the code's verdict on its own looks") proves the column is read. (c) the clause stands at the very end, with
+   a test that the sweep's line does not move.
+
+### The ten questions of 5.4, round 2
+1 yes. 2 yes - item 16 is now honoured where round 1 found it broken: the three scenes are the viewer's own place AND in the film's look.
+3 yes - every rule names its function, its arithmetic, its check, its failing test and its break. 4 no cheap model and no opinion without
+its fence (round 1, question 4). 5 yes, with the pilot's real pairs before the hold is trusted (open issue 201). 6 yes - one new paid kind
+with its line, bound and cap; the repair buys what the first purchase buys, at the address the first purchase uses. 7 yes. 8 yes - every
+older assert that changes is named with its words after the change (`tests/conftest.py`, `tests/test_safety.py` 68, `tests/paid_calls.py`,
+four tests of `tests/test_v12_inside.py`, `tools/sweep.py`, the rehearsal's settings). 9 THE WORST VIDEO STILL LET THROUGH is one the memo
+names itself: until his canary file is filed every long video, and after that every video whose jury was void, goes public after twenty
+hours of his silence having passed every measured check and no first-time viewer (D13's memo names the film; his first three never go out
+without his tap); a film that dies after its first minute; a place scene in which a picture model draws a person although it was asked not
+to (H33) - and, read in this round, asked WITHOUT that sentence in one rare corner (correction 3). 10 yes - open issues 201 to 207, 208
+by correction 3 and 209 by the note under the corrections; H6, H13, H31 to H33.
+
+### TO CORRECT AT THE BUILD (five; each with its exact words; the builder types them, decides nothing, and writes each into Step 4 as
+### "CORRECTED BY THE BUILD (the design review, round 2)"; the finisher checks them first)
+1. 3.11 F2, THE PRODUCTION'S ASSERTS READ THE WRONG PLACE. "in the saved plan `shots[i]["type"]` is not "stock" ... and its prompt holds
+   `path.SENTENCE`": `plan.json` is written ONCE, at the plan stage (`produce`, episode.py 633), BEFORE `stock.shape`, the plant, `path.mark`
+   and `path.lay` (644 to 658), and is not written again for a film that passes. Read there, the three asserts on the shot's type, `search`
+   and `stock_s` are true whether or not the conversion ran, and the assert on the place sentence fails. THE WORDS: the test reads the shot
+   list THE SCRIPT GATE IS HANDED - a spy on `CON.run` that keeps `c["shots"]` at stage "script", the pattern of `tests/test_v12_inside.py`
+   527 to 528 - and makes those four asserts there; every other assert as the memo has it. If in that list the planted shot carries `anim`
+   (the Animation Director took its line as a scene's slot), the plant takes the SECOND index its own rule finds, written down in the test
+   - never a changed assert.
+2. 3.11 F2, THE BREAK'S OWN DESCRIPTION. "(the test then finds `camera_path` FAIL by rule 6 and a call of `media.stock`)": with the
+   conversion gone the film is HELD at the script gate (`produce` 663 to 666), before any asset is fetched - `media.stock` is not called in
+   that break either. THE WORDS: "(the test then finds no log line and `camera_path` FAIL by rule 6; nothing is fetched: the film is held
+   at the script gate)". The break stands as it is.
+3. 3.11 F1 (b), THE FALL-BACK'S SENTENCE IS TRUE ONLY BELOW 1,514 CHARACTERS. "`atmosphere.with_directive` shortens the DIRECTIVE, never
+   the prompt" is that function's docstring; its line 216 (`if room <= 40: return p[:mx]`) cuts the TEXT at its END once the text is longer
+   than `mx - 42` - with today's cells (`IMAGE_PROMPT_MAX_CHARS` 1800; the lock is 159 characters and the default look words 81, counted:
+   `media.still` hands `mx` = 1800 - 161 - 83 = 1,556) from 1,514 characters on - and `NOBODY` (114 characters) stands at the end. A place
+   scene's text is about 1,000 characters by its parts (ESTIMATED, not run: the place sentence about 140, the first-person rule about 200,
+   the Director's words and the look about 320, the lock, the look words, `NOBODY`); it passes 1,514 only where the Director's words and
+   the bible's look together pass about 800, which a continuity re-plan can do (it appends up to five fixes to the look: episode.py 180).
+   So on the fall-back road ALONE, and only for such a text, the still is
+   asked without the whole `NOBODY` sentence (the lock and the look words are put back by `media.still`); the picture is still asked from
+   the shot's own first-person words, never from the trial's sets. THE WORDS: (i) the sentence in (b) becomes "... its lighting directive
+   goes behind the text (`atmosphere.with_directive` shortens the DIRECTIVE first; a text of `mx - 42` characters or more is cut at its
+   END - atmosphere.py 216 - where `NOBODY` stands: open issue 208)"; (ii) the fall-back's test also hands each of the production's three
+   scene texts through `atmosphere.with_directive(text, S("IMAGE_PROMPT_MAX_CHARS", int) - (len(lock) + 2) - (len(sw) + 2))` and asserts
+   `anim.NOBODY` whole in what comes back; (iii) NEW open issue 208, in these words: "(V1c's design review, round 2; READ, NOT RUN -> B7,
+   with 207) ON THE FALL-BACK ROAD A PLACE SCENE'S PICTURE REQUEST LOSES ITS LAST SENTENCE FROM 1,514 CHARACTERS ON
+   (`atmosphere.with_directive`, line 216, cuts a long text at its end; `media.still` puts the lock and the look words back, nothing puts
+   `NOBODY` back). To be decided with the repair loop: where `NOBODY` stands in the text, or a request that is never cut." No code of the
+   batch changes for it.
+4. 3.2, THE TITLE IN THE WHY. "of `downs` it reads its length j and, for the why, `str(downs[j - 1])`": the letter j is the list's length
+   and the number of the down-canary in one sentence. THE WORDS: "the title of D_i is `str(downs[i - 1])`, i counted from 1 - the
+   down-canary the family lost to, never the list's last by default".
+5. 3.2, "WHEREVER A VERDICT IS COMPUTED AGAIN FROM STORED ROWS" NAMES THREE CALLERS AND THERE ARE FIVE. `verdicts.references` and
+   `verdicts.downs` compute "pass" for another episode's newest session from its rows as well. THE WORDS: ONE helper in `floor.py` - the
+   rows of one session in, `floor.verdict(looks, <a list as long as the kinds "R1" .. "Rk" in the first row's `items`>,
+   json.loads(first["downs"] or "[]"))` out - called by the run's rules (1) and (2), check `viewer_floor`, `verdicts.sync`,
+   `verdicts.references` and `verdicts.downs`; a test greps that no other line calls `floor.verdict` on stored rows.
+WHY NONE OF THE FIVE HOLDS THE BATCH: 1 and 2 are where a test looks and how a break is described; 4 and 5 are one clause each on a cell
+that starts at 0; 3 is a corner of a corner (the fall-back road, a text half again as long as usual) on which the request still asks for
+the viewer's own place in the film's look - named as an open issue, as the memo names what a picture model does with the sentence (H33).
+SEEN IN THIS ROUND, OLDER THAN V1c - THE BUILDER NAMES IT AS OPEN ISSUE 209, IN THESE WORDS, AND CHANGES NO CODE FOR IT: "(V1c's design
+review, round 2; READ, NOT RUN -> his eye at the pilot, with H33; a later design of D6) IN A CAMERA-PATH FORMAT A SHOT THAT WAS A SCENE AT
+PLAN TIME CARRIES TWO CAMERAS IN ITS REQUEST. `immersion.apply` gives such a shot the path's motion sentence (lines 135 to 136: 'the camera
+moving forward with the viewer's own steps') and, one line above, the first-person rule written for a clip on a moving object
+(`pov_prompt` -> `data.POV_KLING`: 'camera mounted on the moving object, accelerating, shaking, debris streaking past the lens') in its
+PROMPT. Under V2b's defaults that prompt reached no request of a scene (the audit's F1). With V1c's 3.11 it reaches the start picture and
+the clip of a place scene whose line was a scene at plan time - by chance in a film about a promoted Short, and the promise scene of every
+film made under an override. A scene the Animation Director promoted from a still carries the still's rule ('the camera IS the viewer's
+eyes') and is not touched by this." It holds nothing: the words are V2b's, the request still asks for the viewer's own place, nobody in
+it, in the film's look; what a clip model makes of the two sentences together can be judged only on a real clip.
+
+### The three places attacked hardest across the rounds, and what was found there
+(1) EVERY ROAD ON WHICH THE FLOOR REFUSES NOTHING (his item 73) - found, in the pre-reviews: one failed request made a session void; a
+long-thinking look became a paid void; the month's cap closed the floor at the memo's own bound; the eye's default failed once and was
+never tried again; in the record: with the organisation off the paid jury held nothing (`floor.plain`). Each now has its rule, its test
+and its break, and the roads that remain are named in rupees and in videos under THE WORST VIDEOS.
+(2) HIS OWN WORDS, FROM THE CELL TO THE FILM AND THE DESCRIPTION - found: a changed digit passed the check; the trial's name chip stood
+over his sentence; the Director and the continuity judge were handed his line; a model translated it in six languages by default; the
+quality control rated the film's last picture against his words. Now the check compares the voice's own unit texts, and every step that
+reads a still's type, prompt or words skips his shot by name.
+(3) EVERY REQUEST THAT BUYS A PICTURE OR A CLIP UNDER THE NEW RULES (the audit's lesson) - found, in round 1: the viewer's own place asked
+without the film's look, a repaired scene handed the word "google" as its picture's address, a third request of the repair that no rule
+named; in round 2: the fall-back's last sentence can be cut (correction 3).
+
+### For the finishing pass - where a typist is most likely to drift from the memo, to be read first in the diff
+`anim.picture_request` (the order lock, look words, `NOBODY`; the three joins; a staged scene byte for byte) and `clip_request` (the motion
+sentence only where the shot carries a `path` mark and does not hold it); `scene_picture` (the address None; `anim["frame"]`; road 1 inside
+the loop's own try); `path.mark` (footage becomes a picture BEFORE `first` is chosen; a `maker` shot is never `first`); `p_format_ending`'s
+three clauses from the two cells and `inside_of`'s `rsplit`; `floor.run` (the log read OUTSIDE the try; one try from rule (3) on; the
+viewing filed before the looks and removed again on a void) and `ask_watch`'s three kinds of failure counted by what was PAID;
+`floor.session` as the ONE writer of tab `Floor_Log`; `maker.attach` / `mark` (append, never replace; `su` for the Director and the
+continuity judge) and the list (a) to (d) of 3.3; `story.align` (the same object back; `words` never cut); `hours.translate` (his
+paragraph out before the model, back byte for byte); every "byte for byte with the switch off" backed by a comparing test; each entry of
+`OLD_VIEW` added in the step that adds its cell.
+
+### The reading of round 2
+The diff e50d6fb..8e079c2 of `BUILD_STATE.md` whole (from a file, never a shortened output) and each changed passage in its place; open
+issue 207; of 7e83001: `atmosphere.py` 205 to 219, `room.py` 443 to 450, `ladder.py` 14 to 16, `formats.py` 112 to 117, `episode.py` 668 to
+694 again, `checkpoint.save`, `immersion.pov_prompt`, `data.STYLE_LOCK`, the cells `IMAGE_PROMPT_MAX_CHARS` and `LIGHTING_DIRECTIVE_ON`,
+`tests/conftest.py` 15 to 35, `tests/test_v12_inside.py` at its fixtures, `_start`, `_led` and lines 524 to 530. Nothing was run but
+`next.py`.
+
+### USAGE of round 2
+At its start (08:38 UTC): weekly all models 35%, weekly Fable 60%, this session's context 41%. When this part was written (08:43 UTC):
+weekly all models 35%, weekly Fable 60%, context 45%. The app shows no 5-hour line.
