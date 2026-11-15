@@ -201,6 +201,41 @@ done, never what a batch is built from or judged by. An Opus builder or prover a
   dispatching-parallel-agents and subagent-driven-development for anything that RUNS a test, a rehearsal, a sweep or a break (L9: one run
   at a time) or that edits the repo; using-git-worktrees; finishing-a-development-branch.
   WHAT NO TOOL DOES: shorten the whole reading of a designer, a finisher, a repairer, a first builder or a prover; compute a verdict.
+- A12 (15 Nov 2026; the owner's items 91, 94 and 95 of `02`: NO compromise on build quality, Fable keeps every design, review, finishing pass
+  and audit, and the date comes earlier ONLY by fewer Fable tokens for the SAME Fable judgment and fewer laptop hours for the SAME proofs).
+  MEASURED FIRST (the file `TOOLS_AND_SPEED.md` of the shared notes folder, from the sessions' own records of 12 to 15 Nov): a batch cost about
+  25 points of the weekly Fable line (V1c about 30); 62% of the line is cache read - every tool call of a session at 700k costs 0.04 points
+  however small; V1c paid ten whole Fable readings for its design and review; a whole suite run on the laptop is 35 to 60 minutes and a batch
+  made six to eight of them before its block. WHAT CHANGES - no judgment moves, no reading is shortened, no proof is removed:
+  (a) FOUR WHOLE FABLE READINGS A BATCH, never more: designer, reviewer, finisher, auditor. The designer stops reading new material at 55% of
+      its window and keeps the memo under about 60 KB with the detail in the build steps, so that no second designer of record is needed; a
+      review round goes to the SAME reviewer while its cache is warm (under 50 minutes), otherwise the reviewer reads only the changed lines.
+  (b) THE FINISHER WRITES, AN OPUS TYPIST TYPES AND RUNS. The Fable finisher reads the whole batch with its own eye and writes every correction
+      as an exact failing test plus the fix (file, place, the words), in one file of the shared notes folder; a fresh Opus typist applies them
+      one by one - the failing test first, seen to fail, then the fix - runs the tests, commits (phase BUILD) and reports the diff and the
+      totals; the finisher READS THAT DIFF WHOLE and judges it; a wrong diff or a red goes back the same way. The gate, `--to BUILT` and the
+      record's "FINISHED BY FABLE" stay the finisher's own acts. A7's repairs follow the same rule.
+  (c) NO FABLE SESSION THAT HOLDS A WHOLE READING IDLES PAST AN HOUR: it is briefed so that its reading ends when its work begins (the
+      finisher when the last build step starts), and a session that would idle longer is let go for a fresh one. A wait ends when the
+      PROCESS ends, never by polling.
+  (d) RELAYS BETWEEN OPUS SESSIONS GO DIRECT: a builder sends "step n pushed at <sha>" to the code reader and "go: commit <sha>, step <n>"
+      to the next builder itself (their ids stand in its brief); the dispatcher is woken only by an event that needs a decision - a red, a
+      full context, a design question, the end of the build.
+  (e) EVERY FABLE SESSION READS SEVERAL FILES A ROUND (independent calls in one message) and gives every "where is X" to the user agent
+      `locator` (a cheaper model, Grep / Glob / Read only), then reads every place it names itself (A11 h2, now a duty with a tool).
+  (f) A BUILD STEP'S WHOLE-SUITE EVIDENCE IS GITHUB'S CHECKS ON ITS PUSHED COMMIT (the whole suite, strict, and a rehearsal, on every push),
+      read with `tools/gh_runs.js` of the shared notes folder and written into the record with its run id. On the laptop the builder names
+      the pins first (every test that quotes what the step changed), runs the step's own files and every file with a pin or an import of the
+      change, commits, pushes and goes on; the next step is not COMMITTED until the previous step's Checks is green; a red Checks run is a
+      red (L: never run again). The break run, the builder's block, the finisher's gate and the WHOLE acceptance block stay on the laptop
+      unchanged - `proving/` is not touched.
+  (g) THE OPUS CODE READER reads each step as it is pushed (item 91) and uses, beside the `code-review` skill, the user agents
+      `test-gap-reader` and `silent-failure-reader` (Opus, read-only); a second reader takes over at 80% of the first one's window.
+  (h) EVERY BATCH'S FABLE COST IS MEASURED at its end (`node tools/fable_cost.js` of the shared notes folder) and written into the ledger
+      beside this estimate: (a) to (e) should bring a batch from about 25 points to about 10 to 16. A date told to the owner is computed
+      from those measured numbers and written beside them (item 95 (a)).
+  NOT TAKEN: one Fable session for design AND finish (measured: no saving, and it runs out of room); any change to `proving/` or to the
+  block's own runs; any plugin that keeps a process alive beside a prover.
 - THE DISPATCHER is the Fable session the owner gave his word to (item 38): the app lets a session start another only on the owner's own words
   in it. It starts every session of both lanes, keeps at most three Lane B sessions at work, and does no batch's own work once its context is
   past 60% (it starts a fresh Fable finisher or repairer). A session that is refused a start leaves the card and says so in the first line of
