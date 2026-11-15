@@ -2738,6 +2738,20 @@ is read with `registry._calls`, and each runner call found must be a site of `EN
 edit). FOR THE FINISHER (not changed by me - a Opus builder decides nothing): whether `entry_issues` itself should read every file of the package, so that
 `dept_contract` closes the same gap in production.
 ITS RUN (`tests/test_v12_org.py` whole - the only file changed - alone, `-n 6`, `WI_NO_SKIPS=1`, 22:12 to 22:15 UTC): "99 passed in 168.66s (0:02:48)".
+STEP 7'S SECOND COMMIT, PUSHED: 51b4869 (22:16 UTC); the code reader 2 was sent "step 7 pushed at 51b4869" the same minute. S2-44 ALONE on 51b4869: "S2-44 CAUGHT
+FAILED tests/test_v12_org.py::test_the_registry_is_honest_about_what_runs_under_the_runner".
+THE CLOSING BREAK RUN (the WHOLE list, from the handoff folder, `proving/breaks.py V1c`, clean tree, HEAD 51b4869, alone, 22:17 to 23:47 UTC): "BREAKS V1c: 257
+caught, 0 MISSED, 0 void of 257 listed" (`proving/breaks/V1c_result.json`, keyed to the trees of 51b4869).
+STEP 7'S CHECKS (read with `gh_runs.js` at 23:48 UTC): run 43767767168 on 1762840, 22:10 -> 23:07 UTC, GREEN - "Unit tests: 1753 passed in 3246.13s (0:54:06)";
+"Rehearsal: REHEARSAL: GREEN, episode id EP202611152305; contract script: 40/40 pass; contract final: 23/23 pass". Run 43768322497 on 51b4869, 22:16 -> 23:44
+UTC, GREEN - "Unit tests: 1753 passed in 5092.97s (1:24:52)"; "Rehearsal: REHEARSAL: GREEN, episode id EP202611152341; contract script: 40/40 pass; contract
+final: 23/23 pass". 1753 = step 6's count: step 7 added four assertions inside three existing tests, no new test.
+WHERE THE BUILD STANDS (the fifth Opus builder, builder E, the LAST builder of V1c, 15 Nov 2026 about 23:50 UTC): EVERY STEP OF THE MEMO IS TYPED and the break
+list is closed. THE FINAL CODE: 51b4869. The state stays BUILD: no Opus builder ran the builder's block, `built_gate.py` or `next.py --to BUILT` (A3, A13 (b)).
+NEXT: the Fable finisher (AMENDMENTS 1 and 2) reads `proving/notes/V1c_OPUS_DONE.md` first (its "WHAT I AM UNSURE OF": DESIGN QUESTION 21, the finding under
+DESIGN QUESTION 20, finding (7) above, the Palace's note), audits and corrects every line, and runs the builder's block on the final code commit.
+USAGE AT THE END (get_usage, 23:48 UTC): weekly all models 49%, weekly Fable 73%, extra usage 53% (21.32 of 40.00 USD), this session's context 13% (compacted
+during the closing break run). At the start of builder E (18:33 UTC): 44%, 67%, context 26%. The Fable figure moved by other sessions' work: builder E is Opus.
 ### V2b - INSIDE THE FORMAT (14-15 Nov 2026) - ACCEPTED (final code commit 01e7798 GREEN in GitHub Checks run 196: 1647 passed; sweep 58 of 58 ids)
 (its code is 7e83001; the designer's record: steps 1 to 3; five Opus builders wrote steps 4 to 6a, the Fable finisher `FINISHED BY FABLE` and the takeaway's draft;
 the prover wrote 6b and completed 7 on 15 Nov 2026)
