@@ -138,6 +138,28 @@ def inside_of(core, ep):
     end = words("format_ending").rsplit("; ", 1)[-1][:120] if trial else words("format_ending").split("; no ask")[0][:120]      # v12 V1c (F3): the evidence's own last clause
     return True, f"inside the format held: {fmt}; {share}; {acts}; {end}"
 
+def floor_of(core, ep, climbed=False):
+    """v12 V1c: (ok, words) - THE SWEEP WALKS THE FLOOR, HIS LINE AND ONE STORY. The long video of this id must have PASSED viewer_floor (or say N/A with
+    evidence that begins 'void by its canary'), makers_line and living_characters, and one_story on an id that climbed the ladder (N/A 'made under an
+    override' otherwise). A missing row, any other 'not applicable' or a FAIL is a failure here. The words begin 'the floor judged: ' (or 'the floor was
+    void by its canary: ') and carry the looks won of 4."""
+    from whatifs import contract as CON
+    led = {}
+    for r in core.store().rows("Feature_Ledger"):
+        if r.get("episode_id") == ep: led[r.get("feature")] = r                      # the latest verdict per check
+    def status(k): return str((led.get(k) or {}).get("status") or "missing")
+    def words(k): return str((led.get(k) or {}).get("evidence") or "")
+    void = status("viewer_floor") == CON.NA and words("viewer_floor").startswith("void by its canary"); bad = []
+    if status("viewer_floor") != CON.PASS and not void: bad.append(f"viewer_floor {status('viewer_floor')}: {words('viewer_floor')[:140]}")
+    for k in ("makers_line", "living_characters"):
+        if status(k) != CON.PASS: bad.append(f"{k} {status(k)}: {words(k)[:140]}")
+    if climbed and status("one_story") != CON.PASS: bad.append(f"one_story {status('one_story')}: {words('one_story')[:140]}")
+    if not climbed and not (status("one_story") == CON.NA and words("one_story").startswith("made under an override")):
+        bad.append(f"one_story {status('one_story')} on an id that did not climb: {words('one_story')[:140]}")
+    if bad: return False, "; ".join(bad)
+    return True, (("the floor was void by its canary: " if void else "the floor judged: ") + words("viewer_floor")[:220] + " | " + words("makers_line")[:110] + " | "
+                  + words("one_story")[:140])
+
 # ------------------------------------------------------------------ one id (runs in its own process: module state never leaks between ids)
 def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
     os.environ.update(WI_FAKE="1", WI_SMALL="1", WI_WORK=os.path.join(work, "work"), PYTHONUTF8="1")
@@ -200,7 +222,10 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
             if res["outcome"] == "ok":                                              # v12 V2b: the rehearsal's long video judged by the sweep's own words too (its counter format_inside_held)
                 ok_i, res["inside"] = inside_of(core, ep)
                 if not ok_i: res["outcome"] = "odd"; res["problems"].append("inside the format: " + res["inside"]); res["error"] = res["inside"][:300]
-        else:                                                                       # the recipe of the end-to-end test in tests/test_v12_org.py
+            if res["outcome"] == "ok":                                              # v12 V1c: the rehearsal's long video (it climbed) - the floor, his line, one story
+                ok_f, res["floor"] = floor_of(core, ep, climbed=True)
+                if not ok_f: res["outcome"] = "odd"; res["problems"].append("the floor, his line or one story: " + res["floor"]); res["error"] = res["floor"][:300]
+        else:                                                                      # the recipe of the end-to-end test in tests/test_v12_org.py
             core._store = core.LocalStore(os.path.join(work, "sheet.json")); core._store.ensure_tabs(); core._settings_cache = None
             for k, v in TEST_SETTINGS.items(): core.set_setting(k, v)
             if not org: core.set_setting("ORG_ON", "FALSE")
@@ -229,6 +254,9 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
             if res["outcome"] == "ok":                                              # v12 V2b: THE SWEEP WALKS THE INSIDE OF THE FORMAT - the voice, the ending, the camera path, judged on the script and the render's record
                 ok_i, res["inside"] = inside_of(core, ep)
                 if not ok_i: res["outcome"] = "odd"; res["problems"].append("inside the format: " + res["inside"]); res["error"] = res["inside"][:300]
+            if res["outcome"] == "ok":                                              # v12 V1c: THE SWEEP WALKS THE FLOOR, HIS LINE AND ONE STORY - judged by first-time viewers, his line kept, the thumbnail the opening
+                ok_f, res["floor"] = floor_of(core, ep, climbed=res.get("ladder") == "climbed")
+                if not ok_f: res["outcome"] = "odd"; res["problems"].append("the floor, his line or one story: " + res["floor"]); res["error"] = res["floor"][:300]
         res.update(evidence(core, ep, org))
     except BaseException as e:                                                      # a crash is a result too: the last line of the traceback names it
         if isinstance(e, KeyboardInterrupt): raise
@@ -302,7 +330,8 @@ def summary(results):
             "released_without_cutdowns": sum(1 for r in results if str(r.get("release") or "").startswith("no cut-down") and r["outcome"] == "ok"),
             "money_agreed": sum(1 for r in results if str(r.get("money") or "").startswith("every paid picture") and r["outcome"] == "ok"),
             "ladder_rules_held": sum(1 for r in results if str(r.get("motion") or "").startswith("the ladder's rules held") and r["outcome"] == "ok"),
-            "format_inside_held": sum(1 for r in results if str(r.get("inside") or "").startswith("inside the format held") and r["outcome"] == "ok"), "bad_ids": sorted(r["id"] for r in results if r["outcome"] != "ok"), "fail_classes": {k: sorted(set(v)) for k, v in sorted(fails.items())},
+            "format_inside_held": sum(1 for r in results if str(r.get("inside") or "").startswith("inside the format held") and r["outcome"] == "ok"),
+            "floor_judged": sum(1 for r in results if str(r.get("floor") or "").startswith("the floor judged") and r["outcome"] == "ok"), "bad_ids": sorted(r["id"] for r in results if r["outcome"] != "ok"), "fail_classes": {k: sorted(set(v)) for k, v in sorted(fails.items())},
             "warn_classes": {k: len(v) for k, v in sorted(warn.items())}, "degraded_classes": {k: len(v) for k, v in sorted(deg.items())}, "owner_message_kinds": {k: len(v) for k, v in sorted(own.items())}}
 
 def main(argv=None):

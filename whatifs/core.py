@@ -835,7 +835,7 @@ DEFAULTS = {
  "MODEL_UPGRADE_NOTICE_DAYS": ("3", "v10.1: days between the test result card and the switch (owner can keep or switch now)"),
  "VERDICT_ROTATION_ON": ("TRUE", "v10.1 (K144): the verdict STYLE rotates (hung jury, appeal, plea deal, technicality...) so no two cases end the same way"),
  "VERDICT_STYLE_GAP": ("3", "v10.1: a verdict style is not reused within this many cases"),
- "SCRIPT_SIMILARITY_MAX": ("0.35", "v10.1 (K145): a script more similar than this to one of the last 10 = one card + degraded note"),
+ "SCRIPT_SIMILARITY_MAX": ("0.35", "v10.1 (K145): a script more similar than this to one of the last 10 is HELD at the script gate by check originality, in every format, and the card is sent beside it"),
  "CAROUSEL_ON": ("TRUE", "v10.1 (K149): an Instagram 'Case Files' carousel (6 slides from the episode's own stills) goes out with each long video"),
  "CAROUSEL_PER_WEEK": ("2", "v10.1: at most this many carousels in 7 days"),
  "WORKER_PUBLIC_URL": ("", "v10.1: the dashboard Worker's base URL (https://...workers.dev); carousel images are served from it for 1 day"),

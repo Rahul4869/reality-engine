@@ -344,7 +344,7 @@ def _run_room(draw, episode):
         if added: log(f"audience asks added by code: {', '.join(added)}", episode=episode)
         if code != S("CTA_LAST"): set_setting("CTA_LAST", code)
     script = ensure_tease(script, spine.get("next_tease"), episode); d["next_tease"] = spine.get("next_tease") or {}      # v8.9: the video ends on the next episode
-    try:                                                   # v10.1 (K145): repetitive-content guard (never a hold; one card when too similar)
+    try:                                                   # v10.1 (K145): repetitive-content guard - above SCRIPT_SIMILARITY_MAX check `originality` HOLDS the video at the script gate, in every format, and the card is sent beside it (v12 V1c: this comment made true)
         from whatifs import similarity as SIM
         d["script_similarity"] = round(SIM.check(script.get("script", ""), episode)[0], 3)
     except Exception as e: log(f"similarity check skipped: {scrub(e)}", "WARN", episode)

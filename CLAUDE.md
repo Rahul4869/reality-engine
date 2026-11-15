@@ -136,6 +136,13 @@ pipeline run uses the new code. Nothing restarts.
   frames of the master against the clips, `opening.alike`). A shot with a `short` mark is paid already: any code that turns animated shots into stills, re-makes clips, adds a sound per animated shot or draws an effect over a shot must skip it (`opening.marked`; the sweep found a comic burst over the footage). Never buy a picture for a marked shot (`cut` raises instead), never compare whole
   frames with a hash of a tiny copy (a vignette beat it: compare detail), never judge the window's look in fake mode - the offline clips are wide, real ones are upright. A long
   video under an override has no footage: both checks say NA. After touching any of it: `tests/test_v12_opening.py`, `tests/test_v12_opening_e2e.py` and a sweep id.
+- **The judged floor** (`whatifs/org/floor.py`, D13; check `viewer_floor`): `floor.session` shows a film's first-minute viewing blind, both orders, to two strong families beside the
+  canary (the rejected video: a FILE given once via `floorkit`, offline `floor.stand_in`), its frozen twin and his approved videos; the check recomputes `floor.verdict` from tab
+  `Floor_Log` (one writer). Not named over the canary in every look = HELD; a broken ladder = VOID, to his eye with a clock - never a pass; never count a cheap or other-provider look.
+- **His verdict and his line** (`whatifs/org/verdicts.py` D13, `whatifs/maker.py` D7; check `makers_line`): tab `Owner_Verdicts` has five writers (`verdicts.sync`, `verdicts.record`,
+  `maker._answer`, `maker.take`, his hand) - never another. A line is spoken as typed or not at all (`maker.usable` refuses, never cuts or mends); it goes into the VOICE, never the
+  script (`maker.attach`); its stills (`maker` mark) buy nothing and every later step skips them; the Director, the judges and the per-minute budgets see the script's units only
+  (`maker.script_units`); `hours.translate` never touches `maker.paragraph`.
 - **New format or series idea**: enter it as an experiment arm or a Playbook trial so the data decides; never replace the whole format at once.
 - **Knowledge Palace** (`whatifs/org/palace.py`): knowledge enters only through `palace.add` / `add_many` (dated evidence, real `applied_in` code references)
   and leaves only through `palace.playbook` (the guard runs first). Never write the `Palace_Items` tab directly, never filter statuses yourself.

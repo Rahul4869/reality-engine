@@ -65,6 +65,17 @@ Brand: **Reality Engine**. The promise is the owner's own: it happens to YOU - f
 - Real footage of NASA and Pexels is a short anchor of a long video - a tenth of it at most, never first, never two in a row, changed, credited, no clip whose title names a person (check
   `stock_share`). A Short has none.
 
+## Judged by a first-time viewer, by the owner, and ending on his own words (`whatifs/org/floor.py`, `whatifs/org/verdicts.py` D13; `whatifs/maker.py` D7; `whatifs/story.py` D5)
+- The judged floor: the first minute of every finished long video that passed every measured check is shown to two strong first-time viewers of two model families beside
+  the video the owner rejected (and its frozen copy, and the videos he approved), each pair asked in both orders; a film they cannot tell from the rejected one is HELD with
+  its own card; a session that fails its planted ladder is void and the film goes to his eye with a clock - never a pass by silence of the judges (check `viewer_floor`).
+- His verdict is the strongest label: every public Short and every live long video gets ONE tap of his (Good / Not good) on tab `Owner_Verdicts`; the floor is scored against
+  it, and a video he approved becomes a reference of the next film's floor.
+- The maker's line: at each Short he is asked for ONE sentence of his own; the long video about that Short's topic ends on it, word for word, after a lead-in, over its last
+  picture, and the description carries it - never cut, never mended, never an ask; nothing is drawn or paid for it (check `makers_line`).
+- One story: the thumbnail a viewer taps is the first picture of the Short the long video opens on, and the runner-up is another look at the same scene (check `one_story`).
+- Nobody of the trial's cast where a format shows nobody: F1 and F3 cut to no character, and their animated scenes show the viewer's own place (check `living_characters`).
+
 ## A Short reaches three platforms natively - the one door for every short video (`whatifs/release.py`, Publishing D9)
 - One master file, three uploads of their own: YouTube Shorts, Instagram Reels (a Trial Reel: non-followers first), Facebook Reels (90 seconds at most). Each gets its own words,
   built by code from the Short's script; none carries an ask, a courtroom word or a link.

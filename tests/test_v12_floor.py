@@ -1315,3 +1315,51 @@ def test_the_rescue_swaps_to_a_runner_up_of_the_same_scene(story_on, monkeypatch
     calls = T85._fakes(monkeypatch, 40 * 20, tmp_path); T85._hist(3); T85._live("EPRESC", 40)
     monkeypatch.setattr(MG, "_fetch_some", lambda ep, a, names: {"release.json": str(tmp_path / "release.json"), "thumb_b.jpg": b})
     assert MG.pkg_rescue() == [("EPRESC", "swapped title + thumbnail")] and calls["thumb"] == [b]           # ... and the lagging video's swap sets exactly that picture
+
+# ================================================================== STEP 6. THE SWEEP AND THE REHEARSAL WALK THE FLOOR, HIS LINE AND ONE STORY (3.10)
+JUDGED = "two first-time viewers (gemini, claude) named this video over the rejected one in 4 of 4 looks; the rejected video beat its frozen picture"
+GOOD_FLOOR = {"viewer_floor": (CON.PASS, JUDGED), "makers_line": (CON.PASS, "he gave no line for this topic: none is spoken, none is written"),
+              "living_characters": (CON.PASS, "nobody is drawn without approved art"), "one_story": (CON.PASS, "the thumbnail is drawn from the first picture of Short SH1, the picture this video opens on: 'w'")}
+OVERRIDE_NA = (CON.NA, "made under an override: its own promise scene opens it (viewer_promise, promise_paid)")
+
+def _floor_case(ep, rows):
+    core.store().append("Feature_Ledger", [{"ts": core.iso(), "episode_id": ep, "stage": "final", "feature": k, "status": s, "evidence": e} for k, (s, e) in rows.items()])
+
+def test_the_sweep_judges_the_floor_his_line_and_one_story_of_every_long_video():
+    from tools import sweep as SW
+    _floor_case("EPFL0", GOOD_FLOOR); ok, w = SW.floor_of(core, "EPFL0", climbed=True)
+    assert ok and w.startswith("the floor judged: " + JUDGED) and "in 4 of 4 looks" in w, w                       # the looks won of 4 travel with the words
+    _floor_case("EPFL1", dict(GOOD_FLOOR, viewer_floor=(CON.NA, "void by its canary: gemini did not put the rejected video above its own frozen picture")))
+    ok, w = SW.floor_of(core, "EPFL1", climbed=True); assert ok and w.startswith("the floor was void by its canary: void by its canary"), w      # void: the film went to his eye
+    _floor_case("EPFL2", dict(GOOD_FLOOR, one_story=OVERRIDE_NA)); assert SW.floor_of(core, "EPFL2", climbed=False)[0]                        # an override has no Short to be one story with
+    bad = [("EPFB0", {"viewer_floor": (CON.FAIL, "ranked beside the rejected video: gemini named the new video in 1 of 2 looks")}, True),
+           ("EPFB1", {"viewer_floor": (CON.NA, "the judged floor is switched off (VIEW_FLOOR_ON / VIEWER_SEAT_ON)")}, True),
+           ("EPFB2", {"makers_line": (CON.NA, "the maker's line is switched off (MAKER_LINE_ON / OWNER_VERDICT_ON)")}, True),
+           ("EPFB3", {"makers_line": (CON.FAIL, "his line is not in the description that is sent")}, True),
+           ("EPFB4", {"living_characters": (CON.FAIL, "a cutaway to VALE's character in format F1, where nobody is on screen")}, True),
+           ("EPFB5", {"one_story": (CON.NA, "the Short's archive holds no picture words")}, True),
+           ("EPFB6", {"one_story": OVERRIDE_NA}, True),                                                          # an id that climbed must be ONE story
+           ("EPFB7", {}, False)]                                                                                  # ... and one that did not, under an override
+    for ep, change, climbed in bad:
+        _floor_case(ep, dict(GOOD_FLOOR, **change)); ok, w = SW.floor_of(core, ep, climbed=climbed); assert not ok, (ep, w)
+    _floor_case("EPFB8", {k: v for k, v in GOOD_FLOOR.items() if k != "makers_line"}); ok, w = SW.floor_of(core, "EPFB8", climbed=True)
+    assert not ok and "makers_line missing" in w, w                                                                    # a missing row is a failure: the path was not walked
+    s = SW.summary([{"id": "a", "outcome": "ok", "floor": "the floor judged: x"}, {"id": "b", "outcome": "odd", "floor": "the floor judged: x"},
+                    {"id": "c", "outcome": "ok", "floor": "the floor was void by its canary: x"}, {"id": "d", "outcome": "ok"}])
+    assert s["floor_judged"] == 1                                                                                      # the counter: judged AND the id good
+
+def test_the_sweep_and_the_rehearsal_call_it_and_the_rehearsal_walks_his_verdict_his_line_and_the_flop():
+    import inspect
+    from tools import sweep as SW, rehearsal as RH
+    swp = inspect.getsource(SW.one)
+    assert swp.count('ok_f, res["floor"] = floor_of(core, ep, climbed=') == 2 and 'floor_of(core, ep, climbed=res.get("ladder") == "climbed")' in swp \
+        and swp.index('ok_i, res["inside"] = inside_of(core, ep)') < swp.index('ok_f, res["floor"]')                    # the produce mode and the rehearsal mode, after inside_of
+    src = inspect.getsource(RH.run)
+    assert src.index('set_setting("OWNER_VERDICT_SINCE", (now_utc() - dt.timedelta(days=8))') < src.index("rs12 = SH12.run(") < src.index("VER1c.sync()") < src.index("r = EP.produce(slot, episode_id=epid)")
+    assert '"I would keep it for one day, then beg for gravity back."' in src and '"Not for one hour."' in src and 'set_setting("OWNER_VERDICT_ASK_MAX_PER_DAY", "9")' in src
+    assert 'f"LINE {ref1c} {line1c}"' in src and '.update("Owner_Verdicts"' not in src                               # his line through the second message's link (DESIGN QUESTION 25), never a write of the tab
+    assert 'floor1c(core12, epid, climbed=True)' in src and 'FL1c.stand_in(os.path.join(work, "flop.mp4"), "flop")' in src and 'vf1c[1].startswith("ranked beside the rejected video")' in src
+    assert 'VER1c._answer({"episode_id": epid}, f"VERDICT {epid} UP")' in src and 'VER1c.references(' in src and 'print("floor:"' in src
+    from whatifs import cta as CTA, maker as MK
+    for line in ("I would keep it for one day, then beg for gravity back.", "Not for one hour."):
+        assert MK.usable(line)[0] and CTA.kind_of_text(line) is None                                                    # neither is refused nor read as an ask by the older assert on the asks

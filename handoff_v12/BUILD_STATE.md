@@ -2626,6 +2626,77 @@ defaults: one story ON), `test_v12_rnd.py`: "761 passed in 2478.35s (0:41:18)", 
 items), `tools/gen_docs.py` wrote `SYSTEM.md`. COUNTS AFTER STEP 4: 71 hard checks (script 40, final 23), `SHOW_CHECKS` 60, 89 levers, 86 tabs, 201 founding
 items, 25 workflow files, 247 breaks (NOT RUN). STEP 3'S CHECKS (5ec7ea1, run 43746948748): GREEN at 19:26 UTC, 1743 passed, the rehearsal GREEN (written beside
 step 3) - so step 4 is committed. Its own Checks run is read before step 6 is committed.
+STEP 4 COMMITTED AND PUSHED: acdf9c2 (19:28 UTC); the code reader 2 (`local_946021bb-...`) was sent "step 4 pushed at acdf9c2" the same minute.
+STEP 6 - THE SWEEP'S JUDGE AND COUNTER, THE REHEARSAL, THE BLOCK FILE, THE DOCS, THE FOUNDING ITEMS (3.9 step 6, 3.10) - builder E, from 19:29 UTC.
+READ BEFORE ITS FIRST EDIT: 3.10 whole (the sweep, the rehearsal, the block, the docs, the hypotheses, the changes from the redesign); `tools/sweep.py` whole;
+`tools/rehearsal.py` whole; `whatifs/org/floor.py` (`stand_in`, `kit`, `session`), `whatifs/org/verdicts.py` whole; `contract.p_viewer_floor`; `maker.report`;
+`manage.tick` (the verdicts' sync runs early in every tick); `proving/blocks/V2b.json` and `default.json` (equal but for the note and `expect_tests`); the ledger
+whole from section H; `CONCEPT.md`, `PLATFORM_FACTS.md`; the seed files' forms; `02` items 67 to 100 whole (the dispatcher's text task, widened to 100 on 15 Nov).
+THE PINS (named before any run; each searched in `tests/`): of `tools/sweep.py` - `test_v12_inside.py` 1007 (`ok_i, res["inside"] = inside_of(core, ep)` twice:
+unchanged), `test_v12_cutdowns.py` 122 to 126 (the release texts and `summary`: unchanged), `test_v12_b0b.py` 155 to 159 and `test_v12_inside.py` 1000,
+`test_v12_motion.py` 626, `test_v12_opening.py` 316 (`summary` counters: a key added, none moved); of `tools/rehearsal.py` - `test_v12_motion.py` 734 (the line after
+`r = EP.produce(slot, episode_id=epid)` is still the `assert r.get("ok")` line: nothing was put between them), `test_docs_current.py` 155, `test_v12_palace.py` 473
+(unchanged texts); of the docs and seeds - `test_docs_current.py`, `test_v12_palace.py`, `test_v12_creative.py`, `test_v12_exec.py`, `test_v12_money.py`, `test_v89.py`
+read them (no count of founding items is pinned: searched "201"). No older test is changed in step 6.
+BUILT IN STEP 6: `tools/sweep.py` - NEW `floor_of(core, ep, climbed=False)` (3.10's words: viewer_floor PASS or N/A "void by its canary", makers_line and
+living_characters PASS, one_story PASS on an id that climbed and N/A "made under an override" otherwise; a missing row, any other N/A or a FAIL is BAD; the words begin
+"the floor judged: " or "the floor was void by its canary: " and carry the viewer_floor evidence with its looks won of 4), called after `inside_of` in the produce mode
+(`climbed` = the id climbed) and in the rehearsal mode (`climbed=True`); `summary()` counts `floor_judged`. `tools/rehearsal.py` - after the two opening ticks
+`OWNER_VERDICT_SINCE` is set eight days back and `OWNER_VERDICT_ASK_MAX_PER_DAY` and `NOTIFY_NOW_MAX_PER_DAY` to 9 (NAMED test settings); after the two Shorts are on
+the ladder `verdicts.sync()` asks about both (and sends the second message, his line), his two lines are typed into their rows and `sync()` sees them; after the long
+video's inside-of check: `floor_of` (climbed), `viewer_floor`, `one_story` and `makers_line` PASS, the film ends on the line of the row the ladder USED (`line_used` =
+that film and that line); THE FLOP CASE ends at the check - `floor.session` on `floor.stand_in(<work>/flop.mp4, "flop")` with the kit's canary and twin is "fail" and
+`contract.p_viewer_floor` FAILS with "ranked beside the rejected video"; his tap `VERDICT <episode> UP` - the row (kind long, via tap), D13's run `verdict` ok,
+`agree` TRUE against the floor's "up", and the video is the next film's reference; it prints "floor: ...". `proving/blocks/V1c.json` - V2b's block whole + the counter
+`floor_judged` on parts A, B and C + the rehearsal line "floor:" + the watch line "looks in which the new video was named over the rejected one (of 4)" (regex
+"in (\d) of 4 looks", warned under 4); `expect_tests` stays V2b's 1647 until the Fable finisher writes V1c's after the builder's block (A13 (b)), said in its note.
+THE TWO STALE TEXTS made true (text only): the comment at `room.py` 347 and the note of `SCRIPT_SIMILARITY_MAX` (core.py 838 today) now say that check `originality`
+HOLDS the video at the script gate above the cell, in every format, and that the card is sent beside it; the ledger's line 3 of section I said "only one card,
+never a hold" and now says the same, with "V1c corrected this line". DOCS: the ledger - section H's paragraph "V1c" (his items 16, 49 to 51, 70, 73: the floor, his
+verdict, his line, one story, the cast by format; item 49's answer this batch owns; what only the pilot answers), V1c out of the "Not built yet" line, section I
+lines 2 and 3 updated, and a NEW section J with his items 67 to 100 in the file's own form - 12 the pipeline is a product he sells (70, 71), 13 the launch waits and
+every output aims at a breakout of its own (73, 95 (c)), 14 THE PLATFORMS' NEW FEATURES AS A STANDING REQUIREMENT in the words of item 80 (a) to (e), with V5, V4, B9,
+B10 (V1c builds nothing of it, it files it), 15 a tool's method enters the pipeline only as its own code (88), 16 the build's own way of working (the other items:
+they govern the sessions, never the product); `CONCEPT.md` (a section on the floor, his verdict, his line, one story, the cast by format); the repo's `CLAUDE.md` (two
+recipes, "The judged floor" and "His verdict and his line" - written in seven lines, because the file may hold 200 lines and held 193: Truth turned RED at 211 and
+the recipes were shortened, not the older text); `PLATFORM_FACTS.md` (five dated rows: research 1 to 4 and 9); `SYSTEM.md` regenerated. FOUNDING ITEMS 201 -> 208:
+`owner.platform_features` in `seed/owner.json` (the form of `owner.memo_idea`; his own sentence of item 80 as its evidence; D2 and D9, not D1; no `applied_in` yet)
+and six in `seed/build.json` - `v1c.the_judged_floor` (D13), `v1c.his_verdict_is_the_label` (D13), `v1c.the_makers_line` (D7), `v1c.one_story` (D5),
+`v1c.the_cast_by_format` (D6), `v1c.takeaway` (D13; "BUILT, not accepted when this item was written") - three were first over the Palace's length limits (a
+title of 128, a summary of 435, the owner item's summary of 716) and were shortened until the Palace was GREEN.
+DESIGN QUESTION 24: "his tap `VERDICT <episode> UP`" in the rehearsal (3.10) comes BEFORE the long video is released, and its ask is sent only when it is LIVE (a later
+tick; 3.10: "nothing of it is asserted"). TAKEN: the tap is played through the verdict's own handler, `verdicts._answer` - the function `notify.answer` calls for
+kind `owner_verdict` - with the tap's own text; `record` makes the long video's row (it is made when none exists: nothing is asked). Its consequence, said: the later
+ticks find the row and send no ask for that video. No viewer sees it.
+A FINDING FOR THE FINISHER (no code moved; the memo said to read the Palace command's `note:` line): before step 6 the note read "D1 3, D2 1, D12 1, C 5"; after the
+seven new items it reads "D1 3, D2 2, D9 1, D12 1, C 5". Read by name: the NEW `owner.platform_features` ITSELF is left out of D2's and D9's playbooks (their caps
+are full; D2's other left-out item is `owner.memo_idea`, as before) - nothing older was pushed out. So item 80 is filed in the Palace and the ledger but reaches no
+department's brief until V4 widens the audience or the Librarian consolidates (3.10 foresaw "V4 widens the audience when it builds the intake").
+TESTS (`tests/test_v12_floor.py`, step 6's section; 2 new): `test_the_sweep_judges_the_floor_his_line_and_one_story_of_every_long_video` (both ways, one fault at a
+time: a FAIL and a switched-off N/A of the floor, his line switched off or failing, the character rule failing, one story N/A on a climbed id, an override's N/A on a
+climbed id and a PASS on one that did not climb, a missing row; void stands in; the looks won travel; the counter counts judged AND good ids only),
+`test_the_sweep_and_the_rehearsal_call_it_and_the_rehearsal_walks_his_verdict_his_line_and_the_flop` (both calls after `inside_of`; the rehearsal's order - the day
+set back, the Shorts, the sync, the long video - his two lines, the flop, the tap, the reference, the print; neither line is refused or read as an ask). The
+rehearsal itself is run whole on the laptop (below) and by GitHub's Checks.
+BREAKS S6-01 to S6-10 written into `proving/breaks/V1c.json` (each anchor found exactly once, each named test present; 257 in the list) - NOT RUN.
+STEP 6'S FIRST RUN (the files above, alone, `-n 6`, `WI_NO_SKIPS=1`, 19:38 to 20:04 UTC): "1 failed, 672 passed in 1568.99s" - the red, read whole:
+`tests/test_v12_floor.py::test_owner_verdicts_is_written_by_its_own_module_alone` - "AssertionError: ['rehearsal.py']": the rehearsal typed his two lines with
+`st.update("Owner_Verdicts", ...)`, and the record (3.10 (3)) allows FIVE writers of that tab - `tools/` is none of them. Not run again. DESIGN QUESTION 25 (FOUND BY A
+TEST; the reading that changes less of the batch's law): "a typed line goes into BOTH Shorts' rows" is played through the second message's own link - `notify.answer`
+on each Short's `maker_line` action with "LINE <ref> <his words>", which is `maker._answer`, one of the five writers - not by a write of the tab from a tool; the
+one-writer guard is NOT widened. Sync's step (4) (a line typed in the Sheet) keeps its own tests in step 3's section.
+THE RUNS AFTER THE FIX (the code changed: `tools/rehearsal.py` and one assert of step 6's test that the rehearsal answers through the link and never writes the tab):
+the red test, both step-6 tests and every test that reads `tools/rehearsal.py` (`test_v12_motion.py::test_a_rehearsal_whose_long_video_is_held_names_the_held_checks`,
+`test_v12_cutdowns.py::test_the_rehearsal_and_the_sweep_walk_the_rule`, `test_docs_current.py` whole), 20:05 UTC: "37 passed in 25.19s". THE REHEARSAL, whole and
+alone (`WI_FAKE=1 WI_SMALL=1`, its work folder outside the repo, `python -m whatifs.cli rehearsal`), 20:05:40 to 20:11:28 UTC: "REHEARSAL: GREEN", its long video
+EP202611152005 "contract script: 40/40 pass", "contract final: 23/23 pass"; its line "floor: the floor judged: two first-time viewers (gemini, claude) named this
+video over the rejected one in 4 of 4 looks; the rejected video beat its frozen picture | the film ends on his own line, word for word: "Not for one hour."; ... | the
+flop stand-in: ranked beside the rejected video: gemini named the new video in 1 of 2 looks ... | Kept: up on '...'. The floor had said up: it agrees. Floor so far: 1
+of 1". Plan Guard GREEN, Truth GREEN, Organisation GREEN, Palace GREEN (208 items), `tools/gen_docs.py` wrote `SYSTEM.md`. COUNTS AFTER STEP 6: 71 hard checks,
+`SHOW_CHECKS` 60, 89 levers, 86 tabs, 208 founding items, 25 workflow files, 257 breaks (NOT RUN). THE DISPATCHER'S TEXT TASK (his items 68 to 100 into the
+ledger): DONE in section J (67 to 100). Step 4's Checks run (43752620416 on acdf9c2) was still running at 20:11 UTC: step 6 is committed only after it is green.
+STEP 4'S CHECKS (read with `gh_runs.js` at 20:43 UTC): run 43752620416 on acdf9c2, 19:28 -> 20:42 UTC, GREEN - "Unit tests: 1751 passed in 4243.34s (1:10:43)"
+(1743 + step 4's 8); "Rehearsal: REHEARSAL: GREEN, episode id EP202611152040; contract script: 40/40 pass; contract final: 23/23 pass". So step 6 is committed.
 ### V2b - INSIDE THE FORMAT (14-15 Nov 2026) - ACCEPTED (final code commit 01e7798 GREEN in GitHub Checks run 196: 1647 passed; sweep 58 of 58 ids)
 (its code is 7e83001; the designer's record: steps 1 to 3; five Opus builders wrote steps 4 to 6a, the Fable finisher `FINISHED BY FABLE` and the takeaway's draft;
 the prover wrote 6b and completed 7 on 15 Nov 2026)

@@ -36,6 +36,11 @@ def run(ep_id=None):
         a = MG.tick()["action"]; assert a == "waiting_for_voice_pick", a          # v7.2: nothing is made before the voice pick
         set_setting("VOICE", "C")
         a = MG.tick()["action"]; assert a in ("idle", "produce"), a
+        # v12 V1c: HIS VERDICT AND HIS LINE - the two opening ticks set OWNER_VERDICT_SINCE to now (the day his verdicts are counted from); the Shorts below are
+        # made "a week ago", so the day is set eight days back. A verdict row is made only when its ask is sent, one a day: for its day the rehearsal allows
+        # nine asks and nine "act now" places (NAMED test settings), so that both Shorts have their rows before a line is typed.
+        set_setting("OWNER_VERDICT_SINCE", (now_utc() - dt.timedelta(days=8)).strftime("%Y-%m-%dT%H:%M:%SZ"))
+        set_setting("OWNER_VERDICT_ASK_MAX_PER_DAY", "9"); set_setting("NOTIFY_NOW_MAX_PER_DAY", "9")
         slot = (now_utc() + dt.timedelta(hours=10)).strftime("%Y-%m-%dT%H:%M:%SZ")
         epid = str(ep_id or "EP" + now_utc().strftime("%Y%m%d%H%M"))
         # v12 V2c-b: THE LADDER - every topic starts as a Short. (1) With no Short, no long video starts and nothing is spent. (2) Two topics are made as
@@ -70,6 +75,15 @@ def run(ep_id=None):
         print("short:", rs12["id"], "format", rs12["format"], "(" + FMT12.short_name(rs12["format"]) + "), hook", rs12["hook"], ",", rs12["sec"], "s; short gate 5 / 5; its finished file 2 / 2 (every half second moves, sound from the first frame); release sheet 1 / 1 on", len(rl12), "platforms; 8 department runs")
         lad12 = {x["id"]: x for x in LAD12.rows()}
         assert set(lad12) == {rs12["id"], rs12b["id"]} and all(x["state"] == "POSTED" and x["yt_id"] and x["footage"] for x in lad12.values()), ("a Short is not on the ladder, not posted or its footage was not kept", lad12)
+        from whatifs.org import verdicts as VER1c                                       # v12 V1c (3.2, 3.3): both public Shorts are asked about - his verdict, and the second message: his line
+        VER1c.sync(); vr1c = {x["ref"]: x for x in st.rows("Owner_Verdicts")}
+        assert set(vr1c) == {rs12["id"], rs12b["id"]} and all(x["kind"] == "short" and x["action_id"] for x in vr1c.values()), ("a public Short was not asked about", sorted(vr1c))
+        assert {x.get("episode_id") for x in st.rows("Owner_Actions") if x.get("kind") == "maker_line"} == set(vr1c), "the second message (his line) was not sent for both Shorts"
+        from whatifs import notify as NT1c
+        lines1c = {rs12["id"]: "I would keep it for one day, then beg for gravity back.", rs12b["id"]: "Not for one hour."}      # he types one line for each Short: "LINE <ref> <his words>" through
+        for ref1c, line1c in lines1c.items():                                                                                      # the second message's link (maker._answer: a writer of the tab)
+            NT1c.answer(next(x["id"] for x in st.rows("Owner_Actions") if x.get("kind") == "maker_line" and x.get("episode_id") == ref1c), f"LINE {ref1c} {line1c}")
+        VER1c.sync(); assert all(x["line_seen"] and x["maker_line"] == lines1c[x["ref"]] for x in st.rows("Owner_Verdicts") if x["ref"] in lines1c), "a line he typed was not kept as he typed it"
         ok12, why12, _x12 = LAD12.gate(); assert not ok12 and "no numbers yet" in why12, ("a Short without numbers was promoted", why12)
         assert BR12.ingest_shorts() == 2 and all(BR12.reading_complete(a) and a.get("first_json") not in ("", "{}") for a in st.rows("Analytics")), "the Shorts' numbers were not read over their first three processed days"
         from whatifs.org import memos as OMEM4, execute as EXE4          # v12 B4: one decision of the organisation is carried from ticket to ledger proof inside the rehearsal
@@ -125,6 +139,30 @@ def run(ep_id=None):
         own2b = S("ENDINGS_ON", bool) and FMT12.ending(fmt2b) != "tease"               # a format with its own ending carries its own asks (3.3)
         voices2b = set(FMT12.FORMATS[fmt2b]["voices"]) if fmt2b in FMT12.FORMATS and len(FMT12.FORMATS[fmt2b]["voices"]) == 1 else {"DIRECTOR", "SKEPTIC"}      # F3: one voice
         print("inside the format:", said12[:420])
+        # v12 V1c: THE FLOOR, HIS LINE, ONE STORY - two first-time viewers of two model families named the long video over the stand-in of the video he rejected
+        # (offline the stand-in itself), the film ends on the line he typed for the topic the ladder USED, and its thumbnail is the picture it opens on (3.10).
+        from tools.sweep import floor_of as floor1c
+        from whatifs.org import floor as FL1c
+        from whatifs import contract as CON1c
+        ok1c, said1c = floor1c(core12, epid, climbed=True); assert ok1c, ("the floor, his line or one story did not hold", said1c)
+        led1c = {x["feature"]: (x["status"], str(x["evidence"])) for x in st_rows("Feature_Ledger") if x.get("episode_id") == epid}
+        line1c = lines1c[used12[0]["id"]]; row1c = next(x for x in st.rows("Owner_Verdicts") if x["ref"] == used12[0]["id"])
+        assert all(led1c.get(k, ("missing",))[0] == "PASS" for k in ("viewer_floor", "one_story", "makers_line")), {k: led1c.get(k) for k in ("viewer_floor", "one_story", "makers_line")}
+        assert led1c["makers_line"][1].startswith(f'the film ends on his own line, word for word: "{line1c}"') and json.loads(row1c["line_used"]) == {"ep": epid, "line": line1c}, \
+            ("the film does not end on the line of the row the ladder used", led1c["makers_line"], row1c.get("line_used"))
+        # THE FLOP CASE, ending at the CHECK (3.10, and the memo's change (9)): a session on the stand-in of a flop computes to "fail" and check viewer_floor FAILS on it
+        can1c, twin1c = FL1c.kit(os.path.join(work, "flop_kit"))
+        flop1c = FL1c.session("rehearsal-flop", "flop", FL1c.stand_in(os.path.join(work, "flop.mp4"), "flop"), can1c, twin1c, [], [], "FLOP" + epid[2:])
+        vf1c = CON1c.p_viewer_floor({"floor": flop1c})
+        assert flop1c["status"] == "fail" and vf1c[0] == CON1c.FAIL and vf1c[1].startswith("ranked beside the rejected video"), ("the floor did not refuse the flop", flop1c["status"], vf1c)
+        # HIS TAP "VERDICT <episode> UP" (played through the verdict's own handler: the long video's ask is sent when it is LIVE, by a later tick): the row,
+        # D13's run `verdict`, `agree` against the floor's prediction - and the video becomes a reference of the next film's floor
+        out1c = VER1c._answer({"episode_id": epid}, f"VERDICT {epid} UP"); vr1c = next(x for x in st.rows("Owner_Verdicts") if x["ref"] == epid)
+        ses1c = [x for x in st.rows("Sessions") if x.get("dept") == "D13" and x.get("trigger") == "verdict" and x.get("episode_id") == epid]
+        assert vr1c["kind"] == "long" and VER1c.read(vr1c["verdict"]) == "up" and vr1c["via"] == "tap" and vr1c["floor"] == "up" and vr1c["agree"] == "TRUE" and ses1c and ses1c[-1]["status"] == "ok", \
+            ("his tap was not kept or not scored", {k: vr1c.get(k) for k in ("verdict", "via", "floor", "agree")}, [x.get("status") for x in ses1c])
+        assert [x for x, _v in VER1c.references("EP" + "0" * 12)] == [epid], "his thumbs-up did not make the video a reference"
+        print("floor:", said1c[:300], "| his line, as he typed it:", line1c, "| the flop stand-in:", vf1c[1][:90], "|", out1c[:110])
         # v7.2 independent checks on the real rendered files
         from whatifs import qc as QC
         from whatifs.render import probe_dur
