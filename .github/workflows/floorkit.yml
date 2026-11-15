@@ -1,0 +1,64 @@
+name: Floor kit
+# v12 V1c (the judged floor): ONCE, the first minute of the video the channel's owner rejected becomes the canary every floor session is judged against.
+# Three steps on a phone: (1) in Drive, the video -> Share -> "Anyone with the link" -> Copy link; (2) here: Run workflow, paste the link (and the video's
+# YouTube id, or nothing) -> Run; (3) when the message "has its reference" arrives: Share -> Restricted. The link is read from the event file by the code
+# and is never printed: it is in no env block and on no command line.
+on:
+  workflow_dispatch:
+    inputs:
+      link:
+        description: "The share link of the video you rejected (Drive: Anyone with the link)"
+        required: true
+      yt:
+        description: "Its YouTube id (optional)"
+        required: false
+        default: ""
+permissions:
+  contents: read
+jobs:
+  floorkit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: floorkit            # never two kit runs at once; NOT the group produce (behind a render the run would wait with his file shared)
+      cancel-in-progress: false
+    env:
+      SHEET_ID: ${{ secrets.SHEET_ID }}
+      G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
+      G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
+      G_REFRESH: ${{ secrets.G_REFRESH }}
+      G_REFRESH_DRIVE: ${{ secrets.G_REFRESH_DRIVE }}
+      OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+      GH_REPO: ${{ github.repository }}
+      WA_TOKEN: ${{ secrets.WA_TOKEN }}
+      WA_PHONE_ID: ${{ secrets.WA_PHONE_ID }}
+      WA_WABA_ID: ${{ secrets.WA_WABA_ID }}
+      OWNER_WA: ${{ secrets.OWNER_WA }}
+      GH_MERGE_TOKEN: ${{ secrets.GH_MERGE_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install ffmpeg (bounded; when GitHub's regional Ubuntu mirror does not answer, the main archive is used)
+        timeout-minutes: 30
+        run: |
+          A="-y -qq -o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 -o DPkg::Lock::Timeout=120"
+          try() { sudo timeout 420 apt-get $A update && sudo timeout 600 apt-get $A install ffmpeg > /dev/null; }
+          if ! try; then
+            echo "::warning title=Package mirror::GitHub's regional Ubuntu mirror did not answer; installing ffmpeg from archive.ubuntu.com instead"
+            sudo sed -i 's|azure\.archive\.ubuntu\.com|archive.ubuntu.com|g' /etc/apt/apt-mirrors.txt /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null || true
+            try || { sleep 30; try; } || true
+          fi
+          if ! (ffmpeg -version > /dev/null 2>&1 && ffprobe -version > /dev/null 2>&1); then
+            echo "::error title=ffmpeg could not be installed::no Ubuntu package mirror answered on GitHub's machine (not a fault of the code): run the workflow again later"
+            exit 1
+          fi
+          ffmpeg -version | head -1
+      - name: Python packages
+        run: |
+          pip install -q "torch>=2.2,<3" --index-url https://download.pytorch.org/whl/cpu
+          pip install -q -r requirements.txt
+      - name: File the canary's kit
+        run: python -m whatifs.cli floorkit

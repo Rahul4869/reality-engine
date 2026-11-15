@@ -125,6 +125,31 @@ def _fake_probe(prompt):
     x = prompt.split("OPENING X:")[-1].split("OPENING Y:")[0]; y = prompt.split("OPENING Y:")[-1]
     return json.dumps({"X": pick(x), "Y": pick(y), "X_says": "Something strange is about to happen to you.", "Y_says": "Something strange is about to happen to you."})
 
+# v12 V1c: the offline first-time viewer of the judged floor WATCHES the film strips. Both figures were measured before they were typed (the record's Step 1,
+# part two): on four offline films every gap between neighbouring pictures changes (the smallest change 1.6 grey levels); the stand-in for the rejected
+# video changes in 14 of 29 gaps (48.3%), its frozen twin in none (its largest gap 0.01).
+WATCH_CHANGE = 0.5            # grey levels (of 255) of mean absolute difference between two neighbouring pictures, read as grey at 160 x 90
+WATCH_MARGIN = 10             # percentage points one opening must change more than the other to be named; less = "cannot tell": the one shown first
+
+def _changing(frames):
+    """The share in percent of the gaps between neighbouring pictures whose mean absolute difference is at least WATCH_CHANGE."""
+    import numpy as np
+    from PIL import Image
+    g = [np.asarray(Image.open(f).convert("L").resize((160, 90)), dtype=np.float32) for f in frames or []]
+    if len(g) < 2: return 0.0
+    return 100.0 * sum(1 for a, b in zip(g, g[1:]) if float(np.mean(np.abs(b - a))) >= WATCH_CHANGE) / (len(g) - 1)
+
+def fake_watch(prompt, views):
+    """For each line 'PAIR n: X or Y' it names X when X's strip changes at least WATCH_MARGIN points more than Y's, Y when the reverse holds, else X - the one
+    shown first, which is what 'cannot tell' looks like under two orders."""
+    ch = {str(v.get("label")): _changing(v.get("frames")) for v in views or []}
+    out = {}
+    for n, x, y in re.findall(r"(?m)^PAIR (\d+): ([A-Z]) or ([A-Z])\s*$", str(prompt)):
+        p, q = ch.get(x, 0.0), ch.get(y, 0.0)
+        pick, other = (y, x) if q - p >= WATCH_MARGIN else (x, y)
+        out[n] = [pick, f"its picture changes in {round(ch.get(pick, 0.0), 1):g}% of the minute against {round(ch.get(other, 0.0), 1):g}%"]
+    return json.dumps({"pairs": out})
+
 # v12 V2c: what the offline writer of a Short can write - two scripts per Short format ({w} = one plain word of the premise). Each is written to pass the
 # viewer's seat for a Short (a hook of at most 6 words, no number, no expert word, no ask, the last line picks up a word of the first).
 _SHORT_FAKE = {

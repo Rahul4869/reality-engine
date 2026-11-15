@@ -190,6 +190,9 @@ def tick():
     try:                                                        # v9.4a (WP4): queued owner messages, silence = default, the digest
         from whatifs import notify as NT
         NT.tick()
+        try:                                                    # v12 V1c (D13): a film the judged floor could not judge whose card expired - a default that failed is tried again
+            from whatifs.org import floor as FLR; FLR.eye_sweep()
+        except Exception as x: log(f"floor eye sweep skipped: {scrub(x)}", "WARN")
         try:                                                    # v11 (K159): start a standalone Short when one is due (one dispatch per 50 min at most)
             from whatifs import shorts2 as SH2
             last = parse_iso(S("SHORTS_LAST_DISPATCH"))

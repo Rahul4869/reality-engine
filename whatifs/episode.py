@@ -792,6 +792,8 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
             "path_states": [{"t0": t_(m_)[0], "t1": t_(m_)[1], "i": m_["i"], "type": m_.get("type"), "act": m_.get("act"), "src": m_.get("src"), "move": m_.get("move", ""),
                              "sign": m_.get("sign", 0), "fallback": bool(m_.get("fallback"))} for m_ in sm_]}                                 # v12 V2b: the camera path as the render recorded it (a key of its own: ctx['states'] stays as it is)
     pre = CON.run("final", dict(cctx, critique={"hook": 10, "clarity": 10, "humour": 10, "visual_variety": 10, "audio": 10, "accuracy": 10}), ep, write=False)   # measured checks first (not logged)
+    from whatifs.org import floor as FLOOR                      # v12 V1c (D13): the judged floor - only a film every measured check passed is paid a jury
+    if FLOOR.on() and not pre["failed"]: cctx["floor"] = FLOOR.plain(ORG.work("D13", "floor", ep, lambda b: FLOOR.run(b, ep, master, out, (), ()), measure=FLOOR.m_run))
     cctx["ledger_rows"] = pre["rows"]; cctx["critique"] = CON.critique(cctx, ep)
     g = ORG.work("D8", "final_gate", ep, lambda b: CON.run("final", cctx, ep), measure=WR.m_gate, lesson=WR.gate_lessons, emit=WR.gate_memos(ep, "final"), settle=WR.gate_settle(ep, "final"))
     try:                                                         # v11 (K158): the Breakout Score - ranks and alerts, never holds by itself
@@ -802,6 +804,9 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
             log(f"Breakout Score {b['score']} ({b['grade']}; weakest: {b.get('weakest')}; no evidence for: {', '.join(b.get('missing') or []) or 'none'})", episode=ep)
     except Exception as e: log(f"breakout score skipped: {scrub(e)}", "WARN", ep)
     if not g["ok"]:
+        if [f for f, _ in g["failed"]] == ["viewer_floor"]:        # v12 V1c: held by the floor alone - its own card (watch the minute; publish anyway or drop it), ONE message, no mail
+            FLOOR.hold_card(ep, title, cctx.get("floor"))
+            return _hold(st, ep, out, {"problems": [{"code": "contract:" + f, "detail": str(ev)} for f, ev in g["failed"]]}, notes, fix, mail=False)
         CON.owner_card(ep, "final", g["failed"], "Nothing was uploaded.")
         return _hold(st, ep, out, {"problems": [{"code": "contract:" + f, "detail": str(ev)} for f, ev in g["failed"]]}, notes, fix)
     vid = ORG.work("D9", "publish", ep, lambda b: PUB.yt_upload(master, title, desc, pkg.get("tags", []), publish_at=slot_iso, ai_label=S("AI_LABEL_DEFAULT", bool)), measure=WR.m_upload)
@@ -900,10 +905,14 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     PUB.email("Video scheduled", f"<p>{title}<br>Goes live {slot_iso} (UTC). To stop it, type KILL in the Episodes tab, kill column.</p>"
               f"<p>{_review_note(hook_rec, cut_map)}</p>", kind="info")
     try:                                                         # v10.2: the first CREATIVE_REVIEW_FIRST_N videos stay private until the owner taps Approve
+        cr = cctx.get("critique") or {}
+        summ_ = (f"'{title}'. Self-review: " + ", ".join(f"{k} {cr.get(k)}" for k in CON.CRIT_KEYS if k in cr) +
+                 f". {cr.get('notes', '')} Checks: {sum(1 for r in g['rows'] if r['status'] != 'FAIL')}/{len(g['rows'])} pass.")
         if CON.review_needed("long"):
-            cr = cctx.get("critique") or {}
-            CON.await_approval(ep, vid, slot_iso, f"'{title}'. Self-review: " + ", ".join(f"{k} {cr.get(k)}" for k in CON.CRIT_KEYS if k in cr) +
-                               f". {cr.get('notes', '')} Checks: {sum(1 for r in g['rows'] if r['status'] != 'FAIL')}/{len(g['rows'])} pass.")
+            CON.await_approval(ep, vid, slot_iso, summ_)
+        elif FLOOR.on() and (cctx.get("floor") or {}).get("status") not in ("pass", "fail"):      # v12 V1c: the floor could not judge it - his eye, with a clock (silence = it goes public)
+            CON.await_approval(ep, vid, slot_iso, "The first-time-viewer check could not judge this one (" + str((cctx.get("floor") or {}).get("why") or "not judged") + "). " + summ_,
+                               kind="floor_eye", default="goes public by itself", expires_h=FLOOR.eye_hours(slot_iso))
     except Exception as e: log(f"review gate failed - the video stays as uploaded: {scrub(e)}", "WARN", ep)
     return {"ok": True, "episode": ep, "yt": vid, "master": master, "thumb": thumb, "title": title, "qc_fixes": notes}
 
@@ -953,11 +962,13 @@ def _fix_link(ep):
     if not repo: return ""
     return f"https://github.com/{repo}/issues/new?title={quote('FIX ' + ep)}&body={quote('Click Submit new issue. A robot fixes the held video and schedules it.')}"
 
-def _hold(st, ep, out, chk, notes, fix):
-    """Final QC still failing: nothing is uploaded. The re-render bundle is saved to Drive, you get ONE email with a fix link, new episodes are paused until you act."""
+def _hold(st, ep, out, chk, notes, fix, mail=True):
+    """Final QC still failing: nothing is uploaded. The re-render bundle is saved to Drive, you get ONE email with a fix link, new episodes are paused until you act.
+    v12 V1c: mail=False (a film held by the judged floor alone: its own card is the one message - a 'one click to fix' would be false there)."""
     CK.save(out, ep, "hold")
     probs = "; ".join(f"{p['code']}: {p['detail']}" for p in chk["problems"])[:380]
     st.update("Episodes", "episode_id", ep, {"status": "HOLD_QC", "notes": CK.set_attempts("QC hold: " + probs, 1), "updated": iso()})
+    if not mail: return {"ok": False, "held": True, "episode": ep, "problems": [p["code"] for p in chk["problems"]]}
     link = _fix_link(ep)
     items = "".join(f"<li><b>{p['code']}</b>: {p['detail']}</li>" for p in chk["problems"]) + "".join(f"<li>degraded: {x}</li>" for x in take_degraded())
     act = (f"<p><a href='{link}'>Click here, then press the green <b>Submit new issue</b> button</a>. A robot repairs the video "

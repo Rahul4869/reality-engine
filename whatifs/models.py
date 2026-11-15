@@ -1,6 +1,6 @@
 """Model discovery (names never typed in code), Claude and Gemini calls with prompt caching and routing, JSON repair, fallback and fake mode. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
-import hashlib, json, os, re, threading, time, concurrent.futures as cf
+import base64, hashlib, json, os, re, threading, time, concurrent.futures as cf
 import requests
 from whatifs.core import env, log, cost, S, store, iso, FAKE, status, note_degraded, JOB
 
@@ -154,6 +154,7 @@ ROUTES = {
     "rnd_research": ("sonnet", "edit"), "board_gemini": ("board_g", "judge"), "board_claude": ("board_c", "judge"),       # v12 B5: R&D research with web search; the Review Board's two families
     "short_writer": ("script", "creative"),          # v12 V2c: a Short is written (and fixed once) by the model that writes the long script
     "probe_gemini": ("flash", "judge"), "probe_claude": ("haiku", "chore"),          # v12 V1b: the promise line-up's two cheap readers (the right answer is known to code: no taste call)
+    "floor_gemini": ("board_g", "judge"), "floor_claude": ("board_c", "judge"),      # v12 V1c: the judged floor's two first-time viewers - the Board's own chains (strong, one family each)
 }
 SAVER_MEDIUM = ("scout", "showrunner", "bible", "premise_judge", "memo", "objections", "director", "director_read", "hooks", "packager", "immersion")
 CHAIN_EFFORT = {"opus": "creative", "fable": "creative", "sonnet": "edit", "haiku": "chore"}
@@ -345,7 +346,9 @@ def ai_estimate_inr():
     from whatifs.core import S as _S
     from whatifs import costguard as _CG
     tr = _S("TABLE_READ_EXTRA_INR", float) if _CG.table_read_runs() else 0.0          # v12 V2d: only where the table read RUNS (never under ROOM_MODE v2)
-    return _S("LLM_EST_INR", float) + _S("THINK_EST_INR", float) + _S("ROOM_EXTRA_EST_INR", float) + tr
+    from whatifs.org import floor as _FL
+    fl = _S("VIEW_FLOOR_EST_INR", float) if _FL.on() else 0.0                           # v12 V1c: the judged floor's session is AI money of the video too
+    return _S("LLM_EST_INR", float) + _S("THINK_EST_INR", float) + _S("ROOM_EXTRA_EST_INR", float) + tr + fl
 
 def write_ai_summary(episode):
     """v8.11 (K91): ONE Cost_Log row per finished video: measured AI-writing spend (every Claude + Gemini text call logged for it, TTS excluded) next to
@@ -375,15 +378,16 @@ except Exception: pass
 def _sig(mid, effort, search):
     return f"{mid}|effort={effort or 'default'}|search={bool(search)}|thinking=default"
 
-def _claude_body(role, system, prompt, max_tokens, temperature, search, effort, fanout=False, prewarm=False):
+def _claude_body(role, system, prompt, max_tokens, temperature, search, effort, fanout=False, prewarm=False, content=None, think=None):
     """The request body and the cache info. Thinking is never set (the 5.5 models think adaptively by default), so the thinking configuration is
-    identical across every call that shares a prefix; effort is part of the signature (it is rendered into the prompt)."""
+    identical across every call that shares a prefix; effort is part of the signature (it is rendered into the prompt). v12 V1c: `content` = the user
+    message's blocks (pictures and text) in place of the prompt string; `think` = the thinking room of this call in place of the role's cap."""
     mid = model(role)
     if not mid: raise RuntimeError(f"no {role} model")
     eff = "" if mid in _NO_EFFORT else effort
-    room = min(OUT_CEILING, int(max_tokens) + think_cap(task_of_call(), eff))          # v9.2: a per-role thinking cap (Settings), never more on a retry
+    room = min(OUT_CEILING, int(max_tokens) + (think_cap(task_of_call(), eff) if think is None else int(think)))          # v9.2: a per-role thinking cap (Settings), never more on a retry
     sysf, info = (str(system), {"bps": 0, "ttl": [], "hash": "", "prefix_tokens": 0, "sent_1h": False}) if mid in _NO_CACHE else CACHE.blocks(system, mid, _sig(mid, eff, search), int(max_tokens), fanout)
-    body = {"model": mid, "max_tokens": 0 if prewarm else room, "system": sysf, "messages": [{"role": "user", "content": prompt}]}
+    body = {"model": mid, "max_tokens": 0 if prewarm else room, "system": sysf, "messages": [{"role": "user", "content": content if content is not None else prompt}]}
     if not prewarm and mid not in _NO_SAMPLING and temperature is not None: body["temperature"] = temperature
     headers = AH()
     if eff:
@@ -405,8 +409,8 @@ def _strip_effort(body, headers):
     body["messages"] = [m for m in body["messages"] if m.get("role") != "system"]
     headers.pop("anthropic-beta", None)
 
-def _claude(role, system, prompt, max_tokens, temperature, search, episode, effort="", fanout=False, task=""):
-    body, headers, info, room, mid, eff = _claude_body(role, system, prompt, max_tokens, temperature, search, effort, fanout)
+def _claude(role, system, prompt, max_tokens, temperature, search, episode, effort="", fanout=False, task="", content=None, think=None):
+    body, headers, info, room, mid, eff = _claude_body(role, system, prompt, max_tokens, temperature, search, effort, fanout, content=content, think=think)
     started = time.time()
     def post(): return _post(body, headers)
     _t0 = time.time()
@@ -439,7 +443,7 @@ def _claude(role, system, prompt, max_tokens, temperature, search, episode, effo
         stop = j.get("stop_reason")
         if stop != "pause_turn" or hop == 3: break
         content += j.get("content", [])
-        body["messages"] = [m for m in body["messages"] if m.get("role") == "system"] + [{"role": "user", "content": prompt}, {"role": "assistant", "content": content}]; r = post()
+        body["messages"] = [m for m in body["messages"] if m.get("role") == "system"] + [{"role": "user", "content": prompt}, {"role": "assistant", "content": content}]; r = post()      # (content here = the paused turn's own blocks: a search, never a look of the floor)
     CACHE.note(info, _sig(mid, eff, search), started, time.time() - started)
     if stop == "max_tokens": raise Truncated(f"Claude {role} reply was cut at {room} tokens")
     if stop == "refusal": raise Declined(f"Claude {role} declined this request")
@@ -486,15 +490,15 @@ def simulate_claude(role, system, prompt, max_tokens, search, effort, episode=No
     except Exception as e:
         log(f"cache simulation skipped: {e}", "WARN", episode); return None
 
-def _gemini(role, system, prompt, max_tokens, temperature, search, want_json, images=None, episode=None, video=None):
+def _gemini(role, system, prompt, max_tokens, temperature, search, want_json, images=None, episode=None, video=None, parts=None, think=None):
     mid = model(role) or model("gem_flash")
     answered = role if model(role) else "gem_flash"                # v12 B5: the role that REALLY answers (a missing Pro model falls to Flash here): last_call() must never call a cheap model strong
     vparts = []
     if video:                                                      # v10 (Outlier Lab): a public YouTube URL, clipped to its first seconds (fileData + videoMetadata)
         vparts = [{"fileData": {"fileUri": video[0]}, "videoMetadata": {"startOffset": "0s", "endOffset": f"{int(video[1])}s"}}]
-    body = {"systemInstruction": {"parts": [{"text": str(system)}]},
-            "contents": [{"role": "user", "parts": vparts + [{"text": prompt}] + [{"inlineData": {"mimeType": m, "data": b}} for m, b in (images or [])]}],
-            "generationConfig": {"temperature": temperature, "maxOutputTokens": min(OUT_CEILING, int(max_tokens) + THINK_ROOM)}}      # v8.9.3: thinking shares this limit
+    body = {"systemInstruction": {"parts": [{"text": str(system)}]},      # v12 V1c: `parts` = the user turn's parts (inline clips and text) in place of the prompt; `think` = this call's thinking room
+            "contents": [{"role": "user", "parts": parts if parts is not None else vparts + [{"text": prompt}] + [{"inlineData": {"mimeType": m, "data": b}} for m, b in (images or [])]}],
+            "generationConfig": {"temperature": temperature, "maxOutputTokens": min(OUT_CEILING, int(max_tokens) + (THINK_ROOM if think is None else int(think)))}}      # v8.9.3: thinking shares this limit
     if search: body["tools"] = [{"google_search": {}}]
     elif want_json: body["generationConfig"]["responseMimeType"] = "application/json"
     _t0 = time.time()
@@ -726,6 +730,72 @@ def ask_video(system, prompt, youtube_url, seconds=60, episode=None):
     if monthly_cap_reached(maintenance=False): return None
     try: return parse_json(_gemini("gem_flash", system, prompt, 2000, 0.2, False, True, episode=episode, video=(youtube_url, seconds)))
     except Exception as e: log(f"video look failed: {str(e)[:160]}", "WARN", episode); return None
+
+def _b64(path):
+    with open(path, "rb") as f: return base64.b64encode(f.read()).decode()
+
+def _watch_parts(views, prompt):
+    """What the family that watches and hears is sent: for each view its letter, then its clip inline; the prompt last."""
+    out = []
+    for v in views: out += [{"text": f"OPENING {v['label']}:"}, {"inlineData": {"mimeType": "video/mp4", "data": _b64(v["clip"])}}]
+    return out + [{"text": prompt}]
+
+def _watch_content(views, prompt):
+    """What the family that sees pictures only is sent: for each view its letter and its film strip (one picture every 2 seconds, sound off); the prompt last."""
+    out = []
+    for v in views:
+        out.append({"type": "text", "text": f"OPENING {v['label']} (one picture every 2 seconds, sound off):"})
+        out += [{"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": _b64(f)}} for f in v.get("frames") or []]
+    return out + [{"type": "text", "text": prompt}]
+
+def ask_watch(role, system, prompt, views, max_tokens=800, think=8000, waits=(90, 240), tight=False, episode=None):
+    """v12 V1c (the judged floor): ONE look of a first-time viewer - the openings of `views` ([{label, clip, frames}], in the order shown) and the prompt, to
+    the chain of `role` (Gemini watches and hears the clips; Claude sees the film strips). Returns the parsed JSON (with "_tight" = True when the answer came
+    from an attempt that carried TIGHT_NOTE) or raises RuntimeError. A failed attempt is judged by what was PAID for it, never by an error's words:
+    (1) unpaid (no cost was logged) - the same attempt again after each of `waits` (at most two waits a call), then the chain's next model; (2) cut
+    (Truncated, paid) - ONE more attempt on the same model with TIGHT_NOTE (Claude one effort lower), and a tight attempt that is cut ends the call;
+    (3) paid and useless (declined, not JSON) - the chain's next model, never asked again for this look."""
+    from whatifs import core as _C
+    task = role; chain_key, ecls = route(role); _CUR.task = str(task); _CALL.task = str(task)          # the run's receipt counts it and the cost row carries the task
+    if ASK_TAPS: system = _tap(task, system, prompt)
+    _CALL.last = {}
+    if FAKE:
+        from whatifs.fakes import fake_watch
+        if chain_key in CHAINS and CHAINS[chain_key][0][0] == "c": simulate_claude(CHAINS[chain_key][0][1], system, prompt, max_tokens, False, effort_for(task, ecls), episode)
+        out = fake_watch(prompt, views)
+        p0, r0 = CHAINS[chain_key][0] if chain_key in CHAINS else ("c", _family(chain_key))
+        _note_call("claude" if p0 == "c" else "gemini", r0, f"fake-{r0}", 0.0)
+        res = parse_json(out)
+        if tight and isinstance(res, dict): res["_tight"] = True
+        return res
+    from whatifs.governor import monthly_cap_reached
+    if monthly_cap_reached(maintenance=False): raise RuntimeError("monthly budget cap reached; no new paid model calls will be started")
+    left = list(waits); last = None; eff0 = effort_for(task, ecls)
+    lower = {"max": "high", "xhigh": "high", "high": "medium", "medium": "low", "low": "low", "": "medium"}
+    for prov, r in list(CHAINS[chain_key]):
+        t = bool(tight)
+        while True:
+            pr = str(prompt) + (TIGHT_NOTE if t else ""); eff = (lower[eff0 if eff0 in EFFORTS else ""] if t else eff0)
+            s0 = _C.month_spend()
+            try:
+                if prov == "c": txt = _claude(r, system, pr, max_tokens, 0.2, False, episode, eff, task=task, content=_watch_content(views, pr), think=think)
+                else: txt = _gemini(r, str(system), pr, max_tokens, 0.2, False, True, episode=episode, parts=_watch_parts(views, pr), think=think)
+            except Exception as e:
+                last = e
+                if _C.month_spend() == s0:                                                       # (1) unpaid: wait and ask the same attempt again
+                    if left:
+                        w = left.pop(0); log(f"{task} via {r}: unpaid failure ({type(e).__name__}) - waiting {w}s and asking again", "WARN", episode); time.sleep(w); continue
+                    log(f"{task} via {r}: unpaid failure ({type(e).__name__}) - the next model", "WARN", episode); break
+                if isinstance(e, Truncated):                                                     # (2) cut, paid: one tighter attempt; a tight attempt that is cut ends the call
+                    if t: raise RuntimeError(f"{task}: the look was cut twice at its thinking room") from None
+                    log(f"{task} via {r}: cut - asking ONCE more, tighter (effort {eff0 or 'default'} -> {lower[eff0 if eff0 in EFFORTS else '']})", "WARN", episode); t = True; continue
+                log(f"{task} via {r}: paid and useless ({type(e).__name__}) - the next model", "WARN", episode); break      # (3)
+            try: res = parse_json(txt)
+            except ValueError as e:
+                last = e; log(f"{task} via {r}: the answer is not JSON - the next model", "WARN", episode); break      # (3)
+            if t and isinstance(res, dict): res["_tight"] = True
+            return res
+    raise RuntimeError(f"no model could look for {task}: {type(last).__name__ if last else 'no model in the chain'}")
 
 def _shares_prefix(jobs):
     """True when 2+ jobs go to the same Claude chain with the same effort and search setting and the same cached layers (GLOBAL + EPISODE)."""

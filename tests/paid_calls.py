@@ -20,6 +20,8 @@ def watch(monkeypatch):
     rg = AN.gemini_image; monkeypatch.setattr(AN, "gemini_image", lambda *a, **k: (c.update(["image_ref"]), rg(*a, **k))[1])
     if hasattr(M, "ask_batch"):
         rb = M.ask_batch; monkeypatch.setattr(M, "ask_batch", lambda *a, **k: (c.update(["batch"]), rb(*a, **k))[1])
+    rw = M.ask_watch                                                 # v12 V1c: the judged floor's doorway - a look of a first-time viewer is a paid call (a judge's file changed BY DESIGN)
+    monkeypatch.setattr(M, "ask_watch", lambda role, *a, **k: (c.update(["watch:" + str(role)]), rw(role, *a, **k))[1])
     # v12 V2c-b2b: two kinds of paid call the counter never saw, because other modules hold their own name for the function - the key art (the thumbnail,
     # its runner-up; until this batch also two reel covers) and a voice job (the narration; until this batch also one per cut-down reel).
     import sys
@@ -104,6 +106,11 @@ V12V2CB2C_REMOVED = {"text:reels": 1,        # the cut-downs' planning call (the
 # building and raised the flash-safety check on one offline episode: BUILD_STATE, open issue 164.)
 V12V2DB_ADDED = {"image": 10}
 
+# v12 V1c (the judged floor): ONE session per long video - each of the two first-time viewers looks twice (the openings in one order, then reversed). Counted
+# by this counter on the offline long video with the floor on (tests/test_v12_floor.py, a whole production): watch:floor_gemini 2, watch:floor_claude 2,
+# nothing else new. Its money is the line "floor" of the cost model. (The older tests run with the floor off: tests/conftest.py, OLD_VIEW.)
+V12V1C_ADDED = {"watch:floor_gemini": 2, "watch:floor_claude": 2}
+
 def allowed_base(base):
     out = dict(base)
     for k, v in V12V2CB2C_COUNTED.items(): out[k] = out.get(k, 0) + v
@@ -114,5 +121,6 @@ def allowed_base(base):
     for k, v in V12V1_ADDED.items(): out[k] = out.get(k, 0) + v
     for k, v in V12V1B_ADDED.items(): out[k] = out.get(k, 0) + v
     for k, v in V12V2DB_ADDED.items(): out[k] = out.get(k, 0) + v
+    for k, v in V12V1C_ADDED.items(): out[k] = out.get(k, 0) + v
     return out
 

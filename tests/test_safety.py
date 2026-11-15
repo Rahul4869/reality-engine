@@ -65,7 +65,7 @@ def test_the_research_prompt_tells_the_model_that_signal_titles_are_untrusted():
 # ---------------- workflows ----------------
 WF = sorted(glob.glob(os.path.join(ROOT, ".github", "workflows", "*.yml")))
 def test_there_are_fifteen_workflows_and_all_parse():
-    assert len(WF) == 24          # v10: + special.yml + bakeoff.yml + wa_setup.yml. v9.4b: + dash.yml + whatsapp.yml. v9.4a: + preprod.yml + claude-build.yml. v9.3.1: + upload_check.yml (manual; the ₹0 upload check). v8.9: + merge.yml (one-click merge); v8.10: + preview.yml (Script Preview + approve / reject); v9: + sheets.yml (manual, one-time)
+    assert len(WF) == 25          # v12 V1c: + floorkit.yml (the judged floor's canary, filed once from a link the owner shares; a test changed BY DESIGN). v10: + special.yml + bakeoff.yml + wa_setup.yml. v9.4b: + dash.yml + whatsapp.yml. v9.4a: + preprod.yml + claude-build.yml. v9.3.1: + upload_check.yml (manual; the ₹0 upload check). v8.9: + merge.yml (one-click merge); v8.10: + preview.yml (Script Preview + approve / reject); v9: + sheets.yml (manual, one-time)
     for f in WF: assert yaml.safe_load(open(f))["jobs"]
 
 def test_no_workflow_puts_an_expression_inside_a_shell_command():

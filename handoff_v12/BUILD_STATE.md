@@ -2229,6 +2229,145 @@ WHAT IT NEEDS TO KNOW FROM HERE (facts, not decisions):
 - NOT RUN BY THIS BUILDER: a rehearsal, the sweep, `breaks.py`, the builder's block.
 USAGE: at this builder's start weekly all models 36%, weekly Fable 62% (the account's figure; this session is Opus 5.5), context 9%; at its end weekly all models
 37%, weekly Fable 62%, context 63%.
+THE THIRD OPUS BUILDER (the continuation typist of the plan's A9; 15 Nov 2026, from 16:51 UTC by the laptop's clock; Opus 5.5, started fresh by the dispatcher
+`local_e4e9a03f-...` with a first turn that only answered READY; its brief arrived as a message). `proving/next.py`: batch V1c, phase BUILD, base 01e7798, red rounds
+0, pre-flight clean, the git hooks NOT installed, FOUR open findings of `reviews/V2b_audit.md`. SAID AS THE BRIEF ASKS: the lines of F1 to F4 still read "OPEN" -
+not "CLOSED" - and that is by the first and second builders' own notes above (each stays open until its breaks are caught on the final code by `breaks.py`; F1 =
+0e2a5e3, F2 to F4 = 725459d); no builder rewrote any of them, nothing is wrong with them. The card's last acts (`built_gate.py`, `--to BUILT`, the prover) are not
+this session's (A3). USAGE at the start (plan Ultra; the app shows no 5-hour line): weekly all models 37%, weekly Fable 63% (the account's figure), this session's
+context 9% of 1,000,000.
+THE READING - THE CONTINUATION TYPIST'S READING, A9, each item whole: (1) `next.py` and its card; the plan whole (its amendments 1 to 3 and A9 to A11 first); the
+handoff `CLAUDE.md`; `02` whole (items 1 to 89); (2) in this file the head line, STANDING RULES, under NEXT the paragraph "Remember", HOW TO RUN whole, the record of
+V1c whole (its START, Steps 1 to 3 with the design's history, Step 4 from its first line with both builders' "WHERE THE BUILD STANDS" and DESIGN QUESTIONS 1 to 3)
+and the open issues the memo and those notes name (167, 189, 193, 196 to 209); (3) `reviews/V1c_design.md` whole (round 2 first) and `reviews/V2b_audit.md` whole
+(the four findings `next.py` prints); (4) the repo's `CLAUDE.md` whole; in `docs/CURRENT/ENFORCEMENT_MATRIX.md` the rows of the parts it types (`living_characters`,
+the cast by format, `viewer_probe` as the model of a jury row); (5) BEFORE STEP 1's FIRST EDIT, whole: `whatifs/models.py`, `whatifs/episode.py`, `whatifs/contract.py`,
+`whatifs/notify.py`, `whatifs/cli.py`, `whatifs/costguard.py`, `tests/conftest.py`, `tests/paid_calls.py`, `tests/test_safety.py`, `tests/test_v12_floor.py`; by the
+parts step 1 calls or edits: `whatifs/org/board.py` (whole), `whatifs/org/layman.py` 150 to 257 (`probe`, `probe_run` - the shape copied), `whatifs/org/runner.py`
+15 to 55, 215 to 439 (`Out`, `run`, `work`), `whatifs/org/registry.py` 44 to 230, `whatifs/org/levers.py` (the form `_n` and the D13 rows), `whatifs/org/rnd.py`
+(`ORG_CHECKS`, `SHOW_CHECKS`), `tools/repair.py` (`PROTECTED`), `whatifs/governor.py` (`month_spend_of`, `max_long_videos`), `whatifs/publish.py` (`drive_upload`,
+`drive_download`, `drive_delete`, `email`), `whatifs/release.py` (`sha`), `whatifs/manage.py` (`kill_check`, `tick` 179 to 224), `whatifs/fakes.py` (its outline and
+105 to 130, where `fake_watch` goes), `.github/workflows/fix.yml` whole and the bounded ffmpeg step of `checks.yml`, the lines of the seventeen test files that read
+the workflow files. NOT READ WHOLE, SAID PLAINLY (the plan's chapter 4, CONTEXT: the window is smaller than the reading - the A9 reading and the files above took
+about 66% of it before the first line): `whatifs/core.py` - read are `TABS` 150 to 171, `DEFAULTS` 1000 to 1118 (the newest cells, the form of a note) and 1119 to
+1261 (`S`, `set_setting`, `log`, `cost`, `flush_costs`, `month_spend`); its `DEFAULTS` 320 to 999 were searched for the names step 1 adds (none exists) and not read;
+`whatifs/manage.py` outside `kill_check` and `tick` 179 to 224; `whatifs/fakes.py` outside its outline and 105 to 130; `tools/sweep.py` and `tools/rehearsal.py`
+(step 1 does not touch them).
+DESIGN QUESTION 4 (a choice the memo did not make; the reading that changes LESS of what a viewer sees was taken): the temperature of a look. `models.ask_watch` is
+given none by 3.1. TAKEN: 0.2, the Board's own judges' (`board.assess` line 173) on the same two chains; the Claude 5.5 models refuse a temperature and drop it
+(`_NO_SAMPLING`), so it reaches the Gemini judge only. No viewer sees it.
+DESIGN QUESTION 5: the column `status` of tab `Floor_Log` (3.1 lists it, defines no value). TAKEN: the LOOK's own state - "counted" for a look whose answers
+count, "not counted: <why>" for a look that failed or came from another provider or a model that is not strong (one such row is written so that rule (2) of
+`floor.run` can count a void session on the log); the session's verdict is never stored as a word - every reader computes it again from the counted rows
+through `floor.again`. No viewer sees it.
+DESIGN QUESTION 6: what a look's prompt joins the labels with ("OPENINGS: " + the labels in the order shown). TAKEN: ", ". No viewer sees it.
+DESIGN QUESTION 7: where a run's own notes go (a reference that could not be fetched; a family not asked; a look not counted). The check recomputes the
+verdict's words from the rows and FAILS on any difference, so a note inside `why` would hold every such film. TAKEN: a key `notes` of the result beside `why`,
+never inside it; rule (2)'s suffix " (not judged again: ...)" stands inside a VOID result's why as the memo writes it, and the check compares the status alone
+for a void result (a void result is N/A with its why, whatever is recomputed). No viewer sees it; a film is never held for a note.
+DESIGN QUESTION 8 (found by a test before the code was right): a viewing's clip of a minute PROBES 59.92 s (`-t 60` on the input: 719 frames at 12 a second), so the
+strip of the canary's STORED clip - whose length `kit` must read from the file - had 29 pictures while the new film's strip, cut with the 60 its viewing was made
+with, had 30: the same minute seen in two grains. 3.1 gives `strip` its seconds for `view` (min of the cell and the file's length) and none for a stored clip.
+TAKEN: for a STORED clip (the canary's, a reference's, a down-canary's) the seconds are min(the cell, the file's length rounded to the whole second) - the
+minute it was made as; `view` keeps the memo's rule. Every item of a session is then seen in 30 pictures. No viewer sees it.
+STEP 1 - THE FLOOR (3.1, end to end in one step).
+TESTS CHANGED BY DESIGN IN STEP 1 (each named by the memo's 3.1 / 3.7 / 3.9 before it was touched; each pin counted again on the code before it moved):
+`tests/test_safety.py` 68 (24 -> 25 workflow files: `floorkit.yml`); `tests/paid_calls.py` (`watch` wraps `models.ask_watch` as "watch:" + role; NEW
+`V12V1C_ADDED` = {"watch:floor_gemini": 2, "watch:floor_claude": 2} in `allowed_base` - counted by the counter on the offline long video with the floor on: the
+whole production of `test_a_whole_production_passes_the_floor_with_two_looks_of_each_judge`, nothing else new); `tests/conftest.py` (`OLD_VIEW` gains
+`VIEW_FLOOR_ON` "FALSE"); the counts of 3.9 step 1 - `tests/test_v12_exec.py` 62 (levers 84 -> 86) and 493 (final checks 21 -> 22), `tests/test_v12_cutdowns.py`
+39 (final 21 -> 22, all 68 -> 69), `tests/test_v12_motion.py` 633 (68 -> 69) and 636 (`SHOW_CHECKS` 57 -> 58), `tests/test_v12_release.py` 436 (`SHOW_CHECKS`
+57 -> 58), `tests/test_v12_inside.py` 649 (`SHOW_CHECKS` 57 -> 58: found by the first whole-suite run, "1 failed, 1705 passed" - the one failure this pin,
+read and named here before it moved; run alone after: "1 passed"). No other assert of an older test moved.
+THE FAILING TESTS FIRST: the doorway's, the verdict's and the run's tests were written before `floor.py`, `ask_watch` and the edits existed (an import of
+`whatifs.org.floor` fails the whole section); the first run on the typed code found one fault of the code - DESIGN QUESTION 8 above - and one of a test (its
+search for writers of the tab was too wide: it is now "no other module writes the tab, by its name or by the floor's constant").
+BUILT IN STEP 1 (as written in 3.1, except where DESIGN QUESTIONS 4 to 8 say): NEW `whatifs/org/floor.py` (on `tools/repair.PROTECTED` before its first line):
+`on`, `view` / `strip` / `twin` / `stand_in` (the recipe word for word: fifteen cards, the grey step, the shape's bar, the two number cards, one tone),
+`seconds_of`, `watch_s`, `fetch` (a Drive link by its download form; an https address as it is; 2 GB; a page that is not a video refused with the memo's words;
+a failed fetch names no address), `make_kit`, `kit` (an empty cell offline = the stand-in and its twin; the stored clip IS the canary's viewing and is never
+encoded again; its SHA-256 against the record), `link`, `pairs`, `verdict` (pure: the six worked cases; a missing answer given to the worse item; a ladder pair
+never holds N), `again` (THE ONE HELPER for a verdict computed again from stored rows; its two callers in this step: the run's rules (1) and (2) and check
+`viewer_floor` - `verdicts.py` adds three in step 2), `_parse`, `session` (the items sorted by the session id and lettered blind; look 1 = look 0 reversed; a family
+whose look failed or was answered by another provider or a model not strong has no result and the families after it are not asked; one row of tab `Floor_Log` a
+look, written by `session` alone), `month_cap`, `plain`, `m_run`, `run` (D13's `floor`: rule (1) a pass or a fail on the log decides, (2) two void sessions are
+the last, the log read OUTSIDE any try; from rule (3) ONE try: the cap, the kit, the viewing filed BEFORE the looks and removed on a void, the references and
+down-canaries fetched or left out and named, the session; D13's `floor|void` memo and its closing), `eye_hours`, `hold_card` (no `expires_h`: it never closes by
+itself), `_answer` (FLOOR DROP writes KILL; every other choice is the contract's), `_note_eye`, `_approve_eye`, `_eye_silence`, `eye_sweep`, `register`.
+`models.py`: NEW `ask_watch` (the doorway; its three kinds of failure judged by what was PAID: `core.month_spend()` before and after an attempt; the waits per call;
+a cut asked once more with `TIGHT_NOTE` and Claude one effort lower, a tight cut ends the call; a paid useless answer moves to the next model; `_tight` on a JSON
+from a tight attempt; offline `fakes.fake_watch` with `simulate_claude` for the Claude judge), `_watch_parts`, `_watch_content`, `_b64`; `_gemini(parts=, think=)`,
+`_claude` / `_claude_body(content=, think=)` (`None` = today's body); `ROUTES` "floor_gemini" / "floor_claude" (the Board's chains); `ai_estimate_inr` + the
+floor's estimate while it is on. `fakes.py`: `WATCH_CHANGE` 0.5, `WATCH_MARGIN` 10, `_changing`, `fake_watch`. `contract.py`: check `viewer_floor` (final, a
+SHOW check; recomputes through `floor.again`; a void result N/A with its why) and `await_approval(kind=, default=, expires_h=)` with today's values as defaults.
+`episode.py` (`_finish`): the floor's call right after the measured checks (`FLOOR.plain(ORG.work("D13", "floor", ...))`, only when nothing failed), the floor's
+own card and `_hold(mail=False)` when `viewer_floor` is the only failed check, the eye's branch after the creative review (kind `floor_eye`, "goes public by
+itself", `eye_hours(slot)`); `_hold(..., mail=True)`. `manage.tick`: `floor.eye_sweep()` in a try of its own right after `NT.tick()`. `notify._ensure_handlers`
+names `whatifs.org.floor`. `costguard.lines`: the line "floor" (kinds long and ladder, while the floor is on; calls watch:floor_gemini 2, watch:floor_claude 2).
+`cli.py`: the branch `floorkit` (a local file and an id as arguments, else the workflow's event file; the notice `floor_kit`). NEW `.github/workflows/floorkit.yml`
+(as 3.1 writes it: `workflow_dispatch` with `link` and `yt`, `contents: read`, ONE job, 30 minutes, the group `floorkit`, `fix.yml`'s env order without the model
+keys, the bounded ffmpeg step, `fix.yml`'s two pip lines, `python -m whatifs.cli floorkit` with no argument). `core.py`: tab `Floor_Log` (85 tabs) and SEVEN cells
+(`VIEW_FLOOR_ON`, `_WATCH_S`, `_EST_INR`, `_CAP_PER_VIDEO_INR`, `_MAX_PER_VIDEO`, `_CANARY`, `_EYE_WAIT_H`). `registry.py`: D13's levers + `VIEW_FLOOR_WATCH_S`,
+`VIEW_FLOOR_EYE_WAIT_H`, `ENTRY["D13"]` + ("whatifs/episode.py", "floor") (not in `EPISODE_RUNS`), `CHECK_OWNER["viewer_floor"]` D13. `levers.py`: the two levers
+(int, 30-120 step 15 / 6-72 step 6, lowering needs the owner, `viewer_floor`). `rnd.SHOW_CHECKS` 58. A matrix row; `SYSTEM.md` regenerated. Counts: 69 hard checks
+(39 script, 22 final), `SHOW_CHECKS` 58, 86 levers, 85 tabs, 25 workflow files.
+TESTS (`tests/test_v12_floor.py`, STEP 1 - 39 tests, 45 with their parameters): the six worked cases; a jury that prefers the rejected video is void and a pass
+that lost to a reference says so; a missing answer counts against the session; a film cannot void its own session; the stand-in (30 pictures, 14 of 29 gaps),
+its twin (0) and an offline film measured, a session's files under 14 MB; one encode an item and its strip from its own clip; the labels carry nothing and
+look 1 is look 0 reversed; a look of a cheap model is not counted and the later family is not asked; ONE writer of `Floor_Log`; ONE helper for verdicts from
+rows; the doorway with `requests.post` replaced (a 503 then a good answer after one wait; three 503s; a cut then a tight answer, cut twice, tight and cut; a
+declined Sonnet look goes to Opus once and never back); the cost row carries the task and the month cap closes; a refusal and a pass stand across renders and
+a waiver pays nothing; two void sessions are the last; an unreadable log raises; an ffmpeg error and a lost upload; no kit, a kit not on record, the kit never
+encoded again; `fetch`; the `floorkit` branch; the check says and recomputes; the organisation off; the line, the estimate, the routes; the hold card stays open
+three days and FLOOR DROP kills; the eye's hours; approval by silence never before its hours and a failed default tried again by the sweep; his Hold stands;
+FOUR WHOLE PRODUCTIONS with ids no other test file uses (`OWN_IDS` EP209910010900, EP209910080900, EP209910150900, EP209910220900): a film that passes the floor
+with two looks of each judge (the counter: watch:floor_gemini 2, watch:floor_claude 2) and keeps its viewing; a flop-like film HELD by `viewer_floor` ALONE with
+the floor's own card, its link and no "Video held" mail - with the organisation on and off; a void session (no kit) sends the film to his eye and his silence
+schedules it. Run alone after the code: the unit tests "48 passed" and the productions "6 passed in 426.88s". Breaks S1-01 to S1-50 written into
+`proving/breaks/V1c.json` (a read-only script: "50 breaks, 50 ids, 0 problem(s)"; 90 in the list) - NOT RUN.
+STEP 1's RUN (real pytest, parallel `-n 6`, strict - `WI_NO_SKIPS=1` -, THE WHOLE SUITE, alone; each run's first lines read 25 seconds after its start - it had
+collected and was running -, waited for on its own process): the first "1 failed, 1705 passed in 3469.20s" (the pin of `test_v12_inside.py` 649, named above);
+after that pin, THE WHOLE SUITE AGAIN on the step's final code: "1706 passed in 3489.96s (0:58:09)", 0 failed, 0 skipped (1666 + 40 new; the log searched for
+FAILED, ERROR and skipped: none). Plan Guard "PLAN GUARD: GREEN" (after the test's stand-in model ids were renamed: it had flagged two typed model names),
+Truth "TRUTH: GREEN", `tools/gen_docs.py` "wrote docs/CURRENT/SYSTEM.md" (committed with the step).
+WHERE THE BUILD STANDS (the third Opus builder, 15 Nov 2026 about 19:30 UTC by the laptop's clock; written at 78% of its context, between two steps: step 2 -
+his verdict, 3.2 - needs its own reading of `notify.py`'s callers, `contract.review_needed`, `manage.tick`, `whatifs/org/memos.py`, `ladder.py` and the floor
+just typed, and would cross the brief's 80% line half typed). DONE AND PUSHED: step 0 (725459d), step 0b (0e2a5e3) and step 1 (the commit of this note). The
+state stays BUILD; nothing was moved; `V1c_OPUS_DONE.md` is NOT written. NEXT: a FOURTH Opus builder (card "BUILDER of V1c - phase BUILD"), with the continuation
+typist's reading of the plan's A9, reads this record from "Step 4 BUILD" and goes on at 3.9 STEP 2 (HIS VERDICT, 3.2), then 3, 4, 6, 7 - a checkpoint commit and
+push after each, the whole suite green after each.
+WHAT IT NEEDS TO KNOW FROM HERE (facts, not decisions):
+- THE AUDIT'S LINES: F1 to F4 of `reviews/V2b_audit.md` STAY "OPEN" until their breaks are caught on the final code by `breaks.py` (F1: S0b-01 to S0b-25; F2 to F4:
+  S0-01 to S0-14); then each line becomes `CLOSED F<n>: <commit>, <how it is proven>` - F1's commit 0e2a5e3, F2 to F4's 725459d.
+- THE PINS TODAY: checks by stage {"script": 39, "final": 22, "short": 5, "short_file": 2, "release": 1}, total 69 (`tests/test_v12_cutdowns.py` 39,
+  `tests/test_v12_exec.py` 493, `tests/test_v12_motion.py` 633); `SHOW_CHECKS` 58 (`whatifs/org/rnd.py`; `test_v12_motion.py` 636, `test_v12_release.py` 436,
+  `test_v12_inside.py` 649 - THREE places pin it, not two); levers 86 (`test_v12_exec.py` 62); tabs 85; founding items 201; workflow files 25
+  (`tests/test_safety.py` 68); the suite 1706. Step 2 adds ONE tab (86) and TWO levers (88), no check; step 3 one check (70, 59) and one lever (89); step 4 one
+  check (71, 60).
+- `tests/conftest.py`: `OLD_VIEW` = {"CAST_BY_FORMAT_ON": "FALSE", "VIEW_FLOOR_ON": "FALSE"}; step 2 adds `OWNER_VERDICT_ON`, step 3 `MAKER_LINE_ON`, step 4
+  `ONE_STORY_ON`.
+- WHAT STEP 2 PLUGS INTO (typed in step 1, the memo's words): `_finish` calls `FLOOR.run(b, ep, master, out, (), ())` - step 2 puts `VER.references(ep),
+  VER.downs(ep)` there; `floor.run` already takes `refs` = [(episode, view id)] and `downs` = [(episode, view id, title)] (fetched by `floor._fetched`, a
+  stored clip's strip of its whole seconds: DESIGN QUESTION 8), `floor.session` already lays the R and D items and pairs, `floor.verdict` / `again` already
+  judge them (the D words: "ranked beside a video you marked not good: '<title>'"), and every row carries the column `downs`. `floor.again(rows)` is THE ONE
+  helper: `verdicts.sync`, `references` and `downs` call it (a test greps `FLOOR.verdict(` / `FL.verdict(` outside `floor.py`: none may appear). FLOOR DROP
+  (`floor._answer`) writes KILL and returns "<ep> is dropped" - step 2 adds `VER.record(ep, "down", "", via="drop")` before the return; `contract.hold_review`
+  gains its call too. `verdicts.sync` goes in `manage.tick` in a try of its own BETWEEN `NT.tick()` and the eye's sweep (the sweep's try is there now, right
+  after `NT.tick()`; a test of step 1 asserts the sweep stands after `NT.tick()` and before `SH2.due()` - it stays true). `contract.review_needed`'s change (made
+  at or after `OWNER_VERDICT_SINCE`) is step 2's. `notify.now_room()` does not exist yet.
+- `tests/test_v12_floor.py`: sections 0b and STEP 1; `OWN_IDS` = EP209910010900, EP209910080900, EP209910150900, EP209910220900 (step 1's four productions); a
+  later step's whole production needs ids no other test file uses (EP209910290900 on is free - search `tests/` first); fixtures `floor_on`, `media` (module: the
+  stand-in, its twin, the flop, a film that moves), `real` (the doorway with `requests.post` replaced), helpers `_look`, `_fam`, `_session`, `_start_e2e`
+  (test_v12_inside's F1 start + the floor on), `_led` (final-stage ledger).
+- `proving/breaks/V1c.json`: S0-01 to S0-14, S0b-01 to S0b-26, S1-01 to S1-50 (90) - NOT RUN. Every later step adds its own, written before that step's run.
+- THE DISPATCHER'S TEXT TASK (the owner's items 68 to 89 into `docs/CURRENT/OWNER_REQUIREMENTS_LEDGER.md`, in step 6, where `gen_docs` runs with the docs) is
+  NOT done.
+- DESIGN QUESTIONS: 1 to 3 (the second builder's) and 4 to 8 above (none touches what a viewer sees or the money).
+- A whole-suite run from PowerShell met one failure that is the shell's, not the code's (`test_safety.py`'s restore step: "shell not found: neither %ComSpec% nor
+  %SystemRoot% is set" under xdist); from Git Bash, as HOW TO RUN writes it, the same test passes - run the suite from Git Bash.
+- NOT RUN BY THIS BUILDER: a rehearsal, the sweep, `breaks.py`, the builder's block.
+USAGE: at this builder's start weekly all models 37%, weekly Fable 63% (the account's figure; this session is Opus 5.5), context 9%; at its end weekly all models
+38%, weekly Fable 63%, context 78%. THE READING ALONE (the A9 list and step 1's files) took about 66% of the context before the first line was typed.
 ### V2b - INSIDE THE FORMAT (14-15 Nov 2026) - ACCEPTED (final code commit 01e7798 GREEN in GitHub Checks run 196: 1647 passed; sweep 58 of 58 ids)
 (its code is 7e83001; the designer's record: steps 1 to 3; five Opus builders wrote steps 4 to 6a, the Fable finisher `FINISHED BY FABLE` and the takeaway's draft;
 the prover wrote 6b and completed 7 on 15 Nov 2026)

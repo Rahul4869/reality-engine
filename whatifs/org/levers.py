@@ -31,6 +31,7 @@ LEVERS = {
     "INSIDE_MIN_PCT_F3": _n("int", 20, 80, 5, "down", GATE, ("viewer_inside",)), "LECTURE_MAX_F1": _n("int", 2, 8, 1, "up", GATE, ("viewer_inside",)),
     "LECTURE_MAX_F2": _n("int", 2, 8, 1, "up", GATE, ("viewer_inside",)), "LECTURE_MAX_F3": _n("int", 2, 8, 1, "up", GATE, ("viewer_inside",)),
     "ENDING_FREE_S": _n("int", 20, 90, 10, "down", GATE, ("format_ending",)),      # v12 V2b: the ask-free ending (D13; DESIGN QUESTION 7 of V2b: lowering needs the owner)
+    "VIEW_FLOOR_WATCH_S": _n("int", 30, 120, 15, "down", GATE, ("viewer_floor",)), "VIEW_FLOOR_EYE_WAIT_H": _n("int", 6, 72, 6, "down", GATE, ("viewer_floor",)),      # v12 V1c: the judged floor's minute and the owner's eye (D13)
     "ACT_MIN_S": _n("float", 6, 30, 2, "", "", ("camera_path",)), "PLACE_CHANGES_PER_MIN_MAX": _n("float", 0.5, 3, 0.25, "up", GATE, ("camera_path",)),      # v12 V2b: the camera path's acts (D6; DESIGN QUESTION 13 of V2b: ACT_MIN_S has no direction that needs the owner)
     "FORMAT_SHARE_F1": _n("int", 0, 100, 20), "FORMAT_SHARE_F2": _n("int", 0, 100, 20), "FORMAT_SHARE_F3": _n("int", 0, 100, 20),      # v12 V2a: Strategy moves the mix by small steps
     "SHORT_SHARE_S1": _n("int", 0, 100, 20), "SHORT_SHARE_S2": _n("int", 0, 100, 20), "SHORT_SHARE_S3": _n("int", 0, 100, 20),         # v12 V2c: the Shorts Studio moves its own mix by small steps

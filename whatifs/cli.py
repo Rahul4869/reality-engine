@@ -77,6 +77,17 @@ def main():
         elif cmd == "cutmap":
             if len(sys.argv) < 3: raise SystemExit("usage: python -m whatifs.cli cutmap <episode folder>")
             from whatifs.cutmap import main as cm; cm(sys.argv[2])
+        elif cmd == "floorkit":                                          # v12 V1c (the judged floor): the video the owner rejected becomes the canary's kit, once
+            from whatifs.org import floor as FLR
+            from whatifs import notify as NT
+            from whatifs.core import WORK
+            if len(sys.argv) > 2: src, yt = sys.argv[2], (sys.argv[3] if len(sys.argv) > 3 else "")      # the tests and an offline run: a local file
+            else:                                                      # the workflow "Floor kit": the link and the id are read from its event file - never printed or logged
+                ev = json.load(open(os.environ["GITHUB_EVENT_PATH"]))["inputs"]; src = ev["link"]; yt = ev.get("yt") or ""
+            os.makedirs(WORK, exist_ok=True)
+            sha = FLR.make_kit(FLR.fetch(src, os.path.join(WORK, "kit_src.mp4")), yt=yt)
+            NT.send("floor_kit", f"The first-time-viewer check has its reference: the first minute of the video you gave is filed ({sha[:8]}). You can stop sharing the file now.",
+                    tier="now", expires_h=72, dedupe_key=f"floorkit|{sha[:8]}")
         elif cmd == "abtest":
             from whatifs.tableread import abtest_main; abtest_main()
         elif cmd == "fixheld":

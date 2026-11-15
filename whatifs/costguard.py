@@ -83,6 +83,9 @@ def lines(kind="long", kling=None, stills=None, living=None, table_read=None, fm
     if table_read_runs(table_read): L.append(_line("table_read", "the older room's objections round and the Director's read", 1, S("TABLE_READ_EXTRA_INR", float), "ai_writing"))
     if G.palace_prompt_inr(): L.append(_line("palace", "the Palace playbook inside the creative prompts", 1, G.palace_prompt_inr(), "ai_writing"))
     if S("LAYMAN_PROBE_ON", bool): L.append(_line("probe", "the promise line-up: two cheap readers", 1, S("PROBE_EST_INR", float), "ai_writing", "", None, {"text:probe_gemini": 1, "text:probe_claude": 1}))
+    from whatifs.org import floor as FLOOR                                # v12 V1c: the judged floor's session (two looks of each judge) - its estimate, not a bill
+    if FLOOR.on(): L.append(_line("floor", "the judged floor: two strong first-time viewers of two model families watch the opening beside the rejected video's", 1,
+                                  S("VIEW_FLOOR_EST_INR", float), "ai_writing", "", None, {"watch:floor_gemini": 2, "watch:floor_claude": 2}))
     return L + [_line(k_, "a small community line", 1, v, k_) for k_, v in v91_lines().items() if v]
 
 def estimate_lines():

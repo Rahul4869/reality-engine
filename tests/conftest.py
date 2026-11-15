@@ -19,7 +19,7 @@ OLD_INSIDE = {"INSIDE_ON": "FALSE", "ENDINGS_ON": "FALSE", "CHIP_DRAWN_ONLY_ON":
               "FORMAT_SHARE_F1": "70", "FORMAT_SHARE_F2": "30", "FORMAT_SHARE_F3": "0"}
 # v12 V1c: ... and with the floor, his verdict, the maker's line, one story and the cast by format switched off (each entry is added in the step of the
 # batch that adds its cell; the batch's own tests are tests/test_v12_floor.py).
-OLD_VIEW = {"CAST_BY_FORMAT_ON": "FALSE"}
+OLD_VIEW = {"CAST_BY_FORMAT_ON": "FALSE", "VIEW_FLOOR_ON": "FALSE"}
 
 @pytest.fixture(autouse=True)
 def fresh_store(tmp_path):

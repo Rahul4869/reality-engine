@@ -693,6 +693,22 @@ def p_stock_share(ctx):
     return PASS, (f"{r['n']} clip(s) of real footage, {r['seconds']:g} s = {r['share_pct']:g}% of the film (limit {r['limit_pct']:g}%); never first, never two in a row; "
                   f"cropped in and slowed by the renderer; no title names a person; credited: {', '.join(r['credits'])}")
 
+def p_viewer_floor(ctx):
+    """v12 V1c (the judged floor, D13): two strong first-time viewers of two model families named this film over the video the owner rejected in every look,
+    and kept the planted ladder (the rejected video above its frozen picture, below every video he approved). The verdict is computed by code and computed
+    AGAIN here from the stored looks; a void session is N/A with its why - it holds nothing by itself (the film goes to his eye)."""
+    from whatifs.org import floor as FLOOR
+    if not FLOOR.on(): return NA, "the judged floor is switched off (VIEW_FLOOR_ON / VIEWER_SEAT_ON)"
+    res = ctx.get("floor")
+    if not isinstance(res, dict) or not res.get("status"): return NA, "not judged: the measured checks come first, and a film they hold is not paid a jury"
+    st, why = str(res.get("status")), str(res.get("why") or "")
+    if res.get("looks"):
+        a = FLOOR.again(res["looks"])
+        if a["status"] != st or (st in ("pass", "fail") and a["why"] != why): return FAIL, "the stored verdict is not the code's verdict on its own looks"
+    if st == "pass": return PASS, why[:380]
+    if st == "fail": return FAIL, why[:380]
+    return NA, (why or st)[:380]
+
 # ------------------------------------------------------------------ v12 V2d-b: the gate of a Short's FINISHED FILE (stage "short_file": after it is made, before it is handed to Publishing)
 def _short_file(ctx):
     from whatifs import motion as MOT
@@ -875,6 +891,7 @@ FEATURES = [
     ("opening_shown", "final",  p_opening_shown,"the finished film opens on its Short's footage: the opening clips are the files cut from that Short's archive and the frames of the film match them (the opening)"),
     ("moving_share",  "final",  p_moving_share, "the share of the finished film that really moves - measured on the file where the renderer played a clip made by a model - is at least MOVING_SHARE_MIN_LONG, and the seconds of clip the video paid for are on screen and moving (the motion ladder)"),
     ("stock_share",   "final",  p_stock_share,  "real footage (NASA, Pexels) is a short anchor: STOCK_SHARE_MAX_PCT of the film at most, never the first picture, never two in a row, changed, no clip whose title names a person, every credit in the description"),
+    ("viewer_floor",  "final",  p_viewer_floor, "the judged floor: two strong first-time viewers of two model families named the first minute of this film over the video the owner rejected in every look, and kept the planted ladder - a film they cannot tell from it is held (the judged floor)"),
     ("takeaways_written", "final", p_takeaways_written, "every department run of this episode finished its six steps and wrote a valid takeaway"),
     # v12 V2c: stage "short" = the short gate of a standalone Short (whatifs/shorts2.py), judged before any picture is paid; a held Short is not made
     ("short_open",    "short",  p_short_open,   "a Short opens on the moving promise picture, its hook has at most SHORT_HOOK_WORDS_MAX words and ends inside SHORT_HOOK_BY_S seconds of the real voice, the promise text is on screen in the first second (the viewer's seat for a Short)"),
@@ -981,15 +998,16 @@ def review_needed(kind="long"):
     done = [e for e in store().rows("Episodes") if e.get("yt_id") and str(e.get("status")) not in ("AWAITING_APPROVAL",)]
     return len(done) <= S("CREATIVE_REVIEW_FIRST_N", int)
 
-def await_approval(ep, vid, slot_iso, summary):
-    """The uploaded video is taken OFF YouTube's schedule (private) until the owner approves."""
+def await_approval(ep, vid, slot_iso, summary, kind="creative_review", default="stays private", expires_h=72):
+    """The uploaded video is taken OFF YouTube's schedule (private) until the owner approves. v12 V1c: a film the judged floor could not judge comes here
+    too (kind floor_eye: its default is that it goes public by itself when his silence lasts its hours)."""
     from whatifs import publish as PUB, notify as NT
     try: PUB.yt_set_privacy(vid, "private")
     except Exception as e: log(f"could not unschedule {vid}: {scrub(e)}", "WARN", ep)
     store().update("Episodes", "episode_id", ep, {"status": "AWAITING_APPROVAL", "updated": iso()})
-    NT.send("creative_review", f"Review before it goes public: {summary} Watch it (private): https://studio.youtube.com/video/{vid}/edit",
+    NT.send(kind, f"Review before it goes public: {summary} Watch it (private): https://studio.youtube.com/video/{vid}/edit",
             [("Approve", f"APPROVE {ep}"), ("Hold", f"HOLDREVIEW {ep}"), ("Discuss", f"DISCUSS review {ep}")], tier="now", urgent=True,
-            episode=ep, default="stays private", expires_h=72, dedupe_key=f"review|{ep}")
+            episode=ep, default=default, expires_h=expires_h, dedupe_key=f"review|{ep}")
 
 def approve(ep):
     from whatifs import publish as PUB

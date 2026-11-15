@@ -47,7 +47,8 @@ DEPTS = {
             "wraps": ("whatifs/org/audience.py", "whatifs/org/layman.py", "whatifs/org/shortseat.py", "whatifs/org/inside.py"),
             "levers": ("NUMBERS_PER_MIN_MAX", "GRAPHICS_MAX_LONG", "GRAPHICS_FREE_SEC", "BREATH_EVERY_S", "PLAIN_HARD_PER_MIN_MAX", "PLAIN_OPENING_HARD_MAX", "PLAIN_HARD_PER_SENTENCE_MAX",
                        "SHORT_HOOK_WORDS_MAX", "SHORT_HOOK_BY_S", "SHORT_NUMBERS_MAX", "SHORT_EXPERT_MAX", "SHORT_PROMISE_WORDS_MAX",
-                       "INSIDE_MIN_PCT_F1", "INSIDE_MIN_PCT_F2", "INSIDE_MIN_PCT_F3", "LECTURE_MAX_F1", "LECTURE_MAX_F2", "LECTURE_MAX_F3", "ENDING_FREE_S"), "takes": ()},
+                       "INSIDE_MIN_PCT_F1", "INSIDE_MIN_PCT_F2", "INSIDE_MIN_PCT_F3", "LECTURE_MAX_F1", "LECTURE_MAX_F2", "LECTURE_MAX_F3", "ENDING_FREE_S",
+                       "VIEW_FLOOR_WATCH_S", "VIEW_FLOOR_EYE_WAIT_H"), "takes": ()},      # v12 V1c: the judged floor's minute and the owner's eye
     "D14": {"mission": "the short video as a product of its own: its formats, its brief, three scripts judged blind, every second animated, the loop - built to win alone, never a cut-down", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/shorts2.py",),
             "levers": ("SHORT_SHARE_S1", "SHORT_SHARE_S2", "SHORT_SHARE_S3", "SHORT_MIN_S", "SHORT_MAX_S_S1", "SHORT_MAX_S_S2", "SHORT_MAX_S_S3",
@@ -85,7 +86,7 @@ ENTRY = {
     "D2":  (("whatifs/cli.py", "daily"), ("whatifs/cli.py", "weekly")),             # v12 B5: the learning job runs R&D first (daily always, weekly when due)
     "D3":  (("whatifs/cli.py", "assess"),),                                          # v12 B5: then the Review Board, whenever a research memo waits
     "D12": (("whatifs/org/execute.py", "operate"),),
-    "D13": (("whatifs/episode.py", "seat"), ("whatifs/episode.py", "probe"), ("whatifs/shorts2.py", "short_seat")),      # v12 V1: the viewer's seat, right before the Animation Director; V2c: the seat for a Short
+    "D13": (("whatifs/episode.py", "seat"), ("whatifs/episode.py", "probe"), ("whatifs/shorts2.py", "short_seat"), ("whatifs/episode.py", "floor")),      # v12 V1: the viewer's seat, right before the Animation Director; V2c: the seat for a Short; V1c: the judged floor (never demanded by a gate: it runs only on a film the measured checks passed)
     "D14": (("whatifs/shorts2.py", "write"), ("whatifs/shorts2.py", "make")),                                        # v12 V2c: the Shorts Studio writes and makes every standalone Short
 }
 # Departments with no run of their own yet -> the build batch that wires them. A RATCHET: this list may only shrink (tests/test_v12_org.py).
@@ -114,6 +115,7 @@ CHECK_OWNER = {
     "short_open": "D13", "short_plain": "D13", "short_shape": "D13", "short_kept": "D14", "short_contract": "D8", "topic_ladder": "D10", "release_sheet": "D9",
     "moving_share": "D6", "stock_share": "D6", "short_moving": "D6", "short_sound": "D7",      # v12 V2d-b: the motion ladder, real footage, a Short's first second
     "opening_footage": "D6", "opening_shown": "D6", "camera_path": "D6", "camera_shown": "D6",                                       # v12 V2c-b2b: the long video opens on its Short's footage
+    "viewer_floor": "D13",                                                                                                          # v12 V1c: the judged floor
 }
 
 def runnable(dept):
