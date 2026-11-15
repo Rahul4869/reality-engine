@@ -34,7 +34,8 @@ def lines_of(units, total):
 def plain(shot):
     """A still a clip may run into: a made picture with nothing of its own that must be seen at its first frame. v12 V2b: never an act's first picture
     (the camera path's `path.first`): no scene and no living clip covers the first line of the next act."""
-    return shot.get("type") == "still" and not shot.get("short") and not shot.get("promise") and not shot.get("anim") and not (shot.get("path") or {}).get("first")
+    return shot.get("type") == "still" and not shot.get("short") and not shot.get("promise") and not shot.get("anim") and not (shot.get("path") or {}).get("first") \
+        and not shot.get("maker")                                  # v12 V1c: no clip runs into his line
 
 def cap_s(row=None):
     """The longest ONE clip of a still brought to life: the model's longest clip, and never longer than two picture states may hold (check visual_change)."""
@@ -107,7 +108,7 @@ def place(shots, units, total, plan):
             continue
         busy.update(covers(i, need, out, sp, busy))
     moving = [(sp[i][0] + sp[i][1]) / 2 for i in range(n) if out[i].get("type") == "kling" or out[i].get("short")]
-    def can(i): return out[i].get("type") == "still" and not out[i].get("short") and not out[i].get("promise") and not out[i].get("anim") and i not in busy
+    def can(i): return out[i].get("type") == "still" and not out[i].get("short") and not out[i].get("promise") and not out[i].get("anim") and i not in busy and not out[i].get("maker")      # v12 V1c: never a living clip on his line
     def take(i):
         nonlocal used
         own = sp[i][1] - sp[i][0]; r = room_s(i, out, sp, busy)

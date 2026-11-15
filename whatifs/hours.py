@@ -14,6 +14,9 @@ def translate(title, description):
     if not langs: return {}
     sysm = ("You localize YouTube titles and descriptions for a science 'what if' channel. Keep the hook's punch and meaning (not word-for-word), "
             "keep numbers, keep links and chapter timestamps exactly, keep the AI-disclosure sentence. Return JSON only: {lang: {title, description}}.")
+    from whatifs import maker as MAKER                      # v12 V1c: his line is NEVER translated - taken out before the model, put back as he typed it in every language
+    par = MAKER.find(description)
+    if par: description = description.replace("\n\n" + par, "", 1) if ("\n\n" + par) in description else description.replace(par, "", 1)
     out = ask("localize", sysm, json.dumps({"langs": {l: LANG_NAMES[l] for l in langs}, "title": title, "description": description[:4000]}, ensure_ascii=False),
               want_json=True, max_tokens=6000, fake_key="localize")
     res = {}
@@ -21,6 +24,7 @@ def translate(title, description):
         v = (out or {}).get(l) if isinstance(out, dict) else None
         if isinstance(v, dict) and str(v.get("title") or "").strip():
             res[l] = {"title": str(v["title"]).strip()[:100], "description": str(v.get("description") or "").strip()[:4500]}
+            if par: res[l]["description"] = res[l]["description"][:4500 - len(par) - 2] + "\n\n" + par
     return res
 
 def apply(vid, loc):

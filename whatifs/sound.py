@@ -48,12 +48,12 @@ def plan_sounds(shots, units, density="textured"):
     chosen = []
     for i, s in enumerate(out):
         k = str(s.get("sound") or "").strip().lower(); s["sound"] = "none"
-        if k in KINDS and not _blocked(units, i) and (not chosen or chosen[-1] != i - 1) and len(chosen) < target:
+        if k in KINDS and not _blocked(units, i) and (not chosen or chosen[-1] != i - 1) and len(chosen) < target and not s.get("maker"):      # v12 V1c: no texture from his words
             s["sound"] = k; chosen.append(i)
     if len(chosen) < target:
         for i in range(n):
             if len(chosen) >= target: break
-            if i in chosen or (i - 1) in chosen or (i + 1) in chosen or _blocked(units, i): continue
+            if i in chosen or (i - 1) in chosen or (i + 1) in chosen or _blocked(units, i) or out[i].get("maker"): continue
             k = guess((units[i] if i < len(units) else {}).get("text", "") + " " + str(out[i].get("prompt") or ""))
             if k: out[i]["sound"] = k; chosen.append(i)
     return out
@@ -177,8 +177,9 @@ def immersive(shots, units, total, seed=""):
     hushed lines, foley [(kind, t)] at reveals and POV moments (>= 20 s apart, at most 8), impacts [t] (the impact recipe also shapes the bed)."""
     total = float(total); n = min(len(shots), len(units)); rng = np.random.default_rng(_seed(f"{seed}|amb"))
     amb, cur, start = [], None, 0.0
+    mk = {i for i, s in enumerate(shots) if s.get("maker")}      # v12 V1c: under his line the bed of the last scene goes on (no key-word look-up in his words)
     for i in range(n):
-        k = _ambience_of(str(units[i].get("text", "")) + " " + str(shots[i].get("prompt") or "")) or cur or AMBIENCE[int(rng.integers(0, 2))]
+        k = (cur if i in mk else None) or _ambience_of(str(units[i].get("text", "")) + " " + str(shots[i].get("prompt") or "")) or cur or AMBIENCE[int(rng.integers(0, 2))]
         t = float(units[i]["start"])
         if cur is None: cur, start = k, 0.0
         elif k != cur and t - start >= 25.0: amb.append((cur, start, t)); cur, start = k, t
@@ -196,7 +197,7 @@ def immersive(shots, units, total, seed=""):
     impacts = [float(units[i]["start"]) for i in range(n) if shots[i].get("pov_fx") == "impact_shake"][:3]
     if S("SOUND_WORLDS_ON", bool):
         amb = worlds(units, total, seed) or amb
-        foley = sorted(foley + story_events(units), key=lambda x: x[1])
+        foley = sorted(foley + story_events([u for i, u in enumerate(units) if i not in mk]), key=lambda x: x[1])      # v12 V1c: no story event from his words
     return {"ambience": amb, "close": close[:8], "foley": foley, "impacts": impacts}
 
 def _world_of(u):

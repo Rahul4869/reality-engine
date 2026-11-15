@@ -646,7 +646,7 @@ def test_the_camera_path_is_wired_owners_levers_protected_and_classified():
     a, p = LV.LEVERS["ACT_MIN_S"], LV.LEVERS["PLACE_CHANGES_PER_MIN_MAX"]
     assert REG.may_change("D6", "ACT_MIN_S") and REG.may_change("D6", "PLACE_CHANGES_PER_MIN_MAX")
     assert (a["lo"], a["hi"], a["step"], a["checks"]) == (6, 30, 2, ("camera_path",)) and (p["lo"], p["hi"], p["step"], p["owner"], p["checks"]) == (0.5, 3, 0.25, "up", ("camera_path",))
-    assert all(k not in RND.ORG_CHECKS and k in RND.metrics() for k in ("camera_path", "camera_shown")) and RND.SHOW_CHECKS == 58          # v12 V1c step 1: + viewer_floor (a pin moved BY DESIGN)
+    assert all(k not in RND.ORG_CHECKS and k in RND.metrics() for k in ("camera_path", "camera_shown")) and RND.SHOW_CHECKS == 59          # v12 V1c step 1: + viewer_floor; step 3: + makers_line (pins moved BY DESIGN)
     assert (core.DEFAULTS["CAMERA_PATH_ON"][0], core.DEFAULTS["ACT_MIN_S"][0], core.DEFAULTS["PLACE_CHANGES_PER_MIN_MAX"][0]) == ("TRUE", "12", "1.5")
 
 def test_the_render_draws_a_path_still_from_the_pool_in_its_direction_never_pull_or_roll(camera, setting):
@@ -1118,7 +1118,7 @@ def test_both_voice_calls_of_the_plan_stage_hand_the_beats_on():
     """S8-85: the narration made again after the writer lengthened a short script carries the beats too (the plan stage's second voice call)."""
     import inspect
     src = inspect.getsource(EP._stage_plan); after = src.split("longer = ROOM.extend(")[1]
-    assert src.count("line_beats=beats") == 2 and "clean, beat_marks, beats = _strip_beats(script)" in after and "line_beats=beats" in after
+    assert src.count("line_beats=vbeats") == 2 and src.count("line_beats=beats") == 0 and "clean, beat_marks, beats = _strip_beats(script)" in after and "voiced, vbeats = MAKER.attach(clean, beats, mk)" in after and "line_beats=vbeats" in after      # v12 V1c step 3 (THE PINNED CALLS (a), a pin moved BY DESIGN): the second voice is made from the lengthened script WITH his line attached again
 
 def test_the_asset_step_buys_an_acts_first_picture_the_repetition_guard_would_not_pick(camera, tmp_path):
     """S4-44 (MISSED by the first break run): act 2 opens on shot 2 of 8, where the repetition guard puts no picture ([0, 4] without the act's first still)

@@ -126,7 +126,7 @@ def sync(now=None):
     OWNER_VERDICT_ASK_MAX_PER_DAY a UTC day and only while two 'act now' places are left today; (3) a verdict cell he typed is read (up or down) and kept,
     anything else he is told once. Returns how many he was asked about."""
     if not on(): return 0
-    from whatifs import notify as NT
+    from whatifs import notify as NT, maker as MAKER
     now = now or now_utc(); st = store(); t0 = since()
     if t0 is None:
         set_setting("OWNER_VERDICT_SINCE", iso(now)); log("owner verdicts: counted from today - no release older than today is ever asked about"); return 0
@@ -144,6 +144,7 @@ def sync(now=None):
         st.append(TAB, [row])
         st.update(TAB, "ref", row["ref"], {"action_id": _ask(row["ref"], kind, row["title"], row["url"])})
         asked += 1; n += 1; log(f"owner verdicts: asked about the {kind} '{row['title'][:60]}' ({row['ref']})")
+        if kind == "short" and MAKER.on(): MAKER.ask(row["ref"], row["title"])      # v12 V1c (3.3): the second message - his own last words for this topic
     for r in st.rows(TAB):                                          # (3) a verdict he typed in the Sheet
         if r.get("seen") or not str(r.get("verdict") or "").strip(): continue
         v = read(r["verdict"])
@@ -155,6 +156,10 @@ def sync(now=None):
         else:
             cell = " ".join(str(r["verdict"]).split())
             note(r["ref"], f"unread|{cell}", "owner_verdict", f"I could not read your verdict '{cell}' on '{r.get('title') or r['ref']}': type up or down")
+    if MAKER.on():                                                  # (4) a line he typed in the Sheet: seen once, judged, told once when it is refused or late
+        for r in st.rows(TAB):
+            if str(r.get("maker_line") or "").strip() and not str(r.get("line_seen") or "").strip():
+                st.update(TAB, "ref", r["ref"], {"line_seen": iso(now)}); MAKER.typed(r)
     return n
 
 # ------------------------------------------------------------------ his verdict, kept; D13's run scores the floor against it

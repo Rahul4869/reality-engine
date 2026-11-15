@@ -219,7 +219,8 @@ def test_check_living_characters_holds_the_cast_where_the_row_shows_nobody(cast,
 from whatifs.org import floor as FL
 from whatifs import models as M, notify as NT, fakes as FK
 OWN_IDS = ("EP209910010900", "EP209910080900", "EP209910150900", "EP209910220900",      # the whole productions of this file: ids no other test file uses (a test proves it)
-           "EP209910290900", "EP209911050900")                                          # step 2: a film he gave a thumbs-up, and the film judged beside it
+           "EP209910290900", "EP209911050900",                                          # step 2: a film he gave a thumbs-up, and the film judged beside it
+           "EP209911120900")                                                            # step 3: a long video about a promoted Short that ends on his line (and the same film on a Sheet without one)
 
 @pytest.fixture
 def floor_on(setting):
@@ -844,3 +845,359 @@ def test_a_second_long_video_after_his_thumbs_up_on_the_first_is_judged_beside_i
     led = _led(ep2); assert led["viewer_floor"][0] == CON.PASS and led["viewer_floor"][1].endswith(", and lost to 1 video(s) you approved"), led["viewer_floor"]
     rows = [x for x in core.store().rows("Floor_Log") if x["episode_id"] == ep2]
     assert len(rows) == 4 and all("R1" in json.loads(x["items"]).values() for x in rows) and c["watch:floor_gemini"] == 2 and c["watch:floor_claude"] == 2
+
+# ================================================================== STEP 3. THE MAKER'S LINE (3.3): asked at the Short, never cut or mended, the film's last words
+from whatifs import publish as PUB, qc as QC, sound as SD, motion as MOT_
+
+GOOD_LINES = ("I would keep it for one day, then beg for gravity back.", "No.", "Never - my coffee is sacred.", "Judge me if you like, I'd keep it.", "My answer: never.")
+
+@pytest.fixture
+def line_on(setting, monkeypatch):
+    monkeypatch.setattr(NT, "in_quiet_hours", lambda now=None: False)
+    setting("OWNER_VERDICT_ON", "TRUE"); setting("MAKER_LINE_ON", "TRUE"); yield setting
+    FMT.use("")
+
+def _MK():
+    from whatifs import maker as MK
+    return MK
+
+def _mkrow(ref, topic, line, seen):
+    return dict(_VER().EMPTY, ref=ref, kind="short", title=ref, url="", topic=topic, floor="", maker_line=line, line_seen=seen)
+
+def test_the_older_tests_run_with_his_line_off(setting, monkeypatch):
+    from tests.conftest import OLD_VIEW
+    MK = _MK()
+    assert OLD_VIEW["MAKER_LINE_ON"] == "FALSE" and core.DEFAULTS["MAKER_LINE_ON"][0] == "TRUE" and MK.on() is False
+    assert {k: core.DEFAULTS[k][0] for k in ("MAKER_LINE_MAX_WORDS", "MAKER_QUESTION", "MAKER_VOICE", "MAKER_VOICE_CONSENT")} == \
+        {"MAKER_LINE_MAX_WORDS": "40", "MAKER_QUESTION": "would you keep this world?", "MAKER_VOICE": "", "MAKER_VOICE_CONSENT": ""}
+    assert (MK.MAIL_MAX, MK.LEAD_SHORT, MK.LEAD_LONG) == (200, "And one answer, from the person who made this video.", "One last thing. The person who made this video was asked, {q} Here is the answer.")
+    assert MK.CONSENT == "I am the owner of this voice and I consent to Google using this voice to create a synthetic voice model."
+    monkeypatch.setattr(NT, "in_quiet_hours", lambda now=None: False)
+    setting("OWNER_VERDICT_ON", "TRUE"); setting("OWNER_VERDICT_SINCE", _ago(days=3)); _short("SHOFF", _ago(days=1)); _VER().sync()
+    assert [a["kind"] for a in core.store().rows("Owner_Actions") if a.get("episode_id") == "SHOFF"] == ["owner_verdict"]      # his verdict on, his line off: no second message
+    core.store().update("Owner_Verdicts", "ref", "SHOFF", {"maker_line": "Subscribe for more."}); _VER().sync()
+    assert _vrow("SHOFF")["line_seen"] == "" and not [a for a in core.store().rows("Owner_Actions") if a.get("kind") == "maker_line"]      # nothing of the line happens
+    setting("MAKER_LINE_ON", "TRUE"); setting("OWNER_VERDICT_ON", "FALSE"); assert MK.on() is False                                        # the line lives in the verdict's row
+
+def test_usable_passes_his_good_lines_and_refuses_what_would_be_cut_mended_or_an_ask(line_on):
+    MK = _MK()
+    for l in GOOD_LINES + ("Not for one hour.", "In 2026 I'd pay 3 rupees for it.", "Café owners would keep it.", "\"Never,\" I said."): assert MK.usable(l) == (True, ""), l
+    for l, why in (("Judge: I'd keep it.", "speaker's label"), ("(laughing) I'd keep it.", "a sign at its start"), ("<3 it", "YouTube removes"), ("", "empty"), ("?! ...", "nothing in it can be spoken"),
+                   ("Keep it [pause] forever.", "stage direction"), ("Keep it {softly}.", "stage direction"), ("I *love* it.", "signs the voice strips"), ("# Keep it.", "signs the voice strips"),
+                   ("- keep it", "signs the voice strips"), ("Under__score it.", "signs the voice strips"), ("Use `code` here.", "signs the voice strips"),
+                   ("See https://x.io for more.", "web address"), ("Go to www.example.com now.", "web address"),
+                   ("Subscribe for more.", "subscribe, like, share or comment"), ("See you next week.", "points to another video")):
+        ok, w = MK.usable(l); assert ok is False and why in w, (l, w)
+    assert MK.usable("  No.\n ")[0] is True                                                                     # judged with its spaces made one
+    assert MK.usable(" ".join(["word"] * 40) + ".")[0] is True
+    ok, w = MK.usable(" ".join(["word"] * 41) + "."); assert ok is False and "41 words" in w and "never cut" in w
+    line_on("MAKER_LINE_MAX_WORDS", "45"); assert MK.usable(" ".join(["word"] * 41) + ".")[0] is True            # the lever of D7
+
+def test_the_question_is_data_and_the_lead_in_fits_the_ending(line_on):
+    MK = _MK()
+    assert MK.question() == "would you keep this world?"
+    line_on("MAKER_QUESTION", "would you live there for a year?"); assert MK.question() == "would you live there for a year?"
+    for bad in ("would you keep it", "note: would you keep it?", "would you [keep] it?", "would you <keep> it?"):
+        line_on("MAKER_QUESTION", bad); assert MK.question() == "would you keep this world?", bad
+    asked = "[DIRECTOR] You float above your bed.\n[DIRECTOR] Would you keep this world?"; told = "[DIRECTOR] You float above your bed.\n[DIRECTOR] And that is the day."
+    line_on("ENDINGS_ON", "TRUE")
+    with FMT.using("F1"): assert MK.lead(asked) == MK.LEAD_SHORT and MK.lead(told) == MK.LEAD_LONG.format(q=MK.question())      # the short one only after a real question
+    for fmt in ("F2", "F3", ""):
+        with FMT.using(fmt): assert MK.lead(asked) == MK.LEAD_LONG.format(q=MK.question()), fmt                                     # a trial, an arrival, no format: the film asked nothing
+    line_on("ENDINGS_ON", "FALSE")
+    with FMT.using("F1"): assert MK.lead(asked) == MK.LEAD_LONG.format(q=MK.question())
+    assert MK.LEAD_LONG.format(q=MK.question()) == "One last thing. The person who made this video was asked, would you keep this world? Here is the answer."
+    assert ":" not in MK.LEAD_SHORT and ":" not in MK.LEAD_LONG                                                                          # open issue 193
+
+def test_his_line_goes_into_the_voice_after_a_long_pause_never_into_the_script(line_on):
+    MK = _MK(); from whatifs import voice as VO
+    clean = "[DIRECTOR] You float above your bed.\n\n[DIRECTOR] Would you keep this world?"; beats = [1, 1, 2]
+    assert MK.attach(clean, beats, None) == (clean, beats) and MK.k(None) == 0
+    mk = {"line": GOOD_LINES[0], "lead": MK.LEAD_LONG.format(q=MK.question()), "ref": "SH1", "at": "t"}
+    voiced, vb = MK.attach(clean, beats, mk)
+    assert voiced == clean + "\n[pause:long]\n[DIRECTOR] " + mk["lead"] + "\n[DIRECTOR] " + mk["line"] and vb == [1, 1, 2, 2, 2, 2] and len(voiced.splitlines()) == len(vb)
+    us = VO.parse_script(voiced, line_beats=vb); base = VO.parse_script(clean, line_beats=beats)
+    assert len(us) == len(base) + 4 and [u.text for u in us[-4:]] == ["One last thing.", "The person who made this video was asked, would you keep this world?", "Here is the answer.", GOOD_LINES[0]]
+    assert all(u.speaker == "DIRECTOR" and u.beat == 2 for u in us[-4:]) and abs(us[-4].gap_before - 1.6) < 1e-9 and MK.k(mk) == 4      # the pause line makes no unit: 1.6 s before anybody answers
+    three = dict(mk, line="No. Never. Not for one hour.", lead=MK.LEAD_SHORT); assert MK.k(three) == 4 and MK.E(three["line"]) == ["No.", "Never.", "Not for one hour."]
+    assert MK.E("In 2026 I'd pay 3 rupees for it.") == ["In 2026 I'd pay 3 rupees for it."] and MK.E("Café owners would keep it.") == ["Café owners would keep it."]
+
+def test_the_second_message_and_his_line_through_the_link(line_on):
+    MK = _MK(); V = _VER(); line_on("OWNER_VERDICT_SINCE", _ago(days=3)); _short("SHL", _ago(days=1), title="Pillow Short"); V.sync()
+    acts = [a for a in core.store().rows("Owner_Actions") if a.get("episode_id") == "SHL"]
+    assert [a["kind"] for a in acts] == ["owner_verdict", "maker_line"]
+    a = acts[1]
+    assert (a["tier"], a["dedupe_key"], json.loads(a["buttons"])) == ("week", "makerline|SHL", [["My line", "LINE SHL"]])
+    assert a["text"] == ("Your own last words for 'Pillow Short' (optional): add ONE sentence after LINE SHL in this link's title, or type it in tab Owner_Verdicts, row SHL, "
+                         "column maker_line. If viewers pick this topic it becomes a long video and your sentence ends it: would you keep this world? At most 30 words through this link "
+                         "(its title is a public page, like your line will be); up to 40 words in the tab. No line from you = none in the video.")
+    h = (core.parse_iso(a["expires_at"]) - core.parse_iso(a["created"])).total_seconds() / 3600; assert abs(h - 336) < 0.02
+    out = NT.answer(a["id"], "LINE SHL")                                                                 # a tap without words has spent the message: the same ask once more
+    again = [x for x in core.store().rows("Owner_Actions") if x.get("kind") == "maker_line" and x.get("episode_id") == "SHL"]
+    assert "No words came with your tap" in out and len(again) == 2 and again[1]["dedupe_key"] == "makerline|SHL|2" and again[1]["text"] == a["text"]
+    assert NT.answer(again[1]["id"], "LINE SHL") == "Type your sentence in tab Owner_Verdicts, row SHL, column maker_line."
+    assert len([x for x in core.store().rows("Owner_Actions") if x.get("kind") == "maker_line" and x.get("episode_id") == "SHL"]) == 2
+    ans = lambda c: MK._answer({"episode_id": "SHL"}, c)
+    assert ans("LINE SHL " + GOOD_LINES[0]) == f"Kept: \"{GOOD_LINES[0]}\". If viewers pick this topic, its long video ends on your sentence."
+    r = _vrow("SHL"); assert r["maker_line"] == GOOD_LINES[0] and r["line_seen"] and r["line_used"] == ""
+    ans("LINE SHL Not for one hour."); assert _vrow("SHL")["maker_line"] == "Not for one hour."                       # his newer words replace his older ones
+    out = ans("LINE SHL Subscribe for more."); assert "is not used" in out and "subscribe, like, share or comment" in out
+    long_ = "LINE SHL " + "and then " * 25; assert len(long_) > MK.MAIL_MAX
+    assert ans(long_).startswith("Your sentence may have been cut on the mail route") and _vrow("SHL")["maker_line"] == "Subscribe for more."      # a cut line is never taken for his
+    core.store().update("Ladder", "id", "SHL", {"state": "USED"})
+    assert ans("LINE SHL Never - my coffee is sacred.") == "Your line for 'Pillow Short' came after its long video was planned: it is kept, but that video carries none."
+    assert _vrow("SHL")["line_used"] == "" and _vrow("SHL")["maker_line"] == "Never - my coffee is sacred."
+
+def test_a_typed_line_is_seen_once_and_a_refused_or_late_one_is_told_once(line_on):
+    V = _VER(); line_on("OWNER_VERDICT_SINCE", _ago(days=3)); line_on("OWNER_VERDICT_ASK_MAX_PER_DAY", "9"); line_on("NOTIFY_NOW_MAX_PER_DAY", "9")
+    _short("SHA1", _ago(days=2), topic="moons"); _short("SHA2", _ago(days=1), topic="tides"); V.sync(); st = core.store()
+    st.update("Owner_Verdicts", "ref", "SHA1", {"maker_line": "Subscribe for more."}); st.update("Owner_Verdicts", "ref", "SHA2", {"maker_line": "  No.  "}); V.sync()
+    told = lambda ref: [a for a in st.rows("Owner_Actions") if a.get("episode_id") == ref and a.get("kind") == "maker_line" and str(a.get("dedupe_key")).startswith("told|")]
+    assert _vrow("SHA1")["line_seen"] and _vrow("SHA2")["line_seen"] and _vrow("SHA2")["maker_line"] == "  No.  "                     # seen; his words are never rewritten
+    t1 = told("SHA1"); assert len(t1) == 1 and "is not used" in t1[0]["text"] and t1[0]["tier"] == "week" and json.loads(t1[0]["buttons"]) == [] and not told("SHA2")
+    st.update("Owner_Verdicts", "ref", "SHA1", {"line_seen": ""}); V.sync(); assert len(told("SHA1")) == 1                             # told once per value
+    st.update("Ladder", "id", "SHA2", {"state": "USED"}); st.update("Owner_Verdicts", "ref", "SHA2", {"maker_line": "Never.", "line_seen": ""}); V.sync()
+    assert len(told("SHA2")) == 1 and told("SHA2")[0]["text"] == "Your line for 'The Short' came after its long video was planned: it is kept, but that video carries none."
+
+def test_his_line_is_taken_once_on_record_and_never_under_an_override(line_on):
+    MK = _MK(); st = core.store()
+    st.append("Ladder", [{"id": "SHP", "topic": "kettles", "title": "Kettle Short", "state": "PROMOTED"}, {"id": "SHF", "topic": "kettles", "title": "Follow-up", "state": "POSTED"},
+                         {"id": "OVR9", "topic": "OVR9", "state": "OVERRIDE"}])
+    st.append("Owner_Verdicts", [_mkrow("SHP", "kettles", "Not for one hour.", _ago(days=2)), _mkrow("SHF", "kettles", GOOD_LINES[0], _ago(days=1)),
+                                 _mkrow("SHX", "other", "No.", _ago(hours=1)), _mkrow("SHO", "OVR9", "No.", _ago(hours=2))])
+    clean = "[DIRECTOR] And that is the day."
+    with FMT.using("F2"): mk = MK.take({"ladder": "SHP"}, "EPT1", clean)
+    assert (mk["line"], mk["ref"], mk["lead"]) == (GOOD_LINES[0], "SHF", MK.LEAD_LONG.format(q=MK.question())) and mk["at"]      # the newest line of the TOPIC (a follow-up shares it)
+    assert json.loads(_vrow("SHF")["line_used"]) == {"ep": "EPT1", "line": GOOD_LINES[0]} and _vrow("SHP")["line_used"] == "" and _vrow("SHX")["line_used"] == ""
+    assert MK.take({"ladder": "OVR9"}, "EPT2", clean) is None and MK.take({"ladder": ""}, "EPT2", clean) is None                     # an override has no Short; no ladder row, no line
+    st.update("Owner_Verdicts", "ref", "SHF", {"maker_line": "See you next week.", "line_used": ""})
+    assert MK.take({"ladder": "SHP"}, "EPT3", clean) is None and _vrow("SHF")["line_used"] == "" and _vrow("SHP")["line_used"] == ""   # the newest is not usable: none, never an older one
+
+def test_the_mark_pads_first_then_appends_one_still_a_unit_of_his(line_on):
+    MK = _MK(); mk = {"line": "No. Never. Not for one hour.", "lead": MK.LEAD_SHORT, "ref": "SH", "at": "t"}
+    units = _units(8) + [{"start": 40.0 + k, "end": 40.9 + k, "text": t, "speaker": "DIRECTOR"} for k, t in enumerate(MK.E(mk["lead"]) + MK.E(mk["line"]))]
+    assert MK.k(mk) == 4 and len(units) == 12
+    shots = [{"type": "still", "prompt": f"p{k}"} for k in range(5)] + [{"type": "living", "prompt": "the last living"}, {"type": "graphic", "graphic": {}}]      # one short of the 8 lines
+    out = MK.mark(shots, units, mk)
+    assert len(out) == 12 and out[7] == {"type": "still", "prompt": units[7]["text"], "unit": 7}                                      # padded as plan_check pads it, BEFORE the mark
+    assert [i for i, s in enumerate(out) if s.get("maker")] == [8, 9, 10, 11]                                                         # a three-sentence line marks every one of its units
+    assert all(out[i] == {"unit": i, "type": "still", "prompt": units[7]["text"], "hero": False, "focus": "wide", "maker": True} for i in range(8, 12))
+    shots2 = [{"type": "still", "prompt": "the street at dusk"}, {"type": "living", "prompt": "the square"}, {"type": "stock", "prompt": "nasa"}, {"type": "graphic"},
+              {"type": "reaction", "prompt": "grimm"}, {"type": "still", "prompt": ""}, {"type": "kling", "prompt": " "}, {"type": "graphic"}]
+    assert MK.mark(shots2, units, mk)[8]["prompt"] == "the square"                                                                    # footage, graphics, cutaways and shots without words are passed over
+    assert MK.mark(shots, units, None) is shots and MK.script_units(out, units) == units[:8] and MK.script_units(shots, units) == units
+    assert len(MK.mark(shots + [{"type": "still", "prompt": "extra"}] * 9, units, mk)) == 12                                          # a list longer than the script is cut to it first
+
+def _mshots(n_script, k, prompt="p"):
+    return [{"type": "still", "prompt": f"{prompt}{i}"} for i in range(n_script)] + [{"unit": n_script + j, "type": "still", "prompt": f"{prompt}{n_script - 1}", "hero": False, "focus": "wide", "maker": True} for j in range(k)]
+
+def test_his_lines_never_get_a_picture_of_their_own_and_plan_check_keeps_the_mark(line_on, monkeypatch, tmp_path):
+    shots = _mshots(4, 6)
+    assert not [i for i in EP.anchor_shots(shots, budget=40, max_run=3) if shots[i].get("maker")]                 # whatever the budget, and no "fresh picture in the middle" of his run
+    S_ = {"shots": [dict(s) for s in shots], "plan": {}, "vo": {"duration": 999}, "pkg": {"titles": ["t"]}}
+    out = EP.plan_check(S_, _units(10))["shots"]; assert [i for i, s in enumerate(out) if s.get("maker")] == list(range(4, 10)) and all(s["type"] == "still" for s in out)
+    rec = []
+    monkeypatch.setattr(EP.M, "still", lambda p, path, ep, seed=None, **k: (rec.append(p), (path, None))[1]); monkeypatch.setattr(EP.Job, "render_all", lambda self: None)
+    monkeypatch.setattr(EP, "month_spend", lambda: 0.0)
+    job = EP.Job(ep="EPR", out=str(tmp_path), files={"img": {i: "x.jpg" for i in range(4)}, "clips": {}, "anchors": [0, 1, 2, 3], "missing": []}, shots=shots, units=_units(10), vo=None, fps=25)
+    job.repair_assets({"reuse_run"}, [], 50.0); assert rec == []                                                   # the reuse_run repair never buys a picture "accurate to" his line
+
+def test_his_still_is_never_an_acts_first_and_an_act_without_a_picture_leaves_his_shots_unmarked(line_on):
+    line_on("CAMERA_PATH_ON", "TRUE"); u12 = _units(12)
+    with FMT.using("F1"):
+        last = PATH.acts([{"type": "still"}] * 12, u12, 60.0)[-1]["units"]; assert len(last) >= 2
+        sh = [{"type": "still", "prompt": "his", "maker": True} if k in last else {"type": "still", "prompt": f"p{k}"} for k in range(12)]
+        out, _ = PATH.mark(sh, u12, 60.0, BIBLE, "EPM")
+        assert all("path" not in out[i] for i in last) and all(out[i].get("path") for i in range(12) if i not in last)              # they continue what is on screen
+        sh3 = [dict(s) for s in sh]; sh3[last[1]] = {"type": "still", "prompt": "the act's own picture"}
+        out, _ = PATH.mark(sh3, u12, 60.0, BIBLE, "EPM")
+        assert out[last[1]]["path"]["first"] is True and out[last[0]]["path"]["first"] is False and out[last[0]]["path"]["act"] == out[last[1]]["path"]["act"]
+        laid = PATH.lay(out)                                                                                                         # lay: NO skip - the place sentence is on his shot
+        assert all(PATH.sentence(laid[i]["path"]["place"]) in laid[i]["prompt"] for i in last)
+        anchors = EP.anchors_for(laid, u12, {"stills": 40}, {}); assert last[1] in anchors and last[0] not in anchors
+        assert PATH.plan_report(laid, u12, 60.0, anchors)["problems"] == []                                                         # camera_path's rules hold
+
+def test_his_line_is_never_the_slot_of_a_paid_scene(line_on):
+    line_on("ANIM_DIRECTOR_ON", "TRUE"); u14 = _units(14); sh = _mshots(10, 4)
+    assert [i for i in AN.pick_slots([dict(s, maker=False) for s in sh], u14, 4) if i >= 10]                        # a short film: as plain stills, the 0.92 anchor falls on his line
+    assert AN.pick_slots(sh, u14, 4, skip={i for i in range(10, 14)}) == AN.pick_slots(sh[:10], u14[:10], 4)       # the scenes stand where the film without his line has them (DESIGN QUESTION 21)
+    idx = AN.apply(sh, u14, {"kling": 4}); assert len(idx) == 4 and not [i for i in idx if sh[i].get("maker")]
+    assert all(s["type"] == "still" and "anim" not in s for s in sh[10:])
+
+def test_no_clip_runs_into_his_line_and_none_is_bought_on_it(line_on):
+    from tests.conftest import OLD_CLIPS, OLD_MOTION
+    for k in list(OLD_CLIPS) + list(OLD_MOTION): line_on(k, core.DEFAULTS[k][0])
+    line_on("MONTH_CAP_OVERRIDES", "")
+    assert MOT_.plain({"type": "still"}) and not MOT_.plain({"type": "still", "maker": True})
+    units = [{"start": 6.0 * k, "end": 6.0 * k + 5.9, "text": "x"} for k in range(6)]
+    sh = [{"type": "still"}, {"type": "graphic"}, {"type": "still", "maker": True}, {"type": "still", "maker": True}, {"type": "still", "maker": True}, {"type": "still", "maker": True}]
+    plan = {"living_s": 60}; out = MOT_.place(sh, units, 36.0, plan)
+    assert all(out[i]["type"] == "still" and "buy" not in out[i] for i in range(2, 6)) and out[0]["type"] == "living"       # free budget, his line the farthest still: never brought to life
+    sh2 = [{"type": "still"}, {"type": "still", "maker": True}, {"type": "still", "maker": True}]; u3 = units[:2] + [{"start": 7.0, "end": 12.0, "text": "x"}]
+    assert MOT_.room_s(0, sh2, MOT_.lines_of(u3, 12.0), set()) < 7.0                                                         # a clip's room stops at his line
+
+def test_no_sound_is_chosen_from_his_words(line_on):
+    units = [{"start": 10.0 * k, "end": 10.0 * k + 9, "text": "you stand in your kitchen", "speaker": "DIRECTOR", "tag": "none"} for k in range(6)] + \
+            [{"start": 60.0 + 10 * k, "end": 69.0 + 10 * k, "text": t, "speaker": "DIRECTOR", "tag": "none"} for k, t in enumerate(["Rain and thunder, a storm at sea.", "Behold the prototype exhibit, with fire."])]
+    shots = [{"type": "still", "prompt": "a kitchen"} for _ in range(6)] + [{"type": "still", "prompt": "a kitchen", "maker": True, "sound": "rain"}] * 2
+    out = SD.plan_sounds(shots, units, "rich"); assert all(out[i]["sound"] == "none" for i in (6, 7))                         # no texture from his words, not even the Director's choice
+    assert [s["sound"] for s in SD.plan_sounds([dict(s, maker=False) for s in shots], units, "rich")][6:] != ["none", "none"]  # (without the mark one is chosen: the test can fail)
+    line_on("SOUND_WORLDS_ON", "FALSE"); res = SD.immersive(shots, units, 80.0, seed="m")
+    assert all(a[0] == res["ambience"][0][0] for a in res["ambience"])                                                       # the bed of the last scene goes on under his line
+    line_on("SOUND_WORLDS_ON", "TRUE"); res = SD.immersive(shots, units, 80.0, seed="m")
+    assert not [e for e in res["foley"] if e[0] in ("fizzle", "paper") and e[1] >= 59.0]                                     # no story event on "prototype" or "exhibit" in his sentence
+
+def test_the_picture_judge_never_rates_his_line_and_his_stills_are_no_reuse_run(line_on):
+    u20 = _units(20); sh = _mshots(14, 6)
+    assert max(QC.vision_indexes(u20, sh, 12)) < 14 and max(QC.vision_indexes(u20, [{"type": "still"}] * 20, 12)) >= 14
+    assert QC.reuse_runs(sh, set(range(14))) == 0 and QC.reuse_runs([{"type": "still"}] * 20, set(range(14))) == 6           # k = 6: one held picture by design
+
+def test_the_two_budgets_per_minute_are_the_scripts_own(line_on):
+    line_on("VIEWER_SEAT_ON", "TRUE"); line_on("LAYMAN_ON", "TRUE")
+    lines = [f"In 2026 you count {k} floating cups and 3 spoons." for k in range(12)]
+    units = [{"start": 5.0 * k, "end": 5.0 * k + 4.8, "text": t, "speaker": "DIRECTOR"} for k, t in enumerate(lines)]
+    his = [{"start": 62.0 + 14 * k, "end": 75.8 + 14 * k, "text": t, "speaker": "DIRECTOR"} for k, t in enumerate(["One last thing.", "The person who made this video was asked, would you keep this world?", "Here is the answer.", "Not for one hour."])]
+    base = {"room": {"script": {"script": "\n".join("[DIRECTOR] " + t for t in lines)}}, "d": {}, "pkg": {}}
+    shots = [{"type": "still", "prompt": "p"} for _ in range(12)]
+    a = dict(base, shots=shots, units=units); b = dict(base, shots=shots + [{"type": "still", "prompt": "p", "maker": True}] * 4, units=units + his)
+    for f in (CON.p_viewer_numbers, CON.p_viewer_plain): assert f(a) == f(b), f.__name__
+    c = dict(base, shots=shots + [{"type": "still", "prompt": "p"}] * 4, units=units + his)                         # his seconds, unmarked, WOULD widen both budgets (the test can fail)
+    assert CON.p_viewer_numbers(c) != CON.p_viewer_numbers(a) and CON.p_viewer_plain(c) != CON.p_viewer_plain(a), (CON.p_viewer_plain(c), CON.p_viewer_plain(a))
+
+def test_his_paragraph_closes_the_description_and_is_never_translated(line_on, monkeypatch):
+    MK = _MK(); from whatifs import hours as HR, models as M_
+    line = "Café owners would keep it, 3 days a week."
+    d = EP._description("Hook line.", [], {"spine": {"premise": "p"}}, "EPD", credits="Real footage: NASA.", maker=line)
+    assert d.endswith("\n\nReal footage: NASA.\n\n" + MK.paragraph(line) + "\n\nThis video uses AI-assisted visuals and narration over an original script. Science is simplified for storytelling.")
+    assert MK.find(d) == MK.paragraph(line) == "The maker's answer: \"Café owners would keep it, 3 days a week.\"" and MK.find(d + "\n\n" + MK.paragraph(line)) == ""
+    no = EP._description("Hook line.", [], {"spine": {"premise": "p"}}, "EPD", credits="Real footage: NASA."); assert no == d.replace("\n\n" + MK.paragraph(line), "")      # without a line: as before
+    seen = []
+    def ask(task, system, prompt, **k):
+        x = json.loads(prompt); seen.append(x["description"])
+        return {l: {"title": "T " + l, "description": " ".join(w[::-1] for w in x["description"].split())} for l in x["langs"]}         # a free translation: every word rewritten
+    monkeypatch.setattr(M_, "ask", ask)
+    loc = HR.translate("Your Phone Weighs 400 Kilos", d)
+    assert len(loc) == 6 and "The maker's answer" not in seen[0] and line not in seen[0]                                                  # the model never sees his line
+    for l, v in loc.items(): assert v["description"].endswith("\n\n" + MK.paragraph(line)) and v["description"].count(MK.paragraph(line)) == 1, l     # byte for byte, once, in every language
+    big = d.replace("Hook line.", "Hook " + "x" * 4700)
+    for v in HR.translate("t", big).values(): assert v["description"].endswith("\n\n" + MK.paragraph(line)) and len(v["description"]) <= 4500     # cut before it, never into it
+    seen.clear(); a = HR.translate("t", no); assert seen[0] == no[:4000] and all(v["description"] == " ".join(w[::-1] for w in no[:4000].split())[:4500] for v in a.values())    # no line: as it did
+
+def _mk_ctx(MK, line="In 2026 I'd pay 3 rupees for it.", lead=None, ep="EPC1"):
+    lead = lead or MK.LEAD_LONG.format(q=MK.question()); mk = {"line": line, "lead": lead, "ref": "SHC", "at": "t"}
+    units = [{"start": float(k), "text": f"Script line {k}.", "speaker": "SKEPTIC"} for k in range(5)] + \
+            [{"start": 5.0 + k, "text": t, "speaker": "DIRECTOR"} for k, t in enumerate(MK.E(lead) + MK.E(line))]
+    desc = PUB.clean_meta("t", EP._description("Hook.", [], {"spine": {}}, ep, maker=line), [])[1]
+    return {"ep": ep, "units": units, "description": desc, "maker": mk, "maker_used": json.dumps({"ep": ep, "line": line}), "maker_states": [(i, "still", 4) for i in range(5, len(units))]}
+
+def test_check_makers_line_both_ways(line_on):
+    MK = _MK(); ok = _mk_ctx(MK)
+    assert CON.p_makers_line(ok) == (CON.PASS, "the film ends on his own line, word for word: \"In 2026 I'd pay 3 rupees for it.\"; the same line is in the description")
+    assert CON.p_makers_line({k: v for k, v in ok.items() if k != "maker"}) == (CON.NA, "planned before the maker's line existed")
+    line_on("MAKER_LINE_ON", "FALSE"); assert CON.p_makers_line(ok)[0] == CON.NA; line_on("MAKER_LINE_ON", "TRUE")
+    bad = lambda **ch: CON.p_makers_line(dict(ok, **ch))
+    rec = "the line in this film is not on his record"; word = "his line is on record and the film does not end on it, word for word"
+    assert bad(maker_used="") == (CON.FAIL, rec) and bad(maker_used=json.dumps({"ep": "EPOTHER", "line": ok["maker"]["line"]})) == (CON.FAIL, rec)
+    assert bad(maker_used=json.dumps({"ep": "EPC1", "line": "Another line."})) == (CON.FAIL, rec)
+    u = [dict(x) for x in ok["units"]]; u[-1]["text"] = u[-1]["text"].replace("3", "4"); assert bad(units=u) == (CON.FAIL, word)                 # ONE digit changed
+    acc = _mk_ctx(MK, line="Café owners would keep it."); assert CON.p_makers_line(acc)[0] == CON.PASS
+    u = [dict(x) for x in acc["units"]]; u[-1]["text"] = u[-1]["text"].replace("é", "e"); assert CON.p_makers_line(dict(acc, units=u)) == (CON.FAIL, word)      # an accented letter
+    u = [dict(x) for x in ok["units"]]; u[-2]["speaker"] = "SKEPTIC"; assert bad(units=u) == (CON.FAIL, word)
+    assert bad(units=ok["units"] + [{"start": 99.0, "text": "Subscribe for more.", "speaker": "DIRECTOR"}]) == (CON.FAIL, word)                   # the film must END on it
+    own = _mk_ctx(MK, lead="Here is a word from me."); assert CON.p_makers_line(own) == (CON.FAIL, word)                                         # a lead-in that is neither of the two
+    assert CON.p_makers_line(_mk_ctx(MK, lead=MK.LEAD_LONG.format(q="would you live there?")))[0] == CON.PASS                                   # the long one with another question (DESIGN QUESTION 18)
+    assert CON.p_makers_line(_mk_ctx(MK, lead=MK.LEAD_SHORT))[0] == CON.PASS
+    assert bad(description=ok["description"].replace("The maker's answer", "The answer")) == (CON.FAIL, "his line is not in the description that is sent")
+    assert bad(description=ok["description"] + "\n\n" + MK.paragraph(ok["maker"]["line"]))[0] == CON.FAIL                                       # exactly once
+    sent = PUB.clean_meta("t", EP._description("Hook " + "x" * 5200, [], {"spine": {}}, "EPC1", maker=ok["maker"]["line"]), [])[1]
+    assert bad(description=sent) == (CON.FAIL, "his line is not in the description that is sent")                                                # 5,200 bytes: cut from the end, where it sits
+    pic = "his line is spoken over a picture made for it"
+    assert bad(maker_states=ok["maker_states"] + [(9, "still", 9)]) == (CON.FAIL, pic) and bad(maker_states=[(6, "living", 4)]) == (CON.FAIL, pic)
+    no = dict(ok, maker=None, maker_used="", maker_states=[], units=ok["units"][:5], description=PUB.clean_meta("t", EP._description("Hook.", [], {"spine": {}}, "EPC1"), [])[1])
+    assert CON.p_makers_line(no) == (CON.PASS, "he gave no line for this topic: none is spoken, none is written")
+    for lead in MK.leads():
+        u = ok["units"][:5] + [{"start": 9.0 + k, "text": t, "speaker": "DIRECTOR"} for k, t in enumerate(MK.E(lead))]
+        assert CON.p_makers_line(dict(no, units=u)) == (CON.FAIL, "the film speaks a maker's lead-in and no line of his is on record")         # a lead-in without a record
+    assert CON.p_makers_line(dict(no, description=ok["description"])) == (CON.FAIL, "the description carries a maker's answer and no line of his is on record")
+
+def test_a_voice_without_his_consent_stops_the_preflight_offline(line_on):
+    import inspect
+    from whatifs import preflight as PF
+    MK = _MK(); assert MK.voice_issues() == [] and ("maker voice", True, "", True) in PF.run()
+    line_on("MAKER_VOICE", "his-voice"); ok, why = PF.check(); assert ok is False and "MAKER_VOICE_CONSENT holds no consent record" in why       # OFFLINE: the refusal runs in fake mode
+    line_on("MAKER_VOICE_CONSENT", json.dumps({"file": "", "date": "2026-11-15", "words": "I agree."}))
+    assert MK.voice_issues() == ["the consent record names no file", "the consent record's words are not the voice provider's consent sentence"]
+    line_on("MAKER_VOICE_CONSENT", json.dumps({"file": "consent.wav", "date": "2026-11-15", "words": MK.CONSENT})); assert MK.voice_issues() == []
+    src = inspect.getsource(PF.run); assert src.index('add("maker voice", not MAKER.voice_issues(), "; ".join(MAKER.voice_issues()))') < src.index("if FAKE: return r")
+
+def test_the_overlays_are_built_from_the_scripts_own_units(line_on):
+    import inspect
+    MK = _MK(); from whatifs import overlay as OV
+    units = [{"start": 0.0, "end": 3.0, "text": "Order in the court.", "speaker": "DIRECTOR"}, {"start": 3.0, "end": 6.0, "text": "Fine.", "speaker": "SKEPTIC"},
+             {"start": 8.0, "end": 9.0, "text": MK.LEAD_SHORT, "speaker": "DIRECTOR"}, {"start": 9.0, "end": 12.0, "text": "There is nothing like this world.", "speaker": "DIRECTOR"}]
+    shots = [{"type": "still"}, {"type": "still"}, {"type": "still", "maker": True}, {"type": "still", "maker": True}]
+    drawn = {"DIRECTOR", "SKEPTIC"}                                                                                   # VALE's art approved: the guide is drawn and named
+    assert any(a >= 8.0 for a, _b, _s in OV.SpeakerTag(units, 640, 360, 25, drawn=drawn).spans)                       # the whole timeline would name a character over his words
+    assert not any(a >= 8.0 for a, _b, _s in OV.SpeakerTag(MK.script_units(shots, units), 640, 360, 25, drawn=drawn).spans)
+    assert any(a >= 8.0 for a, _b, _k in OV.CtaChip(units, 640, 360, 25).spans) and not any(a >= 8.0 for a, _b, _k in OV.CtaChip(MK.script_units(shots, units), 640, 360, 25).spans)
+    src = inspect.getsource(EP._render)
+    assert "SpeakerTag(MAKER.script_units(shots, units), ww, wh, fps, drawn=drawn_)" in src and "CtaChip(MAKER.script_units(shots, units), ww, wh, fps)" in src
+
+def test_the_final_gate_reads_the_description_that_is_sent_and_a_plan_without_the_key_is_not_judged():
+    import inspect
+    src = inspect.getsource(EP._finish)
+    assert 'cctx["description"] = PUB.clean_meta(title, desc, [])[1]' in src and 'if "maker" in S_: cctx["maker"] = mk_' in src      # yt_body sends clean_meta's text (it cuts from the END)
+
+def test_line_used_is_written_by_take_alone_and_a_rerender_never_rewrites_what_a_state_shows():
+    import inspect
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); rx = re.compile(r"[\"']line_used[\"']\s*:"); hits = {}
+    for base in ("whatifs", "tools"):
+        for dp, _dn, fn in os.walk(os.path.join(root, base)):
+            for f in fn:
+                if f.endswith(".py") and f != "maker.py":
+                    n = len(rx.findall(open(os.path.join(dp, f), encoding="utf-8").read()))
+                    if n: hits[f] = n
+    assert hits == {"verdicts.py": 1}, hits                                                                          # the empty cell of a new row; nobody else writes it
+    assert not re.search(r"m\[\s*[\"'](i|type|src)[\"']\s*\]\s*=", inspect.getsource(EP.Job.rerender_times))
+
+def test_a_long_video_about_a_promoted_short_ends_on_his_line_and_pays_nothing_for_it(monkeypatch, setting, tmp_path):
+    """3.10's first whole production, as far as step 3 reaches (one story is step 4): his line is taken from the promoted Short's topic, the film ends on it
+    word for word after the short lead-in (F1 ends on its question), the Director and the continuity judge never see it, no picture, scene or clip is bought
+    for it - the same film on a Sheet without his line pays the same and has its scenes where this one has them."""
+    import shutil
+    from tests import test_v12_opening_e2e as E2E
+    from tests.paid_calls import watch
+    from tools.sweep import climb
+    from whatifs import ladder as LAD, models as M_
+    from tests.conftest import OLD_CLIPS, OLD_MOTION, OLD_INSIDE, OLD_VIEW
+    MK = _MK(); ep = OWN_IDS[6]; sid = "SH" + ep[2:]; line = GOOD_LINES[0]
+    def go():                                                     # both Sheets under the same cells (a new Sheet starts from the shipped defaults: the test setup's cells first)
+        for k, v in list(OLD_CLIPS.items()) + list(OLD_MOTION.items()) + list(OLD_INSIDE.items()) + list(OLD_VIEW.items()): setting(k, v)
+        for k in list(OLD_CLIPS) + list(OLD_MOTION): setting(k, core.DEFAULTS[k][0])         # ... and the clip market and the motion ladder as shipped: no living clip may land on his line
+        setting("MONTH_CAP_OVERRIDES", "")
+        for k, v in (("FORMAT_FORCE", "F1"), ("INSIDE_ON", "TRUE"), ("ENDINGS_ON", "TRUE"), ("CAMERA_PATH_ON", "TRUE"), ("OWNER_VERDICT_ON", "TRUE"), ("MAKER_LINE_ON", "TRUE")): setting(k, v)
+        assert climb(core, ep) is True
+    E2E._start(monkeypatch, setting); go()
+    core.store().append("Owner_Verdicts", [_mkrow(sid, LAD.row(sid)["topic"], line, core.iso())])
+    prompts = []; monkeypatch.setattr(M_, "ASK_TAPS", list(M_.ASK_TAPS) + [lambda task, system, prompt: (prompts.append((str(task), str(system) + " " + str(prompt))), system)[1]])
+    gate = {}; real_run = CON.run
+    monkeypatch.setattr(CON, "run", lambda stage, ctx, *a, **k: (gate.setdefault(stage, ctx), real_run(stage, ctx, *a, **k))[1])
+    paid = watch(monkeypatch); r = EP.produce(E2E._slot(10), episode_id=ep); a = dict(paid); assert r.get("ok"), r
+    led = {x["feature"]: (x["status"], str(x["evidence"])) for x in core.store().rows("Feature_Ledger") if x.get("episode_id") == ep}
+    assert not [k for k, v in led.items() if v[0] == CON.FAIL], led
+    assert led["makers_line"] == (CON.PASS, f"the film ends on his own line, word for word: \"{line}\"; the same line is in the description")
+    assert led["format_ending"][0] == CON.PASS and led["viewer_numbers"][0] == CON.PASS and led["camera_path"][0] == CON.PASS      # the script's checks judge the SCRIPT
+    _out, S_, units = E2E._plan(ep); mk = S_["maker"]; k = MK.k(mk)
+    assert (mk["line"], mk["ref"], mk["lead"]) == (line, sid, MK.LEAD_SHORT) and json.loads(_vrow(sid)["line_used"]) == {"ep": ep, "line": line}
+    assert [u["text"] for u in units[-k:]] == MK.E(MK.LEAD_SHORT) + MK.E(line) and all(u["speaker"] == "DIRECTOR" for u in units[-k:])
+    assert not [t for t, p in prompts if t in ("director", "critic") and (line in p or MK.LEAD_SHORT in p)]           # the Director and the continuity judge never see his words
+    g = gate["script"]["shots"]; his = [i for i, s in enumerate(g) if s.get("maker")]
+    assert his == list(range(len(units) - k, len(units))) and all(g[i]["type"] == "still" and not (g[i].get("anim") or g[i].get("buy") or g[i].get("promise")) for i in his)
+    assert all(st_[1] == "still" and st_[2] != st_[0] for st_ in gate["final"]["maker_states"]) and gate["final"]["maker_states"]
+    scenes_a = [i for i, s in enumerate(g) if s.get("anim")]
+    # ---- the same film on a Sheet without his line
+    E2E._new_sheet(tmp_path, "sheet_noline.json"); shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True); go(); paid.clear(); gate.clear()
+    r2 = EP.produce(E2E._slot(10), episode_id=ep); b = dict(paid); assert r2.get("ok"), r2
+    _o2, S2, units2 = E2E._plan(ep); assert S2["maker"] is None and len(units2) == len(units) - k
+    assert {x: a.get(x, 0) for x in a if x.startswith(("image", "clip"))} == {x: b.get(x, 0) for x in b if x.startswith(("image", "clip"))}, (a, b)    # nothing is bought for his line
+    assert scenes_a == [i for i, s in enumerate(gate["script"]["shots"]) if s.get("anim")]                           # and the scenes stand where they stand without it

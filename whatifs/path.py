@@ -95,8 +95,11 @@ def mark(shots, units, total, bible, ep):
             if i < len(out) and out[i].get("type") == "stock": out[i] = STK.own(out[i], units[i]); owned += 1
         for i in a["units"]:
             if i >= len(out): continue
-            if first is None and out[i].get("type") in PICTURES: first = i
+            if first is None and out[i].get("type") in PICTURES and not out[i].get("maker"): first = i      # v12 V1c: his line's still is never an act's first picture
             out[i]["path"] = {"act": a["beat"], "place": pl, "sign": sg, "first": i == first}
+        if first is None:                                      # v12 V1c: an act with no picture of its own leaves his shots unmarked - they continue what is on screen
+            for i in a["units"]:
+                if i < len(out) and out[i].get("maker"): out[i].pop("path", None)
         plan.append({"act": a["beat"], "place": pl, "from_s": a["from_s"], "to_s": a["to_s"], "sign": sg})
     if owned: log(f"camera path: {owned} shot(s) of real footage became pictures of their act")
     log(f"camera path: {len(plan)} act(s) in {len({p['place'] for p in plan})} place(s): " + " | ".join(p["place"] for p in plan)[:300])

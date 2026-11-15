@@ -472,8 +472,8 @@ def test_the_registry_is_honest_about_what_runs_under_the_runner(tmp_path):
 
 def test_every_wrapped_call_site_still_calls_the_function_it_wraps():
     src = open(os.path.join(ROOT, "whatifs", "episode.py"), encoding="utf-8").read()
-    for dept, trig, fn in (("D4", "write", "ROOM.run_room(d, ep)"), ("D7", "voice", "narrate(clean, blend()"), ("D5", "package", "ROOM.package(room, chs, d, ep)"),
-                           ("D6", "plan", "ROOM.plan_shots(room, units, d, plan, ep)"), ("D8", "script_gate", 'CON.run("script"'), ("D6", "assets", "_assets(shots, units, out, ep"),
+    for dept, trig, fn in (("D4", "write", "ROOM.run_room(d, ep)"), ("D7", "voice", "narrate(voiced, blend()"), ("D5", "package", "ROOM.package(room, chs, d, ep)"),      # v12 V1c step 3 (THE PINNED CALLS (b), moved BY DESIGN): the voice is given his line, the Director the script's units
+                           ("D6", "plan", "ROOM.plan_shots(room, su, d, plan, ep)"), ("D8", "script_gate", 'CON.run("script"'), ("D6", "assets", "_assets(shots, units, out, ep"),
                            ("D6", "render", "job.render_all()"), ("D8", "final_gate", 'CON.run("final", cctx, ep)'), ("D9", "publish", "PUB.yt_upload(master, title, desc")):
         line = next(l for l in src.splitlines() if f'ORG.work("{dept}", "{trig}"' in l); assert fn in line, (dept, trig)
     assert 'ORG.work("D10", "daily", "", lambda b: learn()' in open(os.path.join(ROOT, "whatifs", "cli.py"), encoding="utf-8").read()

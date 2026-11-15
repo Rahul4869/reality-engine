@@ -150,17 +150,20 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     room["script"]["script"] = script
     beat_names = [b.get("purpose", f"Part {b.get('n')}") for b in room["bible"].get("beats", [])]
     clean, beat_marks, beats = _strip_beats(script)
+    from whatifs import maker as MAKER                      # v12 V1c (D7): his own last words for this topic - taken once, on record; into the VOICE, never into the script
+    mk = MAKER.take(d, ep, clean) if MAKER.on() else None
+    voiced, vbeats = MAKER.attach(clean, beats, mk)
     hook = RX.ensure_units if FE.mode() != "classic" else None
     vkw = dict(style=d["strategies"]["voice"] or "slow_burn", seed=ep, speaker_blends=speaker_blends(d.get("guest"), d.get("cast")), unit_hook=hook)
-    vo = ORG.work("D7", "voice", ep, lambda b: narrate(clean, blend(), os.path.join(out, "voice"), line_beats=beats, **vkw), measure=WR.m_voice)      # v12 V2b: every unit knows its beat
+    vo = ORG.work("D7", "voice", ep, lambda b: narrate(voiced, blend(), os.path.join(out, "voice"), line_beats=vbeats, **vkw), measure=WR.m_voice)      # v12 V2b: every unit knows its beat
     floor = 20 if SMALL else S("RUNTIME_MIN_SEC", int) + 3
     for attempt in range(2):
         if vo.duration >= floor: break
         short = floor - vo.duration; add_words = int(short / 60 * S("WPM_ESTIMATE", float) * 1.25) + 40
         log(f"narration {vo.duration:.0f}s is under {floor}s - asking the writer for ~{add_words} more words (free step)", "WARN")
         longer = ROOM.extend(room, script, add_words, ep)
-        if longer: script = longer; clean, beat_marks, beats = _strip_beats(script)
-        vo = narrate(clean, blend(), os.path.join(out, "voice"), line_beats=beats, **vkw)
+        if longer: script = longer; clean, beat_marks, beats = _strip_beats(script); voiced, vbeats = MAKER.attach(clean, beats, mk)
+        vo = narrate(voiced, blend(), os.path.join(out, "voice"), line_beats=vbeats, **vkw)
     if vo.duration < floor:
         raise RuntimeError(f"narration {vo.duration:.0f}s still under {floor}s - not spending on visuals; will retry")
     room["script"]["script"] = script
@@ -173,19 +176,22 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     chs = chapters(tl, beats_at)
     d["duration_sec"] = round(vo.duration, 1); d["beat_map"] = [[round(float(t), 1), str(n)[:40]] for t, n in beats_at][:24]      # v8.7: retention dips are mapped to beats
     pkg = tidy_pkg(ORG.work("D5", "package", ep, lambda b: ROOM.package(room, chs, d, ep), measure=WR.m_pkg, topic=str(room["spine"].get("premise") or "")))          # v8.6: title + thumbnail are decided BEFORE the shots (the opening must pay off the click)
-    shots = ORG.work("D6", "plan", ep, lambda b: ROOM.plan_shots(room, units, d, plan, ep), measure=WR.m_shots, topic=str(room["spine"].get("premise") or ""))
+    su = units[:len(units) - MAKER.k(mk)]                   # v12 V1c: the Director and the continuity judge are never handed his line (the script's units alone)
+    shots = ORG.work("D6", "plan", ep, lambda b: ROOM.plan_shots(room, su, d, plan, ep), measure=WR.m_shots, topic=str(room["spine"].get("premise") or ""))
     sync = ROOM.continuity({"script": clean[:20000], "shots": shots[:80], "spine": room["spine"]}, ep)
     if not sync.get("ok", True) and sync.get("problems"):
         log(f"continuity problems: {sync['problems'][:5]} - re-planning shots once", "WARN", public=f"continuity problems ({len(sync['problems'])}) - re-planning shots once (details kept private)")
         room["bible"]["look"] = room["bible"].get("look", "") + " | fix: " + "; ".join(p.get("fix", "") for p in sync["problems"][:5])
-        shots = ROOM.plan_shots(room, units, d, plan, ep)
+        shots = ROOM.plan_shots(room, su, d, plan, ep)
     shots = ROOM.promise_shot(shots, units, pkg)            # v8.6: the first opening Kling clip shows the thumbnail's scene
     shots = OPEN.mark(shots, units, opn)                    # v12 V2c-b2b: the Short's picture track is laid under the first sentences (pure code)
+    shots = MAKER.mark(shots, units, mk)                    # v12 V1c: under his words, the film's last picture - one still a unit of his, marked `maker` (it buys nothing)
     if S("SOUND_DESIGN_ON", bool): shots = SD.plan_sounds(shots, units, SD.density_of(d["strategies"].get("sound")))      # v8.7: close textures under the shots that show them
     if not pkg.get("thumb_prompt") and (d.get("promise") or {}).get("thumb_scene"): pkg["thumb_prompt"] = d["promise"]["thumb_scene"]
     st.update("Episodes", "episode_id", ep, {"draw_json": d, "updated": iso()})          # v8.7: promise, rhythm plan, retention check, beat map, playbook flags
     S0 = {"ep": ep, "slot": slot_iso, "d": d, "plan": plan, "room": room, "hook_rec": hook_rec, "shots": shots, "pkg": pkg, "chs": chs, "opening": opn,
           "vo": {"wav": os.path.basename(vo.wav_path), "timeline": os.path.basename(vo.timeline_path), "duration": vo.duration, "voiceprint": vo.voiceprint, "style": vo.style}}
+    S0["maker"] = mk                           # v12 V1c: his line as taken (None = none) - the key is always there (check makers_line: a plan without it was made before the line existed)
     S0["probe"] = _probe(S0, ep, units)        # v12 V1b (D13): the promise line-up, saved with the plan so that a resume never pays it twice
     return S0
 
@@ -231,7 +237,7 @@ def anchor_shots(shots, budget, max_run=None, opening=(), firsts=()):
     v12 V2b: `firsts` (every act's first still, the camera path) are served from the budget right after the opening and added WHATEVER THE BUDGET SAYS."""
     max_run = max_run or S("FREE_SHOT_MAX_RUN", int)
     own = [i for i, s in enumerate(shots) if s["type"] in ("living", "kling")]
-    stills = [i for i, s in enumerate(shots) if s["type"] == "still"]
+    stills = [i for i, s in enumerate(shots) if s["type"] == "still" and not s.get("maker")]      # v12 V1c: his line is never given a picture of its own
     left = max(0, budget - len([i for i in own if not shots[i].get("short")])); a = set(own)      # v12 V2c-b2b: a shot of the Short's footage is paid already - it takes nothing from this video's picture budget
     if opening and S("OPENING_FRESH_ON", bool):               # v8.5: every opening shot gets its own picture (fast, fresh cuts while viewers decide); taken from the same budget
         op = [i for i in stills if i in set(opening)][:left]; a |= set(op); left -= len(op)
@@ -248,7 +254,7 @@ def anchor_shots(shots, budget, max_run=None, opening=(), firsts=()):
     while extra < 12:                                           # repetition guard
         run_start = None; worst = (0, 0, 0)
         for i, s in enumerate(shots):
-            if i in a or s["type"] in ("stock", "graphic"): run_start = None; continue
+            if i in a or s["type"] in ("stock", "graphic") or s.get("maker"): run_start = None; continue      # v12 V1c: his lines are ONE held picture by design
             if run_start is None: run_start = i
             n = i - run_start + 1
             if n > worst[0]: worst = (n, run_start, i)
@@ -360,7 +366,7 @@ class Job:
         if codes & {"vision_mismatch", "vision_artifact"}: targets |= {anchor_of(i) for i in idx or []}
         foot = {i for i, s in enumerate(shots) if s.get("short")}; targets -= foot      # v12 V2c-b2b: a shot of the Short's footage is never re-made from another picture
         if "reuse_run" in codes:
-            run = [i for i, s in enumerate(shots) if s["type"] == "still" and i not in self.own()]
+            run = [i for i, s in enumerate(shots) if s["type"] == "still" and i not in self.own() and not s.get("maker")]      # v12 V1c: never a picture "accurate to" his line
             if run: targets.add(run[len(run) // 2])
         for i in sorted(targets):
             if spent() >= cap_inr: break
@@ -403,13 +409,15 @@ def _render(job):
             from whatifs.overlay import SpeakerTag, COLOURS as _COL
             from whatifs import living as _LV
             drawn_ = {spk for spk in _COL if _LV.has_art(spk)} if S("CHIP_DRAWN_ONLY_ON", bool) else None      # ... and a name only for a character who is drawn
-            ww, wh = RN.work_size(); tag = SpeakerTag(units, ww, wh, fps, drawn=drawn_); parts.append(tag if tag.active() else None)
+            from whatifs import maker as MAKER                  # v12 V1c: no name chip over the lead-in and his line - the overlays are built from the script's own units
+            ww, wh = RN.work_size(); tag = SpeakerTag(MAKER.script_units(shots, units), ww, wh, fps, drawn=drawn_); parts.append(tag if tag.active() else None)
             if tag.active(): job.chips = list(tag.spans)
         except Exception as e: log(f"speaker tag skipped: {e}", "WARN")
     if S("CTA_ON", bool) and S("CTA_CHIP_ON", bool):
         try:
             from whatifs.overlay import CtaChip
-            ww, wh = RN.work_size(); chip = CtaChip(units, ww, wh, fps)
+            from whatifs import maker as MAKER                  # v12 V1c: and no ask chip over them
+            ww, wh = RN.work_size(); chip = CtaChip(MAKER.script_units(shots, units), ww, wh, fps)
             if chip.active(): parts.append(chip)
         except Exception as e: log(f"like/subscribe/share chip skipped: {e}", "WARN")
     if job.rx and S("REACTION_FX_ON", bool):
@@ -778,7 +786,8 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     cs_ = {i: RN.probe_dur(files["clips"][i]) for i in own_}                  # red 1: each stretch carries the seconds of ITS clip - a clip counts towards what was paid up to its own length
     moving_ = [t_(m_) + ("footage" if m_.get("short") else "scene" if m_.get("type") == "kling" else "living", cs_.get(m_["i"])) for m_ in sm_ if m_.get("clip") and m_.get("type") in MOT.MOVING]
     stock_ = [t_(m_) + (m_["i"],) for m_ in sm_ if m_.get("clip") and m_.get("type") == "stock"]
-    desc = _description(pkg.get("description", ""), chs, room, ep, nxt, credits=STK.credits([(files.get("stock") or {}).get(x[2]) for x in stock_]))
+    mk_ = S_.get("maker") or None                                  # v12 V1c (D7): his line as taken in the plan stage (None = none)
+    desc = _description(pkg.get("description", ""), chs, room, ep, nxt, credits=STK.credits([(files.get("stock") or {}).get(x[2]) for x in stock_]), maker=(mk_ or {}).get("line") or "")
     if fix: slot_iso = _fix_slot(slot_iso)
     from whatifs import contract as CON                         # v10.2 (K151): every finished-video promise checked; a failure is HELD, never uploaded
     clips = list((files.get("clips") or {}).values()) if isinstance(files.get("clips"), dict) else list(files.get("clips") or [])
@@ -791,6 +800,12 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
             "chips": list(getattr(job, "chips", None) or []),                                                                            # v12 V2b: the name chips the render drew
             "path_states": [{"t0": t_(m_)[0], "t1": t_(m_)[1], "i": m_["i"], "type": m_.get("type"), "act": m_.get("act"), "src": m_.get("src"), "move": m_.get("move", ""),
                              "sign": m_.get("sign", 0), "fallback": bool(m_.get("fallback"))} for m_ in sm_]}                                 # v12 V2b: the camera path as the render recorded it (a key of its own: ctx['states'] stays as it is)
+    from whatifs import maker as MAKER                          # v12 V1c (check makers_line): the description that is SENT, his line, its record, and what the render showed under it
+    cctx["description"] = PUB.clean_meta(title, desc, [])[1]
+    if "maker" in S_: cctx["maker"] = mk_
+    from whatifs.org import verdicts as VER_
+    cctx["maker_used"] = str((VER_._row(mk_["ref"]) or {}).get("line_used") or "") if mk_ else ""
+    k_ = MAKER.k(mk_); cctx["maker_states"] = [(m_["i"], m_.get("type"), m_.get("src")) for m_ in sm_ if k_ and m_["i"] >= len(units) - k_]
     pre = CON.run("final", dict(cctx, critique={"hook": 10, "clarity": 10, "humour": 10, "visual_variety": 10, "audio": 10, "accuracy": 10}), ep, write=False)   # measured checks first (not logged)
     from whatifs.org import floor as FLOOR, verdicts as VER     # v12 V1c (D13): the judged floor - only a film every measured check passed is paid a jury; his approved films are its references
     if FLOOR.on() and not pre["failed"]: cctx["floor"] = FLOOR.plain(ORG.work("D13", "floor", ep, lambda b: FLOOR.run(b, ep, master, out, VER.references(ep), VER.downs(ep)), measure=FLOOR.m_run))
@@ -1031,7 +1046,7 @@ def _strip_beats(script):
     clean_, beats = INS.line_beats(script)
     return clean, marks, beats
 
-def _description(desc, chs, room, ep="", nxt=None, credits=""):
+def _description(desc, chs, room, ep="", nxt=None, credits="", maker=""):
     chapters = "\n".join(f"{t} {n}" for t, n in chs) if len(chs) >= 3 else ""
     if "Chapters" in desc: body = desc.replace("Chapters", "Chapters\n" + chapters if chapters else "")
     else: body = desc + (("\n\nChapters\n" + chapters) if chapters else "")      # v8.3: chapters are added even if the packager forgot the word 'Chapters'
@@ -1052,7 +1067,9 @@ def _description(desc, chs, room, ep="", nxt=None, credits=""):
     except Exception as e: log(f"affiliate block skipped: {scrub(e)}", "WARN")
     nl = str(S("NEWSLETTER_URL") or "").strip()
     news = f"Case Files newsletter (the sources behind every verdict): {nl}" if nl.startswith("https://") else ""      # v10.1: owned audience
-    return body + (("\n\n" + aff) if aff else "") + (("\n\n" + news) if news else "") + (("\n\n" + foot) if foot else "") + (("\n\n" + credits) if credits else "") + "\n\nThis video uses AI-assisted visuals and narration over an original script. Science is simplified for storytelling."
+    from whatifs import maker as MAKER                      # v12 V1c: his line, as he typed it, after the credits and before the fixed last sentence
+    return body + (("\n\n" + aff) if aff else "") + (("\n\n" + news) if news else "") + (("\n\n" + foot) if foot else "") + (("\n\n" + credits) if credits else "") \
+        + (("\n\n" + MAKER.paragraph(maker)) if maker else "") + "\n\nThis video uses AI-assisted visuals and narration over an original script. Science is simplified for storytelling."
 
 def _playlist(ptype):
     from whatifs.data import FAMILY_PLAYLIST

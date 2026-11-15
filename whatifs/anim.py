@@ -68,7 +68,7 @@ def pick_slots(shots, units, n=None, skip=(), anchors=None, fit=None):
     if not shots or not units or n <= 0: return []
     times = [(i, float(units[i].get("start", units[i].get("t0", 0)) or 0)) for i, s in enumerate(shots) if i < len(units) and s.get("type") in ("still", "living", "kling")]
     if not times: return []
-    end = max(t for _, t in times) or 1.0; times = [(i, t) for i, t in times if i not in skip]
+    end = max((t for i, t in times if not shots[i].get("maker")), default=0.0) or 1.0; times = [(i, t) for i, t in times if i not in skip]      # v12 V1c (DESIGN QUESTION 21): the anchors are the SCRIPT's - his line moves no scene
     chosen = []
     for a in anchors[:n]:
         target = a * end
@@ -92,7 +92,8 @@ def apply(shots, units, plan=None):
     foot = {i for i, s in enumerate(shots) if s.get("short")}   # v12 V2c-b2b: the opening made of the Short's footage is animated and paid already - the scene at second 0 is not bought again
     from whatifs import motion as MOT
     fit = MOT.scene_fit(shots, units) if MOT.on() else None
-    idx = pick_slots(shots, units, max(0, n - 1), skip=foot, anchors=ANCHORS[1:], fit=fit) if foot else pick_slots(shots, units, n, fit=fit)
+    mk = {i for i, s in enumerate(shots) if s.get("maker")}      # v12 V1c: his line is never the slot of a paid scene
+    idx = pick_slots(shots, units, max(0, n - 1), skip=foot | mk, anchors=ANCHORS[1:], fit=fit) if foot else pick_slots(shots, units, n, skip=mk, fit=fit)
     for i, s in enumerate(shots):                               # a Kling slot that moved becomes a plain still (no extra paid living clip)
         if s.get("type") == "kling" and i not in idx and i not in foot:
             s["type"] = "still"; s.pop("promise", None)        # v12 fix: the promise rides on an animated scene; left on a demoted still it hid the re-aim and held finished videos

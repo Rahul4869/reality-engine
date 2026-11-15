@@ -34,6 +34,7 @@ LEVERS = {
     "VIEW_FLOOR_WATCH_S": _n("int", 30, 120, 15, "down", GATE, ("viewer_floor",)), "VIEW_FLOOR_EYE_WAIT_H": _n("int", 6, 72, 6, "down", GATE, ("viewer_floor",)),      # v12 V1c: the judged floor's minute and the owner's eye (D13)
     "VIEW_FLOOR_REFS_MAX": _n("int", 0, 3, 1, "up", "more references void more sessions: fewer good films are passed", ("viewer_floor",)),      # v12 V1c: his references (D13; lowering needs no owner)
     "VIEW_FLOOR_DOWNS_MAX": _n("int", 0, 2, 1, "up", "every down-canary adds four answers a good film must get right", ("viewer_floor",)),      # v12 V1c: his thumbs-down films the floor passed (D13)
+    "MAKER_LINE_MAX_WORDS": _n("int", 20, 60, 5, "up", "a longer line of yours makes a longer ending of every film that carries one", ("makers_line",)),      # v12 V1c: the maker's line (D7)
     "ACT_MIN_S": _n("float", 6, 30, 2, "", "", ("camera_path",)), "PLACE_CHANGES_PER_MIN_MAX": _n("float", 0.5, 3, 0.25, "up", GATE, ("camera_path",)),      # v12 V2b: the camera path's acts (D6; DESIGN QUESTION 13 of V2b: ACT_MIN_S has no direction that needs the owner)
     "FORMAT_SHARE_F1": _n("int", 0, 100, 20), "FORMAT_SHARE_F2": _n("int", 0, 100, 20), "FORMAT_SHARE_F3": _n("int", 0, 100, 20),      # v12 V2a: Strategy moves the mix by small steps
     "SHORT_SHARE_S1": _n("int", 0, 100, 20), "SHORT_SHARE_S2": _n("int", 0, 100, 20), "SHORT_SHARE_S3": _n("int", 0, 100, 20),         # v12 V2c: the Shorts Studio moves its own mix by small steps

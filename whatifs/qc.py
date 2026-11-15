@@ -120,6 +120,7 @@ def reuse_runs(shots, own):
     """Longest run of consecutive shots that show the same underlying picture. own = set of shot indexes that have their own fresh image or clip."""
     best = run = 0
     for i, s in enumerate(shots):
+        if s.get("maker"): run = 0; continue                       # v12 V1c: his k stills are ONE held picture by design, never 'the same picture k times'
         if i in own or s["type"] in ("stock", "graphic", "living", "kling"): run = 0 if (i in own or s["type"] != "still") else run + 1; continue
         run += 1; best = max(best, run)
     return best
@@ -128,6 +129,7 @@ def vision_indexes(units, shots, n):
     """v9.3.2: which shots the picture check looks at: n spread evenly + every Kling clip (up to 3) + up to QC_VISION_OPENING_MAX shots inside the opening
     window (the seconds that decide whether a viewer stays)."""
     from whatifs.core import S
+    units = units[:next((i for i, s in enumerate(shots or []) if s.get("maker")), len(units or []))] if units else units      # v12 V1c: up to his line - never a frame rated against his words
     if not units: return []
     kl = [i for i, s in enumerate(shots) if s.get("type") == "kling" and i < len(units)][:3]
     n_even = max(6, n - len(kl))

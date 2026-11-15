@@ -30,7 +30,7 @@ DEPTS = {
             "wraps": ("whatifs/media.py", "whatifs/anim.py", "whatifs/living.py", "whatifs/render.py", "whatifs/shotplan.py", "whatifs/opening.py", "whatifs/clips.py", "whatifs/motion.py", "whatifs/stock.py", "whatifs/path.py"),
             "levers": ("ANIM_SHOTS", "VISUAL_CHANGE_MAX_S", "PARTICLES_ON", "LIVING_CHARACTERS_ON", "CAMERA_MOTION", "OPENING_FIT", "OPENING_ENLARGE_MAX", "MOVING_SHARE_LONG", "MOVING_SHARE_MIN_LONG", "STOCK_SHARE_MAX_PCT", "ACT_MIN_S", "PLACE_CHANGES_PER_MIN_MAX"), "takes": ()},      # v12 V2c-b2b: the opening from the Short's footage
     "D7":  {"mission": "voices, sound worlds, story events, the music bed, the pause before a punchline", "cadence": "episode", "cap_inr": None, "inject": "brief",
-            "wraps": ("whatifs/voice.py", "whatifs/tts_gemini.py", "whatifs/sound.py"), "levers": ("SOUND_DESIGN_ON", "TTS_ENGINE", "SHORT_SOUND_BY_S"), "takes": ()},
+            "wraps": ("whatifs/voice.py", "whatifs/tts_gemini.py", "whatifs/sound.py"), "levers": ("SOUND_DESIGN_ON", "TTS_ENGINE", "SHORT_SOUND_BY_S", "MAKER_LINE_MAX_WORDS"), "takes": ()},
     "D8":  {"mission": "the Feature Contract, the Impact Map, the enforcement matrix, problem memos, the repair loop", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/contract.py", "whatifs/enforce.py", "whatifs/qc.py", "whatifs/fixes.py"), "levers": ("CONTRACT_OFF", "BREAKOUT_HARD_BAR", "CRITIQUE_MIN"), "takes": ("repair_memo",)},
     "D9":  {"mission": "uploads, the release sheet (every setting of every platform set by code and read back), one native upload of a Short per platform, schedules, spin-offs", "cadence": "episode", "cap_inr": None, "inject": "brief",
@@ -116,6 +116,7 @@ CHECK_OWNER = {
     "moving_share": "D6", "stock_share": "D6", "short_moving": "D6", "short_sound": "D7",      # v12 V2d-b: the motion ladder, real footage, a Short's first second
     "opening_footage": "D6", "opening_shown": "D6", "camera_path": "D6", "camera_shown": "D6",                                       # v12 V2c-b2b: the long video opens on its Short's footage
     "viewer_floor": "D13",                                                                                                          # v12 V1c: the judged floor
+    "makers_line": "D7",                                                                                                            # v12 V1c: the maker's line
 }
 
 def runnable(dept):

@@ -12,6 +12,8 @@ def run(need_voice=True):
     except Exception: free = 99
     need = 1.0 if SMALL else 8.0            # v8.3: segments + joined video + master are about 3 GB at CRF 20; 8 GB leaves room for repairs and checkpoints
     add("disk", free >= need, f"{free:.1f} GB free (need {need:.0f})")
+    from whatifs import maker as MAKER                      # v12 V1c: a voice of his is never used without his consent record (offline too: before the line below)
+    add("maker voice", not MAKER.voice_issues(), "; ".join(MAKER.voice_issues()))
     if FAKE: return r
     for k in ("ANTHROPIC_KEY", "GEMINI_KEY", "FAL_KEY", "SHEET_ID", "G_REFRESH", "G_CLIENT_ID", "G_CLIENT_KEY"):
         add(f"key {k}", bool(env(k)), "present" if env(k) else "MISSING (GitHub Actions secret)")

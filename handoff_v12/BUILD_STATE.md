@@ -2443,6 +2443,98 @@ THE RUNS OF STEP 2: its tests with `test_v12_exec.py` and `test_v102.py`, run al
 one red is DESIGN QUESTION 13's test, changed as named and run alone with its neighbour pin: "2 passed in 1.88s" (the code did not change after the whole run). Plan
 Guard GREEN, Truth GREEN, Organisation GREEN, Palace GREEN (201 items), `tools/gen_docs.py` wrote `SYSTEM.md`. COUNTS AFTER STEP 2: 69 hard checks, `SHOW_CHECKS` 58,
 88 levers, 86 tabs, 201 founding items, 25 workflow files.
+STEP 3 - THE MAKER'S LINE (3.3). READ BEFORE ITS FIRST EDIT (the session was compacted after step 2; everything below was read again): the memo's 3.3 whole, 3.2 (the
+row, (4), the mail route), 3.6, 3.7, 3.9 step 3, 3.10 whole, "THE PINNED CALLS" at the end of 3.4, settled thing 3 and the Step 1 measurements 4, 5, 7, 8; in the code
+`episode._stage_plan`, `anchor_shots`, `anchors_for`, `_assets`, `Job` (`rerender_times`, `repair_assets`), `_render` (to the sound), `plan_check`, `produce`, `_finish`,
+`_strip_beats`, `_description`; `voice.py` 60 to 170 (`_peel`, `parse_script`); `path.mark` / `lay` / `plan_report`; `anim.pick_slots` / `apply`; `motion.plain`, `room_s`,
+`place`'s `can`; `sound.plan_sounds`, `immersive`, `story_events`; `qc.reuse_runs`, `vision_indexes`; `hours.translate`; `preflight.run`; `publish.clean_meta`;
+`contract.p_viewer_plain`, `p_viewer_numbers`, `p_viewer_floor`, `FEATURES`; `notify.send` / `answer` / `_ensure_handlers`; `ladder.row`; `verdicts.sync`; the pins named below.
+DESIGN QUESTION 14 (a choice the memo did not make; the reading that changes LESS of what a viewer sees was taken): "a topic whose ladder row is already USED" (3.3) -
+TAKEN: any row of tab `Ladder` with that `topic` in state USED (`maker.late`): a follow-up Short shares its parent's topic, and the parent's row is the one a long video
+used. It decides only a notice. No viewer sees it.
+DESIGN QUESTION 15: the words he reads back where 3.3 gives their substance and not their text - a kept line ("Kept: \"<line>\". If viewers pick this topic, its long video
+ends on your sentence."), a refused one ("Your line for '<title>' is not used: <why>. ..."), the reason of each refusal of `usable` (the asks' reason is the memo's,
+word for word), a tap without words, and the lever's why ("a longer line of yours makes a longer ending of every film that carries one"). No viewer sees them.
+DESIGN QUESTION 16: what is stored, spoken and written. TAKEN: the cell keeps his words as he typed them (ends stripped; code never rewrites a cell he typed); what is
+taken, spoken, written and recorded in `line_used` is that line with its spaces made one (`" ".join(line.split())` - the form `usable` judges: a newline inside a cell
+would start a script line of its own and lose the guide's label). His words, his letters, his order: unchanged.
+DESIGN QUESTION 17: `maker.report` gains the keyword `ep` (the film's id; the check hands it `ctx["ep"]`) - 3.3's condition "names another episode" needs the film's id,
+which none of the five arguments carries. No viewer sees it.
+DESIGN QUESTION 18: "`mk["lead"]` is one of the two lead-ins" - TAKEN: the short one, or the long one filled with ANY question `question()` would accept (ends with "?",
+none of `[ ] { } < > :`): a question cell changed between a film's plan and its finish never holds that film. The branch WITHOUT a line looks for today's two, as written.
+DESIGN QUESTION 19: the FAIL words when the description carries `The maker's answer: "` and no line is on record (3.3 gives one sentence for both conditions; the
+timeline's keeps it): "the description carries a maker's answer and no line of his is on record". No viewer sees it.
+DESIGN QUESTION 20: how 3.3's NA "the plan has no key `maker`" reaches the check - `_finish` sets `cctx["maker"]` only when the plan has the key (`S0["maker"]` is always
+written from this step on). And three small readings of 3.3: the "same ask once more" for a tap without words is sent once (`told(ref, "line2")`, as his verdict's
+second ask), then he is pointed to the tab; a choice longer than `MAIL_MAX` writes nothing to the cell; sync's step (4) runs only while `maker.on()` (3.0's rule).
+DESIGN QUESTION 21 (FOUND BY A TEST, after the edits of 3.3 (d) were typed; FOR THE FINISHER TO CHECK FIRST): 3.3 orders "AFTER THE BUILD the builder runs the same
+count: `image`, `clip` and where the scenes stand must be what the film WITHOUT his line shows" (Step 1, part two, item 4). The step's whole production made the same
+film twice under the same cells (a promoted Short, F1, the motion ladder as shipped), once with his line and once on a Sheet without it: pictures and clips were
+equal (`image` 21 for 23 shots against 21 for 21; two living clips each), but the first paid scene stood at 21 s with his line and at 16 s without it - "assert [7,
+12, 18] == [6, 12, 18]". THE CAUSE, read in the code: `anim.pick_slots` measures its anchors (0.29, 0.57, 0.92 of the film) against `end` = the start of the LAST
+picture shot, and his stills are picture shots: his 9 seconds pushed every anchor later. The memo's edit (his shots in `skip`) keeps a scene off his line and does
+not keep the anchors where they were. TAKEN - the memo's own sentence decides the outcome, so it is no new choice of what a viewer sees: `end` is computed over the
+picture shots that are not `maker` (one line of `pick_slots`; the footage of the opening, the other `skip`, is a PREFIX of the film and never was the last picture,
+so no film without his line moves). A test proves both: as plain stills the 0.92 anchor falls on his line; marked, the slots equal those of the film cut at his line.
+A FINDING FOR THE FINISHER (no code moved; typed as written): `path.mark` takes the mark off his shots when their act has no picture of its own (3.3 (d)), and rule (1)
+of `path.plan_report` names "shot <i> of act <n> has no camera-path mark" for an unmarked shot of an act - so such a film would be HELD by `camera_path`. It cannot
+happen while `INSIDE_ON` is TRUE (`inside.open_acts` opens every beat on a picture, and his units carry the script's last beat); with `INSIDE_ON` FALSE and a last act of
+graphics only, it could. The finisher decides whether rule (1) passes over a `maker` shot.
+TESTS CHANGED BY DESIGN IN STEP 3 (each named here before it is touched; the pins were counted again on the code): THE PINNED CALLS (3.4's bullet) - (a)
+`tests/test_v12_inside.py::test_both_voice_calls_of_the_plan_stage_hand_the_beats_on` (line 1121 today, the memo's "1105 to 1108": the file grew) becomes the memo's
+assert word for word; (b) `tests/test_v12_org.py::test_every_wrapped_call_site_still_calls_the_function_it_wraps` 475 to 476: two of its three texts move now -
+`"narrate(voiced, blend()"` and `"ROOM.plan_shots(room, su, d, plan, ep)"`; its third (`ROOM.package(..., opening=opn)`) and pin (c) move in step 4 with the packager.
+THE COUNTS of 3.9 step 3 (one lever, one check): `tests/test_v12_exec.py` 62 (levers 88 -> 89) and 493 (final checks 22 -> 23), `tests/test_v12_cutdowns.py` 39 (final
+22 -> 23, all 69 -> 70), `tests/test_v12_motion.py` 633 (69 -> 70) and 636 (`SHOW_CHECKS` 58 -> 59), `tests/test_v12_release.py` 436 (`SHOW_CHECKS` 58 -> 59),
+`tests/test_v12_inside.py` 649 (`SHOW_CHECKS` 58 -> 59); `tests/conftest.py` (`OLD_VIEW` gains `MAKER_LINE_ON` "FALSE").
+BUILT IN STEP 3 (as written, except where DESIGN QUESTIONS 14 to 21 say otherwise): NEW `whatifs/maker.py` (on `tools/repair.PROTECTED` before its first line) - `on`,
+`question`, `usable` (its order of 3.3: empty, no letter, too long, `[ ] { }`, `< >`, `*` / backtick / `__` / the first sign, a web address, a speaker's label or a stage
+direction, an ask or a pointer), `lead` (chosen once), `leads`, `E`, `k`, `ask` (the second message, word for word), `late`, `typed` (sync's step (4)), `_answer` (LINE,
+`MAIL_MAX`, once more, refused, late), `register`, `take`, `attach`, `mark`, `script_units`, `paragraph`, `find` (ONE regular expression, `_PAR`, also `report`'s),
+`report`, `voice_issues`; the constants `MAIL_MAX`, `LEAD_SHORT`, `LEAD_LONG`, `CONSENT`. `verdicts.sync`: the second message at a Short's row and step (4).
+`episode._stage_plan`: `take` / `attach` after `_strip_beats`, both `narrate` calls given `voiced` and `vbeats` (the loop attaches again), `su` to both Director calls (the
+continuity judge sees only the script's shots), `MAKER.mark` after `OPEN.mark`, `S0["maker"]`; `anchor_shots` (a), `Job.repair_assets` (b), the two overlays of `_render`,
+`_description(maker=)`, the gate's four keys in `_finish`; `path.mark`, `anim.apply` (and `pick_slots`'s end: DESIGN QUESTION 21), `motion.plain` and `place`'s `can`,
+`sound.plan_sounds` (both loops) and `immersive` (the bed, the story events), `qc.reuse_runs` and `vision_indexes`, `contract.p_viewer_numbers` / `p_viewer_plain`
+(`script_units`), check `makers_line` (final, D7, a SHOW check), `hours.translate`, the pre-flight's "maker voice" before `if FAKE: return r`. `core`: the five cells;
+`notify._ensure_handlers` + `whatifs.maker`; `registry` (D7's lever, `CHECK_OWNER["makers_line"]` D7); `levers.py` (`MAKER_LINE_MAX_WORDS`: int, 20 to 60, step 5,
+"up" needs him, `makers_line`); `rnd.SHOW_CHECKS` 59; the matrix row "THE MAKER'S LINE"; `SYSTEM.md` regenerated. `plan_check`, `opening.mark`, `stock.shape`,
+`audience.shape`, `inside.open_acts`, `path.lay`, `promise_shot`, `fixes.auto_fix`, `rerender_times`: untouched, as 3.3 (d) says (tests prove `plan_check` keeps the
+mark and `lay` puts the place sentence on his shot).
+TESTS (`tests/test_v12_floor.py`, step 3's section; 22 new): `test_the_older_tests_run_with_his_line_off`, `test_usable_passes_his_good_lines_and_refuses_what_would_be_cut_mended_or_an_ask`
+(the eight lines of Step 1 and more; 41 words refused, the lever), `test_the_question_is_data_and_the_lead_in_fits_the_ending`, `test_his_line_goes_into_the_voice_after_a_long_pause_never_into_the_script`
+(the pause: 1.6 s before the lead-in; a three-sentence line; a digit and an accented letter kept), `test_the_second_message_and_his_line_through_the_link`,
+`test_a_typed_line_is_seen_once_and_a_refused_or_late_one_is_told_once`, `test_his_line_is_taken_once_on_record_and_never_under_an_override`,
+`test_the_mark_pads_first_then_appends_one_still_a_unit_of_his`, `test_his_lines_never_get_a_picture_of_their_own_and_plan_check_keeps_the_mark`,
+`test_his_still_is_never_an_acts_first_and_an_act_without_a_picture_leaves_his_shots_unmarked` (and `camera_path`'s rules hold), `test_his_line_is_never_the_slot_of_a_paid_scene`,
+`test_no_clip_runs_into_his_line_and_none_is_bought_on_it`, `test_no_sound_is_chosen_from_his_words`, `test_the_picture_judge_never_rates_his_line_and_his_stills_are_no_reuse_run` (k = 6),
+`test_the_two_budgets_per_minute_are_the_scripts_own`, `test_his_paragraph_closes_the_description_and_is_never_translated` (six languages, byte for byte),
+`test_check_makers_line_both_ways` (a digit, an accented letter, 5,200 bytes, a lead-in without a record ...), `test_a_voice_without_his_consent_stops_the_preflight_offline`,
+`test_the_overlays_are_built_from_the_scripts_own_units`, `test_the_final_gate_reads_the_description_that_is_sent_and_a_plan_without_the_key_is_not_judged`,
+`test_line_used_is_written_by_take_alone_and_a_rerender_never_rewrites_what_a_state_shows`, and ONE WHOLE PRODUCTION (an id no other test file uses, `EP209911120900`):
+`test_a_long_video_about_a_promoted_short_ends_on_his_line_and_pays_nothing_for_it` - a promoted Short with his line, F1, the motion ladder as shipped: no check fails,
+`makers_line` PASS, the film ends on the short lead-in and his line, the Director's and the continuity judge's prompts hold none of his words, his shots carry no scene,
+clip or promise and the render shows no picture of his own under them; then the SAME film on a Sheet without his line: the same `image` and `clip` counts and its
+scenes where this one has them (3.3's count after the build, Step 1 part two item 4 - the run that found DESIGN QUESTION 21).
+BUILT OTHERWISE, SAID PLAINLY: 3.3's chip test asks for "a trial with VALE's art approved and a line taken"; it is built on the two overlays themselves (`SpeakerTag` with
+the guide drawn, `CtaChip`) fed what `_render` feeds them, plus a pin of both lines of `_render` - not a whole trial rendered with approved art. AND: in this step
+the tests were written AFTER the code, not before it as A3 asks (the code of 3.3 was typed first, then its tests); what proves each test fails when its rule is
+broken is its break (S3-01 to S3-78), run at step 7.
+THE RUNS OF STEP 3: step 3's tests with the moved pins and their neighbours (`test_v12_floor.py` whole, the two pinned tests, the registry test, `test_v12_exec.py`,
+the matrix meta-test, `test_v10_growth.py`; `-n 6`): "214 passed in 661.79s". THE WHOLE SUITE (Git Bash, `-n 6`, `WI_NO_SKIPS=1`), started about 16:12 UTC: the app
+restarted twice while it ran (about 17:45 and again before 18:21 UTC) and the session's wake-up was lost both times; read at 18:21 UTC (`date -u`), its log ENDED -
+it carries its summary line: "3 failed, 1740 passed in 5185.03s (1:26:25)" (1,743 = step 2's 1,721 + step 3's 22; no skip). THE THREE, each read whole:
+(1) `tests/test_v12_short.py::test_two_shorts_in_a_row_differ_and_a_copy_is_held` - the second Short's ffmpeg failed: "Could not allocate memory ... Cannot allocate
+memory", "Decode error rate 1 exceeds maximum"; (2) `tests/test_v12_release.py::test_a_dropped_ai_field_is_set_again_once_and_a_repair_that_does_not_hold_fails_the_check` -
+the Short's ffmpeg: "x264 [error]: malloc of size 11105472 failed"; (3) `tests/test_v12_opening_e2e.py::test_a_retry_on_another_machine_fetches_the_footage_again_and_does_not_pay_the_writing_twice` -
+the resumed film's final gate: the measured pre-check said "contract final: 23/23 pass", the gate seconds later "22/23 pass; FAILED: animation: 0 s of animated
+scenes (need 20 s)" in the same `_finish`, on the same clips. None of the three runs code step 3 changed in the failing line (the Short's making; the scenes' seconds
+probed from their files); free memory read after the run: 4.0 GB of 15.6 GB, no python running. Not rerun: each is REPRODUCED ALONE first (one process, no `-n`).
+REPRODUCED ALONE at 18:22 to 18:27 UTC, the three in one process, the code unchanged: "3 passed in 326.04s (0:05:26)". The three reds were the laptop's memory
+during the app's restarts (two ffmpeg allocations refused; a probe that read 0 s), not step 3. Plan Guard GREEN, Truth GREEN, Organisation GREEN, Palace GREEN,
+`tools/gen_docs.py` wrote `SYSTEM.md`. COUNTS AFTER STEP 3: 70 hard checks (final 23), `SHOW_CHECKS` 59, 89 levers, 86 tabs, 201 founding items, 25 workflow files,
+218 breaks in `proving/breaks/V1c.json` (S3-01 to S3-78 added; each anchor found once, each named test present) - NOT RUN. From this commit on, a step's
+whole-suite evidence is GitHub's Checks run on its pushed commit (the dispatcher's order, plan A12 (f)); this step's laptop run above ENDED and stands as written.
 ### V2b - INSIDE THE FORMAT (14-15 Nov 2026) - ACCEPTED (final code commit 01e7798 GREEN in GitHub Checks run 196: 1647 passed; sweep 58 of 58 ids)
 (its code is 7e83001; the designer's record: steps 1 to 3; five Opus builders wrote steps 4 to 6a, the Fable finisher `FINISHED BY FABLE` and the takeaway's draft;
 the prover wrote 6b and completed 7 on 15 Nov 2026)

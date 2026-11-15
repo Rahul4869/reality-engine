@@ -462,7 +462,8 @@ def p_viewer_plain(ctx):
     if not LAY.on(): return NA, "the layman test is switched off (LAYMAN_ON / VIEWER_SEAT_ON)"
     text = _script_text(ctx)
     if not str(text or "").strip(): return FAIL, "empty script"
-    r = LAY.plain_report(text, ctx.get("units"), LAY.promise_words(ctx.get("pkg"), ctx.get("d"))[1])
+    from whatifs import maker as MAKER                      # v12 V1c: the budget is per minute of the SCRIPT's timeline - his line's seconds never widen it
+    r = LAY.plain_report(text, MAKER.script_units(ctx.get("shots"), ctx.get("units")), LAY.promise_words(ctx.get("pkg"), ctx.get("d"))[1])
     if r["problems"]: return FAIL, "; ".join(r["problems"])[:400]
     return PASS, (f"{len(r['hard'])} expert word(s) a layman would not know (limit {r['allowed']})" + (f": {', '.join(r['hard'][:6])}" if r["hard"] else "")
                   + f"; {len(r['opening'])} in the first 30 s (limit {r['opening_max']}); sentences: median {r['median_words']} words, longest {r['longest_words']}")
@@ -595,7 +596,8 @@ def p_viewer_numbers(ctx):
     if not AUD.on(): return NA, "the viewer's seat is switched off (VIEWER_SEAT_ON)"
     text = _script_text(ctx)
     if not str(text or "").strip(): return FAIL, "empty script"
-    r = AUD.numbers_report(text, ctx.get("shots"), ctx.get("units"))
+    from whatifs import maker as MAKER                      # v12 V1c: the budget is per minute of the SCRIPT's timeline - his line's seconds never widen it
+    r = AUD.numbers_report(text, ctx.get("shots"), MAKER.script_units(ctx.get("shots"), ctx.get("units")))
     if r["problems"]: return FAIL, "; ".join(r["problems"])
     g = "" if ctx.get("shots") is None else ("; no number graphic" if not r["graphics"] else f"; {r['graphics']} number graphic(s)"
                                              + (f", the first at {r['first_graphic_s']:.0f} s" if r["first_graphic_s"] is not None else ""))
@@ -708,6 +710,15 @@ def p_viewer_floor(ctx):
     if st == "pass": return PASS, why[:380]
     if st == "fail": return FAIL, why[:380]
     return NA, (why or st)[:380]
+
+def p_makers_line(ctx):
+    """v12 V1c (the maker's line, D7): his line is never given, cut, mended or spoken over an invented picture - the timeline's last units are the lead-in and
+    his line word for word (the voice's own parser), his record names this film and these words, the description that is sent holds his paragraph once."""
+    from whatifs import maker as MAKER
+    if not MAKER.on(): return NA, "the maker's line is switched off (MAKER_LINE_ON / OWNER_VERDICT_ON)"
+    if "maker" not in ctx: return NA, "planned before the maker's line existed"
+    ok, why = MAKER.report(ctx.get("units") or [], ctx.get("description") or "", ctx.get("maker"), ctx.get("maker_used") or "", ctx.get("maker_states") or [], ep=ctx.get("ep"))
+    return (PASS if ok else FAIL), why[:380]
 
 # ------------------------------------------------------------------ v12 V2d-b: the gate of a Short's FINISHED FILE (stage "short_file": after it is made, before it is handed to Publishing)
 def _short_file(ctx):
@@ -892,6 +903,7 @@ FEATURES = [
     ("moving_share",  "final",  p_moving_share, "the share of the finished film that really moves - measured on the file where the renderer played a clip made by a model - is at least MOVING_SHARE_MIN_LONG, and the seconds of clip the video paid for are on screen and moving (the motion ladder)"),
     ("stock_share",   "final",  p_stock_share,  "real footage (NASA, Pexels) is a short anchor: STOCK_SHARE_MAX_PCT of the film at most, never the first picture, never two in a row, changed, no clip whose title names a person, every credit in the description"),
     ("viewer_floor",  "final",  p_viewer_floor, "the judged floor: two strong first-time viewers of two model families named the first minute of this film over the video the owner rejected in every look, and kept the planted ladder - a film they cannot tell from it is held (the judged floor)"),
+    ("makers_line",   "final",  p_makers_line,  "the maker's line: a film that carries his line ends on it word for word after its lead-in, over the film's last picture, with the line on his record and in the description that is sent; a film without one speaks and writes none (the maker's line)"),
     ("takeaways_written", "final", p_takeaways_written, "every department run of this episode finished its six steps and wrote a valid takeaway"),
     # v12 V2c: stage "short" = the short gate of a standalone Short (whatifs/shorts2.py), judged before any picture is paid; a held Short is not made
     ("short_open",    "short",  p_short_open,   "a Short opens on the moving promise picture, its hook has at most SHORT_HOOK_WORDS_MAX words and ends inside SHORT_HOOK_BY_S seconds of the real voice, the promise text is on screen in the first second (the viewer's seat for a Short)"),
