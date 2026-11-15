@@ -2727,6 +2727,17 @@ TESTS CHANGED BY THIS STEP (named before the change): `tests/test_v12_floor.py` 
 STEP 7'S RUN (`tests/test_v12_floor.py` whole - the only file changed; no line of `whatifs/` or `tools/` changed - alone, `-n 6`, `WI_NO_SKIPS=1`, 22:00 to 22:09
 UTC): "102 passed in 528.97s (0:08:48)". The V2b audit's lines 2 to 5 rewritten to CLOSED F1 to F4 (their 40 breaks S0-01 to S0-14 and S0b-01 to S0b-26 all
 CAUGHT on bbd47ef). Then: the six breaks alone (`--only`) on the new commit, then the WHOLE list again on it (a result counts only for the code it ran on).
+STEP 7 COMMITTED AND PUSHED: 1762840 (22:10 UTC); the code reader 2 was sent "step 7 pushed at 1762840" the same minute.
+THE SIX ALONE on 1762840 (`--only S1-50,S2-36,S2-39,S2-44,S2-49,S3-32`, 22:10 to 22:11 UTC): S1-50, S2-36, S2-39, S2-49, S3-32 CAUGHT; "S2-44 MISSED 1 passed in
+2.04s" (the line "5 caught, 1 MISSED, 251 void of 257 listed": the 251 were not run on this code). FINDING (7), reproduced by reading the code it runs:
+`registry.entry_issues` reads ONLY the files `ENTRY` names (`named` is built from `ENTRY`, line 192-196). `whatifs/org/verdicts.py` holds ONE run, so taking
+`("whatifs/org/verdicts.py", "verdict")` out of D13 takes the file out of the scan: its runner call `ORG.work("D13", "verdict", ...)` is never read and nothing
+says it is unregistered - in the test AND in check `dept_contract` (the same function). THE MISSING ASSERTION (added to
+`tests/test_v12_org.py::test_the_registry_is_honest_about_what_runs_under_the_runner`, the test S2-44 names; no older line changed): every `.py` file of `whatifs/`
+is read with `registry._calls`, and each runner call found must be a site of `ENTRY` - today 28 calls in 8 files, every one registered (read by a search before the
+edit). FOR THE FINISHER (not changed by me - a Opus builder decides nothing): whether `entry_issues` itself should read every file of the package, so that
+`dept_contract` closes the same gap in production.
+ITS RUN (`tests/test_v12_org.py` whole - the only file changed - alone, `-n 6`, `WI_NO_SKIPS=1`, 22:12 to 22:15 UTC): "99 passed in 168.66s (0:02:48)".
 ### V2b - INSIDE THE FORMAT (14-15 Nov 2026) - ACCEPTED (final code commit 01e7798 GREEN in GitHub Checks run 196: 1647 passed; sweep 58 of 58 ids)
 (its code is 7e83001; the designer's record: steps 1 to 3; five Opus builders wrote steps 4 to 6a, the Fable finisher `FINISHED BY FABLE` and the takeaway's draft;
 the prover wrote 6b and completed 7 on 15 Nov 2026)

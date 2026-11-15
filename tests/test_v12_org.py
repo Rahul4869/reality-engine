@@ -461,6 +461,12 @@ def test_money_and_model_calls_of_a_run_are_counted_by_the_runner_not_reported_b
 # ------------------------------------------------------------------ the honest registry
 def test_the_registry_is_honest_about_what_runs_under_the_runner(tmp_path):
     assert REG.entry_issues() == [] and REG.data_issues() == []
+    sites = {(rel, d, t) for d, ss in REG.ENTRY.items() for rel, t in ss}; seen = 0          # v12 V1c step 7: EVERY file of the package is read - a run whose file has no other entry is found too
+    for dp, _dn, fn in os.walk(os.path.join(ROOT, "whatifs")):
+        for f in sorted(x for x in fn if x.endswith(".py")):
+            rel = os.path.relpath(os.path.join(dp, f), ROOT).replace(os.sep, "/"); calls = {(rel, d, t) for d, t in REG._calls(rel)}
+            assert calls <= sites, (rel, sorted(calls - sites)); seen += len(calls)
+    assert seen >= 28                                                                            # the scan read the runner calls (28 in 8 files on 15 Nov 2026)
     assert set(REG.ENTRY) | set(REG.PENDING) == set(DEPARTMENTS) and not set(REG.ENTRY) & set(REG.PENDING)
     assert set(REG.PENDING) <= {"D0", "D1", "D2", "D3", "D11", "C", "L"}, "the pending list may only shrink: wire the department, never add one back"      # v12 B4: D12 is wired
     os.makedirs(tmp_path / "whatifs" / "org"); src = open(os.path.join(ROOT, "whatifs", "episode.py"), encoding="utf-8").read()
