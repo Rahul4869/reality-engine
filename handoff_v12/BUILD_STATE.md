@@ -2752,6 +2752,107 @@ NEXT: the Fable finisher (AMENDMENTS 1 and 2) reads `proving/notes/V1c_OPUS_DONE
 DESIGN QUESTION 20, finding (7) above, the Palace's note), audits and corrects every line, and runs the builder's block on the final code commit.
 USAGE AT THE END (get_usage, 23:48 UTC): weekly all models 49%, weekly Fable 73%, extra usage 53% (21.32 of 40.00 USD), this session's context 13% (compacted
 during the closing break run). At the start of builder E (18:33 UTC): 44%, 67%, context 26%. The Fable figure moved by other sessions' work: builder E is Opus.
+**FINISHED BY FABLE** (the finishing pass of amendments A5 and A12 (b), (c), (e); Fable 5.2 at Effort High; THREE finishers, because the whole reading alone
+fills more than half of a session's room: finisher 2 `local_...27582bf0` audited steps 0, 0b and 1 and stopped at 75% of its context; finisher 3 audited steps 2, 3
+and 4, ruled on the Opus code readers' findings for steps 0 to 4 and wrote corrections C1 to C17, and stopped at 86%; finisher 4 - this text's writer, started
+ahead by the dispatcher `local_e4e9a03f-...`, briefed by its message - audited steps 6 and 7 and the break list, wrote C18 to C23, judges the typist's diff and
+does the last acts. NONE of the three typed a line of the build; every correction is typed by an Opus typist (`local_c78a2b59-...`) from the finishers' exact
+words - the failing test first, seen to fail, then the fix - and its diff is read whole by finisher 4 before the batch is gated. The finishers' files lie outside
+the repository, in the shared notes folder `...\side-session-notes\local_b262210d-2981-4aa7-a6df-b1e40fcbc58c\`: `V1c_FINISH_NOTES.md` (N1 to N12),
+`V1c_CORRECTIONS.md` (C1 to C23, each with its failing test, its fix and its break; the rulings), `V1c_CODE_READING_PART.md` and `V1c_CODE_READING_PART2.md`
+(the Opus code readers: R1 to R20, S1 to S29), `V1c_TYPIST_REPORT.md`.
+THIS TEXT IS WRITTEN BEFORE ANY CORRECTION IS COMMITTED (the builders' last code commit is 51b4869, their closing record f5f5374 - "257 caught, 0 MISSED, 0 void
+of 257 listed" on 51b4869; the typist began its first failing tests in the same minutes). What the typist typed, the
+finisher's judgement of that diff, the runs, the gate and the usage at the end stand under "THE CORRECTIONS" below, written after them.
+FINISHER 4's START (15 Nov 2026, 22:56 UTC by `date -u`): `proving/next.py` - batch V1c, phase BUILD, base 01e7798, red rounds 0, the hooks not installed, the
+card "BUILDER" (read as the finisher: the plan's table, row 4); its pre-flight named one changed file and four python processes - the last builder's closing
+break run, which changes one place at a time and puts it back: nothing was touched and nothing run beside it. USAGE at its start: weekly all models 48%, weekly
+Fable 71%, context 11%; after the whole reading (23:00 UTC) 49% / 72%, context 62%. Finisher 2: 38% / 63% at 15:14 UTC, 40% / 65% at 15:22; finisher 3: 45% /
+68% at 19:39 UTC, 47% / 70% at 20:05. (The first three builders' "UTC" times in Step 4 are the laptop's IST clock: the fourth builder says so.)
+READ WHOLE BY EACH FINISHER, own eye (the plan's chapter 4, nothing shortened): the plan whole with its amendments; the handoff `CLAUDE.md`, `00`, `01`, `03`,
+`04`, `05`, `06`; `02` whole (finisher 4: items 1 to 100); the redesign whole; in this file the head line, STANDING RULES, the owner's verdict, NEXT whole, this
+record of V1c whole, V2b's FINISHED BY FABLE, OPEN ISSUES 1 to 209, HOW TO RUN, the BATCH LOG; `reviews/V1c_design.md` (both rounds), `reviews/V2b_audit.md`;
+the repo's `CLAUDE.md`. THE DIFF, EVERY LINE BY A FABLE EYE, beside the memo's parts: 01e7798..f576363 (steps 0, 0b, 1: finisher 2), f576363..acdf9c2 (steps 2,
+3, 4: finisher 3), acdf9c2..51b4869 (steps 6 and 7: finisher 4) - code, tests, docs, seeds, the workflow; `proving/notes/V1c_OPUS_DONE.md`;
+`proving/blocks/V1c.json`; `proving/breaks/V1c.json` whole, all 257 breaks (finisher 4). In place, for the corrections: the lines each finisher's file names.
+THE CODE GRAPH'S CALLERS (A11 h3): no finisher could run it - a builder's run was alive at every look. It was run by the second Opus code reader as a command
+that ran and ended (15 Nov, 23:50 UTC, no python process alive) and its callers are LISTED, function by function beside a text search, in
+`proving/notes/V1c_CODE_READING.md` (the joined reading of both code readers: 49 findings, each with its ruling here). Finisher 4 read that list. WHERE THE TWO
+LISTS DIFFER, each difference read: `room.package` (the graph sees only a test - the production call stands inside the lambda handed to the runner, episode.py
+178); `registry.entry_issues` (the graph names two tests - the production callers are `runner.py` 484 and 533 through the alias `REG`, found by finisher 4's own
+search before C18 was written, with the nine test files that call it); the four checks (called through the contract's table) and the two handlers (through
+`notify`'s dispatch); `opening.fetch` (three false edges to a local `fetch` of other modules). The graph named no caller of what C18 to C23 change that the
+search had not. `SYSTEM.md`'s diff was read for its counts only.
+THE FINDINGS (each written here BEFORE its edit; "viewer" = a viewer, the owner or the money depends on it; the source in brackets: N = finisher 2's notes, R and
+S = the Opus code readers, confirmed by a finisher in the code before it became a correction):
+ C1 (viewer - THE WORST; N1 = R1). The floor's hold card is sent with the contract's own `dedupe_key` (`contract|<ep>|final`, the memo's own words, typed as
+     written): while an older contract card of the film is open, `notify.send` folds the floor's card into it and `_hold(mail=False)` sends no mail - a film he
+     fixed by the mail's link and the floor then refused reaches him with NOTHING. The truer execution of "one hold, ONE message": a key of the floor's own.
+ C2 (viewer; N6 (a), (b)). No test walks a SECOND `_finish`: a film a measured check holds is paid no jury; refused by the floor after the fix it gets the
+     floor's card and no mail; after his "Publish anyway" no look is paid, the status is WAIVED and no eye card is sent. One whole production of three finishes.
+ C3 (a judge with a hole; N3 = R5). Check `viewer_floor` recomputes only a result that carries looks: `{"status": "pass"}` alone PASSES unverified.
+ C4 (his private link on a public page; N2 = R8, N6 (d), (g)). A kit link that does not begin "https://" is copied as a local path and its error - holding the
+     link - is logged and written to `last_error.txt` in a public run; the workflow's real road (the event file) and the 2 GB stop have no test.
+ C5 (money on the fall-back road; N4, N8). A repaired scene's fall-back still carries the first purchase's fixed seed: most likely the same picture is paid
+     again and a clip bought from it; a place scene with an empty motion is asked ". <prompt>".
+ C6 (a viewer hears it; R16). With `SOUND_WORLDS_ON` the bed under his lead-in and his line switches to the guide's world: `worlds()` is handed his units.
+ C7 (the owner: a hold at the script gate; R17 = the builder's own FINDING under DESIGN QUESTION 20 - RULED). An act whose only pictures are his stills leaves
+     them unmarked, and rule (1) of `path.plan_report` then holds the film: rule (1) passes over an unmarked `maker` shot.
+ C8 (his words into another topic's film; R19). `maker._answer` takes the row from the CHOICE, not from the message it answers.
+ C9 (a viewer and the rescue; S1, S3, S8). The packager's base prompt orders a runner-up "built on a DIFFERENT idea" beside 3.4's "ANOTHER LOOK AT THE SAME
+     SCENE"; and a packager that obeys and repeats the scene's words gets them twice (`r[:160]` cuts its other look off). The base prompt is not edited at the
+     finish (a later design's): 3.4's sentence says what it replaces, and `align` keeps the other look.
+ C10 (tests that could not fail; S6, R18, N6 (e)). "No second drawing of the opening" held whether or not `promise_shot` ran; the gate's four keys of his line
+     and the 14 MB of a real offline session's clips were asserted on nothing.
+ C11 (breaks caught by luck; R2, R3). The pools with the switch off, and a film that must never be taken always NEWER than the one that may.
+ C12 (rules of step 1 with no test and no break; R4, R6, R7, R11). D13's `floor|void` memo and its closing; a film that left the review by another road is
+     never approved by silence; the blind order really follows the session id; the month cap at its edge.
+ C13 (hooks into the tick proven by source position only; N6 (c), R12). One test that runs the real `manage.tick()`.
+ C14 (finisher 3's; a release nobody is ever asked about). `verdicts.sync` appends the row and THEN sends the ask: an ask that fails leaves a row no later
+     tick asks about.
+ C15 (finisher 3's; a guard). `_long_row` reads the draw with `json.loads` only; production writes it as a dict.
+ C16 (words on a card to him, behind a cell at 0; N7 = R14). A fail by a down-canary alone says its sentence twice and the card says "the video you rejected".
+ C17 (docs; R13, N5). No matrix row for the audit's F2; the note of `VIEW_FLOOR_WATCH_S` does not say that the stored clips keep their length.
+ C18 (the builder's "FOR THE FINISHER" of step 7 = S27, S28 - RULED). `registry.entry_issues` - what `dept_contract`, `short_contract`, `takeaways_written` and
+     the runner's health read - sees only the files `ENTRY` already names: a run in a file with no other entry can leave the registry unnoticed (break S2-44;
+     step 7 closed it in the TEST only). The rule is the repo's own; its truer execution reads every file of the package (and keeps one cache entry a file:
+     today every call parses every named file again). A PROTECTED file, named here before it is touched.
+ C19 (his line and a paid scene on the road EVERY laddered film takes; S22, S23). `anim.apply` has two calls of `pick_slots`; the tests and break S3-32 walk
+     the one WITHOUT footage. And the step-7 assert rests on `ANIM_SHOTS` 4 without setting it and never reads `plan["kling"]`.
+ C20 (which of his approvals stands beside a new film; S24). `_pool`'s newest-first and its stop at the cell have no test that can fail.
+ C21 (finisher 4's; the memo's own value). The rehearsal's flop session is given the constant id "rehearsal-flop" where 3.1 writes `"S-flop-" + <its episode
+     id>`: every rehearsal and all four ids of the sweep's part C laid the flop's items in ONE blind order.
+ C22 (finisher 4's; sentences untrue of the code). The ledger and founding item `v1c.his_verdict_is_the_label` say "a few a day" (the cell is ONE ask a day);
+     the ledger says "one session a film" (a void session is tried once more); `v1c.takeaway` counts no finisher and carries a status word (S19).
+ C23 (a judge's rule with no test; S16). `floor_of` reads "the latest verdict per check" and nothing proves which row decides.
+STEPS 6 AND 7 AGAINST THE MEMO (finisher 4): `floor_of`, the counter, both calls, the rehearsal's walk, the block file (V2b's whole + the counter on A, B and C,
+the line "floor:", the watch line), the two stale texts, the ledger's paragraph and its section J, `CONCEPT.md`, the two recipes, the five dated rows and the
+seven founding items are typed as 3.9 step 6 and 3.10 write them, but for C21 and C22. THE BREAK LIST, READ ONE BY ONE: every break changes ONE place; five
+pairs share an anchor and take different things away. CAUGHT ONLY BY A TEST THAT PINS SOURCE TEXT, said as V2b's five were: S3-20, S3-62, S3-63, S4-08, S4-09,
+S4-26, S4-27, S6-07 to S6-10 - behind S4-26 stands C10's spy, behind S6-07 / S6-08 the block's counter `floor_judged`, behind S6-09 / S6-10 the rehearsal itself.
+THE BUILDERS' DESIGN QUESTIONS, RULED ON (A4): 1 to 19 and 22 to 25 STAND AS TAKEN - each is the reading that changes less of what a viewer sees, read in the
+code (16: his line is spoken and written with its spaces made one, the cell keeps what he typed - nothing of a usable line is changed by the voice's parser
+but "..." , which becomes a pause; 25: the rehearsal types his lines through the second message's link, the one-writer guard of tab `Owner_Verdicts` is not
+widened). 20 STANDS and the FINDING under it is C7. 21 STANDS (`pick_slots`' `end` over the script's pictures executes the memo's own sentence - the scenes
+stand where the film without his line has them - and no film without his line moves). 8 STANDS for a 60-second kit and is where open issue 210 starts. Step
+7's finding (7) is C18. C9 leaves ONE design question of the typist's reading: the offline packager is handed the user message alone and cannot see the
+scene's sentence - the line of `fakes.py` C9 asked for is NOT typed; offline the runner-up's other look stays the stand-in packager's own words (open issue 222).
+REJECTED OR ANSWERED, WITH THE REASON: R20 (his line over a number card: no - `prev_img` is set only from a shot's own picture file). S5 (the manifest's
+`picture` when the plan's first shot is under 0.05 s: no input makes it). S11 (`produce`'s second condition decides nothing in practice: kept as the memo
+orders it, pinned). S12 (`floor_of` on an id that did not climb cannot pass in the sweep: as 3.10 writes it - a sweep that does not walk one story is not this
+batch's proof; open issue 220). S13 (the watch line can only read 4 on a good id, and the block is red on a void id: a tripwire as 3.10 ordered it, and
+offline a void session means the machinery broke - the block is right to be red). S15 (the long video's own ask is walked by nothing: refuted for the sweep -
+`release_of`'s second tick sends it - true of the rehearsal after DESIGN QUESTION 24, said). S21 (the rehearsal's nine places: the memo's named test settings).
+S25 (a dead guard line: C11 moves the cells around it). R15, S9 (the tab read once per candidate, the condition read three times: open issue 214).
+SAID PLAINLY, NOT CHANGED: (a) 3.10's second whole production is built under an override, not "as `climb` makes its Short" - the reference path is walked
+either way (R10). (b) 3.10's first whole production ("all three checks PASS" with the floor's counter) runs with the floor off; the floor beside his line and
+one story in ONE film is walked by the rehearsal and the sweep, the floor's own productions count its looks (the builder's own "built otherwise"). (c) In
+steps 2 and 3 the tests were written before the code and not RUN on the unchanged code, in step 3 after it: what proves each is its break, run on the final
+code. (d) The audit's lines F1 to F4 were rewritten to CLOSED by the last builder on the break run of bbd47ef (S26): the finisher checks all four against the
+closing run on the FINAL code commit and against the audit's "TO CLOSE" before the gate - C5, C7 and C17 touch F1 and F2 (below). (e) 3.10 asks that "the
+builder writes down on how many of the 24 ids" the ask `owner_verdict` was sent: no builder runs a sweep - the prover reads `owner_message_kinds` of parts A
+and B (open issue 220). (f) `expect_tests` in `proving/blocks/V1c.json` is V2b's until the finisher's block has counted V1c's (A13 (b); open issue 182).
+OPEN ISSUES WRITTEN BY THE FINISH: 210 to 222 (under OPEN ISSUES; none is a new rule added at the finish - A5).
 ### V2b - INSIDE THE FORMAT (14-15 Nov 2026) - ACCEPTED (final code commit 01e7798 GREEN in GitHub Checks run 196: 1647 passed; sweep 58 of 58 ids)
 (its code is 7e83001; the designer's record: steps 1 to 3; five Opus builders wrote steps 4 to 6a, the Fable finisher `FINISHED BY FABLE` and the takeaway's draft;
 the prover wrote 6b and completed 7 on 15 Nov 2026)
@@ -9559,6 +9660,49 @@ Rehearsal asserts `docs_current` ran and passed.
    camera IS the viewer's eyes') and is not touched by this. It holds nothing: the words are V2b's, the request still asks for the
    viewer's own place, nobody in it, in the film's look; what a clip model makes of the two sentences together can be judged only on a
    real clip.
+210. (V1c's finish, N5 -> V4, which owns the levers) `VIEW_FLOOR_WATCH_S` MOVES THE NEW FILM'S SECONDS AND NOT THE STORED CLIPS'. The canary's, a reference's
+   and a down-canary's clip is the file as it was filed (60 s on the day of the kit or of its own session); only their STRIP follows the cell (DESIGN QUESTION 8).
+   With the lever at 30 the watching judge is sent 30 s of the new film beside 60 s of the canary - a standing difference exactly where the floor judges. Until a
+   design decides (cut the stored clips at the cell, or file the kit again by code): the cell's note says "file the kit again when this cell moves".
+211. (V1c's finish, N9 -> B7, with 114) `floor.run`: an exception AFTER the viewing was filed leaves that Drive file (it is removed only on a void VERDICT); and
+   when the log's own append raises after four paid looks, the looks are lost, rule (2) cannot count the session (no row) and the next finish pays the jury again.
+212. (V1c's finish, R9 -> B10's runbook, V4) WHILE `OWNER_VERDICT_SINCE` IS EMPTY `contract.review_needed` COUNTS EVERY ROW, as the memo's 3.1 writes: a long
+   video finished before any tick's `verdicts.sync` succeeded, on a Sheet that holds the old code's LIVE rows, would skip his first-three review. The runbook's
+   line: the first tick runs BEFORE the first production (it does in every run from an empty Sheet: the tick starts the production).
+213. (V1c's finish, S2, S4, S7, S10 -> B7, the family of 127) ONE STORY WHEN THE SHORT'S ARCHIVE COULD NOT BE FETCHED. A fetch that fails at the plan stage, or a
+   plan without the key, holds the film at the script gate (his Rewrite plans it again, his Approve waives it); after a failed fetch at `produce` check
+   `one_story`'s N/A names the wrong reason; its PASS does not look at whether the footage was laid (`opening_footage` holds such a film).
+214. (V1c's finish, R15, S9 -> B10, with 18, 92, 117) SHEET READS ADDED BY V1c, proven on the local store only: `verdicts._pool` reads tab `Floor_Log` once per
+   candidate film, `story.words_for` is asked three times a plan, the tick's `verdicts.sync` and `floor.eye_sweep` read their tabs every 30 minutes.
+215. (V1c's finish, N10) FLOOR DROP ANSWERS "<ep> is dropped" WHILE THE CELL `KILL_CHECK` IS FALSE AND NOTHING DROPS IT (`manage.kill_check` returns at once). The
+   cell is TRUE by default; a channel that switched the kill check off is told something untrue.
+216. (V1c's finish, N12 -> the prover's 6b and B7) THE FLOOR IS ASKED RIGHT AFTER THE MEASURED PRE-CHECK, WHICH RUNS WITH A PERFECT STAND-IN CRITIQUE: a film that
+   `self_review` or another critique-fed check then holds in the real gate has been paid a jury (the memo's order; about Rs 30).
+217. (V1c's finish, S17; OLDER THAN V1c -> V5, "variety across uploads") `similarity.check` NEVER RAISES: when it cannot read tab `Script_Fingerprints` it logs a
+   WARN and answers 0.0, and check `originality` then PASSES "0% vs the last 10". Only the room's own `except` (no `script_similarity` on the draw) is the hold
+   "the similarity guard did not run". So the note under item 49 of `02` ("holds it too when the guard did not run") is true of that one road; the two texts V1c
+   made true ("above the cell ... HELD") stand as worded. Not changed at the finish: it would change when a film is held.
+218. (V1c's finish, S20 -> B9's desk) A LINE OF HIS THAT WAS NOT TAKEN IS CALLED "NO LINE". `maker.take` returns None both when he gave no line and when his
+   newest line is not usable (a WARN in the log); check `makers_line` then PASSES "he gave no line for this topic". He is told the reason when he TYPES an
+   unusable line; a line he edits later in the Sheet into something unusable is not judged again before `take`. To decide with his desk: what he is told about a
+   line that was not taken, and the check's words (the plan's key `maker` would have to carry the reason).
+219. (V1c's finish, S29; OLDER THAN V1c -> B10, with 13) THE REGISTRY'S SCAN SEES ONLY `<x>.work("<dept>", "<trigger>", ...)` WITH TWO STRING LITERALS: a bare
+   `work(` after a from-import, an alias, or a department or trigger held in a variable is invisible to `entry_issues` (and so to `dept_contract`). None exists
+   today (28 calls, all literals). Since C18 the scan reads every file of the package; this is what is left of the gap.
+220. (V1c's finish, S12, S13 -> the prover of V1c and the designer of the next block) THREE THINGS OF V1c's BLOCK, SAID: (a) the counter `floor_judged` counts
+   judged ids only, so an id whose session was void is good for `floor_of` and RED for the block - right offline, where a void session means the machinery broke;
+   (b) the watch line "looks in which the new video was named ... (of 4)" can only read 4 on a good id (a pass is 4 of 4 by the verdict's rule): it is a tripwire
+   for the words, not a margin; (c) a sweep run with the ladder off would mark every long-video id bad (`one_story` is then N/A "switched off", not "made under
+   an override") - V1c's block runs none. And the memo's 3.10 asks a builder to write down on how many of the 24 ids the ask `owner_verdict` was sent: no builder
+   runs a sweep - the prover reads `owner_message_kinds` of parts A and B.
+221. (V1c's build, step 6; S18 -> V4's design, which builds the intake) THE OWNER'S ITEM 80 REACHES NO DEPARTMENT'S BRIEF YET. The founding item
+   `owner.platform_features` is filed (the ledger's section J, line 14; the Palace) and is itself left out of D2's and D9's playbooks by their caps (the Palace
+   command's note: "D1 3, D2 2, D9 1, D12 1, C 5"; nothing older was pushed out). V4 widens the audience or the Librarian (B8) consolidates.
+222. (V1c's finish, C9; S1, S3, S8 -> a later design of D5, and his eye at the pilot with H31) THE PACKAGER IS GIVEN TWO ORDERS ABOUT THE RUNNER-UP THUMBNAIL. Its
+   base prompt (`prompts.py`) still says the runner-up is "built on a DIFFERENT idea"; one story's sentence says "ANOTHER LOOK AT THE SAME SCENE" and, since the
+   finish, that it REPLACES that rule. Code makes both thumbnails the opening's scene whatever is written, but what stands after the scene's words in the
+   runner-up's request is the packager's own - offline always another scene's words (the stand-in packager is handed the user message alone and cannot see
+   the sentence). A later design gives the packager ONE order for a one-story film; whether a picture model draws "another look" from such a request is the pilot's.
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - SINCE 13 NOV 2026 (the owner's item 33): the acceptance block, its verdict, the deliberate breaks and the moves of the state are
   run through `REALITY_ENGINE_HANDOFF/proving/` exactly as `handoff_v12/OPUS_BUILD_PLAN.md` says (chapters 5.8, 5.9, 6, 8 and 16; the
