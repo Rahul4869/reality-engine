@@ -255,9 +255,17 @@ def p_living(ctx):
     """v12 V2d-b: A CHARACTER IS DRAWN OR ABSENT, in every format (the owner's rejected video showed a flat black shape with a name: the code that
     drew it is gone). Every reaction cutaway of the plan is for a character with approved art, and the renderer showed that art in each (blinking,
     breathing, talking). No cutaway at all = nobody is on screen: that passes - absent is the other half of the rule. v12 V2b (CHIP_DRAWN_ONLY_ON): and no
-    name chip the render drew (ctx['chips'], what the renderer recorded) names a character nobody sees."""
-    from whatifs import living as LV
+    name chip the render drew (ctx['chips'], what the renderer recorded) names a character nobody sees. v12 V1c (CAST_BY_FORMAT_ON): in a format whose row
+    says nobody is on screen (formats.cast) no cutaway to a character - on the plan or in what the render recorded - and no staged scene of the cast."""
+    from whatifs import living as LV, formats as FMT
     react = [s for s in (ctx.get("shots") or []) if s.get("type") == "reaction"]
+    d_ = ctx.get("d") if isinstance(ctx.get("d"), dict) else {}; fmt_ = str(d_.get("format") or "")
+    nobody_ = S("CAST_BY_FORMAT_ON", bool) and not FMT.cast(fmt_)
+    if nobody_:
+        if react or any(s[2] == "reaction" for s in (ctx.get("states") or [])):
+            return FAIL, f"a cutaway to {(react[0].get('speaker') if react else '') or 'a speaker'}'s character in format {fmt_}, where nobody is on screen"
+        staged_ = [s for s in (ctx.get("shots") or []) if s.get("anim") and (s.get("anim") or {}).get("world") != "place"]
+        if staged_: return FAIL, f"a staged scene of the trial's cast ({(staged_[0].get('anim') or {}).get('world')}) in format {fmt_}, where nobody is on screen"
     bare = sorted({str(s.get("speaker")) for s in react if not LV.has_art(s.get("speaker"))})
     if bare: return FAIL, f"a reaction cutaway is planned for {', '.join(bare)} without approved character art: a character is drawn or absent"
     absent = int(ctx.get("absent") or 0)
@@ -266,7 +274,8 @@ def p_living(ctx):
     if chip_:
         unseen = sorted({str(c[2]) for c in (ctx.get("chips") or []) if not LV.has_art(c[2])})
         if unseen: return FAIL, "; ".join(f"a name chip for {x}, who is never seen" for x in unseen)
-    if not react: return PASS, "nobody is on screen: no cutaway of a character was made (a character without approved art is absent, never a shape)" + tail_
+    if not react: return PASS, ("nobody is on screen: no cutaway and no staged scene of a character was made" if nobody_ else "nobody is on screen: no cutaway of a character was made") \
+                         + " (a character without approved art is absent, never a shape)" + tail_      # v12 V1c (DESIGN QUESTION 1 of its record: today's parenthesis kept)
     return PASS, f"{len(react)} reaction cutaways, each the approved character ({sum(u['blinks'] for u in LV.USED)} blinks, {sum(u['mouth_frames'] for u in LV.USED)} talking frames in this job)" + tail_
 
 def p_visual_change(ctx):
@@ -520,8 +529,11 @@ def p_camera_path(ctx):
     total = float(ctx.get("total") or (units[-1].get("end") if units else 0) or 0)
     r = PATH.plan_report(shots, units, total, EP.anchors_for(shots, units, d, ctx.get("plan") or {}))
     if r["problems"]: return FAIL, "; ".join(r["problems"])[:380]
+    from whatifs import anim as ANIM                              # v12 V1c (DESIGN QUESTION 2 of its record): the scenes of the viewer's own place that hold their act's place
+    n_ = sum(1 for s in shots if ANIM.place_scene(s) and s.get("path") and PATH.sentence(s["path"]["place"]) in str(s.get("prompt") or ""))
     return PASS, (f"{r['acts']} acts in {len(set(r['places']))} places ({r['changes']} changes in {r['minutes']:.1f} min, at most {r['allow']}): " + " | ".join(r["places"])[:200]
-                  + ("; every picture at eye level" if r["angles"] else "; angle not assigned by code") + "; every act opens on its own picture")
+                  + ("; every picture at eye level" if r["angles"] else "; angle not assigned by code") + "; every act opens on its own picture"
+                  + (f"; {n_} scene(s) asked in their act's place" if n_ else ""))      # at the very end: the sweep prints this evidence up to "; every picture"
 
 def p_camera_shown(ctx):
     """v12 V2b (the camera path, D6): on what the RENDER recorded (ctx['path_states']), never the plan - every still state of an act showed a picture of

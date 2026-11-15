@@ -293,7 +293,7 @@ def _assets(shots, units, out, ep, budget=56, have=None, footage=None):
             try:
                 if s["type"] == "stock": return i, M.stock(s.get("search", "space"), p, ep, need_s=(float(units[i + 1]["start"]) - float(units[i]["start"])) if i + 1 < len(units) else None)
                 if s["type"] in ("living", "kling") and i in img_paths:
-                    mp = __import__("whatifs.anim", fromlist=["x"]).acting_prompt(s) if s.get("anim") else motion_prompt(s, units[i]["text"], i in opening)
+                    mp = __import__("whatifs.anim", fromlist=["x"]).clip_request(s, units[i]["text"]) if s.get("anim") else motion_prompt(s, units[i]["text"], i in opening)      # v12 V1c: one function says what a scene's clip is asked with
                     return i, M.animate(img_urls.get(i), img_paths[i], mp, p, ep, hero=s["type"] == "kling", seconds=s.get("buy") if s["type"] == "living" else None)      # v12 V2d-b: a living clip is bought as long as its line
                 return i, None
             except Exception as e: log(f"clip {i} failed ({s['type']}, try {attempt + 1}/{tries}): {e}", "WARN"); time.sleep(3)
@@ -349,9 +349,13 @@ class Job:
     def repair_assets(self, codes, idx, cap_inr):
         """Paid repair, capped in rupees: re-make missing pictures, failed Kling clips and the pictures a vision check flagged; then one free re-render."""
         base = month_spend(); done = False; f = self.files; shots, units = self.shots, self.units
+        from whatifs import anim as ANIM
         def spent(): return month_spend() - base
         def anchor_of(i):
             return i if i in f["img"] else next((j for j in range(i, -1, -1) if j in f["img"]), i)
+        def scene_picture(i):                                    # v12 V1c (the audit of V2b, F1 (d)): a scene's picture is re-made on BOTH roads as the first purchase made it -
+            path, how = ANIM.start_frame(shots[i], os.path.join(self.out, f"img{i:03d}.jpg"), self.ep, self.out); f["img"][i] = path; shots[i]["anim"]["frame"] = how
+            self._urls = getattr(self, "_urls", None) or dict(f.get("urls") or {}); self._urls[i] = None      # its own file is animated: `how` is a word, never an address
         targets = set(f.get("missing", [])) | {i for i in f["anchors"] if i not in f["img"]}
         if codes & {"vision_mismatch", "vision_artifact"}: targets |= {anchor_of(i) for i in idx or []}
         foot = {i for i, s in enumerate(shots) if s.get("short")}; targets -= foot      # v12 V2c-b2b: a shot of the Short's footage is never re-made from another picture
@@ -361,9 +365,11 @@ class Job:
         for i in sorted(targets):
             if spent() >= cap_inr: break
             try:
-                p = os.path.join(self.out, f"img{i:03d}.jpg"); txt = units[i]["text"][:140]
-                path, url = M.still(f"{shots[i].get('prompt') or txt}. Clear, sharp, no text in the picture, accurate to this line: {txt}", p, self.ep, seed=f"{self.ep}fixed{self.fixn}{i}")
-                f["img"][i] = path; self._urls = getattr(self, "_urls", {}); self._urls[i] = url; done = True
+                if shots[i].get("anim"): scene_picture(i); done = True                # v12 V1c: road 1 - a scene's own request (picture_request), never a still of its words
+                else:
+                    p = os.path.join(self.out, f"img{i:03d}.jpg"); txt = units[i]["text"][:140]
+                    path, url = M.still(f"{shots[i].get('prompt') or txt}. Clear, sharp, no text in the picture, accurate to this line: {txt}", p, self.ep, seed=f"{self.ep}fixed{self.fixn}{i}")
+                    f["img"][i] = path; self._urls = getattr(self, "_urls", {}); self._urls[i] = url; done = True
                 if i not in f["anchors"]: f["anchors"].append(i)
             except Exception as e: log(f"repair of picture {i} failed: {e}", "WARN")
         redo = {i for i in (idx or []) if "vision_artifact" in codes and i < len(shots) and shots[i]["type"] == "kling" and i in f["clips"] and i not in foot}      # v8.3: a Kling clip the picture judge flagged is re-made (the old one is kept if the re-make fails)
@@ -373,8 +379,10 @@ class Job:
                 try:
                     self._urls = getattr(self, "_urls", None) or dict(f.get("urls") or {})
                     if i not in f["img"] or i in redo:          # v8.9.1: a picture that exists is animated as it is (its URL or the file), never re-bought just for a URL
-                        path, url = M.still(shots[i].get("prompt") or units[i]["text"], os.path.join(self.out, f"img{i:03d}.jpg"), self.ep, seed=f"{self.ep}kfix{self.fixn}{i}"); f["img"][i] = path; self._urls = getattr(self, "_urls", {}); self._urls[i] = url
-                    newp = M.animate(self._urls.get(i), f["img"][i], (s.get("motion") or "") + ". " + (s.get("prompt") or ""), os.path.join(self.out, f"clip{i:03d}" + (f"_r{self.fixn}" if i in redo else "") + ".mp4"), self.ep, hero=True)
+                        if s.get("anim"): scene_picture(i)       # v12 V1c: road 2 - the same helper as road 1
+                        else: path, url = M.still(shots[i].get("prompt") or units[i]["text"], os.path.join(self.out, f"img{i:03d}.jpg"), self.ep, seed=f"{self.ep}kfix{self.fixn}{i}"); f["img"][i] = path; self._urls = getattr(self, "_urls", {}); self._urls[i] = url
+                    newp = M.animate(self._urls.get(i), f["img"][i], ANIM.clip_request(s, units[i]["text"]) if s.get("anim") else (s.get("motion") or "") + ". " + (s.get("prompt") or ""),
+                                     os.path.join(self.out, f"clip{i:03d}" + (f"_r{self.fixn}" if i in redo else "") + ".mp4"), self.ep, hero=True)      # v12 V1c: the first purchase's clip request (anim.clip_request)
                     f["clips"][i] = newp; done = True
                 except Exception as e: log(f"repair of Kling clip {i} failed: {e}", "WARN")
         f["missing"] = [i for i in f["anchors"] if i not in f["img"]]

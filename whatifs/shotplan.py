@@ -140,8 +140,10 @@ def words(t): return len(re.findall(r"[A-Za-z0-9']+", str(t or "")))
 
 def reaction_shots(shots, units):
     """Tiny lines become free REACTION cutaways of the speaking character - ONLY where that character has approved art (v12 V2d-b: a character is drawn
-    or absent; a line of a character without it keeps its picture). Never a Kling / living / impact / exhibit / clip-bait line. Returns (shots, n_converted)."""
-    from whatifs import living as LV
+    or absent; a line of a character without it keeps its picture). Never a Kling / living / impact / exhibit / clip-bait line. v12 V1c: never in a format whose
+    row says nobody is on screen (formats.cast, CAST_BY_FORMAT_ON): the short line is then a picture line like any other. Returns (shots, n_converted)."""
+    from whatifs import living as LV, formats as FMT
+    if S("CAST_BY_FORMAT_ON", bool) and not FMT.cast(): return shots, 0
     n = 0; mx = S("REACTION_MAX_WORDS", int); art = {}
     def drawn(spk):
         if spk not in art: art[spk] = LV.has_art(spk)

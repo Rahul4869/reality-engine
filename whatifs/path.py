@@ -104,11 +104,14 @@ def mark(shots, units, total, bible, ep):
 
 def lay(shots):
     """THE WORDS LAST (after motion.place, the last step before the script gate; it changes no type): every still or living shot with a `path` mark and none
-    of the marks short / promise / anim gets, once, the act's place sentence in front of its prompt."""
+    of the marks short / promise / anim gets, once, the act's place sentence in front of its prompt. v12 V1c: a scene of the viewer's own place
+    (anim.place_scene) is a still of its act here - its start picture is asked from its prompt."""
+    from whatifs import anim as ANIM
     out = []
     for s in shots:
         s = dict(s); pm = s.get("path")
-        if pm and s.get("type") in ("still", "living") and not (s.get("short") or s.get("promise") or s.get("anim")) and SENTENCE not in str(s.get("prompt") or ""):
+        if pm and (s.get("type") in ("still", "living") or ANIM.place_scene(s)) and not (s.get("short") or s.get("promise") or (s.get("anim") and not ANIM.place_scene(s))) \
+                and SENTENCE not in str(s.get("prompt") or ""):
             s["prompt"] = sentence(pm["place"]) + str(s.get("prompt") or "")
         out.append(s)
     return out
@@ -131,6 +134,7 @@ def plan_report(shots, units, total, anchors):
     shot without the marks short / promise / anim that does not hold its act's place sentence, (5) an act shorter than ACT_MIN_S beside another, or more
     changes of place than the allowance (the joins did not run), (6) v12 V1c: a shot of real footage inside an act (path.mark makes it a picture of the act).
     Returns {acts, places, changes, allow, minutes, angles, problems}."""
+    from whatifs import anim as ANIM
     p = []; want = acts(shots, units, total); anchors = set(anchors or ())
     for a in want:
         for i in a["units"]:
@@ -142,7 +146,8 @@ def plan_report(shots, units, total, anchors):
         if not pm: continue
         have.setdefault(pm["act"], {"place": pm["place"], "units": []})["units"].append(i)
         if pm.get("first") and s.get("type") == "still" and i not in anchors: p.append(f"act {pm['act']} would open on a picture made for another act")
-        if s.get("type") in ("still", "living") and not (s.get("short") or s.get("promise") or s.get("anim")) and sentence(pm["place"]) not in str(s.get("prompt") or ""):
+        if (s.get("type") in ("still", "living") or ANIM.place_scene(s)) and not (s.get("short") or s.get("promise") or (s.get("anim") and not ANIM.place_scene(s))) \
+                and sentence(pm["place"]) not in str(s.get("prompt") or ""):      # v12 V1c: a scene of the viewer's own place holds its act's place as a still does
             p.append(f"shot {i} does not hold the place of act {pm['act']}")
     angles = [str((s.get("pov") or {}).get("angle")) for s in shots if s.get("type") in PICTURES and (s.get("pov") or {}).get("angle")]
     bad = [a for a in angles if a != "eye level"]

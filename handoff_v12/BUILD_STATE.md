@@ -2131,6 +2131,104 @@ WHAT IT NEEDS TO KNOW FROM HERE (facts, not decisions):
 - NOT RUN BY THIS BUILDER: a rehearsal, the sweep, `breaks.py`, the builder's block.
 USAGE: at this builder's start weekly all models 36%, weekly Fable 62% (the account's figure; this session is Opus 5.5), context 9%; at its end weekly all models
 36%, weekly Fable 62%, context 71%.
+THE SECOND OPUS BUILDER (the continuation typist of the plan's A9; 15 Nov 2026, from about 10:10 UTC by the laptop's clock; Opus 5.5, started fresh by the
+dispatcher `local_e4e9a03f-...` with a first turn that only answered READY; its brief arrived as a message). `proving/next.py`: batch V1c, phase BUILD, base
+01e7798, red rounds 0, pre-flight clean, the git hooks NOT installed, FOUR open findings of `reviews/V2b_audit.md`. SAID AS THE BRIEF ASKS: the lines of F2, F3
+and F4 still read "OPEN" - not "CLOSED" - because the first builder's note above keeps them open until their breaks (S0-01 to S0-14) are caught on the final
+code; nothing is wrong with them. The card's last acts (`built_gate.py`, `--to BUILT`, the prover) are not this session's (A3). USAGE at the start (plan Ultra;
+the app shows no 5-hour line): weekly all models 36%, weekly Fable 62% (the account's figure), this session's context 9% of 1,000,000.
+THE READING - THE CONTINUATION TYPIST'S READING, A9, each item whole: (1) `next.py` and its card; the plan whole (its amendments 1 to 3 and A9 to A11 first);
+the handoff `CLAUDE.md`; `02` whole (items 1 to 89); (2) in this file the head line, STANDING RULES, under NEXT the paragraph "Remember", HOW TO RUN whole, the
+record of V1c whole (its START, Steps 1 to 3 with the design's history, Step 4 from its first line with the first builder's "WHERE THE BUILD STANDS"; no
+`DESIGN QUESTION` had been written) and the open issues the memo and that note name (167, 189, 193, 196 to 209); (3) `reviews/V1c_design.md` whole (round 2
+first) and `reviews/V2b_audit.md` whole (the four findings `next.py` prints); (4) the repo's `CLAUDE.md` whole; in `docs/CURRENT/ENFORCEMENT_MATRIX.md` the
+rows of the parts typed (`living_characters`, the camera path, the name chip); (5) BEFORE STEP 0b's FIRST EDIT, whole: `whatifs/anim.py`, `whatifs/shotplan.py`,
+`whatifs/path.py`, `whatifs/formats.py`, `whatifs/episode.py`, `whatifs/contract.py`, `tests/conftest.py`, `tests/paid_calls.py`; the callers of what the step
+changes, searched by name: `anim.apply` (`episode.produce`; tests `test_v111_enforce` 113 to 148, `test_v12_opening` 262 to 265, `test_v12_seat` 69),
+`anim.start_frame` / `acting_prompt` (`episode._assets`, `specials.run` 356 to 358 - its own staged shots, untouched), `anim.frame_prompt` (`start_frame`,
+`sheets.style_samples` 173), `shotplan.reaction_shots` (`room.plan_shots` 704), `path.lay` / `plan_report` (`episode.produce`, `contract.p_camera_path`),
+`contract.p_living` (the contract's table); read at the lines that matter: `media.still` 92 to 123 (the join a place scene copies), `atmosphere.with_directive`,
+`immersion.apply` 126 to 147 (the motion sentence); their tests at the lines that call them (`test_v102.py` 23, 24, 141 to 173; `test_v12_motion.py` 346 to
+372; `test_v92_shots.py` 49 to 52). `tools/sweep.py` and `tools/rehearsal.py`: step 0b does not touch them. `tests/test_v12_inside.py`: its helpers and its
+section index (step 0b changes none of its tests).
+STEP 0b - THE CAST AND THE SCENES BY FORMAT (3.5 with 3.11's F1, typed as the memo decides them).
+DESIGN QUESTION 1 (a choice the memo did not make; the reading that changes LESS of what a viewer sees was taken): 3.11 F1 (f) writes the PASS words of
+`living_characters` in a format whose row shows nobody as "nobody is on screen: no cutaway and no staged scene of a character was made (...)" - the
+parenthesis is an ellipsis. TAKEN: today's parenthesis and tail, word for word - "(a character without approved art is absent, never a shape)" and, with
+`CHIP_DRAWN_ONLY_ON`, "; no name chip for a character nobody sees". No viewer sees these words.
+DESIGN QUESTION 2: 3.11 F1 (f) says the PASS words of `camera_path` gain "; <n> scene(s) asked in their act's place" when n > 0 and does not define n. TAKEN:
+n = the place scenes of the shot list that carry a camera-path mark and whose prompt holds their act's place sentence (`path.sentence`) - exactly the scenes
+the clause speaks of; a `promise` scene keeps its exemption from the sentence (3.11 F1 (e)) and so is not counted. No viewer sees these words; the sweep's
+line is cut before them (3.11 F1 (f)).
+DESIGN QUESTION 3: 3.5's FAIL words name "<speaker>'s character", but a reaction state of the render's record (the five-value tuple of `ctx["states"]`) carries
+no speaker. TAKEN: the speaker of the plan's first reaction shot when the plan holds one, else the words "a speaker" ("a cutaway to a speaker's character in
+format F3, where nobody is on screen"). The check FAILS either way; no viewer sees the words.
+TESTS CHANGED BY DESIGN IN STEP 0b: none of the older tests. `tests/conftest.py` gains `OLD_VIEW` = {"CAST_BY_FORMAT_ON": "FALSE"} in the loop of the fixture
+`fresh_store`, beside `OLD_INSIDE` (3.0: a change by design to a judge's file; the later steps add their entries). No paid call is added or changed
+(`tests/paid_calls.py` untouched: a place scene is the same paid picture, cost row `image_ref`, and the same clip).
+THE FAILING TESTS FIRST: V1c's own test file `tests/test_v12_floor.py` (NEW; section 0b: 11 tests, 15 with their parameters) run on the unchanged code: "15
+failed in 25.03s" (each for the missing rule: no row key, no switch, no place world, no `picture_request` / `clip_request`, the check's old words).
+BUILT IN STEP 0b (as written in 3.5 and 3.11 F1, except where DESIGN QUESTIONS 1 to 3 say): 3.5 - the row key `cast` (F1 False, F2 True, F3 False) read by NEW
+`formats.cast(fmt=None)` (True without a format); `shotplan.reaction_shots` returns the shots unchanged with 0 when `CAST_BY_FORMAT_ON` and not
+`formats.cast()`; NEW cell `CAST_BY_FORMAT_ON` TRUE with its note. F1 (a) - `anim.apply` writes the world "place" when the switch is on and the format in
+the making shows nobody; nothing else of the record changes. F1 (b) - NEW `anim.NOBODY`, `anim.place_scene(shot)` and `anim.picture_request(shot, line,
+aspect)` (a staged scene: `frame_prompt`, byte for byte; a place scene: its prompt or its line, then the cell's lock and `style_words()` joined exactly as
+`media.still` joins them, then `NOBODY`); `anim.start_frame` asks through it with the `anim` record's own `line`, asks the reference portraits for a staged
+scene only, and hands its fall-back the same text. F1 (c) - NEW `anim.clip_request(shot, line)` (a staged scene: `acting_prompt`, byte for byte; a place
+scene: its motion, with `path.KLING_MOTION` in front when the shot carries a path mark and the motion does not hold it, then its prompt or the line). F1 (d) -
+`episode._assets.get_clip` asks `clip_request` for every shot with `anim`; `Job.repair_assets` gains the helper `scene_picture(i)` (`anim.start_frame`, `f["img"]`,
+`anim["frame"]` = the word it returns, the address None), used on road 1 in place of the still for a target with `anim` and on road 2 in place of line 376 for a
+shot with `anim`; the clip of a shot with `anim` is asked with `clip_request` (line 377); every shot without `anim` keeps today's expressions. F1 (e) -
+`path.lay` and rule 4 of `path.plan_report` treat a place scene as a still of its act (`promise` keeps its exemption). F1 (f) and 3.5's check -
+`contract.p_living`, with the switch on and `formats.cast(<the draw's format>)` False, FAILS "a cutaway to <speaker>'s character in format <fmt>, where nobody
+is on screen" (a reaction shot of the plan, or a reaction state the render recorded) and "a staged scene of the trial's cast (<world>) in format <fmt>, where
+nobody is on screen"; its PASS words there "nobody is on screen: no cutaway and no staged scene of a character was made (...)" (DESIGN QUESTION 1); with the
+switch off word for word as before. `contract.p_camera_path`'s PASS words end "; <n> scene(s) asked in their act's place" when n > 0 (DESIGN QUESTION 2).
+The dated line under V2b's 6b ("CORRECTED BY V1c's BUILD ... F1") corrects V2b's Step 5 row and its memo's sentence about `anim.start_frame`. A matrix row;
+`SYSTEM.md` regenerated (one cell more). No check, lever or tab moved: 68 hard checks, `SHOW_CHECKS` 57, 84 levers, 84 tabs, 201 founding items, 24
+workflow files.
+TESTS (`tests/test_v12_floor.py`, section 0b): `test_the_older_tests_run_with_the_cast_rule_off`; `test_the_row_decides_whether_the_trials_cast_is_cut_to` (F1
+and F3 cut to nobody with GRIMM's and VALE's art approved, the trial as before, the switch off as before); `test_in_a_format_where_nobody_is_on_screen_the_three_scenes_are_the_viewers_own_place` (F1 and F3: the texts the picture model and `media.animate` are HANDED on the first purchase - `episode._assets` with
+recorders - hold the act's place, the shot's words, `NOBODY`, the lock and the look words once each, the motion sentence, none of "Grimm", "Vale", "Rosa",
+"laboratory", "detective office", "courtroom"; the address None; no portrait asked); `test_the_trial_keeps_its_staged_scenes_byte_for_byte` (hashes of the
+three picture and the three clip texts against `frame_prompt` / `acting_prompt`; the portraits asked as before); `test_with_the_switch_off_every_format_is_as_before`; `test_a_place_scene_is_asked_in_the_films_look_on_both_roads_of_its_start_picture` (at `ART_STYLE` toybox_noir and illustrated: the fall-back is
+handed the same text, `media.still`'s own join adds nothing, `NOBODY` survives `atmosphere.with_directive` at the room `media.still` gives - round 2's
+correction 3); `test_the_clip_request_of_a_place_scene_carries_the_paths_motion_once`; `test_the_repair_asks_a_scene_with_the_texts_of_the_first_purchase_on_both_roads` (F1, F3 and a trial: (1) the start picture missing, (2) the scene flagged `vision_artifact` with its clip there - the picture text and the clip
+text of the first purchase, the address None, `anim["frame"]` the word; a shot without `anim` keeps the still "accurate to this line");
+`test_lay_gives_a_place_scene_its_acts_place_and_rule_4_holds_one_without_it`; `test_camera_path_names_the_scenes_asked_in_their_acts_place_at_the_very_end` (and
+`tools/sweep.py:inside_of`'s line is the same with and without the clause); `test_check_living_characters_holds_the_cast_where_the_row_shows_nobody`. Run alone
+after the code: "15 passed". Breaks S0b-01 to S0b-26 written into `proving/breaks/V1c.json` (a read-only script: "40 breaks, 40 ids, 0 problem(s)" - each anchor
+found exactly once, each named test present) - NOT RUN.
+STEP 0b'S RUN (real pytest, parallel `-n 6`, strict - `WI_NO_SKIPS=1` -, THE WHOLE SUITE, alone; started 10:25:54 UTC, its first lines read 20 seconds later -
+it had collected and was running -, waited for on its own process): "1666 passed in 3210.52s (0:53:30)", 0 failed, 0 skipped (1651 + the 15 new; the log searched
+for FAILED, ERROR and skipped: none). Plan Guard "PLAN GUARD: GREEN", Truth "TRUTH: GREEN", `tools/gen_docs.py` "wrote docs/CURRENT/SYSTEM.md" (committed with
+the step).
+WHERE THE BUILD STANDS (the second Opus builder, 15 Nov 2026 about 11:25 UTC; written at 63% of its context, between two steps: step 1 - the floor end to end,
+the memo's largest step - needs its own reading of `models.py`, `cli.py`, `notify.py`, `manage.py`, `fakes.py`, `costguard.py`, `governor.py`, the registry,
+the levers and the eight test files that read the workflows, and would cross the brief's 80% line half typed). DONE AND PUSHED: step 0 (725459d, the first
+builder) and step 0b (the commit of this note). The state stays BUILD; nothing was moved; `V1c_OPUS_DONE.md` is NOT written. NEXT: a THIRD Opus builder (card
+"BUILDER of V1c - phase BUILD"), with the continuation typist's reading of the plan's A9, reads this record from "Step 4 BUILD" and goes on at 3.9 STEP 1 (THE
+FLOOR, 3.1, end to end in one step), then 2, 3, 4, 6, 7 - a checkpoint commit and push after each, the whole suite green after each.
+WHAT IT NEEDS TO KNOW FROM HERE (facts, not decisions):
+- THE AUDIT'S LINES: F1 to F4 of `reviews/V2b_audit.md` STAY "OPEN" until their breaks are CAUGHT on the final code by `breaks.py` (F1: S0b-04 to S0b-25 with
+  the cast's S0b-01 to S0b-03; F2 to F4: S0-01 to S0-14); then each line becomes `CLOSED F<n>: <commit>, <how it is proven>` - F1's commit is the one of step
+  0b, F2 to F4's is 725459d. `next.py` prints all four as open until then and refuses `--to BUILT` (the finisher's move, not a typist's).
+- THE PINS TODAY (unchanged by step 0b): checks by stage `{"script": 39, "final": 21, "short": 5, "short_file": 2, "release": 1}`, total 68, `SHOW_CHECKS` 57,
+  levers 84, tabs 84, founding items 201, workflow files 24 (`tests/test_safety.py` 68); the suite 1666. Step 1 moves them as 3.9 says (one check, two levers,
+  one tab, 25 workflows); count again before a pin moves.
+- `tests/conftest.py`: `OLD_VIEW` exists with ONE entry, `CAST_BY_FORMAT_ON` "FALSE", in the loop of `fresh_store`; each later step adds the entries of its
+  cells (step 1: `VIEW_FLOOR_ON`; step 2: `OWNER_VERDICT_ON`; step 3: `MAKER_LINE_ON`; step 4: `ONE_STORY_ON` - 3.0).
+- `tests/test_v12_floor.py` EXISTS (V1c's own file): section 0b, helpers `_sheets`, `_units`, `_film` (a shot list as `produce` makes it before the gate:
+  `path.mark`, `anim.apply`, `path.lay`), `_record` (recorders of every request that buys a picture or a clip), `_job`; NO whole production yet and so no
+  `OWN_IDS` - step 1's three whole productions (3.10) need ids no other test file uses (`EP2099...` - search `tests/` before choosing; the ids of
+  `test_v12_inside.py` are `EP209908...` and `EP209909050900` / `EP209909120900`).
+- `proving/breaks/V1c.json`: S0-01 to S0-14 and S0b-01 to S0b-26 (40) - NOT RUN. Every later step adds its own, written before that step's run.
+- THE DISPATCHER'S TEXT TASK (the owner's items 68 to 89 into `docs/CURRENT/OWNER_REQUIREMENTS_LEDGER.md`, in step 6, where `gen_docs` runs with the docs) is
+  NOT done (the first builder's note says the ledger's form).
+- DESIGN QUESTIONS: 1 to 3 above (all three about words of the checks' evidence; none touches what a viewer sees or the money).
+- NOT RUN BY THIS BUILDER: a rehearsal, the sweep, `breaks.py`, the builder's block.
+USAGE: at this builder's start weekly all models 36%, weekly Fable 62% (the account's figure; this session is Opus 5.5), context 9%; at its end weekly all models
+37%, weekly Fable 62%, context 63%.
 ### V2b - INSIDE THE FORMAT (14-15 Nov 2026) - ACCEPTED (final code commit 01e7798 GREEN in GitHub Checks run 196: 1647 passed; sweep 58 of 58 ids)
 (its code is 7e83001; the designer's record: steps 1 to 3; five Opus builders wrote steps 4 to 6a, the Fable finisher `FINISHED BY FABLE` and the takeaway's draft;
 the prover wrote 6b and completed 7 on 15 Nov 2026)
@@ -3706,6 +3804,13 @@ and the sweep's lines "...; ends on a tease" were the judge's constant, not what
 trial on its tease") and `proving/notes/V2b_BUILT.md` (line 5 of "What was built") - the notes are not edited (law L11). Since V1c, check `format_ending` says in a
 trial "format F2 is a trial: its own devices judge its ending; " and what it ends on (its tease; no next topic under the ladder; none while NEXT_TEASE_ON is off),
 and `tools/sweep.py:inside_of` prints that clause.
+CORRECTED BY V1c's BUILD (15 Nov 2026, the audit of V2b, F1; V1c's 3.11 F1 (f)): two sentences of this record were not true of the three animated scenes. Step 5's
+row "The Director is told; the scenes move with the viewer" was executed for the field `motion` only: with `ANIM_DIRECTOR_ON` every scene was bought through
+`anim.frame_prompt` / `acting_prompt`, which read neither `motion` nor `prompt` and asked for the trial's cast in the trial's sets in F1 and F3 too. And the
+memo's sentence in 3.2 that the Animation Director builds a scene's start picture "from" its prompt (`anim.start_frame`) was not true: it built it from the
+`anim` record's world and line. SINCE V1c (with `CAST_BY_FORMAT_ON`): in a format whose row shows nobody (F1, F3) a scene is the viewer's own place - its start
+picture asked from its prompt (its act's place, the film's look words, nobody in it: `anim.picture_request`), its clip from its motion and its words
+(`anim.clip_request`), on the first purchase and on both roads of the paid repair; the trial's staged scenes are byte for byte as before.
 #### Step 7 TAKEAWAY - THE BUILDER'S DRAFT (five Opus typists and the Fable finisher; the prover completes it; also Palace item `v2b.takeaway`)
 - WORKED: a memo that leaves no taste to the typist (A4). Five Opus sessions typed nine steps; the finisher's own probe found the machine with the switches off
   byte for byte the accepted one, and a trial's texts untouched; the 21 choices the memo had not made came back as DESIGN QUESTIONS, not as code. The break list

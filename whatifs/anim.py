@@ -96,9 +96,11 @@ def apply(shots, units, plan=None):
     for i, s in enumerate(shots):                               # a Kling slot that moved becomes a plain still (no extra paid living clip)
         if s.get("type") == "kling" and i not in idx and i not in foot:
             s["type"] = "still"; s.pop("promise", None)        # v12 fix: the promise rides on an animated scene; left on a demoted still it hid the re-aim and held finished videos
+    from whatifs import formats as FMT
+    place_ = S("CAST_BY_FORMAT_ON", bool) and not FMT.cast()     # v12 V1c (the audit of V2b, F1): where the row says nobody is on screen a scene is the viewer's own place
     for k, i in enumerate(idx):
         u = units[i] if i < len(units) else {}; k = k + (1 if foot else 0)      # the later scenes keep their slot numbers (and their worlds) when the opening is footage
-        w = world_for(shots[i], u, k)
+        w = "place" if place_ else world_for(shots[i], u, k)
         shots[i]["type"] = "kling"; shots[i]["anim"] = {"slot": k, "world": w, "line": str(u.get("text", ""))[:160]}
     if plan is not None: plan["kling"] = len(idx)
     log(f"animation director: {len(idx)} animated scenes at {[round(float(units[i].get('start', 0) or 0)) for i in idx if i < len(units)]} s"
@@ -141,13 +143,39 @@ def gemini_image(prompt, refs, path, ep, aspect="16:9"):
                 open(path, "wb").write(base64.b64decode(d)); cost("image_ref", "google", 1, S("PRICE_GEM_IMAGE_USD", float), ep); return path
     raise RuntimeError("Google image: no picture in the reply")
 
+NOBODY = "No character and no face is in the picture: only the place and what happens in it, at most the viewer's own hands."
+
+def place_scene(shot):
+    """v12 V1c: is this an animated scene of the viewer's own place (a format whose row says nobody is on screen: anim.apply wrote the world 'place')?"""
+    return (shot.get("anim") or {}).get("world") == "place"
+
+def picture_request(shot, line, aspect="16:9"):
+    """v12 V1c (the audit of V2b, F1) - THE ONE FUNCTION THAT SAYS WHAT A SCENE'S START PICTURE IS ASKED WITH: a staged scene of the trial - frame_prompt, byte
+    for byte; a place scene - the text a still of the same film is asked with (its prompt or its line, then the cell's lock and the show's look words exactly
+    as media.still joins them), then NOBODY."""
+    if not place_scene(shot): return frame_prompt(shot.get("anim") or {}, aspect)
+    t = str(shot.get("prompt") or line).rstrip(); lock = str(S("STYLE_LOCK") or "").strip(); sw = style_words()
+    if lock and lock not in t: t = t.rstrip(". ") + ". " + lock
+    if sw and sw not in t: t = t.rstrip(". ") + ". " + sw
+    return t.rstrip(". ") + ". " + NOBODY
+
+def clip_request(shot, line):
+    """v12 V1c - THE ONE FUNCTION THAT SAYS WHAT A SCENE'S CLIP IS ASKED WITH: a staged scene - acting_prompt, byte for byte; a place scene - its motion (the
+    camera path's motion sentence in front when the shot carries a path mark and the motion does not hold it) and its own words."""
+    if not place_scene(shot): return acting_prompt(shot)
+    from whatifs import path as PATH
+    m = str(shot.get("motion") or "")
+    if shot.get("path") and PATH.KLING_MOTION.strip() not in m: m = PATH.KLING_MOTION + m
+    return m.strip().rstrip(".") + ". " + str(shot.get("prompt") or line)
+
 def start_frame(shot, path, ep, workdir, aspect="16:9"):
-    """The staged, reference-locked start picture of an animated scene. Falls back to the normal still (same style lock)."""
+    """The staged, reference-locked start picture of an animated scene (v12 V1c: a place scene's is its own place, no portrait - picture_request). Falls back
+    to the normal still, handed the same text."""
     anim = shot.get("anim") or {}
     who = WORLDS.get(anim.get("world"), {}).get("who")
-    prompt = frame_prompt(anim, aspect)
+    prompt = picture_request(shot, str(anim.get("line") or ""), aspect)
     try:
-        refs = _refs([who] if who else [], workdir, ep)
+        refs = _refs([who] if who else [], workdir, ep) if not place_scene(shot) else []
         return gemini_image(prompt, refs, path, ep, aspect), "google+refs" if refs else "google"
     except Exception as e:
         log(f"reference start frame failed ({scrub(e)[:100]}): using the normal still with the style lock", "WARN", ep)
