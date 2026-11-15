@@ -968,7 +968,8 @@ Sheet (the kit's record) and in the runbook of HIS pilot, nowhere in code or doc
   NOT ASKED (the Board's own lines, `board.assess` 183 to 186: nobody is paid for a session that is already void; the note says "<family>
   not asked (the session was already void)"). Every look is one row of NEW tab `Floor_Log`: ts, session_id, episode_id, sha, family, role,
   model, order, items = {label: kind}, answers = {pair: [letter, reason]}, status, view (the Drive id of the session's kept viewing of
-  the new film - the same on every row of the session, "" when it could not be kept; `session` takes it as its last argument `view=""`).
+  the new film - the same on every row of the session, "" when it could not be kept; `session` takes it as its last argument `view=""`),
+  downs (the JSON list of the down-canaries' titles in the order D1 .. Dj, "[]" while the cell of 3.2 is 0: 3.2, "WHAT IT RETURNS").
 - A MISSING ANSWER COUNTS AGAINST THE SESSION IN EVERY PAIR (`floor._parse`): the letter must be one of the pair's two; a missing or
   unreadable answer is given to the item that makes the session worse - Z in {C, Z}; C in {Ri, C} and in {N, C}; Ri in {N, Ri}. (A judge
   that answers nothing is void by its canary, never valid.) Reasons are cleaned as `board._clean` does.
@@ -1238,6 +1239,19 @@ ref, kind, title, url, topic, asked, verdict, text, maker_line, seen, via, floor
   N2; his item 50: "the strongest label the machine learns from"). `verdicts.downs(exclude)`: rows of kind "long" with verdict
   "down" whose episode's newest session that is not void computes to "PASS" and carries a `view` - the floor's own MISSES: films it
   let through and he rejected - newest `seen` first, the first `S("VIEW_FLOOR_DOWNS_MAX", int)`, never the episode being judged.
+  WHAT IT RETURNS, AND THE ROAD OF THE TITLE INTO THE VERDICT'S WORDS (the review's change 5 b): `downs` returns [(episode, view id,
+  title)] - `title` = the `title` cell of that row of tab `Owner_Verdicts`, spaces made one, cut at 80 characters (`references` stays
+  [(episode, view id)]). `floor.run` fetches a down-canary's kept viewing exactly as a reference's (one that cannot be fetched is left
+  out and named) and hands `session` each as its viewing with two more keys, `episode` and `title`. THE TITLE IS STORED WHERE THE VERDICT
+  IS COMPUTED AGAIN: tab `Floor_Log` carries ONE more column, its last, `downs` - on every row of a session the JSON list of the
+  down-canaries' titles in the order D1 .. Dj ("[]" while the cell is 0), written by `floor.session` alone like the rest of the row.
+  `floor.verdict(looks, refs, downs)` stays pure: of `downs` it reads its length j and, for the why, `str(downs[j - 1])` - in rule (5) of
+  `floor.run` it is handed `[v["title"] for v in downs]`; WHEREVER A VERDICT IS COMPUTED AGAIN FROM STORED ROWS (the run's rules (1) and
+  (2), check `viewer_floor`, `verdicts.sync`) it is handed `json.loads(row["downs"] or "[]")` of the session's first row - and, of the
+  references, a list as long as the kinds "R1" .. "Rk" in that row's `items` (`verdict` reads of `refs` its length k alone). So the
+  stored why and the why computed again are the same words. Test: a session with one down-canary whose title holds a quote mark and a
+  comma - the why names it, and the check's own computation from the rows agrees; a break (the list not written on the row: computed
+  again, j is 0 and check `viewer_floor` FAILS "the stored verdict is not the code's verdict on its own looks").
   `_finish` passes `VER.downs(ep)` to `floor.run` beside the references; `session` adds the items D1 .. Dj and, after the reference
   pairs, one pair {N, Dj} each (a missing answer goes to Dj); `verdict`: BEATS(f) = `wins(f, N, C) == 2` AND, for every j,
   `wins(f, N, Dj) == 2`; a family that fails only on a Dj is named "ranked beside a video you marked not good: '<its title>'". A
@@ -1458,7 +1472,13 @@ S("OWNER_VERDICT_ON", bool)` (the line lives in the verdict's row).
   runner-up of another scene would give exactly the videos that LAG a thumbnail the film does not open on. The rescue keeps both its
   levers - the title, and the thumbnail's framing and words - and `manage.py` is not edited for it.
   THEN `story.align(pkg, d, opening)`, right after the package is made, makes both thumbnails the opening's scene BY CONSTRUCTION,
-  whatever the model wrote (`words` = `story.first_picture(opening)`, spaces made one): `thumb_prompt` = `words`; `thumb_prompt_b` =
+  whatever the model wrote - ONLY WHERE THERE IS A SHORT'S OPENING TO ALIGN TO (the review's change 5 a): `align` RETURNS THE PACKAGE AS
+  IT CAME, the same object, and sets no key, unless `S("ONE_STORY_ON", bool)` AND `opening.source(d)[0] == "short"` AND `words` is not
+  empty - the three conditions the packager's sentence above has. So a video made under an override keeps the packager's own thumbnail
+  prompts and has no key `one_story`, and the next bullet's `pkg.get("one_story")` is false for it: its promise scene IS drawn. Test:
+  under an override, with `ONE_STORY_ON` FALSE, and with a Short whose archive holds no picture words, `align(pkg, d, opening) == pkg`
+  byte for byte (compared as JSON) and `"one_story" not in pkg`; a break (the condition left out: the override's thumbnail prompt is "").
+  Where the three hold (`words` = `story.first_picture(opening)`, spaces made one): `thumb_prompt` = `words`; `thumb_prompt_b` =
   `words + "; " + r[:160]`, where `r` (spaces made one) = the reply's own `thumb_prompt_b`, else the reply's own `thumb_prompt` when
   that differs from `words`, else "a closer look from another angle"; `thumb_text_b` = the reply's, else its `thumb_text`;
   `pkg["one_story"] = {"short": d["ladder"], "words": words}`. `words` IS NEVER CUT - only what follows it (so `promise_shot` cuts:
@@ -1504,7 +1524,7 @@ the floor - `VIEW_FLOOR_ON`, `VIEW_FLOOR_WATCH_S` 60, `VIEW_FLOOR_REFS_MAX` 1, `
 3, `VIEW_FLOOR_EYE_WAIT_H` 20; four of the verdict - `OWNER_VERDICT_ON`, `OWNER_VERDICT_SINCE` "", `OWNER_VERDICT_ASK_MAX_PER_DAY` 1,
 `OWNER_VERDICT_EXPIRES_H` 336; five of the line - `MAKER_LINE_ON`, `MAKER_LINE_MAX_WORDS` 40, `MAKER_QUESTION`, `MAKER_VOICE` "",
 `MAKER_VOICE_CONSENT` ""; `ONE_STORY_ON`; `CAST_BY_FORMAT_ON`. Two tabs (84 -> 86), no column on an older tab: `Floor_Log` (ts,
-session_id, episode_id, sha, family, role, model, order, items, answers, status, view) and `Owner_Verdicts` (ref, kind, title, url,
+session_id, episode_id, sha, family, role, model, order, items, answers, status, view, downs) and `Owner_Verdicts` (ref, kind, title, url,
 topic, asked, verdict, text, maker_line, seen, via, floor, agree, action_id, line_seen, line_used, told). Five message kinds:
 `floor_eye` and `floor_hold` (their handlers registered by `floor.register`), `owner_verdict` (`verdicts.register`), `maker_line`
 (`maker.register`) - the three modules named in `notify._ensure_handlers` - and `floor_kit` (a notice, no handler). Three checks
@@ -1801,24 +1821,54 @@ row key and the same switch), and 3.5 moves from step 5 to the front as step 0b.
   PUPPETS IN THE TRIAL'S SETS (his item 16: three shows in one upload). No offline run shows it (the offline start picture is one flat colour).
   THE RULE, pure functions of `anim.py` (not on the PROTECTED list; `episode.py` is), each with a test ON THE REQUEST TEXT and a break:
   (a) `anim.apply`: `w = "place" if (S("CAST_BY_FORMAT_ON", bool) and not FMT.cast()) else world_for(shots[i], u, k)` - nothing else of the
-  record changes; the shot keeps the prompt the Director wrote for its line (the camera-path rules, the look, the style lock are in it).
+  record changes; the shot keeps the prompt the Director wrote for its line. WHAT THAT PROMPT HOLDS, READ AGAIN FOR THE REVIEW'S CHANGE 1: the
+  camera-path rules, the bible's `look` and the cell `STYLE_LOCK` (`room.normalise_shots`, room.py 741 to 743; `plan_check`, episode.py 558) -
+  it does NOT hold the show's look words: `anim.style_words()` (the cell `ART_STYLE`) is added by `media.still` AT THE REQUEST (media.py 108
+  to 113), and `anim.gemini_image` sends its text as it is. So (b) adds them itself.
   NEW `anim.place_scene(shot)` = `(shot.get("anim") or {}).get("world") == "place"`.
   (b) NEW `anim.picture_request(shot, line, aspect="16:9")` - THE ONE FUNCTION THAT SAYS WHAT A SCENE'S START PICTURE IS ASKED WITH: a staged
-  scene -> `frame_prompt(shot["anim"], aspect)`, byte for byte today's; a place scene -> `str(shot.get("prompt") or line).rstrip() + " " +
-  anim.NOBODY`, `anim.NOBODY` = "No character and no face is in the picture: only the place and what happens in it, at most the viewer's own
-  hands." `anim.start_frame` calls it (in place of `frame_prompt`) and asks for reference portraits only for a staged scene (`_refs([who])` as
-  today; a place scene: `gemini_image(prompt, [], ...)` - THE SAME PAID CALL, the same cost row `image_ref`, the same count: no line of the
-  cost model moves; its fall-back `M.still(prompt, ...)` as today).
+  scene -> `frame_prompt(shot["anim"], aspect)`, byte for byte today's; a place scene -> THE TEXT A STILL OF THE SAME FILM IS ASKED WITH, THEN
+  `NOBODY`, built exactly as `media.still` joins it (media.py 108 to 113), in its order:
+  `t = str(shot.get("prompt") or line).rstrip(); lock = str(S("STYLE_LOCK") or "").strip(); sw = style_words()`;
+  `if lock and lock not in t: t = t.rstrip(". ") + ". " + lock`; `if sw and sw not in t: t = t.rstrip(". ") + ". " + sw`;
+  `return t.rstrip(". ") + ". " + NOBODY`, with `anim.NOBODY` = "No character and no face is in the picture: only the place and what happens
+  in it, at most the viewer's own hands." `anim.start_frame(shot, path, ep, workdir, aspect)` has no line of its own to hand over: it calls
+  `picture_request(shot, str((shot.get("anim") or {}).get("line") or ""), aspect)` - THE `anim` RECORD'S OWN `line` - in place of
+  `frame_prompt`, and asks for reference portraits only for a staged scene (`_refs([who])` as today; a place scene: `gemini_image(prompt, [],
+  ...)` - THE SAME PAID CALL, the same cost row `image_ref`, the same count: no line of the cost model moves). ITS FALL-BACK IS HANDED THE SAME
+  TEXT (`M.still(prompt, ...)`, anim.py 155, as today): `media.still` then finds the lock and the look words in it and adds neither again, and
+  its lighting directive goes behind the text (`atmosphere.with_directive` shortens the DIRECTIVE, never the prompt: atmosphere.py 213 to 219)
+  - ONE FUNCTION, TWO ROADS, THE SAME LOOK WORDS ONCE ON BOTH. SAID PLAINLY: on the first road (Google's picture model) a place scene carries
+  no lighting directive - no staged scene ever did; whether the two picture models draw the same words alike is the pilot's eye (H33).
   (c) NEW `anim.clip_request(shot, line)` - THE ONE FUNCTION THAT SAYS WHAT A SCENE'S CLIP IS ASKED WITH: a staged scene -> `acting_prompt(shot)`,
   byte for byte; a place scene -> `m.strip().rstrip(".") + ". " + str(shot.get("prompt") or line)` with `m` = the shot's `motion`, and
   `path.KLING_MOTION` put in front of it when the shot carries a `path` mark and `m` does not hold it (`immersion.apply`, 135 to 136, writes that
   sentence only on the shots that were scenes BEFORE the Animation Director moved them: a slot it promoted from a still has none).
   (d) ONE RULE FOR THE FIRST PURCHASE AND THE REPAIR (the audit's (d); older than V2b): `episode._assets.get_clip` asks `ANIM.clip_request(s,
-  units[i]["text"])` for every shot with `anim` (line 296, in place of `acting_prompt(s)`); `Job.repair_assets` asks the same at line 377 for a
-  shot with `anim` (today `motion + prompt`: a repaired scene of a trial was asked for another film than the first) and re-makes its start
-  picture through `ANIM.start_frame(s, <its path>, self.ep, self.out)` at line 376 (today `M.still` of the prompt: another model, no portraits);
-  a shot without `anim` keeps both of today's expressions. A test with `media.animate` and `anim.gemini_image` replaced: first purchase and
-  repair hand over THE SAME TEXT, in F1, F3 and a trial.
+  units[i]["text"])` for every shot with `anim` (line 296, in place of `acting_prompt(s)`); `Job.repair_assets` (episode.py 349 to 383) asks
+  the same at line 377 for a shot with `anim` (today `motion + prompt`: a repaired scene of a trial was asked for another film than the
+  first); a shot without `anim` keeps every one of today's expressions. THE REPAIR BUYS A SCENE'S PICTURE ON TWO ROADS, AND BOTH TAKE THE
+  SAME LINES (the review's change 2). NEW helper inside `repair_assets`, beside `anchor_of`:
+  `def scene_picture(i): path, how = ANIM.start_frame(shots[i], os.path.join(self.out, f"img{i:03d}.jpg"), self.ep, self.out); f["img"][i] =
+  path; shots[i]["anim"]["frame"] = how; self._urls = getattr(self, "_urls", None) or dict(f.get("urls") or {}); self._urls[i] = None`.
+  WHY `None`: `start_frame` returns `(path, how)` and `how` is a WORD ("google+refs", "google", "fallback-still": anim.py 151, 156), never an
+  address - the first purchase hands `media.animate` the address None for a scene (`get_img`, line 282) and `animate` then sends the picture's
+  own FILE (media.py 142 to 144); the word typed into `self._urls[i]` would be sent to the clip provider as the picture's address, refused,
+  booked by the Steward as the model's failure, the start picture paid and the scene not repaired - and no offline run would show it
+  (`animate` reads no address offline). ROAD 1, THE FIRST LOOP (361 to 368: a missing start picture; a scene the picture judge flagged -
+  `anchor_of(i)` is the scene itself): `if shots[i].get("anim"): scene_picture(i); done = True` and then the loop's own last line (`if i not
+  in f["anchors"]: f["anchors"].append(i)`), IN PLACE OF line 365's `M.still("<prompt>. Clear, sharp, no text ...")` and line 366 for that
+  target; every target WITHOUT `anim` keeps lines 365 and 366 as they are. ROAD 2, LINE 376 (`if i not in f["img"] or i in redo`):
+  `scene_picture(i)` for a shot with `anim`, today's line for one without. Line 377 hands `self._urls.get(i)` as today - None for a scene.
+  So a trial's scene is acted out on its staged picture on every road, and a place scene is asked with `NOBODY` on every road.
+  TESTS (each with `media.animate`, `anim.gemini_image` and `media.still` replaced by recorders; F1, F3 and a trial): the first purchase and
+  BOTH roads of the repair - (1) the scene's start picture missing after the first purchase, (2) the scene flagged as `vision_artifact`
+  with its clip there - hand the picture model THE SAME TEXT (`picture_request(shot, shot["anim"]["line"])`) and `media.animate` THE SAME
+  TEXT (`clip_request(shot, units[i]["text"])`); THE ADDRESS a repaired scene's clip is asked with is None on both roads; `anim["frame"]`
+  is the word `start_frame` returned. Breaks: `self._urls[i] = how`; road 1 left on line 365 for a scene; line 377 left on `motion + prompt`.
+  SEEN BESIDE IT, OLDER THAN V1c, NAMED AND NOT REPAIRED HERE (open issue 207): a scene flagged as `vision_artifact` is bought its start
+  picture twice in one repair (road 1, then road 2 because it is in `redo`), and a scene flagged as `vision_mismatch` only is bought a
+  picture that its clip, which stays, never shows.
   (e) THE PLACE SENTENCE: `path.lay` (100 to 109) and rule 4 of `path.plan_report` (138) treat a place scene as a still of its act -
   `(s.get("type") in ("still", "living") or ANIM.place_scene(s))` and, for the skip, `(s.get("anim") and not ANIM.place_scene(s))` in place of
   `s.get("anim")`: its prompt gets the act's place sentence in front, and `camera_path` FAILS "shot <i> does not hold the place of act <n>"
@@ -1827,12 +1877,19 @@ row key and the same switch), and 3.5 moves from step 5 to the front as step 0b.
   (f) THE CHECK (3.5's rule in `contract.p_living`, the same switch and key): it FAILS too "a staged scene of the trial's cast (<world>) in
   format <fmt>, where nobody is on screen" when a shot's `anim` world is not "place"; its PASS words in such a format become "nobody is on
   screen: no cutaway and no staged scene of a character was made (...)"; `p_camera_path`'s PASS words gain "; <n> scene(s) asked in their
-  act's place" when n > 0 - the two sentences the audit found untrue of a film with scenes are true of one.
+  act's place" when n > 0, AT THE VERY END OF THE WORDS (after "...; every act opens on its own picture": the sweep's judge prints that
+  evidence up to "; every picture" - `tools/sweep.py` 136 - so the line the block reads on every F1 and F3 id does not move; a test: the
+  evidence of a film with three place scenes ends with "; 3 scene(s) asked in their act's place" and `inside_of`'s line is the same as
+  without the clause) - the two sentences the audit found untrue of a film with scenes are true of one.
   (g) THE TRIAL IS UNTOUCHED: `WORLDS`, `ACTING`, `frame_prompt`, `acting_prompt` byte for byte (a test hashes the three request texts of a
   trial's scenes before and after); with `CAST_BY_FORMAT_ON` FALSE every format is as today. TESTS (the audit's (b)): the texts handed to the
   picture model and to `media.animate` for all three scenes of an F1 film, a walk and a trial - an F1 or F3 text holds its act's place, the
-  shot's own words, `NOBODY` and the motion sentence, and NONE of "Grimm", "Vale", "Rosa", "laboratory", "detective office", "courtroom"; a
-  break for each of (a) to (f). CORRECTED IN V2b's RECORD BY THE BUILD (text): Step 5's row "the Director is told; the scenes move with the
+  shot's own words, `NOBODY` and the motion sentence, and NONE of "Grimm", "Vale", "Rosa", "laboratory", "detective office", "courtroom";
+  THE LOOK (the review's change 1): the picture text of ALL THREE scenes of an F1 film and of a walk holds `anim.style_words()` and the
+  cell `STYLE_LOCK` EXACTLY ONCE each, with `ART_STYLE` at its default and at "illustrated"; the text `media.still` is handed on the
+  fall-back road (`gemini_image` made to raise) is the same text, and what `media.still` would send (its lines 108 to 113 applied to it)
+  still holds each once; a trial's three picture texts and three clip texts are byte for byte today's (the hash test above). A break for
+  each of (a) to (f), and one more: the look words left out of `picture_request`. CORRECTED IN V2b's RECORD BY THE BUILD (text): Step 5's row "the Director is told; the scenes move with the
   viewer" and the memo's sentence that the Animation Director builds a start picture "from" its prompt. SAID PLAINLY: whether a picture model
   keeps the place, draws nobody and whether such a scene holds a viewer as a puppet scene does is the pilot's and B8's (H33); a scene state is
   still not judged by `camera_shown` (open issue 197 a).
@@ -1844,17 +1901,54 @@ row key and the same switch), and 3.5 moves from step 5 to the front as step 0b.
   `path.plan_report` gains rule 6, "a shot of real footage stands inside act <n>" (so `camera_path` FAILS if the conversion is ever removed).
   THE DIRECTOR IS TOLD WHAT CODE DOES: `path.DIRECTOR` gains the sentence "Never \"stock\" in this format: real footage is another place."
   (`prompts.py` 113 offers it in every format). TESTS: the audit's own (a stock shot on a 3-second line that does not open its beat, inside act
-  2: after `mark` a still with its act's mark, after `lay` its place sentence); a whole F1 production with `CAMERA_PATH_ON` whose offline
-  Director asks for footage (it does, on every seventh line): the log line, `camera_path` PASS, no state of type "stock" in what the render
-  recorded; a break for the conversion and one for rule 6. WHAT IS LOST, SAID: real footage as a reality anchor (V2d-b) now lives in the trial
+  2: after `mark` a still with its act's mark, after `lay` its place sentence); A WHOLE F1 PRODUCTION WITH `CAMERA_PATH_ON` THAT WALKS THE
+  CONVERSION - AND HOW IT GETS ITS FOOTAGE SHOT (the review's change 4). The offline Director asks for footage on every seventh line
+  (fakes.py 301), but in none of the 21 offline long videos on record did one reach `path.mark` (`stock.shape`, the seat and
+  `inside.open_acts` turn it back first: open issue 199) - a production that only waits for one walks nothing. So the test PLANTS ONE, with
+  a named tool of the test file (as 3.10 names its patched viewing): `monkeypatch.setattr(INS, "open_acts", planted)` on `whatifs.org.inside`
+  - the LAST step before `PATH.mark` (episode.py 648, 650) - where `planted(shots, units)` calls the real `open_acts`, then takes `i` = the
+  FIRST index >= 2 whose unit has the same `beat` as the unit before it (the line does not open its beat), whose shot is of type "still" and
+  carries none of the marks `short`, `promise`, `maker`, sets `out[i] = dict(out[i], type="stock", search="ocean waves", stock_s=3.0)`,
+  remembers `i` in a list of the test and returns the list; `media.stock` is replaced by a recorder. THE ASSERTS ARE UNCONDITIONAL: an `i`
+  was planted; the log holds "camera path: <n> shot(s) of real footage became pictures of their act" with n >= 1; in the saved plan
+  `shots[i]["type"]` is not "stock", the shot carries no `search` and no `stock_s`, and its prompt holds `path.SENTENCE` with its act's
+  place; the ledger's `camera_path` is PASS; `media.stock` was never called; no entry of the render's record for shot `i` is real footage.
+  A break for the conversion (the test then finds `camera_path` FAIL by rule 6 and a call of `media.stock`) and one for rule 6. WHAT IS LOST, SAID: real footage as a reality anchor (V2d-b) now lives in the trial
   alone, one long video in five - whether an anchor of real footage lifts retention can be read only there; the Short's own footage at the
   opening belongs to no act and is untouched.
 - F3, AS THE AUDIT WRITES IT - THE JUDGE AND THE RECORD SAY WHAT THE FILM DOES. `contract.p_format_ending` (497), in a trial: N/A
-  `f"format {fmt} is a trial: its own devices judge its ending; " + ("it ends on a tease" if ROOM.tease_on() else "no next topic is
-  promised under the ladder")`. `tools/sweep.py:inside_of` (131, 137): a trial's `format_ending` N/A is accepted when its evidence holds "is a
-  trial", and the line prints the evidence's own last clause in place of the constant "ends on a tease" - A JUDGE'S FILE CHANGED BY DESIGN,
-  named here before it is changed (L7): the same change as `floor_of`'s (3.10). Tests: a trial under the ladder and one with `LADDER_ON`
-  FALSE; `test_a_whole_trial_under_the_ladder_names_only_the_character_who_is_drawn` asserts the new words (a test changed by design). THE
+  `f"format {fmt} is a trial: its own devices judge its ending; " + END`, where `END` is ONE of three clauses, decided by the two cells
+  alone (the check stands behind `ENDINGS_ON` and in the branch `FMT.ending(fmt) == "tease"`, so this IS what `ROOM.tease_on()` answers for
+  that film - written from the cells because `tease_on()` reads the format IN THE MAKING, and a check run outside `formats.use` would
+  answer for another format): `"it ends on a tease"` when `S("NEXT_TEASE_ON", bool) and not LAD.on()`; `"no next topic is promised under
+  the ladder"` when `S("NEXT_TEASE_ON", bool) and LAD.on()`; `"no next topic is promised (NEXT_TEASE_ON is off)"` otherwise. NO CLAUSE HOLDS
+  "; " INSIDE IT. `tools/sweep.py:inside_of`: line 131 accepts a trial's `format_ending` N/A when its evidence holds "is a trial" (in place
+  of "ends on a tease"); line 137 prints THE EVIDENCE'S OWN LAST CLAUSE - exactly `words("format_ending").rsplit("; ", 1)[-1][:120]`, the
+  text after the last "; " - in place of the constant "ends on a tease"; the docstring's words at line 115 follow. A JUDGE'S FILE CHANGED BY
+  DESIGN, named here before it is changed (L7): the same change as `floor_of`'s (3.10).
+  FOUR OLDER TESTS OF `tests/test_v12_inside.py` PIN THE OLD WORDS (searched "ends on a tease" in `tests/`, `tools/`, `whatifs/` and
+  `proving/blocks/` on 15 Nov 2026: these four, the three lines of the sweep (115, 131, 137) and line 497; two docstrings that speak of a
+  format "that ends on a tease" - formats.py 191, room.py 446 - are true and stay; no block file and no line of `tools/rehearsal.py` holds
+  the words; V2b's own break list finds the two source lines - `proving/breaks/V2b.json` is V2b's and is not run again, V1c's list is
+  written against the new lines) - EACH IS A TEST CHANGED BY DESIGN, NAMED HERE WITH WHAT IT ASSERTS AFTER THE CHANGE (the review's change 3):
+  (1) line 369, `test_check_format_ending_passes_holds_and_says_na`: it runs with the fixture `endings` (`ENDINGS_ON` TRUE), `conftest`'s
+  `LADDER_ON` FALSE and the default `NEXT_TEASE_ON` TRUE, so it must find the FIRST clause - the assert becomes `s == CON.NA and ev ==
+  "format F2 is a trial: its own devices judge its ending; it ends on a tease"`; and it GAINS two asserts: after `setting("LADDER_ON",
+  "TRUE")` AND `setting("SHORTS_TRACK_ON", "TRUE")` (`ladder.on()` needs both: ladder.py 14 to 16) the evidence ends "; no next topic is
+  promised under the ladder", after `setting("NEXT_TEASE_ON", "FALSE")` it ends "; no next topic is promised (NEXT_TEASE_ON is off)". (If the first assert does not hold as written, the settings of that test are not what this
+  memo read: a `DESIGN QUESTION`, never a changed clause.)
+  (2) line 536, `test_a_whole_trial_under_the_ladder_names_only_the_character_who_is_drawn`: `led["format_ending"] == (CON.NA, "format F2
+  is a trial: its own devices judge its ending; no next topic is promised under the ladder")`.
+  (3) lines 981 to 985, `test_the_sweeps_judge_says_the_inside_of_the_format_held_and_holds_an_id_where_it_was_not_walked`: EPSW4's
+  planted evidence becomes "format F2 is a trial: its own devices judge its ending; no next topic is promised under the ladder" and its
+  line must end "; the trial cuts between its pictures; no next topic is promised under the ladder"; ONE more case EPSW4b with the planted
+  evidence "...; it ends on a tease", whose line ends "; the trial cuts between its pictures; it ends on a tease"; EPSW6 (planted
+  "ENDINGS_ON is FALSE") stays held and its comment reads "only 'is a trial' is a trial's N/A"; ONE more case: the OLD words "format F2
+  ends on a tease" planted in a trial are now HELD (`not ok`, "format_ending N/A" in the line).
+  (4) line 1079, `test_the_sweep_holds_a_trial_whose_camera_is_not_applicable_for_another_reason`: the planted `format_ending` evidence
+  becomes the new sentence of (3), so that the id is held for the camera's reason ALONE; its assert stays, and gains `"format_ending" not
+  in w`. (The docstring at line 1032 says the old words in a comment: its words follow; no assert.)
+  NEW tests: a whole trial with `LADDER_ON` FALSE whose ledger says "...; it ends on a tease" AND whose script holds its tease. THE
   RECORD: one dated line under V2b's 6b, "CORRECTED BY V1c's BUILD (the audit's F3): under the ladder a trial ends on no tease", which names
   the two notes that repeat the sentence (`proving/notes/V2b_ACCEPTED.md`, `V2b_BUILT.md`) - the notes themselves are NOT edited (law L11).
 - F4, AS THE AUDIT WRITES IT - A ONE-VOICE FORMAT IS TOLD OF NO SECOND VOICE. `format_engine._for_format` (91 on), when the format in the
@@ -1877,6 +1971,16 @@ this laptop only: `PREDESIGN_V1c.md`, `PREREVIEW_V1c.md` and `V1c_DESIGNER2_NOTE
 `DESIGN_V1c_DRAFT_before_shrink.md` (the first designer's map of line numbers), `PREREVIEW2_V1c.md` and `PREREVIEW3_V1c.md` in
 `...\side-session-notes\local_b262210d-2981-4aa7-a6df-b1e40fcbc58c\`. WHAT STOOD AND WHAT IS TRUE, one line each, so that nobody
 "corrects" a rule back:
+- THE REVIEW IN THE RECORD, ROUND 1 (`reviews/V1c_design.md`, 15 Nov 2026: CHANGES REQUIRED, five, all in or beside 3.11 - the part no
+  pre-review had seen). Applied on 15 Nov 2026 by the dispatcher's Fable session (High; the session that finished V2b and knows the code
+  the five are about - the third designer stood too high in its context for another turn), each read against 7e83001 before it was
+  written: 1 - a place scene's picture is asked with the look words a still gets (3.11 F1 (a), (b), (g)); 2 - the repair's two roads
+  take one helper, the address is None (3.11 F1 (d); open issue 207 for what is older); 3 - the four tests that pin "ends on a tease",
+  each with its assert after the change, and the last clause said exactly (3.11 F3) - AND ONE THING MORE THAN THE REVIEW ASKED, for it to
+  judge: the clause is decided from the two cells, not from `ROOM.tease_on()`, which reads the format in the making, and it has three
+  forms, not two; 4 - the production plants its footage shot through `inside.open_acts` (3.11 F2); 5 - `story.align`'s condition (3.4),
+  what `verdicts.downs` returns and the title's road through a column `downs` of tab `Floor_Log` (3.2, 3.1, 3.7), the clause's place
+  (3.11 F1 (f)). Usage when it was written (08:36 UTC): weekly all models 34%, weekly Fable 59% (the reviewer's reading at 08:28).
 - 3.0 / 3.1: "`floorkit <file> [<id>]` on the runner with the link in `env:`, the group `produce`" - a link he shares, read from the
   event file, a group of its own (the second pre-review's change 3; the third designer's reading of the workflow tests).
 - 3.1: "ONE attempt a model; any error moves on" - an unpaid failure is asked again, a cut reply once more (the second pre-review's
@@ -8676,6 +8780,13 @@ Rehearsal asserts `docs_current` ran and passed.
    checks `viewer_promise` and `promise_paid` read the prompt, not the request. V1c's 3.11 makes the prompt reach the picture model in F1 and F3
    (a place scene); the trial's staged scenes are kept byte for byte, so this case stays. To be confirmed by a test on the request texts (the
    audit's lesson: every request that buys a picture or a clip, by name).
+207. (V1c's design reviewer, 15 Nov 2026, round 1 in the record, its change 2; READ, NOT RUN; older than V1c -> B7, the repair loop) THE PAID
+   REPAIR CAN BUY A SCENE'S START PICTURE TWICE, OR BUY ONE NOBODY SEES. `Job.repair_assets` (episode.py 349 to 383): a scene flagged as
+   `vision_artifact` is a target of the first loop (its picture is re-made) AND is in `redo` (line 376 re-makes the picture again before the
+   clip is re-made) - two pictures paid for one repair; a scene flagged as `vision_mismatch` only is bought a new start picture while its
+   clip, which stays, still shows the old one - a rupee for nothing a viewer sees. V1c's 3.11 (d) gives both roads ONE request (the scene's
+   own); it does not change which targets are bought. To be decided with the repair loop: one purchase a scene a repair, and a picture
+   only where its clip is re-made too.
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - SINCE 13 NOV 2026 (the owner's item 33): the acceptance block, its verdict, the deliberate breaks and the moves of the state are
   run through `REALITY_ENGINE_HANDOFF/proving/` exactly as `handoff_v12/OPUS_BUILD_PLAN.md` says (chapters 5.8, 5.9, 6, 8 and 16; the
