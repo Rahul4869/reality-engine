@@ -336,13 +336,15 @@ class Job:
         for m in hit:
             img = m.get("img") or next((p for _, p in sorted(self.files["img"].items())), None); RN.set_cursor(m["f0"])
             from whatifs import path as PATH
-            pk_ = {"sign": m["sign"], "pool": PATH.MOVES} if m.get("act") is not None and m.get("sign") in (-1, 1) else {}      # v12 V2b: a camera-path state is re-drawn with ITS sign and pool
+            mark_ = (self.shots[m["i"]].get("path") or {}) if m.get("act") is not None and m["i"] < len(self.shots) else {}      # v12 V2b: a state of a camera-path act is re-drawn in ITS ACT'S direction, from the pool.
+            sg_ = mark_.get("sign") if mark_.get("sign") in (-1, 1) else m.get("sign")                                         # The direction is the shot's own mark: a state that fell back or played a clip was recorded with 0
+            pk_ = {"sign": sg_, "pool": PATH.MOVES} if m.get("act") is not None and sg_ in (-1, 1) else {}                      # (DESIGN QUESTION 21, settled by the finishing pass)
             try:
-                if img: RN.parallax_segment(img, m["path"], m["nf"], seed=f"{self.ep}fix{self.fixn}{m['i']}", detail=True, focus="center", look=RN.LOOKS[self.fixn % len(RN.LOOKS)], **pk_); m["move"] = RN._LAST["move"] or ""
-                else: RN.graphic_segment({"label": "", "from": 0, "to": 0}, None, m["path"], m["nf"]); m["move"] = ""
-                m["clip"] = False; m["fallback"] = False                # v12 V2d-b: whatever played here before, it is a still picture now (the moving-share record follows); V2b: the record says the move it was re-drawn with
+                if img: RN.parallax_segment(img, m["path"], m["nf"], seed=f"{self.ep}fix{self.fixn}{m['i']}", detail=True, focus="center", look=RN.LOOKS[self.fixn % len(RN.LOOKS)], **pk_); m["move"] = RN._LAST["move"] or ""; m["sign"] = pk_.get("sign", 0)
+                else: RN.graphic_segment({"label": "", "from": 0, "to": 0}, None, m["path"], m["nf"]); m["move"] = ""; m["sign"] = 0
+                m["clip"] = False; m["fallback"] = False                # v12 V2d-b: whatever played here before, it is a still picture now (the moving-share record follows); V2b: the record says the move AND the direction it was re-drawn with (check camera_shown reads it after the repair)
             except Exception as e:
-                log(f"segment {m['i']} re-render failed: {e} -> plain fallback", "WARN"); RN.graphic_segment({"label": "", "from": 0, "to": 0}, img, m["path"], m["nf"]); m["move"] = ""; m["fallback"] = True
+                log(f"segment {m['i']} re-render failed: {e} -> plain fallback", "WARN"); RN.graphic_segment({"label": "", "from": 0, "to": 0}, img, m["path"], m["nf"]); m["move"] = ""; m["sign"] = 0; m["fallback"] = True
         RN.set_overlay(None); return self.rebuild_video()
     def repair_assets(self, codes, idx, cap_inr):
         """Paid repair, capped in rupees: re-make missing pictures, failed Kling clips and the pictures a vision check flagged; then one free re-render."""
@@ -489,7 +491,8 @@ def _render(job):
                         if S("LIVING_CHARACTERS_ON", bool) else None             # v11.1 (K167): the approved character, blinking / breathing / talking
                     if not done_:                                # v12 V2d-b: DRAWN OR ABSENT - no approved art, no character: the picture before continues (no shape is ever drawn)
                         job.absent += 1
-                        if img: RN.parallax_segment(img, path, nf, seed=f"{ep}{i}{k}", detail=True, look=RN.LOOKS[(reuse + 1) % len(RN.LOOKS)], world=_world_of_unit(u_))
+                        if img: RN.parallax_segment(img, path, nf, seed=f"{ep}{i}{k}", detail=True, look=RN.LOOKS[(reuse + 1) % len(RN.LOOKS)], world=_world_of_unit(u_),
+                                                    **({"sign": pm_["sign"], "pool": PATH.MOVES} if pm_ else {}))      # v12 V2b: the picture that continues is a still of its act - the act's direction, the path's pool
                         else: RN.graphic_segment({"label": "", "from": 0, "to": 0}, None, path, nf)
                 elif img:
                     RN.parallax_segment(img, path, nf, seed=f"{ep}{i}{k}", detail=((k + reuse) % 2 == 1), focus=s.get("focus"), look=None if own else RN.LOOKS[reuse % len(RN.LOOKS)], energy="high" if (i in strong and k == 0) else "calm",

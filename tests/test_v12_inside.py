@@ -159,6 +159,9 @@ def test_the_offline_writer_passes_the_voice_rule_of_its_format_and_is_byte_for_
     setting("INSIDE_ON", "FALSE")
     with FMT.using("F1"): off = json.loads(FK.fake_reply("writer", prompt))["script"]
     lines = [l for l in FK._lines(12)]; assert all(l.split("]", 1)[1].strip() in off for l in lines if not l.startswith("[pause"))      # the older pool, word for word
+    import hashlib                                                                                                      # FINISHED BY FABLE (FF5): BYTE FOR BYTE - the whole reply of the ACCEPTED code
+    for fmt, pin in (("F1", "7f89d346b9210299d4cdb4fb1f7106fe0b8ca5c5c2fd4de65fef3a4c036db869"), ("F2", "b1e8705a9ccbe55bac10e288f0c010986b5c108499bfcc8e195c5d2589e250b5")):      # (5827d97, run under these fixtures), pinned
+        with FMT.using(fmt): assert hashlib.sha256(FK.fake_reply("writer", prompt).encode("utf-8")).hexdigest() == pin, fmt      # a later batch that changes the stand-in BY DESIGN names this pin in its record first
 
 # ------------------------------------------------------------------ 6. the picture half of SHOW: every beat opens on a picture
 def test_a_graphic_or_real_footage_that_opens_a_beat_becomes_a_still_and_a_marked_shot_never_does(inside):
@@ -685,9 +688,9 @@ def test_no_clip_runs_into_an_acts_first_picture(camera, setting):
     assert "buy" not in out[0] and out[0]["type"] == "still"                                                              # a living clip asked on an act's last line of 3 s is not bought across the break
     out = MOT.place([{"type": "living"}, {"type": "still"}, {"type": "still"}], u, t, {"living_s": 5}); assert out[0].get("buy") == 5      # without the break it runs on, as before
 
-def _render_record(tmp_path, monkeypatch, setting, fail=None):
+def _render_record(tmp_path, monkeypatch, setting, fail=None, shape=None):
     """A real `episode._render` of four lines in two acts (stopped where the segments are joined): line 2 is a 0.6-second first line of act 2 with a
-    picture of its own; line 3 has none. Returns (job, the shots)."""
+    picture of its own; line 3 has none. `shape(shots)` may change the marked shots before the render. Returns (job, the shots)."""
     import cv2, numpy as np
     setting("ACT_MIN_S", "1")                                                                                             # two short acts that stay two acts
     u, t = _lines([(1, 2.0), (1, 2.0), (2, 0.6), (2, 2.0)])
@@ -696,6 +699,7 @@ def _render_record(tmp_path, monkeypatch, setting, fail=None):
         files["img"][i] = str(tmp_path / f"img{i}.png"); cv2.imwrite(files["img"][i], (np.random.default_rng(i).random((360, 640, 3)) * 255).astype(np.uint8))
     with FMT.using("F1"):
         shots, _ = PATH.mark([{"type": "still", "prompt": "x"} for _ in u], u, t, {}, "EPREC")
+        if shape is not None: shape(shots)
         class Stop(Exception): pass
         monkeypatch.setattr(RN, "concat", lambda segs, path: (_ for _ in ()).throw(Stop()))
         if fail is not None:
@@ -1060,8 +1064,8 @@ def test_the_one_helper_counts_the_living_and_kling_budget_and_the_opening():
     assert EP.anchors_for(sh, u, {"stills": 3}, {"living": 1, "kling": 1}) == want
 
 def test_a_re_render_clears_the_fall_back_mark_when_the_picture_is_drawn_again(camera, setting, tmp_path, monkeypatch):
-    """S8-89: a state that fell back and is re-drawn whole is no fall-back any more, and the move it was drawn with is recorded (DESIGN QUESTION 21: WHICH
-    move a fall-back state is re-drawn with is a Fable session's to decide)."""
+    """S8-89: a state that fell back and is re-drawn whole is no fall-back any more, and the move it was drawn with is recorded (DESIGN QUESTION 21 - WHICH
+    move a fall-back state is re-drawn with - was settled by the finishing pass: section 16)."""
     real = RN.parallax_segment
     job, shots = _render_record(tmp_path, monkeypatch, setting, fail=1)
     fb = [m for m in job.segmeta if m["i"] == 1]; assert fb and all(m["fallback"] for m in fb), fb
@@ -1126,3 +1130,57 @@ def test_with_the_endings_switched_off_the_format_block_of_every_format_is_as_be
     setting("ENDINGS_ON", "FALSE")
     for k in ("F1", "F2", "F3"):
         with FMT.using(k): assert FE._for_format(FE.REALITY_ENGINE) == FE.REALITY_ENGINE, k
+
+# ------------------------------------------------------------------ 16. FINISHED BY FABLE (the finishing pass, A5): the faults the audit of the build found, each test written BEFORE its fix
+def _states(job):
+    return [{"t0": m["f0"] / RN.fps(), "type": m["type"], "act": m["act"], "src": m["src"], "move": m["move"], "sign": m["sign"], "fallback": m["fallback"]} for m in job.segmeta]
+
+def test_a_fall_back_state_is_re_drawn_in_its_acts_direction_and_the_record_then_passes_camera_shown(camera, setting, tmp_path, monkeypatch):
+    """FF1 (DESIGN QUESTION 21, settled): a state that FELL BACK was recorded with sign 0. When the quality control re-draws it, the direction is its
+    ACT's (the shot's own `path` mark), the move comes from the path's pool, and the record's sign is REWRITTEN - so that check camera_shown, which
+    reads the record after the repair, does not hold the paid video for the repair itself ('travelled against its act's direction')."""
+    real = RN.parallax_segment
+    job, shots = _render_record(tmp_path, monkeypatch, setting, fail=1)
+    fb = [m for m in job.segmeta if m["i"] == 1]; assert fb and all(m["fallback"] and m["sign"] == 0 and m["act"] == 1 for m in fb), fb
+    seen = []
+    monkeypatch.setattr(RN, "parallax_segment", lambda *a, **k: (seen.append(k), real(*a, **k))[1]); monkeypatch.setattr(job, "rebuild_video", lambda: None)
+    job.rerender_times([fb[0]["f0"] / RN.fps() + 0.1])
+    want = shots[1]["path"]["sign"]; again = [m for m in job.segmeta if m["i"] == 1]
+    assert PATH.shown_report(_states(job), shots)["problems"] == [], PATH.shown_report(_states(job), shots)["problems"]      # what the final gate reads after the repair
+    assert again and all(not m["fallback"] and m["sign"] == want and m["move"] in PATH.MOVES for m in again), again          # the record says what was drawn
+    assert seen and all(k.get("pool") == PATH.MOVES and k.get("sign") == want for k in seen), seen                           # every re-drawn state of act 1: its direction, the pool
+
+def test_a_re_draw_that_fails_again_is_a_fall_back_with_no_direction_on_record(camera, setting, tmp_path, monkeypatch):
+    """FF1: when the re-draw itself fails, the state is a fall-back again - move '', sign 0 - and is judged for its picture only."""
+    job, shots = _render_record(tmp_path, monkeypatch, setting)
+    monkeypatch.setattr(RN, "parallax_segment", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("planted")))
+    monkeypatch.setattr(RN, "graphic_segment", lambda *a, **k: None); monkeypatch.setattr(job, "rebuild_video", lambda: None)
+    job.rerender_times([job.segmeta[0]["f0"] / RN.fps() + 0.1])
+    hit = [m for m in job.segmeta if m["fallback"]]
+    assert hit and all(m["move"] == "" and m["sign"] == 0 for m in hit), hit
+    assert PATH.shown_report(_states(job), shots)["problems"] == []
+
+def test_a_clip_state_of_an_act_is_re_drawn_as_a_still_in_its_acts_direction(camera, setting, tmp_path, monkeypatch):
+    """FF1: a state that played a clip is recorded with sign 0 too (a clip has no code-made move). Re-drawn as a still it travels in its act's
+    direction, from the pool - never backwards, never rolled."""
+    real = RN.parallax_segment
+    job, shots = _render_record(tmp_path, monkeypatch, setting)
+    clip = [m for m in job.segmeta if m["i"] == 3]; assert clip and all(m["act"] == 2 for m in clip)
+    for m in clip: m.update(type="living", clip=True, move="", sign=0)                                                  # as the render records a clip's state
+    seen = []
+    monkeypatch.setattr(RN, "parallax_segment", lambda *a, **k: (seen.append(k), real(*a, **k))[1]); monkeypatch.setattr(job, "rebuild_video", lambda: None)
+    job.rerender_times([(clip[-1]["f0"] + clip[-1]["nf"]) / RN.fps() - 0.05])                                           # the film's last moment: only line 3's states are within a second of it
+    want = shots[3]["path"]["sign"]
+    assert len(seen) == len(clip) and all(k.get("pool") == PATH.MOVES and k.get("sign") == want for k in seen), seen
+    assert all(m["clip"] is False and m["move"] in PATH.MOVES and m["sign"] == want and not m["fallback"] for m in clip), clip
+
+def test_a_cutaway_whose_art_is_gone_continues_the_picture_in_its_acts_direction(camera, setting, tmp_path, monkeypatch):
+    """FF2: a reaction cutaway whose character art is gone when the film is rendered continues the picture before (drawn or absent). In a camera-path
+    format that picture is a still of the act: it is drawn with the act's direction and the path's pool, like every other still of the act."""
+    real = RN.parallax_segment; seen = {}
+    monkeypatch.setattr(RN, "parallax_segment", lambda img, p, *a, **k: (seen.setdefault(os.path.basename(p), k), real(img, p, *a, **k))[1])
+    job, shots = _render_record(tmp_path, monkeypatch, setting, shape=lambda sh: sh[1].update(type="reaction", speaker="SKEPTIC"))
+    cut = {n: k for n, k in seen.items() if n.startswith("seg001")}
+    assert job.absent >= 1 and cut, (job.absent, sorted(seen))                                                          # nobody is drawn: the picture before continues
+    assert all(k.get("pool") == PATH.MOVES and k.get("sign") == shots[1]["path"]["sign"] for k in cut.values()), cut
+    rec = [m for m in job.segmeta if m["i"] == 1]; assert rec and all(m["type"] == "reaction" and m["move"] == "" and not m["fallback"] for m in rec), rec      # the record: a cutaway, as 3.2 says

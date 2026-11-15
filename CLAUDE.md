@@ -62,7 +62,9 @@ pipeline run uses the new code. Nothing restarts.
 - **The motion ladder** (`whatifs/motion.py`, department D6; switch `MOTION_LADDER_ON`): the MOVING SECONDS of a long video are a budget. `governor.moving_floor` is the floor every estimate counts
   (`costguard.lines` carries its living seconds: line `living_clips`, unit `s`), `governor.moving_plan` adds what `governor.split()["free_inr"]` leaves, up to `MOVING_SHARE_LONG`; the episode keeps
   `d["living_s"]`. A still is brought to life by `clips.living()` - a row of `CLIP_MODELS` with a commercial licence (`clips.issues`), bought by the second: `media.animate(..., seconds=shot["buy"])`.
-  `motion.place` (in `episode.produce`, the last step before the script gate) decides WHICH stills; `motion.carry` and `motion.cuts` are the ONE rule for a line that carries a clip (the renderer and
+  `motion.place` (in `episode.produce`, after the Animation Director; only the camera path's `path.lay` comes after it, then the script gate) decides WHICH stills: it reserves every scene's
+  run-on lines BEFORE any living clip, and buys a clip only where its room shows it whole with `SPARE_S` to spare (`room_s` stops at a graphic, another clip, a reserved line and an act's first
+  picture). The renderer's merge of sub-second lines is `motion.merge` (never a line that carries a paid clip); `motion.carry` and `motion.cuts` are the ONE rule for a line that carries a clip (the renderer and
   check `visual_change` both read what was rendered: `job.segmeta` -> `ctx["states"]`, `ctx["moving"]`). `motion.long_report` / `short_report` measure the finished file; their limits are the cells
   `MOVING_CHANGE_MIN` / `SHORT_CHANGE_MIN`, set from BOTH kinds of measured pairs (a held picture under grain still changes: never lower a limit without measuring one). Never buy a living clip
   from a model outside the table, never count a moving second from the plan, never let a later render step show a clip's start picture in its place. A Short's finished file has its own gate
@@ -180,7 +182,8 @@ pipeline run uses the new code. Nothing restarts.
   per walk), `path.lay` puts the place first in every still / living prompt AFTER `motion.place` (never on `short`, `promise`, `anim`). An act's first picture is a
   guarantee of `episode.anchor_shots` (`firsts`) and `episode.anchors_for` is the ONE helper the asset step and the gate share; `motion.plain` is False for it (no clip
   runs into an act). Eye level comes from `shotplan.assign_anchors`; a path still is drawn with its sign and `path.MOVES` (never `pull`, never `kb_roll`), and the render
-  RECORDS act / src / move / sign / fallback in `job.segmeta` (`rerender_times` rewrites it) -> `ctx["path_states"]` (never inside `ctx["states"]`). Checks
+  RECORDS act / src / move / sign / fallback in `job.segmeta` -> `ctx["path_states"]` (never inside `ctx["states"]`). A re-render (`Job.rerender_times`) and the picture that continues under an
+  absent cutaway take the direction from the SHOT'S `path` mark, never from the record (a fall-back or a clip state recorded 0), and a re-render rewrites move, sign and fallback. Checks
   `camera_path` (the shot list) and `camera_shown` (the render's record). The reference frames must not move with `sign` None. The older tests run with it off.
 - **Creative departments and the canon** (`whatifs/org/cite.py`, `canon.py`): Palace knowledge enters a creative model call only through the runner's
   ask tap and its proof leaves only through the reply tap (`models.REPLY_TAPS`) - never paste a playbook into a brief by hand and never count an id a

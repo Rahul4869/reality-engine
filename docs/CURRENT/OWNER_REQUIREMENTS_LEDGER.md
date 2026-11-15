@@ -1,6 +1,6 @@
 # OWNER REQUIREMENTS LEDGER - Reality Engine ("Reality on Trial")
 Single source of truth for EVERYTHING the owner asked for, what was decided, and exactly HOW each point is applied in code.
-Read this first in every build chat. Never ask the owner to repeat a point listed here. Updated 10 Nov 2026 (v12 build, batch B2).
+Read this first in every build chat. Never ask the owner to repeat a point listed here. Updated 14 Nov 2026 (v12 build, batch V2b; section I carries his words of that day).
 Companion files (all in docs/CURRENT): ENFORCEMENT_MATRIX.md (requirement -> code check, test-enforced), SYSTEM.md (what the code does, generated
 from the code), CONCEPT.md (the show). Anything in docs/ARCHIVE is history and is never followed.
 
@@ -125,3 +125,59 @@ V2d-a the money and the model (`whatifs/clips.py`, department D6; `whatifs/costg
 V2d-b the ladder's rules (`whatifs/motion.py`, `whatifs/stock.py`, department D6; `whatifs/governor.py` `moving_plan`; `whatifs/sound.py` `short_bed`; checks `moving_share`, `stock_share`, `short_moving`, `short_sound`, `living_characters`): owner, 11 Nov 2026 - "can we also try to make fully motion animated videos and reels", on the first live video "I myself couldn't identify where the kling clips were" (20 of 793 seconds moved) and one frame in four a flat black shape with a name; "THE BUDGET STAYS SAME". A long video now has a floor: a fifth of its time is moving pictures made by a model, and what the month's money leaves free buys more, up to two fifths (at the prices of 13 Nov 2026 the money reaches about 28 to 30%; the code says the number it bought). Every moving second comes from one market of models that are licensed for commercial use - the cheap model the code paid for living stills is licensed for research only and is never bought again. Code places the moving seconds and the renderer shows a paid clip whole (before, half of a paid scene could be cut away). The finished film is measured: it is held under the floor or when it shows less than it paid for; a Short must move in every second of its file and sound from its first frame as a phone plays it (the sound it had was silent on a phone until the voice began) - a Short that fails after its clips are paid waits for his one tap. No shape is ever drawn in place of a character: a character appears as its approved art or not at all. Real footage of NASA and Pexels (his key) is a short anchor under rules by code - a tenth of a video at most, never first, never two in a row, changed, no clip whose title names a person, credited - and a Short has none. Nothing here has met a real clip: how gently a real living clip moves, and where the limits of the measure must sit, is first seen at the pilot.
 V2b inside the format (`whatifs/org/inside.py`, department D13; `whatifs/path.py`, D6; `whatifs/formats.py`, `whatifs/cta.py`; checks `viewer_inside`, `camera_path`, `camera_shown`, `format_ending`): owner, 11 Nov 2026 - "explain every aspect or anything with a first person immersive experience and also very nice visual continuous camera experience in a good environment to make the audience literally feel the things", on the first live video "no audience feel or touch", a name label on a black shape, three asks and a tease at the end. The voice is counted sentence by sentence: a share of at least the format's floor speaks to "you" in the present tense (F1 50%, the trial 40%, F3 60%), never more than a few sentences in a row from outside, and no part explains before it has shown; the writers are told, their one fix carries it, the gate holds. Each act of a long video has ONE place, every picture is at the viewer's own eye level, the code-made camera travels one way inside an act and never backwards or tilted, and no still shows a picture made for another act - judged on what the render recorded, not the plan. The ending is the format's own: F1 ends on its question with one subscribe ask in the middle, F3 on its arrival with no ask; under the ladder no video teases a next topic. A name chip is shown only for a character who is drawn. A third format, F3 "The walk" (one voice, one route), joins at 20 of 100 beside F1 60 and the trial 20. The Short's spoken first line is kept on its ladder row and handed to the long video's writer; the witness and the third thumbnail template no longer ask for a shape; an F1 / F3 writer is no longer given the trial's cast. No new kind of paid call; at most one still an act more (the stills line carries it). Nothing here has met a real writer or a real picture model: what share a real script reaches and whether a picture model keeps one place is first seen at the pilot.
 Not built yet (V3, V1c, V4, V5, B6b-B10): THE BREAKOUT REDESIGN (owner, 11 Nov 2026: he rejected the first live video, made by the old code - "absolutely looks like just a cheap pipeline made video" - and gave a free hand: "IF YOU HAVE TO REDESIGN CHANNEL, DO IT"). Decided in `handoff_v12/BREAKOUT_REDESIGN.md`: hook-first production, a new Audience department with a veto, Strategy as the portfolio manager that decides, informs and implements, formats as data; then the Council, the repair loop, the learning loop with the Librarian, the Owner Office.
+
+## I. THE OWNER'S WORDS OF 14 NOV 2026 (items 38 to 66 of the handoff's `02_OWNER_VERBATIM.md`, word for word there): what each means for the product and which batch executes it
+NOTHING IN THIS SECTION IS BUILT UNLESS ITS LINE SAYS SO. Each line names the batch whose design must carry it and whose check must enforce it (A1: hard
+enforcement or it does not exist). A designer reads the items themselves; this is the digest, never a replacement for his words.
+1. **THE SCOREBOARD IS WHAT THE PARTNER PROGRAM COUNTS** (item 55: "there is something called eligible views, which is what worries me the most"; measured on
+   his paused channel: about 120 views and 0 eligible watch hours on the first long video, about 200 views and 12 eligible on the Shorts). Every prediction,
+   pace line and decision of the brain is stated in engaged Shorts views over 90 days, eligible watch hours over 12 months and subscribers - never in raw
+   views. BUILT: the learning core reads `engagedViews` and learns on the engaged rate (`whatifs/brain.py`). TO BUILD: the scoreboard and its daily pace
+   (V4), the learning loop's predictions (B8).
+2. **EVERY OUTPUT ALONE** (items 42, 52, 55, 56, 59, 61: "every output in itself should be such maximum best made so that it can attain YPP monetization by
+   itself only"; "100 million views type of content maximum possible in our budget"; "the best channel and pipeline in our niche"; "our efforts should be
+   viewer centric"). The standard every design is reviewed against: each long video and each Short is made and judged as one that must break out by itself;
+   the viewer is the measure, visuals and voice included. An aim every output is held to, never a promise. BUILT: the viewer's seat, the layman test, the
+   Short as a product, the motion ladder, inside the format (V1a to V2b). TO BUILD: the judged floor against the best reference videos and his own verdict
+   (V1c), the aspect map - every aspect with an owner and a check (V5).
+3. **NEVER MASS-PRODUCED, NEVER THE SAME VIDEO TWICE** (item 49: "many AI channels don't get monetized or get demonetized due to mass producing content").
+   BUILT: a Short is held when it shares more than `SHORT_SIMILAR_MAX` of its three-word phrases with one of the channel's last ten; the Short formats rotate
+   by code; three long formats with their own structure, ending and camera; the Review Board asks of every idea whether it could break YouTube's policy on
+   inauthentic content; the policy watch raises an official change to him; the volume is small (about 12 Shorts and 4 long videos a month). NOT BUILT, said
+   plainly: a long script that is too similar to an earlier one only raises one card (`SCRIPT_SIMILARITY_MAX`: never a hold), and nothing compares the LOOK of
+   a video with the channel's earlier ones. TO BUILD: his own verdict and his maker's line - the human element (V1c); "repetition across uploads" as a row
+   of the aspect map (V5); one look and never one repeated scene (DRAWN BY CODE).
+4. **THE CEO ACTS BY ITSELF, AHEAD OF TROUBLE** (items 39, 52, 65: "pro actively act on it, even if i dont have time"; "goal achievement urgency is very very
+   real and do-or-die"). The brain watches on its own clock, reads the scoreboard every day against a pace to the goal, acts the same day on a slip, changes
+   what it may change as a ticket that is verified and undone when worse, and tells him in one line; his silence never stops it. A monetisation-risk watch -
+   the policy pages, the channel's own repetition, the warnings and strikes a platform reports - with an owner, a measure and an action each. TO BUILD: V4
+   (with V5, B6b, B7, B8).
+5. **WHAT THE MACHINE DECIDES AND WHAT STAYS HIS** (items 53, 60: "you can decide the channel name and leaving science ... for the cap and deleting, i'll
+   inform"; "not just science"). The channel's name and its subject are the machine's to decide - by evidence, as a small arm first, rarely, as a ticket that
+   can be undone, with one line to him. Money above the cap and deleting a video stay his. The show's present identity stays until real viewers' numbers
+   say otherwise. TO BUILD: V4.
+6. **LEARN FROM WHO GETS THERE FASTEST - WITHOUT SWAYING** (items 42, 65, 66). The Observatory studies first the channels and uploads that reached millions
+   of views and the Partner Program fastest from a new start, inside the monetisation policy (a pattern that leads to demonetisation is recorded as a risk,
+   never copied). A pattern enters as ONE trial at a time with a prediction, judged by our own viewers' eligible numbers: no chasing of every trend. His
+   observation of the channel "ConChaser" is one case for it, not a benchmark. TO BUILD: V5.
+7. **THE API CREDITS ARE A BONUS LAYER WITH AN END DATE, NEVER THE FLOOR** (items 38, 56, 57: "the channel video quality should not fall down suddenly because
+   of no API credits"; "no visible drop in quality after credits expiry"). The base - every gate, every format, the cadence, the look - runs on Rs 5,000 a
+   month without any credit. What credits pay for (the pipeline's own text calls: more drafts, more blind judgements, more scenes drawn by code) are levers
+   with a start and an end date in the cost model that step down on record. Every gate judges a credit-paid output and an everyday one by the SAME bar: the
+   end of the credits may cost volume or variety of drafts, never a weaker video on air. Credits are spent first on what lasts - winners that teach the
+   Palace, the house kit, tested briefs; the month's credit is planned inside its month and what lapsed is reported. They pay for words, judgement and
+   code-drawn scenes only, never for pictures, clips or voices. TO BUILD: V4 (the levers, the plan, the report), DRAWN BY CODE (the house kit), B8.
+8. **RAILS ARE MEASURES, NEVER TEMPLATES** (item 57: the framework must not cost "dynamism flexibility" or breed "AI slop"). A rule RECOGNISES what is wrong
+   and leaves the writing free; variety is itself checked (line 3); no rail prescribes a fixed script, scene or look. BUILT as the pattern of every measure
+   since V1a (the repo's `CLAUDE.md`: never flag what a rule does not know). REVIEWED in every later design.
+9. **THE BEST MODELS, JUDICIOUSLY** (items 55, 58, 62). In the pipeline every call that decides taste or quality goes to the strongest models of its family,
+   discovered live, and cheap models do mechanical work only. BUILT: `models.ROUTES`, hard rule 9 of the repo's `CLAUDE.md`. TO BUILD: the brain spends
+   where the evidence says eligible views move, every paid call on its line of the cost model (V4).
+10. **HIS DESK IS WHATSAPP AND A DASHBOARD; A RELEASE NEVER WAITS FOR HIM** (items 50, 51). Every recurring step of his is doable from his phone. The
+   one-minute release card is ONE message with four button links - each opens the exact Studio page of that video for one step only a hand can set (the
+   Short-to-video link, the end screen, the pinned comment, the thumbnail test) - and a field for his maker's line. When he does not do it, the video goes
+   out with every setting code CAN set, chosen from the release sheet, and the card stays open with a reminder. The machine never drives his browser.
+   TO BUILD: B9 (the desk), V3 (the card); the designer reads YouTube's own pages for each of the four steps first.
+11. **EVERY FILE IS WRITTEN FOR THE READER THAT ACTS ON IT** (items 63, 64: "every file and effort in every molecule should be to maximize results"). His words
+   stay word for word in `02`; this ledger and the Palace's owner items are the structured digest that departments and models read; a file that serves no
+   reader is archived. A standing rule for every batch's docs step and for B10's hand-over package.
