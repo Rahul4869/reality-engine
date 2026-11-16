@@ -3166,6 +3166,41 @@ WHAT THE JUDGE LOOKED AT (6.6), in plain words:
   the rehearsals print it; the floor-only hold is the test file's whole production).
 USAGE (the prover, Opus): at its start weekly all models 61%, weekly Fable 86%, context 27%; at the red note (about 19:20 UTC) 69% / 94%, context 25% (after
 one compaction). No 5-hour line is shown on this plan; extra usage off.
+**THE REPAIR OF RED ROUND 1 (16-17 Nov 2026; the dispatcher's ruling 4 (A) to (D); the plan's 8.7 under the owner's item 130: the diagnosis by Opus 5.5 at max effort - `V1c_REPAIR_DIAGNOSIS.md` in the dispatcher's notes folder. The typist's order was HELD by the app (its session runs in another permission mode), so the same session TYPED it, by the scripts the diagnosis names, each dry-run first on a copy of 030f197 (byte for byte); the independent checks are the script proof, the prover's block and the Fable re-audit at the reset, for which this diff is named. Every run with the fast ffmpeg folder FIRST on PATH, ruling 4 (B)).** CORRECTED BY THE BUILD, numbered for this round (each written here BEFORE the edit that fixes it):
+(1) OPEN ISSUE 224 - THE FIXTURE `media` ASKED FOR A FIXTURE THE PROOF'S SERIAL RUNNER DOES NOT HAVE. `shim/minitest.py` gives a test only `tmp_path`,
+`monkeypatch`, `capsys`, a parametrize name and the fixtures of `tests/conftest.py` and of the test's own module (names it imports included), and runs every
+fixture once per test (no scope); `media` (`tests/test_v12_floor.py`, step 1 f576363) was a module fixture of pytest's `tmp_path_factory`, so the 29 tests that
+use it (directly or through `real`) failed in the block before their first line while pytest - the pre-check, GitHub - passed all 113. THE FAILING TEST FIRST:
+`test_every_test_file_asks_only_for_what_the_proofs_serial_runner_gives` holds EVERY test file to what the stand-in gives (fixture names, fixture options,
+`pytest.*`, `pytest.mark.*`, `monkeypatch.*`, `capsys.*`); on the red code it fails with ``['test_v12_floor.py: media asks for `tmp_path_factory`']`` and
+nothing else - so from now a fixture the serial runner does not know fails the builder's own run, the pre-check and GitHub first (the gap of ruling 4 (E),
+closed at the cause). THE FIX, fixture plumbing only (no assert, no test, no production line): `media` makes its files ONCE A PROCESS in the run's own temp
+root (`tests/conftest.py`'s `_TMP`, folder `floor_media`) and keeps them in `_MEDIA`; pytest still makes them once a module. Weighed and refused: a function
+fixture on `tmp_path` (the media made 29 times a run under every runner, for nothing); teaching the stand-in `tmp_path_factory` (`shim/` is the proving
+machinery, L11). MEASURED on a plain export of 030f197 with the fix (16 Nov 2026, the fast folder first): the serial runner 113 passed, 0 failed, 643 s;
+pytest 113 passed in 645.90 s.
+(2) OPEN ISSUE 225 - ITS CAUSE, MEASURED (read only; nothing on the machine changed): on EVERY start of the installed `ffmpeg.exe` (WinGet, 227,823,104 bytes)
+the registered antivirus's scanner `mc-fw-host.exe` (McAfee) reads 321.5 MB and the start takes 1.13 to 1.28 s; the byte copy in
+`C:\Users\rrahu\AppData\Local\wi_fast_ffmpeg` (SHA-256 equal) is read 0 MB and starts in 0.03 s; a brand-new copy is read 321.5 MB on its FIRST start (1.47 s)
+and 0 MB after it (0.03 s). Ruled out: a WinGet link or alias (`where ffmpeg` names the package's own file; WinGet's Links folder holds no ffmpeg), a reparse
+point or a link on the path, a mark of the web (no `Zone.Identifier` stream), a signature (both files unsigned). The scanner had read 26,958 GB since the boot
+of 13 Nov. Why it stopped trusting the installed file between 15 and 16 Nov cannot be read from outside the scanner. FROM NOW every run of a test, a
+rehearsal, a sweep, a break run or a block has the fast folder FIRST on PATH in its own shell, and `ffmpeg -version` is timed five times before a block (a
+dropped scanner verdict makes the copy slow again).
+(3) RULING 4 (C) - ONE FILE IS SPLIT. Each of the nine files timed ONCE under the serial runner with (2) in force (a plain export of 030f197 with (1), 16 Nov
+2026 21:19-22:29 UTC, one at a time): test_v12_floor 643 s (pytest 646 s), test_v12_opening_e2e 405, test_v12_inside 389, test_v12_motion 354,
+test_v91_flaky_root 336, test_v12_release 283, test_v82 265, test_v12_money 249, test_v12_exec 206 - every one 0 failed; and the other files this batch
+changed: test_v12_cutdowns 138, test_v12_org 109, test_safety 3, 0 failed. ONLY test_v12_floor is over 450 s: ITS FOUR LONGEST WHOLE PRODUCTIONS MOVE, WORD FOR
+WORD, BY A SCRIPT (`split_floor.py`) - `test_a_flop_like_film_is_held_by_the_floor_alone_with_its_own_card` and
+`test_a_film_held_by_a_measured_check_then_refused_by_the_floor_then_published_anyway` to `tests/test_v12_floor_holds.py`;
+`test_a_second_long_video_after_his_thumbs_up_on_the_first_is_judged_beside_it` and `test_a_long_video_about_a_promoted_short_ends_on_his_line_and_pays_nothing_for_it`
+to `tests/test_v12_floor_his_word.py`. Their helpers, fixtures and episode ids stay in `tests/test_v12_floor.py` and are imported from there: the literal ids
+of `OWN_IDS` stay in that one file, so its test "the whole productions of this file use ids no other test file uses" stands word for word (a shared helper
+module would have carried the ids and failed it). The 11 entries of `proving/breaks/V1c.json` that name a moved test are repointed by the same script.
+PROVEN BY SCRIPT (`prove_split.py` against a plain export of the commit before the split; its output is `V1c_REPAIR_PROOF.md` in the dispatcher's notes
+folder): every test function's SHA-256 equal, every other line of `tests/test_v12_floor.py` unchanged, the collected ids equal (file name aside) - the family
+114, the suite 1766 = 1765 + the test of (1) - every break-list node id resolves, and each file of the family passes alone under the serial runner (its
+seconds are in the proof).
 #### Step 7 TAKEAWAY - THE BUILDER'S DRAFT (five Opus builders, an Opus typist and three Fable finishers; the prover completes it; also Palace item `v1c.takeaway`)
 - WORKED: a jury with a PLANTED ladder - the session is valid only when the rejected video beats its own frozen picture, so a judge that is not watching is
   void and never a pass; the verdict computed by code and computed again by the check from the stored looks. His words kept as typed or not used at all, and

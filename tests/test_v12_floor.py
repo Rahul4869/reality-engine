@@ -262,6 +262,42 @@ def media(tmp_path_factory):
     film = FL.view(src, str(d / "film"), 60.0)                                              # (no Settings read here: a module fixture runs before the test's own store)
     return {"canary": can, "twin": tw, "flop": flop, "film": film, "src": src, "dir": str(d)}
 
+def test_every_test_file_asks_only_for_what_the_proofs_serial_runner_gives():
+    """(V1c repair, red round 1, open issue 224) The proof's serial suite runs every test file with a stand-in pytest (`shim/minitest.py`, outside the
+    repo: law L10). It gives a test only `tmp_path`, `monkeypatch`, `capsys`, a parametrize name and the fixtures of the test files - no fixture scope,
+    no `params`, no `request`, no `tmp_path_factory` - and of pytest itself only the names below. 29 tests of this file asked for more, passed under
+    pytest here and on GitHub, and failed in the block before their first line: every test file is held to that list, so the next one fails HERE first."""
+    import ast
+    root = os.path.dirname(os.path.abspath(__file__))
+    trees = {f: ast.parse(open(os.path.join(root, f), encoding="utf-8").read()) for f in sorted(os.listdir(root)) if f.endswith(".py")}
+    def fixture_of(fn):
+        for d in fn.decorator_list:
+            t = d.func if isinstance(d, ast.Call) else d
+            if isinstance(t, ast.Attribute) and t.attr == "fixture": return d
+        return None
+    known = {"tmp_path", "monkeypatch", "capsys"} | {n.name for t in trees.values() for n in t.body if isinstance(n, ast.FunctionDef) and fixture_of(n)}
+    has = {"pytest": {"fixture", "mark", "raises", "approx", "skip", "fail", "importorskip", "MonkeyPatch"}, "capsys": {"readouterr"},
+           "monkeypatch": {"setattr", "delattr", "setitem", "delitem", "setenv", "delenv", "chdir", "undo"}}
+    bad = []
+    for f, t in trees.items():
+        for n in t.body:
+            if not isinstance(n, ast.FunctionDef) or not (n.name.startswith("test_") or fixture_of(n)): continue
+            given = set()
+            for d in n.decorator_list:
+                if isinstance(d, ast.Call) and isinstance(d.func, ast.Attribute) and d.func.attr == "parametrize" and d.args:
+                    a0 = d.args[0]
+                    given |= {x.strip() for x in a0.value.split(",")} if isinstance(a0, ast.Constant) else {e.value for e in getattr(a0, "elts", []) if isinstance(e, ast.Constant)}
+            bad += [f"{f}: {n.name} asks for `{a.arg}`" for a in n.args.args if a.arg not in known | given]
+            fx = fixture_of(n)
+            if isinstance(fx, ast.Call): bad += [f"{f}: fixture {n.name} sets `{k.arg}`" for k in fx.keywords if k.arg not in ("autouse", "scope")]
+        for x in ast.walk(t):
+            if isinstance(x, ast.Attribute) and isinstance(x.value, ast.Name) and x.value.id in has and x.attr not in has[x.value.id]:
+                bad.append(f"{f}: {x.value.id}.{x.attr}")
+            if isinstance(x, ast.Attribute) and isinstance(x.value, ast.Attribute) and isinstance(x.value.value, ast.Name) and x.value.value.id == "pytest" \
+                    and x.value.attr == "mark" and x.attr != "parametrize":
+                bad.append(f"{f}: pytest.mark.{x.attr}")
+    assert bad == [], bad
+
 def _look(fam, order, items, answers, status="counted"):
     return {"family": fam, "order": order, "items": json.dumps(items), "answers": json.dumps(answers), "status": status, "downs": "[]"}
 
