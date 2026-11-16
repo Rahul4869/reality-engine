@@ -39,7 +39,7 @@ def align(pkg, d, opening):
     w = words_for(d, opening)
     if not w or not isinstance(pkg, dict): return pkg
     own_b, own = _one(pkg.get("thumb_prompt_b")), _one(pkg.get("thumb_prompt"))
-    r = own_b or (own if own != w else "") or OTHER_LOOK
+    r = own_b or own or OTHER_LOOK
     if r.startswith(w): r = r[len(w):].lstrip(" ;,.:-") or OTHER_LOOK
     pkg["thumb_prompt"] = w
     pkg["thumb_prompt_b"] = w + "; " + r[:B_MAX]
