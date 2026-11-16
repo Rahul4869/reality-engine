@@ -957,6 +957,16 @@ def test_a_thumbs_up_is_a_reference_a_thumbs_down_and_a_refused_then_published_f
     assert V.references("EPOTHER") == [("EPREF1", view1)] and V.downs("EPOTHER") == [("EPDN1", "vd1", 'He said "no", twice')]
     verdict_on("OWNER_VERDICT_ON", "FALSE"); assert V.references("EPOTHER") == [] and V.downs("EPOTHER") == []   # the switch off: no reference, no down-canary (DESIGN QUESTION 9)
 
+def test_the_pools_take_his_newest_verdicts_first_and_stop_at_their_cell(verdict_on, media):
+    """(V1c finish, C20) Newest first, and the pool stops at its cell: with the default 1 the reference is his NEWEST approval alone."""
+    V = _VER()
+    for n, (ep, m) in enumerate((("EPPL1", 30), ("EPPL2", 20), ("EPPL3", 10))):
+        _long(ep, title=f"T{n}"); _judged(media, ep, media["film"], f"S-pl{n}", view=f"vp{n}"); V.record(ep, "up", "", "tap")
+        core.store().update("Owner_Verdicts", "ref", ep, {"seen": _ago(minutes=m)})
+    verdict_on("VIEW_FLOOR_REFS_MAX", "1"); assert V.references("x") == [("EPPL3", "vp2")]                              # the cell's default: his NEWEST approval alone
+    verdict_on("VIEW_FLOOR_REFS_MAX", "2"); assert V.references("x") == [("EPPL3", "vp2"), ("EPPL2", "vp1")]
+    verdict_on("VIEW_FLOOR_REFS_MAX", "3"); assert V.references("EPPL3") == [("EPPL2", "vp1"), ("EPPL1", "vp0")]            # never the film being judged
+
 def test_references_and_downs_are_empty_while_his_verdict_is_off(verdict_on, media):
     """(V1c finish, C11) A passed, kept film he thumbed up and one he thumbed down: both pools hold them while his verdict is on and nothing while it is off."""
     V = _VER()
@@ -1210,13 +1220,16 @@ def test_his_still_is_never_an_acts_first_and_an_act_without_a_picture_leaves_hi
         assert PATH.plan_report(laid, u12, 60.0, anchors)["problems"] == []                                                         # camera_path's rules hold
 
 def test_his_line_is_never_the_slot_of_a_paid_scene(line_on):
-    line_on("ANIM_DIRECTOR_ON", "TRUE"); u14 = _units(14); sh = _mshots(10, 4)
+    line_on("ANIM_SHOTS", "4"); line_on("ANIM_DIRECTOR_ON", "TRUE"); u14 = _units(14); sh = _mshots(10, 4)
     assert [i for i in AN.pick_slots([dict(s, maker=False) for s in sh], u14, 4) if i >= 10]                        # a short film: as plain stills, the 0.92 anchor falls on his line
     assert AN.pick_slots(sh, u14, 4, skip={i for i in range(10, 14)}) == AN.pick_slots(sh[:10], u14[:10], 4)       # the scenes stand where the film without his line has them (DESIGN QUESTION 21)
     idx = AN.apply(sh, u14, {"kling": 4}); assert len(idx) == 4 and not [i for i in idx if sh[i].get("maker")]
     assert all(s["type"] == "still" and "anim" not in s for s in sh[10:])
     sh2 = _mshots(2, 4); assert sorted(AN.apply(sh2, _units(6), {"kling": 4})) == [0, 1]                           # (V1c step 7) the script runs out of shots first: the later anchors stay empty, never his line
     assert all(s["type"] == "still" and "anim" not in s for s in sh2[2:])
+    p2 = {"kling": 4}; AN.apply(_mshots(2, 4), _units(6), p2); assert p2["kling"] == 2                              # (V1c finish, C19) the two empty anchors are not bought
+    sh4 = _mshots(3, 4); sh4[0]["short"] = {"id": "SHX", "parts": []}                                                # the road every laddered film takes: the opening is the Short's footage
+    assert sorted(AN.apply(sh4, _units(7), {"kling": 4})) == [1, 2] and all(s["type"] == "still" and "anim" not in s for s in sh4[3:])
 
 def test_no_clip_runs_into_his_line_and_none_is_bought_on_it(line_on):
     from tests.conftest import OLD_CLIPS, OLD_MOTION
@@ -1550,6 +1563,10 @@ def test_the_sweep_judges_the_floor_his_line_and_one_story_of_every_long_video()
         _floor_case(ep, dict(GOOD_FLOOR, **change)); ok, w = SW.floor_of(core, ep, climbed=climbed); assert not ok, (ep, w)
     _floor_case("EPFB8", {k: v for k, v in GOOD_FLOOR.items() if k != "makers_line"}); ok, w = SW.floor_of(core, "EPFB8", climbed=True)
     assert not ok and "makers_line missing" in w, w                                                                    # a missing row is a failure: the path was not walked
+    _floor_case("EPFL3", dict(GOOD_FLOOR, viewer_floor=(CON.FAIL, "ranked beside the rejected video: x"))); _floor_case("EPFL3", GOOD_FLOOR)      # (V1c finish, C23)
+    assert SW.floor_of(core, "EPFL3", climbed=True)[0]                                                              # the LATEST row of a check decides
+    _floor_case("EPFL4", GOOD_FLOOR); _floor_case("EPFL4", {"makers_line": (CON.FAIL, "his line is not in the description that is sent")})
+    ok, w = SW.floor_of(core, "EPFL4", climbed=True); assert not ok and "makers_line FAIL" in w, w
     s = SW.summary([{"id": "a", "outcome": "ok", "floor": "the floor judged: x"}, {"id": "b", "outcome": "odd", "floor": "the floor judged: x"},
                     {"id": "c", "outcome": "ok", "floor": "the floor was void by its canary: x"}, {"id": "d", "outcome": "ok"}])
     assert s["floor_judged"] == 1                                                                                      # the counter: judged AND the id good
@@ -1566,6 +1583,7 @@ def test_the_sweep_and_the_rehearsal_call_it_and_the_rehearsal_walks_his_verdict
     assert 'f"LINE {ref1c} {line1c}"' in src and '.update("Owner_Verdicts"' not in src                               # his line through the second message's link (DESIGN QUESTION 25), never a write of the tab
     assert 'floor1c(core12, epid, climbed=True)' in src and 'FL1c.stand_in(os.path.join(work, "flop.mp4"), "flop")' in src and 'vf1c[1].startswith("ranked beside the rejected video")' in src
     assert 'VER1c._answer({"episode_id": epid}, f"VERDICT {epid} UP")' in src and 'VER1c.references(' in src and 'print("floor:"' in src
+    assert 'FL1c.session("S-flop-" + epid, "flop", FL1c.stand_in(' in src                                                # (V1c finish, C21) the memo's own value: each rehearsal's flop walks its own blind order
     from whatifs import cta as CTA, maker as MK
     for line in ("I would keep it for one day, then beg for gravity back.", "Not for one hour."):
         assert MK.usable(line)[0] and CTA.kind_of_text(line) is None                                                    # neither is refused nor read as an ask by the older assert on the asks

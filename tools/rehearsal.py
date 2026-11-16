@@ -152,7 +152,7 @@ def run(ep_id=None):
             ("the film does not end on the line of the row the ladder used", led1c["makers_line"], row1c.get("line_used"))
         # THE FLOP CASE, ending at the CHECK (3.10, and the memo's change (9)): a session on the stand-in of a flop computes to "fail" and check viewer_floor FAILS on it
         can1c, twin1c = FL1c.kit(os.path.join(work, "flop_kit"))
-        flop1c = FL1c.session("rehearsal-flop", "flop", FL1c.stand_in(os.path.join(work, "flop.mp4"), "flop"), can1c, twin1c, [], [], "FLOP" + epid[2:])
+        flop1c = FL1c.session("S-flop-" + epid, "flop", FL1c.stand_in(os.path.join(work, "flop.mp4"), "flop"), can1c, twin1c, [], [], "FLOP" + epid[2:])
         vf1c = CON1c.p_viewer_floor({"floor": flop1c})
         assert flop1c["status"] == "fail" and vf1c[0] == CON1c.FAIL and vf1c[1].startswith("ranked beside the rejected video"), ("the floor did not refuse the flop", flop1c["status"], vf1c)
         # HIS TAP "VERDICT <episode> UP" (played through the verdict's own handler: the long video's ask is sent when it is LIVE, by a later tick): the row,

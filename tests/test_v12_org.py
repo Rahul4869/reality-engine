@@ -476,6 +476,14 @@ def test_the_registry_is_honest_about_what_runs_under_the_runner(tmp_path):
     bad = REG.entry_issues(str(tmp_path))
     assert any("no runner call for D5 'package'" in b for b in bad) and any("runner call for D7 'remix' is not in the registry" in b for b in bad) and len(bad) == 2
 
+def test_a_runner_call_in_a_file_the_registry_does_not_name_is_reported(tmp_path):
+    shutil.copytree(os.path.join(ROOT, "whatifs"), tmp_path / "whatifs", ignore=shutil.ignore_patterns("__pycache__"))
+    assert REG.entry_issues(str(tmp_path)) == []
+    p = tmp_path / "whatifs" / "org" / "zz_unnamed.py"; p.write_text('def f(ORG, ep):\n    return ORG.work("D5", "x", ep, lambda b: None)\n', encoding="utf-8")
+    assert REG.entry_issues(str(tmp_path)) == ["whatifs/org/zz_unnamed.py: runner call for D5 'x' is not in the registry"]
+    p.write_text('def f(ORG, ep):\n    return ORG.work("D5", "y", ep, lambda b: None)\n', encoding="utf-8"); t = os.path.getmtime(p) + 5; os.utime(p, (t, t))
+    assert REG.entry_issues(str(tmp_path)) == ["whatifs/org/zz_unnamed.py: runner call for D5 'y' is not in the registry"]      # a changed file is read again
+
 def test_every_wrapped_call_site_still_calls_the_function_it_wraps():
     src = open(os.path.join(ROOT, "whatifs", "episode.py"), encoding="utf-8").read()
     for dept, trig, fn in (("D4", "write", "ROOM.run_room(d, ep)"), ("D7", "voice", "narrate(voiced, blend()"), ("D5", "package", "ROOM.package(room, chs, d, ep, opening=opn)"),      # v12 V1c steps 3 and 4 (THE PINNED CALLS (b), moved BY DESIGN): the voice is given his line, the Director the script's units, the packager the opening

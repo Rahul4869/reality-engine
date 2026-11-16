@@ -169,21 +169,21 @@ _CALLS: dict = {}
 def _calls(rel, root=None):
     """Every `<x>.work("<dept>", "<trigger>", ...)` / `.run(...)` call written in a file, read from its syntax tree (remembered per file change)."""
     p = os.path.join(root or ROOT, *rel.split("/"))
-    try: key = (p, os.path.getmtime(p))
+    try: m = os.path.getmtime(p)
     except OSError: return None
-    if key not in _CALLS:
+    if _CALLS.get(p, (None, None))[0] != m:
         with open(p, encoding="utf-8") as f: tree = ast.parse(f.read())
         found = set()
         for n in ast.walk(tree):
             if (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr in ("work", "run") and len(n.args) >= 2
                     and all(isinstance(a, ast.Constant) and isinstance(a.value, str) for a in n.args[:2]) and n.args[0].value in DEPARTMENTS):
                 found.add((n.args[0].value, n.args[1].value))
-        _CALLS.clear(); _CALLS[key] = found
-    return _CALLS[key]
+        _CALLS[p] = (m, found)
+    return _CALLS[p][1]
 
 def entry_issues(root=None):
     """Is the registry honest? Every department is either wired (each named call site exists in the code) or pending - never both, never neither;
-    a runner call that exists in a named file but is missing here is reported too; registry data points only at real files, cells and checks."""
+    a runner call that exists in ANY file of the package but is missing here is reported too; registry data points only at real files, cells and checks."""
     p = []
     both = set(ENTRY) & set(PENDING); none = set(DEPARTMENTS) - set(ENTRY) - set(PENDING)
     if both: p.append("wired AND pending: " + ", ".join(sorted(both)))
@@ -192,6 +192,10 @@ def entry_issues(root=None):
     named = {}
     for dept, sites in ENTRY.items():
         for rel, trig in sites: named.setdefault(rel, set()).add((dept, trig))
+    base = root or ROOT                                              # v12 V1c (the finish; break S2-44): EVERY file of the package is read - a runner call in a file the registry does not name is reported too
+    for dp, _dn, fn in os.walk(os.path.join(base, "whatifs")):
+        for f in fn:
+            if f.endswith(".py"): named.setdefault(os.path.relpath(os.path.join(dp, f), base).replace(os.sep, "/"), set())
     for rel, want in sorted(named.items()):
         have = _calls(rel, root)
         if have is None: p.append(f"{rel} does not exist"); continue
