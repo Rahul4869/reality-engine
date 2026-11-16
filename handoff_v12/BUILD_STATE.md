@@ -2852,6 +2852,17 @@ code. (d) The audit's lines F1 to F4 were rewritten to CLOSED by the last builde
 closing run on the FINAL code commit and against the audit's "TO CLOSE" before the gate - C5, C7 and C17 touch F1 and F2 (below). (e) 3.10 asks that "the
 builder writes down on how many of the 24 ids" the ask `owner_verdict` was sent: no builder runs a sweep - the prover reads `owner_message_kinds` of parts A
 and B (open issue 220). (f) `expect_tests` in `proving/blocks/V1c.json` is V2b's until the finisher's block has counted V1c's (A13 (b); open issue 182).
+THE FIRST BREAK RUN ON THE CORRECTED CODE WAS RED, AND ITS FINDING (written here BEFORE its edit; 16 Nov 2026). The typist's four commits (1745ffc C1 to C8,
+37d4f6c C9 and C10, 4e07d5f C11 to C17, 6579024 C18 to C23) were read whole by finisher 4 and match their corrections. `proving/breaks.py V1c` on 6579024 (the
+whole list, 282; started 03:47 UTC, alone): "BREAKS V1c: 281 caught, 1 MISSED, 0 void of 282 listed" - "S4-12 MISSED whatifs/story.py - 1 passed". NOT run
+again; the builder's block was not started. READ, the cause:
+ C24 (the finish's own fault - a second guard hid the first; S4-12). `story.align` line 42 is `r = own_b or (own if own != w else "") or OTHER_LOOK` (3.4: the
+     packager's own scene is the other look only where it differs from the opening's). C9 added the next line, `if r.startswith(w): r = r[len(w):].lstrip(...) or
+     OTHER_LOOK` - which also turns `r == w` into the other look. Since C9 the condition of line 42 decides nothing: with it and without it (S4-12's
+     replacement) every package gives the same runner-up, so no test can catch that break. The rule is kept - by line 43 alone; line 42's condition is dead
+     code that a break list rightly cannot kill. THE REPAIR AT THE CAUSE (never at the break): line 42 becomes `r = own_b or own or OTHER_LOOK` (the same
+     output for every input), and break S4-12 moves to the ONE place the rule now lives - line 43 with the equal case taken out (`... and r != w`), the same
+     test, the same sentence; FB-10 (line 43 gone) stays. A new final code commit: the WHOLE break list runs again on it, then the builder's block.
 OPEN ISSUES WRITTEN BY THE FINISH: 210 to 222 (under OPEN ISSUES; none is a new rule added at the finish - A5).
 ### V2b - INSIDE THE FORMAT (14-15 Nov 2026) - ACCEPTED (final code commit 01e7798 GREEN in GitHub Checks run 196: 1647 passed; sweep 58 of 58 ids)
 (its code is 7e83001; the designer's record: steps 1 to 3; five Opus builders wrote steps 4 to 6a, the Fable finisher `FINISHED BY FABLE` and the takeaway's draft;
