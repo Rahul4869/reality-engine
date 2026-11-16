@@ -873,3 +873,22 @@ channels reach 10 million views; any measured reach effect of Meta's AI label; a
   own mark, and the record is rewritten - without it the repair itself would have held every repaired video. (6) NOT judged by any check: the pixels (a
   paid look at the finished pictures was left out on purpose); a clip state re-drawn as a still (open issue 197). (7) Open for V1c's design: the trial's
   cast in the cutaways of F1 and F3 once its art is approved (open issue 196).
+- ORDER UPDATE (V1c, 16 Nov 2026): V1c built THE FLOOR, HIS VERDICT AND THE MAKER'S LINE (4.3's judged floor with its canary; the owner's verdict tab; 11.6 H-A
+  and 11.9 "Maker's line"; open issue 124's one story; open issue 196's cast by format; the four findings of V2b's audit). BUILT 16 Nov 2026 on final code
+  commit 78e0e86 - NOT accepted when this note was written: `handoff_v12/BUILD_STATE.md` says whether its prover's block is green. THE ORDER AFTER IT: V4, V5,
+  DRAWN BY CODE, B6b, B7, B8, B9, B10, and V3 - the pilot and going live - LAST. Nine batches remain.
+  WHAT THE BUILD CHANGED IN THIS SECTION, with reasons (the record is in `BUILD_STATE.md`): (1) 4.3 "one generic first-time viewer per model family ...
+  hearing the sound": one of the owner's two families can watch and hear a film; the other takes pictures only and is shown a film strip, sound off - said in
+  the check's own words. (2) 4.3 "pairwise against reference videos": the references are the videos he gave a thumbs-up, one a session to start; the rung
+  that needs none - the rejected video against its own frozen picture - is what makes a session valid; public links are not used. (3) 4.3 "must BEAT it; a
+  jury that does not see that is void": a film the judges cannot tell from the rejected one is HELD (never void), and a void session sends the film to his
+  eye with a clock instead of letting it through unseen. (4) 4.3 "a prediction for every video ... a D13 that cannot predict loses weight": a long video's
+  prediction is scored against his verdict and reported at three misses in five; a Short gets none; what the score does to the gate is B8's. (5) 11.6 "typed
+  on the release card ... in his own voice": asked at the topic's Short (a long video is planned a day ahead of its slot), spoken by the guide after a
+  lead-in until V3 has his voice - which Google's own page says may not be obtainable at all. (6) The LAST words of a film that carries his line are his, not
+  the format's ending (V2b). (7) 4.3 lists "one story" among what code measures: built as the same words by construction and a check on the plan. (8) 4.9 "one
+  guide and one foil, drawn": 11.5 wins - in F1 and F3 nobody is on screen, and their animated scenes show the viewer's own place, never the trial's sets.
+  (9) The rejected video is a FILE the channel's owner gives once (the pipeline is also a product: no id of his in code).
+  New H31 (of two looks at the same opening scene, which thumbnail wins), H32 (the two families agree on the new film against the rejected one in nine
+  sessions of ten), H33 (a scene of the viewer's own place holds a viewer at a retention cliff as the trial's staged scene does). O22 - nothing of the floor
+  has met a real judge: before its hold is trusted the pilot measures what ONE answer is worth (`BUILD_STATE.md` open issue 201).
