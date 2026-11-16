@@ -250,17 +250,23 @@ def test_the_older_tests_run_with_the_floor_off():
                                           "VIEW_FLOOR_CANARY": "", "VIEW_FLOOR_EYE_WAIT_H": "20"}
     assert (FL.LOOKS, FL.EVERY_S, FL.THINK, FK.WATCH_CHANGE, FK.WATCH_MARGIN) == (2, 2, 8000, 0.5, 10)
 
+_MEDIA = {}          # (V1c repair, open issue 224) the module's media, made ONCE A PROCESS: the proof's serial runner (`shim/minitest.py`) knows no fixture scope and no `tmp_path_factory`, so the folder is the run's own temp root (`tests/conftest.py` `_TMP`, removed at the end of a pytest session) and the files are kept here
+
 @pytest.fixture(scope="module")
-def media(tmp_path_factory):
+def media():
     """The stand-in for the rejected video (seed canary), its frozen twin, a flop (seed flop) and an offline film that moves (made once for the module)."""
-    d = tmp_path_factory.mktemp("floor_media")
+    if _MEDIA: return _MEDIA
+    import pathlib
+    from tests.conftest import _TMP
+    d = pathlib.Path(_TMP) / "floor_media"; d.mkdir(parents=True, exist_ok=True)
     can = FL.stand_in(str(d / "canary.mp4"), "canary"); tw = FL.twin(can, str(d / "canary_twin")); flop = FL.stand_in(str(d / "flop.mp4"), "flop")
     src = str(d / "film_src.mp4")
     import subprocess
     subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", "testsrc2=size=640x360:rate=12", "-f", "lavfi", "-i", "sine=frequency=220:duration=60", "-t", "60",
                     "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", src], check=True, capture_output=True)
     film = FL.view(src, str(d / "film"), 60.0)                                              # (no Settings read here: a module fixture runs before the test's own store)
-    return {"canary": can, "twin": tw, "flop": flop, "film": film, "src": src, "dir": str(d)}
+    _MEDIA.update({"canary": can, "twin": tw, "flop": flop, "film": film, "src": src, "dir": str(d)})
+    return _MEDIA
 
 def test_every_test_file_asks_only_for_what_the_proofs_serial_runner_gives():
     """(V1c repair, red round 1, open issue 224) The proof's serial suite runs every test file with a stand-in pytest (`shim/minitest.py`, outside the
