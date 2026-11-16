@@ -341,6 +341,12 @@ def test_a_session_labels_carry_nothing_and_look_1_is_look_0_reversed(floor_on, 
     assert all(os.path.basename(x) in ("film.mp4", "canary.mp4", "canary_twin.mp4") for x in calls[0][3])      # file names are never sent: clips go as data
     rows = [x for x in core.store().rows("Floor_Log") if x["session_id"] == "S-labels"]
     assert len(rows) == 4 and all(x["status"] == "counted" and x["view"] == "v1" for x in rows) and FL.again(rows)["status"] == "pass"
+    blind = lambda sid: sorted(["N", "C", "Z"], key=lambda k: hashlib.sha1(f"{sid}|{k}".encode()).hexdigest())      # (V1c finish, C12 - R7) the order is the session id's
+    def look0(sid):
+        it = json.loads(next(x for x in core.store().rows("Floor_Log") if x["session_id"] == sid and str(x["order"]) == "0")["items"]); return it
+    it1 = look0("S-labels"); assert [it1[l] for l in sorted(it1)] == blind("S-labels"), it1
+    _session(media, "S-labels-2"); it2 = look0("S-labels-2")
+    assert blind("S-labels") != blind("S-labels-2") and it1 != it2 and [it2[l] for l in sorted(it2)] == blind("S-labels-2"), (it1, it2)
 
 def test_a_look_by_another_provider_or_a_cheap_model_is_not_counted_and_the_later_family_is_not_asked(floor_on, monkeypatch, media):
     asked = []; real = M.ask_watch
@@ -428,7 +434,7 @@ def test_a_declined_sonnet_look_goes_to_opus_once_and_never_back(real):
     c = sent[0][1]["messages"][-1]["content"]
     assert c[0]["text"].startswith("OPENING A (one picture every 2 seconds, sound off)") and c[1]["type"] == "image" and c[-1] == {"type": "text", "text": "p"}
 
-def test_the_cost_row_of_a_look_carries_the_task_and_the_month_cap_closes_on_it(real, floor_on):
+def test_the_cost_row_of_a_look_carries_the_task_and_the_month_cap_closes_on_it(real, floor_on, tmp_path):
     from whatifs import governor as G
     use, views = real; use([_gem(GOOD)])
     M.ask_watch("floor_gemini", "s", "p", views, waits=(0, 0)); core.flush_costs()
@@ -437,6 +443,11 @@ def test_the_cost_row_of_a_look_carries_the_task_and_the_month_cap_closes_on_it(
     core.set_setting("VIEW_FLOOR_CAP_PER_VIDEO_INR", "0")
     r = FL.plain(FL.run(None, "EPCAP", "x.mp4", "/nonexistent", (), ()))
     assert r["status"] == "void" and r["why"].startswith("the month's floor money is spent")
+    spent = G.month_spend_of(["floor_gemini", "floor_claude"]); assert spent > 0                          # (V1c finish, C12 - R11) the cap closes ON the month's spend, not before it
+    core.set_setting("VIEW_FLOOR_CAP_PER_VIDEO_INR", str((spent + 0.5) / G.max_long_videos()))
+    r = FL.plain(FL.run(None, "EPCAP2", "x.mp4", str(tmp_path), (), ())); assert not r["why"].startswith("the month's floor money is spent"), r
+    core.set_setting("VIEW_FLOOR_CAP_PER_VIDEO_INR", str(spent / G.max_long_videos()))
+    r = FL.plain(FL.run(None, "EPCAP3", "x.mp4", str(tmp_path), (), ())); assert r["why"].startswith("the month's floor money is spent") and "Rs" in r["why"], r
 
 # ------------------------------------------------------------------ the run: one verdict an episode; the kit; the check
 def test_a_refusal_stands_across_renders_and_so_does_a_pass(floor_on, monkeypatch, media, tmp_path):
@@ -475,6 +486,18 @@ def test_the_run_survives_an_ffmpeg_error_and_a_lost_upload(floor_on, monkeypatc
     monkeypatch.setattr(FL, "view", lambda *a: (_ for _ in ()).throw(__import__("subprocess").CalledProcessError(1, "ffmpeg")))
     r = FL.plain(FL.run(None, "EPFF", media["src"], str(tmp_path), (), ()))
     assert r["status"] == "void" and r["why"] == "the floor could not run: CalledProcessError"
+
+def test_a_void_session_writes_d13s_memo_and_the_next_valid_one_closes_it(floor_on, media, monkeypatch, tmp_path):
+    """(V1c finish, C12 - R4) Under the organisation: a void session writes D13's own problem memo (floor|void); the next valid session closes it."""
+    from whatifs.org import runner as ORG, memos as MEM
+    floor_on("ORG_ON", "TRUE")
+    live = lambda: [m for m in MEM.find(core.store(), type="problem_memo", from_dept="D13") if str(m.get("dedupe_key") or "") == "floor|void"]
+    real_kit = FL.kit; monkeypatch.setattr(FL, "kit", lambda out: (None, "no canary kit"))
+    ORG.work("D13", "floor", "EPVOID1", lambda b: FL.run(b, "EPVOID1", media["src"], str(tmp_path), (), ()), measure=FL.m_run)
+    assert len(live()) == 1 and live()[0]["body"]["what_failed"] == "no canary kit", live()
+    monkeypatch.setattr(FL, "kit", real_kit)
+    r = FL.plain(ORG.work("D13", "floor", "EPVOID2", lambda b: FL.run(b, "EPVOID2", media["src"], str(tmp_path), (), ()), measure=FL.m_run))
+    assert r["status"] == "pass" and live() == [], (r.get("status"), live())                                     # resolved, repair_verified
 
 def test_no_kit_and_a_kit_whose_file_is_not_the_one_on_record(floor_on, monkeypatch, media, tmp_path):
     monkeypatch.setattr(FL, "FAKE", False)
@@ -639,6 +662,19 @@ def test_his_hold_before_the_hour_stands(floor_on, monkeypatch):
     row = next(r for r in core.store().rows("Owner_Actions") if r.get("episode_id") == "EPHOLD")
     NT.answer(row["id"], "HOLDREVIEW EPHOLD"); NT.expire_defaults(now=core.now_utc() + dt.timedelta(hours=25)); FL.eye_sweep()
     assert next(r for r in core.store().rows("Episodes") if r["episode_id"] == "EPHOLD")["status"] == "HELD_BY_OWNER"
+
+def test_a_film_that_left_the_review_by_another_road_is_never_approved_by_silence(floor_on, monkeypatch):
+    """(V1c finish, C12 - R6) A floor_eye card still OPEN while its film left AWAITING_APPROVAL by another road: his silence approves nothing."""
+    import datetime as dt
+    monkeypatch.setattr(NT, "in_quiet_hours", lambda now=None: False)
+    slot = (core.now_utc() + dt.timedelta(hours=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    core.store().append("Episodes", [{"episode_id": "EPEYEX", "status": "UPLOADED", "yt_id": "yt3", "slot_et": slot}])
+    CON.await_approval("EPEYEX", "yt3", slot, "summary", kind="floor_eye", default="goes public by itself", expires_h=FL.eye_hours(slot))
+    assert next(r for r in core.store().rows("Owner_Actions") if r.get("episode_id") == "EPEYEX")["status"] == "OPEN"
+    core.store().update("Episodes", "episode_id", "EPEYEX", {"status": "HELD_BY_OWNER"})                    # by hand: the film left the review by another road
+    calls = []; real = CON.approve; monkeypatch.setattr(CON, "approve", lambda ep: (calls.append(ep), real(ep))[1])
+    NT.expire_defaults(now=core.now_utc() + dt.timedelta(hours=21)); FL.eye_sweep()
+    assert next(r for r in core.store().rows("Episodes") if r["episode_id"] == "EPEYEX")["status"] == "HELD_BY_OWNER" and calls == [], calls
 
 # ------------------------------------------------------------------ whole productions (ids no other test file uses)
 def test_the_whole_productions_of_this_file_use_ids_no_other_test_file_uses():
@@ -815,6 +851,21 @@ def test_one_ask_a_day_oldest_first_and_never_the_last_now_place(verdict_on):
     rows = core.store().rows("Owner_Verdicts"); assert [r["ref"] for r in rows] == ["SHA", "EP209912030900"]
     assert (rows[1]["kind"], rows[1]["topic"], rows[1]["url"]) == ("long", "pillows", "https://youtu.be/ytL")
     assert "SHMADE" not in [r["ref"] for r in rows]                                              # a Short that is not public is never asked about
+    _long("EP209912040900", title="The long two")                                                # (V1c finish, C15) its draw cell written as production writes it: a DICT
+    core.store().update("Episodes", "episode_id", "EP209912040900", {"draw_json": {"ladder": "SHA"}})
+    verdict_on("NOTIFY_NOW_MAX_PER_DAY", "4"); V.sync()
+    assert _vrow("EP209912040900") and _vrow("EP209912040900")["topic"] == "pillows", _vrow("EP209912040900")
+
+def test_an_ask_that_could_not_be_sent_leaves_no_row_and_is_sent_at_the_next_tick(verdict_on, monkeypatch):
+    """(V1c finish, C14) ONE ROW A RELEASE, level-triggered: an ask whose write failed leaves no row behind, so the next sync asks again."""
+    V = _VER(); verdict_on("OWNER_VERDICT_SINCE", _ago(days=3)); _short("SHRETRY", _ago(days=1))
+    real_send = NT.send
+    monkeypatch.setattr(NT, "send", lambda kind, *a, **k: (_ for _ in ()).throw(RuntimeError("sheet")) if kind == "owner_verdict" else real_send(kind, *a, **k))
+    with pytest.raises(RuntimeError): V.sync()
+    assert core.store().rows("Owner_Verdicts") == []
+    monkeypatch.setattr(NT, "send", real_send)                                                       # the patch undone (the quiet hours stay off)
+    V.sync(); r = _vrow("SHRETRY")
+    assert r and r["action_id"] and next(x for x in core.store().rows("Owner_Actions") if x["id"] == r["action_id"])["status"] == "OPEN", r
 
 def test_his_tap_is_the_label_and_words_after_it_are_not_stored(verdict_on):
     V = _VER(); verdict_on("OWNER_VERDICT_SINCE", _ago(days=3)); _short("SHT", _ago(days=1)); V.sync()
@@ -886,30 +937,48 @@ def test_a_thumbs_up_is_a_reference_a_thumbs_down_and_a_refused_then_published_f
     FL.plain(FL.run(None, "EPREF1", media["src"], str(tmp_path), (), ()))                         # held by another check, fixed: answered from the log, the first view kept
     view1 = next(r for r in core.store().rows("Floor_Log") if r["episode_id"] == "EPREF1")["view"]; assert view1
     V.record("EPREF1", "up", "", "tap")
+    seen = lambda ref, m: core.store().update("Owner_Verdicts", "ref", ref, {"seen": _ago(minutes=m)})      # (V1c finish, C11) written apart: a film that must never be taken is always NEWER
+    seen("EPREF1", 50)
     assert V.references("EPOTHER") == [("EPREF1", view1)] and V.references("EPREF1") == []        # never the episode being judged
-    _long("EPREF2", title="Refused, published"); _judged(media, "EPREF2", media["flop"], "S-ref2", view="vr2"); V.record("EPREF2", "up", "", "tap")
-    _long("EPREF4", title="Its minute was not kept"); _judged(media, "EPREF4", media["film"], "S-ref4", view=""); V.record("EPREF4", "up", "", "tap")
+    _long("EPREF2", title="Refused, published"); _judged(media, "EPREF2", media["flop"], "S-ref2", view="vr2"); V.record("EPREF2", "up", "", "tap"); seen("EPREF2", 40)
+    _long("EPREF4", title="Its minute was not kept"); _judged(media, "EPREF4", media["film"], "S-ref4", view=""); V.record("EPREF4", "up", "", "tap"); seen("EPREF4", 30)
     _long("EPREF3", title="Void only")
     monkeypatch.setattr(M, "ask_watch", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("down"))); _judged(media, "EPREF3", media["film"], "S-ref3", view="v3")
-    monkeypatch.undo(); monkeypatch.setattr(NT, "in_quiet_hours", lambda now=None: False); V.record("EPREF3", "up", "", "tap")
+    monkeypatch.undo(); monkeypatch.setattr(NT, "in_quiet_hours", lambda now=None: False); V.record("EPREF3", "up", "", "tap"); seen("EPREF3", 20)
+    verdict_on("VIEW_FLOOR_REFS_MAX", "3")
     assert V.references("EPOTHER") == [("EPREF1", view1)]                                          # a refused film, a film no valid session judged, a film whose minute was not kept: never
     verdict_on("VIEW_FLOOR_REFS_MAX", "0"); assert V.references("EPOTHER") == []
-    _long("EPDN1", title='He said "no", twice'); _judged(media, "EPDN1", media["film"], "S-dn1", view="vd1"); V.record("EPDN1", "down", "", "tap")
-    _long("EPDN2", title="Refused and down"); _judged(media, "EPDN2", media["flop"], "S-dn2"); V.record("EPDN2", "down", "", "tap")
+    _long("EPDN1", title='He said "no", twice'); _judged(media, "EPDN1", media["film"], "S-dn1", view="vd1"); V.record("EPDN1", "down", "", "tap"); seen("EPDN1", 10)
+    _long("EPDN2", title="Refused and down"); _judged(media, "EPDN2", media["flop"], "S-dn2"); V.record("EPDN2", "down", "", "tap"); seen("EPDN2", 5)
     assert V.downs("EPOTHER") == []                                                                # the cell starts at 0
-    verdict_on("VIEW_FLOOR_DOWNS_MAX", "1"); assert V.downs("EPOTHER") == [("EPDN1", "vd1", 'He said "no", twice')]      # the floor's own MISS, never a film it refused
-    assert ("EPDN1", "vd1") not in V.references("EPOTHER")
+    verdict_on("VIEW_FLOOR_DOWNS_MAX", "2"); assert V.downs("EPOTHER") == [("EPDN1", "vd1", 'He said "no", twice')]      # the floor's own MISS, never a film it refused
+    verdict_on("VIEW_FLOOR_REFS_MAX", "3"); assert ("EPDN1", "vd1") not in V.references("EPOTHER")
     verdict_on("VIEW_FLOOR_REFS_MAX", "5"); verdict_on("VIEW_FLOOR_DOWNS_MAX", "5")                 # (V1c step 7) room for every film: each pool keeps ITS verdict only
     assert V.references("EPOTHER") == [("EPREF1", view1)] and V.downs("EPOTHER") == [("EPDN1", "vd1", 'He said "no", twice')]
     verdict_on("OWNER_VERDICT_ON", "FALSE"); assert V.references("EPOTHER") == [] and V.downs("EPOTHER") == []   # the switch off: no reference, no down-canary (DESIGN QUESTION 9)
 
-def test_a_down_canary_fails_a_film_with_its_title_and_the_check_recomputes_it(verdict_on, media):
+def test_references_and_downs_are_empty_while_his_verdict_is_off(verdict_on, media):
+    """(V1c finish, C11) A passed, kept film he thumbed up and one he thumbed down: both pools hold them while his verdict is on and nothing while it is off."""
+    V = _VER()
+    _long("EPSW1"); _judged(media, "EPSW1", media["film"], "S-sw1", view="vs1"); V.record("EPSW1", "up", "", "tap")
+    _long("EPSW2", title="Down one"); _judged(media, "EPSW2", media["film"], "S-sw2", view="vs2"); V.record("EPSW2", "down", "", "tap")
+    verdict_on("VIEW_FLOOR_DOWNS_MAX", "1")
+    assert V.references("x") == [("EPSW1", "vs1")] and V.downs("x") == [("EPSW2", "vs2", "Down one")]
+    verdict_on("OWNER_VERDICT_ON", "FALSE")
+    assert V.references("x") == [] and V.downs("x") == []
+
+def test_a_down_canary_fails_a_film_with_its_title_and_the_check_recomputes_it(verdict_on, media, monkeypatch):
     d = dict(media["film"], episode="EPDN", title='He said "no", twice')
     r = FL.session("S-down", "sha", media["film"], media["canary"], media["twin"], [], [d], "EPDOWN", view="vv")
     assert r["status"] == "fail" and r["why"].startswith("ranked beside a video you marked not good: ") and "'He said \"no\", twice'" in r["why"]
     rows = [x for x in core.store().rows("Floor_Log") if x["session_id"] == "S-down"]
     assert all(json.loads(x["downs"]) == ['He said "no", twice'] for x in rows) and FL.again(rows)["why"] == r["why"]
     assert CON.p_viewer_floor({"floor": r}) == (CON.FAIL, r["why"])                               # the check's own computation from the rows agrees
+    t = 'He said "no", twice'                                                                       # (V1c finish, C16) the words of a fail by a down-canary alone, and its card
+    assert r["why"] == "ranked beside a video you marked not good: " + "; ".join(f"{f}: '{t}'" for f in r["families"]) and r["hold"]["down"] == t, r["why"]
+    monkeypatch.setattr(NT, "in_quiet_hours", lambda now=None: False); FL.hold_card("EPDOWN", "T", r)
+    card = next(x for x in core.store().rows("Owner_Actions") if x.get("episode_id") == "EPDOWN" and x.get("kind") == "floor_hold")["text"]
+    assert "ranked its first minute beside a video you marked not good, '" + t + "'" in card and "the video you rejected" not in card, card
     r0 = FL.session("S-nodown", "sha", media["film"], media["canary"], media["twin"], [], [], "EPDOWN0", view="vv")
     assert r0["status"] == "pass" and all(json.loads(x["downs"]) == [] for x in core.store().rows("Floor_Log") if x["session_id"] == "S-nodown")
 
@@ -920,6 +989,21 @@ def test_the_tick_asks_in_a_try_of_its_own_before_the_eye_sweep_and_the_finish_h
     e = open(EP.__file__, encoding="utf-8").read()
     assert "FLOOR.run(b, ep, master, out, VER.references(ep), VER.downs(ep))" in e and "master, out, (), ())" not in e
     n = open(NT.__file__, encoding="utf-8").read(); assert '("whatifs.org.verdicts", "register")' in n
+
+def test_the_real_tick_sets_the_day_asks_about_a_short_and_schedules_a_film_his_silence_approved(verdict_on, monkeypatch):
+    """(V1c finish, C13) The hooks run in the REAL tick job (the repo's rule for a new hook): the first tick sets the day, a later one asks about a new Short,
+    and one schedules a film the floor could not judge whose eye card defaulted."""
+    import datetime as dt
+    from whatifs import manage as MG
+    MG.tick(); assert S("OWNER_VERDICT_SINCE") and core.store().rows("Owner_Verdicts") == []                    # the real tick job, nothing called by hand
+    _short("SHTICK", core.iso()); MG.tick()
+    assert _vrow("SHTICK") and _vrow("SHTICK")["action_id"], _vrow("SHTICK")
+    slot = (core.now_utc() + dt.timedelta(hours=30)).strftime("%Y-%m-%dT%H:%M:%SZ")                              # the eye test's own setup
+    core.store().append("Episodes", [{"episode_id": "EPTICK", "status": "UPLOADED", "yt_id": "yt4", "slot_et": slot}])
+    CON.await_approval("EPTICK", "yt4", slot, "summary", kind="floor_eye", default="goes public by itself", expires_h=FL.eye_hours(slot))
+    card = next(r for r in core.store().rows("Owner_Actions") if r.get("episode_id") == "EPTICK" and r.get("kind") == "floor_eye")
+    core.store().update("Owner_Actions", "id", card["id"], {"status": "DEFAULTED"}); MG.tick()
+    assert next(r for r in core.store().rows("Episodes") if r["episode_id"] == "EPTICK")["status"] == "SCHEDULED"
 
 def test_owner_verdicts_is_written_by_its_own_module_alone():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); hits = []

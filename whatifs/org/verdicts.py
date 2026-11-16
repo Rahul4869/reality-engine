@@ -88,8 +88,10 @@ def downs(exclude):
 # ------------------------------------------------------------------ the rows, the asks, the notices
 def _long_row(e):
     ep = str(e.get("episode_id") or "")
-    try: lad = str((json.loads(e.get("draw_json") or "{}") or {}).get("ladder") or "")
-    except Exception: lad = ""
+    dj = e.get("draw_json")
+    try: dj = dj if isinstance(dj, dict) else json.loads(dj or "{}")
+    except Exception: dj = {}
+    lad = str((dj or {}).get("ladder") or "")
     lr = next((r for r in store().rows("Ladder") if str(r.get("id")) == lad), None) if lad else None
     topic = "" if not lr or str(lr.get("state") or "").startswith("OVERRIDE") else str(lr.get("topic") or "")      # "" under an override
     yt = str(e.get("yt_id") or "")
@@ -140,9 +142,9 @@ def sync(now=None):
     day = now.strftime("%Y-%m-%d"); asked = sum(1 for r in rows if str(r.get("asked") or "")[:10] == day); n = 0
     for _t, kind, src in sorted(cands, key=lambda x: x[0]):
         if asked >= S("OWNER_VERDICT_ASK_MAX_PER_DAY", int) or NT.now_room() < 2: break
-        row = dict(EMPTY, **(_short_row(src) if kind == "short" else _long_row(src)), asked=iso(now))
-        st.append(TAB, [row])
-        st.update(TAB, "ref", row["ref"], {"action_id": _ask(row["ref"], kind, row["title"], row["url"])})
+        base = _short_row(src) if kind == "short" else _long_row(src)
+        aid = _ask(base["ref"], kind, base["title"], base["url"])
+        row = dict(EMPTY, **base, asked=iso(now), action_id=aid); st.append(TAB, [row])
         asked += 1; n += 1; log(f"owner verdicts: asked about the {kind} '{row['title'][:60]}' ({row['ref']})")
         if kind == "short" and MAKER.on(): MAKER.ask(row["ref"], row["title"])      # v12 V1c (3.3): the second message - his own last words for this topic
     for r in st.rows(TAB):                                          # (3) a verdict he typed in the Sheet

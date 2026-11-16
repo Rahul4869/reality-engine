@@ -208,19 +208,20 @@ def verdict(looks, refs, downs):
     lw = sum(wins(f, "N", "C") for f in full)
     vr = sum(wins(f, "N", f"R{i}") for f in full for i in range(1, k + 1)); tot = LOOKS * len(full) * k
     out = dict(base, looks_won=lw, vs_refs=vr)
-    parts, hold, on_c = [], None, False
+    parts, dpairs, hold = [], [], None                               # (V1c finish) the C parts and the down-canaries' (family, title) pairs apart
     for f in full:
         w = wins(f, "N", "C")
         if w != LOOKS:
             n = num[("N", "C")]; r = next((_reason(lk, n) for lk in by[f] if _named(lk, n, "N", "C") != "N"), "") or next((_reason(lk, n) for lk in by[f]), "")
-            parts.append(f'{f} named the new video in {w} of {LOOKS} looks ("{r}")'); on_c = True; hold = hold or {"family": f, "reason": r}
+            parts.append(f'{f} named the new video in {w} of {LOOKS} looks ("{r}")'); hold = hold or {"family": f, "reason": r}
             continue
         bad = next((i for i in range(1, j + 1) if wins(f, "N", f"D{i}") != LOOKS), None)
         if bad is not None:
-            t = str(downs[bad - 1]); parts.append(f"{f} ranked it beside a video you marked not good: '{t}'")
-            n = num[("N", f"D{bad}")]; hold = hold or {"family": f, "reason": next((_reason(lk, n) for lk in by[f] if _named(lk, n, "N", f"D{bad}") != "N"), "")}
-    if parts:
-        why = ("ranked beside the rejected video: " if on_c else "ranked beside a video you marked not good: ") + "; ".join(parts)
+            t = str(downs[bad - 1]); dpairs.append((f, t))
+            n = num[("N", f"D{bad}")]; hold = hold or {"family": f, "reason": next((_reason(lk, n) for lk in by[f] if _named(lk, n, "N", f"D{bad}") != "N"), ""), "down": t}
+    if parts or dpairs:
+        why = ("ranked beside the rejected video: " + "; ".join(parts + [f"{f} ranked it beside a video you marked not good: '{t}'" for f, t in dpairs])) if parts \
+            else "ranked beside a video you marked not good: " + "; ".join(f"{f}: '{t}'" for f, t in dpairs)
         return dict(out, status="fail", why=why, predict="down", hold=hold)
     why = (f"two first-time viewers ({', '.join(full)}) named this video over the rejected one in {lw} of {LOOKS * len(full)} looks; the rejected video beat its "
            f"frozen picture" + (f", and lost to {k} video(s) you approved" if k else ""))
@@ -408,8 +409,11 @@ def hold_card(ep, title, res):
     from whatifs import notify as NT
     res = res if isinstance(res, dict) else {}; h = res.get("hold") or {}
     watch = f"Watch that minute: {res.get('view_url')}." if res.get("view_url") else "The minute could not be filed for you to watch."
-    text = (f"'{title}' is HELD: two first-time viewers could not tell its first minute from the video you rejected - {h.get('family') or 'a viewer'}: "
-            f"\"{h.get('reason') or ''}\". {watch} There is no automatic repair: publish it anyway, or drop it.")
+    first = (f"'{title}' is HELD: two first-time viewers ranked its first minute beside a video you marked not good, '{h['down']}' - {h.get('family') or 'a viewer'}: "
+             f"\"{h.get('reason') or ''}\"." if h.get("down") else
+             f"'{title}' is HELD: two first-time viewers could not tell its first minute from the video you rejected - {h.get('family') or 'a viewer'}: "
+             f"\"{h.get('reason') or ''}\".")
+    text = f"{first} {watch} There is no automatic repair: publish it anyway, or drop it."
     return NT.send("floor_hold", text, [("Publish anyway", f"CONTRACT WAIVE {ep} viewer_floor"), ("Drop it", f"FLOOR DROP {ep}"), ("Discuss", f"DISCUSS contract {ep}")],
                    tier="now", urgent=True, episode=ep, default="stays held", dedupe_key=f"floor|{ep}|hold")
 
