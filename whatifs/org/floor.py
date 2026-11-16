@@ -8,6 +8,7 @@ LOG = "Floor_Log"
 LOOKS = 2                     # every family is asked twice: the items in one order, then reversed (a judge's answer that flips with the order is "cannot tell")
 EVERY_S = 2                   # the film strip: one picture every two seconds
 THINK = 8000                  # the thinking room of a look (3.8: the bound of a session hangs on it); the answer itself is under 300 tokens
+FETCH_MAX = 2 * 1024 ** 3     # the largest file the kit's fetch takes (2 GB): the first two minutes of the video are enough
 JUDGES = (("floor_gemini", "gemini"), ("floor_claude", "claude"))      # the Board's own two chains: strong models of ONE family each, never a cheap one
 LETTERS = "ABCDEFGHIJKLMNOP"
 DEFERRED = "read by Audience: the floor judges openings only; anything else is for its addressed departments"
@@ -105,7 +106,9 @@ def fetch(src, dst):
     any other https address as it is. The link is never printed or logged; a failure names no address."""
     src = str(src or "").strip()
     if not src.startswith("https://"):
-        shutil.copyfile(src, dst)
+        if not os.path.isfile(src): raise RuntimeError("the link must begin with https:// - copy it again with Drive's Share button (nothing was fetched)")
+        try: shutil.copyfile(src, dst)
+        except Exception as e: raise RuntimeError(f"the file could not be copied ({type(e).__name__})") from None
     else:
         m = re.search(r"/d/([-\w]{20,})|[?&]id=([-\w]{20,})", src)
         url = f"https://drive.usercontent.google.com/download?id={m.group(1) or m.group(2)}&export=download&confirm=t" if m else src
@@ -115,7 +118,7 @@ def fetch(src, dst):
                 with open(dst, "wb") as f:
                     for c in r.iter_content(1 << 20):
                         n += len(c)
-                        if n > 2 * 1024 ** 3: raise RuntimeError("the file is larger than 2 GB: a smaller file is enough - the first two minutes of the video")
+                        if n > FETCH_MAX: raise RuntimeError("the file is larger than 2 GB: a smaller file is enough - the first two minutes of the video")
                         f.write(c)
         except RuntimeError: raise
         except Exception as e: raise RuntimeError(f"the link could not be fetched ({type(e).__name__})") from None
@@ -408,7 +411,7 @@ def hold_card(ep, title, res):
     text = (f"'{title}' is HELD: two first-time viewers could not tell its first minute from the video you rejected - {h.get('family') or 'a viewer'}: "
             f"\"{h.get('reason') or ''}\". {watch} There is no automatic repair: publish it anyway, or drop it.")
     return NT.send("floor_hold", text, [("Publish anyway", f"CONTRACT WAIVE {ep} viewer_floor"), ("Drop it", f"FLOOR DROP {ep}"), ("Discuss", f"DISCUSS contract {ep}")],
-                   tier="now", urgent=True, episode=ep, default="stays held", dedupe_key=f"contract|{ep}|final")
+                   tier="now", urgent=True, episode=ep, default="stays held", dedupe_key=f"floor|{ep}|hold")
 
 def _answer(row, choice):
     """His tap on the floor's hold card: FLOOR DROP kills the held film (the tick's kill_check takes it); every other choice is the contract's."""

@@ -95,8 +95,10 @@ def _answer(row, choice):
     """His tap: LINE <ref> <words>. Words replace his older ones; a tap without words asks once more; a choice longer than MAIL_MAX may have been cut on
     the mail route and is refused unspoken."""
     from whatifs.org import verdicts as VER
-    p = str(choice or "").split(None, 2); ref = str((row or {}).get("episode_id") or (p[1] if len(p) > 1 else ""))
-    if len(p) >= 2 and p[0].upper() == "LINE": ref = p[1]
+    p = str(choice or "").split(None, 2); ref = str((row or {}).get("episode_id") or "")
+    if len(p) >= 2 and p[0].upper() == "LINE":
+        if ref and p[1] != ref: return f"That link is for {ref}: nothing was changed. Type your sentence after LINE {ref}, or in tab Owner_Verdicts, row {ref}, column maker_line."
+        ref = ref or p[1]
     r = VER._row(ref)
     if r is None: return f"{ref}: no row on tab Owner_Verdicts - nothing kept"
     title = r.get("title") or ref

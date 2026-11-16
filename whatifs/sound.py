@@ -196,7 +196,7 @@ def immersive(shots, units, total, seed=""):
             foley.append((FOLEY[len(foley) % len(FOLEY)], max(0.0, t - 0.15))); last = t
     impacts = [float(units[i]["start"]) for i in range(n) if shots[i].get("pov_fx") == "impact_shake"][:3]
     if S("SOUND_WORLDS_ON", bool):
-        amb = worlds(units, total, seed) or amb
+        amb = worlds([u for i, u in enumerate(units) if i not in mk], total, seed) or amb
         foley = sorted(foley + story_events([u for i, u in enumerate(units) if i not in mk]), key=lambda x: x[1])      # v12 V1c: no story event from his words
     return {"ambience": amb, "close": close[:8], "foley": foley, "impacts": impacts}
 

@@ -141,7 +141,7 @@ def plan_report(shots, units, total, anchors):
     p = []; want = acts(shots, units, total); anchors = set(anchors or ())
     for a in want:
         for i in a["units"]:
-            if i < len(shots) and not shots[i].get("path"): p.append(f"shot {i} of act {a['beat']} has no camera-path mark"); break
+            if i < len(shots) and not shots[i].get("path") and not shots[i].get("maker"): p.append(f"shot {i} of act {a['beat']} has no camera-path mark"); break
         if any(i < len(shots) and shots[i].get("type") == "stock" for i in a["units"]): p.append(f"a shot of real footage stands inside act {a['beat']}")
     have = {}
     for i, s in enumerate(shots):

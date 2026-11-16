@@ -167,9 +167,9 @@ def clip_request(shot, line):
     from whatifs import path as PATH
     m = str(shot.get("motion") or "")
     if shot.get("path") and PATH.KLING_MOTION.strip() not in m: m = PATH.KLING_MOTION + m
-    return m.strip().rstrip(".") + ". " + str(shot.get("prompt") or line)
+    m = m.strip().rstrip("."); return (m + ". " if m else "") + str(shot.get("prompt") or line)
 
-def start_frame(shot, path, ep, workdir, aspect="16:9"):
+def start_frame(shot, path, ep, workdir, aspect="16:9", seed=None):
     """The staged, reference-locked start picture of an animated scene (v12 V1c: a place scene's is its own place, no portrait - picture_request). Falls back
     to the normal still, handed the same text."""
     anim = shot.get("anim") or {}
@@ -181,7 +181,7 @@ def start_frame(shot, path, ep, workdir, aspect="16:9"):
     except Exception as e:
         log(f"reference start frame failed ({scrub(e)[:100]}): using the normal still with the style lock", "WARN", ep)
         from whatifs import media as M
-        M.still(prompt, path, ep, seed=f"anim|{ep}|{anim.get('slot')}")
+        M.still(prompt, path, ep, seed=seed or f"anim|{ep}|{anim.get('slot')}")
         return path, "fallback-still"
 
 # ------------------------------------------------------------------ 3. acting prompt

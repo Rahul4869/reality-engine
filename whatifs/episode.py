@@ -362,7 +362,7 @@ class Job:
         def anchor_of(i):
             return i if i in f["img"] else next((j for j in range(i, -1, -1) if j in f["img"]), i)
         def scene_picture(i):                                    # v12 V1c (the audit of V2b, F1 (d)): a scene's picture is re-made on BOTH roads as the first purchase made it -
-            path, how = ANIM.start_frame(shots[i], os.path.join(self.out, f"img{i:03d}.jpg"), self.ep, self.out); f["img"][i] = path; shots[i]["anim"]["frame"] = how
+            path, how = ANIM.start_frame(shots[i], os.path.join(self.out, f"img{i:03d}.jpg"), self.ep, self.out, seed=f"anim|{self.ep}|{(shots[i].get('anim') or {}).get('slot')}|fix{self.fixn}"); f["img"][i] = path; shots[i]["anim"]["frame"] = how
             self._urls = getattr(self, "_urls", None) or dict(f.get("urls") or {}); self._urls[i] = None      # its own file is animated: `how` is a word, never an address
         targets = set(f.get("missing", [])) | {i for i in f["anchors"] if i not in f["img"]}
         if codes & {"vision_mismatch", "vision_artifact"}: targets |= {anchor_of(i) for i in idx or []}

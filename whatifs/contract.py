@@ -712,8 +712,8 @@ def p_viewer_floor(ctx):
     res = ctx.get("floor")
     if not isinstance(res, dict) or not res.get("status"): return NA, "not judged: the measured checks come first, and a film they hold is not paid a jury"
     st, why = str(res.get("status")), str(res.get("why") or "")
-    if res.get("looks"):
-        a = FLOOR.again(res["looks"])
+    if st in ("pass", "fail") or res.get("looks"):
+        a = FLOOR.again(res.get("looks") or [])
         if a["status"] != st or (st in ("pass", "fail") and a["why"] != why): return FAIL, "the stored verdict is not the code's verdict on its own looks"
     if st == "pass": return PASS, why[:380]
     if st == "fail": return FAIL, why[:380]

@@ -41,12 +41,14 @@ def _n(name): return int(re.search(r"\d{3}", name).group(0))
 
 def _record(monkeypatch, gemini_fails=False):
     """Recorders in place of every request that buys a picture or a clip (the picture model with references, the still, the clip): what each was HANDED."""
-    rec = {"picture": {}, "refs": [], "clip": {}, "url": {}, "still": {}}
+    rec = {"picture": {}, "refs": [], "clip": {}, "url": {}, "still": {}, "seed": {}}
     def gem(prompt, refs, path, ep, aspect="16:9"):
         if gemini_fails: raise RuntimeError("the picture model is down")
         rec["picture"].setdefault(_n(os.path.basename(path)), []).append(prompt); MD.fake_image(path, 64, 36, "x"); return path
     def refs_(who, workdir, ep): rec["refs"].append(tuple(who)); return []
-    def still(prompt, path, episode, seed=None, **k): rec["still"].setdefault(_n(os.path.basename(path)), []).append(prompt); MD.fake_image(path, 64, 36, "x"); return path, None
+    def still(prompt, path, episode, seed=None, **k):
+        rec["still"].setdefault(_n(os.path.basename(path)), []).append(prompt); rec["seed"].setdefault(_n(os.path.basename(path)), []).append(seed)      # (V1c finish, C5) and its seed
+        MD.fake_image(path, 64, 36, "x"); return path, None
     def animate(url, img, prompt, path, episode, **k): i = _n(os.path.basename(path)); rec["clip"][i] = prompt; rec["url"][i] = url; return path
     monkeypatch.setattr(AN, "gemini_image", gem); monkeypatch.setattr(AN, "_refs", refs_); monkeypatch.setattr(MD, "still", still); monkeypatch.setattr(MD, "animate", animate)
     return rec
@@ -136,6 +138,8 @@ def test_the_clip_request_of_a_place_scene_carries_the_paths_motion_once():
     assert AN.clip_request(dict(base, prompt=""), "the line itself") == "slow drift. the line itself"
     staged = {"type": "kling", "anim": {"slot": 1, "world": "lab", "line": "x"}, "prompt": "p", "motion": "m"}
     assert AN.clip_request(staged, "x") == AN.acting_prompt(staged) and AN.picture_request(staged, "x") == AN.frame_prompt(staged["anim"])
+    assert AN.clip_request({"anim": {"world": "place"}, "prompt": "your street", "motion": ""}, "x") == "your street"            # (V1c finish, C5) no motion: never ". "
+    assert AN.clip_request({"anim": {"world": "place"}, "prompt": "your street", "motion": "drift."}, "x") == "drift. your street"
 
 # ------------------------------------------------------------------ 0b-3. ONE RULE FOR THE FIRST PURCHASE AND THE REPAIR (3.11 F1 (d))
 def _job(shots, units, out, files):
@@ -165,6 +169,17 @@ def test_the_repair_asks_a_scene_with_the_texts_of_the_first_purchase_on_both_ro
     files = {"img": {k: v for k, v in pics.items() if k != j}, "clips": {k: "c.mp4" for k in idx}, "anchors": sorted(set(pics)), "missing": [j], "urls": {}}
     with FMT.using(fmt): _job(shots, units, out, files).repair_assets(set(), [], 999)
     assert rec["still"][j] == [f"{shots[j].get('prompt')}. Clear, sharp, no text in the picture, accurate to this line: {units[j]['text'][:140]}"] and j not in rec["picture"]
+    # (V1c finish, C5) the picture model down: the fall-back still - the first purchase's TEXT on both roads of the repair, a fresh SEED at each repair
+    ep_, slot = "EPV1C0BR", shots[i]["anim"]["slot"]
+    rec = _record(monkeypatch, gemini_fails=True); AN.start_frame(shots[i], os.path.join(out, f"img{i:03d}.jpg"), ep_, out)
+    assert rec["still"][i] == [want_pic] and rec["seed"][i] == [f"anim|{ep_}|{slot}"]                     # the first purchase
+    for codes, flagged, missing in (({"kling_short"}, [], [i]), ({"vision_artifact"}, [i], [])):         # road 1, then both roads
+        rec = _record(monkeypatch, gemini_fails=True)
+        files = {"img": dict(pics) if missing else {**pics, i: os.path.join(out, f"img{i:03d}.jpg")}, "clips": {k: "c.mp4" for k in idx if k != i or not missing},
+                 "anchors": sorted(set(pics) | {i}), "missing": missing, "urls": {}}
+        job = _job(shots, units, out, files); n = job.fixn
+        with FMT.using(fmt): job.repair_assets(codes, flagged, 999)
+        assert set(rec["still"][i]) == {want_pic} and set(rec["seed"][i]) == {f"anim|{ep_}|{slot}|fix{n}"} != {f"anim|{ep_}|{slot}"}, rec["seed"]
 
 # ------------------------------------------------------------------ 0b-4. THE PLACE SENTENCE AND THE TWO CHECKS' WORDS (3.11 F1 (e), (f); 3.5)
 def test_lay_gives_a_place_scene_its_acts_place_and_rule_4_holds_one_without_it(cast):
@@ -220,7 +235,8 @@ from whatifs.org import floor as FL
 from whatifs import models as M, notify as NT, fakes as FK
 OWN_IDS = ("EP209910010900", "EP209910080900", "EP209910150900", "EP209910220900",      # the whole productions of this file: ids no other test file uses (a test proves it)
            "EP209910290900", "EP209911050900",                                          # step 2: a film he gave a thumbs-up, and the film judged beside it
-           "EP209911120900")                                                            # step 3: a long video about a promoted Short that ends on his line (and the same film on a Sheet without one)
+           "EP209911120900",                                                            # step 3: a long video about a promoted Short that ends on his line (and the same film on a Sheet without one)
+           "EP209911190900")                                                            # the finish (C2): a film held by a measured check, then refused by the floor, then published anyway
 
 @pytest.fixture
 def floor_on(setting):
@@ -495,6 +511,18 @@ def test_fetch_takes_a_drive_link_by_its_download_form_and_refuses_a_page(monkey
     with pytest.raises(RuntimeError) as e: FL.fetch("https://drive.google.com/open?id=1AbCdEfGhIjKlMnOpQrStUvWxYz012345", str(tmp_path / "b.mp4"))
     assert "did not give a video file" in str(e.value) and "Anyone with the link" in str(e.value) and "drive.google" not in str(e.value)
     FL.fetch(media["canary"]["clip"], str(tmp_path / "c.mp4")); assert os.path.getsize(str(tmp_path / "c.mp4")) == len(vid)
+    monkeypatch.setattr(FL, "FETCH_MAX", 10)                                                      # (V1c finish, C4) the size limit is the module's own number
+    class _S3(_S):
+        def iter_content(self, n): yield from (b"x" * 8, b"x" * 8, b"x" * 8)
+    monkeypatch.setattr(FL.requests, "get", lambda url, **k: _S3(b""))
+    with pytest.raises(RuntimeError) as e: FL.fetch("https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz012345/view", str(tmp_path / "d.mp4"))
+    assert "larger than 2 GB" in str(e.value)
+
+def test_fetch_names_no_address_when_the_link_is_not_https(tmp_path):
+    """(V1c finish, C4) A link pasted as http:// or without its scheme is refused with words that name no address - never copied as a local path."""
+    for src in ("http://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWx/view", "drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWx/view", "  "):
+        with pytest.raises(RuntimeError) as e: FL.fetch(src, str(tmp_path / "x.mp4"))
+        assert "1AbCdEf" not in str(e.value) and "drive.google" not in str(e.value) and "https://" in str(e.value), (src, e.value)
 
 def test_the_floorkit_branch_files_the_kit_and_tells_him_once(floor_on, monkeypatch, media):
     import sys
@@ -505,6 +533,25 @@ def test_the_floorkit_branch_files_the_kit_and_tells_him_once(floor_on, monkeypa
     n = [r for r in core.store().rows("Owner_Actions") if r.get("kind") == "floor_kit"]
     assert len(n) == 1 and k["sha"][:8] in n[0]["text"] and "stop sharing" in n[0]["text"]
 
+def test_the_floorkit_workflow_road_reads_the_event_file_and_logs_no_link(floor_on, monkeypatch, media, tmp_path, capsys):
+    """(V1c finish, C4) The workflow's road: the link comes from the event file; a link that is not https:// fails with no address in the crash file
+    (the public Actions log's last_error.txt), in no printed line and in no Run_Log row; the kit is unchanged."""
+    import sys
+    from whatifs import cli
+    monkeypatch.chdir(tmp_path)                                                                   # the crash handler writes last_error.txt into the current folder - NEVER the repo's
+    ev = tmp_path / "event.json"; ev.write_text(json.dumps({"inputs": {"link": media["film"]["clip"], "yt": ""}}), encoding="utf-8")
+    monkeypatch.setenv("GITHUB_EVENT_PATH", str(ev)); monkeypatch.setattr(sys, "argv", ["cli", "floorkit"])
+    cli.main()
+    k = json.loads(S("VIEW_FLOOR_CANARY")); assert k["yt"] == ""
+    assert len([r for r in core.store().rows("Owner_Actions") if r.get("kind") == "floor_kit"]) == 1
+    before = S("VIEW_FLOOR_CANARY"); capsys.readouterr()
+    ev.write_text(json.dumps({"inputs": {"link": "http://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWx/view", "yt": ""}}), encoding="utf-8")
+    with pytest.raises(RuntimeError): cli.main()
+    printed = capsys.readouterr()
+    assert "1AbCdEf" not in open(tmp_path / "last_error.txt", encoding="utf-8").read()
+    assert "1AbCdEf" not in printed.out + printed.err and not [r for r in core.store().rows("Run_Log") if "1AbCdEf" in str(r.get("message"))]
+    assert S("VIEW_FLOOR_CANARY") == before
+
 def test_check_viewer_floor_says_and_recomputes(floor_on, media):
     r = _session(media, "S-check")
     assert CON.p_viewer_floor({"floor": r}) == (CON.PASS, r["why"])
@@ -513,6 +560,12 @@ def test_check_viewer_floor_says_and_recomputes(floor_on, media):
     assert CON.p_viewer_floor({}) == (CON.NA, "not judged: the measured checks come first, and a film they hold is not paid a jury")
     assert CON.p_viewer_floor({"floor": {"status": "void", "why": "void by its canary: x"}}) == (CON.NA, "void by its canary: x")
     core.set_setting("VIEW_FLOOR_ON", "FALSE"); assert CON.p_viewer_floor({"floor": r})[1].startswith("the judged floor is switched off")
+
+def test_the_check_recomputes_a_verdict_that_carries_no_looks(floor_on):
+    """(V1c finish, C3) A pass or a fail with no looks is not the code's verdict: it never passes unverified; a void keeps its N/A."""
+    bad = (CON.FAIL, "the stored verdict is not the code's verdict on its own looks")
+    assert CON.p_viewer_floor({"floor": {"status": "pass", "why": "anything"}}) == bad and CON.p_viewer_floor({"floor": {"status": "fail", "why": "x"}}) == bad
+    assert CON.p_viewer_floor({"floor": {"status": "void", "why": "no canary kit"}}) == (CON.NA, "no canary kit")
 
 def test_with_the_organisation_off_the_result_is_the_same_dict(floor_on, media, tmp_path):
     from whatifs.org import runner as ORG
@@ -543,6 +596,16 @@ def test_the_hold_card_stays_open_and_drop_kills_the_held_film(floor_on, monkeyp
     assert next(r for r in core.store().rows("Episodes") if r["episode_id"] == "EPH")["kill"] == "KILL"
     FL.hold_card("EPH2", "T", {"hold": {"family": "claude", "reason": "r"}, "view_url": ""})
     assert "The minute could not be filed for you to watch." in next(r for r in core.store().rows("Owner_Actions") if r.get("episode_id") == "EPH2")["text"]
+
+def test_the_floors_hold_card_is_never_folded_into_an_older_card(floor_on):
+    """(V1c finish, C1) A film held at the final check, fixed, then refused by the floor: the floor's card is its own message - never folded into the contract's."""
+    CON.owner_card("EPFOLD", "final", [("aliveness", "planted")], "Nothing was uploaded.")
+    res = {"status": "fail", "why": "ranked beside the rejected video: x", "hold": {"family": "gemini", "reason": "r"}, "view_url": ""}
+    a = FL.hold_card("EPFOLD", "T", res)
+    rows = [r for r in core.store().rows("Owner_Actions") if r["episode_id"] == "EPFOLD"]
+    assert [r["kind"] for r in rows] == ["contract_hold", "floor_hold"] and rows[1]["id"] == a and rows[1]["status"] == "OPEN" and rows[1]["delivered_at"] \
+        and rows[1]["expires_at"] == "" and rows[1]["dedupe_key"] == "floor|EPFOLD|hold"
+    assert FL.hold_card("EPFOLD", "T", res) == a                                                  # a second hold of the SAME film folds into its own open card
 
 def test_the_eye_hours_follow_the_slot(floor_on):
     import datetime as dt
@@ -631,6 +694,41 @@ def test_a_void_session_sends_the_film_to_his_eye_with_the_clock(monkeypatch, se
     assert "The first-time-viewer check could not judge this one (no canary kit)." in card["text"] and card["default_action"] == "goes public by itself"
     NT.expire_defaults(now=core.now_utc() + dt.timedelta(hours=21))
     assert next(x for x in core.store().rows("Episodes") if x["episode_id"] == ep)["status"] == "SCHEDULED"
+
+def test_a_film_held_by_a_measured_check_then_refused_by_the_floor_then_published_anyway(monkeypatch, setting):
+    """(V1c finish, C2; 3.10) THE WHOLE ROAD of one film over three finishes: held by a measured check (no jury paid), then the fix renders a new master and
+    the floor refuses it (its own card, no mail), then his "Publish anyway" - answered from the log, no second jury, WAIVED and uploaded."""
+    from tests import test_v12_opening_e2e as E2E
+    from whatifs import publish as PUB
+    _start_e2e(monkeypatch, setting); ep = OWN_IDS[7]
+    asks = []; real_watch = M.ask_watch
+    monkeypatch.setattr(M, "ask_watch", lambda *a, **k: (asks.append(a[0]), real_watch(*a, **k))[1])
+    mails = []; monkeypatch.setattr(PUB, "email", lambda subject, *a, **k: (mails.append(str(subject)), True)[1])
+    row = lambda: next(x for x in core.store().rows("Episodes") if x["episode_id"] == ep)
+    kinds = lambda: [x["kind"] for x in core.store().rows("Owner_Actions") if x.get("episode_id") == ep]
+    # FINISH 1 - a measured check holds the film: no jury is paid
+    real_features = CON.FEATURES
+    monkeypatch.setattr(CON, "FEATURES", [(f[0], f[1], (lambda ctx: (CON.FAIL, "planted")), *f[3:]) if f[0] == "aliveness" else f for f in real_features])
+    r = EP.produce(E2E._slot(10), episode_id=ep)
+    assert r.get("held") and row()["status"] == "HOLD_QC" and len(asks) == 0, r
+    assert _led(ep)["viewer_floor"] == (CON.NA, "not judged: the measured checks come first, and a film they hold is not paid a jury")
+    assert kinds() == ["contract_hold"] and len([m for m in mails if m.startswith("Video held")]) == 1, mails
+    # FINISH 2 - the fix renders a new master; the floor refuses it: its own card, open until he answers, no mail
+    monkeypatch.setattr(CON, "FEATURES", real_features)
+    real_view = FL.view
+    monkeypatch.setattr(FL, "view", lambda src, base, s: FL.stand_in(os.path.join(os.path.dirname(base), "flop.mp4"), "flop") if base.endswith(os.sep + "new") else real_view(src, base, s))
+    n1 = len(mails)
+    r2 = EP.fix_held(ep)
+    assert r2.get("held") and r2["problems"] == ["contract:viewer_floor"], r2
+    assert len(asks) == 4 and kinds() == ["contract_hold", "floor_hold"], (asks, kinds())
+    hold = next(x for x in core.store().rows("Owner_Actions") if x.get("episode_id") == ep and x["kind"] == "floor_hold")
+    assert hold["status"] == "OPEN" and hold["expires_at"] == "" and not row().get("yt_id"), hold
+    new = mails[n1:]; assert len(new) == 1 and "is HELD" in new[0] and not new[0].startswith("Video held"), new      # ONE new mail: the card's own (C2 (c), ruled by finisher 4)
+    # FINISH 3 - his "Publish anyway": answered from the log (no second jury), WAIVED, uploaded
+    assert NT.answer(hold["id"], f"CONTRACT WAIVE {ep} viewer_floor").startswith("waived viewer_floor")
+    n2 = len(mails); r3 = EP.fix_held(ep)
+    assert r3.get("ok") and len(asks) == 4 and _led(ep)["viewer_floor"][0] == CON.WAIVED and row().get("yt_id"), r3
+    assert "floor_eye" not in kinds() and not [m for m in mails[n2:] if m.startswith("Video held") or "is HELD" in m], mails[n2:]
 
 # ================================================================== STEP 2. HIS VERDICT (3.2): one row a release, one tap, the label the floor is scored against
 import datetime as _dt
@@ -950,6 +1048,9 @@ def test_the_second_message_and_his_line_through_the_link(line_on):
     core.store().update("Ladder", "id", "SHL", {"state": "USED"})
     assert ans("LINE SHL Never - my coffee is sacred.") == "Your line for 'Pillow Short' came after its long video was planned: it is kept, but that video carries none."
     assert _vrow("SHL")["line_used"] == "" and _vrow("SHL")["maker_line"] == "Never - my coffee is sacred."
+    core.store().append("Owner_Verdicts", [_mkrow("SHX", "other", "", "")])                              # (V1c finish, C8) the message's own ref decides, never the ref typed after LINE
+    out = MK._answer({"episode_id": "SHL"}, "LINE SHX No.")
+    assert out.startswith("That link is for SHL") and _vrow("SHX")["maker_line"] == "" and _vrow("SHL")["maker_line"] == "Never - my coffee is sacred.", out
 
 def test_a_typed_line_is_seen_once_and_a_refused_or_late_one_is_told_once(line_on):
     V = _VER(); line_on("OWNER_VERDICT_SINCE", _ago(days=3)); line_on("OWNER_VERDICT_ASK_MAX_PER_DAY", "9"); line_on("NOTIFY_NOW_MAX_PER_DAY", "9")
@@ -1012,6 +1113,8 @@ def test_his_still_is_never_an_acts_first_and_an_act_without_a_picture_leaves_hi
         sh = [{"type": "still", "prompt": "his", "maker": True} if k in last else {"type": "still", "prompt": f"p{k}"} for k in range(12)]
         out, _ = PATH.mark(sh, u12, 60.0, BIBLE, "EPM")
         assert all("path" not in out[i] for i in last) and all(out[i].get("path") for i in range(12) if i not in last)              # they continue what is on screen
+        laid0 = PATH.lay(out); rep = PATH.plan_report(laid0, u12, 60.0, EP.anchors_for(laid0, u12, {"stills": 40}, {})); assert rep["problems"] == [], rep["problems"]      # (V1c finish, C7) and are not judged for a direction
+        assert PATH.shown_report([{"type": "still", "act": None, "i": last[0], "src": 3, "move": "", "sign": 0, "t0": 50.0}], laid0)["problems"] == []
         sh3 = [dict(s) for s in sh]; sh3[last[1]] = {"type": "still", "prompt": "the act's own picture"}
         out, _ = PATH.mark(sh3, u12, 60.0, BIBLE, "EPM")
         assert out[last[1]]["path"]["first"] is True and out[last[0]]["path"]["first"] is False and out[last[0]]["path"]["act"] == out[last[1]]["path"]["act"]
@@ -1051,6 +1154,9 @@ def test_no_sound_is_chosen_from_his_words(line_on):
     assert all(a[0] == res["ambience"][0][0] for a in res["ambience"])                                                       # the bed of the last scene goes on under his line
     line_on("SOUND_WORLDS_ON", "TRUE"); res = SD.immersive(shots, units, 80.0, seed="m")
     assert not [e for e in res["foley"] if e[0] in ("fizzle", "paper") and e[1] >= 59.0]                                     # no story event on "prototype" or "exhibit" in his sentence
+    units2 = [dict(u, speaker="JUDGE") if 3 <= k < 6 else dict(u) for k, u in enumerate(units)]                              # (V1c finish, C6) a trial that ends on the Judge (court)
+    line_on("SOUND_WORLD_MIN_S", "5"); amb = SD.immersive(shots, units2, 80.0, seed="m")["ambience"]                         # his two units are the guide's (office)
+    assert amb[-1][0] == SD.WORLD_AMB["court"] and amb[-1][2] == 80.0 and not [a for a in amb if a[1] >= 59.0], amb          # the bed of the last scene goes on under his line
 
 def test_the_picture_judge_never_rates_his_line_and_his_stills_are_no_reuse_run(line_on):
     u20 = _units(20); sh = _mshots(14, 6)
