@@ -664,6 +664,8 @@ def test_a_whole_production_passes_the_floor_with_two_looks_of_each_judge(monkey
     assert c["watch:floor_gemini"] == 2 and c["watch:floor_claude"] == 2
     rows = [x for x in core.store().rows("Floor_Log") if x["episode_id"] == ep]
     assert len(rows) == 4 and {x["view"] for x in rows} == {f"{ep}_view.mp4"}
+    d = os.path.join(core.WORK, ep, "floor"); clips = [os.path.join(d, f) for f in ("new.mp4", "canary.mp4", "canary_twin.mp4")]      # (V1c finish, C10) the session's three clips
+    assert all(os.path.exists(c) for c in clips) and sum(os.path.getsize(c) for c in clips) < 14 * 1024 ** 2, clips
 
 @pytest.mark.parametrize("org", ["TRUE", "FALSE"])
 def test_a_flop_like_film_is_held_by_the_floor_alone_with_its_own_card(monkeypatch, setting, org, media):
@@ -1295,7 +1297,10 @@ def test_a_long_video_about_a_promoted_short_ends_on_his_line_and_pays_nothing_f
     prompts = []; monkeypatch.setattr(M_, "ASK_TAPS", list(M_.ASK_TAPS) + [lambda task, system, prompt: (prompts.append((str(task), str(system) + " " + str(prompt))), system)[1]])
     gate = {}; real_run = CON.run
     monkeypatch.setattr(CON, "run", lambda stage, ctx, *a, **k: (gate.setdefault(stage, ctx), real_run(stage, ctx, *a, **k))[1])
+    calls = []; real_ps = ROOM_.promise_shot                                                         # (V1c finish, C10) a spy: one story never re-aims a promise scene
+    monkeypatch.setattr(ROOM_, "promise_shot", lambda *a_, **k_: (calls.append(1), real_ps(*a_, **k_))[1])
     paid = watch(monkeypatch); r = EP.produce(E2E._slot(10), episode_id=ep); a = dict(paid); assert r.get("ok"), r
+    assert calls == []                                                                                                             # (V1c finish, C10) promise_shot never ran
     led = {x["feature"]: (x["status"], str(x["evidence"])) for x in core.store().rows("Feature_Ledger") if x.get("episode_id") == ep}
     assert not [k for k, v in led.items() if v[0] == CON.FAIL], led
     assert led["makers_line"] == (CON.PASS, f"the film ends on his own line, word for word: \"{line}\"; the same line is in the description")
@@ -1307,16 +1312,19 @@ def test_a_long_video_about_a_promoted_short_ends_on_his_line_and_pays_nothing_f
     g = gate["script"]["shots"]; his = [i for i, s in enumerate(g) if s.get("maker")]
     assert his == list(range(len(units) - k, len(units))) and all(g[i]["type"] == "still" and not (g[i].get("anim") or g[i].get("buy") or g[i].get("promise")) for i in his)
     assert all(st_[1] == "still" and st_[2] != st_[0] for st_ in gate["final"]["maker_states"]) and gate["final"]["maker_states"]
+    assert gate["final"]["maker"] == mk and json.loads(gate["final"]["maker_used"]) == {"ep": ep, "line": line} and gate["final"]["description"].count(MK.paragraph(line)) == 1      # (V1c finish, C10)
     scenes_a = [i for i, s in enumerate(g) if s.get("anim")]
     from whatifs import story as STORY                            # ---- step 4 (3.10): ONE STORY - the thumbnail is the picture this film opens on
     words = " ".join(str(S_["opening"].get("picture") or "").split()); pk = S_["pkg"]
     assert words and led["one_story"][0] == CON.PASS and led["one_story"][1].startswith(f"the thumbnail is drawn from the first picture of Short {sid}, the picture this video opens on: '"), led["one_story"]
-    assert pk["thumb_prompt"] == words and pk["thumb_prompt_b"].startswith(words + "; ") and pk["one_story"] == {"short": sid, "words": words}
+    assert pk["thumb_prompt"] == words and pk["thumb_prompt_b"] == words + "; " + "a single pillow drifting past the Moon" and pk["one_story"] == {"short": sid, "words": words}      # (V1c finish, C9 (c)(5)) the offline packager's own B (it cannot see the system text: DESIGN QUESTION)
     assert [t for t, p in prompts if STORY.BRIEF.format(words=words) in p]                                            # the packager was told the scene
-    assert not [i for i, s in enumerate(g) if not s.get("short") and (s.get("promise") or str(s.get("prompt") or "").startswith(words))]      # drawn once: no shot outside the footage is re-aimed at it
+    assert not [i for i, s in enumerate(g) if not s.get("short") and (s.get("promise") or words in str(s.get("prompt") or ""))]      # drawn once: no shot outside the footage is re-aimed at it
     # ---- the same film on a Sheet without his line
     E2E._new_sheet(tmp_path, "sheet_noline.json"); shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True); go(); paid.clear(); gate.clear()
     r2 = EP.produce(E2E._slot(10), episode_id=ep); b = dict(paid); assert r2.get("ok"), r2
+    led2 = {x["feature"]: (x["status"], str(x["evidence"])) for x in core.store().rows("Feature_Ledger") if x.get("episode_id") == ep}
+    assert calls == [] and led2["makers_line"] == (CON.PASS, "he gave no line for this topic: none is spoken, none is written"), led2.get("makers_line")      # (V1c finish, C10)
     _o2, S2, units2 = E2E._plan(ep); assert S2["maker"] is None and len(units2) == len(units) - k
     assert {x: a.get(x, 0) for x in a if x.startswith(("image", "clip"))} == {x: b.get(x, 0) for x in b if x.startswith(("image", "clip"))}, (a, b)    # nothing is bought for his line
     assert scenes_a == [i for i, s in enumerate(gate["script"]["shots"]) if s.get("anim")]                           # and the scenes stand where they stand without it
@@ -1340,7 +1348,8 @@ def test_the_older_tests_run_with_one_story_off():
     assert (STORY.OTHER_LOOK, STORY.B_MAX) == ("a closer look from another angle", 160)
     assert STORY.BRIEF.format(words="X") == ("THUMBNAIL SCENE (fixed: the picture this video opens on, the one real viewers stayed for): \"X\". Write thumb_text for THIS scene. "
                                             "For the runner-up write thumb_prompt_b as ANOTHER LOOK AT THE SAME SCENE - closer or wider, the same place, the same impossible thing - "
-                                            "and thumb_text_b as other words for it; never another scene: whichever thumbnail a viewer taps, the video opens on what it showed.")
+                                            "and thumb_text_b as other words for it; never another scene: whichever thumbnail a viewer taps, the video opens on what it showed."
+                                            " This replaces the rule above that the runner-up is built on a DIFFERENT idea: here it is the SAME scene, seen another way.")      # (V1c finish, C9: a pin moved by design)
 
 def test_the_manifest_carries_the_words_the_shorts_first_clip_was_drawn_from(monkeypatch, tmp_path):
     from whatifs import release as REL
@@ -1362,7 +1371,7 @@ def _pack(monkeypatch, d, opening):
     return seen[-1], pkg
 
 def test_the_packager_is_told_the_scene_on_a_laddered_video_and_not_under_an_override(story_on, monkeypatch):
-    s, _ = _pack(monkeypatch, D1, OPN); assert STORY.BRIEF.format(words=W) in s
+    s, _ = _pack(monkeypatch, D1, OPN); assert STORY.BRIEF.format(words=W) in s and "This replaces the rule above" in s      # (V1c finish, C9) the opposite order of the base prompt is named
     for d, opn in (({"ladder": "OV1"}, OPN), (D1, {"short": "SH1", "picture": ""}), (D1, None)):          # an override; an archive with no picture words; no opening
         s, _ = _pack(monkeypatch, d, opn); assert "THUMBNAIL SCENE (fixed" not in s
     story_on("ONE_STORY_ON", "FALSE"); s, _ = _pack(monkeypatch, D1, OPN); assert "THUMBNAIL SCENE (fixed" not in s
@@ -1378,6 +1387,8 @@ def test_align_makes_both_thumbnails_the_opening_scene_by_construction(story_on)
     assert len(lw) == 220 and r["thumb_prompt"] == lw and r["thumb_prompt_b"] == lw + "; " + "y" * 160       # the scene's words are never cut - only what follows them
     assert CON.p_one_story({"d": D1, "pkg": r, "opening": {"picture": lw}})[0] == CON.PASS
     cut = dict(r, thumb_prompt_b=r["thumb_prompt_b"][:160]); assert CON.p_one_story({"d": D1, "pkg": cut, "opening": {"picture": lw}})[0] == CON.FAIL      # cut whole, as promise_shot cuts: not the scene
+    assert STORY.align({"thumb_prompt": "x", "thumb_prompt_b": lw + ", seen from far below"}, D1, {"picture": lw})["thumb_prompt_b"] == lw + "; seen from far below"      # (V1c finish, C9) a packager that repeats the scene keeps its other look
+    assert STORY.align({"thumb_prompt": "x", "thumb_prompt_b": W}, D1, OPN)["thumb_prompt_b"] == W + "; " + STORY.OTHER_LOOK                                          # the scene alone: the other look is ours
 
 def test_a_package_that_is_not_one_story_comes_back_as_it_came(story_on):
     def same(d, opn):
@@ -1416,12 +1427,12 @@ def test_the_rescue_swaps_to_a_runner_up_of_the_same_scene(story_on, monkeypatch
     from tests import test_v85 as T85
     from whatifs import manage as MG, art as ART
     from PIL import Image
-    pkg = STORY.align({"thumb_prompt": "a pillow on the moon", "thumb_prompt_b": "a pillow on Mars", "thumb_text": "UP"}, D1, OPN); drawn = []
+    pkg = STORY.align({"thumb_prompt": "a pillow on the moon", "thumb_prompt_b": "seen from far below", "thumb_text": "UP"}, D1, OPN); drawn = []      # (V1c finish, C9) another LOOK, never another scene
     def thumb(prompt, text, out_dir, ep, **kw):
         os.makedirs(out_dir, exist_ok=True); p = os.path.join(out_dir, "up.jpg"); Image.new("RGB", (64, 36)).save(p); drawn.append(prompt); return p, p, None
     monkeypatch.setattr(ART, "thumbnail", thumb); monkeypatch.setattr(QC, "check_thumb", lambda up, phone: (True, {}))
     b = EP._thumb_b(pkg, {}, _dir(tmp_path / "ep"), "EPRESC", False)
-    assert b and drawn == [W + "; a pillow on Mars"]                                                          # B is drawn from the opening's scene ...
+    assert b and drawn == [W + "; seen from far below"]                                                       # B is drawn from the opening's scene ...
     story_on("PKG_RESCUE_HOURS", "36")                                                                        # test_v85's timing (the shipped default is 72 h)
     calls = T85._fakes(monkeypatch, 40 * 20, tmp_path); T85._hist(3); T85._live("EPRESC", 40)
     monkeypatch.setattr(MG, "_fetch_some", lambda ep, a, names: {"release.json": str(tmp_path / "release.json"), "thumb_b.jpg": b})

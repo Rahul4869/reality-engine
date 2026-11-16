@@ -954,7 +954,7 @@ def _title_b(pkg, title):
     return ""
 
 def _thumb_b(pkg, room, out, ep, fix):
-    """v8.5: the B thumbnail (one premium image, about Rs 8). It must be a DIFFERENT idea, not a re-roll; any failure just means no rescue for this video."""
+    """v8.5: the B thumbnail (one premium image, about Rs 8). It must be a DIFFERENT idea, not a re-roll (v12 V1c: in one story it is another look at the SAME scene - story.align); any failure just means no rescue for this video."""
     if not S("PKG_RESCUE_ON", bool): return ""
     p = os.path.join(out, "thumb_b.jpg")
     if fix and os.path.exists(p): return p

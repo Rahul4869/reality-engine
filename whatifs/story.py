@@ -6,7 +6,8 @@ OTHER_LOOK = "a closer look from another angle"      # the runner-up's second ha
 B_MAX = 160                                          # characters of the packager's own words after the scene's words in the runner-up (the scene's words are NEVER cut)
 BRIEF = ("THUMBNAIL SCENE (fixed: the picture this video opens on, the one real viewers stayed for): \"{words}\". Write thumb_text for THIS scene. For the "
          "runner-up write thumb_prompt_b as ANOTHER LOOK AT THE SAME SCENE - closer or wider, the same place, the same impossible thing - and thumb_text_b as "
-         "other words for it; never another scene: whichever thumbnail a viewer taps, the video opens on what it showed.")
+         "other words for it; never another scene: whichever thumbnail a viewer taps, the video opens on what it showed."
+         " This replaces the rule above that the runner-up is built on a DIFFERENT idea: here it is the SAME scene, seen another way.")
 
 def on():
     """Is the thumbnail the picture the film opens on? (cell ONE_STORY_ON)"""
@@ -39,6 +40,7 @@ def align(pkg, d, opening):
     if not w or not isinstance(pkg, dict): return pkg
     own_b, own = _one(pkg.get("thumb_prompt_b")), _one(pkg.get("thumb_prompt"))
     r = own_b or (own if own != w else "") or OTHER_LOOK
+    if r.startswith(w): r = r[len(w):].lstrip(" ;,.:-") or OTHER_LOOK
     pkg["thumb_prompt"] = w
     pkg["thumb_prompt_b"] = w + "; " + r[:B_MAX]
     pkg["thumb_text_b"] = pkg.get("thumb_text_b") or pkg.get("thumb_text") or ""
