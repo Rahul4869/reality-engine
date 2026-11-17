@@ -206,6 +206,49 @@ def _fake_short(prompt):
     f = lambda t: t.replace("{W}", w.title()).replace("{w}", w)
     return json.dumps({"title": f(title), "promise": f(promise), "beats": [{"role": r, "line": f(l), "picture": f(pc)} for r, l, pc in beats]})
 
+def _keep_given_asks(body, prompt):
+    """v12 V1c repair (red round 2): a writer asked to rewrite a NARRATION keeps what it was not asked to change - the audience asks in it (cta.is_ask; a
+    two-line entry stays whole) stay, each where code puts an ask back (cta.ensure's own place: POS, the share two lines from the end, cta._safe_slot), so code
+    has nothing to put back after the last measured fix (room.py re-draws OTHER asks when a rewrite dropped them: CTA_LAST already names the dropped ones)."""
+    if "NARRATION:\n" not in str(prompt): return body
+    from whatifs import cta as _CTA
+    given = str(prompt).split("NARRATION:\n", 1)[1].split("\n"); asks = []
+    for i in _CTA._spoken_index(given):
+        k = _CTA.is_ask(_CTA._peel(given[i])[3])
+        if k and asks and asks[-1][0] == k and asks[-1][2] == i - 1: asks[-1][1].append(given[i].strip()); asks[-1][2] = i
+        elif k: asks.append([k, [given[i].strip()], i])
+    lines = list(body); spoken = _CTA._spoken_index(lines); n = len(spoken)
+    if not asks or n < 8: return body
+    plan = [(_CTA._safe_slot(lines, spoken, (n - 2) if k == "share" else int(n * _CTA.POS.get(k, 0.5))), entry) for k, entry, _ in asks]
+    for p, entry in sorted(plan, key=lambda x: -x[0]):                         # from the end, so earlier places stay valid (as cta.ensure inserts)
+        lines[spoken[p] + 1:spoken[p] + 1] = entry; spoken = _CTA._spoken_index(lines)
+    return lines
+
+def _punch_to_rule(body):
+    """v12 V1c repair (red round 2): the stand-in's [PUNCH] lines follow the joke rule's own measures (enforce.joke_need, enforce.biggest_gap_lines, the
+    check's 2.2 x JOKE_EVERY_SEC_LONG) on the narration the script gate measures: this answer with the Short's hook that hooks.apply_to_script puts first
+    when the writer did not open on it - the stand-in never sees that FIRST LINE (models.ask hands a fake only its user message), so it counts a line of
+    SHORT_HOOK_WORDS_MAX words. Until both hold, a [PUNCH] goes on its own line nearest the middle of the longest stretch without one (never on an ask)."""
+    from whatifs import enforce as _EN, hooks as _HK, cta as _CTA
+    from whatifs.core import S as _S
+    every, wpm = _S("JOKE_EVERY_SEC_LONG", float), max(1.0, _S("WPM_ESTIMATE", float))
+    hook = " ".join(["word"] * _S("SHORT_HOOK_WORDS_MAX", int))
+    secs = lambda l: len(re.sub(r"\[[^\]]*\]", " ", l).split()) / wpm * 60.0
+    while True:
+        gate = _HK.apply_to_script("\n".join(body), hook)[0].split("\n")
+        if len(_EN.punch_lines("\n".join(gate))) >= _EN.joke_need("\n".join(gate)) and _EN.biggest_gap_lines("\n".join(gate)) <= 2.2 * every: return body
+        sp = _CTA._spoken_index(body); first = sp[0] if sp else len(body)    # where the hook goes: body line i is gate line i (i < first) or i + 1
+        t, start = 0.0, []
+        for l in gate: start.append(t); t += secs(l)
+        marks = [0.0] + [start[i] for i, l in enumerate(gate) if _EN.PUNCH_RE.search(l)] + [t]
+        free = [i for i in sp if not _EN.PUNCH_RE.search(body[i]) and not _CTA.is_ask(_CTA._peel(body[i])[3])]
+        for a, b in sorted(zip(marks, marks[1:]), key=lambda s: s[0] - s[1]):
+            cand = [i for i in free if a < start[i + (i >= first)] < b]
+            if cand: break
+        else: return body                                                       # nothing left to mark: the gate decides
+        i = min(cand, key=lambda i: abs(start[i + (i >= first)] - (a + b) / 2))
+        body[i] = "[PUNCH] " + body[i]
+
 def fake_reply(key, prompt):
     r = random.Random(len(prompt))
     if key == "rnd_research": return _fake_research(prompt)
@@ -314,6 +357,8 @@ def fake_reply(key, prompt):
                 k2 = next((j for j in range(max(8, len(body) // 2), len(body)) if not re.search(r"(?i)exhibit|^## BEAT|^\[pause", body[j])), len(body) - 2)
                 tags_ = " ".join(m for m in moved if m.startswith("[")); text_ = " ".join(m for m in moved if not m.startswith("["))
                 body[k2] = (tags_ + " " if tags_ else "") + body[k2] + (" " + text_ if text_ else "")
+        if _FMT.rule("joke_density") == "must":          # v12 V1c repair (red round 2): in a format whose joke rule holds the video, the narration the gate measures is the stand-in's
+            body = _punch_to_rule(_keep_given_asks(body, prompt))
         return json.dumps({"title_working": "Pillows", "script": "\n".join(body), "facts": [{"claim": "c", "reasoning": "r"}]})
     if key == "critic" and "MEASURED CHECKS" in prompt:          # v10.2: the 6-point creative self-review (contract)
         return json.dumps({"hook": 8, "clarity": 8, "humour": 7, "visual_variety": 7, "audio": 8, "accuracy": 8, "notes": "Fake review: tighten the cold open; more Grimm."})
