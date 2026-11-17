@@ -54,10 +54,12 @@ def lines(kind="long", kling=None, stills=None, living=None, table_read=None, fm
         else:
             n_clips, per, pics, sec = short_shots(fmt); hero_s = CL.paid_s(per, n_clips)
         n_var = max(1, S("SHORTS_VARIANTS", int))
+        from whatifs.org import finance as FIN
+        boost = FIN.boost("THINK_BOOST_VARIANTS")                         # v12 V4: more scripts while the Claude credit's lane is open (closed: the base's lines, key for key)
         return [_line("hero_clips", "every second of the Short but the loop's: clips of the hero model", hero_s, hero_inr, "visuals", "s", "hero_clip", {"clip_kling": n_clips}),
                 _line("pictures", "the start picture of each beat", pics, MD.still_usd(*SH._still_size()) * u, "visuals", "", "image", {"image": pics}),
                 _line("writing", f"{n_var} scripts, the blind jury, one fix", 1, S("REPLAN_SHORT_INR", float), "ai_writing", "", None, {"text:short_writer": n_var + 1}),
-                _line("voice", "the guide's voice, by the second", 1, voice_inr(sec), "tts", "", "gemini_tts", {"voice_job": 1})]
+                _line("voice", "the guide's voice, by the second", 1, voice_inr(sec), "tts", "", "gemini_tts", {"voice_job": 1})] +                ([_line("boost_variants", f"{boost} more scripts while the Claude credit lasts", boost, S("SHORT_VARIANT_EST_INR", float), "ai_writing", "", None, {"text:short_writer": boost})] if boost > 0 else [])
     ladder = kind == "ladder"; full = G.TIERS[0]
     k = S("KLING_CLIPS", int) if kling is None else int(kling)
     if ladder: k = max(0, k - 1)                                          # the scene at second 0 is the Short's footage: paid when the Short was made
@@ -149,7 +151,8 @@ def stage_of(item, provider=""):
 def spend_monitor():
     """One email per threshold per month. Returns the thresholds mailed now."""
     from whatifs import governor as G, publish as PUB
-    cap = G.cap_inr(); spent = month_spend(); mk = now_utc().strftime("%Y-%m"); sent = str(S("SPEND_WARN_SENT") or "")
+    from whatifs.org import finance as FIN
+    cap = G.cap_inr(); spent = month_spend() - FIN.cover(); mk = now_utc().strftime("%Y-%m"); sent = str(S("SPEND_WARN_SENT") or "")      # v12 V4: his own money = governor.own_spend_inr() (its own month_spend: tests/test_v9_cost.py plants the spend here)
     out = []
     for p in sorted(int(x) for x in str(S("SPEND_WARN_PCTS") or "70,90").split(",") if x.strip().isdigit()):
         tag = f"{mk}:{p}"

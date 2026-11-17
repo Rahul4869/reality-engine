@@ -161,19 +161,21 @@ def digest(now=None, force=False):
     st = store(); eps = st.rows("Episodes"); week_ago = (now_utc() - dt.timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
     recent = [e for e in eps if str(e.get("slot_et", "")) >= week_ago]
     opens = open_rows("week") + open_rows("now")
-    try:
-        from whatifs.costguard import month_spend
-        spent = month_spend()
+    try: spent = G.own_spend_inr()                                                     # v12 V4: his own money (= the list-price spend with STRATEGY_ON FALSE)
     except Exception: spent = 0.0
-    try: cover = G.credit_cover_inr()
+    try:
+        from whatifs.org import finance as FIN
+        cover = FIN.cover() if FIN.on() else G.credit_cover_inr()
     except Exception: cover = 0.0
     try:
         from whatifs import scoreboard as SB; sb = SB.line(now)                      # v12 V4: the scoreboard is the digest's first paragraph ("" with STRATEGY_ON FALSE)
     except Exception as e: sb = ""; log(f"digest: the scoreboard line was not built: {scrub(e)[:120]}", "WARN")
     lines = (["<p>" + sb.replace("&", "&amp;").replace("<", "&lt;") + "</p>"] if sb else [])
-    lines += [f"<p><b>Mode:</b> {G.budget_mode()} · <b>spend this month:</b> Rs {spent:.0f} of Rs {G.cap_inr():.0f}"
-             + (f" (about Rs {cover:.0f} of it covered by free credits)" if cover > 0 else "") + "</p>",
-             "<p><b>This week:</b> " + (", ".join(f"{str(e.get('title') or e.get('episode_id'))[:50]} [{e.get('status')}]" for e in recent) or "no videos yet") + "</p>"]
+    if S("STRATEGY_ON", bool):                                                               # v12 V4: what he reads of his money
+        lines.append(f"<p><b>Mode:</b> {G.budget_mode()} · Your money this month: Rs {spent:.0f} of Rs {G.cap_inr():.0f}." + (f" Claude credit paid another Rs {cover:.0f}." if cover > 0 else "") + "</p>")
+    else: lines.append(f"<p><b>Mode:</b> {G.budget_mode()} · <b>spend this month:</b> Rs {spent:.0f} of Rs {G.cap_inr():.0f}"
+                       + (f" (about Rs {cover:.0f} of it covered by free credits)" if cover > 0 else "") + "</p>")
+    lines.append("<p><b>This week:</b> " + (", ".join(f"{str(e.get('title') or e.get('episode_id'))[:50]} [{e.get('status')}]" for e in recent) or "no videos yet") + "</p>")
     if opens:
         lines.append("<p><b>Waiting for you (optional):</b></p><ul>" + "".join(f"<li>{r['text'][:160]} " + " ".join(f"<a href='{_link(v, r['id'])}'>{l}</a>" for l, v in json.loads(r.get('buttons') or '[]') if _link(v, r['id'])) + "</li>" for r in opens[:12]) + "</ul>")
     else: lines.append("<p>Nothing is waiting for you.</p>")

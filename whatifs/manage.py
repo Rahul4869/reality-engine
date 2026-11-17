@@ -1264,7 +1264,8 @@ def money_check():
 def monthly_brief():
     JOB["name"] = "brief"; st = store()
     rev = [dict(r, month=G.month_key(r.get("month")) or r.get("month"), inr_received=G.money_num(r.get("inr_received"))) for r in st.rows("Revenue_Log")[-3:]]
-    data = {"analytics": st.rows("Analytics")[-15:], "spend_month": month_spend(), "cap": G.cap_inr(), "revenue": rev,
+    data = {"analytics": st.rows("Analytics")[-15:], "spend_month": G.own_spend_inr(), "cap": G.cap_inr(),      # v12 V4: his own money
+            "revenue": rev,
             "lessons": st.rows("Lessons")[-10:], "trends": [r["item"] for r in st.rows("Trend_Brief")[-15:]]}
     try:                                                        # v9: the experiments and the season feed the brief (recommendations only)
         data["experiments"] = st.rows("Experiments")[-8:]; data["season"] = st.rows("Season")[-8:]

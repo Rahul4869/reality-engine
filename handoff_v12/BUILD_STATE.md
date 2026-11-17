@@ -1367,6 +1367,30 @@ STEP 1'S RUN (pytest `-n 8`, fake mode, alone): `test_v12_strategy`, `test_docs_
 STEP 0'S CHECKS (read with `gh_runs.js`): run 44086327940 on 369ee3e, 12:46 -> about 14:15 UTC, GREEN - "Unit tests: 1770 passed in 5054.57s"; the free rehearsal "REHEARSAL: GREEN ... contract script: 40/40 pass; contract final: 23/23 pass".
 WHAT THE OWNER GETS: his morning brief opens on the Partner Program's own numbers - subscribers, the Shorts views that count, the long
 watch hours - each with the pace its bar needs ("about N days at this pace"), the same line on the e-mail's first paragraph.
+STEP 2 - FINANCE IS WIRED, AND THE MONEY IS HIS OWN (3.3). WHAT CHANGED: `governor` - `episodes_left_this_month`, `long_videos_this_month`,
+`slots`, `month_fit`, `own_spend_inr`, `remaining_inr`; `_balance` / `runway_days` read `finance.lane()`. NEW `whatifs/org/finance.py`
+(PROTECTED; D11 wraps it) - `credit`, `lane`, `cover`, `boost`, `overruns`, `watch` (the cover's rows cached `COVER_TTL_S` 600 s). Cells
+CLAUDE_CREDIT_FROM, CREDIT_FLOOR_INR 2970, CLAUDE_CREDIT_COVERED, CREDIT_COVER_MONTH_MAX_INR 3300 (MEASURED in step 1), THINK_BOOST_VARIANTS
+0, SHORT_VARIANT_EST_INR 12, FINANCE_SEEN_TS; CLAUDE_CREDIT_UNTIL's default "". Every reader of "his spending" reads `own_spend_inr`
+(governor, `notify.digest`, the dashboard's `_cover`, the caretaker, `manage.monthly_brief`, `owner_view.money` - "Your money this month");
+`costguard.spend_monitor` counts `month_spend() - finance.cover()`. The boost: `shorts2.write` asks n plus the boost, `_write` keeps `asked`
+and `won`, the line `boost_variants`, `paid_calls.V12V4_ADDED`. Registry: D11 in `ENTRY` (its literal call in `cli.strategy_round`) and
+PENDING without D11; levers MONTH_RESERVE_INR and THINK_BOOST_VARIANTS (91 in the table). Pins moved by design (each with its comment):
+`test_v12_short` 235 (`_write` gains `asked`, `won`), `test_v12_org` 232 (a memo D11 could not act on now escalates to D0), `test_v12_exec`
+62 (the lever table 89 -> 91). TWO CHANGES AT THE APPLY: (1) the module's docstring is one line (the plan guard; the rest a comment);
+(2) A FAULT THE FIRST RUN FOUND: `finance.watch` never called `brief.take()`, and the runner's contract breaks a run whose department never
+takes its playbook ("no playbook injection: the department never took its playbook" - `test_finance_watch_keeps_the_months_cover...`
+raised it). `watch` now takes it first (D11 decides by code; the playbook changes no figure). The same fault is in the typed
+`strategy.review` (step 3) - fixed at its apply. Matrix: two rows (every rupee his own - `fn:` governor.own_spend_inr / month_fit,
+finance.lane / cover / boost; an overrun reaches somebody - `fn:` finance.watch). SYSTEM.md regenerated.
+STEP 2'S RUN (pytest `-n 8`, fake mode, alone): `test_v12_strategy`, `test_v12_org`, `test_v12_short`, `test_v12_exec`, `test_v12_money`,
+`test_v94a`, `test_v94b`, `test_v9_cost`, `test_v103`, `test_v83`, `test_v811`, `test_v12_palace`, `test_v12_ladder`, `test_v111_enforce`,
+`test_docs_current` - 514 passed, 1 failed (the fault above) in 492.88 s; after the fix `test_v12_strategy` 21 passed. ALONE UNDER
+`shim/minitest.py`: `test_v12_strategy.py` 21 passed in 4 s; `test_v12_org.py` 100 passed in 115 s; `test_v12_short.py` 22 passed in 82 s; `test_v12_exec.py` 88 passed in 212 s. `tools/plan_guard.py`: GREEN.
+STEP 1'S CHECKS (`gh_runs.js`): run 44101980576 on 9d4edd7, 14:20 -> 15:36 UTC, GREEN - "Unit tests: 1781 passed in 4344.24s"; "REHEARSAL: GREEN ... contract script: 40/40 pass; contract final: 23/23 pass".
+WHAT THE OWNER GETS: the money he is told about is HIS - the Claude credit no longer eats his Rs 5,000 cap (it covers at most Rs 3,300 a
+month, and closes by itself the day after its date or under its floor); while the credit lasts a Short can be written with more scripts
+for the jury to choose from (the boost, 0 by default); an overrun or an unlisted paid call reaches Operations as a memo the same day.
 ### V1c - THE FLOOR, HIS VERDICT AND THE MAKER'S LINE (15-17 Nov 2026) - ACCEPTED (final code commit 9dfc916 GREEN in GitHub Checks run 246: 1768 passed; sweep 58 of 58 ids) - its code b326887, BUILT AGAIN AFTER RED ROUND 2 (the offline writer keeps the asks it is given and marks its punchlines by the joke rule's own measures (open issue 228); `proving/notes/V1c_BUILT.md`; the repair block "THE REPAIR OF RED ROUND 2" under the second pass's 6b); BEFORE IT RED ON ITS SECOND PASS (46615df, 17 Nov 2026: the rehearsal F2/S2 held by joke_density on episode EP202611170305 - 6 punchlines, need 7, the script one word over the line; `proving/notes/V1c_RED_2.md`), NOT ACCEPTED; BEFORE IT BUILT AGAIN (red round 1 on 030f197 repaired: final code commit d39a213 - the floor's media fixture made for the proof's serial runner, a guard over every test file, test_v12_floor split word for word into three files; `proving/notes/V1c_BUILT.md`; the builder's record, the prover's 6b of the first pass, the repair block under it)
 WHAT IT IS FOR, in a viewer's and the owner's words: a finished long video is shown - its first minute - to two strong first-time viewers of two
 model families beside the video he rejected; a film they cannot tell from that one is HELD, a jury that fails its own planted questions holds

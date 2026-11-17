@@ -89,7 +89,7 @@ def rollover_month(now=None):
 
 def record_month_close():
     """Keeps LAST_MONTH_* current every tick (the values at month end are what rollover uses)."""
-    set_setting("LAST_MONTH_CAP_INR", f"{cap_inr():.0f}"); set_setting("LAST_MONTH_SPEND_INR", f"{month_spend():.0f}")
+    set_setting("LAST_MONTH_CAP_INR", f"{cap_inr():.0f}"); set_setting("LAST_MONTH_SPEND_INR", f"{own_spend_inr():.0f}")      # v12 V4: his own money (the credit's cover is his unspent money)
 
 def cap_inr():
     rec = last_month_revenue()
@@ -128,8 +128,8 @@ def specials_left_inr():
 def max_long_videos():
     return {"runway": S("RUNWAY_MAX_LONG_PER_MONTH", int), "growth": S("GROWTH_MAX_LONG_PER_MONTH", int)}.get(budget_mode(), S("STANDARD_MAX_LONG_PER_MONTH", int))
 
-def long_videos_this_month():
-    mk = now_utc().strftime("%Y-%m")
+def long_videos_this_month(now=None):
+    mk = (now or now_utc()).strftime("%Y-%m")                                                 # v12 V4: time can be planted (None = today)
     return sum(1 for e in store().rows("Episodes") if str(e.get("slot_et", "")).startswith(mk) and str(e.get("status", "")).upper() not in ("KILLED", "FAILED", "SKIPPED"))
 
 def credit_cover_inr():
@@ -151,9 +151,9 @@ def extras_allowed(est_inr, kind="extra"):
     GROWTH_ALLOWANCE_INR and (b) after this spend the remaining slots' production still fits. Extras pause first; production is never squeezed."""
     if kind == "breakout":                                                                    # v11: breakout follow-ups first use the carried-in fund
         if est_inr <= breakout_fund_left_inr(): return True, "breakout fund"
-    elif month_spend() + est_inr > S("BUDGET_GUARD_PCT", float) / 100.0 * cap_inr():          # v11: the 90% guard pauses extras (never production)
+    elif own_spend_inr() + est_inr > S("BUDGET_GUARD_PCT", float) / 100.0 * cap_inr():        # v11: the 90% guard pauses extras (never production); v12 V4: of his own money
         _guard_alert()
-        return False, f"paused: the month is at {100 * month_spend() / max(1.0, cap_inr()):.0f}% of the cap (guard {S('BUDGET_GUARD_PCT', float):.0f}%)"
+        return False, f"paused: the month is at {100 * own_spend_inr() / max(1.0, cap_inr()):.0f}% of the cap (guard {S('BUDGET_GUARD_PCT', float):.0f}%)"
     spent = month_spend_of(_prefixes("GROWTH_ITEMS"))
     if spent + est_inr > S("GROWTH_ALLOWANCE_INR", float): return False, f"growth allowance used (Rs {spent:.0f} of Rs {S('GROWTH_ALLOWANCE_INR', float):.0f})"
     left_slots = max(0, min(episodes_left_this_month(), max_long_videos() - long_videos_this_month()))
@@ -168,7 +168,7 @@ def _guard_alert():
     if str(S("BUDGET_GUARD_ALERTED") or "") == mk: return
     try:
         from whatifs import notify as NT
-        NT.send("budget_guard", f"Budget guard: Rs {month_spend():.0f} of Rs {cap_inr():.0f} spent this month. Extras (spin-offs, tool tests, Shorts above 1 a day) "
+        NT.send("budget_guard", f"Budget guard: Rs {own_spend_inr():.0f} of Rs {cap_inr():.0f} spent this month. Extras (spin-offs, tool tests, Shorts above 1 a day) "
                 "are paused; scheduled long episodes keep their money.", [("OK", "OK")], tier="now", default="ok", expires_h=48, dedupe_key=f"guard|{mk}")
     except Exception: pass
     set_setting("BUDGET_GUARD_ALERTED", mk)
@@ -186,7 +186,13 @@ def org_left_inr():
     except Exception as e:
         log(f"organisation reserve not computed: {str(e)[:100]}", "WARN"); return 0.0
 
-def remaining_inr(): return cap_inr() - month_spend()
+def own_spend_inr(now=None):
+    """v12 V4: what HIS money paid this month - the list-price spend less what the Claude credit covered (finance.cover: 0 with STRATEGY_ON FALSE or
+    the lane closed, at most CREDIT_COVER_MONTH_MAX_INR - beyond it Claude's rows count against his cap again and the cap is the breaker it was)."""
+    from whatifs.org import finance as FIN
+    return month_spend() - FIN.cover(now)
+
+def remaining_inr(): return cap_inr() - own_spend_inr()
 
 def production_room_inr():
     """v8.7: what production may still spend this month. The maintenance reserve is kept INSIDE the cap (it was above it until v8.6, so a month could total
@@ -195,15 +201,41 @@ def production_room_inr():
             - breakout_fund_left_inr()                                                                                     # v11: nor is the breakout fund
             - org_left_inr())                                                                                              # v12 B5: nor the organisation's thinking caps
 
-def episodes_left_this_month():
+def episodes_left_this_month(now=None):
     from zoneinfo import ZoneInfo
     days = [d.strip()[:3] for d in publish_days().split(",")]
     names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-    today = now_utc().astimezone(ZoneInfo("America/New_York")).date(); n = 0; d = today
+    today = (now or now_utc()).astimezone(ZoneInfo("America/New_York")).date(); n = 0; d = today      # v12 V4: time can be planted (None = today)
     while d.month == today.month:
         if names[d.weekday()] in days: n += 1
         d += dt.timedelta(days=1)
     return max(1, n)
+
+def slots(now=None, left=False):
+    """v12 V4: how many publishing days (publish_days()) the calendar month has, on the US Eastern clock as episodes_left_this_month reads it -
+    all of them, or (left=True) those from today on (0 after the month's last)."""
+    from zoneinfo import ZoneInfo
+    days = [d.strip()[:3] for d in str(publish_days() or "").split(",")]
+    names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    today = (now or now_utc()).astimezone(ZoneInfo("America/New_York")).date(); d = today if left else today.replace(day=1); n = 0
+    while d.month == today.month:
+        if names[d.weekday()] in days: n += 1
+        d += dt.timedelta(days=1)
+    return n
+
+def month_fit(n_long, n_short, extra_inr=0.0, now=None):
+    """v12 V4: split()'s own arithmetic for OTHER counts - does a month of n_long long videos and n_short Shorts (plus extra_inr) fit the money left
+    for production? It reads the Sheet and the clock. The long video is priced as split prices the NEXT one (no kind)."""
+    import calendar
+    from whatifs import shorts2 as SH
+    now = now or now_utc(); days = calendar.monthrange(now.year, now.month)[1]; left_days = days - now.day + 1
+    long = full_episode_inr() * S("BUDGET_SAFETY_MARGIN", float)
+    long_left = max(0, min(episodes_left_this_month(now), int(n_long) - long_videos_this_month(now)))
+    short_left = max(0, int(n_short) - SH.made_this_month(now)); one = short_inr()
+    reserve = max(0.0, S("MONTH_RESERVE_INR", float)) * left_days / days
+    need = long_left * long + short_left * one + reserve + float(extra_inr or 0.0); room = production_room_inr()
+    return {"room_inr": round(room, 0), "long_inr": round(long, 1), "short_inr": round(one, 1), "reserve_inr": round(reserve, 0), "need_inr": round(need, 0),
+            "free_inr": round(room - need, 0), "fits": need <= room, "long_left": long_left, "short_left": short_left}
 
 # v8.2 budget tiers. Code sets the numbers; Claude and Gemini are briefed with them and write/plan inside them. The floor is never cut:
 # 8:25 minimum (the 8:10 mid-roll line plus margin), 3 Kling clips, both roles, captions, full QC. Order of trimming: living stills, stills, runtime.
@@ -260,7 +292,12 @@ def plan_for_episode(est_full_inr, eps_left, living_s=None, floor_s=None):
 
 def _balance(provider):
     funded = S("FAL_FUNDED_USD" if provider == "fal" else "ANTHROPIC_FUNDED_USD", float)
-    return funded - lifetime_spend_usd(provider)
+    bal = funded - lifetime_spend_usd(provider)
+    if provider == "anthropic":                                                               # v12 V4: the router knows the Claude credit while its lane is open
+        from whatifs.org import finance as FIN
+        c = FIN.lane()
+        if c: bal += c["left_inr"] / (S("USD_INR", float) or 99.0)
+    return bal
 def monthly_cap_reached(maintenance=False):
     """Stop starting new paid generations once logged/active-session costs hit the monthly cap.
     maintenance=True (trend scout / policy watch / playbook research, learning, brief) may use the BUDGET_MAINT_RESERVE_INR kept INSIDE the cap (v8.7)."""
@@ -409,7 +446,7 @@ def headroom():
     left = episodes_left_this_month(); need = full_episode_inr() * S("BUDGET_SAFETY_MARGIN", float) * left
     room = production_room_inr()
     return {"room_inr": round(room, 0), "videos_left": left, "need_inr": round(need, 0), "headroom_inr": round(room - need, 0),
-            "per_video_inr": round(full_episode_inr(), 0), "cap_inr": round(cap_inr(), 0), "spent_inr": round(month_spend(), 0)}
+            "per_video_inr": round(full_episode_inr(), 0), "cap_inr": round(cap_inr(), 0), "spent_inr": round(own_spend_inr(), 0)}      # v12 V4: his own money
 
 def kling4_proposal():
     """A 4th Kling clip is proposed ONLY when the headroom pays for it in every remaining video (with the safety margin). None otherwise."""
@@ -450,6 +487,9 @@ def claude_allowed():
 def opus_allowed(): return claude_allowed() and production_room_inr() > 150
 
 def runway_days(provider):
+    if provider == "anthropic":                                                               # v12 V4: no top-up mail while free Claude credit is left
+        from whatifs.org import finance as FIN
+        if FIN.lane(): return 999
     usd = lifetime_spend_usd(provider)
     rows = [r for r in store().rows("Cost_Log") if r.get("provider") == provider]
     if not rows: return 999

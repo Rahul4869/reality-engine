@@ -26,6 +26,19 @@ def research_round():
     except ORG.CapReached as x: log(f"Review Board waits: {x}", "WARN")
     except Exception as x: log(f"Review Board session failed: {type(x).__name__}: {str(x)[:160]}", "WARN")
 
+def strategy_round():
+    """v12 V4: the CEO's round inside the daily learning job, right after Growth & Learning's run: Finance's watch (D11). It returns at once unless the
+    CEO is on (STRATEGY_ON), the Execution Engine is on (with the organisation or the engine off a decision could never become a ticket) and the
+    channel is not paused (no decision for a channel that makes nothing; the first round after counts what arrived). Each run in its own try: a
+    failure is recorded by the department runner and logged, never raised."""
+    from whatifs.core import S
+    from whatifs.org import runner as ORG, execute as EX, finance as FIN
+    from whatifs.manage import paused
+    if not S("STRATEGY_ON", bool) or not EX.on() or paused(): return False
+    try: ORG.run("D11", "watch", FIN.watch)
+    except Exception as x: log(f"Finance watch failed: {type(x).__name__}: {str(x)[:160]}", "WARN")
+    return True
+
 def research_catch_up():
     """v12 B5: the script gate judges research_cadence, but only the daily learning job ran the round - a dropped cron, or an organisation switched
     back on after days, would HOLD a video for work any job can do. A production job that would meet a stale round runs it first (level-triggered:
@@ -69,7 +82,7 @@ def main():
             from whatifs.manage import learn, money_check
             from whatifs.org import runner as ORG, wraps as WR          # v12: the daily learning job is the Growth & Learning department's run
             research_round()                                            # v12 B5: R&D and the Review Board run first
-            ORG.work("D10", "daily", "", lambda b: learn(), measure=WR.m_learn); ORG.daily_check(); money_check()
+            ORG.work("D10", "daily", "", lambda b: learn(), measure=WR.m_learn); strategy_round(); ORG.daily_check(); money_check()      # v12 V4: then the CEO's round
         elif cmd == "brief":
             from whatifs.manage import monthly_brief; monthly_brief()
         elif cmd == "research":

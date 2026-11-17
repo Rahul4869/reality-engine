@@ -111,6 +111,11 @@ V12V2DB_ADDED = {"image": 10}
 # nothing else new. Its money is the line "floor" of the cost model. (The older tests run with the floor off: tests/conftest.py, OLD_VIEW.)
 V12V1C_ADDED = {"watch:floor_gemini": 2, "watch:floor_claude": 2}
 
+# v12 V4 (Finance, the boost that ends by itself): while the Claude credit's lane is open and THINK_BOOST_VARIANTS is 2, a Short asks two more scripts of
+# its writers (the blind jury sees five). Counted on a Short with the lane open (tests/test_v12_strategy.py); a long video is unchanged, and with the lane
+# closed - the older tests, the default - a Short is unchanged too. Its money is the line "boost_variants" of the cost model.
+V12V4_ADDED = {"text:short_writer": 2}
+
 def allowed_base(base):
     out = dict(base)
     for k, v in V12V2CB2C_COUNTED.items(): out[k] = out.get(k, 0) + v

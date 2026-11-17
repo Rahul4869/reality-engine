@@ -94,10 +94,10 @@ def backup(now=None):
 def advisor(now=None):
     from whatifs import governor as G, notify as NT
     now = now or now_utc()
-    try:
-        from whatifs.costguard import month_spend
-        spent = month_spend()
+    try: spent = G.own_spend_inr()                                                     # v12 V4: his own money (= the list-price spend with STRATEGY_ON FALSE)
     except Exception: spent = 0.0
+    from whatifs.org import finance as FIN
+    cover = FIN.cover() if FIN.on() else G.credit_cover_inr()                                # v12 V4: the Claude credit lane's cover with the CEO on, the older view without
     eps = [e for e in store().rows("Episodes") if str(e.get("slot_et", "")).startswith(now.strftime("%Y-%m")) and e.get("yt_id")]
     per_video = spent / len(eps) if eps else 0.0
     tips = []
@@ -113,7 +113,7 @@ def advisor(now=None):
     except Exception: pass
     if rules: tips.append(f"{rules} retention rule(s) from your own data are guiding the writers now (see the Lab tab).")
     text = (f"This week: spend Rs {spent:.0f} of Rs {G.cap_inr():.0f} ({G.budget_mode()} mode)"
-            + (f", about Rs {G.credit_cover_inr():.0f} covered by free credits" if G.credit_cover_inr() > 0 else "")
+            + (f", about Rs {cover:.0f} covered by free credits" if cover > 0 else "")
             + (f"; about Rs {per_video:.0f} per long video" if per_video else "") + ". " + " ".join(tips[:2]))
     return NT.send("advisor", text, [("Discuss", "DISCUSS advisor"), ("OK", "OK")], tier="week", default="noted", expires_h=24 * 6, dedupe_key=f"advisor|{now:%G-W%V}")
 

@@ -71,11 +71,15 @@ def _progress():
     return {"subs": int(subs), "watch_hours": round(hours), "shorts_views_90d": int(sum(_f(r.get("shorts_views")) for r in rows)),
             "old_bar_deadline": "2027-01-31", "series_14d": [], "kpis": k}
 
+def _cover():
+    """v12 V4: the Claude credit lane's cover with STRATEGY_ON, the older money view without."""
+    from whatifs import governor as G
+    from whatifs.org import finance as FIN
+    return FIN.cover() if FIN.on() else G.credit_cover_inr()
+
 def _money():
     from whatifs import governor as G
-    try:
-        from whatifs.costguard import month_spend
-        spent = month_spend()
+    try: spent = G.own_spend_inr()                                                     # v12 V4: his own money (= the list-price spend with STRATEGY_ON FALSE)
     except Exception: spent = 0.0
     mk = now_utc().strftime("%Y-%m"); lines = {}
     groups = [("Writers' room", ("writer", "memo", "objection", "critic", "bible", "showrunner", "scout", "punchup", "editor", "hook", "rewrite", "humanize")),
@@ -91,7 +95,7 @@ def _money():
         if str(r.get("month", "")).startswith(mk):
             src = str(r.get("source") or "").lower(); key = "affiliate" if "affil" in src else ("ads" if "ad" in src or "youtube" in src else "clients")
             rev[key] = (rev[key] or 0) + _f(r.get("inr_received"))
-    return {"month_spend": round(spent), "cap": round(G.cap_inr()), "credit_cover": round(G.credit_cover_inr()),
+    return {"month_spend": round(spent), "cap": round(G.cap_inr()), "credit_cover": round(_cover()),
             "lines": [{"label": k, "inr": round(v)} for k, v in sorted(lines.items(), key=lambda x: -x[1])], "revenue": rev,
             "modes": [{"id": "lean", "name": "Runway", "cost": round(S("RUNWAY_CAP_INR", float)), "text": "One long case a week (Saturdays), Shorts kept, smaller research and chat caps."},
                       {"id": "standard", "name": "Standard", "cost": round(S("BUDGET_CEILING_INR", float)), "text": "Two long cases a week (Tue + Sat), the full Shorts Lab, faces, research and chat."},

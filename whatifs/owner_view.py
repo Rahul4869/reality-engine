@@ -124,7 +124,7 @@ def strategy():
     if rec.get("next_cases"): plan.append("Strongest idea on the bench: " + rec["next_cases"][0]["premise"])
     rules = _rows("Data_Rules")[-2:]
     if rules: plan.append("Briefs follow the latest data rules: " + "; ".join(str(r.get("text"))[:70] for r in rules))
-    plan.append(f"Budget mode: {mode} (cap Rs {S('BUDGET_CEILING_INR')}).")
+    plan.append(f"Budget mode: {mode} (cap Rs {G.cap_inr():.0f}).")                          # v12 V4: the cap in force, not the ceiling cell
     return {"plan": plan, "why": "Built from the slot calendar, the idea bench and the data rules above (rule-based, no AI guess).", "kind": "interpretation"}
 
 def experiments():
@@ -139,7 +139,9 @@ def money():
     by = {}
     for r in _rows("Cost_Log"):
         if str(r.get("ts", "")).startswith(month): by[r.get("provider") or "other"] = by.get(r.get("provider") or "other", 0) + (_f(r.get("inr"), 0) or 0)
-    return {"month_spend": round(spent), "cap": int(round(G.cap_inr())), "by_provider": {k: round(v) for k, v in sorted(by.items(), key=lambda kv: -kv[1])},
+    from whatifs.org import finance as FIN
+    cover = FIN.cover()                                                                       # v12 V4: his own money - the Claude credit's cover is not his (0 with STRATEGY_ON FALSE)
+    return {"month_spend": round(spent - cover), "cap": int(round(G.cap_inr())), "cover": round(cover), "by_provider": {k: round(v) for k, v in sorted(by.items(), key=lambda kv: -kv[1])},
             "src": "Cost_Log", "date": _date(iso())}
 
 def build(demo=False):
@@ -211,6 +213,11 @@ def render(name, view):
     elif name == "experiments":
         lines = [f"{x.get('episode')}: {x.get('hypothesis') or x.get('variant')} (CTR 48 h {_n(x.get('ctr_48h'), '%')})" for x in (s.get("running") or [])[-3:]]
         src = "Experiments tab"
+    elif name == "money" and S("STRATEGY_ON", bool):                                         # v12 V4: his own money; the providers' rows keep their list prices
+        cv = float(s.get("cover") or 0)
+        lines = ([f"Your money this month: Rs {float(s.get('month_spend') or 0):.0f} of Rs {float(s.get('cap') or 0):.0f}." + (f" Claude credit paid another Rs {cv:.0f}." if cv > 0 else "")]
+                 + [f"{k}: Rs {_n(v)} at list price" for k, v in list((s.get("by_provider") or {}).items())[:3]])
+        src = f"Cost_Log, {s.get('date')}"
     elif name == "money":
         lines = [f"Spent Rs {_n(s.get('month_spend'))} of Rs {_n(s.get('cap'))} this month"] + [f"{k}: Rs {_n(v)}" for k, v in list((s.get("by_provider") or {}).items())[:3]]
         src = f"Cost_Log, {s.get('date')}"

@@ -232,7 +232,7 @@ def test_the_writers_get_one_fix_with_every_measured_problem_named(monkeypatch):
     prompts = []; real = FK.fake_reply
     monkeypatch.setattr(FK, "fake_reply", lambda key, prompt, _r=real: (prompts.append(prompt) if key == "short_fix" else None, _r(key, prompt))[1])
     sc = SH.write({"premise": MOON}, "S1", "you_pov", "SHT1", [])
-    assert asked.count("short_script") == 3 and asked.count("short_fix") == 1 and sc["_write"] == {"variants": 3, "valid": 3, "clean": 0, "fixed": 1, "left": 0}
+    assert asked.count("short_script") == 3 and asked.count("short_fix") == 1 and sc["_write"] == {"variants": 3, "valid": 3, "clean": 0, "fixed": 1, "left": 0, "asked": 3, "won": sc["_write"]["won"]} and sc["_write"]["won"] in (0, 1, 2)      # v12 V4: + asked, won (BY DESIGN)
     assert SEAT.script_issues(sc, "S1") == [] and "THE HOOK: the hook has 16 words" in prompts[0] and "an ask in a Short: 'subscribe'" in prompts[0] and "does not hand back" in prompts[0]
     assert SH.m_write(sc)["fixed"] == 1 and SH.m_write(sc)["hook_words"] == 6
 

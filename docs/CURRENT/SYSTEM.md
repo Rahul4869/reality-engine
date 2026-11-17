@@ -10,7 +10,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `heygen/heygen-video/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 3 standalone Shorts a week, 12 a month at most - every topic starts as a Short and the promote rule picks the long video's topic (`whatifs/ladder.py`); spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 134 code modules, 826 settings, 87 Sheet tabs, 25 GitHub workflows.
+- Size: 135 code modules, 833 settings, 87 Sheet tabs, 25 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -500,6 +500,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | whatifs/org/canon.py | World canon: the show's living bible as Palace items - the cast mirrored from the character bible, a case record written by code after every D4 write and accepted only when the upload is confirmed, the continuity debt the next script must pay, and the check canon_in_brief. |
 | whatifs/org/cite.py | Creative citations: the rule the creative model calls receive, quote-anchored verification of every Palace item a model says it applied, creative memos with the same-idea guard, and the episode checks palace_injected / palace_cited. |
 | whatifs/org/execute.py | Execution Engine: turns a ticket into a typed change, writes it down before and after, verifies it with evidence another component wrote later, and rolls it back when that fails. |
+| whatifs/org/finance.py | Finance (D11): the money is his own - the Claude credit's lane and meter, one boost that ends by itself, the daily watch. |
 | whatifs/org/floor.py | The judged floor (D13): two strong first-time viewers of two model families compare the first minute of a finished long video with the video the owner rejected, in both orders, beside a planted ladder; the verdict is computed by code. |
 | whatifs/org/inside.py | Inside the scene (D13): the voice is counted sentence by sentence - how much of it speaks to the viewer as something happening to him now, no lecture from outside, and every beat shows before it explains. |
 | whatifs/org/layman.py | Layman test (D13): the expert words a first-time viewer would not know are counted by code, and the promise line-up asks two cheap readers whether the first 30 seconds say what the video is about. |
@@ -633,7 +634,7 @@ By kind: audience_insight 8, failure_lesson 7, owner_preference 27, plan 2, poli
 | id | department | rhythm | runs under the runner | playbook | thinking cap (Rs / month) | levers (Settings cells) |
 |---|---|---|---|---|---|---|
 | D0 | Owner Office | tick | pending (B9) | brief | - | WA_ON, DASH_ON |
-| D1 | Strategy & Planning | weekly | pending (B9) | brief | - | STANDARD_MAX_LONG_PER_MONTH, PUBLISH_DAYS, VIDEOS_PER_MONTH_EST, FORMAT_SHARE_F1, FORMAT_SHARE_F2, FORMAT_SHARE_F3 |
+| D1 | Strategy & Planning | weekly | pending (B9) | brief | - | STANDARD_MAX_LONG_PER_MONTH, PUBLISH_DAYS, VIDEOS_PER_MONTH_EST, FORMAT_SHARE_F1, FORMAT_SHARE_F2, FORMAT_SHARE_F3, THINK_BOOST_VARIANTS |
 | D2 | R&D - Research | daily | daily (whatifs/cli.py), weekly (whatifs/cli.py) | brief | 300 | RESEARCH_ON, IDEA_MIN_MULTIPLE, RESEARCH_PER_WEEK |
 | D3 | Review Board | weekly | assess (whatifs/cli.py) | brief | 120 | BOARD_MIN_EVIDENCE |
 | D4 | Creative - Ideation & Writers' Room | episode | write (whatifs/episode.py), draft (whatifs/preview.py) | brief | - | ROOM_MODE, ROOM_V2_DRAFTS, REHOOK_MAX_GAP_SEC, JOKE_EVERY_SEC_LONG, COLD_OPEN_LORE_FREE_SEC |
@@ -643,7 +644,7 @@ By kind: audience_insight 8, failure_lesson 7, owner_preference 27, plan 2, poli
 | D8 | QA & Enforcement | episode | script_gate (whatifs/episode.py), final_gate (whatifs/episode.py), short_gate (whatifs/shorts2.py), short_file_gate (whatifs/shorts2.py), release_gate (whatifs/release.py) | brief | - | CONTRACT_OFF, BREAKOUT_HARD_BAR, CRITIQUE_MIN |
 | D9 | Publishing & Distribution | episode | publish (whatifs/episode.py), short_publish (whatifs/release.py) | brief | - | REEL1_DELAY_MIN, NEXT_LINK_ON, IG_TRIAL_REELS_ON, SHORT_THUMB_ON |
 | D10 | Growth & Learning | daily | daily (whatifs/cli.py), promote (whatifs/ladder.py) | brief | - | BRAIN_ON, BRAIN_HOLDOUT, LADDER_WINDOW_DAYS, LADDER_MIN_ENGAGED |
-| D11 | Finance | daily | pending (B9) | brief | - | BUDGET_GUARD_PCT, BREAKOUT_FUND_CAP_INR, AUTO_FIX_PAID_INR |
+| D11 | Finance | daily | watch (whatifs/cli.py) | brief | - | BUDGET_GUARD_PCT, BREAKOUT_FUND_CAP_INR, AUTO_FIX_PAID_INR, MONTH_RESERVE_INR |
 | D12 | Operations | tick | operate (whatifs/org/execute.py) | brief | - | PREFLIGHT_ON |
 | D13 | Audience | episode | seat (whatifs/episode.py), probe (whatifs/episode.py), short_seat (whatifs/shorts2.py), floor (whatifs/episode.py), verdict (whatifs/org/verdicts.py) | brief | - | NUMBERS_PER_MIN_MAX, GRAPHICS_MAX_LONG, GRAPHICS_FREE_SEC, BREATH_EVERY_S, PLAIN_HARD_PER_MIN_MAX, PLAIN_OPENING_HARD_MAX, PLAIN_HARD_PER_SENTENCE_MAX, SHORT_HOOK_WORDS_MAX, SHORT_HOOK_BY_S, SHORT_NUMBERS_MAX, SHORT_EXPERT_MAX, SHORT_PROMISE_WORDS_MAX, INSIDE_MIN_PCT_F1, INSIDE_MIN_PCT_F2, INSIDE_MIN_PCT_F3, LECTURE_MAX_F1, LECTURE_MAX_F2, LECTURE_MAX_F3, ENDING_FREE_S, VIEW_FLOOR_WATCH_S, VIEW_FLOOR_EYE_WAIT_H, VIEW_FLOOR_REFS_MAX, VIEW_FLOOR_DOWNS_MAX |
 | D14 | Shorts Studio | episode | write (whatifs/shorts2.py), make (whatifs/shorts2.py) | brief | - | SHORT_SHARE_S1, SHORT_SHARE_S2, SHORT_SHARE_S3, SHORT_MIN_S, SHORT_MAX_S_S1, SHORT_MAX_S_S2, SHORT_MAX_S_S3, SHORTS_PER_WEEK, SHORTS_PER_MONTH, SHORTS_BREAKOUT_X, FOLLOWUP_WITHIN_H |
@@ -715,6 +716,7 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | FORMAT_SHARE_F1 | D1 | int | 0 to 100 | 20 | - | the next complete run |
 | FORMAT_SHARE_F2 | D1 | int | 0 to 100 | 20 | - | the next complete run |
 | FORMAT_SHARE_F3 | D1 | int | 0 to 100 | 20 | - | the next complete run |
+| THINK_BOOST_VARIANTS | D1 | int | 0 to 4 | 2 | - | the next complete run |
 | RESEARCH_ON | D2 | bool | - | - | off: it switches off something you rely on | research |
 | IDEA_MIN_MULTIPLE | D2 | float | 2 to 20 | 2 | down: it weakens a quality gate | idea_evidence |
 | RESEARCH_PER_WEEK | D2 | int | 1 to 8 | 2 | up: it costs more money | research_cadence |
@@ -755,6 +757,7 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | BUDGET_GUARD_PCT | D11 | int | 50 to 100 | 10 | up: it costs more money | the next complete run |
 | BREAKOUT_FUND_CAP_INR | D11 | int | 0 to 3000 | 500 | up: it costs more money | the next complete run |
 | AUTO_FIX_PAID_INR | D11 | int | 0 to 100 | 20 | up: it costs more money | the next complete run |
+| MONTH_RESERVE_INR | D11 | int | 0 to 1000 | 100 | down: it removes the month's safety reserve | the next complete run |
 | PREFLIGHT_ON | D12 | bool | - | - | off: paid steps would start without the free health checks | the next complete run |
 | NUMBERS_PER_MIN_MAX | D13 | float | 1 to 8 | 1 | up: it weakens a quality gate | viewer_numbers |
 | GRAPHICS_MAX_LONG | D13 | int | 0 to 8 | 1 | up: it weakens a quality gate | viewer_numbers |

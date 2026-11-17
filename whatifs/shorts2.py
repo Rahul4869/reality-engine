@@ -182,7 +182,8 @@ def write(topic, fmt, hook, ep, hist):
     if topic.get("origin") == "breakout":                              # v12 V2c-b: the follow-up of a winner continues it - a repeat would be held by short_kept
         base += ("THIS IS THE FOLLOW-UP OF A SHORT THAT REAL VIEWERS STAYED FOR. Write the NEXT Short for those viewers: the next consequence, or the question it left open - "
                  "the same premise from a new side, never the same lines again.\n" + (f"THE WINNER SAID: {' / '.join(str(topic.get('said')).splitlines())[:600]}\n" if topic.get("said") else ""))
-    n = max(1, S("SHORTS_VARIANTS", int))
+    from whatifs.org import finance as FIN
+    n = max(1, S("SHORTS_VARIANTS", int)) + FIN.boost("THINK_BOOST_VARIANTS")          # v12 V4: more scripts while the Claude credit's lane is open (they feed the blind jury)
     outs = ask_many([dict(role="short_writer", system=system, prompt=base + f"Variant {k + 1} of {n}: make it genuinely different from an obvious take.", episode=ep,
                           fake_key="short_script", max_tokens=1500) for k in range(n)])
     good = [o for o in outs if not valid(o)]
@@ -195,7 +196,7 @@ def write(topic, fmt, hook, ep, hist):
                  + "\nThe Short:\n" + json.dumps({k: sc.get(k) for k in ("title", "promise", "beats")}, ensure_ascii=False), episode=ep, fake_key="short_fix", max_tokens=1500)
         if not valid(fx): sc = dict(fx); fixed = 1
         left = SEAT.script_issues(sc, fmt, hist)
-    sc["_write"] = {"variants": len(outs), "valid": len(good), "clean": len(clean), "fixed": fixed, "left": len(left)}
+    sc["_write"] = {"variants": len(outs), "valid": len(good), "clean": len(clean), "fixed": fixed, "left": len(left), "asked": n, "won": outs.index(pool[win])}      # v12 V4: which asked-for script the jury chose (H34)
     return sc
 
 def m_write(sc):

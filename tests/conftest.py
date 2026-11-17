@@ -29,6 +29,7 @@ def fresh_store(tmp_path):
     with core._clock: core._cost_buf.clear(); core._session.clear()      # v8.1: spend counters are module-level, so every test starts with an empty month
     core._last_cost_flush[0] = __import__("time").time()          # v12 V2d: ... and with a FRESH flush clock - the cost log sends its rows by itself when its last sending is over 45 s old, which emptied the buffer under a test that reads it whenever a slow test had run before in the same process
     core._base["v"] = None
+    from whatifs.org import finance as _fin; _fin.forget()          # v12 V4: Finance's cached read of Cost_Log never leaks between tests
     from whatifs import models as _m, fakes as _f          # v8.11: cache bookkeeping and the fake cache server start empty in every test
     _m.CACHE.__init__(); _f.FAKE_ANTHROPIC.reset(); _m._models = None
     import shutil as _sh; _sh.rmtree(os.path.join(core.WORK, "_tts_cache"), ignore_errors=True)      # v9: the audio cache never leaks between tests

@@ -16,7 +16,7 @@ DEPTS = {
     "D0":  {"mission": "capture every owner input verbatim, route it, guarantee it is honoured", "cadence": "tick", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/wa.py", "whatifs/notify.py", "whatifs/dash.py", "whatifs/owner_view.py"), "levers": ("WA_ON", "DASH_ON"), "takes": ()},
     "D1":  {"mission": "goals, the monthly and weekly plan, cadence, priorities, budget allocation, urgency", "cadence": "weekly", "cap_inr": None, "inject": "brief",
-            "wraps": ("whatifs/replan.py", "whatifs/manage.py"), "levers": ("STANDARD_MAX_LONG_PER_MONTH", "PUBLISH_DAYS", "VIDEOS_PER_MONTH_EST", "FORMAT_SHARE_F1", "FORMAT_SHARE_F2", "FORMAT_SHARE_F3"), "takes": ()},
+            "wraps": ("whatifs/replan.py", "whatifs/manage.py"), "levers": ("STANDARD_MAX_LONG_PER_MONTH", "PUBLISH_DAYS", "VIDEOS_PER_MONTH_EST", "FORMAT_SHARE_F1", "FORMAT_SHARE_F2", "FORMAT_SHARE_F3", "THINK_BOOST_VARIANTS"), "takes": ()},
     "D2":  {"mission": "automatic research: outliers, techniques, platform policy, tools, audience, competitors", "cadence": "daily", "cap_inr": 300, "inject": "brief",
             "wraps": ("whatifs/org/rnd.py", "whatifs/outlier_lab.py", "whatifs/demand.py", "whatifs/research.py", "whatifs/scout.py"), "levers": ("RESEARCH_ON", "IDEA_MIN_MULTIPLE", "RESEARCH_PER_WEEK"), "takes": ()},
     "D3":  {"mission": "assess every research and creative memo: evidence, novelty, impact, feasibility, cost, risk", "cadence": "weekly", "cap_inr": 120, "inject": "brief",
@@ -40,7 +40,7 @@ DEPTS = {
             "wraps": ("whatifs/brain.py", "whatifs/breakout.py", "whatifs/growth.py", "whatifs/reach.py", "whatifs/ladder.py"),
             "levers": ("BRAIN_ON", "BRAIN_HOLDOUT", "LADDER_WINDOW_DAYS", "LADDER_MIN_ENGAGED"), "takes": ()},
     "D11": {"mission": "caps, the guard, the breakout fund, cost forecasts, spend vetoes", "cadence": "daily", "cap_inr": None, "inject": "brief",
-            "wraps": ("whatifs/governor.py", "whatifs/costguard.py"), "levers": ("BUDGET_GUARD_PCT", "BREAKOUT_FUND_CAP_INR", "AUTO_FIX_PAID_INR"), "takes": ()},
+            "wraps": ("whatifs/governor.py", "whatifs/costguard.py", "whatifs/org/finance.py"), "levers": ("BUDGET_GUARD_PCT", "BREAKOUT_FUND_CAP_INR", "AUTO_FIX_PAID_INR", "MONTH_RESERVE_INR"), "takes": ()},
     "D12": {"mission": "reliability, the watchdog, model ladders, deprecations, incidents, build requests", "cadence": "tick", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/steward.py", "whatifs/builds.py", "tools/repair.py"), "levers": ("PREFLIGHT_ON",), "takes": ("build_request",)},
     "D13": {"mission": "the viewer's seat: what a first-time viewer meets is measured and repaired before any picture is paid - the promise first, a voice that breathes, few numbers", "cadence": "episode", "cap_inr": None, "inject": "brief",
@@ -85,12 +85,13 @@ ENTRY = {
     "D10": (("whatifs/cli.py", "daily"), ("whatifs/ladder.py", "promote")),      # v12 V2c-b: the promote rule runs when a long video is about to start
     "D2":  (("whatifs/cli.py", "daily"), ("whatifs/cli.py", "weekly")),             # v12 B5: the learning job runs R&D first (daily always, weekly when due)
     "D3":  (("whatifs/cli.py", "assess"),),                                          # v12 B5: then the Review Board, whenever a research memo waits
+    "D11": (("whatifs/cli.py", "watch"),),                                           # v12 V4: Finance's daily watch, in the learning job's strategy round
     "D12": (("whatifs/org/execute.py", "operate"),),
     "D13": (("whatifs/episode.py", "seat"), ("whatifs/episode.py", "probe"), ("whatifs/shorts2.py", "short_seat"), ("whatifs/episode.py", "floor"), ("whatifs/org/verdicts.py", "verdict")),      # v12 V1: the viewer's seat, right before the Animation Director; V2c: the seat for a Short; V1c: the judged floor (never demanded by a gate: it runs only on a film the measured checks passed) and his verdict scoring it (on his tap)
     "D14": (("whatifs/shorts2.py", "write"), ("whatifs/shorts2.py", "make")),                                        # v12 V2c: the Shorts Studio writes and makes every standalone Short
 }
 # Departments with no run of their own yet -> the build batch that wires them. A RATCHET: this list may only shrink (tests/test_v12_org.py).
-PENDING = {"D0": "B9", "D1": "B9", "D11": "B9", "C": "B6", "L": "B8"}
+PENDING = {"D0": "B9", "D1": "B9", "C": "B6", "L": "B8"}      # v12 V4: D11 is wired
 
 # The runs an episode must have finished before each gate (the gate itself is the run in flight).
 EPISODE_RUNS = {

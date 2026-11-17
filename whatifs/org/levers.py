@@ -63,6 +63,7 @@ LEVERS = {
     "IG_TRIAL_REELS_ON": _b(checks=("release_sheet",)), "SHORT_THUMB_ON": _b(checks=("release_sheet",)),      # v12 V2c-b2: two rows of a Short's release sheet (reach trials: neither costs money nor weakens a gate)
     "BRAIN_ON": _b("off", "the channel stops learning from its own videos"), "BRAIN_HOLDOUT": _n("float", 0.05, 0.5, 0.1),
     "BUDGET_GUARD_PCT": _n("int", 50, 100, 10, "up", COST), "BREAKOUT_FUND_CAP_INR": _n("int", 0, 3000, 500, "up", COST), "AUTO_FIX_PAID_INR": _n("int", 0, 100, 20, "up", COST),
+    "MONTH_RESERVE_INR": _n("int", 0, 1000, 100, "down", "it removes the month's safety reserve"), "THINK_BOOST_VARIANTS": _n("int", 0, 4, 2),      # v12 V4: Finance's reserve (D11); Strategy's boost that ends by itself (D1)
     "PREFLIGHT_ON": _b("off", "paid steps would start without the free health checks"),
     "ORG_SLA_HOURS": _j("memo", 0.25, 720, "always", "it changes how fast the organisation must act", pair=True),
     "PALACE_PLAYBOOK_TOKENS": _n("int", 200, 6000, 600, "", "", ("palace_health",)), "PALACE_PLAYBOOK_TOKENS_BY_DEPT": _j("dept", 200, 6000, checks=("palace_health",)),
