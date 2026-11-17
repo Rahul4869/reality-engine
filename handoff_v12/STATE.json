@@ -285,6 +285,15 @@
    "from": "PROVING",
    "to": "RED",
    "why": ""
+  },
+  {
+   "at": "2026-11-17T07:35:19Z",
+   "batch": "V1c",
+   "by": "",
+   "commit": "46615df",
+   "from": "RED",
+   "to": "REPAIR",
+   "why": ""
   }
  ],
  "order": [
@@ -301,11 +310,11 @@
   "B10",
   "V3"
  ],
- "phase": "RED",
+ "phase": "REPAIR",
  "red_notes": [
   "V1c_RED_1.md",
   "V1c_RED_2.md"
  ],
  "red_rounds": 2,
- "updated": "2026-11-17T05:17:46Z"
+ "updated": "2026-11-17T07:35:19Z"
 }
