@@ -38,10 +38,10 @@
    "verdict": "VERDICT: FINDINGS (4)"
   }
  ],
- "base_commit": "01e77987d256b577cdd233907dc8929b39c2fc9d",
- "batch": "V1c",
+ "base_commit": "9dfc916fce36ecb94d5ee30b68f9bcfc3115b445",
+ "batch": "V4",
  "fable_design_gate": true,
- "final_code_commit": "9dfc916fce36ecb94d5ee30b68f9bcfc3115b445",
+ "final_code_commit": "",
  "history": [
   {
    "at": "2026-11-13T11:25:00Z",
@@ -330,6 +330,15 @@
    "from": "PROVING",
    "to": "ACCEPTED",
    "why": ""
+  },
+  {
+   "at": "2026-11-17T12:32:25Z",
+   "batch": "V4",
+   "by": "",
+   "commit": "",
+   "from": "ACCEPTED",
+   "to": "DESIGN",
+   "why": ""
   }
  ],
  "order": [
@@ -346,11 +355,8 @@
   "B10",
   "V3"
  ],
- "phase": "ACCEPTED",
- "red_notes": [
-  "V1c_RED_1.md",
-  "V1c_RED_2.md"
- ],
- "red_rounds": 2,
- "updated": "2026-11-17T12:30:00Z"
+ "phase": "DESIGN",
+ "red_notes": [],
+ "red_rounds": 0,
+ "updated": "2026-11-17T12:32:25Z"
 }

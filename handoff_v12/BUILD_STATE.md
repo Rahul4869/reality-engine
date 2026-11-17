@@ -490,6 +490,832 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
+Designed by the Fable session local_f4b3eb5f (16 Nov 2026) and place-checked against V1c's final code by an Opus session (V4_PASTE_CHECK.md); pasted word for word under plan A13 (a).
+### V4 - THE CEO AND THE LADDER (16 Nov 2026) - DESIGNED, NOT BUILT, NOT ACCEPTED (the designer's record: steps 1 to 3; the Opus builder writes steps 4 to 6a, the Fable finisher `FINISHED BY FABLE`, the prover 6b and 7)
+THE BATCH'S START: the first check (the batch before on the record, GitHub's run of its final code commit, a clean tree) and the usage
+figures are written by the session that pastes this record at V1c's acceptance. NOT SPLIT (open issue 189: `next.py` has no move for a
+half): designed whole, built in the dependency order of 3.12 with a checkpoint after every step.
+
+#### Step 1 RESEARCH (E = a platform's or a provider's own page; O = practice; every page below was fetched and read by this session on 16 Nov 2026; the redesign's R1 to R5, R9, R20, R28, R53 to R57 and the launch kit's F1 to F11 are the base)
+1. E - YouTube Analytics API, "Metrics" (https://developers.google.com/youtube/analytics/metrics; no date on the page). `engagedViews`:
+   "The number of times the channel's videos have been viewed past the first frame, or the user clicks/taps to play." The page defines
+   NO metric for qualified, eligible or valid public watch hours. -> (a) the Shorts bar CAN be counted by code in the Partner Program's own
+   unit (the owner's item 55: 200 views, 12 eligible); (b) the HOURS bar cannot: the API's minutes are every minute, Studio's "eligible"
+   figure is his page alone (his first video: 120 views, 0 eligible hours). The scoreboard therefore says which figure it shows and
+   carries ONE correction cell typed from Studio (3.1) - never a second number passed off as the first.
+2. E - YouTube Help 72851, the Partner Program overview (https://support.google.com/youtube/answer/72851; "(c) 2026 Google"): "Get 1,000
+   subscribers with 4,000 qualified watch hours in the last 12 months, or" "1,000 subscribers with 10 million qualified Shorts views in
+   the last 90 days"; "any qualified watch hours from Shorts views in the Shorts Feed won't count towards the 4,000"; "Have advanced
+   features access"; a review "typically in about 1 month". -> the bars are DATA with an end date (3.1); a month of review is part of
+   every date the scoreboard prints.
+3. E - YouTube Help 12843009 (https://support.google.com/youtube/answer/12843009; "(c) 2026"): from 1 Feb 2027 "8,000 qualified watch
+   hours in the last 365 days, or 20M qualified Shorts views in the last 90 days" "in addition to still needing 1k subscribers"; a
+   channel in the program must stay ACTIVE ("1,000 qualified watch hours in the past 365 days", "1 million qualified Shorts views in the
+   last 90 days" or "2 long-form videos or 5 Shorts uploaded every 90 days"). -> the second row of the bars; the pre-design's "could
+   not confirm" is closed.
+4. E - YouTube Data API, the `channels` resource (https://developers.google.com/youtube/v3/docs/channels; no date): `subscriberCount`
+   "is rounded down to three significant figures" (exact under 1,000); `auditDetails` (`communityGuidelinesGoodStanding`,
+   `copyrightStrikesGoodStanding`) needs the scope `youtubepartner-channel-audit`, a token a multichannel network holds for two weeks.
+   -> A STRIKE CANNOT BE READ BY THE PIPELINE. "The warnings and strikes the platforms report" (his item 52) reach code only through
+   what each VIDEO's own record says (5).
+5. E - YouTube Data API, the `videos` resource (https://developers.google.com/youtube/v3/docs/videos; no date): `status.uploadStatus`
+   in `deleted | failed | processed | rejected | uploaded`; `status.rejectionReason` in `claim, copyright, duplicate, inappropriate,
+   legal, length, termsOfUse, trademark, uploaderAccountClosed, uploaderAccountSuspended`; `contentDetails.contentRating.ytRating` =
+   `ytAgeRestricted`; `contentDetails.regionRestriction.blocked`; none is owner-only. -> one free read a day of the channel's own newest
+   uploads tells a rejected, removed, age-restricted or blocked video: the facts the risk watch acts on (3.7).
+6. E - YouTube Help 2802032, Community Guidelines strikes (https://support.google.com/youtube/answer/2802032; "(c) 2026"): "the first
+   violation is typically only a warning"; a first strike freezes uploads for 1 week and "Your scheduled public content is set to
+   'private' for the penalty period duration"; a second within 90 days: "2 weeks"; "3 strikes in the same 90-day period may result in
+   your channel being permanently removed". -> after ONE removed video the next violation inside 90 days costs a week of the channel:
+   the machine stops uploading by itself until he has looked (the lock that exists), instead of publishing the next video of the same
+   kind into a strike.
+7. O (a statistician's worked argument, simulated figures) - E. Miller, "How Not To Run an A/B Test", 18 Apr 2010
+   (https://www.evanmiller.org/how-not-to-run-an-ab-test.html): "Repeated significance testing always increases the rate of false
+   positives"; checking after every observation turns a nominal 5% into 26.1%; "Decide on a sample size in advance and wait until the
+   experiment is over". -> A RULE THAT READS VIEWERS IS JUDGED AT COUNTS FIXED BEFOREHAND, ON EXACTLY THAT MANY VIDEOS - never again
+   each morning as one more video arrives (the pre-design's ARMS rule looked every day from the eighth video on).
+8. E - Anthropic Help 17154008 (https://support.claude.com/en/articles/17154008-monthly-api-credits-for-max-ultra-and-team-plans;
+   "Updated over 2 weeks ago"): Max USD 100, Ultra USD 200 a billing cycle; "Unused credits expire at the end of each billing cycle";
+   they are "spent before any credits you've purchased"; with nothing else on the account "API requests stop until your next monthly
+   credits arrive"; auto-reload carries on from his card; after a downgrade credits "stay usable until they expire"; the page names no way for a
+   program to read the balance. -> the credit is a DATED RELIEF with a meter of our own and a floor (3.3); his Ultra plan ends 10 Jan
+   2027 (item 38 (i)), so a pipeline that goes live after the build meets at most the cycle of about 10 Dec to 10 Jan.
+THE RESEARCH KEY AND THE YOUTUBE SKILLS (A11 (f)): NOT USED, 0 units - a skill run is a python process and a run was alive on the
+laptop; nothing in this design rests on a figure they would have given (V5's rings are where real breakouts are read).
+NOT FOUND, so nothing is built on it: an API figure for ELIGIBLE watch hours; any way for a program to read a warning or a strike; a
+way to read the credit balance; any study of how many videos a format arm needs before its share may move (8 and 12 stay the
+redesign's starting values, 8 and 16 this memo's for Shorts); any measured effect of a daily owner line on anything.
+AN EXPERIMENT BEFORE THE DESIGN - COUNTED BY READING f5f5374 (nothing may run beside the typist's tests; what the builder MEASURES first
+is step 1 of 3.12):
+- NO DECISION OF STRATEGY OR FINANCE CAN BE EXECUTED TODAY: `registry.PENDING` holds D1 and D11 (registry.py 93); `memos._first_level`
+  sends a memo for a department without a wired run to level 2 at once (memos.py 65 to 68) - the owner.
+- THE ENGINE'S PROOF OF A SETTING IS THE LEVER-OWNER'S NEXT COMPLETE RUN, OR A VIDEO: `_verify_setting` (execute.py 204 to 222) - a
+  lever WITH checks needs an episode made after the change that passed them; one WITHOUT is verified by the next "ok" run of the
+  ticket's department, rolled back by a failed or breached one, and rolled back with "no evidence" after `EXEC_VERIFY_DAYS`
+  (`_judge`, 484). `_start` (401 to 404): a setting changes only between videos and "one unverified change per department". So
+  Strategy can make ONE move a day on its own cells, and a move on a cell of the Shorts Studio waits for that Studio's own run.
+- WHAT HE WOULD NOT SEE: `notify.send(tier="week")` only appends a row (notify.py 63 to 75); a "week" row is printed three evenings a
+  week, CUT at 160 characters, under "Waiting for you (optional)" (174); tier "now" is capped at `NOTIFY_NOW_MAX_PER_DAY` for every
+  kind and waits through the quiet hours (89), and V1c's verdict asks draw on the same places (`now_room`, 54).
+- THE CREDIT IS A VIEW AND THE ROUTER IGNORES IT: `governor.credit_cover_inr` (135 to 147) only colours one digest line;
+  `claude_allowed()` (446 to 448) = the cap not reached and `_balance("anthropic") > 0.4`.
+- AN EXPERIMENT ARM EXISTS AND IS A RULEBOOK TRIAL: lever class C (execute.py 231 to 274) takes the target `playbook:<role>` (a role of `playbook.DEPTS` - showrunner, writer, packager, director - never a department's id), vets the
+  rule (`playbook.vet`), refuses when `MAX_TRIALS` are in use, is verified once `EXEC_ARM_OUTPUTS` LONG videos carry the arm in
+  `Video_Features` (a coin flip per video) and is retired by a rollback. "A small experiment arm ... applied as a ticket the engine can
+  roll back" (brief 12.4) is built - the intake only has to write its ticket.
+- THE MONTH'S ARITHMETIC TAKES NO PLANTED DAY: `split(now)` passes `now` to its own lines, but `episodes_left_this_month()` and
+  `long_videos_this_month()` (131 to 133) read the clock themselves; `split` prices a long video by `full_episode_inr()` - the kind of
+  the NEXT video (`long_kind`), not "ladder".
+- V1c MOVED EVERY FIGURE OF THE PRE-DESIGN (its memo's 3.7 and 3.8, read): 89 levers, 71 hard checks, `SHOW_CHECKS` 60, 86 tabs; a long
+  video about a promoted Short about Rs 584 with the floor's line; a full month leaves about Rs 224 free, not 414. So NO WORKED RUPEE
+  FIGURE IS TYPED INTO A TEST: every money test of this batch plants the cells and compares with what the code's own functions return.
+- CARRIED, `(pre-review)`: `replan._answer` writes `SHORTS_PER_WEEK` round the engine and the cadence stops at `SHORTS_PER_MONTH`, so
+  the one mid-month "decision" changes nothing that runs; `dash.route` writes the same cell on his own tap; a long video's Analytics
+  are read ONCE, 72 hours after its slot; `ypp.check` runs on Sundays only; `deeptrial.maybe` turns the first slot from day 18 into a
+  film of 1.9 times the words and forces F2; with `CASEFILES_ON` the tick dispatches a compilation of the trial's cards that is
+  published round every gate from the fifth archived episode on; a long video's breakout still asks him ("Approve follow-ups").
+
+#### Step 2 CREATIVITY (scores 1-5: what the owner or the channel gains / enforceable / cost inside the cap / reliability / owner effort)
+A. As the redesign wrote it (4.4): D1 and D11 to `ENTRY`, a weekly review that writes tickets for "the portfolio", rules for format
+   arms, one line in the brief. 3 / 2 / 5 / 2 / 4 = 16 - WHAT a review computes is left to the typist; the proof of a change would be
+   "Strategy ran"; nothing for a falling number or a risk.
+B. A strong model in the chair: weekly, the best model reads the scoreboard, the Palace and the memos and returns the month's plan;
+   code applies it as tickets. 4 / 1 / 3 / 2 / 4 = 14 - an opinion ranks and decides (forbidden: the brief's first constraint, `01` N6,
+   redesign R9); five cells moved at once can be neither attributed nor undone one by one; a paid call for a guess.
+C. A bandit: Thompson sampling over the format arms and the Shorts count on real views. 3 / 4 / 5 / 2 / 5 = 19 - four long videos a
+   month give a posterior nobody can read for a year, one lucky video looks like a law, and "why did it move" has no sentence he can read.
+D. The pre-design's thermostat with a logbook, with the pre-review's 27 changes: a daily loop of pure rules that moves one lever one
+   step toward a computed target through three gates, a row and an Undo for every decision, a fast lane on the Shorts.
+   5 / 4 / 5 / 4 / 5 = 23 - the right executor. What it still lacks: it re-judges an arm every morning (research 7); it knows cells
+   only - nothing ACTS on a removed video, a channel drifting into repetition or a falling pace (items 52, 65), and nothing takes in a
+   NEW thing (a platform feature, a subject - items 53, 60, 80); its money tests are literals a price moves.
+E. (ORIGINAL, CHOSEN) THE STANDING ORDERS - ONE CLOCK, THREE BOOKS, EACH BOOK DATA. D's executor is kept whole (one lever, one step,
+   three gates, a ticket, a row, one tap to undo). On it:
+   (1) THE RULE BOOK: a rule is a ROW (its cells, its measure, its judgement points, its prediction), never a branch of one function -
+   the Council, the Observatory and the learning loop ADD ROWS later. A rule that reads viewers has PRE-REGISTERED JUDGEMENT POINTS: it
+   is judged once when an arm has exactly its first 8 measured videos, once at its second point, on exactly those videos - a verdict
+   that does not depend on which morning the review ran (research 7). The Shorts' rules come first: twelve readings a month.
+   (2) THE WATCH BOOK: a danger is a row with an owner, a measure and an ACT code takes the same day - a video the platform rejected or
+   removed closes the uploads (one that merely vanished asks him first: he may have deleted it); repetition creeping toward its limit, an upload mix past the measured band
+   and a fall of the Shorts' own numbers each become one line to him and one question on R&D's agenda (items 52 and 65 as rules that can
+   fail, on facts the platform reports - never on a model's reading of a policy).
+   (3) THE ARM BOOK: a new thing is a filed CANDIDATE with dated sources and the lever that would execute it; ONE becomes a trial at a
+   time, as a ticket the engine can roll back - a rulebook trial where it is words, a setting where a cell exists; a candidate nothing
+   can execute is PARKED and said (item 80 (b); 53 and 60: a subject and a name enter the same book).
+   And THE SCOREBOARD IN THE PARTNER PROGRAM'S OWN NUMBERS with the pace it NEEDS beside the pace it has; THE MONEY IN HIS OWN RUPEES,
+   the credit a dated relief that ends by itself. 5 / 5 / 5 / 4 / 5 = 24.
+THE CASE AGAINST E, built before it was chosen:
+ (i) "More machinery than D: more to prove, more that can go red." Each book is rows on ONE executor, one tab and one way to tell
+     him; the build order (3.12) is green after every step and the books come last. What E adds in code is small beside what D
+     already needs (the loop, the gates, the logbook); what it adds for him is the difference between a thermostat and a watchman.
+ (ii) "A machine that closes the uploads by itself can stop the channel on a false alarm." It acts only on the platform's own record
+     of OUR video: REJECTED closes them at once; GONE asks him first (he may have deleted it himself) and closes them only on his silence; the lock's message is the watch's own, true, with one tap that opens it; an age
+     restriction or a blocked country is a line to him, not a lock. Against it stands research 6: the next violation inside 90 days is a strike.
+ (iii) "Judgement points make it slower." By design: the alternative fires on noise. He is told the count every day ("S2: 5 of 8").
+ (iv) "In the first quarter the long formats still move nothing." True, and said to him in the daily line. The Shorts' rules judge
+     from about week 7, the watch from day 1, a trial as soon as a candidate is filed, the money from the first of the month.
+ (v) "The arm book is empty until V5." The stand-in list of fake mode proves the road; a book that takes one trial at a time is the
+     only form in which "what works fastest now" can enter without swaying (item 65).
+Why the losers lose: A leaves the brain to the typist; B puts an opinion in the chair; C learns from numbers that do not exist yet;
+D is E's executor without its eyes.
+
+#### Step 3 DESIGN MEMO (for an Opus builder that decides nothing - amendment A4; a choice this memo did not make is a `DESIGN QUESTION` in the record, never settled in code; the parts 3.1 to 3.11 ARE the build steps, in order)
+WHAT HE SEES (1 to 2 minutes a day on a phone; everything through `notify.send` and the daily brief). EVERY MORNING, the first two
+things of his brief: the SCOREBOARD in the Partner Program's own numbers with the pace each bar needs, and ONE Strategy part - a
+decision's whole line with its Undo link, or "no change" with what is being counted ("S2: 5 of 8 Shorts"), or the first move that was
+refused and why; a danger the watch acted on ("Risk: ...") the same morning. ONCE A WEEK the weekly line: the plan, the money, the
+mix, the risk line, the credit used and what lapses. WHEN HE TYPES AN IDEA into the tab `Owner_Input`: an answer in the next brief -
+ADOPTED or PARKED, and why. A CARD only where the lever table says the move is his (the engine's own card, unchanged). Nothing else.
+**3.0 THE SWITCH, THE FILES, WHAT IS DATA.** `STRATEGY_ON` (TRUE; FALSE = exactly the behaviour of the code V4 is built on: the Monday
+re-planner card, the long video's breakout card, no review, no watch, no desk, the credit a view, `month_spend` in every reader). The
+older tests run with it FALSE: `tests/conftest.py` gains `OLD_STRATEGY = {"STRATEGY_ON": "FALSE"}` beside `OLD_VIEW` (a change BY
+DESIGN). NEW MODULES, each on `tools/repair.py` PROTECTED before its first line: `whatifs/scoreboard.py` (D10 wraps it),
+`whatifs/org/finance.py` (D11), `whatifs/org/strategy.py` and `whatifs/org/risk.py` (D1), `whatifs/org/desk.py` (D0 wraps it and
+stays pending until B9: the desk is plain code in the tick, as `ladder.watch` is). NEW TABS (append-only, 86 -> 91): `Scoreboard`,
+`Decisions`, `Candidates`, `Owner_Input`, `Owner_Desk`. DATA, never code: the bars (cell `YPP_BARS`), the rules (`strategy.RULES`), the
+watches (`risk.WATCH`), the metrics a prediction may name (`strategy.METRICS`), every number below (a cell with its note). COULD A BUYER
+WHO IS NOT HIM RUN THIS (plan 12.11)? Yes: no name, account, channel or laptop is in any text or cell of this batch; the channel is
+"the signed-in channel" (`mine=true`), the credit cells are empty, the bars are a cell; the manual's lines are written in 3.10.
+**3.1 STEP 0 - THE AUDITS' OPEN FINDINGS, AND OPEN ISSUE 200.** Every OPEN finding `next.py` prints is closed first (a failing test,
+the fix at its cause). ISSUE 200 (handed to this design): `runner.run`'s off-branch (runner.py 227) answers `Result("off",
+act(...))` and `work` hands its `.output` on - for a native run that is the `Out` object. THE FIX: the off-branch hands back
+`raw.output if isinstance(raw, Out) else raw`. TESTS both ways: with `ORG_ON` FALSE `runner.work` of an act that returns `Out({"a":
+1})` gives `{"a": 1}`, and of an act that returns a dict gives that dict; `contract.p_viewer_probe` then judges the line-up with the
+organisation off (not N/A). BREAK: the `isinstance` branch removed. Pin: any test that asserts N/A there is named before it moves.
+**3.2 STEP 1 - THE SCOREBOARD (`whatifs/scoreboard.py`; tab `Scoreboard`: date, subs, hours, shorts_90, src).**
+FIRST ACT OF THE BUILD, before any edit: a read-only scratch script (file tool, `WI_FAKE=1`, a fresh local store after `manage.setup`)
+prints `governor.month_room_inr()`, `full_episode_inr()`, `full_episode_inr(kind="ladder")`, `short_inr()`, `split()`,
+`moving_plan()` - the figures go into the record ("MEASURED ON <sha>"); the memo's 3.9 is said again with them.
+- CELLS: `YPP_BARS` = `[{"until": "2027-01-31", "subs": 1000, "hours": 4000, "shorts": 10000000}, {"until": "", "subs": 1000, "hours":
+  8000, "shorts": 20000000}]` (YouTube Help 72851 and 12843009, read 16 Nov 2026); `SCOREBOARD_ELIGIBLE_PCT` "100" ("of the long watch
+  hours YouTube's API reports, the share Studio's Earn page counts as eligible - typed from Studio; no API gives it").
+- `read(now)` -> {subs, hours, shorts_90, at}: `p = ypp.progress(now)`; `hours = round(p["hours"] * S("SCOREBOARD_ELIGIBLE_PCT",
+  float) / 100, 1)`; `shorts_90 = p["shorts_views_90d"]` (the API's `engagedViews`: research 1); `subs = _subs()`.
+- `_subs()`: `FAKE` -> None; else `requests.get("https://www.googleapis.com/youtube/v3/channels", params={"part": "statistics", "mine":
+  "true"}, headers=publish.gheaders(), timeout=30)` (the pattern of `ypp._query`) -> `int(items[0]["statistics"]["subscriberCount"])`;
+  any failure -> None with a WARN (exact under 1,000: research 4).
+- `keep(now)`: appends one row for the UTC date (a second call on that date changes nothing). CALLED in `manage.learn` in a `try` of its
+  own right after the `try` block that calls `BRN.daily()` (manage.py 566 to 571) - every day; `ypp.check` stays in its Sunday block.
+- `bars(now)`: the first entry whose `until` is "" or >= today. `sub_pace(rows, now)`: the newest row dated at least 28 days before
+  today with a `subs` -> (today's subs - its subs) / the days between; None without such a row or without today's subs. `eta(v, bar,
+  pace)`: 0 when v >= bar; None when pace is None or <= 0; else `ceil((bar - v) / pace)`.
+- `line(now)`, word for word: "Scoreboard: {subs} of {bar_subs:,} subscribers ({P}) | Shorts views that count: {shorts:,} of
+  {bar_s:,} in 90 days - {shorts / 90:,.0f} a day, the bar needs {bar_s / 90:,.0f} | long watch hours: {hours:.1f} of {bar_h:,} in 12
+  months - {hours / 365:.2f} a day, the bar needs {bar_h / 365:.1f}{E}.{R}" with P = "reached" | "about N days at this pace" | "more
+  than 10 years at this pace" (N > 3,650) | "no pace yet: 28 days of readings are needed"; E = "" at 100, else " (counted at N% eligible)";
+  R = " The bars rise on {until + 1 day:%d %b %Y}: {hours2:,} hours or {shorts2:,} Shorts views." while a later entry exists. A `subs`
+  of None prints "subscribers: no reading". No row: "Scoreboard: no reading yet (the first comes with the daily learning job)."
+  WORKED: subs 40 today and 12 on the row of 28 days ago: pace 1.0, eta ceil(960 / 1.0) = 960 -> "about 960 days at this pace"; Shorts
+  200,000: 2,222 a day against 111,111; hours 12.5: 0.03 a day against 11.0.
+- WHERE: `digests.compose` (digests.py 25): `parts` = the head, then `SB.line(now)`, then `STR.brief(now)` (3.4: the part "*Decisions*"; "" until step 3.4),
+  then the parts that stand there (both kinds); `notify.digest`: its first `<p>`.
+- CORRECTED BY THE BUILD (into the record before the edit; `(pre-review)`): `owner_view.strategy()`'s sentence "... then 2-4 Shorts
+  cut from it over the next days" becomes "Next slot {ist}: a long video about the Short viewers picked (three Shorts a week, each a
+  topic of its own)."; `owner_view.money()` shows `governor.cap_inr()`, not `BUDGET_CEILING_INR`.
+- TESTS: the worked line word for word from planted rows; each P; a second `keep` on one date adds no row; in both briefs (a DEMO brief too) the FIRST PART AFTER THE HEAD (`tests/test_v103.py` 51 pins the head) is
+  the line; the stale sentence is a retired string in `tests/test_docs_current.py`'s list ("Shorts cut from it"). BREAKS: the line
+  dropped from `compose`; `shorts / 90` typed as `/ 28`.
+**3.3 STEP 2 - FINANCE IS WIRED, AND THE MONEY IS HIS OWN (`whatifs/org/finance.py`; `governor.py`; D11's run `watch`).**
+- TIME CAN BE PLANTED: `governor.episodes_left_this_month(now=None)` and `long_videos_this_month(now=None)` gain `now` (None = today:
+  nothing older moves); NEW `governor.slots(now=None, left=False)` = the days of the calendar month (`left=True`: from today on; 0 after the month's last) (US Eastern, as line 202 reads the clock) whose
+  weekday is in `publish_days()`.
+- `governor.month_fit(n_long, n_short, extra_inr=0.0, now=None)` - `split`'s own arithmetic for other counts (it reads the Sheet and the
+  clock; said): `long = full_episode_inr() * S("BUDGET_SAFETY_MARGIN", float)` (no kind: `split` prices the NEXT video, line 382);
+  `long_left = max(0, min(episodes_left_this_month(now), n_long - long_videos_this_month(now)))`; `short_left = max(0, n_short -
+  shorts2.made_this_month(now))`; `reserve = max(0, MONTH_RESERVE_INR) * left_days / days`; `need = long_left * long + short_left *
+  short_inr() + reserve + extra_inr`; returns {room_inr = `production_room_inr()`, long_inr, short_inr, reserve_inr, need_inr, free_inr =
+  room - need, fits = need <= room, long_left, short_left}. TEST: for the cells' own counts `month_fit(max_long_videos(),
+  S("SHORTS_PER_MONTH", int), now=now)["free_inr"]` equals `split(now)["free_inr"]` to the rupee whenever `split(now)["fits"]`.
+- THE CREDIT IS A DATED RELIEF WITH A METER OF OUR OWN (research 8; items 38 (g), 56, 57). CELLS: `CLAUDE_CREDIT_USD_MONTH` (exists, 0 =
+  closed), `CLAUDE_CREDIT_FROM` (new, ""), `CLAUDE_CREDIT_UNTIL` (exists; its default becomes ""), `CREDIT_FLOOR_INR` "2970" (USD 30:
+  the launch kit's floor - the meter is ours, the balance is not readable), `CLAUDE_CREDIT_COVERED` "{}" (written by code).
+  `finance.credit(now)`: `amount = CLAUDE_CREDIT_USD_MONTH * USD_INR`; `rows` = the `Cost_Log` rows with provider "anthropic", basis not
+  "summary", whose `ts` date lies in [FROM, UNTIL]; `spent = sum(inr)`; `left = amount - spent`; `usable = max(0, amount -
+  CREDIT_FLOOR_INR)`; `covered_month = max(0, min(spent, usable) - min(spent before the first of this month, usable))`; `open` =
+  `S("STRATEGY_ON", bool)` and amount > 0 and both dates set and FROM <= today <= UNTIL and `left >= CREDIT_FLOOR_INR`. Returns {open,
+  amount_inr, spent_inr, left_inr, covered_month, until}. WORKED: USD 200 at Rs 99 = 19,800, usable 16,830; window 10 Dec to 10 Jan;
+  Claude rows Rs 900 in December and Rs 300 so far in January: covered in January = min(1,200, 16,830) - min(900, 16,830) = 300. A
+  window with Rs 16,000 before this month and Rs 2,000 in it: 16,830 - 16,000 = 830.
+  `finance.cover(now)` = 0.0 with `STRATEGY_ON` FALSE, else `min(S("CREDIT_COVER_MONTH_MAX_INR", float), max(the figure CLAUDE_CREDIT_COVERED holds for this month,
+  credit(now)["covered_month"]))` - `watch` writes the month's figure into the cell and never lowers it (the day he types the next
+  cycle's window the old window's rows fall out of the sum; the month keeps what it had).
+- THE CAP STAYS A BREAKER (code cannot see whether the credit really pays: research 8 - a key outside the linked organisation, a
+  credit used elsewhere or auto-reload would put every covered rupee on HIS CARD). `CREDIT_COVER_MONTH_MAX_INR` (his cell, no lever)
+  is the most the lane covers in a month; beyond it Claude's rows count against his Rs 5,000 again and the cap is the breaker it is
+  today. ITS DEFAULT IS MEASURED in step 3.2's first act, never typed from memory: 1.5 x (`max_long_videos()` x the long kind's TEXT
+  lines x `BUDGET_SAFETY_MARGIN` + `SHORTS_PER_MONTH` x (a Short's writing line + 4 x `SHORT_VARIANT_EST_INR`) + the caps of D2 and
+  D3), rounded up to the next Rs 100 - the TEXT lines are the lines of `costguard.lines` whose calls are text models' (the builder
+  names them in the record), the arithmetic stands in the cell's note. `cover` reads tab `Cost_Log` at most once in `COVER_TTL_S`
+  (600) seconds a process (`finance.forget()` for tests; the family of open issue 214). TEST: an open window with Rs 9,000 of Claude
+  rows in the month: cover = the cell and `monthly_cap_reached()` is True. BREAK: the `min` removed.
+- HIS OWN MONEY: NEW `governor.own_spend_inr(now=None)` = `month_spend() - FIN.cover(now)`; `remaining_inr()` = `cap_inr() -
+  own_spend_inr()`. EVERY caller of `month_spend(` WITHOUT a provider is found by search and written into the record as "reads own
+  spend" (switched to `own_spend_inr`) or "counts list prices on purpose: <why>". THE TABLE (typed here; the builder classifies nothing; ALL OF IT BEHIND THE SWITCH - with
+  `STRATEGY_ON` FALSE cover is 0 and the base's words stand: `tests/test_v94a.py` 165). OWN SPEND: `governor.extras_allowed` (154,
+  156), `_guard_alert` (171), `record_month_close` (92: next month's breakout fund grows by the month's cover - right, it is his
+  unspent money), `headroom` (412), `costguard.spend_monitor`, `digests._risks`, `notify.digest` (166 to 171), `dash.py` 78,
+  `caretaker.py` 99, `manage.py` 1264 (`monthly_brief`'s `spend_month`), `owner_view.money` (138 to 142: its total; its `by_provider`
+  keeps list prices and says "at list price"). THE LANE'S COVER with the switch on, the old view without: `dash.py` 94,
+  `caretaker.py` 116. `governor.cap_inr()` instead of `BUDGET_CEILING_INR`: `owner_view.strategy` (127), `owner_view.money` (142).
+  LIST PRICE ON PURPOSE: `episode.py` 359 and 361, `models.py` 779 and 785 (a delta inside one job); `finance.credit` (the meter). A
+  caller the search finds beyond these is a `DESIGN QUESTION`. What he reads: "Your money this month: Rs {own:.0f} of Rs
+  {cap:.0f}." + " Claude credit paid another Rs {cover:.0f}." when cover > 0 (in `owner_view.money` and `notify.digest`; the old
+  "(about Rs ... covered by free credits)" clause goes; `credit_cover_inr` stays the view it is, its Gemini half untouched).
+  THE ROUTER KNOWS THE CREDIT: `governor._balance("anthropic")` adds `FIN.credit(now)["left_inr"] / USD_INR` while the lane is open,
+  and `runway_days("anthropic")` is 999 then (no top-up mail while free credit is left).
+  TESTS: closed (the default) every figure equals the base's on a planted month; a month whose list spend is Rs 5,300 with Rs 900
+  covered: no message, mail or brief says more than Rs 4,400 of his money, the 90% guard does not fire, `remaining_inr()` is 600; a
+  row outside the window, of another provider or of basis "summary" is not covered; lifetime Claude spend USD 30, funded 25, lane open
+  with Rs 5,000 left: `claude_allowed()` is True and no top-up reminder is sent - closed: as the base; the day after UNTIL: closed;
+  `left` under the floor: closed.
+- ONE BOOST, A LEVER THAT ENDS BY ITSELF (item 57 (b): credit buys "more drafts and blind judgements whose winners teach"):
+  `THINK_BOOST_VARIANTS` "0" (D1, `_n("int", 0, 4, 2)`). `finance.boost(key)` = the cell while `credit(now)["open"]` and
+  `governor.claude_allowed()`, else 0 - the READER closes the boost on the end date even if no ticket ever does. `shorts2.write`
+  (185): `n = max(1, S("SHORTS_VARIANTS", int)) + FIN.boost("THINK_BOOST_VARIANTS")`; `sc["_write"]` (198) gains `asked` = n and `won` =
+  `outs.index(pool[win])` (which of the scripts asked for the jury chose: the datum B8 reads - H34). `costguard.lines("short")`: one
+  line `boost_variants` - ONLY while `finance.boost("THINK_BOOST_VARIANTS") > 0` (closed = the base's lines, key for key:
+  `tests/test_v12_money.py` 277, 279) - = boost x `SHORT_VARIANT_EST_INR` ("12": a third of the Rs 36 lump that pays three scripts, the jury and the
+  fix - it errs upward), with the `calls` of the Short's own writing line for the paid-call counter (the builder reads
+  `costguard.lines` 50 to 60 and `tests/paid_calls.py` first; `V12V4_ADDED` holds the boost's calls, counted with the lane open).
+  TESTS: open with the cell 2: five requests reach `ask_many`; the day after UNTIL five become three with the cell still 2; closed: 3.
+- `watch(brief)` returns `Out` (D11's run, `ORG.run("D11", "watch", FIN.watch)`): (a) measures of `month_fit` for the plan in force;
+  (b) the month's cover written into `CLAUDE_CREDIT_COVERED`; (c) THE OVERRUN BECOMES A MEMO (issue 157; the builder reads
+  `costguard.reconcile` whole first, `(pre-review)`: the summary row's `role` cell is `<kind>: <JSON>` cut at 900 characters): every
+  `Cost_Log` row of basis "summary" newer than the cell `FINANCE_SEEN_TS` whose JSON, parsed after the first ": ", holds a non-empty
+  `over` or `unlisted` - or does not parse - gives a problem memo from D11 to D12 (Operations: a missing line is code, `DESIGN
+  QUESTION` if `registry.takes("D12", "problem_memo")` is False: then D8): subject "A video cost more than its estimate: <episode>",
+  body {what_failed: the `over` texts and "paid with no line: ..." (or "the cost summary of <episode> is cut and cannot be read"),
+  where: "Cost_Log:<episode>", attempt: 1, error_class: "cost_overrun"}, evidence [{source: "Cost_Log:<episode>", date, type: "own
+  data"}], dedupe_key "overrun|<episode>", done_when "the estimate's lines carry it and the next video of that kind has a clean
+  summary"; a later clean summary of the same kind resolves it (`repair_verified`, ref "Cost_Log:<episode2>"). Every inbound memo is
+  dispositioned ("deferred", "read by Finance: a <type> is counted in the month's fit").
+- LEVER: `MONTH_RESERVE_INR` joins D11 (`_n("int", 0, 1000, 100, "down", "it removes the month's safety reserve")`). REGISTRY: D11 to
+  `ENTRY` (the caller is `whatifs/cli.py`; the builder reads `registry.ENTRY` 78 to 92 for the row's exact form); D11 wraps
+  `whatifs/org/finance.py` beside its two. `cli.strategy_round()` RETURNS AT ONCE unless `execute.on()` (with the organisation or the
+  engine off a decision could never become a ticket: runner.py 227, 378) and while `manage.paused()` (no decision for a channel that
+  makes nothing; the first round after counts what arrived). Else (the shape of `research_round`, cli.py 13 to 27: each run in its own
+  `try`, a `ContractBreach` logged, never raised) runs D11's `watch` here; 3.4 adds D1's review and `STR.tell()`. It is called in the
+  `learn` command after `ORG.work("D10", "daily", ...)` and before `ORG.daily_check()` (cli.py 72).
+- BREAKS: `- FIN.cover(now)` removed from `own_spend_inr`; the floor test removed from `open`; `boost` returning the cell when closed;
+  `month_fit` pricing `kind="ladder"`; the `unlisted` half of the overrun test removed.
+**3.4 STEP 3 - THE LOOP (`whatifs/org/strategy.py`; D1's run `review`; one rule in this step: SLOTS).**
+- TAB `Decisions`: id, ts, rule, key, old, new, why, numbers, effect_before, effect_after, prediction, ticket, state, told,
+  frozen_until, observed, scored, briefed. `id` = "DEC-" + the first 10 hex of sha1(rule|key|old|new|UTC date). STATES: decided -> applied ->
+  verified | rolled_back | refused | no_effect | undone | void; `judged` (a judgement that moved nothing), `hand`, `watch`.
+- A RULE IS A ROW: `RULES` = a tuple of dicts {id, keys, target (a function of `now` -> {key: {"target", "why", "numbers", "evidence":
+  "ok" | "thin", "count": "<n of m>"}}), metric, board ("shorts" | "hours" | "subs": which scoreboard number it moves - item 55),
+  direction}. `PORTFOLIO` = the keys of every row, in the rows' order. A later batch adds a rule by adding a row (a recipe line of the
+  repo's `CLAUDE.md`). `METRICS` = {"shorts_engaged_90d": the scoreboard's `shorts_90`, "long_hours_12m": its `hours`,
+  "shorts_engaged_first_days": the median first-days measure (3.5's item) of the measured Ladder rows posted in the last 28 days,
+  "long_hours_per_video_28d": the median `h` (3.5) of the long videos ripe in the last 56 days}: a prediction names one of these and
+  nothing else (one vocabulary for B8; V1c's own prediction keeps its tab).
+- `effect(key, value, now)` - what the running code will do with that value, from the READERS' own arithmetic:
+  `STANDARD_MAX_LONG_PER_MONTH`: `min(n, made + left)` with n = `value if G.budget_mode() == "standard" else G.max_long_videos()`,
+  made = `G.long_videos_this_month(now)`, left = `G.slots(now, left=True)` (after the month's last slot nothing can change: a move is
+  then refused by EFFECT - `episodes_left_this_month` answers at least 1 and is not used here);
+  `SHORTS_PER_MONTH` / `SHORTS_PER_WEEK`: `min(m, w * days_in_month // 7, the largest k <= m with month_fit(L, k, now=now)["fits"])`
+  with the PARTNER cell at ITS target whenever both differ from their targets (in the gate, in `effect_after` and in `settle` alike);
+  a `FORMAT_SHARE_*`: `{f: int(10 * s / total + 0.5)}` over `formats.shares()` with that value - and the vector of the cells as they
+  stand whenever `FORMAT_FORCE` or `WI_FORMAT` is set or `formats.on()` is False; a `SHORT_SHARE_*`: the same over
+  `formats.short_shares()`, unchanged under `SHORT_FORMAT_FORCE` / `WI_SHORT_FORMAT`; `THINK_BOOST_VARIANTS`: `SHORTS_VARIANTS + (value
+  if FIN.credit(now)["open"] and G.claude_allowed() else 0)`; a switch: its value. A cell is AT its target when `effect(key, cell) ==
+  effect(key, target)`.
+- `next_move(now)`: the first key of `PORTFOLIO` that is not FROZEN (a row for that key with `frozen_until` > now), has no row in state
+  decided or applied, and is not at its target; `new` = the cell moved toward the target by at most the lever's step (a switch: the
+  target). THREE GATES, each refusing with its arithmetic in words: RANGE (`levers.check(LV.owner_of(key), key, new)["why"]` is
+  empty), EFFECT (`effect(key, old) != effect(key, new)`), FIT (asked only when the plan with `new` needs MORE than the plan with
+  `old` by `month_fit`'s `need_inr`: then it must fit). A refused candidate is kept as "not taken: ..." and the NEXT key is tried. At
+  most ONE decision a review and `STRATEGY_MOVES_PER_WEEK` ("3") in any seven days (his undos and the desk's tickets do not count).
+- `decide(c, now)`, in this order (the runner writes `Out.memos` only after `review` returns): (1) the ticket MEMO is built - from D1
+  to `LV.owner_of(key)`, lever class B, target, value, `acceptance_test` "the next review finds: " + the effect in words, `rollback`
+  "{key} back to {old}", `decision_ref` the id, `dedupe_key` "strategy|{id}", `subject` "Strategy: {plain words}" (the engine shows it to him: execute.py
+  431), `done_when` "the engine verified {key} = {new} or took it back" (the builder reads `schemas.TYPES["ticket"]` and Palace
+  item `b4.how_to_write_a_ticket` for the fields); (2) the row, with `ticket` = `memos.id_for(<that memo>)`, state "decided",
+  `prediction` = {metric, board, direction, horizon_videos, baseline = `METRICS[metric](now)` or null, read_on = ""}; (3) the memo
+  joins `Out.memos`. NO message inside the run. A move whose `levers.check` returns an `owner` reason goes the same way: the engine's
+  own card asks him (unchanged words).
+- `tell(now)` (called by `cli.strategy_round` after the review; level-triggered - a crashed run tells late, never falsely): every row
+  "decided" with an empty `told` whose ticket is on tab `Memos` gets its action: `NT.send("strategy", TEXT, [("Undo", f"STRATEGY UNDO
+  {id}")], tier="week", default="it stays", dedupe_key=f"strategy|{id}")` (NO expiry: the row stays open and quiet - `INFORM_KINDS` below - so
+  an Undo link never dies), `memos.note_owner_told(ticket, action id)`,
+  `told` = the action id. TEXT: "Strategy decided: {plain words} ({key} {old} -> {new}). Why: {why}. It should move {the board's name}:
+  {metric in words} {up | down}. Nothing to do - tap Undo to take it back."
+- `brief(now)` -> the part "*Decisions*" of the daily brief (the older part *Strategy* of `owner_view` keeps its name:
+  `tests/test_v103.py` 50) (3.2 names its place; `notify._link` becomes the public `notify.link`, its
+  three callers in `notify.py` follow): (a) every row whose `briefed` is empty, in a state other than `hand` (no clock: a brief that leaves late, or not at all on a
+  paused day, loses nothing): its TEXT whole (a `watch` row:
+  "Risk: {why}"; a `judged` row: "{rule} judged {key} at {n}: {verdict in words}"), and for a decision "Undo: {NT.link(verb, action
+  id)}"; (b) when the cell `STRATEGY_WEEKLY_AT` is 7 days old: THE WEEKLY LINE (then the cell is set): "Strategy, week of {d Mon}: the
+  plan is {L} long videos and {S} Shorts this month - {it fits, Rs N free (it buys moving seconds) | the money pays K Shorts, not S}.
+  Formats F1 a / F2 b / F3 c; Short formats S1 x / S2 y / S3 z. {the counts line}. {the risk words (3.5)} {Claude credit: Rs U used of
+  Rs A, Rs T left until {until}; what is left on that day lapses. | ''} Spin-offs: switched off; they come back only rebuilt.
+  {D decisions this week: V took effect, W not seen yet, X taken back | No change this week: every
+  setting is at its target.} {Outside Strategy: {the keys with their values - ONE sentence for all of them, also on the first review of a Sheet that was live
+  before V4} - counted as your own values and left alone for 28 days. | ''}";
+  (c) on a day with no row: ONE line - "Strategy today: no change. Counting: {every `count` of a rule whose evidence is thin, e.g. S1 5
+  of 8 Shorts, S2 4 of 8, F1 3 of 8 long videos}." or "Not taken today: {the first refusal}." WHEREVER a Short's format is named to him
+  the words are "Short format S2", never the learning core's family name `lead` (issue 90).
+- `review(brief)` returns `Out`, in this order: (1) `settle(now)`: for every row decided or applied, the engine's row - NEW
+  `execute.state_of(tid)`, a three-line public reader of `_get` (execute.py 56; a PROTECTED file, named) - refused, failed,
+  rolled_back, verified: the state and its note are copied; applied and `effect(key, live cell, now) != effect_after`:
+  state "no_effect" and a NEW ticket with value = old (P1, dedupe "strategy|noeffect|{id}") - never `memos.reject`: only a ticket's
+  holder or the owner may reject it (schemas.py 21), and for a Short share the holder is D14 (the
+  engine applies it once the first change is verified: one unverified change per department). SAID PLAINLY: the engine's "verified"
+  for these levers means "the lever-owner's next run finished", nothing more, and ONE failed or breached run of that department takes
+  the change back (execute.py 217 to 219); `settle` itself compares the gate's own arithmetic a day
+  later - it differs only when the calendar, the money or a hand changed overnight; what production DID is the column `observed`
+  (3.5). A row "decided" for more than 26 hours whose ticket is not on tab `Memos` has its memo sent ONCE more, then is `void` with one
+  line to him. A row `undone` whose cell is not `old` and has no ticket in flight gets its undo ticket again. (2) `hands(now)`: a
+  portfolio cell that is neither its default, nor the `new` of the newest row in force for that key, nor the value of a `hand` row,
+  is recorded once as a row of rule "HAND", state "hand", `frozen_until` = now + `STRATEGY_UNDO_FREEZE_DAYS` (28) - and `dash.route`
+  (dash.py 223) records the same row at once for a portfolio key (his own tap; its clamp of 1 to 5 STAYS - his hand may stand
+  outside the lever's range 2 to 4, and after the freeze the rule walks the cell back a step at a time). (3) the watch book (3.6) and the intake (3.7). (4)
+  `next_move`, `decide`. (5) every inbound memo dispositioned: an owner memo -> ("deferred", "answered on the owner's desk: it closes
+  with its answer"); a performance or decision memo -> ("deferred", "read by Strategy: counted in this review's numbers"); a problem
+  memo -> ("deferred", "read by Strategy: <class> is repaired by its own department; counted in the week's line"); anything else ->
+  ("deferred", "read by Strategy: a <type> is not Strategy's to close"). Measures: decisions, refused, counting, risks, candidates.
+- WHAT WAS SHOWN IS STAMPED ONLY WHEN IT WENT: `digests.send` (digests.py 40 to 55) keeps what `PUB.email` returned (as
+  `notify._deliver_now` does, notify.py 94 - today a failed e-mail is swallowed, 51 to 52) and, ONLY when WhatsApp took the text or
+  the e-mail returned true, calls `strategy.briefed(now)`: it stamps `briefed` on every Decisions row and every desk row (3.9) that
+  brief carried. `strategy.briefed(now)` stamps the rows whose `ts` is not later than the brief's own `now` (a row written between
+  `compose` and the stamp was not in the text he got). `notify.INFORM_KINDS = ("strategy", "desk")`: rows of these kinds are left out
+  of `digests._risks`' count of open decisions (17 to 18) and of `notify.digest`'s "Waiting for you" list (163, 174) - a line that says
+  "Nothing to do" is never shown as waiting. The action rows of kinds "strategy" and "desk" no longer expire: what the dashboard shows
+  of them - a list of their own ("Decided for you - tap to undo"), never inside its count of open decisions; the builder reads
+  `dash.build_snapshot` (dash.py 114) first (a place the design review did not read). TESTS: a failed e-mail leaves every row unstamped and the next brief carries them; a tick 40 minutes late loses nothing;
+  both lists. BREAK: the stamp called before the send.
+- TAKEN BACK IS SAID, AND NOT TRIED AGAIN AT ONCE: every row that leaves decided or applied otherwise than verified has its `briefed`
+  emptied and gets ONE line in the next brief - "Taken back: {plain words} ({key} stays {old}). Why: {the engine's note}." - and an
+  undo ticket that had to be sent again says so once. A key whose move the engine refused or rolled back is not moved again for
+  `STRATEGY_RETRY_DAYS` (7); after two such tries on one key: a problem memo to D12 (class "strategy_stuck": a code fault; closed by
+  Strategy as its sender when a move on that key is verified) and the key is frozen 28 days. TESTS: a planted failed D14 run after a
+  share decision gives one "Taken back" line and no new decision on that key for seven days; a no-effect move of `SHORT_SHARE_S2` is
+  taken back by its ticket.
+- UNDO (`strategy._answer`, registered for kind "strategy"; `strategy.register` joins `notify._ensure_handlers`): it acts on the
+  WHOLE STACK: a tap on an older decision undoes every later decision still in force on that key, newest first, then itself - all
+  are marked `undone` at once, their undo tickets go one at a time (one unverified change per department: `settle` sends the next) -
+  so that no link of his is ever dead and the cell ends where he tapped. TEST: 60 -> 40 -> 30, one tap on the first line: after the
+  engine's passes the cell reads 60. (The answer names the
+  later decisions it took back with it.) For each row: ticket not yet applied -> `memos.reject(ticket, "owner", "undone by the owner from the strategy
+  message")`; applied -> the same reject, then `execute.reconcile()` at once (it rolls the cell back by compare-and-swap); verified ->
+  a NEW ticket (value = old, P1 - a setting waits for the gap between two videos and a P0 clock of six hours would lift it to him -
+  dedupe "strategy|undo|{id}") by `memos.write` and `execute.engine_tick()`. The answer is BUILT from
+  what the engine returned ("undone: it had not been changed yet" | "undone: {key} is back at {old}" | "undone: {key} goes back to
+  {old} between videos" | "the engine refused: {its note}"); a second tap is answered by `notify.answer` itself ("<id> already ANSWERED", notify.py 119). Always: state "undone", `frozen_until` =
+  now + 28 days - no rule moves that key before it: the loop never fights his hand. `execute.apply` is NOT changed (no portfolio lever
+  of this batch keeps a direction that needs him, except the two spin-off switches - their card is the engine's).
+- RULE SLOTS (`STANDARD_MAX_LONG_PER_MONTH`; issue 2; metric `long_hours_per_video_28d`, board "hours", up): target = the largest n
+  with 4 <= n <= min(8, G.slots(now)) and `month_fit(n, S("SHORTS_PER_MONTH", int), now=now)["fits"]`, else 4. TESTS (figures planted,
+  never typed): a five-Saturday month with the Shorts cell planted so that five fit -> ONE decision 4 -> 5; the same month with the
+  cell at a count where `month_fit(5, ...)` does not fit -> "not taken" with both rupee figures in its words; in a four-Saturday month
+  a cell of 5 is AT its target (`effect` equal: nothing is "moved back" for ever) and 4 -> 5 is refused by EFFECT.
+- CHECK `strategy_live` (`contract.FEATURES`, stage "script" beside `research_cadence` (contract.py 861); `rnd.ORG_CHECKS` gains it:
+  `SHOW_CHECKS` stays 60; 71 -> 72 hard checks, 40 -> 41 at the script stage; `registry.CHECK_OWNER["strategy_live"] = "D1"`): NA with
+  `STRATEGY_ON` FALSE or the organisation off, and NA "Strategy has not reviewed yet: the organisation started H h ago" while
+  `ORG_SINCE` is younger than `STRATEGY_STALE_H` (the precedent: `rnd.round_overdue`, rnd.py 453 to 460 - the sweep, the rehearsal
+  and every whole-production test call `episode.produce` on a fresh Sheet with no `cli`; TESTS both ways on an empty Sheet with
+  nothing run before it);
+  FAIL when (1) the newest D1 `review` session with status "ok" is older than `STRATEGY_STALE_H` (36), or (2) a row has stood
+  "decided" for more than 26 hours and its ticket is not on tab `Memos`. PASS: "Strategy reviewed H h ago; N decisions on record (V
+  verified, R rolled back, U undone, Z void)". `cli.strategy_catch_up()` stands beside `research_catch_up()` (cli.py 61) and runs
+  `strategy_round()` first when EITHER rule would fail - a video is never held for work this job can do.
+- WHAT STAYS HIS, AS A RULE THAT CAN FAIL (item 53: "for the cap and deleting, i'll inform"): `strategy.OWNER_ONLY =
+  ("BUDGET_CEILING_INR", "BUDGET_FLOOR_INR", "MONTH_CAP_OVERRIDES", "BUDGET_MODE", "PAUSED", "PUBLISH_DAYS",
+  "CREDIT_COVER_MONTH_MAX_INR", "CLAUDE_CREDIT_USD_MONTH", "CLAUDE_CREDIT_FROM", "CLAUDE_CREDIT_UNTIL")` - a test fails when one of
+  them is a lever that can move without `owner: "always"`; the builder lists every caller of `yt_delete` by search into the record,
+  and one that deletes a published video without his tap is a `DESIGN QUESTION`. BREAK: a cap cell added to D11's levers.
+- REGISTRY: D1 to `ENTRY` (caller `whatifs/cli.py`), its cadence "daily", its wraps gain the two new modules; `PENDING` = {"D0": "B9",
+  "C": "B6", "L": "B8"}. LEVER: `STANDARD_MAX_LONG_PER_MONTH` becomes `_n("int", 4, 8, 1)` with no owner direction (the redesign's 4.4:
+  Strategy decides inside 4 to 8 and the money; his "4 a month" of 10 Nov was a count, his item 18 asked why not more).
+- TESTS: the rules' cases above; one decision a review and three in seven days (four cells off their targets: a decision on each of
+  three days, none on the fourth); the three undo cases and "a later decision"; a review the day after an undo decides nothing on that
+  key; a planted `set_setting` on a portfolio cell gives ONE `hand` row, the weekly line names it and the key is frozen; `tell` after a
+  run whose ticket write failed sends nothing; the brief of the morning after a decision holds the whole TEXT and the link, a day
+  without one the Counting line; a run with an undispositioned memo is a breach (one planted of each type); check both ways.
+  BREAKS: the ticket left out of `Out.memos` (the check FAILS "only text"); the EFFECT gate removed; the freeze removed; `tell` sending
+  before the ticket exists; `hands` skipped.
+**3.5 STEP 4 - THE RULE BOOK'S OTHER ROWS, THE LEVER TABLE, THE TWO SPIN-OFFS (order of `RULES`: CREDIT, SHORT_ARMS, SLOTS, SPLIT, ARMS,
+TRIAL - the Shorts' numbers arrive in days, the long videos' in months).**
+- JUDGEMENT POINTS (research 7) - the form of both arm rules. An arm X with points (p1, p2) is judged ONCE at each: when X has its
+  p-th measured item and no row of that rule, key and point exists, the rule compares X's FIRST p items (by publishing time) with
+  every measured item of the OTHER arms published up to X's p-th, and writes a row (state `judged`; numbers {point, median, q1,
+  n_others, verdict, target}) - on those items only, so the verdict does not depend on the morning the review ran. BELOW = `median(X)
+  < Q1(others)` with `statistics.quantiles(others, n=4, method="inclusive")[0]`. At p1: below -> the target is HALF the share the
+  cell held at that moment, rounded down to a multiple of 5; not below -> the cell. At p2: below -> 0 (never for the last arm above
+  0: then the cell, said); not below -> the share it held before p1 (a false alarm at p1 is taken back). Between and after the points
+  the target is the newest judgement's (unless that decision was undone); with fewer than p1 items, or the others under their
+  minimum, evidence is "thin" and `count` says "n of p1". WORKED: others [20, 30, 50, 80, 90, 120, 200, 400]: Q1 = 30 + 0.75 x (50 -
+  30) = 45; X's first eight [10, 10, 20, 20, 30, 30, 40, 300]: median 25 < 45: 40 -> 20 (X's MEAN is 57.5 > 45: a mean would have
+  saved it on one lucky item). THE CASE BUILT TO DEFEAT IT: one X item of 5,000 beside seven others moves nothing (1 of 8), and
+  nothing ever RAISES a share for it. FIVE REVIEWS IN A ROW after a failed p1 at 60: 60, 40, 30, 30, 30 (steps of at most 20; the
+  target is anchored, never halved again).
+- RULE SHORT_ARMS (`SHORT_SHARE_S1` / `_S2` / `_S3`, levers of D14 - the ticket goes to D14, which is runnable and has its own queue of
+  one unverified change; metric `shorts_engaged_first_days`, board "shorts", up): an item = a Ladder row with `evidence == "measured"`
+  (what `ladder.read` writes with a measured reading, ladder.py 110 to 113 - NEVER `brain.reading_complete`, which answers True for a
+  row nobody has read: brain.py 262 to 266), its measure the engaged views of its FIRST `LADDER_READ_DAYS` processed days, read from
+  the row's `first` (the figure the promote rule compares; the builder reads `brain.first_days` for the key's name; a row whose
+  `first` has none is not an item) - NEVER `engaged`, the total to date, which is read again every week and grows - its time
+  `posted`; points (`SHORT_ARM_MIN` 8, `SHORT_ARM_RETIRE`
+  16); the others need 8 together. THE CALENDAR, said to him as counts: at 40 / 40 / 20 of twelve a month S1 and S2 have eight
+  readings in about week 7, S3 in about week 14.
+- RULE ARMS (`FORMAT_SHARE_F1` / `_F2` / `_F3`; metric `long_hours_per_video_28d`, board "hours", up): an item = a LIVE long video of
+  the new code (its `draw_json` carries a `format`) with a RIPE reading; `h` = `ripe_views * ripe_sec / 3600`; points (`ARM_MIN_VIDEOS`
+  8, `ARM_RETIRE_VIDEOS` 12); the others need `ARM_OTHERS_MIN` 4. THE RIPE READING (`(pre-review)`: `manage.learn` reads a long
+  video's Analytics once, 72 hours after its slot - manage.py 589 to 597): tab `Analytics` gains three columns at its END -
+  `ripe_views`, `ripe_sec`, `ripe_at`; `manage._analytics(vid, t, dur=None, end=None)` (1137) reads to `end` when given; after the
+  loop that appends new rows, every LIVE long video whose slot is `ARM_RIPE_DAYS` (28) + 3 days old and whose row has no `ripe_at` is
+  read ONCE with `end` = its slot day + 28 days and the three cells are written by `st.update` (`ripe_views = m["views"]`, `ripe_sec =
+  m["avg_view_sec"]` - the builder confirms the real branch's key after manage.py 1160; a pending or failed answer is tried again the
+  next day; a video with no Analytics row gets none). TESTS: a video of 30 days is not read,
+  one of 31 is, once; `end` is in the request; the 72-hour row is unchanged. The calendar: at four a month F1 (60%) has eight ripe
+  videos in about month 5, F2 and F3 in about month 11 - until then the mix is 60 / 20 / 20 and the Counting line says why.
+- RULE SPLIT (`SHORTS_PER_MONTH`, `SHORTS_PER_WEEK`; redesign 11.4, O8, O15). THE RISK LINE `strategy.risk_line(now)`, read weekly and
+  stored as a `judged` row of rule "RISK": `now_` = the `v48` (tab `Monitor48`, kind long) of the long videos published in the last
+  `RISK_WINDOW_DAYS` (28), `prev` = of the 28 days before; "unknown" when either holds fewer than `RISK_MIN_LONG` (3) or
+  `median(prev) < RISK_MIN_VIEWS` (200); "worse" when `median(now_) < (1 - RISK_DROP_PCT / 100) * median(prev)` (20); else "ok".
+  Beside it `uploads(now, 28)` (issue 138): long = Episodes rows with status LIVE whose `slot_et` is in the window; short = EVERY row
+  of tab `Specials` with a `yt_id` whose `made` (else `ts`) is in the window, whatever its kind. Its words: "long videos at 48 hours:
+  a median of 300 views over 3 against 500 over 3 in the four weeks before, beside 12 against 11 short uploads" / "not enough long
+  videos yet (n and m; 3 are needed in each half)". TESTS: [12, 30, 9] against [20, 18, 25] is unknown (too few views); [300, 420,
+  280] against [500, 610, 450] is worse (300 < 0.8 x 500).
+  RAISE the month by ONE step (2, to 16 at most) only while (a) `risk_line` is not "worse", (b) the raised plan fits and still pays
+  the motion the lever asks: `month_fit(L, cell + 2, now=now)["free_inr"] >= long_left * margin * mf["inr_s"] * (mf["living_target_s"]
+  - mf["living_s"])` with `mf = governor.moving_floor()` - MOTION FIRST, then more Shorts (his loudest complaint was that nothing
+  moved; a rupee goes to a new Short only when the moving seconds are paid in full; the decision's line says so). LOWER by one step
+  (not under 8) only after `STRATEGY_WINDOW_END` ("2027-01-31": until then the Shorts are the first road into the Partner Program and
+  no rule takes one away) and only on TWO "worse" readings 28 days apart whose windows both began after the last SPLIT decision was
+  applied. The week follows the month: target `min(4, max(2, ceil(month_target / 4)))`; the cell that binds moves first - the week
+  when `week * days // 7 < month_target`, else the month. WORKED, a 30-day month, target (14, 4): the week 3 -> 4 first (`effect`:
+  min(14, 120 // 7 = 17) = 14 against 12), next review the month 12 -> 14. AT FOUR A WEEK `shorts2.gap_h` is 24 hours (four Shorts on
+  four days running, then three quiet days): the decision's line says it; the cadence's code is not changed.
+- RULE CREDIT (`THINK_BOOST_VARIANTS`; metric `shorts_engaged_first_days`, board "shorts", up): lane closed -> 0. Open -> 4 while
+  UNTIL is `CREDIT_TAPER_DAYS` (7) or more away, else 0 - by the lever's step, so the last week walks 4, 2, 0 on record (item 56: "step
+  down gradually"); a step UP only when its cost for the rest of the month (`short_left * 2 * SHORT_VARIANT_EST_INR`) fits as
+  `extra_inr` AND `FIN.cover(now)` is already at least that cost - REALISED cover only, nothing planned on a share nobody measured.
+- THE COLUMN `observed` (what production DID, filled by a later review, never by the gate's arithmetic): SLOTS - the long videos with a
+  slot in the decision's month; SPLIT - the Shorts made in it; a share - the formats of the next ten made after the decision; CREDIT -
+  `asked` of the next Short's write run. The weekly line counts "took effect" from this column.
+- THE LEVER TABLE (`registry.DEPTS`, `levers.LEVERS`; issues 78, 154, 168; 89 -> 93 levers, the pin of `tests/test_v12_exec.py` 62).
+  MOVED TO D1: `SHORTS_PER_WEEK` (`_n("int", 2, 4, 1)`) and `SHORTS_PER_MONTH` (`_n("int", 8, 16, 2)`) from D14 - both lose "raising
+  needs the owner" (the fit gate and the cadence's own split bound the money); `MOVING_SHARE_LONG` from D6 (its rule unchanged; no rule
+  of V4 moves it: the month's money already buys toward it; issue 181 stays for the pilot). NEW, D1: `THINK_BOOST_VARIANTS`;
+  `DEEP_TRIAL_ON` (`_b("on", "it turns one of the month's long videos into a 20-minute trial")`); `CASEFILES_ON` (`_b("on", "it
+  publishes a long video no gate has judged")`). NEW, D11: `MONTH_RESERVE_INR`. UNCHANGED AND SAID: `PUBLISH_DAYS`,
+  `VIDEOS_PER_MONTH_EST` (his); `MOVING_SHARE_MIN_LONG` (D6; lowering needs him); the promote rule's levers (D10: the rule stays code);
+  `SPLIT_ON`, `CLIP_VALUE_ON`, `TTS_RETAKES` - switches of how money is counted, not of the plan: his (issue 154, DECIDED); which asks
+  a format carries (issue 188, DECIDED): data of the format row, no lever. THE NEW NUMBERS OF THIS BATCH (`SHORT_ARM_*`, `ARM_*`,
+  `RISK_*`, `PACE_*`, `TRIAL_GAP_DAYS`, `STRATEGY_*`, `CREDIT_*`) are CELLS, not levers: no ticket can move them until B8 gives a
+  number a rule that reads its results (the pre-review's lever for `RISK_MIN_VIEWS` is refused for that reason).
+- THE TWO SPIN-OFFS ARE PAUSED, NOT BUILT (`(pre-review)`, changes 17 and 18): `DEEP_TRIAL_ON` and `CASEFILES_ON` default FALSE; a
+  one-time move `manage.v12v4_upgrade(st)` with `V12V4_FLIPS = [("DEEP_TRIAL_ON", "TRUE", "FALSE"), ("CASEFILES_ON", "TRUE", "FALSE"),
+  ("CLAUDE_CREDIT_UNTIL", "2026-12-10", "")]`, cell `V12V4_MOVE_DONE`, called where `v12v2b_upgrade` is (manage.py 522 and 1333). No
+  rule of V4 switches either on, and the weekly line says so ("switched off; they come back only rebuilt") - no cell that only a
+  sentence reads.
+- THE RE-PLANNER STEPS ASIDE: with `STRATEGY_ON` `replan.weekly` returns [] before it sends (`month_restore` still gives back, once,
+  what an older card changed).
+- TESTS OF THE MEASURE: eight S2 rows of which three have no measured reading are "5 of 8" and nothing is judged; a later weekly
+  re-reading that doubles `engaged` changes no verdict.
+- BREAKS: the measure read from `engaged`; a point judged on ALL of X's items instead of its first p; the median typed as a mean; the anchor recomputed from the
+  cell; RAISE without its motion test; LOWER before the window's end; the taper removed; the re-planner's guard removed.
+**3.6 STEP 5 - THE WATCH BOOK (`whatifs/org/risk.py`; items 52 and 65 (c): a danger has an owner, a measure and an act the same day).**
+`WATCH` = rows {id, owner, measure (a function of `now` -> None or {why, numbers, evidence}), act}. `risk.run(now)` (called by
+`strategy.review`) returns, for every row that fires and has no `watch` row with its dedupe key yet, a Decisions row (rule "WATCH", key
+= the row's id, state `watch`) and - for the three rows whose act is a memo - its memo for `Out.memos`: a problem memo FROM D1 to the row's owner DEPARTMENT
+(`owner_visible` False; `subject` "Risk: {the row's why}", cut at 140; `done_when` "the watch's next reading of {row id} no longer
+fires"; evidence [{source, date, type: "own
+data"}]); the key of a `watch` ROW = the row's id + its fixed point - `platform_flag`: the video's id; `repetition`: the newest
+fingerprint's episode; `upload_mix`: the ISO week; `pace_slip`: the count of measured rows. A danger that still fires at its NEXT fixed
+point writes a new row and a new line, and its one live memo recurs (attempt + 1). TEST: two reviews on one day write one row; the next
+fixed point writes a second. ONE LIVE MEMO A DANGER (dedupe "risk|{row id}" - never per episode), CLOSED BY THE WATCH ITSELF as its sender: at the row's
+next FIXED POINT at which the measure no longer fires a `judged` row ("cleared") is written and `memos.resolve(mid, "D1",
+"repair_verified", "Decisions:{that row's id}")`. THE ROAD TO R&D IS BUILT, NOT ASSUMED (`rnd.gaps` passes over a problem memo that
+carries an `error_class` and one at attempt 1: rnd.py 196 to 200, 237 to 240): a NEW gap source in `rnd.gaps` reads the `watch` rows
+of the last 28 days - `add("risk", <row id>, "<the row's why>. What do channels that recovered from this do, with evidence, and what
+should we change first?", "problem", [<owner dept>], "P1", 6)`. TEST: a `watch` row is on the agenda once; BREAK: the source removed.
+SAID PLAINLY: the act of `repetition`, `upload_mix` and `pace_slip` is ONE "Risk:" line to him and ONE research question - no lever
+moves, because no number exists that says which.
+- `platform_flag` (D9): `ids` = the `yt_id` of the newest `RISK_UPLOADS_N` (20) uploads (Episodes rows at LIVE, Specials rows with a
+  `yt_id`). `_video_states(ids)`: `FAKE` -> `fakes.video_states(ids)` (every id "processed"); else ONE free `videos.list` (part
+  `status,contentDetails`, the ids, `publish.gheaders()`) - a request that fails gives NO flag and a WARN (a failed read never locks).
+  REJECTED = `uploadStatus` is "rejected" (YouTube's own record, with its `rejectionReason`); GONE = the id is absent from an answer
+  that holds other ids, or `uploadStatus` is "deleted" (what the API also answers for a video HE deleted - his right, item 53 - and
+  for one the pipeline deleted); LIMITED = `ytRating` is "ytAgeRestricted" or `regionRestriction.blocked` is not empty.
+  ACT on REJECTED, at once: `risk.lock(vid, why, now)` - it sets `UPLOAD_LOCK` "on" and sends ITS OWN true words (kind "risk_lock",
+  tier "now", urgent, no expiry): "The uploads are closed: YouTube rejected {title} ({reason}). Look at it in Studio first - the next
+  violation inside 90 days is a strike (research 6). One tap opens the uploads again." with ("Open the uploads", "RISK OPEN {vid}"):
+  the handler sets `UPLOAD_LOCK` "off", stamps the `watch` row and answers "the uploads are open". `risk.lock`'s sentence takes its reason from `why`: on the road of an
+  unanswered "gone" it reads "The uploads are closed: {title} is gone from YouTube and you did not say that you deleted it. ..." - never
+  "YouTube rejected" (the typed text is the REJECTED road's). NEVER `launch.lock_detected`: its
+  mail says YouTube keeps uploads private and names an audit form, and no tap opens its lock (launch.py 78 to 94).
+  ACT on GONE: nothing closes by itself - ONE message (kind "risk_gone", tier "now", urgent): "A video is gone from YouTube: {title}.
+  If you deleted it, tap I deleted it. If you did not, YouTube removed it: the uploads close in {RISK_GONE_WAIT_H} hours so that the
+  next video cannot become a strike." with ("I deleted it", "RISK MINE {vid}") and ("Close the uploads now", "RISK CLOSE {vid}"),
+  `expires_h` = the cell `RISK_GONE_WAIT_H` ("12"), its default = `risk.lock` (silence is the safe thing: item 52). "I deleted it"
+  closes nothing and that id is never asked about again (a `watch` row "his own delete"). ACT on LIMITED: a line only - "Risk:
+  YouTube {age-restricted | blocked in N countries} {title}. Nothing was closed." `risk.register` joins `notify._ensure_handlers`
+  (kinds "risk_lock", "risk_gone"). No memo for this row: the message IS the act. SAID: in fake mode `manage.audit_gate` passes
+  whatever the lock says (manage.py 131) - the sweep proves the cell and the message; the test that production WAITS behind the lock
+  sets `_AUDIT_TEST`. TESTS: `rejected` / `inappropriate` closes and one tap opens; his own delete answered "I deleted it" closes
+  nothing and is not asked again; an unanswered "gone" closes after the cell's hours; no text of this road holds "private" or "audit".
+- `repetition` (D4; item 49): from tab `Script_Fingerprints` (ts, episode_id, sig) the newest `RISK_SIM_N` (4) scripts; for each the
+  highest `similarity.similarity` to the ten before it; it fires when the MEDIAN of the four is at or above `RISK_SIMILAR_PCT` (80)
+  percent of `SCRIPT_SIMILARITY_MAX` (the limit at which check `originality` holds a video) - the scripts are converging BEFORE one is
+  held. A P1 memo, class "repetition_trend", the four pairs as evidence; its fixed point: each new fingerprint. (The Shorts'
+  likeness is held by their own gate `short_kept`; a trend measure for Shorts is an open issue, not built.)
+- `upload_mix` (D9; issue 138; redesign R2, R56): `uploads(now, 28)["short"] > RISK_SHORTS_28D_MAX` (35: the count at which long
+  videos fall back to the level of channels with no Shorts) - an older door is on, or a hand raised the cadence. A P1 memo naming the
+  kinds; its fixed point: each ISO week's first review.
+- `pace_slip` (D14; item 65 (c)): the Ladder's measured rows (3.5's item and its first-days measure) in publishing order; judged ONLY when their count is a multiple of
+  `PACE_N` (6) and at least 12 (a fixed point, no morning's peek): it fires when `median(prev six) >= PACE_MIN_ENGAGED` (50) and
+  `median(last six) < (1 - PACE_DROP_PCT / 100) * median(prev six)` (40). A P1 memo, class "pace_slip" (its fixed point: every sixth measured row):
+  "the last six Shorts held a median of {a} viewers who stayed against {b} for the six before". TESTS for each row both ways, one
+  fault at a time; a failed request locks nothing; a second review with the same flag writes nothing new; the defeat case of the
+  pace (one Short of 50,000 among the last six moves the median of neither half). BREAKS: the lock act removed; "absent" read from a
+  failed request; the multiple-of-six test removed; the median of the four typed as their maximum.
+WHAT EXISTS AND IS ONLY NAMED IN THE MATRIX: the policy watch (an official change about AI or inauthentic content reaches him:
+`manage.py`, `facts_watch.py`); the lock on an upload that comes back private (`launch.py`).
+**3.7 STEP 6 - THE ARM BOOK (tab `Candidates`: id, ts, kind, title, how, sources, policy, filed_by, state, ticket, note; items 80 (b),
+53, 60, 65 (b)).**
+- `strategy.file(c, now)` is the ONE writer: `kind` in ("machine", "hand", "subject", "name"); `sources` a list with at least one
+  {url, date}; `policy` must be "ok" (the filer read the monetisation policy first: item 65) - else the row is written with state
+  "refused: no dated source" / "refused: no policy reading"; `how` = {"lever_class": "B" | "C", "target", "value", "metric"} or {};
+  id = "CAN-" + the first 10 hex of sha1(kind|title); the same id twice is a no-op. Text from outside is DATA: `title` is cut at 120
+  characters and never reaches a prompt.
+- `intake(now)`: the Observatory (V5) will call `file`; UNTIL IT EXISTS `strategy._filed(now)` returns `fakes.features()` when `FAKE`
+  and the cell `ARM_STAND_IN_ON` ("FALSE"; the rehearsal month and the sweep's judge set it on their own Sheet) is TRUE, else []. The
+  stand-in list: one "machine" candidate whose `how` is a rulebook trial ({"lever_class": "C", "target": "playbook:packager", "value": a
+  rule `playbook.vet` accepts - the builder reads `playbook.vet` first and writes a rule about a thumbnail's text size with a
+  `source_url` and `evidence`}), one "hand" candidate, one "subject" candidate with an empty `how`.
+- RULE TRIAL (the last row of `RULES`; ONE TRIAL AT A TIME): when no candidate is in state "trial" and none was opened in the last
+  `TRIAL_GAP_DAYS` (28), the oldest "filed" candidate of kind "machine" becomes a decision: class C - a ticket from D1 to the
+  department of THIS TABLE - showrunner, writer, packager, director -> D4 (the creative lead: the road `tests/test_v12_exec.py` 292
+  and 308 already walk; a rulebook role names no department, and `playbook:<a department's id>` is refused: execute.py 234 to 235)
+  - the engine vets and can retire it (232 to 274). There is no reel role: `playbook.DEPTS` has four (playbook.py 7), and `_plan_arm`
+  (execute.py 234 to 235) refuses a `playbook:reel` candidate. SAID: while the trial is unverified
+  D4's other B and C levers wait (one unverified change per department: until `EXEC_ARM_OUTPUTS` long videos carry the arm; a class C change waits
+  `EXEC_VERIFY_DAYS` x `EXEC_ARM_OUTPUTS` days, 120 at the most (execute.py 73 to 75)) - no rule of V4 moves a lever of D4. A rulebook trial is verified on LONG videos only (262 to 266): a class C
+  candidate whose `how` carries `"for": "short"` is parked ("a rulebook trial is judged on long videos only") - a candidate about
+  Shorts needs a lever (class B); class B - `how.target` must be a lever
+  (`LV.owner_of`) and the move passes the three gates of 3.4. Its prediction names `how.metric` when that is one of `METRICS`, else
+  `shorts_engaged_first_days`. The candidate's state: "trial" with the ticket's id; after `settle` - refused, failed or rolled back:
+  "dropped: {the engine's note}"; verified: "running since {date}" (whether it HELPED is the prediction B8 scores; a rulebook trial is
+  judged on its own data by the rulebook). A "machine" candidate without an executable `how`, a "subject" and a "name": "parked:
+  nothing in the pipeline can execute it yet" - said in the weekly line as a count ("2 candidates parked, 1 for your desk"); a "hand"
+  candidate: "for his desk (B9)". TESTS: no source or no policy reading -> refused and never tried; two machine candidates -> one
+  trial, the second only 28 days later; a class B candidate on a cell that is no lever is parked; a refused ticket drops its
+  candidate. BREAKS: the one-at-a-time test removed; the policy test removed.
+**3.8 STEP 7 - ONE RULE FOR A BREAKOUT (issue 103; `breakout.monitor` 160 to 167, `ladder.order_followup`).** With `STRATEGY_ON` a LONG
+video that is a winner at its 48-hour mark (its own cells, unchanged) gets what a Short gets: when a Ladder row carries this episode
+(`episode_id == key`), `LAD.order_followup(key, y, v, base, 48, now, kind="long video", line=S("BREAKOUT_MIN_VIEWS", float))` - THE
+ORDER'S KEY IS THE EPISODE'S ID, never the Short's ladder id (a promoted Short is the likeliest earlier winner: its own order stands
+under its id and `order_followup` would answer None for exactly the best topics - ladder.py 345) - ONE
+follow-up Short ordered by code with its clock and its "Stop it" button; `order_followup` gains the two keyword arguments (`kind`
+changes the words "Short {key} is a winner" / "A long video is taking off: ..." in its message and its performance memo's subject;
+`line` replaces `SHORTS_WINNER_MIN_VIEWS` in the multiple without history; with `kind="long video"` the `_set(key, multiple=...)` of
+lines 343 to 344 is skipped - the Short's own multiple is not written over). NEW `ladder.order_row(key)` = `row(key)` or the Ladder
+row whose `episode_id == key`. The builder lists every reader and writer of `Breakout_Queue.video_key` by search first: those that
+only MATCH the key (`open_orders`, `order_tried`, `order_done`, the "Stop it" handler, `ladder.watch`) need nothing; those that look
+the TOPIC up from the key (`shorts2._order_premise`, asked by `order_due`, shorts2.py 80; any other the search finds) use
+`order_row`. A long video made under an override has no Ladder row:
+the old card stays for it (said). ISSUE 144, DECIDED: the follow-up does not point at the long video (a Short's rule is no ask).
+TESTS: with the switch on no approval card and one order with a clock; a Short whose own follow-up is DONE and whose long video
+wins at 48 hours -> ONE new order under the episode's id, one message, and `order_due` finds its topic; off: the card. BREAKS: the
+`STRATEGY_ON` branch removed; the Short's id passed as the key.
+**3.9 STEP 8 - THE OWNER'S DESK (redesign 4.9, until B9; `whatifs/org/desk.py`; `desk.tick()` in `manage.tick` in a `try` of its own
+after `VERS.sync()`, manage.py 194).**
+- HE TYPES INTO tab `Owner_Input` (one column, `input`). THE MACHINE WRITES tab `Owner_Desk` (n, ts, sha, verbatim, verdict, how, memo,
+  ticket, action, briefed). An input is new when the sha1 of its text is not on `Owner_Desk`.
+- WITH THE ORGANISATION OR THE ENGINE OFF (`execute.on()` False) an input is stored and answered "stored word for word; the
+  organisation is switched off, so nothing was filed" - no memo, no ticket. WHILE THE CHANNEL IS PAUSED the tick returns before the
+  desk (manage.py 184): the input waits on its tab and gets its verdict at the first tick after.
+- FOR EACH NEW INPUT, in the same tick: (1) an `owner_memo` from D0 to D1 - `subject` written by code, "Owner input {n} (tab
+  Owner_Input)" (never his words: `check_memo` refuses a subject that reads like an instruction); `verbatim` = his text, the first
+  4,000 characters (the tab holds all of it and `interpretation` says so); `interpretation` by code ("recognised as: <what>" or "not a
+  request code can recognise"); a `MemoError` is answered too ("Your input {n} is stored on the tab; it could not be filed
+  ({reason})"). (2) THE VERDICT, BY CODE, ONLY WHERE CODE CAN RECOGNISE THE REQUEST (the lesson of V1b and V2c-a) - three patterns on
+  the lower-cased text, each matching ONLY WHEN THE WHOLE INPUT IS THE REQUEST (a question, a refusal or a remark of his is weighed,
+  never executed: item 18). With HEAD = `^\s*(?:please\s+)?(?:(?:make|do|post|set|give me|i want|we want|go to)\s+)?` and TAIL =
+  `\s*[.!]?\s*$`: HEAD + `(\d{1,2})\s+shorts?\s+(?:a|per|every)\s+month` + TAIL ->
+  `SHORTS_PER_MONTH`; HEAD + `(\d)\s+shorts?\s+(?:a|per|every)\s+week` + TAIL -> `SHORTS_PER_WEEK`;
+  HEAD + `(\d)\s+(?:long\s+)?videos?\s+(?:a|per|every)\s+month` + TAIL -> `STANDARD_MAX_LONG_PER_MONTH`. MUST BE a request: "3 shorts
+  a week"; "Make 4 shorts a week."; "please do 14 shorts a month"; "5 long videos a month"; "I want 5 videos a month!". MUST NOT be:
+  "so you mean we'll posting only 4 videos a month?"; "can we do 5 videos a month?"; "why 3 shorts a week?"; "don't make 4 shorts a
+  week"; "is 2 shorts a week better?"; "4 shorts a week is too many"; "I made 3 shorts a week ago"; "in 2 weeks do 5 shorts a week";
+  "5 videos a month would be good if the quality holds"; "we made 12 shorts a month last year". Recognised, inside the
+  lever's range and through the EFFECT and FIT gates: ADOPTED - one step now as a ticket by `memos.write` (dedupe "desk|{n}"), "the
+  rest after it is verified" when the value is further than a step; recognised and refused by a gate: PARKED with the gate's
+  arithmetic and what would change it; anything else: PARKED - "stored word for word as input {n}; no rule of Strategy can act on
+  it; the Council reads it when it exists (B6b)". "TESTED" IS NEVER CLAIMED: nothing in V4 can open an experiment for an idea in free
+  words. (3) THE MEMO IS CLOSED AT ONCE, by D1, with the NEW kind `desk_answered` (`schemas.TYPES["owner_memo"]["resolved_by"]` gains
+  it - a PROTECTED file, named; `memos._proof_problem` gets its rule: the ref "Owner_Desk:{n}" is a row with a verdict). WHY AT ONCE:
+  an open owner memo is a question R&D asks past its cap, again every `RESEARCH_REPEAT_DAYS` (open issue 56) - a typed idea must
+  never start paid research by standing open; routing a real question to research is B9's. (4) THE ANSWER reaches him in the NEXT
+  daily brief: `strategy.brief` lists every `Owner_Desk` row with an empty `briefed` - "Your input {n} (\"{the first 80 characters}\"):
+  {VERDICT} - {how or why}." - and, for a request a gate refused, the link of its action (kind "desk", tier "week", button ("Do it
+  anyway", "DESK DO {n}")); `strategy.briefed(now)` (3.4: `digests.send` calls it only when the brief really went) stamps those
+  rows - an answer a failed send did not carry is in the next brief. "Do it anyway" writes the ticket (his own word overrides FIT -
+  the cadence's split still never spends what the month does not have - never RANGE or EFFECT) and a NEW owner memo that links the
+  first. The first answer ever ends: "Ideas go in the tab Owner_Input; your verdict on a video goes in Owner_Verdicts."
+- TESTS: the fifteen sentences typed above, each word for word (five ADOPTED or refused by a gate; ten stay PARKED - "in 2 weeks do
+  5 shorts a week" among them); an input that is itself an instruction to a model is stored and answered; an input of 5,000
+  characters; the memo is closed in the tick that wrote it and `rnd.gaps` never lists it; an answer is in the next brief and stamped
+  only after `send` returned sent. BREAKS: the `^` of HEAD removed; `briefed` stamped by `compose`; the memo left open.
+**3.10 STEP 9 - THE SWEEP, THE REHEARSAL MONTH, THE BLOCK, THE DOCS.**
+- `tools/sweep.py`: NEW `strategy_of(core, ep)` on every long-video id, after its video, on the id's own Sheet (`ARM_STAND_IN_ON`
+  and `PLAYBOOK_ON` TRUE; a planted `now`). ON AN ID MADE WITH THE ORGANISATION OFF (part B: sweep.py 231, 234 - no ticket can exist
+  there) it asserts that a round wrote NOTHING, no Decisions row and no action, and its words are "the month's decision held: the
+  organisation is off, nothing was written" - such an id counts as held, so `strategy_month_held` equals the long-video ids of EVERY
+  part. WITH IT ON: (a) sixteen planted Ladder rows, `evidence` "measured", `posted` one hour apart and ALL EARLIER than the id's own
+  climbed Short - eight of S2 with the first-days measures [10, 10, 20, 20, 30, 30, 40, 300], four of S1 [20, 30, 50, 80], four of
+  S3 [90, 120, 200, 400] (S1 and S3 stand under their first point: exactly ONE judgement can exist; S1's four and S3's four are posted first, then S2's eight
+  - the rule compares S2's first eight with the others published UP TO its eighth: with S2 first there are no others and nothing is
+  judged) -> `strategy_round` -> ONE
+  judgement, ONE decision (`SHORT_SHARE_S2` 40 -> 20), its ticket, ONE "strategy" action whose text begins "Strategy decided:"; (b)
+  `engine_tick` -> the cell reads 20; (c) the Undo -> the cell reads 40 and the row is `undone`; (d) the NEXT round, a planted day
+  later, decides nothing on that key and opens the stand-in's trial: the machine candidate IS "trial" and after `engine_tick` the
+  engine's row is applied; the hand candidate is "for his desk (B9)"; (e) a planted REJECTED video (`risk._video_states` answered by
+  the judge) -> `UPLOAD_LOCK` is "on", ONE `watch` row and ONE "risk_lock" action exist, and the tap "RISK OPEN" sets the cell "off";
+  (f) a Scoreboard row exists and in both briefs the first part after the head begins "Scoreboard:"; the brief carries the decision's
+  line and, after `strategy.briefed`, not again. Its words begin "the month's decision held: ". `summary()` counts
+  `strategy_month_held`; a missing step makes the id BAD. No price moves this judge.
+- `tools/rehearsal.py`, THE REHEARSAL MONTH (redesign section 6): twelve planted Ladder rows with readings ("tested"), four promotions
+  by `ladder.promote` (one before each of four long-video slots), one decision taken, the owner informed (the action's text asserted
+  word for word), one undo; it prints "strategy: 12 Shorts tested, 4 promoted, 1 decision (...), 1 undo | scoreboard: ...".
+- `proving/blocks/V4.json`: the promoted block whole + the counter `strategy_month_held` on parts A, B and C + the rehearsal line
+  "strategy:" + a watch line "decisions per rehearsal month" (`(\d+) decision`), warned over 3.
+- DOCS: a matrix row per rule of 3.11; the ledger's paragraph "V4" (his items 39, 52, 53, 55 to 58, 60, 65, 80 with where each is
+  executed); `PLATFORM_FACTS.md` gains four dated rows (research 1, 3 with the ACTIVE rule, 4, 6); three recipes in the repo's
+  `CLAUDE.md` ("Strategy: a rule is a row", "The watch book", "The credit lane and a boost": a later boost is a `THINK_BOOST_*` cell,
+  its line, its reader through `finance.boost`); the manual's lines for a buyer (the three credit cells, the two desk tabs,
+  `SCOREBOARD_ELIGIBLE_PCT`); `SYSTEM.md` regenerated; founding items `v4.*` with real code references, addressed NARROWLY (D1's
+  playbook already leaves three limits out - open issue 6): `v4.a_decision_must_change_what_runs`, `v4.judged_once_at_a_fixed_count`,
+  `v4.one_lever_one_step`, `v4.a_rejected_video_closes_the_uploads`, `v4.the_credit_is_metered_never_planned`, `v4.takeaway`.
+- TESTS `tests/test_v12_strategy.py`: every row of 3.11 both ways, one fault at a time; every WORKED figure of this memo that is not a
+  rupee as an assertion (the builder's measure must give exactly these numbers); a gate that refuses is tried on ordinary good cases
+  too; per portfolio key ONE test that moves the cell by a ticket and runs the REAL reader - `shorts2.cadence` (a 13th Short becomes
+  due), `governor.can_start_episode` (a fifth video starts), `formats.pick` and `formats.short_pick` over ten planted items,
+  `shorts2.write` (five requests) - each with the break "the reader ignores the cell"; ONE WHOLE MONTH with ids no other file uses.
+- THEN: the break list (before the last test run), `breaks.py` to 0 missed and 0 void (the builder's block is the finisher's: A13 (b)).
+  THE FALL-BACK (open issue 189): past 60% of its context a builder writes "WHERE THE BUILD STANDS" and a fresh Opus session goes on.
+**3.11 ENFORCEMENT (rule -> executing code -> fails when broken).**
+| Rule | Executed by | Fails when broken |
+|---|---|---|
+| A decision is a ticket, never a sentence | `strategy.decide` (row + ticket in one run); check `strategy_live` rule 2 | the ticket left out: the check FAILS "only text"; `tell` sends nothing |
+| A decision must change what runs | the EFFECT gate; `settle`'s ticket back and the engine's rollback; the column `observed`; a real-reader test per key | 4 -> 5 long videos in a four-Saturday month and a share move under `FORMAT_FORCE` are refused; a planted applied decision without its effect is rolled back |
+| What Strategy did reaches him once, and only when the brief went; a decision the engine took back is said and not tried again at once | `strategy.brief` / `briefed`, `digests.send`, `notify.INFORM_KINDS`, `settle` | a failed e-mail stamps nothing; a late brief loses nothing; a planted failed run gives one "Taken back" line and seven days of rest |
+| The cap, the credit cells, PAUSED and the publishing days never move without him | `strategy.OWNER_ONLY` | a cap cell added to a department's levers fails the test |
+| No lever outside its range or further than a step | `next_move`, `levers.check` | a target three steps away gives one step; a value outside the range is refused, the cell untouched |
+| A month that does not fit is never decided; a saving is never refused | `governor.month_fit`, the FIT gate | planted counts that do not fit are refused with both figures; a lowering in a month that does not fit is decided |
+| No rule decides on thin numbers, and none peeks | the judgement points; the minimums of `risk_line`; the watch's fixed counts | the defeat cases; 7 items move nothing; the 9th item changes no verdict; five reviews after a failed point: 60, 40, 30, 30, 30 |
+| One move a review, three a week; one trial at a time | `next_move`'s budget; RULE TRIAL | four cells off target: three decisions on three days; a second candidate waits 28 days |
+| One tap undoes, and the rule then leaves that lever alone | `strategy._answer`, the freeze, `hands`, `dash.route` | the three undo cases; one tap on the oldest of a stack (60 -> 40 -> 30) ends at 60; a review the day after decides nothing on that key; a hand-typed cell is recorded, named and frozen |
+| The scoreboard counts what the Partner Program counts and is the first line of every brief | `scoreboard.read` / `line`; `digests.compose`, `notify.digest` | the worked line; both briefs; `engagedViews`, never `views`, in `ypp.progress` (a test reads the request) |
+| Every rupee he reads is his own; the credit ends by itself | `governor.own_spend_inr`, `finance.cover`, `finance.boost`, `_balance` | the Rs 5,300 month; the Rs 9,000 month (cover = its ceiling, the cap reached); closed = the base's figures; the day after UNTIL and under the floor: closed, the boost reads 0 |
+| A video YouTube rejected closes the uploads the same day and one tap opens them; a vanished one asks him first; every danger has an owner, a line to him and a question on R&D's agenda | `risk.WATCH`, `risk.run`, `risk.lock`, the gap source "risk" | each row both ways; a failed request locks nothing; his own delete closes nothing; no word "private" or "audit" on this road |
+| A new thing is tried only with a dated source and a policy reading | `strategy.file`, RULE TRIAL | a candidate without either is refused and never tried |
+| A long video's winner is followed like a Short's | `breakout.monitor` | no approval card with the switch on; one order with a clock |
+| Every input of his is stored word for word, answered in the next brief and never starts research by standing open | `desk.tick`, `strategy.briefed` | the fifteen typed sentences; the memo closed in the same tick; a brief whose e-mail failed leaves the answer for the next |
+| Strategy and Finance say what they did with every memo | the dispositions | a run with an undispositioned memo is a breach |
+| An overrun reaches somebody | `finance.watch` | a planted summary with `over`, one with `unlisted`, one cut: a memo each; a clean one closes it |
+THE WORST CASES OF THE BRIEF, each a test AND a break: "a decision that changed nothing that runs" (row 2); "a lever moved outside
+its range" (row 3); "a month whose plan does not fit and is forced anyway" (row 4). THE WORST MONTH THIS DESIGN STILL LETS THROUGH: a
+first quarter in which the brain honestly decides almost nothing on the long formats - held by the Shorts' rules, the watch and the
+daily Counting line; and a channel whose video YouTube removes while a read fails for days - the lock then waits for the first read
+that succeeds (said; the existing private-upload lock is not touched).
+**3.12 MONEY, THE ORDER, WHAT IS NOT HERE.**
+- MONEY (the code's own lines; NOT measured on a bill): NO NEW PAID CALL with the lane closed - the reviews, the gates, the watch,
+  the desk and the scoreboard are code and two free reads a day (one quota unit each). A month stays what V1c's memo computed: a long
+  video about a promoted Short about Rs 584 with the floor's line, twelve Shorts about Rs 101, the reserve Rs 300, about Rs 224 free
+  in a full month - MEASURED by step 1 before anything is typed. With the lane open: his own spending falls by what the
+  credit pays - IF IT PAYS: code cannot see that. THE EXPOSURE, in rupees: when the key is not in the linked organisation, the credit
+  was used elsewhere or auto-reload is on, HIS CARD pays Claude's part - at most `CREDIT_COVER_MONTH_MAX_INR` a month above his Rs
+  5,000 (the cell measured in 3.3; said to him in the pilot's line). The boost adds up to 4 x Rs 12 a Short at list price, paid by the
+  credit (the two jurors of the other family read
+  more text: a few rupees of cash a Short, inside the line).
+- THE ORDER OF THE BUILD = the steps 3.1 to 3.10, a checkpoint commit after each, the suite green after each with `OLD_STRATEGY`,
+  GitHub's Checks green on a step's push before the next is committed (A12 (f)); no cell, reader, lever or function before the code
+  that reads or calls it; a finding into the record before its edit.
+- HYPOTHESES (numbered on from V1c's H33): H34 a Short chosen from five or seven scripts holds more viewers in its first days than
+  one chosen from three (the lane's weeks against the weeks after - confounded with the season, said). H35 a month in which Strategy
+  moved a lever shows the predicted direction more often than chance (B8 scores tab `Decisions`). H36 the risk line turns "worse"
+  before the long videos' monthly hours fall. H37 a Short format judged below the others' lower quartile at 8 is still below at 16.
+- CHANGED FROM THE REDESIGN, with reasons: (1) 4.4 "long videos a month (start 5)": the start is 4 (11.10; the money) and a fifth is
+  decided by the FIT in a month that has the slot. (2) "a weekly review": the review runs DAILY and speaks daily in one line, weekly in
+  full. (3) "a format arm below the other arm's lower quartile after 8 ... loses half its share, after 12 it is retired": judged ONCE
+  at 8 and once at 12 on exactly those videos, and an arm that is no longer below at 12 gets its share back (research 7). (4) 11.4
+  "until 1 Feb 2027 D1 reports the split": it may ADD Shorts before that date when the moving seconds are paid in full (unspent
+  rupees buy nothing and the Shorts are the first road); it never takes one away before it. (5) "the promotion bar, animated seconds
+  per video" as levers Strategy moves: owned as 3.5 says; no rule moves them - no number exists that a rule could read. (6) 4.7 "the
+  compilation from month 2" and the Deep Trial: PAUSED, not built - the code's compilation is the trial's cards over stills, published
+  round every gate, and the Deep Trial is a 17-minute trial that overrides the format arms and the length he asked for (open issues;
+  one line to him in the batch's closing message). (7) 4.9 "TESTED": V4 never says it. (8) 4.4 / items 53 and 60, the channel's name
+  and subject "as experiment arms": they enter the arm book as candidates; no lever executes a subject or a name yet, so they are
+  PARKED and said - the first subject arm needs a reader in the topic pick, which the Observatory's batch builds with the first
+  subject it files (an open issue with its number at the paste, addressed to V5's designer by name: what is missing is a reader in
+  the topic pick and a number to judge a subject arm by; one line to him in the batch's closing message, as for the spin-offs).
+- NOT IN THIS BATCH, on purpose: a model anywhere in Strategy; the scoring of predictions and the retiring of a rule that does not
+  predict (B8 - V4 stores `prediction`, `observed`, `asked` / `won`); the Council's and the Observatory's rows; routing an input to
+  research, the WhatsApp desk, the release card, the optional hand tasks (B9); from the launch kit's 2.8 - the writer on the newest
+  strongest model and the stronger Claude juror while credit lasts (a quality that would exist only while the credit does: his item
+  57 forbids it), more drafts of a LONG script (a draft differs by its cold-open archetype, which a video on its Short's footage does
+  not use), R&D's cap raised (half of every judged question is the other family's, cash), the weekly premise bench (its cadence is
+  not a cell: open issue); the price cells of the newest Fable model (launch kit F11: the meter over-counts a quarter on that model,
+  the safe side - re-read on the provider's page by the batch that next touches prices); a rule with a follower reading for Trial
+  Reels (launch kit F1: no follower count is read by the code - B10's runbook reads the first Reel's receipt and sets the cell); the
+  cost row of a strong Gemini model (issue 204: B7 owns the model table). THREE OPEN ISSUES HANDED TO THIS DESIGN BY V1c's FINISH
+  (93701ee), each DECIDED: 210 (`VIEW_FLOOR_WATCH_S` moves the new film's seconds and not the stored clips') - HANDED TO B6b: no rule
+  of V4 and no wired department can write a ticket for a lever of D13 before the Council exists; the fix is the floor's own (every
+  stored clip cut at the cell when a session is built) and until then the cell's note stands. 212 (the first-three review while
+  `OWNER_VERDICT_SINCE` is empty) - B10's runbook, as the issue says: no code of V4 reads that cell; V4's own lines for the same
+  runbook are the one-time move and the first review's `hand` sentence. 221 (his item 80 reaches no department's brief) - HANDED TO
+  B8: rule (b) of item 80 is executed by RULE TRIAL in code and needs no playbook; the caps of D2's and D9's playbooks are the
+  Librarian's lever, and serving ADOPTED features to the briefs is V5's (rule (d)).
+- WHAT ONLY REALITY CAN ANSWER (open issues, numbered on at the paste): how far Studio's ELIGIBLE hours lie under the API's (his eye
+  on the Earn page in the first week; the cell is typed then); whether the pipeline's key sits in the organisation the credit is
+  linked to, and auto-reload is OFF on his Console (one line of the pilot: "one plan links ONE Console organisation and it cannot be
+  changed: link the one the pipeline's key belongs to; switch auto-reload off - it refills from your card while free credit remains; if the credit does not pay, your card pays Claude's
+  part - at most Rs {the cell} a month above your Rs 5,000";
+  his yes is recorded in `02` before the three cells are typed); Claude's true share of the text lumps; whether `v48` of a long video
+  on a channel this small is ever more than noise (`RISK_MIN_VIEWS` is the guard); what `videos.list` really answers for a video
+  YouTube removed (absent, or `rejected`: both are read); whether he reads a daily line at all (the Undo taps and the desk are the
+  only signal).
+**THE PRE-REVIEW'S 27 CHANGES, EACH ANSWERED (not part of what a builder types; for the reviewer and the audit).** 1 TAKEN (`strategy.brief`, `notify.link`; kind `strategy_week` dropped). 2 TAKEN (`keep`
+daily after `BRN.daily`; bars from Help 12843009). 3 TAKEN (`own_spend_inr`, every caller listed; the view stays a view). 4 TAKEN IN
+PART: the answer rides the daily brief, not tier "now" (no cap to compete for), and the memo closes at once by `desk_answered` -
+delivery is the desk row's `briefed`, stamped only after a send (the reason: open issue 56). 5 TAKEN (the ripe reading). 6 TAKEN and
+widened (the anchor; judgement points; LOWER's windows). 7 TAKEN (the partner at its target; the binding cell first; `gap_h` SAID, not
+changed). 8 TAKEN. 9 TAKEN IN PART: motion first is a test in rupees; RAISE is allowed before the window's end (reason in CHANGED
+(4)), LOWER is not. 10 TAKEN (3 and 200 views). 11 TAKEN (`effect` equality is "at target"). 12 TAKEN. 13 TAKEN. 14 TAKEN
+(`memos.id_for`, `tell`, `strategy_round`, cadence "daily"). 15 TAKEN (`observed`, a real-reader test per key, the sentence). 16 TAKEN
+with one more field (`board`: his item 55) and four metrics. 17 TAKEN. 18 TAKEN. 19 TAKEN (`_balance`, `runway_days`, `boost` asks
+`claude_allowed`). 20 TAKEN ((a) the floor, one buffer; (b) the cell that never lowers; (c) the pilot's line; (d) REFUSED here: no
+price cell moves on a page this session did not read - NOT IN THIS BATCH). 21 TAKEN IN PART: every row of the kit's 2.8 is decided
+(3.3, NOT IN THIS BATCH); the boost is the Shorts' scripts only; the free measure is RECORDED (`asked`, `won`) and judged by B8, not
+by a rule of V4 (a boost that ends within weeks needs no second end). 22 TAKEN (RULE SHORT_ARMS first in the book; issue 90's words).
+23 TAKEN (the judge and the rehearsal use a decision no price moves; no rupee literal in a test). 24 TAKEN IN PART: `dash.route`
+records his tap at once; the check's third rule is DROPPED - a stray cell is a named `hand` row, never a held video; a decision
+without its ticket is re-sent once, then void. 25 TAKEN (the memo's fields; addressed to D12). 26 TAKEN ((a) H34 to H37; (b) the two
+ticks in their own `try`; (c) no "now" message of V4; (d) step 1 measures; (e) the desk's first answer; (f) handed to B10, said). 27
+TAKEN (`uploads`' two definitions; `int(10 * s / total + 0.5)`; `(?!\s+ago)` and "no other digit"; `line=` and `kind=`).
+**PINS AND PLACES (each pin is read BEFORE it moves and named in the record with its reason; count again before pinning).**
+`tests/test_v12_exec.py` 62 (`len(reg) == 89` -> 93); every test that asserts the owner direction or D14's list for
+`SHORTS_PER_WEEK` / `SHORTS_PER_MONTH` (the names stand in `test_v12_exec.py`, `test_v12_cadence.py`, `test_v12_ladder.py`,
+`test_v11_stage_e.py`, `test_v94b.py`, `test_v12_money.py`, `test_docs_current.py`) or the range 1 to 8 of
+`STANDARD_MAX_LONG_PER_MONTH` (`test_v12_cadence.py`, `test_v12_exec.py`); `tests/test_v94a.py` (the credit cells and
+`credit_cover_inr`); `tests/test_v12_org.py` 471 (the pending set still holds) and 581 (the health counts follow); the tab count 86
+-> 91 and the cell list (`tests/golden/v9_sheet_schema.json` and whatever counts tabs); the check counts 71 -> 72 and, at the script
+stage, 40 -> 41 (`tests/test_v12_cutdowns.py` 39: `{"script": 40, ...}` and `len(ids) == 71`; `tests/test_v12_motion.py` 633)
+and the rehearsal's own asserts (`test_v102.py` pins nothing), `SHOW_CHECKS` 60 unchanged (`test_v12_rnd.py` 428). NAMED BY THE
+DESIGN REVIEW, each read before it moves: `tests/test_v12_org.py` 232 (a problem memo to D11 starts at level 2: it breaks the hour D11
+is wired); `tests/test_v12_exec.py` 403 to 407 (a D1 ticket "stays with the owner", `rep["moved"]` pinned to two) and 89 (`ok("D14",
+"SHORTS_PER_WEEK", 2)`); `tests/test_v12_ladder.py` 368 and 369 (the owner of the two cadence levers, and "up"), 374 with
+`tests/test_v94b.py` 63 to 64 (the dashboard's clamp of 1 to 5: it STAYS - 3.4), 375 and `tests/test_v86.py` 202 (the END of tab
+`Analytics`: the three ripe columns follow it); `tests/test_v12_short.py` 235 (`sc["_write"]` gains `asked` and `won`);
+`tests/test_v12_money.py` 277 and 279 (a Short's lines: unchanged while the boost is 0); `tests/test_v12_motion.py` 638
+(`MOVING_SHARE_LONG` of D6); `tests/test_v103.py` 50, 51 and `tests/test_v94a.py` 165 (the briefs' words); the tests that build a
+fresh Sheet and so lose `OLD_STRATEGY` - `tests/test_v12_opening_e2e.py` 19 to 23, `tests/test_v91_flaky_root.py` 25,
+`tests/test_v91_matrix.py` 93, the lists at `tests/test_v12_floor.py` 1383 to 1387. Also: the tests of
+`digests.compose` and `notify.digest` that pin a first line; the tests of `replan.weekly` and of the long video's breakout card
+(they run with `OLD_STRATEGY`; a test that builds its own fresh Sheet loses that default - the lesson of V2c-b1); `tests/paid_calls.py`
+(`V12V4_ADDED`); `tests/conftest.py` (`OLD_STRATEGY`). THE CODE PLACES, by their words: `registry.PENDING` (93), `ENTRY` (78);
+`levers.LEVERS` lines 22, 39, 40, 56, 60, 65; `governor.py` 92, 131, 135, 149 to 174, 189, 198, 261, 372, 407, 446, 452; `core.py`
+`month_spend` (1247), `TABS` (47), `DEFAULTS`; `manage.py` `tick` (192 to 236), `learn` (522, 566 to 597), `_analytics` (1137),
+`setup` (1333); `cli.py` 13 to 37, 61, 71, 72; `digests.py` 21 to 55; `notify.py` 15, 24, 157 to 180; `shorts2.py` 34 to 59, 174 to
+199; `formats.py` 213 to 247, 351 to 369; `breakout.py` 130 to 170; `ladder.py` 335; `replan.py` 33; `dash.py` 214 to 223;
+`runner.py` 23, 227; `execute.py` 56, 190 to 274, 368 to 531; `memos.py` 65, 78, 113, 124; `schemas.py` 40, 91, 115; `rnd.py` 21 to
+23, 206 to 265; `contract.py` 446, 859 to 861; `launch.py` 78; `similarity.py` 17, 21; `ypp.py` whole; `brain.py` 262. Since V1c's finish (correction C18) `registry.entry_issues`
+reads EVERY file of the package: every runner call V4 writes, in whatever module, is named in `registry.ENTRY` under its own file and is
+typed with a literal department and a literal trigger (open issue 219: the scan sees literals only); a call the scan cannot see is a call
+`dept_contract` cannot guard.
+**DESIGN QUESTIONS LEFT OPEN, each with the reading that changes less.** DQ1 the exact fields of a ticket's and a problem memo's
+body: as `schemas.py` asks today; a field this memo names that the schema refuses goes into `body` under its own name. DQ2 if
+`registry.takes("D12", "problem_memo")` is False the overrun memo goes to D8 (moot: every department takes one - registry.py 10,
+140). DQ3 the watch's lock is `risk.lock` and nothing of `launch.lock_detected`; if the search finds another writer of `UPLOAD_LOCK`
+than launch.py 63 and 80, the record names it and says what it does with a lock the watch set - the reading that changes less: it is
+left as it is. (Was: more than a video
+id - struck by the design review's change 1.) DQ4
+if tab `Script_Fingerprints` holds fewer than five rows of different episodes the repetition watch says nothing (not N/A as a
+failure). DQ5 ONLY where `PLAYBOOK_ON` cannot be TRUE on the judge's own Sheet: the stand-in machine candidate is class B on
+`THINK_BOOST_VARIANTS` (it is then refused by EFFECT with the lane closed: the judge asserts "dropped: ..."). DQ6 whatever in V1c's
+final code differs from f5f5374 in a place this memo names: the memo is corrected by its designer from the finish's diff before the
+build starts - a builder that still meets a difference stops and asks.
+**THE DESIGN REVIEW'S ROUND 1 (`REVIEW_V4_RECORD.md`: 14 changes, 16 to correct), EACH ANSWERED IN THE MEMO'S OWN TEXT (not part of
+what a builder types; the place of each change, for round 2).** 1 TAKEN (3.6 `platform_flag`: REJECTED locks by `risk.lock` with its
+own words and one tap; GONE asks him first; `launch.lock_detected` is not called; Step 2 E (2) and case (ii); DQ3; the sweep's (e)).
+2 TAKEN (3.3 "THE CAP STAYS A BREAKER": `CREDIT_COVER_MONTH_MAX_INR`, its measured default, the test and the break; 3.12 MONEY and the
+pilot's line). 3 TAKEN (3.4: the column `briefed`, `brief` (a) by the stamp, "WHAT WAS SHOWN IS STAMPED ONLY WHEN IT WENT",
+`INFORM_KINDS`, no expiry on the action, the whole stack undone by one tap). 4 TAKEN (3.4 `settle`: a ticket back instead of a
+reject; "TAKEN BACK IS SAID, AND NOT TRIED AGAIN AT ONCE"; the sentence on what "verified" means). 5 TAKEN (3.5 the item and its
+first-days measure; the metric; `pace_slip`; the tests and the break). 6 TAKEN (3.6 opening: the owner DEPARTMENT, one live memo a
+danger closed by the watch at its fixed point, the gap source "risk" in `rnd.gaps`, the act said plainly). 7 TAKEN (3.9: HEAD and
+TAIL, the fifteen sentences typed). 8 TAKEN (3.7: `playbook:packager`, the table role -> D4, what waits behind a trial, a
+Shorts-only candidate; the judge asserts "trial"; Step 1's experiment line). 9 TAKEN (3.3 `strategy_round`'s two returns; 3.4 the
+check's NA while `ORG_SINCE` is young and the catch-up on EITHER rule; 3.9 the desk with the organisation off and while paused; 3.10
+the judge on part B and its typed set). 10 TAKEN (3.8: the episode's id as the order's key, `ladder.order_row`, `_set` skipped, the
+test). 11 TAKEN (3.4 `OWNER_ONLY`, its test, the search for `yt_delete`). 12 TAKEN (3.3 THE TABLE). 13 TAKEN (PINS AND PLACES; the
+counts 40 -> 41 and 72; the clamp stays). 14 TAKEN (3.12 NOT IN THIS BATCH: 210 to B6b, 212 to B10, 221 to B8, each with its reason).
+TO CORRECT: 1, 2 (the part is "*Decisions*"), 3, 4, 5 (`slots(left=True)`), 6, 7, 8, 9 (`COVER_TTL_S`), 10 (P1), 11, 12, 13, 14, 15,
+16 - each taken at its place.
 ### V1c - THE FLOOR, HIS VERDICT AND THE MAKER'S LINE (15-17 Nov 2026) - ACCEPTED (final code commit 9dfc916 GREEN in GitHub Checks run 246: 1768 passed; sweep 58 of 58 ids) - its code b326887, BUILT AGAIN AFTER RED ROUND 2 (the offline writer keeps the asks it is given and marks its punchlines by the joke rule's own measures (open issue 228); `proving/notes/V1c_BUILT.md`; the repair block "THE REPAIR OF RED ROUND 2" under the second pass's 6b); BEFORE IT RED ON ITS SECOND PASS (46615df, 17 Nov 2026: the rehearsal F2/S2 held by joke_density on episode EP202611170305 - 6 punchlines, need 7, the script one word over the line; `proving/notes/V1c_RED_2.md`), NOT ACCEPTED; BEFORE IT BUILT AGAIN (red round 1 on 030f197 repaired: final code commit d39a213 - the floor's media fixture made for the proof's serial runner, a guard over every test file, test_v12_floor split word for word into three files; `proving/notes/V1c_BUILT.md`; the builder's record, the prover's 6b of the first pass, the repair block under it)
 WHAT IT IS FOR, in a viewer's and the owner's words: a finished long video is shown - its first minute - to two strong first-time viewers of two
 model families beside the video he rejected; a film they cannot tell from that one is HELD, a jury that fails its own planted questions holds
