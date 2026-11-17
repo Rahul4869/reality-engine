@@ -339,6 +339,15 @@
    "from": "ACCEPTED",
    "to": "DESIGN",
    "why": ""
+  },
+  {
+   "at": "2026-11-17T12:33:44Z",
+   "batch": "V4",
+   "by": "",
+   "commit": "",
+   "from": "DESIGN",
+   "to": "DESIGN_REVIEW",
+   "why": ""
   }
  ],
  "order": [
@@ -355,8 +364,8 @@
   "B10",
   "V3"
  ],
- "phase": "DESIGN",
+ "phase": "DESIGN_REVIEW",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-17T12:32:25Z"
+ "updated": "2026-11-17T12:33:44Z"
 }
