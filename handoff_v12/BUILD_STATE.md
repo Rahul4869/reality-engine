@@ -1466,6 +1466,18 @@ STEP 4'S CHECKS (`gh_runs.js`): run 44145379799 on 4ca4f28, 18:12 -> 19:47 UTC, 
 WHAT A VIEWER GETS: a video YouTube rejects or that vanishes closes the uploads the same day - before a second one can become a strike and
 cost the channel - and no money is spent on a new video while they are closed; scripts that start to sound alike, too many Shorts and a
 falling Short pace reach the department that owns them and research's agenda.
+STEP 6 - THE ARM BOOK (3.7). WHAT CHANGED: tab `Candidates` (id, ts, kind, title, how, sources, policy, filed_by, state, ticket, note); in
+`strategy.py` the rule TRIAL (after ARMS), `file` (a candidate needs a dated source and a policy reading, else refused), `_filed`, `intake`,
+`trial_move` / `decide_trial` (one trial at a time; the next waits TRIAL_GAP_DAYS), `_follow`, `candidate_words`; `fakes.features` (the
+offline stand-in list, filed only in fake mode with its switch); cells ARM_STAND_IN_ON, TRIAL_GAP_DAYS. ONE PIN MOVED AT THE APPLY: step
+4's own test pinned `RULES` as CREDIT, SHORT_ARMS, SLOTS, SPLIT, ARMS - the rule TRIAL now follows ARMS (the memo's order). Matrix: one row
+(`fn:` strategy.file / intake / trial_move / decide_trial). SYSTEM.md regenerated.
+STEP 6'S RUN (pytest `-n 8`, fake mode, alone): `test_v12_strategy`, `test_v12_exec`, `test_docs_current`, `test_v111_enforce`,
+`test_v12_org` - 295 passed, 1 failed (the pin above) in 264.76 s; after it `test_v12_strategy` 61 passed. ALONE UNDER `shim/minitest.py`:
+`test_v12_strategy.py` 61 passed in 8 s. `tools/plan_guard.py`: GREEN.
+STEP 5'S CHECKS (`gh_runs.js`): run 44162837069 on e1a2809, 19:50 -> 21:14 UTC, GREEN - "Unit tests: 1825 passed in 4886.03s"; "REHEARSAL: GREEN ... contract script: 41/41 pass; contract final: 23/23 pass".
+WHAT A VIEWER GETS: a new technique is tried on the channel one at a time, only with a dated source and the platform's policy read first,
+and judged like any other arm - never a whole format replaced at once.
 ### V1c - THE FLOOR, HIS VERDICT AND THE MAKER'S LINE (15-17 Nov 2026) - ACCEPTED (final code commit 9dfc916 GREEN in GitHub Checks run 246: 1768 passed; sweep 58 of 58 ids) - its code b326887, BUILT AGAIN AFTER RED ROUND 2 (the offline writer keeps the asks it is given and marks its punchlines by the joke rule's own measures (open issue 228); `proving/notes/V1c_BUILT.md`; the repair block "THE REPAIR OF RED ROUND 2" under the second pass's 6b); BEFORE IT RED ON ITS SECOND PASS (46615df, 17 Nov 2026: the rehearsal F2/S2 held by joke_density on episode EP202611170305 - 6 punchlines, need 7, the script one word over the line; `proving/notes/V1c_RED_2.md`), NOT ACCEPTED; BEFORE IT BUILT AGAIN (red round 1 on 030f197 repaired: final code commit d39a213 - the floor's media fixture made for the proof's serial runner, a guard over every test file, test_v12_floor split word for word into three files; `proving/notes/V1c_BUILT.md`; the builder's record, the prover's 6b of the first pass, the repair block under it)
 WHAT IT IS FOR, in a viewer's and the owner's words: a finished long video is shown - its first minute - to two strong first-time viewers of two
 model families beside the video he rejected; a film they cannot tell from that one is HELD, a jury that fails its own planted questions holds

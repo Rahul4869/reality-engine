@@ -507,7 +507,7 @@ def test_the_lever_table_is_strategys_where_the_plan_is(setting):
     for k in ("SHORTS_PER_WEEK", "SHORTS_PER_MONTH", "MOVING_SHARE_LONG", "DEEP_TRIAL_ON", "CASEFILES_ON", "THINK_BOOST_VARIANTS", "STANDARD_MAX_LONG_PER_MONTH"): assert LV.owner_of(k) == "D1", k
     assert (LV.LEVERS["SHORTS_PER_WEEK"]["lo"], LV.LEVERS["SHORTS_PER_WEEK"]["hi"], LV.LEVERS["SHORTS_PER_MONTH"]["lo"], LV.LEVERS["SHORTS_PER_MONTH"]["hi"]) == (2, 4, 8, 16)
     assert LV.LEVERS["DEEP_TRIAL_ON"]["owner"] == "on" and LV.LEVERS["CASEFILES_ON"]["owner"] == "on" and len(LV.LEVERS) == 93 and LV.issues() == []
-    assert [r["id"] for r in STR.RULES] == ["CREDIT", "SHORT_ARMS", "SLOTS", "SPLIT", "ARMS"]
+    assert [r["id"] for r in STR.RULES] == ["CREDIT", "SHORT_ARMS", "SLOTS", "SPLIT", "ARMS", "TRIAL"]
     for k in ("SHORT_ARM_MIN", "ARM_MIN_VIDEOS", "RISK_MIN_VIEWS", "STRATEGY_WINDOW_END", "CREDIT_TAPER_DAYS"): assert k in core.DEFAULTS and k not in LV.LEVERS, k
     setting("STRATEGY_ON", "TRUE"); from whatifs import dash as DS
     if any(v[0] == "SHORTS_PER_WEEK" for v in getattr(DS, "SETTINGS_MAP", {}).values()):
@@ -604,3 +604,48 @@ def test_a_watch_row_reaches_the_research_agenda_once(setting):
                                        "why": "the last six Shorts held a median of 30 viewers who stayed against 90 for the six before"} for i in range(2)])
     g = [x for x in RNDM.gaps() if x["source"] == "risk"]
     assert len(g) == 1 and g[0]["ref"] == "pace_slip" and g[0]["target_depts"] == ["D14"] and "What do channels that recovered from this do" in g[0]["question"]
+
+# ------------------------------------------------------------------ step 6: the arm book (tab Candidates; rule TRIAL)
+SRC = [{"url": "https://support.google.com/youtube/answer/72431", "date": "2026-11-16"}]
+def machine(title, how=None, **k):
+    return dict({"kind": "machine", "title": title, "sources": SRC, "policy": "ok", "filed_by": "test",
+                 "how": how if how is not None else {"lever_class": "C", "target": "playbook:packager", "metric": "long_hours_per_video_28d",
+                                                     "value": {"rule": f"{title}: write the thumbnail's words large enough to read on a phone.", "metric": "pack",
+                                                               "source_url": "https://support.google.com/youtube/answer/72431", "evidence": "YouTube Help"}}}, **k)
+def cands(): return {r["title"]: r for r in core.store().rows("Candidates")}
+
+def test_a_candidate_without_a_dated_source_or_the_policy_read_first_is_refused_and_never_tried(setting):
+    setting("STRATEGY_ON", "TRUE")
+    STR.file(machine("No source", sources=[{"url": "https://x.org/a"}])); STR.file(machine("No policy", policy="")); STR.file(machine("No policy", policy="ok"))
+    c = cands(); assert c["No source"]["state"] == "refused: no dated source" and c["No policy"]["state"] == "refused: no policy reading"     # the same id twice is a no-op
+    assert STR.trial_move(JAN) is None and c["No source"]["id"].startswith("CAN-") and len(c["No source"]["id"]) == 14
+
+def test_one_trial_at_a_time_and_the_next_one_four_weeks_later(setting):
+    from whatifs.org import memos as MEMO
+    setting("STRATEGY_ON", "TRUE"); STR.file(machine("First idea"), JAN); STR.file(machine("Second idea"), JAN + dt.timedelta(minutes=1))
+    row, memo = STR.decide_trial(STR.trial_move(JAN), JAN); MEMO.write(memo)
+    assert memo["to_depts"] == ["D4"] and memo["body"]["lever_class"] == "C" and memo["body"]["target"] == "playbook:packager" and cands()["First idea"]["state"] == "trial"
+    assert STR.trial_move(JAN + dt.timedelta(days=29)) is None                                                 # the first is still in trial: one at a time
+    core.store().update("Candidates", "id", cands()["First idea"]["id"], {"state": "dropped: test"})
+    assert STR.trial_move(JAN + dt.timedelta(days=10)) is None and STR.trial_move(JAN + dt.timedelta(days=29))["title"] == "Second idea"     # and 28 days apart
+
+def test_a_class_b_candidate_on_a_cell_that_is_no_lever_is_parked_and_the_other_kinds_wait(setting):
+    setting("STRATEGY_ON", "TRUE")
+    STR.file(machine("Not a lever", how={"lever_class": "B", "target": "BUDGET_CEILING_INR", "value": "9000"}))
+    STR.file(machine("For Shorts", how={"lever_class": "C", "target": "playbook:writer", "value": {"rule": "x" * 30, "for": "short"}}))
+    STR.file({"kind": "subject", "title": "A subject", "sources": SRC, "policy": "ok", "how": {}}); STR.file({"kind": "hand", "title": "His idea", "sources": SRC, "policy": "ok"})
+    c = cands(); assert c["Not a lever"]["state"] == "parked: BUDGET_CEILING_INR is not a lever" and c["For Shorts"]["state"] == "parked: a rulebook trial is judged on long videos only"
+    assert c["A subject"]["state"] == "parked: nothing in the pipeline can execute it yet" and c["His idea"]["state"] == "for his desk (B9)"
+    assert STR.candidate_words() == "3 candidate(s) parked, 1 for your desk." and STR.trial_move(JAN) is None
+
+def test_a_refused_ticket_drops_its_candidate_and_a_verified_one_runs(setting):
+    setting("STRATEGY_ON", "TRUE"); STR.file(machine("Dropped idea"), JAN)
+    row, memo = STR.decide_trial(STR.trial_move(JAN), JAN)
+    core.store().append("Tickets", [{"id": row["ticket"], "state": "refused", "note": "the rulebook refuses the arm: repeats an existing rule"}])
+    STR.settle(JAN + dt.timedelta(hours=2)); assert cands()["Dropped idea"]["state"] == "dropped: the rulebook refuses the arm: repeats an existing rule"
+
+def test_the_stand_in_list_is_filed_only_in_fake_mode_with_its_switch_and_its_rule_passes_the_rulebook(setting):
+    from whatifs import playbook as PB, fakes as FK
+    setting("STRATEGY_ON", "TRUE"); assert STR.intake(JAN) == []
+    setting("ARM_STAND_IN_ON", "TRUE"); STR.intake(JAN); c = cands(); assert sorted(r["kind"] for r in c.values()) == ["hand", "machine", "subject"]
+    v = FK.features()[0]["how"]["value"]; ok, bad = PB.vet([dict(v, department="packager")]); assert ok and not bad, bad

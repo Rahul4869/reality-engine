@@ -182,6 +182,9 @@ TABS = {
  # stamped only after a brief carrying the row went out (digests.send); `observed` and `scored` are written by the rules' readers (3.5)
  "Decisions":       ["id", "ts", "rule", "key", "old", "new", "why", "numbers", "effect_before", "effect_after", "prediction", "ticket", "state", "told",
                      "frozen_until", "observed", "scored", "briefed"],
+ # v12 V4 (the arm book, strategy.file - the ONE writer): one row per candidate a filer brings (machine, hand, subject, name) with dated sources and the
+ # monetisation policy read first; rule TRIAL opens ONE at a time as a decision. Text from outside is DATA: it never reaches a prompt
+ "Candidates":      ["id", "ts", "kind", "title", "how", "sources", "policy", "filed_by", "state", "ticket", "note"],
 }
 
 class LocalStore:
@@ -914,6 +917,8 @@ DEFAULTS = {
  "PACE_N": ("6", "v12 V4 (pace_slip): the Shorts are judged in sixes, only when the measured count is a multiple of this and at least two sixes"),
  "PACE_MIN_ENGAGED": ("50", "v12 V4 (pace_slip): the six before must have held at least this median of viewers who stayed"),
  "PACE_DROP_PCT": ("40", "v12 V4 (pace_slip): fires when the last six's median fell by more than this percent"),
+ "ARM_STAND_IN_ON": ("FALSE", "v12 V4 (the arm book): TRUE = in fake mode the stand-in list of candidates is filed (the rehearsal month and the sweep's judge set it on their own Sheet) until the Observatory (V5) files real ones"),
+ "TRIAL_GAP_DAYS": ("28", "v12 V4 (rule TRIAL): one candidate trial at a time, and the next one at least this many days after the last opened"),
  "V12V4_MOVE_DONE": ("", "v12 V4: set once after the one-time move (the two spin-offs paused, the Max credit's old end date cleared) on a live Sheet"),
  "STRATEGY_TODAY": ("", "auto - v12 V4: the newest review's refusals and counting, for the brief's one line on a day without a decision"),
  "FINANCE_SEEN_TS": ("", "auto - v12 V4: the newest cost summary Finance's watch has read (an overrun after it becomes a memo to Operations)"),

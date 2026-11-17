@@ -228,6 +228,7 @@ RULES = (
     {"id": "SLOTS", "keys": ("STANDARD_MAX_LONG_PER_MONTH",), "target": _slots_target, "metric": "long_hours_per_video_28d", "board": "hours", "direction": "up", "horizon": 4},
     {"id": "SPLIT", "keys": ("SHORTS_PER_MONTH", "SHORTS_PER_WEEK"), "target": _split_target, "metric": "shorts_engaged_90d", "board": "shorts", "direction": "up", "horizon": 12},
     {"id": "ARMS", "keys": ("FORMAT_SHARE_F1", "FORMAT_SHARE_F2", "FORMAT_SHARE_F3"), "target": _arms_target, "metric": "long_hours_per_video_28d", "board": "hours", "direction": "up", "horizon": 8},
+    {"id": "TRIAL", "keys": (), "target": lambda now: {}, "metric": "shorts_engaged_first_days", "board": "shorts", "direction": "up", "horizon": 8},      # the arm book (trial_move)
 )
 PORTFOLIO = tuple(k for r in RULES for k in r["keys"])
 WORDS = {"STANDARD_MAX_LONG_PER_MONTH": "{new} long videos a month instead of {old}", "SHORTS_PER_MONTH": "{new} Shorts a month instead of {old}",
@@ -442,6 +443,8 @@ def weekly(now=None, st=None):
     c = FIN.lane(now)
     if c: out.append(f"Claude credit: Rs {c['spent_inr']:.0f} used of Rs {c['amount_inr']:.0f}, Rs {c['left_inr']:.0f} left until {c['until']}; what is left on that day lapses.")
     out.append("Spin-offs: switched off; they come back only rebuilt.")
+    cw = candidate_words(st)
+    if cw: out.append(cw)
     rows = _rows(st); wk = [r for r in rows if r.get("rule") not in ("HAND", "WATCH", "RISK") and r["state"] not in ("hand", "watch", "judged") and (parse_iso(r.get("ts")) or now) > now - dt.timedelta(days=7)]
     if wk:
         v = sum(1 for r in wk if r.get("observed")); x = sum(1 for r in wk if r["state"] in TAKEN_BACK + ("undone",)); w = len(wk) - v - x
@@ -478,7 +481,7 @@ def _ticket_in_flight(key, st):
 
 def _back(st, r, state, note, now):
     nums = dict(_js(r.get("numbers"), {}), engine_note=str(note)[:300])
-    _save(st, r, state=state, numbers=nums, briefed="")
+    _save(st, r, state=state, numbers=nums, briefed=""); _follow(r, st, state, note)
     tries = [x for x in _rows(st) if x["key"] == r["key"] and x["state"] in ("refused", "rolled_back")]
     if state in ("refused", "rolled_back") and len(tries) >= 2:
         from whatifs.org import memos as MEM
@@ -510,7 +513,7 @@ def settle(now=None, st=None):
             continue
         state, note = es
         if state == "verified":
-            _save(st, r, state="verified", numbers=dict(_js(r.get("numbers"), {}), engine_note=note[:300]))
+            _save(st, r, state="verified", numbers=dict(_js(r.get("numbers"), {}), engine_note=note[:300])); _follow(r, st, "verified")
             for m in MEM.find(st, type="problem_memo", from_dept="D1"):
                 if m.get("dedupe_key") == f"strategy_stuck|{r['key']}":
                     try: MEM.resolve(m["id"], "D1", "repair_verified", f"Decisions:{r['id']}", "a move on that key was verified", st, now)
@@ -518,7 +521,7 @@ def settle(now=None, st=None):
         elif state in ("refused", "failed", "rolled_back"): _back(st, r, "rolled_back" if state == "rolled_back" else "refused", note, now)
         elif state in ("applied", "dispatched", "intent"):
             if r["state"] != "applied": _save(st, r, state="applied")
-            if json.dumps(effect(r["key"], _cell(r["key"]), now)) != str(r.get("effect_after") or ""):
+            if r.get("rule") != "TRIAL" and json.dumps(effect(r["key"], _cell(r["key"]), now)) != str(r.get("effect_after") or ""):      # a rulebook trial is no cell: the rulebook judges it
                 _back(st, r, "no_effect", f"the running code would not do what was decided ({r['key']} = {_cell(r['key'])})", now)
                 out.append(_ticket(r["key"], r["old"], r["new"], r["id"], f"strategy|noeffect|{r['id']}", now))
     for key in {r["key"] for r in _rows(st) if r["state"] == "undone"}:                          # the undo stack: one ticket at a time, newest first
@@ -575,18 +578,107 @@ def review(brief):
     hs = hands(now, st)
     judge(now, st); observe(now, st)
     risks, risk_memos = book(now, st)
+    cands = intake(now, st)
     c, refused = next_move(now, st); memos = list(resend) + list(risk_memos); decided = 0
     if c: _row, memo = decide(c, now, st); memos.append(memo); decided = 1
+    elif _moves_this_week(_rows(st), now) < S("STRATEGY_MOVES_PER_WEEK", int):
+        tc = trial_move(now, st)
+        if tc:
+            _row, memo = decide_trial(tc, now, st)
+            if memo: memos.append(memo); decided = 1
     cnt = counting(now)
     set_setting("STRATEGY_TODAY", json.dumps({"at": iso(now), "refused": refused[:3], "counting": cnt}))
     acts = {m["id"]: _disposition(m) for m in getattr(brief, "memos", None) or []}
     return Out(output={"decided": c, "refused": refused, "hands": len(hs)}, memos=memos, memo_actions=acts,
-               measures={"decisions": decided, "refused": len(refused), "counting": len(cnt), "risks": risks, "candidates": 0, "hands": len(hs)})
+               measures={"decisions": decided, "refused": len(refused), "counting": len(cnt), "risks": risks, "candidates": len(cands), "hands": len(hs)})
 
 def book(now=None, st=None):
     """The watch book's pass (memo 3.6): (rows written, memos for Out.memos)."""
     from whatifs.org import risk as RISK
     return RISK.run(now, st)
+
+# ------------------------------------------------------------------ THE ARM BOOK (tab Candidates; rule TRIAL)
+CAND = "Candidates"
+TRIAL_ROLES = {"showrunner": "D4", "writer": "D4", "packager": "D4", "director": "D4"}         # a rulebook role names no department: the creative lead executes it
+
+def file(c, now=None, st=None):
+    """The ONE writer of tab Candidates. Refused without a dated source or without the policy read first; parked when nothing can execute it; a hand
+    candidate waits for his desk. The same id twice is a no-op. Returns the row."""
+    from whatifs.org import levers as LV
+    st = st or store(); now = now or now_utc(); kind = str(c.get("kind") or "").strip(); title = str(c.get("title") or "").strip()[:120]
+    cid = "CAN-" + hashlib.sha1(f"{kind}|{title}".encode("utf-8")).hexdigest()[:10]
+    old = next((r for r in st.rows(CAND) if r.get("id") == cid), None)
+    if old: return old
+    src = [x for x in (c.get("sources") or []) if isinstance(x, dict) and str(x.get("url") or "").strip() and str(x.get("date") or "").strip()]
+    how = c.get("how") if isinstance(c.get("how"), dict) else {}
+    if kind not in ("machine", "hand", "subject", "name"): state = "refused: unknown kind"
+    elif not src: state = "refused: no dated source"
+    elif str(c.get("policy") or "") != "ok": state = "refused: no policy reading"
+    elif kind == "hand": state = "for his desk (B9)"
+    elif kind != "machine" or how.get("lever_class") not in ("B", "C") or not how.get("target"): state = "parked: nothing in the pipeline can execute it yet"
+    elif how["lever_class"] == "C" and (isinstance(how.get("value"), dict) and how["value"].get("for") == "short"): state = "parked: a rulebook trial is judged on long videos only"
+    elif how["lever_class"] == "C" and str(how["target"]).split(":", 1)[-1] not in TRIAL_ROLES: state = f"parked: {how['target']} is no rulebook role"
+    elif how["lever_class"] == "B" and not LV.owner_of(str(how["target"])): state = f"parked: {how['target']} is not a lever"
+    else: state = "filed"
+    row = {"id": cid, "ts": iso(now), "kind": kind, "title": title, "how": json.dumps(how, sort_keys=True)[:2000], "sources": json.dumps(src)[:1000],
+           "policy": str(c.get("policy") or ""), "filed_by": str(c.get("filed_by") or "")[:40], "state": state, "ticket": "", "note": ""}
+    st.append(CAND, [row]); return row
+
+def _filed(now=None):
+    """The candidates to file today: the Observatory (V5) will call `file`; until it exists the stand-in list in fake mode when ARM_STAND_IN_ON."""
+    from whatifs.core import FAKE
+    if FAKE and S("ARM_STAND_IN_ON", bool):
+        from whatifs import fakes as FK
+        return FK.features()
+    return []
+
+def intake(now=None, st=None):
+    st = st or store(); return [file(c, now, st) for c in _filed(now)]
+
+def trial_move(now=None, st=None):
+    """RULE TRIAL - ONE TRIAL AT A TIME: with no candidate in trial and none opened in the last TRIAL_GAP_DAYS, the oldest filed machine candidate."""
+    st = st or store(); now = now or now_utc(); cs = st.rows(CAND)
+    if any(r.get("state") == "trial" for r in cs): return None
+    lim = now - dt.timedelta(days=S("TRIAL_GAP_DAYS", float))
+    if any(r.get("rule") == "TRIAL" and (parse_iso(r.get("ts")) or now) > lim for r in _rows(st)): return None
+    return next((r for r in sorted(cs, key=lambda r: str(r.get("ts") or "")) if r.get("state") == "filed" and r.get("kind") == "machine"), None)
+
+def decide_trial(cand, now=None, st=None):
+    """The candidate becomes a decision: class C - a ticket from D1 to D4 (the rulebook's role names no department); class B - its lever, through the
+    three gates. Returns (row, memo) or (None, None) with the candidate parked or refused in words."""
+    from whatifs.org import levers as LV, memos as MEM
+    st = st or store(); now = now or now_utc(); how = _js(cand.get("how"), {}); metric = how.get("metric") if how.get("metric") in METRICS else "shorts_engaged_first_days"
+    did = _did("TRIAL", cand["id"], "", str(how.get("target")), now)
+    if how.get("lever_class") == "B":
+        key, old, new = str(how["target"]), _cell(str(how["target"])), str(how.get("value"))
+        why = LV.check(LV.owner_of(key), key, new)["why"]
+        if not why and effect(key, old, now) == effect(key, new, now): why = f"{key} {old} -> {new} changes nothing the code does"
+        n0, n1 = _plan_need(key, old, now), _plan_need(key, new, now)
+        if not why and n0 is not None and n1["need_inr"] > n0["need_inr"] and not n1["fits"]: why = f"the month would need Rs {n1['need_inr']:.0f} and has Rs {n1['room_inr']:.0f}"
+        if why: st.update(CAND, "id", cand["id"], {"state": f"not taken: {why}"[:200]}); return None, None
+        memo = _ticket(key, new, old, did, f"strategy|{did}", now, words=f"trial of a candidate: {cand['title']}")
+    else:
+        key, old, new = str(how["target"]), "", str((how.get("value") or {}).get("rule") or "")[:240]
+        memo = {"type": "ticket", "from_dept": "D1", "to_depts": [TRIAL_ROLES[key.split(":", 1)[1]]], "subject": f"Strategy: try a candidate in the rulebook: {cand['title']}"[:200],
+                "body": {"lever_class": "C", "target": key, "value": how.get("value"), "acceptance_test": f"the rulebook trial runs on the next long videos and is judged on its own metric ({(how.get('value') or {}).get('metric')})"[:400],
+                         "rollback": "retire the rule from the rulebook", "decision_ref": did},
+                "dedupe_key": f"strategy|{did}", "done_when": "the engine verified the trial or retired it"}
+    row = {"id": did, "ts": iso(now), "rule": "TRIAL", "key": key, "old": old, "new": new, "why": f"a candidate from the arm book: {cand['title']}", "numbers": json.dumps({"candidate": cand["id"]}),
+           "effect_before": json.dumps(old), "effect_after": json.dumps(new), "ticket": MEM.id_for(memo, st, now), "state": "decided", "told": "", "frozen_until": "",
+           "prediction": json.dumps({"metric": metric, "board": "shorts" if metric.startswith("shorts") else "hours", "direction": "up", "horizon_videos": 8, "baseline": METRICS[metric](now), "read_on": ""}),
+           "observed": "", "scored": "", "briefed": ""}
+    st.append(TAB, [row]); st.update(CAND, "id", cand["id"], {"state": "trial", "ticket": row["ticket"]}); return row, memo
+
+def _follow(r, st, state, note=""):
+    """A TRIAL row's candidate follows its ticket: dropped (refused, failed, rolled back) or running since its date (verified)."""
+    if r.get("rule") != "TRIAL": return
+    cid = _js(r.get("numbers"), {}).get("candidate")
+    if not cid: return
+    st.update(CAND, "id", cid, {"state": (f"running since {iso()[:10]}" if state == "verified" else f"dropped: {note}")[:200]})
+
+def candidate_words(st=None):
+    cs = (st or store()).rows(CAND); parked = sum(1 for r in cs if str(r.get("state") or "").startswith("parked")); desk = sum(1 for r in cs if r.get("state") == "for his desk (B9)")
+    return f"{parked} candidate(s) parked, {desk} for your desk." if (parked or desk) else ""
 
 # ------------------------------------------------------------------ what production DID (a later review fills `observed`; never the gate's arithmetic)
 def observe(now=None, st=None):

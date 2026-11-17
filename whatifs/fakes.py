@@ -2,6 +2,18 @@
 import json, re, random
 from whatifs.core import SMALL
 
+def features():
+    """v12 V4 (the arm book's stand-in until the Observatory, V5): one machine candidate whose `how` is a rulebook trial playbook.vet accepts, one hand
+    candidate and one subject candidate with nothing to execute."""
+    src = [{"url": "https://support.google.com/youtube/answer/72431", "date": "2026-11-16"}]
+    return [{"kind": "machine", "title": "Thumbnail words big enough to read on a phone", "sources": src, "policy": "ok", "filed_by": "stand-in",
+             "how": {"lever_class": "C", "target": "playbook:packager", "metric": "long_hours_per_video_28d",
+                     "value": {"rule": "Write the thumbnail's words in letters at least a fifth of the picture's height, so they can be read on a phone.", "metric": "pack",
+                               "source_url": "https://support.google.com/youtube/answer/72431", "evidence": "YouTube Help: thumbnails are seen small on phones",
+                               "why": "a candidate of the stand-in list"}}},
+            {"kind": "hand", "title": "A video he would like to make by hand", "sources": src, "policy": "ok", "filed_by": "stand-in", "how": {}},
+            {"kind": "subject", "title": "A subject viewers keep asking about", "sources": src, "policy": "ok", "filed_by": "stand-in", "how": {}}]
+
 def video_states(ids):
     """v12 V4 (the watch book): the offline answer of YouTube's videos.list - every id processed, nothing limited."""
     return {i: {"upload": "processed", "reason": "", "rating": "", "blocked": []} for i in ids}
