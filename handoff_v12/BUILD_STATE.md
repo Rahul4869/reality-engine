@@ -1391,6 +1391,37 @@ STEP 1'S CHECKS (`gh_runs.js`): run 44101980576 on 9d4edd7, 14:20 -> 15:36 UTC, 
 WHAT THE OWNER GETS: the money he is told about is HIS - the Claude credit no longer eats his Rs 5,000 cap (it covers at most Rs 3,300 a
 month, and closes by itself the day after its date or under its floor); while the credit lasts a Short can be written with more scripts
 for the jury to choose from (the boost, 0 by default); an overrun or an unlisted paid call reaches Operations as a memo the same day.
+STEP 3 - THE LOOP (3.4; one rule in this step: SLOTS). WHAT CHANGED: NEW `whatifs/org/strategy.py` (PROTECTED; D1 wraps it) - RULES as data,
+`effect` / `at_target`, `next_move` with its three gates (RANGE, EFFECT, FIT), `decide` (the Decisions row and its ticket in one run),
+`tell`, `brief` / `briefed`, `weekly`, `settle`, `hands` / `hand`, `review` (D1's run), `undo` / `_answer`, `register`, `live_issues`,
+`OWNER_ONLY`; tab `Decisions`; `execute.state_of`; `notify.link` (public) and `notify.INFORM_KINDS`; the digest stamps only after a real
+send; the dashboard's "Decided for you" (`dash._decided`, `mission_control.html`) and its SET route records a hand row; check
+`strategy_live` (stage script, `rnd.ORG_CHECKS`, owner D1); `cli.strategy_catch_up`; D1 wired (PENDING `{"D0": "B9", "C": "B6", "L":
+"B8"}`); lever STANDARD_MAX_LONG_PER_MONTH 4 to 8, step 1; cells STRATEGY_MOVES_PER_WEEK, STRATEGY_UNDO_FREEZE_DAYS, STRATEGY_RETRY_DAYS,
+STRATEGY_STALE_H, STRATEGY_WEEKLY_AT, STRATEGY_TODAY. Pins moved by design: `test_v12_cutdowns` 39 (script checks 40 -> 41, all 71 -> 72),
+`test_v12_exec` 403/407 (a ticket of an unwired department D1 -> D0) and 493, `test_v12_motion` 633.
+FIVE CHANGES AT THE APPLY (the first run found them; none changes the memo's arithmetic):
+(1) A TYPING FAULT IN `levers.py`: the new STANDARD_MAX_LONG_PER_MONTH entry's trailing comment swallowed the PUBLISH_DAYS entry typed on
+the same line (`tools/gen_docs.py` failed: KeyError 'PUBLISH_DAYS'); the two entries are on two lines again. (2) `strategy.review` never
+called `brief.take()` (the fault of step 2's `finance.watch`): it takes it first. (3) The module's docstring is one line (the plan guard).
+(4) THREE TYPED TESTS WERE WRONG, the code right: the undo test's stand-in D1 run took no playbook and reported no measure (the runner's
+contract refuses both: it now takes it and reports `engine_passes`); the dispositioned test's `done_when` "it moves" is under the memo
+schema's 10 characters; `test_a_decision_is_a_ticket...` ran under conftest's FORMAT_FORCE F2 and FORMAT_SHARE_F1 70 (not its default
+60), so the review rightly recorded 70 as HIS hand and no share move could change anything - the test now plants the default and an
+effect, as the undo test does. (5) DESIGN QUESTION D-STR9 (P17 in OPEN_ISSUES_PENDING): the memo's "in a four-Saturday month ... 4 -> 5 is
+refused by EFFECT" contradicts its own definition of AT its target (4 and 5 both take effect as 4 there, so `next_move` passes the key
+without a word). The code keeps the definition; the test proves the silent pass AND an EFFECT refusal that can happen (7 -> 6 toward a
+target of 4 in a five-slot month: "not taken: STANDARD_MAX_LONG_PER_MONTH 7 -> 6 changes nothing the code does (5)"), so the break "the
+EFFECT gate removed" is caught. Matrix: five rows (a decision is a ticket and must change what runs; one move a review, range, step, fit;
+what stays his; reaches him once, undo, his hand; every memo dispositioned). SYSTEM.md regenerated.
+STEP 3'S RUN (pytest `-n 8`, fake mode, alone): `test_v12_strategy`, `test_v12_org`, `test_v12_exec`, `test_v12_cutdowns`, `test_v12_motion`,
+`test_v12_rnd`, `test_v12_formats`, `test_v94a`, `test_v94b` (the dashboard's node render), `test_v103`, `test_docs_current`,
+`test_v12_layman`, `test_v111_enforce` - 489 passed, 4 failed (the tests above) in 548.44 s; after the fixes `test_v12_strategy` 34 passed.
+ALONE UNDER `shim/minitest.py`: `test_v12_strategy.py` 34 passed in 6 s; `test_v12_cutdowns.py` 50 passed in 138 s; `test_v12_exec.py` 88 passed in 214 s; `test_v12_motion.py` 60 passed in 368 s (the nearest to the 450 s line). `tools/plan_guard.py`: GREEN.
+STEP 2'S CHECKS (`gh_runs.js`): run 44116618927 on 37012eb, 15:38 -> 17:04 UTC, GREEN - "Unit tests: 1790 passed in 4900.87s"; "REHEARSAL: GREEN ... contract script: 40/40 pass; contract final: 23/23 pass".
+WHAT THE OWNER GETS: the channel's plan moves by itself, one step at a time and only inside the money - a fifth long video in a month whose
+calendar and money hold it; he is told once, in the brief that really went, with an Undo that always works; a cell he set by hand is
+counted as his and left alone for 28 days.
 ### V1c - THE FLOOR, HIS VERDICT AND THE MAKER'S LINE (15-17 Nov 2026) - ACCEPTED (final code commit 9dfc916 GREEN in GitHub Checks run 246: 1768 passed; sweep 58 of 58 ids) - its code b326887, BUILT AGAIN AFTER RED ROUND 2 (the offline writer keeps the asks it is given and marks its punchlines by the joke rule's own measures (open issue 228); `proving/notes/V1c_BUILT.md`; the repair block "THE REPAIR OF RED ROUND 2" under the second pass's 6b); BEFORE IT RED ON ITS SECOND PASS (46615df, 17 Nov 2026: the rehearsal F2/S2 held by joke_density on episode EP202611170305 - 6 punchlines, need 7, the script one word over the line; `proving/notes/V1c_RED_2.md`), NOT ACCEPTED; BEFORE IT BUILT AGAIN (red round 1 on 030f197 repaired: final code commit d39a213 - the floor's media fixture made for the proof's serial runner, a guard over every test file, test_v12_floor split word for word into three files; `proving/notes/V1c_BUILT.md`; the builder's record, the prover's 6b of the first pass, the repair block under it)
 WHAT IT IS FOR, in a viewer's and the owner's words: a finished long video is shown - its first minute - to two strong first-time viewers of two
 model families beside the video he rejected; a film they cannot tell from that one is HELD, a jury that fails its own planted questions holds

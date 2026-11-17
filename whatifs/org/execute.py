@@ -55,6 +55,10 @@ def _rows(st):
 
 def _get(tid, st): return next((r for r in _rows(st) if r["id"] == tid), None)
 
+def state_of(tid, st=None):
+    """v12 V4: the engine's row of a ticket as (state, note), or None - a read-only reader for Strategy's settle."""
+    r = _get(tid, st or store()); return (r["state"], str(r.get("note") or "")) if r else None
+
 def _save(st, row, now, **ch):
     ch["updated"] = iso(now); row.update(ch)
     st.update(TAB, "id", row["id"], ch); return row

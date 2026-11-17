@@ -630,7 +630,7 @@ def test_the_sweep_makes_an_id_bad_when_a_rule_was_not_walked(ladder):
 def test_the_batch_is_wired_protected_and_documented():
     prot = open(os.path.join(ROOT, "tools", "repair.py"), encoding="utf-8").read()
     assert '"whatifs/motion.py"' in prot and '"whatifs/stock.py"' in prot and {"whatifs/motion.py", "whatifs/stock.py"} <= set(REG.DEPTS["D6"]["wraps"])
-    stage = {f[0]: f[1] for f in CON.FEATURES}; assert len(stage) == len(CON.FEATURES) == 71          # v12 V1c step 1: + viewer_floor; step 3: + makers_line; step 4: + one_story (pins moved BY DESIGN)
+    stage = {f[0]: f[1] for f in CON.FEATURES}; assert len(stage) == len(CON.FEATURES) == 72          # v12 V4 step 3: + strategy_live (BY DESIGN). v12 V1c step 1: + viewer_floor; step 3: + makers_line; step 4: + one_story (pins moved BY DESIGN)
     assert (stage["moving_share"], stage["stock_share"], stage["short_moving"], stage["short_sound"], stage["living_characters"]) == ("final", "final", "short_file", "short_file", "final")
     assert [REG.check_owner(k) for k in ("moving_share", "stock_share", "short_moving", "short_sound")] == ["D6", "D6", "D6", "D7"]
     assert RND.SHOW_CHECKS == 60 and all(k not in RND.ORG_CHECKS and k in RND.metrics() for k in ("moving_share", "stock_share", "short_moving", "short_sound"))

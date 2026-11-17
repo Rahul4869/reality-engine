@@ -6,11 +6,11 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 ## 1. Facts (read from the code)
 - Channel: "Reality on Trial" (brand Reality Engine). Concept: `docs/CURRENT/CONCEPT.md`. Owner requirements: `docs/CURRENT/OWNER_REQUIREMENTS_LEDGER.md`.
 - Money: hard cap Rs 5,000 a month, everything included (`BUDGET_CEILING_INR`); extras pause at 90% of the cap; breakout fund carries over at most Rs 1,000. One month can be overridden in `MONTH_CAP_OVERRIDES`.
-- Quality: 71 HARD contract checks (40 at the script stage and 23 on the final video of an episode, 5 at the short gate of a standalone Short and 1 at its release gate, after the uploads). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway); a held Short is simply not made; a release row a platform did not keep is a problem memo to Publishing (the Short is public by then). No upload below Breakout Score 80.
+- Quality: 72 HARD contract checks (41 at the script stage and 23 on the final video of an episode, 5 at the short gate of a standalone Short and 1 at its release gate, after the uploads). A FAIL holds the episode and asks the owner (Rewrite / Approve anyway); a held Short is simply not made; a release row a platform did not keep is a problem memo to Publishing (the Short is public by then). No upload below Breakout Score 80.
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `heygen/heygen-video/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 3 standalone Shorts a week, 12 a month at most - every topic starts as a Short and the promote rule picks the long video's topic (`whatifs/ladder.py`); spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 135 code modules, 833 settings, 87 Sheet tabs, 25 GitHub workflows.
+- Size: 136 code modules, 839 settings, 88 Sheet tabs, 25 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -92,6 +92,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | dept_contract | script | every department that worked on the script ran under the department contract: memos and playbook loaded, work done, memos sent, takeaway written, tickets executed, run reported |
 | decisions_executed | script | nothing the organisation decided stays text: every decision has tickets, every ticket is executed with proof, refused with a reason or escalated |
 | lever_verified | script | every change made by ticket is written down before and after, verified by later evidence or rolled back; none sits past its window |
+| strategy_live | script | the CEO is alive: Strategy reviewed within STRATEGY_STALE_H hours and every decision became a ticket the engine executes (no decision stays text) |
 | research_cadence | script | R&D researched on schedule with sources proven by code, and the Review Board judged every research memo in time, blind, across two model families, with a rejected canary and the verdict computed by code |
 | viewer_promise | script | the video opens on a made picture and the thumbnail's promise is on screen within PROMISE_BY_SEC seconds (the viewer's seat) |
 | viewer_breath | script | the voice breathes: a real pause at least every BREATH_EVERY_S seconds (the viewer's seat) |
@@ -384,6 +385,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Floor_Log | 13 | ts, session_id, episode_id, sha, family, role ... |  |
 | Owner_Verdicts | 17 | ref, kind, title, url, topic, asked ... |  |
 | Scoreboard | 5 | date, subs, hours, shorts_90, src |  |
+| Decisions | 18 | id, ts, rule, key, old, new ... |  |
 
 ## 9. Modules
 | module | purpose |
@@ -512,6 +514,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | whatifs/org/runner.py | Department runner: the six-step contract of every department run - LOAD, ACT, EMIT, LEARN, EXECUTE, REPORT - each proven by a receipt the runner itself builds and chains. |
 | whatifs/org/schemas.py | Memo schemas: every memo type the organisation can send - sender, audience, body, clocks, statuses and legal moves as data - with the validator that runs on every write. |
 | whatifs/org/shortseat.py | Audience (D13): the viewer's seat for a Short - the first frame, the hook, plain words, the shape and the loop are measured by code and repaired by code before any picture is paid. |
+| whatifs/org/strategy.py | Strategy (D1): the loop - a rule book as data, at most one decision a review, each a ticket told to him with an Undo. |
 | whatifs/org/verdicts.py | His verdict (D13): one row and one tap a release on tab Owner_Verdicts - his tap is the strongest label, the judged floor is scored against it and the videos he approved are its references. |
 | whatifs/org/wraps.py | Department wrappers: what each wrapped production step reports about its own output (measures, lessons, problem memos) when it runs under the department runner. |
 | tools/atmos_bench.py | Render performance check: times one still shot through the real render path with the atmosphere layer off and on (run: python tools/atmos_bench.py [seconds]). |
@@ -634,7 +637,7 @@ By kind: audience_insight 8, failure_lesson 7, owner_preference 27, plan 2, poli
 | id | department | rhythm | runs under the runner | playbook | thinking cap (Rs / month) | levers (Settings cells) |
 |---|---|---|---|---|---|---|
 | D0 | Owner Office | tick | pending (B9) | brief | - | WA_ON, DASH_ON |
-| D1 | Strategy & Planning | weekly | pending (B9) | brief | - | STANDARD_MAX_LONG_PER_MONTH, PUBLISH_DAYS, VIDEOS_PER_MONTH_EST, FORMAT_SHARE_F1, FORMAT_SHARE_F2, FORMAT_SHARE_F3, THINK_BOOST_VARIANTS |
+| D1 | Strategy & Planning | daily | review (whatifs/cli.py) | brief | - | STANDARD_MAX_LONG_PER_MONTH, PUBLISH_DAYS, VIDEOS_PER_MONTH_EST, FORMAT_SHARE_F1, FORMAT_SHARE_F2, FORMAT_SHARE_F3, THINK_BOOST_VARIANTS |
 | D2 | R&D - Research | daily | daily (whatifs/cli.py), weekly (whatifs/cli.py) | brief | 300 | RESEARCH_ON, IDEA_MIN_MULTIPLE, RESEARCH_PER_WEEK |
 | D3 | Review Board | weekly | assess (whatifs/cli.py) | brief | 120 | BOARD_MIN_EVIDENCE |
 | D4 | Creative - Ideation & Writers' Room | episode | write (whatifs/episode.py), draft (whatifs/preview.py) | brief | - | ROOM_MODE, ROOM_V2_DRAFTS, REHOOK_MAX_GAP_SEC, JOKE_EVERY_SEC_LONG, COLD_OPEN_LORE_FREE_SEC |
@@ -669,7 +672,7 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | build_request | D12 | D12 | ask | 24 / 72 | merged_verified, owner_answer | a code change that no lever can make: the spec, the files, the tests to add and the acceptance |
 | takeaway | any | L | record | 0 / 0 | - | one atomic learning from one department run (kept in the Takeaways tab, proposed to the Palace when it is new) |
 
-**Who owns each contract check** (a failed check becomes a problem memo to that department): D1: breakout_bar; D2: research, research_cadence; D4: audience_asks, canon_in_brief, cold_open, emotion_beat, end_tease, exhibits, format_ending, format_kept, grimm_prototype, hook_lab, idea_evidence, joke_density, no_retired, originality, owners_cut, palace_cited, palace_injected, retention, send_and_awe, time_ladder, verdict_line, verdict_style; D5: chapters, one_story, thumbnails, titles; D6: aliveness, animation, camera_path, camera_shown, impact_map, living_characters, moving_share, no_frozen_frames, opening_footage, opening_shown, promise_paid, real_motion, short_moving, slop_guard, stock_share, visual_change; D7: designed_voices, makers_line, music_bed, short_sound; D8: dept_contract, self_review, short_contract, takeaways_written; D9: release_sheet; D10: brain_playbook, topic_ladder; D12: docs_current, lever_verified; D13: short_open, short_plain, short_shape, viewer_breath, viewer_floor, viewer_inside, viewer_numbers, viewer_plain, viewer_probe, viewer_promise; D14: short_kept; C: decisions_executed; L: palace_health.
+**Who owns each contract check** (a failed check becomes a problem memo to that department): D1: breakout_bar, strategy_live; D2: research, research_cadence; D4: audience_asks, canon_in_brief, cold_open, emotion_beat, end_tease, exhibits, format_ending, format_kept, grimm_prototype, hook_lab, idea_evidence, joke_density, no_retired, originality, owners_cut, palace_cited, palace_injected, retention, send_and_awe, time_ladder, verdict_line, verdict_style; D5: chapters, one_story, thumbnails, titles; D6: aliveness, animation, camera_path, camera_shown, impact_map, living_characters, moving_share, no_frozen_frames, opening_footage, opening_shown, promise_paid, real_motion, short_moving, slop_guard, stock_share, visual_change; D7: designed_voices, makers_line, music_bed, short_sound; D8: dept_contract, self_review, short_contract, takeaways_written; D9: release_sheet; D10: brain_playbook, topic_ladder; D12: docs_current, lever_verified; D13: short_open, short_plain, short_shape, viewer_breath, viewer_floor, viewer_inside, viewer_numbers, viewer_plain, viewer_probe, viewer_promise; D14: short_kept; C: decisions_executed; L: palace_health.
 
 ## 12. The Execution Engine: from a decision to a change that runs (`whatifs/org/levers.py`, `execute.py`)
 - A ticket is ONE change: lever class, target, value. The engine compiles it into a typed operation with a registered way to verify and to undo it,
@@ -710,7 +713,7 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 |---|---|---|---|---|---|---|
 | WA_ON | D0 | bool | - | - | always: it is your own channel to the pipeline | the next complete run |
 | DASH_ON | D0 | bool | - | - | always: it is your own dashboard | the next complete run |
-| STANDARD_MAX_LONG_PER_MONTH | D1 | int | 1 to 8 | 1 | always: it changes the plan you set | the next complete run |
+| STANDARD_MAX_LONG_PER_MONTH | D1 | int | 4 to 8 | 1 | - | the next complete run |
 | PUBLISH_DAYS | D1 | days | - | - | always: it changes the plan you set | the next complete run |
 | VIDEOS_PER_MONTH_EST | D1 | int | 1 to 8 | 1 | always: it changes the plan you set | the next complete run |
 | FORMAT_SHARE_F1 | D1 | int | 0 to 100 | 20 | - | the next complete run |

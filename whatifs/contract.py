@@ -455,6 +455,16 @@ def p_research_cadence(ctx):
                   f"{s.get('escalated', 0)} escalated; {s.get('assessments', 0)} assessment(s) re-computed ({s.get('accept', 0)} accept, {s.get('test', 0)} test, "
                   f"{s.get('reject', 0)} reject); spent D2 Rs {s.get('D2_inr', 0)}, D3 Rs {s.get('D3_inr', 0)}")
 
+def p_strategy_live(ctx):
+    """v12 V4 (Strategy, D1): the CEO is alive - its review ran within STRATEGY_STALE_H hours and no decision has stood 26 hours as text without its
+    ticket. N/A with Strategy or the organisation off, and while the organisation is younger than STRATEGY_STALE_H on this Sheet."""
+    from whatifs.org import strategy as STR
+    p, s, na = STR.live_issues()
+    if na: return NA, na
+    if p: return FAIL, f"{len(p)} problem(s): " + " | ".join(p[:3])
+    return PASS, (f"Strategy reviewed {s.get('h')} h ago; {s.get('n', 0)} decisions on record ({s.get('verified', 0)} verified, {s.get('rolled_back', 0)} rolled back, "
+                  f"{s.get('undone', 0)} undone, {s.get('void', 0)} void)")
+
 def p_viewer_plain(ctx):
     """v12 V1b (the layman test, D13): few expert words - the distinct words a layman would not know, in the whole narration, in the first 30 s and
     piled into one sentence. Counted by code (whatifs/org/layman.py); names and the title's own words are not counted."""
@@ -858,6 +868,7 @@ FEATURES = [
     ("dept_contract", "script", p_dept_contract, "every department that worked on the script ran under the department contract: memos and playbook loaded, work done, memos sent, takeaway written, tickets executed, run reported"),
     ("decisions_executed", "script", p_decisions_executed, "nothing the organisation decided stays text: every decision has tickets, every ticket is executed with proof, refused with a reason or escalated"),
     ("lever_verified", "script", p_lever_verified, "every change made by ticket is written down before and after, verified by later evidence or rolled back; none sits past its window"),
+    ("strategy_live", "script", p_strategy_live, "the CEO is alive: Strategy reviewed within STRATEGY_STALE_H hours and every decision became a ticket the engine executes (no decision stays text)"),
     ("research_cadence", "script", p_research_cadence, "R&D researched on schedule with sources proven by code, and the Review Board judged every research memo in time, blind, across two model families, with a rejected canary and the verdict computed by code"),
     ("viewer_promise", "script", p_viewer_promise, "the video opens on a made picture and the thumbnail's promise is on screen within PROMISE_BY_SEC seconds (the viewer's seat)"),
     ("viewer_breath", "script", p_viewer_breath, "the voice breathes: a real pause at least every BREATH_EVERY_S seconds (the viewer's seat)"),

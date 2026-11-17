@@ -15,8 +15,8 @@ EVERYONE = ("owner_memo", "performance_memo", "problem_memo", "decision_memo", "
 DEPTS = {
     "D0":  {"mission": "capture every owner input verbatim, route it, guarantee it is honoured", "cadence": "tick", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/wa.py", "whatifs/notify.py", "whatifs/dash.py", "whatifs/owner_view.py"), "levers": ("WA_ON", "DASH_ON"), "takes": ()},
-    "D1":  {"mission": "goals, the monthly and weekly plan, cadence, priorities, budget allocation, urgency", "cadence": "weekly", "cap_inr": None, "inject": "brief",
-            "wraps": ("whatifs/replan.py", "whatifs/manage.py"), "levers": ("STANDARD_MAX_LONG_PER_MONTH", "PUBLISH_DAYS", "VIDEOS_PER_MONTH_EST", "FORMAT_SHARE_F1", "FORMAT_SHARE_F2", "FORMAT_SHARE_F3", "THINK_BOOST_VARIANTS"), "takes": ()},
+    "D1":  {"mission": "goals, the monthly and weekly plan, cadence, priorities, budget allocation, urgency", "cadence": "daily", "cap_inr": None, "inject": "brief",
+            "wraps": ("whatifs/replan.py", "whatifs/manage.py", "whatifs/org/strategy.py"), "levers": ("STANDARD_MAX_LONG_PER_MONTH", "PUBLISH_DAYS", "VIDEOS_PER_MONTH_EST", "FORMAT_SHARE_F1", "FORMAT_SHARE_F2", "FORMAT_SHARE_F3", "THINK_BOOST_VARIANTS"), "takes": ()},
     "D2":  {"mission": "automatic research: outliers, techniques, platform policy, tools, audience, competitors", "cadence": "daily", "cap_inr": 300, "inject": "brief",
             "wraps": ("whatifs/org/rnd.py", "whatifs/outlier_lab.py", "whatifs/demand.py", "whatifs/research.py", "whatifs/scout.py"), "levers": ("RESEARCH_ON", "IDEA_MIN_MULTIPLE", "RESEARCH_PER_WEEK"), "takes": ()},
     "D3":  {"mission": "assess every research and creative memo: evidence, novelty, impact, feasibility, cost, risk", "cadence": "weekly", "cap_inr": 120, "inject": "brief",
@@ -85,13 +85,14 @@ ENTRY = {
     "D10": (("whatifs/cli.py", "daily"), ("whatifs/ladder.py", "promote")),      # v12 V2c-b: the promote rule runs when a long video is about to start
     "D2":  (("whatifs/cli.py", "daily"), ("whatifs/cli.py", "weekly")),             # v12 B5: the learning job runs R&D first (daily always, weekly when due)
     "D3":  (("whatifs/cli.py", "assess"),),                                          # v12 B5: then the Review Board, whenever a research memo waits
+    "D1":  (("whatifs/cli.py", "review"),),                                          # v12 V4: Strategy's daily review, in the learning job's strategy round
     "D11": (("whatifs/cli.py", "watch"),),                                           # v12 V4: Finance's daily watch, in the learning job's strategy round
     "D12": (("whatifs/org/execute.py", "operate"),),
     "D13": (("whatifs/episode.py", "seat"), ("whatifs/episode.py", "probe"), ("whatifs/shorts2.py", "short_seat"), ("whatifs/episode.py", "floor"), ("whatifs/org/verdicts.py", "verdict")),      # v12 V1: the viewer's seat, right before the Animation Director; V2c: the seat for a Short; V1c: the judged floor (never demanded by a gate: it runs only on a film the measured checks passed) and his verdict scoring it (on his tap)
     "D14": (("whatifs/shorts2.py", "write"), ("whatifs/shorts2.py", "make")),                                        # v12 V2c: the Shorts Studio writes and makes every standalone Short
 }
 # Departments with no run of their own yet -> the build batch that wires them. A RATCHET: this list may only shrink (tests/test_v12_org.py).
-PENDING = {"D0": "B9", "D1": "B9", "C": "B6", "L": "B8"}      # v12 V4: D11 is wired
+PENDING = {"D0": "B9", "C": "B6", "L": "B8"}      # v12 V4: D11 and D1 are wired
 
 # The runs an episode must have finished before each gate (the gate itself is the run in flight).
 EPISODE_RUNS = {
@@ -111,7 +112,7 @@ CHECK_OWNER = {
     "designed_voices": "D7", "music_bed": "D7", "animation": "D6", "real_motion": "D6", "no_frozen_frames": "D6", "slop_guard": "D6", "impact_map": "D6",
     "visual_change": "D6", "living_characters": "D6", "aliveness": "D6", "promise_paid": "D6", "thumbnails": "D5", "titles": "D5", "chapters": "D5",
     "self_review": "D8", "breakout_bar": "D1", "dept_contract": "D8", "takeaways_written": "D8",
-    "decisions_executed": "C", "lever_verified": "D12", "research_cadence": "D2", "palace_injected": "D4", "palace_cited": "D4", "canon_in_brief": "D4",
+    "decisions_executed": "C", "lever_verified": "D12", "research_cadence": "D2", "strategy_live": "D1", "palace_injected": "D4", "palace_cited": "D4", "canon_in_brief": "D4",
     "viewer_numbers": "D13", "viewer_breath": "D13", "viewer_promise": "D13", "viewer_plain": "D13", "viewer_probe": "D13", "viewer_inside": "D13", "format_kept": "D4", "format_ending": "D4",
     "short_open": "D13", "short_plain": "D13", "short_shape": "D13", "short_kept": "D14", "short_contract": "D8", "topic_ladder": "D10", "release_sheet": "D9",
     "moving_share": "D6", "stock_share": "D6", "short_moving": "D6", "short_sound": "D7",      # v12 V2d-b: the motion ladder, real footage, a Short's first second

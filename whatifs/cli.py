@@ -32,12 +32,25 @@ def strategy_round():
     channel is not paused (no decision for a channel that makes nothing; the first round after counts what arrived). Each run in its own try: a
     failure is recorded by the department runner and logged, never raised."""
     from whatifs.core import S
-    from whatifs.org import runner as ORG, execute as EX, finance as FIN
+    from whatifs.org import runner as ORG, execute as EX, finance as FIN, strategy as STR
     from whatifs.manage import paused
     if not S("STRATEGY_ON", bool) or not EX.on() or paused(): return False
     try: ORG.run("D11", "watch", FIN.watch)
     except Exception as x: log(f"Finance watch failed: {type(x).__name__}: {str(x)[:160]}", "WARN")
+    try: ORG.run("D1", "review", STR.review)
+    except Exception as x: log(f"Strategy review failed: {type(x).__name__}: {str(x)[:160]}", "WARN")
+    try: STR.tell()                                                                         # level-triggered: a decision whose ticket is on tab Memos is told once
+    except Exception as x: log(f"Strategy's message was not sent: {type(x).__name__}: {str(x)[:160]}", "WARN")
     return True
+
+def strategy_catch_up():
+    """v12 V4: the script gate judges strategy_live, but only the daily learning job runs the round - a production job that would meet a stale review
+    (or a decision standing as text) runs the round first. Never stops the production."""
+    try:
+        from whatifs.org import strategy as STR
+        if STR.live_issues()[0]:
+            log("Strategy's round is overdue: this production job runs it first", "WARN"); strategy_round()
+    except Exception as x: log(f"Strategy catch-up skipped: {type(x).__name__}: {str(x)[:160]}", "WARN")
 
 def research_catch_up():
     """v12 B5: the script gate judges research_cadence, but only the daily learning job ran the round - a dropped cron, or an organisation switched
@@ -72,6 +85,7 @@ def main():
         elif cmd == "produce":
             from whatifs.episode import produce
             research_catch_up()                                         # v12 B5: never hold a video for a research round this job can run itself
+            strategy_catch_up()                                         # v12 V4: nor for Strategy's round
             slot = sys.argv[2]; res = produce(slot)
             print(json.dumps({k: res.get(k) for k in ("ok", "episode", "yt")}, default=str))      # no title or file names in the public log
         elif cmd == "release1":                                         # the long video's release step (v12 V2c-b2b: one step - no cut-down reels follow)

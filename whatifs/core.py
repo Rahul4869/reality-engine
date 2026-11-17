@@ -178,6 +178,10 @@ TABS = {
  # v12 V4 (the scoreboard, whatifs/scoreboard.py): one row per UTC date - the Partner Program's own numbers as read that day (subscribers, the long
  # watch hours counted at SCOREBOARD_ELIGIBLE_PCT, the Shorts views of 90 days); written by scoreboard.keep alone, never updated or removed
  "Scoreboard":      ["date", "subs", "hours", "shorts_90", "src"],
+ # v12 V4 (Strategy's loop, whatifs/org/strategy.py): one row per decision, judgement, hand or watch - written and moved by strategy.py alone; `briefed` is
+ # stamped only after a brief carrying the row went out (digests.send); `observed` and `scored` are written by the rules' readers (3.5)
+ "Decisions":       ["id", "ts", "rule", "key", "old", "new", "why", "numbers", "effect_before", "effect_after", "prediction", "ticket", "state", "told",
+                     "frozen_until", "observed", "scored", "briefed"],
 }
 
 class LocalStore:
@@ -885,6 +889,12 @@ DEFAULTS = {
  "CREDIT_COVER_MONTH_MAX_INR": ("3300", "v12 V4 (the owner's cell, no lever): the most the Claude credit's lane covers in a month - beyond it Claude's rows count against the cap again (code cannot see whether the credit really pays). 1.5 x (4 long videos x Rs 170.5 of text lines (writing 166 + hook lab 4 + line-up 0.5) x 1.10 + 12 Shorts x (Rs 36 writing + 4 x Rs 12 boost) + R&D 300 + Review Board 120) = 3,267.3, up to the next Rs 100 - TO BE CONFIRMED by the measurement of the first act"),
  "THINK_BOOST_VARIANTS": ("0", "v12 V4 (a lever of Strategy, D1; 0-4): more Short scripts asked while the Claude credit's lane is open (they feed the blind jury, whose winners teach); the reader closes it on the window's end"),
  "SHORT_VARIANT_EST_INR": ("12", "v12 V4: one more Short script in the estimate (a third of the Rs 36 lump that pays three scripts, the jury and the fix - it errs upward)"),
+ "STRATEGY_MOVES_PER_WEEK": ("3", "v12 V4 (Strategy, D1): at most this many decisions in any seven days (his undos and the desk's tickets do not count); one a review"),
+ "STRATEGY_UNDO_FREEZE_DAYS": ("28", "v12 V4: a key he took back (Undo) or set by hand is not moved by any rule for this many days - the loop never fights his hand"),
+ "STRATEGY_RETRY_DAYS": ("7", "v12 V4: a key whose move the engine refused or rolled back is not moved again for this many days (two such tries: frozen 28 days, a memo to Operations)"),
+ "STRATEGY_STALE_H": ("36", "v12 V4: check strategy_live fails when Strategy's newest complete review is older than this many hours"),
+ "STRATEGY_WEEKLY_AT": ("", "auto - v12 V4: when the brief last carried Strategy's weekly line"),
+ "STRATEGY_TODAY": ("", "auto - v12 V4: the newest review's refusals and counting, for the brief's one line on a day without a decision"),
  "FINANCE_SEEN_TS": ("", "auto - v12 V4: the newest cost summary Finance's watch has read (an overrun after it becomes a memo to Operations)"),
  "GEMINI_CREDIT_USD_MONTH": ("0", "v9.4a: monthly Gemini API credit from Google AI Pro (10 when linked); money view only"),
  "FACTS_WATCH_ON": ("TRUE", "v9.4a: weekly check of the official change logs (YouTube API, YPP, Anthropic, Gemini, fal, Meta, Cloudflare, GitHub); a change that affects us becomes one card"),

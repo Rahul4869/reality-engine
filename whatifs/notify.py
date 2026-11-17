@@ -12,7 +12,7 @@ DEFAULTS = {}          # kind -> callable(row) run when the row expires unanswer
 
 def _ensure_handlers():
     """Every feature's answer/default handlers are known before an answer or a default runs (any entry point: email, dashboard, WhatsApp, tick)."""
-    for mod, fn in (("whatifs.builds", "ensure_registered"), ("whatifs.visual_lab", "register"), ("whatifs.wa", "register"), ("whatifs.caretaker", "register"), ("whatifs.bakeoff", "register"), ("whatifs.steward", "register"), ("whatifs.contract", "register"), ("whatifs.specials", "register"), ("whatifs.sheets", "register"), ("whatifs.breakout", "register"), ("whatifs.ladder", "register"), ("whatifs.replan", "register"), ("whatifs.org.memos", "register"), ("whatifs.org.execute", "register"), ("whatifs.org.floor", "register"), ("whatifs.org.verdicts", "register"), ("whatifs.maker", "register")):
+    for mod, fn in (("whatifs.builds", "ensure_registered"), ("whatifs.visual_lab", "register"), ("whatifs.wa", "register"), ("whatifs.caretaker", "register"), ("whatifs.bakeoff", "register"), ("whatifs.steward", "register"), ("whatifs.contract", "register"), ("whatifs.specials", "register"), ("whatifs.sheets", "register"), ("whatifs.breakout", "register"), ("whatifs.ladder", "register"), ("whatifs.replan", "register"), ("whatifs.org.memos", "register"), ("whatifs.org.execute", "register"), ("whatifs.org.floor", "register"), ("whatifs.org.verdicts", "register"), ("whatifs.maker", "register"), ("whatifs.org.strategy", "register")):
         try: getattr(__import__(mod, fromlist=[fn]), fn)()
         except Exception as e: log(f"handlers from {mod} not loaded: {scrub(e)[:80]}", "WARN")
 
@@ -21,7 +21,10 @@ def register(kind, on_answer=None, on_default=None):
     if on_default: DEFAULTS[kind] = on_default
 
 
-def _link(verb, aid):
+INFORM_KINDS = ("strategy", "desk")      # v12 V4: rows that tell him what was done ("Nothing to do"): never counted or listed as waiting for him, never expire
+
+def link(verb, aid):
+    """The one-tap link of an owner action (v12 V4: public - the brief's Undo links use it)."""
     from urllib.parse import quote
     repo = env("GH_REPO")
     if not repo: return ""
@@ -77,7 +80,7 @@ def send(kind, text, buttons=(), episode=None, tier="week", default=None, expire
 
 def _email_body(row):
     btns = json.loads(row.get("buttons") or "[]")
-    links = " &nbsp;|&nbsp; ".join(f"<a href='{_link(v, row['id'])}'>{l}</a>" for l, v in btns if _link(v, row["id"]))
+    links = " &nbsp;|&nbsp; ".join(f"<a href='{link(v, row['id'])}'>{l}</a>" for l, v in btns if link(v, row["id"]))
     dflt = f"<p><i>If you do nothing: {row['default_action']}" + (f" (at {row['expires_at'][:16].replace('T', ' ')} UTC)" if row.get("expires_at") else "") + "</i></p>" if row.get("default_action") else ""
     return f"<p>{row['text']}</p><p>{links}</p>{dflt}"
 
@@ -160,7 +163,7 @@ def digest(now=None, force=False):
     from whatifs import governor as G
     st = store(); eps = st.rows("Episodes"); week_ago = (now_utc() - dt.timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
     recent = [e for e in eps if str(e.get("slot_et", "")) >= week_ago]
-    opens = open_rows("week") + open_rows("now")
+    opens = [r for r in open_rows("week") + open_rows("now") if r.get("kind") not in INFORM_KINDS]      # v12 V4: "Nothing to do" is never shown as waiting
     try: spent = G.own_spend_inr()                                                     # v12 V4: his own money (= the list-price spend with STRATEGY_ON FALSE)
     except Exception: spent = 0.0
     try:
@@ -177,7 +180,7 @@ def digest(now=None, force=False):
                        + (f" (about Rs {cover:.0f} of it covered by free credits)" if cover > 0 else "") + "</p>")
     lines.append("<p><b>This week:</b> " + (", ".join(f"{str(e.get('title') or e.get('episode_id'))[:50]} [{e.get('status')}]" for e in recent) or "no videos yet") + "</p>")
     if opens:
-        lines.append("<p><b>Waiting for you (optional):</b></p><ul>" + "".join(f"<li>{r['text'][:160]} " + " ".join(f"<a href='{_link(v, r['id'])}'>{l}</a>" for l, v in json.loads(r.get('buttons') or '[]') if _link(v, r['id'])) + "</li>" for r in opens[:12]) + "</ul>")
+        lines.append("<p><b>Waiting for you (optional):</b></p><ul>" + "".join(f"<li>{r['text'][:160]} " + " ".join(f"<a href='{link(v, r['id'])}'>{l}</a>" for l, v in json.loads(r.get('buttons') or '[]') if _link(v, r['id'])) + "</li>" for r in opens[:12]) + "</ul>")
     else: lines.append("<p>Nothing is waiting for you.</p>")
     try:
         from whatifs import publish as PUB

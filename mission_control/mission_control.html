@@ -567,7 +567,8 @@ function renderDocket() {
   const items = S.docket || [];
   const open = items.filter(c => !ruled[c.id]).length;
   return `<div class="sec-head"><h2 class="serif">Today’s docket</h2><p>${open ? open + " waiting" : "All clear"}</p></div>
-    ${items.length ? items.map(caseCard).join("") : `<div class="empty">Nothing needs you. The engine follows its defaults.</div>`}`;
+    ${items.length ? items.map(caseCard).join("") : `<div class="empty">Nothing needs you. The engine follows its defaults.</div>`}
+    ${(S.decided || []).length ? `<div class="sec-head"><h2 class="serif">Decided for you - tap to undo</h2><p>${S.decided.length}</p></div>${S.decided.map(caseCard).join("")}` : ""}`;
 }
 
 /* ------------------------------------------------------------------ progress */
@@ -722,7 +723,7 @@ document.addEventListener("click", async ev => {
     return rule(c.id, key, verb, key === "A" ? "A stays live. Covers switch only if you pick another." : `Cover ${key} goes live before release. Logged as your taste for the Packager.`);
   }
   if (t.dataset.verb) {
-    const c = S.docket.find(x => x.id === t.dataset.case), label = t.dataset.label;
+    const c = (S.docket || []).concat(S.decided || []).find(x => x.id === t.dataset.case), label = t.dataset.label;
     if (/^DISCUSS\|/.test(t.dataset.verb)) {
       if (S.whatsapp) window.open("https://wa.me/" + encodeURIComponent(S.whatsapp) + "?text=" + encodeURIComponent("Discuss: " + c.title), "_blank", "noopener");
       else toast("WhatsApp is not connected yet. Use your Opus chat for now.", 3500);

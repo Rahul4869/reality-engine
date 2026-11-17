@@ -14,7 +14,8 @@ def _risks(view):
     eps = store().rows("Episodes")
     held = [e.get("episode_id") for e in eps if e.get("status") in ("HOLD_QC", "AWAITING_APPROVAL", "HELD_BY_OWNER")]
     if held: out.append(f"Waiting for you: {', '.join(held[-3:])} [Episodes]")
-    opn = [r for r in store().rows("Owner_Actions") if str(r.get("status", "")).upper() in ("", "QUEUED", "PENDING", "SENT", "OPEN")]
+    from whatifs.notify import INFORM_KINDS
+    opn = [r for r in store().rows("Owner_Actions") if str(r.get("status", "")).upper() in ("", "QUEUED", "PENDING", "SENT", "OPEN") and r.get("kind") not in INFORM_KINDS]      # v12 V4
     if len(opn) > 2: out.append(f"{len(opn)} open decisions on the dashboard [Owner_Actions]")
     return out or ["No risks flagged [rule-based check of spend, holds and open decisions]"]
 
@@ -22,7 +23,8 @@ def compose(kind="daily", demo=False, now=None):
     from whatifs import owner_view as OV, charts as CH, scoreboard as SB
     now = now or now_utc(); v = OV.build(demo=demo)
     head = ("[DEMO] " if demo else "") + ("Morning brief" if kind == "daily" else "Weekly brief") + f", {now.astimezone(IST):%a %d %b}"
-    parts = [f"*{head}*"] + [p for p in (SB.line(now),) if p]                     # v12 V4: the scoreboard is the first thing after the head ("" with STRATEGY_ON FALSE)
+    from whatifs.org import strategy as STR
+    parts = [f"*{head}*"] + [p for p in (SB.line(now), STR.brief(now)) if p]      # v12 V4: the scoreboard, then Strategy's part *Decisions* ("" with STRATEGY_ON FALSE)
     parts += [OV.render("today", v), OV.render("numbers", v), OV.render("observations", v), OV.render("strategy", v),
               OV.render("hot_topics", v), OV.render("recommendations", v)]
     if kind == "weekly": parts += [OV.render("experiments", v), OV.render("money", v), learned(demo)]
@@ -49,8 +51,13 @@ def send(kind="daily", demo=False, now=None):
             WA.send_buttons("Open a section:", [("Menu", "MENU|menu"), ("Numbers", "MENU|numbers"), ("What to post", "MENU|recommendations")]); sent = "whatsapp"
         else:
             WA.send_template(f"Your {kind} brief is ready ({text.splitlines()[0].strip('*')}).", ["Menu", "Numbers", "Pause"], ["MENU|menu", "MENU|numbers", "PAUSE"]); sent = "template"
-    try: PUB.email(f"Reality Engine {kind} brief", "<pre style='font-family:inherit;white-space:pre-wrap'>" + text.replace("<", "&lt;") + "</pre>")
-    except Exception: pass
+    mailed = False
+    try: mailed = bool(PUB.email(f"Reality Engine {kind} brief", "<pre style='font-family:inherit;white-space:pre-wrap'>" + text.replace("<", "&lt;") + "</pre>"))
+    except Exception as e: log(f"{kind} brief e-mail failed: {scrub(e)[:120]}", "WARN")
+    if sent == "whatsapp" or mailed:                                              # v12 V4: what was shown is stamped only when it went
+        try:
+            from whatifs.org import strategy as STR; STR.briefed(now)
+        except Exception as e: log(f"the brief's rows were not stamped: {scrub(e)[:120]}", "WARN")
     if kind == "daily": set_setting("DIGEST_DAILY_SENT", now.astimezone(IST).date().isoformat())
     else: set_setting("DIGEST_WEEKLY_SENT", f"{now.astimezone(IST).isocalendar()[0]}-W{now.astimezone(IST).isocalendar()[1]:02d}")
     log(f"{kind} brief sent ({sent})"); return {"kind": kind, "via": sent, "chars": len(text), "chart": bool(chart)}

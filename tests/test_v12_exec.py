@@ -400,11 +400,11 @@ def test_a_merge_whose_checks_never_report_is_escalated_and_never_reverted_on_a_
     assert row["state"] == "failed" and "the checks on the merge commit never reported" in row["note"] and len(hub.sent) == n and not hub.closed and MEM.get(t["id"])["status"] == "escalated"
 
 def test_the_tick_takes_up_a_new_ticket_of_any_wired_department_without_waiting_for_its_next_video(setting):
-    P.ensure_seed(); ta = ticket("D6", "A", "palace:b4-push-in", item()); tb = ticket(); tx = ticket("D1", "B", "VIDEOS_PER_MONTH_EST", 5, subject="Plan for five videos"); T = now()
+    P.ensure_seed(); ta = ticket("D6", "A", "palace:b4-push-in", item()); tb = ticket(); tx = ticket("D0", "B", "VIDEOS_PER_MONTH_EST", 5, subject="Plan for five videos"); T = now()      # v12 V4: D1 is wired - a still-unwired department (D0) keeps the case (BY DESIGN)
     st().append("Episodes", [{"episode_id": "EP1", "status": "PLANNING", "updated": core.iso(T)}]); rep = EXE.engine_tick(now=T)
     assert rep["moved"] == {ta["id"]: "new -> applied", tb["id"]: "new -> queued"} and "operated" not in rep and not st().rows("Sessions")          # no department run was needed
     assert P.get(P.item_id("b4-push-in"))["status"] == "accepted" and cell("JOKE_EVERY_SEC_LONG") == "15" and MEM.get(tb["id"])["status"] == "in_progress"
-    assert trow(tx["id"]) is None and MEM.get(tx["id"])["level"] == 2                                                              # D1 has no wired run: its ticket is with the owner, not with the engine
+    assert trow(tx["id"]) is None and MEM.get(tx["id"])["level"] == 2                                                              # D0 has no wired run: its ticket is with the owner, not with the engine
     assert MEM.watchdog(now=T + 30 * H)["escalated"] == [] and acts(tb["id"]) == ["queued"]                                         # taken up in time: nothing climbs for a missed acknowledgement
     st().update("Episodes", "episode_id", "EP1", {"status": "UPLOADED"}); assert EXE.engine_tick(now=T + 31 * H)["moved"] == {tb["id"]: "queued -> applied"} and cell("JOKE_EVERY_SEC_LONG") == "10"
     setting("EXEC_ON", "FALSE"); t3 = ticket("D6", "B", "ANIM_SHOTS", 3, subject="One animated scene fewer"); assert EXE.engine_tick(now=T + 32 * H) == {"on": False} and trow(t3["id"]) is None
@@ -490,7 +490,7 @@ def decision(tickets, cls="B", **k):
 
 def test_decisions_executed_passes_on_real_tickets_and_fails_on_text_only_decisions():
     assert {(f[0], f[1]) for f in CON.FEATURES} >= {("decisions_executed", "script"), ("lever_verified", "script")} and REG.check_owner("decisions_executed") == "C" and REG.check_owner("lever_verified") == "D12"
-    assert sum(1 for f in CON.FEATURES if f[1] == "script") == 40 and sum(1 for f in CON.FEATURES if f[1] == "final") == 23 and sum(1 for f in CON.FEATURES if f[1] == "short") == 5 and sum(1 for f in CON.FEATURES if f[1] == "release") == 1          # v12 V2c: + the short gate (a standalone Short); V2c-b2: + its release gate; V2c-b2b: + the opening (one check at each gate of the long video)
+    assert sum(1 for f in CON.FEATURES if f[1] == "script") == 41 and sum(1 for f in CON.FEATURES if f[1] == "final") == 23 and sum(1 for f in CON.FEATURES if f[1] == "short") == 5 and sum(1 for f in CON.FEATURES if f[1] == "release") == 1          # v12 V2c: + the short gate (a standalone Short); V2c-b2: + its release gate; V2c-b2b: + the opening (one check at each gate of the long video)
     s, ev = CON.p_decisions_executed({}); assert s == CON.NA and "nothing to execute" in ev and CON.p_lever_verified({})[0] == CON.PASS          # nothing decided yet: not a PASS (the lever table is still judged)
     t, T = applied_setting(); d = decision([t["id"]]); s, ev = CON.p_decisions_executed({}); assert s == CON.PASS and ev.startswith("1 decision(s), 1 ticket(s): none is text only; 1 open")
     d2 = decision([], subject="Change the camera style for the cold open"); assert CON.p_decisions_executed({})[0] == CON.PASS                # inside the two hours in which its tickets may still arrive

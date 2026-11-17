@@ -15,8 +15,9 @@ def _f(v, d=0.0):
 def _docket():
     from whatifs import packaging as PK
     st = store(); cards = []
+    from whatifs.notify import INFORM_KINDS
     for r in st.rows("Owner_Actions"):
-        if r.get("status") not in ("OPEN", "QUEUED") or r.get("tier") == "fyi": continue
+        if r.get("status") not in ("OPEN", "QUEUED") or r.get("tier") == "fyi" or r.get("kind") in INFORM_KINDS: continue      # v12 V4: what was done for him is not waiting
         btns = json.loads(r.get("buttons") or "[]")
         kind = r.get("kind"); verbs = {}
         if kind == "build_ready":
@@ -52,6 +53,17 @@ def _docket():
                               "default_label": "Locks by itself after 72 h", "default_at": "", "window_h": 72,
                               "verbs": {"Lock these": f"LOCKSHEETS|{ch}", "Redo": f"REDOSHEETS|{ch}"}})
     return cards
+
+def _decided():
+    """v12 V4: what was decided for him (kinds strategy and desk) - a list of its own ("Decided for you - tap to undo"), never in the count of open decisions."""
+    from whatifs.notify import INFORM_KINDS
+    out = []
+    for r in store().rows("Owner_Actions"):
+        if r.get("status") not in ("OPEN", "QUEUED") or r.get("kind") not in INFORM_KINDS: continue
+        btns = json.loads(r.get("buttons") or "[]")
+        out.append({"id": r["id"], "kind": "decided", "title": re.sub(r"<[^>]+>", "", r.get("text", ""))[:90], "why": re.sub(r"<[^>]+>", "", r.get("text", ""))[:400],
+                    "default_label": r.get("default_action") or "It stays", "default_at": "", "window_h": 0, "verbs": {str(lbl)[:24]: f"ACT|{r['id']}|{i}" for i, (lbl, _v) in enumerate(btns)}})
+    return out
 
 def _progress():
     rows = store().rows("Analytics")
@@ -134,7 +146,7 @@ def build_snapshot():
                        "upload_lock": LA.lock_state() == "on",
                        "next_release": {"episode": nr.get("episode_id", ""), "title": str(nr.get("title") or "")[:90], "case_no": len([e for e in eps if e.get("yt_id")]) + 1,
                                         "slot_iso": nr.get("slot_et")} if nr else None},
-            "docket": _docket(), "progress": _progress(), "learned": (rules + lessons)[-6:],
+            "docket": _docket(), "decided": _decided(), "progress": _progress(), "learned": (rules + lessons)[-6:],
             "lab": _lab(), "money": _money(),
             "health": _health(),
             "settings": {"shorts_per_week": S("SHORTS_PER_WEEK", int),
@@ -224,7 +236,12 @@ def route(verb):
         else:
             try: val = str(max(1, min(5, int(float(val))))) if kind == "week" else str(max(0, min(4, int(float(val)))))
             except ValueError: return False, "not a number"
-        set_setting(key, val); return True, f"{key} = {val}"
+        set_setting(key, val)
+        try:                                                                                     # v12 V4: his own tap on a portfolio key is a hand: the key is frozen
+            from whatifs.org import strategy as STR
+            if STR.on() and key in STR.PORTFOLIO: STR.hand(key, val)
+        except Exception as e: log(f"dashboard: the hand on {key} was not recorded: {scrub(e)[:120]}", "WARN")
+        return True, f"{key} = {val}"
     return False, "That action is not allowed."
 
 def handle_action(payload_json):

@@ -19,7 +19,8 @@ def _j(keys, lo, hi, owner="", why="", checks=(), pair=False): return {"kind": "
 # rolled back; a lever without checks is judged by the next complete run of its department. Which department owns a lever: registry.DEPTS.
 LEVERS = {
     "WA_ON": _b("always", "it is your own channel to the pipeline"), "DASH_ON": _b("always", "it is your own dashboard"),
-    "STANDARD_MAX_LONG_PER_MONTH": _n("int", 1, 8, 1, "always", PLAN), "PUBLISH_DAYS": {"kind": "days", "owner": "always", "why": PLAN, "checks": ()},
+    "STANDARD_MAX_LONG_PER_MONTH": _n("int", 4, 8, 1),      # v12 V4: Strategy decides inside 4 to 8 and the money (the redesign's 4.4)
+    "PUBLISH_DAYS": {"kind": "days", "owner": "always", "why": PLAN, "checks": ()},
     "VIDEOS_PER_MONTH_EST": _n("int", 1, 8, 1, "always", PLAN),
     "RESEARCH_ON": _b("off", OWNER, ("research",)), "IDEA_MIN_MULTIPLE": _n("float", 2, 20, 2, "down", GATE, ("idea_evidence",)),
     "RESEARCH_PER_WEEK": _n("int", 1, 8, 2, "up", COST, ("research_cadence",)), "BOARD_MIN_EVIDENCE": _n("int", 3, 9, 1, "down", GATE, ("research_cadence",)),
