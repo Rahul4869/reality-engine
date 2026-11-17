@@ -454,11 +454,8 @@ def weekly(now=None, st=None):
 def risk_words(now=None):
     """The risk words of the weekly line: the newest risk line (3.5), then the watch book's (memo 3.6, once it exists)."""
     rs = sorted([r for r in _rows() if r.get("rule") == "RISK"], key=lambda r: r["ts"]); out = f"Risk line: {rs[-1]['why']}." if rs else ""
-    try:
-        from whatifs.org import risk as RISK
-        w = RISK.words(now); out = (out + " " + w).strip() if w else out
-    except ImportError: pass
-    return out
+    from whatifs.org import risk as RISK
+    w = RISK.words(now); return (out + " " + w).strip() if w else out
 
 def briefed(now=None, st=None):
     """Stamp `briefed` on every row the brief that just WENT carried (rows not later than the brief's own `now`), and the weekly line's clock."""
@@ -577,8 +574,8 @@ def review(brief):
     resend = settle(now, st)
     hs = hands(now, st)
     judge(now, st); observe(now, st)
-    risks = book(now, st)
-    c, refused = next_move(now, st); memos = list(resend); decided = 0
+    risks, risk_memos = book(now, st)
+    c, refused = next_move(now, st); memos = list(resend) + list(risk_memos); decided = 0
     if c: _row, memo = decide(c, now, st); memos.append(memo); decided = 1
     cnt = counting(now)
     set_setting("STRATEGY_TODAY", json.dumps({"at": iso(now), "refused": refused[:3], "counting": cnt}))
@@ -587,11 +584,9 @@ def review(brief):
                measures={"decisions": decided, "refused": len(refused), "counting": len(cnt), "risks": risks, "candidates": 0, "hands": len(hs)})
 
 def book(now=None, st=None):
-    """The watch book's pass (memo 3.6; 0 until it exists)."""
-    try:
-        from whatifs.org import risk as RISK
-        return RISK.watch(now, st)
-    except ImportError: return 0
+    """The watch book's pass (memo 3.6): (rows written, memos for Out.memos)."""
+    from whatifs.org import risk as RISK
+    return RISK.run(now, st)
 
 # ------------------------------------------------------------------ what production DID (a later review fills `observed`; never the gate's arithmetic)
 def observe(now=None, st=None):

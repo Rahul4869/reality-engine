@@ -10,7 +10,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `heygen/heygen-video/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 3 standalone Shorts a week, 12 a month at most - every topic starts as a Short and the promote rule picks the long video's topic (`whatifs/ladder.py`); spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 136 code modules, 852 settings, 88 Sheet tabs, 25 GitHub workflows.
+- Size: 137 code modules, 860 settings, 88 Sheet tabs, 25 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -510,6 +510,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | whatifs/org/memos.py | Memos: the organisation's nervous system - validated on write, read only by their audience, moved only with proof, escalated by the SLA watchdog when a clock runs out. |
 | whatifs/org/palace.py | Knowledge Palace: the one repository every department reads and writes - guarded items, life cycle, versions and bounded department playbooks. |
 | whatifs/org/registry.py | Department registry: what each department is for, the code it wraps, its rhythm, levers, thinking cap, owned checks and the call sites that really run under the runner. |
+| whatifs/org/risk.py | The watch book (D1): a danger has an owner, a measure and an act the same day; WATCH is data. |
 | whatifs/org/rnd.py | R&D (D2): a research agenda computed from the organisation's own gaps, one bounded web-search question at a time, every source proven by code, research memos to the Review Board. |
 | whatifs/org/runner.py | Department runner: the six-step contract of every department run - LOAD, ACT, EMIT, LEARN, EXECUTE, REPORT - each proven by a receipt the runner itself builds and chains. |
 | whatifs/org/schemas.py | Memo schemas: every memo type the organisation can send - sender, audience, body, clocks, statuses and legal moves as data - with the validator that runs on every write. |

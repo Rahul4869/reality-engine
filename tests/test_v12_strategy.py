@@ -520,3 +520,87 @@ def test_a_point_judges_the_first_p_items_only(setting):
     for i, v in enumerate([10, 10, 20, 20, 30, 30, 40, 300] + [900] * 7): ladder_row(i, "S2", v, day=i)       # seven later winners do not rewrite the eighth item's verdict
     STR.judge(D0 + dt.timedelta(days=40))
     nb = json.loads(next(r for r in decisions() if r["state"] == "judged" and r["key"] == "SHORT_SHARE_S2")["numbers"]); assert nb["verdict"] == "below" and nb["median"] == 25.0
+
+# ------------------------------------------------------------------ step 5: the watch book (whatifs/org/risk.py)
+from whatifs.org import risk as RISK
+def watch_rows(key=None): return [r for r in decisions() if r.get("rule") == "WATCH" and (key is None or r["key"] == key)]
+def live_episode(i, vid): core.store().append("Episodes", [{"episode_id": f"EPW{i}", "status": "LIVE", "yt_id": vid, "title": f"Case {i}", "slot_et": core.iso(core.now_utc() - dt.timedelta(days=i + 1))}])
+def states(monkeypatch, answer): monkeypatch.setattr(RISK, "_video_states", lambda ids: answer if not callable(answer) else answer(ids))
+
+def test_a_rejected_video_closes_the_uploads_in_true_words_and_one_tap_opens_them(monkeypatch, setting):
+    setting("STRATEGY_ON", "TRUE"); setting("UPLOAD_LOCK", "off"); live_episode(1, "v1"); live_episode(2, "v2")
+    states(monkeypatch, {"v1": {"upload": "processed"}, "v2": {"upload": "rejected", "reason": "inappropriate"}})
+    assert RISK.run()[0] == 1 and core.S("UPLOAD_LOCK") == "on"
+    a = next(x for x in core.store().rows("Owner_Actions") if x["kind"] == "risk_lock")
+    assert a["text"].startswith("The uploads are closed: YouTube rejected Case 2 (inappropriate).") and "private" not in a["text"].lower() and "audit" not in a["text"].lower()
+    assert not a["expires_at"] and NTF.answer(a["id"], "RISK OPEN v2") == "the uploads are open" and core.S("UPLOAD_LOCK") == "off"
+    assert RISK.run()[0] == 0                                                                                   # a second review with the same flag writes nothing new
+
+def test_while_the_watch_holds_the_uploads_closed_production_waits_and_his_tap_lets_it_start(monkeypatch, setting):   # P11 / D-RISK5: the REAL gate obeys the lock
+    from whatifs import manage as M
+    monkeypatch.setattr(M, "_AUDIT_TEST", [True]); setting("STRATEGY_ON", "TRUE"); setting("UPLOAD_LOCK", "off"); live_episode(1, "v1")
+    assert M.audit_gate([])[0]                                                                                  # open: a new video may start
+    states(monkeypatch, {"v1": {"upload": "rejected", "reason": "inappropriate"}}); RISK.run()
+    ok, why = M.audit_gate([]); assert not ok and "UPLOAD_LOCK = on" in why                                    # the lock of the watch book holds production back
+    a = next(x for x in core.store().rows("Owner_Actions") if x["kind"] == "risk_lock"); NTF.answer(a["id"], "RISK OPEN v1")
+    assert M.audit_gate([])[0]                                                                                  # his one tap: production starts again
+
+def test_his_own_delete_closes_nothing_and_is_not_asked_again_and_an_unanswered_gone_closes_after_the_cells_hours(monkeypatch, setting):
+    setting("STRATEGY_ON", "TRUE"); setting("UPLOAD_LOCK", "off"); live_episode(1, "v1"); live_episode(2, "v2")
+    states(monkeypatch, {"v1": {"upload": "processed"}})                                                       # v2 is absent from an answer that holds v1
+    RISK.run(); a = next(x for x in core.store().rows("Owner_Actions") if x["kind"] == "risk_gone")
+    assert "If you deleted it, tap I deleted it." in a["text"] and "close in 12 hours" in a["text"] and core.S("UPLOAD_LOCK") == "off"
+    assert NTF.answer(a["id"], "RISK MINE v2").startswith("noted") and core.S("UPLOAD_LOCK") == "off"
+    RISK.run(); assert len([x for x in core.store().rows("Owner_Actions") if x["kind"] == "risk_gone"]) == 1       # never asked again
+    live_episode(3, "v3"); states(monkeypatch, {"v1": {"upload": "processed"}, "v2": {"upload": "deleted"}})       # v3 is gone and he says nothing
+    RISK.run(); NTF.expire_defaults(now=core.now_utc() + dt.timedelta(hours=13))
+    assert core.S("UPLOAD_LOCK") == "on" and next(x for x in core.store().rows("Owner_Actions") if x["kind"] == "risk_lock")["text"].startswith("The uploads are closed: Case 3 is gone from YouTube and you did not say")
+
+def test_a_failed_read_locks_nothing_and_a_limited_video_is_a_line_only(monkeypatch, setting):
+    setting("STRATEGY_ON", "TRUE"); setting("UPLOAD_LOCK", "off"); live_episode(1, "v1")
+    states(monkeypatch, None); assert RISK.run() == (0, []) and core.S("UPLOAD_LOCK") == "off"
+    states(monkeypatch, {"v1": {"upload": "processed", "rating": "ytAgeRestricted"}}); RISK.run()
+    assert core.S("UPLOAD_LOCK") == "off" and watch_rows("platform_flag")[0]["why"] == "YouTube age-restricted Case 1. Nothing was closed"
+    assert "- Risk: YouTube age-restricted Case 1. Nothing was closed" in STR.brief(core.now_utc() + dt.timedelta(minutes=1))
+
+def test_videos_list_answers_absent_only_inside_an_answer_and_never_from_a_failed_request(monkeypatch, setting):
+    import requests
+    setting("STRATEGY_ON", "TRUE"); monkeypatch.setattr(RISK, "FAKE", False)
+    monkeypatch.setattr(requests, "get", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("down")))
+    assert RISK._video_states(["v1"]) is None
+
+def test_repetition_fires_on_converging_scripts_by_their_median(setting):
+    setting("STRATEGY_ON", "TRUE"); same = ",".join(str(i) for i in range(64)); far = lambda k: ",".join(str(1000 * k + i) for i in range(64))
+    for i in range(5): core.store().append("Script_Fingerprints", [{"ts": core.iso(core.now_utc()), "episode_id": f"E{i}", "sig": far(i)}])
+    assert RISK.repetition()[0]["fires"] is False
+    core.store().append("Script_Fingerprints", [{"ts": "t", "episode_id": f"S{i}", "sig": same} for i in range(4)])
+    f = RISK.repetition()[0]; assert f["fires"] and f["point"] == "S3" and f["numbers"]["median"] == 1.0
+    core.store().replace("Script_Fingerprints", [{"ts": "t", "episode_id": f"M{i}", "sig": far(i)} for i in range(5)] + [{"ts": "t", "episode_id": "M9", "sig": far(1)}])
+    assert RISK.repetition()[0]["fires"] is False                                                              # ONE twin among four: the median, not the maximum
+
+def test_upload_mix_writes_one_row_a_week_and_its_memo_clears_itself(setting):
+    setting("STRATEGY_ON", "TRUE"); n = core.now_utc()
+    core.store().append("Specials", [{"id": f"SP{i}", "kind": "short", "yt_id": f"y{i}", "made": core.iso(n - dt.timedelta(days=1))} for i in range(36)])
+    rows, memos = RISK.run(n); assert rows == 1 and memos[0]["dedupe_key"] == "risk|upload_mix" and memos[0]["to_depts"] == ["D9"] and memos[0]["owner_visible"] is False
+    assert memos[0]["subject"].startswith("Risk: 36 short uploads in 28 days") and RISK.run(n + dt.timedelta(minutes=1)) == (0, [])     # two reviews on one day: one row
+    from whatifs.org import memos as MEMO
+    MEMO.write(memos[0]); later = n + dt.timedelta(days=7)
+    for r in core.store().rows("Specials"): core.store().update("Specials", "id", r["id"], {"made": core.iso(n - dt.timedelta(days=40))})
+    RISK.run(later); m = next(x for x in MEMO.find(live=False, type="problem_memo", from_dept="D1") if x["dedupe_key"] == "risk|upload_mix")
+    assert m["status"] == "resolved" and [r["state"] for r in watch_rows("upload_mix")] == ["watch", "judged"]
+
+def test_pace_slip_is_judged_only_in_whole_sixes_and_one_huge_short_moves_no_median(setting):
+    setting("STRATEGY_ON", "TRUE")
+    for i, v in enumerate([100] * 6 + [50] * 5): ladder_row(i, "S1", v, day=i)
+    assert RISK.pace_slip() == []                                                                              # eleven: no fixed point
+    ladder_row(11, "S1", 50, day=11); f = RISK.pace_slip()[0]; assert f["fires"] and f["point"] == "12"
+    core.store().replace("Ladder", []); [ladder_row(i, "S1", v, day=i) for i, v in enumerate([100] * 6 + [50] * 5 + [50000])]
+    assert RISK.pace_slip()[0]["fires"]                                                                        # the defeat case: one Short of 50,000 moves neither median
+
+def test_a_watch_row_reaches_the_research_agenda_once(setting):
+    from whatifs.org import rnd as RNDM
+    setting("STRATEGY_ON", "TRUE"); n = core.now_utc()
+    core.store().append("Decisions", [{"id": f"DEC-w{i}", "ts": core.iso(n - dt.timedelta(days=i)), "rule": "WATCH", "key": "pace_slip", "new": str(12 + 6 * i), "state": "watch",
+                                       "why": "the last six Shorts held a median of 30 viewers who stayed against 90 for the six before"} for i in range(2)])
+    g = [x for x in RNDM.gaps() if x["source"] == "risk"]
+    assert len(g) == 1 and g[0]["ref"] == "pace_slip" and g[0]["target_depts"] == ["D14"] and "What do channels that recovered from this do" in g[0]["question"]

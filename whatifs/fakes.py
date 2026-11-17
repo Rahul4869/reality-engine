@@ -2,6 +2,10 @@
 import json, re, random
 from whatifs.core import SMALL
 
+def video_states(ids):
+    """v12 V4 (the watch book): the offline answer of YouTube's videos.list - every id processed, nothing limited."""
+    return {i: {"upload": "processed", "reason": "", "rating": "", "blocked": []} for i in ids}
+
 def _lines(n):
     pool = ["[calm] Right now, about eight billion people are doing something ordinary.", "[tension] But at exactly noon, all of them do it at once.",
             "[reveal] That adds up to a number nobody has ever written down.", "[aside] And somewhere, someone still replies 'k' to a long text... [beat] classic.",

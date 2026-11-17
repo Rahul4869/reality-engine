@@ -16,7 +16,7 @@ DEPTS = {
     "D0":  {"mission": "capture every owner input verbatim, route it, guarantee it is honoured", "cadence": "tick", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/wa.py", "whatifs/notify.py", "whatifs/dash.py", "whatifs/owner_view.py"), "levers": ("WA_ON", "DASH_ON"), "takes": ()},
     "D1":  {"mission": "goals, the monthly and weekly plan, cadence, priorities, budget allocation, urgency", "cadence": "daily", "cap_inr": None, "inject": "brief",
-            "wraps": ("whatifs/replan.py", "whatifs/manage.py", "whatifs/org/strategy.py"), "levers": ("STANDARD_MAX_LONG_PER_MONTH", "PUBLISH_DAYS", "VIDEOS_PER_MONTH_EST", "FORMAT_SHARE_F1", "FORMAT_SHARE_F2", "FORMAT_SHARE_F3", "THINK_BOOST_VARIANTS",
+            "wraps": ("whatifs/replan.py", "whatifs/manage.py", "whatifs/org/strategy.py", "whatifs/org/risk.py"), "levers": ("STANDARD_MAX_LONG_PER_MONTH", "PUBLISH_DAYS", "VIDEOS_PER_MONTH_EST", "FORMAT_SHARE_F1", "FORMAT_SHARE_F2", "FORMAT_SHARE_F3", "THINK_BOOST_VARIANTS",
                        "SHORTS_PER_WEEK", "SHORTS_PER_MONTH", "MOVING_SHARE_LONG", "DEEP_TRIAL_ON", "CASEFILES_ON"), "takes": ()},      # v12 V4: the plan's cells are Strategy's
     "D2":  {"mission": "automatic research: outliers, techniques, platform policy, tools, audience, competitors", "cadence": "daily", "cap_inr": 300, "inject": "brief",
             "wraps": ("whatifs/org/rnd.py", "whatifs/outlier_lab.py", "whatifs/demand.py", "whatifs/research.py", "whatifs/scout.py"), "levers": ("RESEARCH_ON", "IDEA_MIN_MULTIPLE", "RESEARCH_PER_WEEK"), "takes": ()},

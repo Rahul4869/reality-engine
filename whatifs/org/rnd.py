@@ -239,6 +239,15 @@ def gaps(st=None, now=None):
                 add("problem", m["id"], f"This keeps failing ({m['attempt']} times): {str(m['body'].get('what_failed') or '')[:200]}. What causes this in comparable "
                     f"productions and what fix has evidence behind it?", "problem", m["to_depts"], "P1", 4 + int(m["attempt"]))
     except Exception as e: log(f"research agenda: memos not read: {scrub(e)[:120]}", "WARN")
+    try:                                                              # v12 V4: the watch book's dangers reach the research agenda (a built road, not an assumed one)
+        from whatifs.org import risk as RISK
+        seen = set()
+        for r in sorted((r for r in st.rows("Decisions") if r.get("rule") == "WATCH" and r.get("state") == "watch" and parse_iso(r.get("ts"))
+                         and now - parse_iso(r["ts"]) <= dt.timedelta(days=28)), key=lambda r: r["ts"], reverse=True):
+            if r["key"] in seen: continue
+            seen.add(r["key"]); owner = next((w["owner"] for w in RISK.WATCH if w["id"] == r["key"]), "D1")
+            add("risk", r["key"], f"{r['why']}. What do channels that recovered from this do, with evidence, and what should we change first?", "problem", [owner], "P1", 6)
+    except Exception as e: log(f"research agenda: the watch book not read: {scrub(e)[:120]}", "WARN")
     try:
         ol = [r for r in _recent(st.rows("Outlier_Lab"), OUTLIER_DAYS, now) if r.get("video_id") and not str(r.get("status") or "").startswith(("intake failed", "no answer"))]
         for r in ol[-3:]:

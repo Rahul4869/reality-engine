@@ -1448,6 +1448,24 @@ STEP 3'S CHECKS (`gh_runs.js`): run 44133166356 on 76bf970, 17:05 -> 18:11 UTC, 
 WHAT A VIEWER GETS: a format or a Short format that viewers hold less is cut by evidence - judged once, at a fixed count, by its median
 against the others - and never on a peek; the Shorts rise only when the long videos' moving pictures are paid in full; the two spin-offs
 nobody judged stop publishing.
+STEP 5 - THE WATCH BOOK (3.6). WHAT CHANGED: NEW `whatifs/org/risk.py` (PROTECTED; D1 wraps it) - WATCH as data (platform_flag D9,
+repetition D4, upload_mix D9, pace_slip D14), `run` (one `watch` row a danger and fixed point; its act; at the next point that no longer
+fires a `judged` row "cleared" and the memo resolved), `lock` (UPLOAD_LOCK on in its own words, one tap "RISK OPEN", no expiry), the "gone"
+question (I deleted it / Close the uploads now; closes after RISK_GONE_WAIT_H), `register`, `words`; `fakes.video_states`; `strategy.review`
+takes the book's memos; `rnd.gaps` gains the source "risk" (one gap a danger, to its owner department); cells RISK_UPLOADS_N,
+RISK_GONE_WAIT_H, RISK_SIM_N, RISK_SIMILAR_PCT, RISK_SHORTS_28D_MAX, PACE_N, PACE_MIN_ENGAGED, PACE_DROP_PCT. No pin moved.
+TWO CHANGES AT THE APPLY: (1) the module's docstring is one line (the plan guard); (2) THE TEST THE TYPING LEFT OPEN (P11, D-RISK5) IS
+TYPED: `test_while_the_watch_holds_the_uploads_closed_production_waits_and_his_tap_lets_it_start` - the REAL `manage.audit_gate` (its
+`_AUDIT_TEST` switch on, as `tests/test_audit.py` does) lets a video start, holds production once the watch book's lock is on ("UPLOAD_LOCK =
+on"), and lets it start again after his one tap "RISK OPEN". Matrix: one row (`fn:` risk.WATCH / run / lock, manage.audit_gate, rnd.gaps).
+SYSTEM.md regenerated.
+STEP 5'S RUN (pytest `-n 8`, fake mode, alone): `test_v12_strategy`, `test_v12_rnd`, `test_v12_org`, `test_v931` (the upload lock),
+`test_docs_current`, `test_v111_enforce`, `test_audit` - 274 passed in 125.93 s. ALONE UNDER `shim/minitest.py`: `test_v12_strategy.py` 56
+passed in 8 s. `tools/plan_guard.py`: GREEN.
+STEP 4'S CHECKS (`gh_runs.js`): run 44145379799 on 4ca4f28, 18:12 -> 19:47 UTC, GREEN - "Unit tests: 1816 passed in 5456.65s"; "REHEARSAL: GREEN ... contract script: 41/41 pass; contract final: 23/23 pass".
+WHAT A VIEWER GETS: a video YouTube rejects or that vanishes closes the uploads the same day - before a second one can become a strike and
+cost the channel - and no money is spent on a new video while they are closed; scripts that start to sound alike, too many Shorts and a
+falling Short pace reach the department that owns them and research's agenda.
 ### V1c - THE FLOOR, HIS VERDICT AND THE MAKER'S LINE (15-17 Nov 2026) - ACCEPTED (final code commit 9dfc916 GREEN in GitHub Checks run 246: 1768 passed; sweep 58 of 58 ids) - its code b326887, BUILT AGAIN AFTER RED ROUND 2 (the offline writer keeps the asks it is given and marks its punchlines by the joke rule's own measures (open issue 228); `proving/notes/V1c_BUILT.md`; the repair block "THE REPAIR OF RED ROUND 2" under the second pass's 6b); BEFORE IT RED ON ITS SECOND PASS (46615df, 17 Nov 2026: the rehearsal F2/S2 held by joke_density on episode EP202611170305 - 6 punchlines, need 7, the script one word over the line; `proving/notes/V1c_RED_2.md`), NOT ACCEPTED; BEFORE IT BUILT AGAIN (red round 1 on 030f197 repaired: final code commit d39a213 - the floor's media fixture made for the proof's serial runner, a guard over every test file, test_v12_floor split word for word into three files; `proving/notes/V1c_BUILT.md`; the builder's record, the prover's 6b of the first pass, the repair block under it)
 WHAT IT IS FOR, in a viewer's and the owner's words: a finished long video is shown - its first minute - to two strong first-time viewers of two
 model families beside the video he rejected; a film they cannot tell from that one is HELD, a jury that fails its own planted questions holds
