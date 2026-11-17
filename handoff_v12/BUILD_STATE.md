@@ -3250,6 +3250,48 @@ WHAT THE JUDGE LOOKED AT (6.6), in plain words:
 - THE RECORD AGAINST THE CODE: as on the first pass (CHANGED FROM THE REDESIGN (6) and (9): the three green rehearsals end on his line word for word).
 USAGE (this prover, Opus 5.5 at xhigh): at the start of this pass weekly all models 74%, weekly Fable 99%, context 22%; at the red note 75% / 99%, context 20%
 (after one compaction). No 5-hour line is shown on this plan; extra usage off.
+**THE REPAIR OF RED ROUND 2 (17 Nov 2026; the dispatcher's last ruling - the check did its job and is not touched, the cause is in what wrote the script
+offline - as the measured cause adapts it; the plan's 8.7 under the owner's item 130: the diagnosis and the checker `local_31c0e6d3`, Opus 5.5 at max; the
+typist `local_c78a2b59`; every fact and command: `V1c_REPAIR2_DIAGNOSIS.md` in the dispatcher's notes folder)**
+THE CAUSE, MEASURED (8.2, 8.3; every number by the check's own unchanged functions on what the run kept). EP202611170305 reproduced alone on 46615df AND on
+V1c's base 01e7798 (V2b ACCEPTED): the same hold, the same numbers - the fault is OLDER than V1c (V1c changed none of the stand-in writer, `room.py`'s asks,
+`cta.py`, `hooks.py`, `enforce.py`). A run with listeners at the unchanged functions (8.3) gave the chain, step by step: the asks code adds before the fix
+(`room._place_asks`: like, subscribe, share = l0,s0,h5, 46 words) -> `enforce.fix_all` measures 236 words, need 6, has 6, no marker problem, and sends its
+ONE mandatory rewrite for three retention problems -> THE STAND-IN ANSWERS WITH A FRESH SCRIPT THAT DROPS THE ASKS IT WAS GIVEN: 198 words, need 5, has 6 -
+its own text passes -> `room.py` puts the asks back, but `CTA_LAST` already names the dropped ones, so `cta.ensure` draws OTHER, longer ones (l1,s1,h0, 60
+words): 258 words, need 6, has 6 -> in `episode.produce` `hooks.run_hooks(proven=)` puts the Short's hook first ("The shadow is yours now.", 5 words),
+because the stand-in never opens on the FIRST LINE the real writer is handed (`models.ask` gives a fake only its user message): 263 words = 105.2 s ->
+need 7, has 6, gap 28.4 s (limit 33.0 s) - HELD. A second id the chain predicted, EP202611170113, was held for real the same way. HOW LONG IT WAITED: of
+200 rehearsal ids (17 Nov 2026 from 00:00, one a minute) 2 are held with S2's hook (EP202611170113, EP202611170305), 5 with S1's or S3's; of 200 from
+18 Nov 12:00, 2 with S2's; of the sweep's 200 fixed ids none (the longest 262 words - on the edge). A latent one-in-a-hundred of the F2/S2 rehearsal.
+WHY NOT THE RULING'S WORDS: the stand-in's own text already passes the rule on its own length (198 words, need 5, has 6), so punchlines that follow ITS
+OWN length change nothing, and a test of the offline script's own seconds cannot fail today. The repair measures what the GATE measures; the ruling's
+bounds hold: `joke_density`'s rule and numbers, the rehearsal and the ids are untouched; the fix is in the offline writer only.
+CORRECTED BY THE BUILD (4), written BEFORE the fix - THE FAILING TESTS FIRST (tests/test_v12_floor.py, at its end): `_gate_narration` builds the narration
+the script gate measures in the F2 rehearsal with the production functions in the order `room.py` and `episode.py` run them after the writer's first draft
+(the stand-in's draft, `room._place_asks` with `CTA_LAST` as room.py keeps it, `enforce.fix_all`, the asks and the tease put back, `hooks.apply_to_script`
+with the Short's hook), with the rehearsal's switches (`fakes.SMALL`, INSIDE_ON, ENDINGS_ON, LADDER_ON at their defaults); then
+`test_the_second_pass_red_id_passes_the_joke_check_on_the_narration_the_gate_measures` (EP202611170305, the check `p_joke_density` itself; on 46615df
+('FAIL', '6 punchlines (need 7); biggest gap 28 s')) and `test_no_F2_rehearsal_id_comes_up_short_of_the_joke_rule_whatever_its_short` (200 rehearsal
+ids x the hooks of S1, S2, S3, by `enforce.joke_need`, `punch_lines`, `biggest_gap_lines` and the check's limit; on 46615df 12 of 600 held). Red by design
+until (5).
+CORRECTED BY THE BUILD (5) - THE FIX AT THE CAUSE, IN THE OFFLINE WRITER ONLY (`whatifs/fakes.py`): in a format whose joke rule holds the video, the
+stand-in writer (a) KEEPS the audience asks of a NARRATION it is asked to rewrite (`cta.is_ask`; a two-line entry stays whole), each where code itself puts
+an ask back (`cta.ensure`'s own place: POS, the share two lines from the end, `cta._safe_slot`) - as a writer told to change only what fixes the problems
+does - so code has nothing to put back after the last measured fix and CTA_LAST names the asks the video carries (`_keep_given_asks`; a first draft that
+kept them at the same SHARE of the lines put a trial ask - "... keeps this court in session" - into the first 20 s, and the retention check held two older
+tests' films, test_v12_motion's paid-clip test and test_v91_flaky_root's [23]: the place must be code's own); (b) MARKS its
+[PUNCH] lines BY THE JOKE RULE'S OWN MEASURES (`enforce.joke_need`, `enforce.biggest_gap_lines`, the check's 2.2 x JOKE_EVERY_SEC_LONG) on the narration the
+gate measures: its answer with the Short's hook that `hooks.apply_to_script` puts first, counted at SHORT_HOOK_WORDS_MAX words because the stand-in never
+sees the FIRST LINE; a [PUNCH] goes on its own line nearest the middle of the longest stretch without one, never on an ask (`_punch_to_rule`). No older
+test's assert changed. Three deliberate breaks, each caught by the sweep test: R2-01 the whole fix out (12 of 600 held), R2-02 the asks half out (12),
+R2-03 the punchline half out (8: EP202611170003, EP202611170103, EP202611170156, ...).
+IN VIEWER TERMS: the rehearsal's viewer would have heard 105 s of narration with 6 laugh lines - one every 17.5 s where the channel's rule asks one every
+15 s, and a 28-second stretch with none. A live video's writer is a model, not this stand-in: the gate that held the rehearsal is the gate that keeps such
+a thin stretch from a viewer, and it is not touched. What a viewer gets from this repair: nothing new on screen; the proof stops failing one rehearsal in a
+hundred for a reason that is not in the product. Cost: no rupees (the offline writer only).
+THE SECOND RED OF THE PASS (wt2: 1 changed) is the same crash: `whatifs/cli.py:160` writes the traceback into the tracked `last_error.txt`; no
+separate change.
 #### Step 7 TAKEAWAY - THE BUILDER'S DRAFT (five Opus builders, an Opus typist and three Fable finishers; the prover completes it; also Palace item `v1c.takeaway`)
 - WORKED: a jury with a PLANTED ladder - the session is valid only when the rejected video beats its own frozen picture, so a judge that is not watching is
   void and never a pass; the verdict computed by code and computed again by the check from the stored looks. His words kept as typed or not used at all, and
@@ -10158,6 +10200,22 @@ Rehearsal asserts `docs_current` ran and passed.
    need floor(105.2 / JOKE_EVERY_SEC_LONG 15) = 7, have 6; the gap 28.4 s is inside its limit 33.0 s. His line and its lead are not in the counted text. The
    same crash wrote its traceback into the TRACKED file `last_error.txt` (`whatifs/cli.py:160`), which the block reads as a second red. Not measured: whether
    V1c's base 01e7798 holds this id too, and which step brought the script to 263 words. Facts and commands: `proving/notes/V1c_RED_2.md`.
+   CAUSE MEASURED, REPAIRED, NOT YET PROVEN (red round 2, 17 Nov 2026): 01e7798 holds the id too (older than V1c); the stand-in's own answer passes (198
+   words, need 5, has 6); code adds 65 words after the last measured fix - the asks put back are re-drawn longer (46 -> 60 words) and the Short's hook is
+   put first (5 words). The repair is CORRECTED BY THE BUILD (4) and (5) of V1c's "THE REPAIR OF RED ROUND 2"; the real path's half is open issue 229.
+229. (V1c's red round 2, 17 Nov 2026 -> a Fable session for the design; the REAL path, not repaired in this round - the ruling: the offline writer only)
+   AFTER THE LAST MEASURED FIX, CODE STILL ADDS NARRATION THAT THE JOKE RULE NEVER SAW. (1) `room.py` puts the asks back after `enforce.fix_all` "(both
+   idempotent)" - they are not when the rewrite dropped them: `CTA_LAST` already names the dropped asks, so `cta.ensure` draws OTHER ones (measured on
+   EP202611170305: l0,s0,h5 = 46 words measured by the fix, l1,s1,h0 = 60 words put back), and `CTA_LAST` keeps naming asks the video does not carry (the
+   next video's variety rule then avoids the wrong lines). (2) `hooks.run_hooks(proven=)` puts the Short's hook first after the fix whenever the writer did not
+   open on its FIRST LINE. With a real writer both happen only when the model drops lines it was told to keep or ignores the FIRST LINE; then a video can be
+   HELD at the script gate for one punchline - a day's slot and an URGENT mail; the gate is right to hold it. Measured offline only; the offline writer now
+   keeps the asks and counts the hook (V1c's CORRECTED BY THE BUILD (5)).
+230. (V1c's red round 2, 17 Nov 2026 -> every repairer who replays a rehearsal id; a Fable session for the plan's 8.2) A PAST REHEARSAL ID REPLAYED BY
+   `tools/sweep.py --one <id> --mode rehearsal` NEVER ENDS GREEN: its long video is made, then the rehearsal's assert stops on dept_contract and
+   takeaways_written N/A - "this episode was started before the organisation was installed" (the id is older than the replay's fresh store). Measured on
+   46615df with EP202611170204 (a green id of the builder's block) and with the repaired EP202611170305: "contract script: 40/40 pass", status SCHEDULED,
+   fails [], outcome "assert" ("the organisation's checks did not pass", 'N/A', 'N/A'). A replay shows a hold truly; it cannot show a whole green run.
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - (V1c's prover, 16 Nov 2026) THE SERIAL SUITE IS `shim/minitest.py`, NOT PYTEST: it knows only its own fixtures (`tmp_path_factory` is not one: open issue
   224) and cuts a file at 900 s (`timeout 900` in `shim/runseq.sh`). A parallel total that differs from the serial total is traced file by file with

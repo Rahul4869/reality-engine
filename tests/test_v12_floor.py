@@ -1504,3 +1504,58 @@ def test_the_sweep_and_the_rehearsal_call_it_and_the_rehearsal_walks_his_verdict
     from whatifs import cta as CTA, maker as MK
     for line in ("I would keep it for one day, then beg for gravity back.", "Not for one hour."):
         assert MK.usable(line)[0] and CTA.kind_of_text(line) is None                                                    # neither is refused nor read as an ask by the older assert on the asks
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+# V1c repair, red round 2 (open issue 228): the F2 rehearsal held one punchline short at the script gate (EP202611170305, the second pass on 46615df)
+def _gate_narration(ep, hook, setting):
+    """(V1c repair, red round 2) the narration the script gate measures in the F2 rehearsal, built by the production functions in the order room.py and
+    episode.py run them after the writer's first draft: the stand-in's draft, the asks code adds (room._place_asks; CTA_LAST as room.py keeps it), the ONE
+    mandatory fix (enforce.fix_all - the stand-in answers), the asks and the tease put back, the Short's hook put first (hooks.apply_to_script). Returns
+    (narration, the fix's issues). Inside FMT.using("F2"), with the rehearsal's switches (_rehearsal_switches)."""
+    from whatifs import enforce as EN, room as RM, hooks as HK, fakes as FK
+    spine = {"promise": {"title": "What If Every Pillow Floated Away?", "thumb_text": "", "thumb_scene": "c", "first_30s": "p"}, "next_tease": {}}     # the rehearsal's (its plan.json)
+    setting("CTA_LAST", "")
+    s1, _, code = RM._place_asks(json.loads(FK.fake_reply("writer", "Write the narration.")), {}, ep); setting("CTA_LAST", code)
+    fixed, issues = EN.fix_all(s1, "", spine, ep, "long")
+    if issues:
+        fixed = RM._place_asks(fixed, {}, ep)[0]
+        fixed = RM.ensure_tease(fixed, spine["next_tease"], ep)
+    return HK.apply_to_script(fixed.get("script", ""), hook)[0], issues
+
+def _rehearsal_switches(monkeypatch, setting):
+    from whatifs import fakes as FK
+    monkeypatch.setattr(FK, "SMALL", True)                                    # the rehearsal and the sweep run small (tools/sweep.py sets WI_SMALL=1)
+    for k in ("INSIDE_ON", "ENDINGS_ON", "LADDER_ON"): setting(k, core.DEFAULTS[k][0])       # the rehearsal's switches (conftest turns them off for the older tests)
+
+def _short_hooks():
+    """The first sentence of every offline Short format's first script: the line a promoted Short hands its long video (the ladder row's hook_line)."""
+    from whatifs import fakes as FK
+    return {s: FK._SHORT_FAKE[s][0][2][0][1].replace("{W}", "Shadow").replace("{w}", "shadow").split(". ")[0].rstrip(".") + "." for s in sorted(FK._SHORT_FAKE)}
+
+def test_the_second_pass_red_id_passes_the_joke_check_on_the_narration_the_gate_measures(monkeypatch, setting):
+    """(V1c repair, red round 2; open issue 228) EP202611170305 - the F2/S2 rehearsal the second pass on 46615df held at the script gate: the check
+    joke_density, unchanged, on the narration the gate measures for that id ('6 punchlines (need 7); biggest gap 28 s' before the repair)."""
+    _rehearsal_switches(monkeypatch, setting)
+    with FMT.using("F2"):
+        t, issues = _gate_narration("EP202611170305", _short_hooks()["S2"], setting)
+        status, evidence = CON.p_joke_density({"room": {"script": {"script": t}}})
+    assert issues and status == CON.PASS, (status, evidence)
+
+def test_no_F2_rehearsal_id_comes_up_short_of_the_joke_rule_whatever_its_short(monkeypatch, setting):
+    """(V1c repair, red round 2; open issue 228) THE SWEEP: 200 rehearsal ids (17 Nov 2026 from 00:00, one a minute - a rehearsal's id is the minute it
+    starts) x the hook of every Short format: the narration the gate measures is never short of the joke rule by its own measures (enforce.joke_need,
+    punch_lines, biggest_gap_lines, the check's 2.2 x JOKE_EVERY_SEC_LONG). Before the repair: with S2's hook 2 of 200 held (EP202611170113 and
+    EP202611170305), with S1's and S3's 5 of 200 each."""
+    import datetime as dt
+    from whatifs import enforce as EN
+    _rehearsal_switches(monkeypatch, setting)
+    ids = [(dt.datetime(2026, 11, 17) + dt.timedelta(minutes=i)).strftime("EP%Y%m%d%H%M") for i in range(200)]
+    held, walked = [], 0
+    with FMT.using("F2"):
+        for s, hook in _short_hooks().items():
+            for ep in ids:
+                t, issues = _gate_narration(ep, hook, setting); walked += bool(issues)
+                if len(EN.punch_lines(t)) < EN.joke_need(t) or EN.biggest_gap_lines(t) > 2.2 * S("JOKE_EVERY_SEC_LONG", float): held.append((s, ep))
+    assert walked == len(ids) * len(_short_hooks()), walked           # the ONE mandatory fix is walked on every id (the road on which the stand-in answers)
+    assert held == [], (len(held), held[:10])
