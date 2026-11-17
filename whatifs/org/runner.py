@@ -224,7 +224,9 @@ def run(dept, trigger, act, *, episode="", topic="", stage=None, context=None, m
     if dept not in DEPARTMENTS: raise ContractBreach("LOAD", f"unknown department '{dept}'")
     episode = str(episode or ""); stage = stage or DEPARTMENTS[dept][1]; key = str(key or "")
     if stage not in STAGES: raise ContractBreach("LOAD", f"unknown stage '{stage}'")
-    if not on(): return Result("off", act(Brief(dept, trigger, episode, stage, topic, {}, [], "", context)))
+    if not on():                                                                   # v12 V4 (open issue 200): a native run's result is not lost with the organisation off
+        raw = act(Brief(dept, trigger, episode, stage, topic, {}, [], "", context))
+        return Result("off", raw.output if isinstance(raw, Out) else raw)
     st = st or store(); t0 = now or now_utc(); sid = ""; R = None
     if not str(S("ORG_SINCE") or "").strip(): install(st, t0)          # the first run on a Sheet marks when the organisation started there
     # ---- 1 LOAD

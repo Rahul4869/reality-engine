@@ -636,7 +636,7 @@ def test_with_the_organisation_off_the_result_is_the_same_dict(floor_on, media, 
     from whatifs.org import runner as ORG
     core.set_setting("ORG_ON", "FALSE")
     x = ORG.work("D13", "floor", "EPOFF", lambda b: FL.run(b, "EPOFF", media["src"], str(tmp_path), (), ()))
-    assert isinstance(x, ORG.Out) and isinstance(FL.plain(x), dict) and FL.plain(x)["status"] in ("pass", "fail", "void")
+    assert not isinstance(x, ORG.Out) and isinstance(x, dict) and FL.plain(x) is x and x["status"] in ("pass", "fail", "void")   # V4 step 0 (issue 200): the act's own dict
 
 def test_the_line_the_estimate_and_the_routes(floor_on):
     from whatifs import costguard as CG

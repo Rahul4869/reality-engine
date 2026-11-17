@@ -1316,6 +1316,33 @@ test). 11 TAKEN (3.4 `OWNER_ONLY`, its test, the search for `yt_delete`). 12 TAK
 counts 40 -> 41 and 72; the clamp stays). 14 TAKEN (3.12 NOT IN THIS BATCH: 210 to B6b, 212 to B10, 221 to B8, each with its reason).
 TO CORRECT: 1, 2 (the part is "*Decisions*"), 3, 4, 5 (`slots(left=True)`), 6, 7, 8, 9 (`COVER_TTL_S`), 10 (P1), 11, 12, 13, 14, 15,
 16 - each taken at its place.
+#### Step 4 BUILD (what changed) - THE FIRST OPUS BUILDER G (Opus 5.5, xhigh; it types the approved memo and decides nothing - amendment A4; a choice the memo did not make is a DESIGN QUESTION below)
+HOW THIS BUILD RAN: the steps 3.1 to 3.10 were TYPED AHEAD on an export of 030f197 while V1c was proven (the dispatcher's ruling 2: one
+patch a step, nothing run, nothing committed); at V1c's acceptance (e6350a2, final code commit 9dfc916) each patch is applied in the memo's
+order on the accepted code, its tests run, every new or changed test file once ALONE under `shim/minitest.py` (the dispatcher's ruling 4 (E),
+R1), committed and pushed; GitHub's Checks are each step's whole-suite evidence (A12 (f)). Every run from Git Bash with
+`C:\Users\rrahu\AppData\Local\wi_fast_ffmpeg` first on PATH (R2) - measured 17 Nov 12:40 UTC with `sha256sum`: ffmpeg.exe
+`589e50b766d251afdf181dd664d40bd94407e200b019989fd7468c7d118a28d0`, ffprobe.exe `02264dfa4f56baaa31e443ece8aa16d397f6b008200e7fd184d22b9009e75fd3`
+(= the installed files, FAST_FFMPEG.md). THE PASTE CHECK AGAIN (`git diff 030f197 9dfc916 --stat`): V1c's repair changed only
+`tests/test_v12_floor.py` (split: `test_v12_floor_his_word.py`, `test_v12_floor_holds.py` are new) and `whatifs/fakes.py` (+45); the
+memo's place "the lists at `tests/test_v12_floor.py` 1383 to 1387" is now `tests/test_v12_floor_his_word.py` 41 to 45 (identical text);
+every typed patch (13, with the three split-file patches) applies cleanly on 96a5749, in order (checked on an export). The paste: commits
+7efcf5c (the design of record), 126a5c3 (the review: its attribution line stands UNDER "VERDICT: APPROVED" - `proving/next.py` demands
+that first line), 96a5749 (the state BUILD). USAGE AT THE START (17 Nov 12:45 UTC): weekly all models 80%, weekly Fable 100%; this
+session's context 20%.
+
+STEP 0 - OPEN ISSUE 200 (3.1). `whatifs/org/runner.py` `run`: with the organisation OFF the act's result is no longer lost - the off-branch
+hands back `raw.output if isinstance(raw, Out) else raw` (the memo's words). `tests/test_v12_strategy.py` (NEW - V4's test file): both ways
+(an act returning `Out({"a": 1})` gives `{"a": 1}`, a plain dict stays that dict) and D13's line-up judged with the organisation off (PASS,
+not N/A). A PIN MOVED BY DESIGN that the typing-ahead could not see (V1c added it): `tests/test_v12_floor.py`
+`test_with_the_organisation_off_the_result_is_the_same_dict` asserted the OLD hand-back (an `Out`); it now asserts what its name says - the
+act's own dict, `floor.plain(x) is x`; `floor.plain`'s docstring said the old behaviour and now says the new one (code unchanged).
+STEP 0'S RUN (17 Nov, pytest `-n 8`, fake mode, alone): `test_v12_strategy`, `test_v12_org`, `test_v12_layman`, `test_v12_floor_holds`
+and the two floor tests with the organisation off - 115 passed, 1 failed (the pin above) in 328.75 s; after the pin: 3 passed. ALONE UNDER
+`shim/minitest.py` (R1): `test_v12_strategy.py` 2 passed in 1 s; `test_v12_floor.py` 111 passed in 192 s. `tools/gen_docs.py`: no change;
+`tools/plan_guard.py`: GREEN. Break S0-01 is in the break list.
+WHAT A VIEWER GETS: with the organisation switched off, a long video's opening is still judged by two first-time readers (before, the
+line-up's verdict was silently lost and the check said N/A).
 ### V1c - THE FLOOR, HIS VERDICT AND THE MAKER'S LINE (15-17 Nov 2026) - ACCEPTED (final code commit 9dfc916 GREEN in GitHub Checks run 246: 1768 passed; sweep 58 of 58 ids) - its code b326887, BUILT AGAIN AFTER RED ROUND 2 (the offline writer keeps the asks it is given and marks its punchlines by the joke rule's own measures (open issue 228); `proving/notes/V1c_BUILT.md`; the repair block "THE REPAIR OF RED ROUND 2" under the second pass's 6b); BEFORE IT RED ON ITS SECOND PASS (46615df, 17 Nov 2026: the rehearsal F2/S2 held by joke_density on episode EP202611170305 - 6 punchlines, need 7, the script one word over the line; `proving/notes/V1c_RED_2.md`), NOT ACCEPTED; BEFORE IT BUILT AGAIN (red round 1 on 030f197 repaired: final code commit d39a213 - the floor's media fixture made for the proof's serial runner, a guard over every test file, test_v12_floor split word for word into three files; `proving/notes/V1c_BUILT.md`; the builder's record, the prover's 6b of the first pass, the repair block under it)
 WHAT IT IS FOR, in a viewer's and the owner's words: a finished long video is shown - its first minute - to two strong first-time viewers of two
 model families beside the video he rejected; a film they cannot tell from that one is HELD, a jury that fails its own planted questions holds

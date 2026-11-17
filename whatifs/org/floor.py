@@ -306,7 +306,7 @@ def month_cap():
     return S("VIEW_FLOOR_CAP_PER_VIDEO_INR", float) * G.max_long_videos()
 
 def plain(x):
-    """The run's result whether the organisation is on or off (off: `runner.run` hands back the native run's Out itself)."""
+    """The run's result as a dict: on, `runner.work` gives the dict; off, it hands back the act's own output too (issue 200) - an Out is unwrapped."""
     from whatifs.org.runner import Out
     return x.output if isinstance(x, Out) else x
 
