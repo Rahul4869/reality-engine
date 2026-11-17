@@ -32,7 +32,7 @@
  "base_commit": "01e77987d256b577cdd233907dc8929b39c2fc9d",
  "batch": "V1c",
  "fable_design_gate": true,
- "final_code_commit": "46615dfd593f33df58c541c808338b665209e295",
+ "final_code_commit": "9dfc916fce36ecb94d5ee30b68f9bcfc3115b445",
  "history": [
   {
    "at": "2026-11-13T11:25:00Z",
@@ -294,6 +294,15 @@
    "from": "RED",
    "to": "REPAIR",
    "why": ""
+  },
+  {
+   "at": "2026-11-17T09:33:30Z",
+   "batch": "V1c",
+   "by": "",
+   "commit": "9dfc916",
+   "from": "REPAIR",
+   "to": "BUILT",
+   "why": ""
   }
  ],
  "order": [
@@ -310,11 +319,11 @@
   "B10",
   "V3"
  ],
- "phase": "REPAIR",
+ "phase": "BUILT",
  "red_notes": [
   "V1c_RED_1.md",
   "V1c_RED_2.md"
  ],
  "red_rounds": 2,
- "updated": "2026-11-17T07:35:19Z"
+ "updated": "2026-11-17T09:33:30Z"
 }
