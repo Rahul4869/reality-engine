@@ -348,6 +348,15 @@
    "from": "DESIGN",
    "to": "DESIGN_REVIEW",
    "why": ""
+  },
+  {
+   "at": "2026-11-17T12:33:55Z",
+   "batch": "V4",
+   "by": "",
+   "commit": "",
+   "from": "DESIGN_REVIEW",
+   "to": "BUILD",
+   "why": ""
   }
  ],
  "order": [
@@ -364,8 +373,8 @@
   "B10",
   "V3"
  ],
- "phase": "DESIGN_REVIEW",
+ "phase": "BUILD",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-17T12:33:44Z"
+ "updated": "2026-11-17T12:33:55Z"
 }
