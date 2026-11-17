@@ -303,6 +303,15 @@
    "from": "REPAIR",
    "to": "BUILT",
    "why": ""
+  },
+  {
+   "at": "2026-11-17T09:36:02Z",
+   "batch": "V1c",
+   "by": "",
+   "commit": "9dfc916",
+   "from": "BUILT",
+   "to": "PROVING",
+   "why": ""
   }
  ],
  "order": [
@@ -319,11 +328,11 @@
   "B10",
   "V3"
  ],
- "phase": "BUILT",
+ "phase": "PROVING",
  "red_notes": [
   "V1c_RED_1.md",
   "V1c_RED_2.md"
  ],
  "red_rounds": 2,
- "updated": "2026-11-17T09:33:30Z"
+ "updated": "2026-11-17T09:36:02Z"
 }
