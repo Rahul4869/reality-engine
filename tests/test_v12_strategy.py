@@ -288,6 +288,8 @@ def test_the_ticket_is_told_once_it_exists_and_the_brief_carries_the_whole_text_
 
 def test_a_day_without_a_decision_says_no_change_or_the_first_refusal(monkeypatch, setting):
     ceo(setting); setting("STRATEGY_WEEKLY_AT", core.iso(JAN))
+    assert STR.brief(JAN).startswith("*Decisions*\n- Strategy today: no change. Counting: S1 0 of 8 Shorts, ")     # a fresh Sheet: every arm counts toward its point
+    monkeypatch.setattr(STR, "counting", lambda now=None: [])                                         # no rule counting
     assert STR.brief(JAN) == "*Decisions*\n- Strategy today: no change."
     setting("STRATEGY_TODAY", json.dumps({"refused": ["not taken: X 1 -> 2 changes nothing the code does (1)"], "counting": []}))
     assert STR.brief(JAN) == "*Decisions*\n- Not taken today: not taken: X 1 -> 2 changes nothing the code does (1)."
@@ -308,6 +310,7 @@ def test_what_was_shown_is_stamped_only_when_it_went(monkeypatch, setting):
 def test_his_hand_on_a_portfolio_cell_is_recorded_once_said_in_the_week_and_frozen(setting):
     from whatifs.org import runner as RN
     ceo(setting); setting("STANDARD_MAX_LONG_PER_MONTH", "6")                                         # set by hand in the Sheet
+    for k in ("FORMAT_SHARE_F1", "FORMAT_SHARE_F2", "FORMAT_SHARE_F3"): setting(k, core.DEFAULTS[k][0])   # the shares as shipped (conftest's 70 / 30 / 0 would be his hands too)
     RN.run("D1", "review", STR.review); RN.run("D1", "review", STR.review)                              # two reviews: ONE hand row
     h = [r for r in decisions() if r["state"] == "hand"]; assert len(h) == 1 and h[0]["key"] == "STANDARD_MAX_LONG_PER_MONTH" and h[0]["new"] == "6"
     assert core.parse_iso(h[0]["frozen_until"]) > core.now_utc() + dt.timedelta(days=27) and not [r for r in decisions() if r["state"] == "decided"]   # the key is frozen
@@ -319,7 +322,7 @@ def test_a_decision_is_a_ticket_or_the_check_fails_only_text(monkeypatch, settin
     monkeypatch.setattr(STR, "targets", lambda now=None: {"FORMAT_SHARE_F1": {"target": "40", "why": "w", "numbers": {}, "evidence": "ok", "count": "", "rule": "T"}})
     monkeypatch.setattr(STR, "rule_of", lambda key: {"id": "T", "metric": "shorts_engaged_90d", "board": "shorts", "direction": "up", "horizon": 4})
     setting("FORMAT_SHARE_F1", "60"); monkeypatch.setattr(STR, "effect", lambda key, value, now=None: str(value))   # the default (conftest's 70 would be his hand) and an effect
-    RN.run("D1", "review", STR.review); r = decisions()[0]
+    RN.run("D1", "review", STR.review); r = next(x for x in decisions() if x["key"] == "FORMAT_SHARE_F1")   # the risk line's weekly judged row is written too
     assert r["state"] == "decided" and MEMO.get(r["ticket"]) is not None and MEMO.get(r["ticket"])["type"] == "ticket"   # the runner wrote the decision's ticket
     assert STR.live_issues(now=core.now_utc() + dt.timedelta(hours=27))[0] == [] or all("only text" not in p for p in STR.live_issues(now=core.now_utc() + dt.timedelta(hours=27))[0])
 
@@ -374,3 +377,146 @@ def test_what_stays_his_is_a_list_no_lever_moves_without_his_tap_and_d1_is_wired
     assert ("whatifs/cli.py", "review") in REG.ENTRY["D1"] and REG.PENDING == {"D0": "B9", "C": "B6", "L": "B8"} and REG.DEPTS["D1"]["cadence"] == "daily"
     assert "whatifs/org/strategy.py" in REG.DEPTS["D1"]["wraps"] and REG.entry_issues() == [] and LV.issues() == [] and NTF.INFORM_KINDS == ("strategy", "desk")
     assert "def link(" in open(os.path.join(ROOT, "whatifs", "notify.py"), encoding="utf-8").read() and "def _link(" not in open(os.path.join(ROOT, "whatifs", "notify.py"), encoding="utf-8").read()
+
+# ------------------------------------------------------------------ step 4: the rule book's other rows, the lever table, the two spin-offs
+import statistics
+D0 = dt.datetime(2026, 9, 1, 12, 0, tzinfo=dt.timezone.utc)
+def ladder_row(i, fmt, engaged, measured=True, day=0):
+    core.store().append("Ladder", [{"id": f"L{fmt}{i}", "format": fmt, "posted": core.iso(D0 + dt.timedelta(days=day)), "state": "POSTED", "evidence": "measured" if measured else "",
+                                    "engaged": engaged * 3, "first": json.dumps({"days": 3, "engaged": engaged}) if measured else ""}])
+
+def test_a_short_format_is_judged_on_its_first_eight_against_the_others_first_quartile(setting):
+    setting("STRATEGY_ON", "TRUE"); setting("SHORT_SHARE_S2", "40")
+    for i, v in enumerate([20, 30, 50, 80, 90, 120, 200, 400]): ladder_row(i, "S1", v, day=i)                 # the others: Q1 = 30 + 0.75 x (50 - 30) = 45
+    for i, v in enumerate([10, 10, 20, 20, 30, 30, 40, 300]): ladder_row(i, "S2", v, day=i)                   # X: median 25 (its mean 57.5 would have saved it)
+    assert STR.q1([20, 30, 50, 80, 90, 120, 200, 400]) == 45 and statistics.median([10, 10, 20, 20, 30, 30, 40, 300]) == 25
+    assert STR.judge(D0 + dt.timedelta(days=30)) >= 1
+    j = [r for r in decisions() if r["state"] == "judged" and r["key"] == "SHORT_SHARE_S2"]; nb = json.loads(j[0]["numbers"])
+    assert len(j) == 1 and (nb["point"], nb["median"], nb["q1"], nb["verdict"], nb["target"]) == (8, 25.0, 45.0, "below", 20)
+    assert STR.targets(D0 + dt.timedelta(days=30))["SHORT_SHARE_S2"]["target"] == "20"
+    STR.judge(D0 + dt.timedelta(days=31)); assert len([r for r in decisions() if r["state"] == "judged" and r["key"] == "SHORT_SHARE_S2"]) == 1      # judged ONCE at a point
+
+def test_one_lucky_short_moves_nothing_and_a_thin_arm_is_counted(setting):
+    setting("STRATEGY_ON", "TRUE")
+    ladder_row(0, "S3", 5000)
+    for i in range(7): ladder_row(i, "S1", 30 + i, day=i)
+    for i in range(8): ladder_row(i, "S2", 40, measured=i < 5, day=i)                                        # three of eight have no measured reading
+    STR.judge(D0 + dt.timedelta(days=30)); t = STR.targets(D0 + dt.timedelta(days=30))
+    assert not [r for r in decisions() if r["state"] == "judged" and r["rule"] == "SHORT_ARMS"]                  # nothing is judged
+    assert t["SHORT_SHARE_S3"]["count"] == "S3 1 of 8 Shorts" and t["SHORT_SHARE_S2"]["count"] == "S2 5 of 8 Shorts" and t["SHORT_SHARE_S3"]["target"] == core.S("SHORT_SHARE_S3")
+
+def test_a_later_reading_that_doubles_engaged_changes_no_verdict(setting):
+    setting("STRATEGY_ON", "TRUE")
+    for i, v in enumerate([20, 30, 50, 80, 90, 120, 200, 400]): ladder_row(i, "S1", v, day=i)
+    for i, v in enumerate([10, 10, 20, 20, 30, 30, 40, 300]): ladder_row(i, "S2", v, day=i)
+    for r in core.store().rows("Ladder"): core.store().update("Ladder", "id", r["id"], {"engaged": int(float(r["engaged"])) * 2})   # the weekly re-reading grows `engaged`
+    assert [x[2] for x in STR.short_items() if x[0] == "S2"] == [10, 10, 20, 20, 30, 30, 40, 300]           # the measure is `first`, never `engaged`
+
+def test_five_reviews_after_a_failed_first_point_walk_60_40_30_and_stay(monkeypatch, setting):
+    ceo(setting); setting("FORMAT_SHARE_F1", "60"); keys = ("FORMAT_SHARE_F1",); monkeypatch.setattr(STR, "PORTFOLIO", keys)
+    row = {"id": "DEC-judged0001", "ts": core.iso(JAN), "rule": "ARMS", "key": "FORMAT_SHARE_F1", "old": "60", "new": "8", "why": "below", "ticket": "", "state": "judged",
+           "numbers": json.dumps({"point": 8, "median": 1.0, "q1": 2.0, "n_others": 4, "verdict": "below", "target": 30, "held": 60}), "effect_before": "", "effect_after": "",
+           "prediction": "", "told": "", "frozen_until": "", "observed": "", "scored": "", "briefed": ""}
+    core.store().append("Decisions", [row]); monkeypatch.setattr(STR, "effect", lambda key, value, now=None: str(value)); walk = [core.S("FORMAT_SHARE_F1")]
+    for d in range(4):
+        c, _ = STR.next_move(JAN + dt.timedelta(days=d))
+        if c: core.set_setting("FORMAT_SHARE_F1", c["new"]); STR.decide(c, JAN + dt.timedelta(days=d)); core.store().update("Decisions", "id", decisions()[-1]["id"], {"state": "verified"})
+        walk.append(core.S("FORMAT_SHARE_F1"))
+    assert walk == ["60", "40", "30", "30", "30"]                                                              # steps of at most 20; the target is anchored, never halved again
+
+def test_the_ripe_reading_comes_once_on_day_31_to_its_28th_day(monkeypatch, setting):
+    from whatifs import manage as MG
+    asks = []; monkeypatch.setattr(MG, "_analytics", lambda vid, t, dur=None, end=None: (asks.append((vid, end)), {"views": 900, "avg_view_sec": 200.0})[1])
+    n = core.now_utc()
+    for ep, age in (("EP30", 30), ("EP31", 31)):
+        core.store().append("Episodes", [{"episode_id": ep, "status": "LIVE", "yt_id": "y" + ep, "slot_et": core.iso(n - dt.timedelta(days=age))}])
+        core.store().append("Analytics", [{"episode_id": ep, "yt_id": "y" + ep, "views": 300, "data_note": "ok"}])
+    assert MG.ripe() == ["EP31"] and MG.ripe() == [] and asks[0][0] == "yEP31"
+    assert asks[0][1].date() == (n - dt.timedelta(days=31) + dt.timedelta(days=28)).date()                   # `end` = its slot day + 28 days
+    a = {r["episode_id"]: r for r in core.store().rows("Analytics")}
+    assert (a["EP31"]["ripe_views"], a["EP31"]["ripe_sec"]) == ("900", "200.0") and a["EP31"]["views"] == "300" and not a["EP30"].get("ripe_at")     # the 72-hour row is unchanged
+
+def test_the_risk_line_is_unknown_on_too_few_views_and_worse_on_a_real_drop(setting):
+    n = core.now_utc()
+    def mon(vals, start):
+        for i, v in enumerate(vals): core.store().append("Monitor48", [{"yt_id": f"y{start}{i}", "kind": "long", "published": core.iso(n - dt.timedelta(days=start + i)), "v48": v}])
+    mon([12, 30, 9], 1); mon([20, 18, 25], 30)
+    v, words = STR.risk_line(n); assert v == "unknown" and "too few views" in words
+    core.store().replace("Monitor48", []); mon([300, 420, 280], 1); mon([500, 610, 450], 30)
+    v, words = STR.risk_line(n); assert v == "worse" and words.startswith("long videos at 48 hours: a median of 300 views over 3 against 500 over 3 in the four weeks before")
+
+def test_split_moves_the_binding_week_first_then_the_month(monkeypatch, setting):
+    from whatifs import governor as G
+    ceo(setting); setting("SHORTS_PER_MONTH", "12"); setting("SHORTS_PER_WEEK", "3")
+    nov = dt.datetime(2026, 11, 2, 12, 0, tzinfo=dt.timezone.utc)                                            # a 30-day month
+    monkeypatch.setattr(G, "moving_floor", lambda kind=None, runtime=None: {"on": False, "inr_s": 0.0, "living_target_s": 0, "living_s": 0})
+    t = STR._split_target(nov); assert (t["SHORTS_PER_MONTH"]["target"], t["SHORTS_PER_WEEK"]["target"]) == ("12", "4")     # the week binds (3 x 30 // 7 = 12 < 14): it moves first
+    setting("SHORTS_PER_WEEK", "4"); t = STR._split_target(nov); assert t["SHORTS_PER_MONTH"]["target"] == "14" and "four days running" in t["SHORTS_PER_MONTH"]["why"]
+    monkeypatch.setattr(G, "moving_floor", lambda kind=None, runtime=None: {"on": True, "inr_s": 10.0 ** 6, "living_target_s": 60, "living_s": 10})      # the motion is not paid in full
+    assert STR._split_target(nov)["SHORTS_PER_MONTH"]["target"] == "12"                                       # MOTION FIRST: no raise
+    monkeypatch.setattr(G, "moving_floor", lambda kind=None, runtime=None: {"on": False, "inr_s": 0.0, "living_target_s": 0, "living_s": 0})
+    core.store().append("Decisions", [{"id": f"DEC-risk{i}", "ts": core.iso(nov - dt.timedelta(days=28 * i)), "rule": "RISK", "key": "risk_line", "new": "worse", "state": "judged",
+                                       "why": "worse"} for i in (0, 1)])
+    assert STR._split_target(nov)["SHORTS_PER_MONTH"]["target"] == "12"                                       # worse: no raise - and no lowering before STRATEGY_WINDOW_END
+
+def test_the_credit_boost_walks_down_in_the_last_week_and_steps_up_only_on_realised_cover(setting):
+    from whatifs.org import finance as F
+    n = core.now_utc(); ceo(setting); setting("THINK_BOOST_VARIANTS", "4")
+    assert STR._credit_target(n)["THINK_BOOST_VARIANTS"]["target"] == "0"                                    # lane closed
+    lane(setting, frm=day(n - dt.timedelta(days=1)), until=day(n + dt.timedelta(days=5))); assert STR._credit_target(n)["THINK_BOOST_VARIANTS"]["target"] == "0"   # tapering
+    setting("CLAUDE_CREDIT_UNTIL", day(n + dt.timedelta(days=20))); setting("THINK_BOOST_VARIANTS", "0"); F.forget()
+    assert STR._credit_target(n)["THINK_BOOST_VARIANTS"]["target"] == "0" and "waits" in STR._credit_target(n)["THINK_BOOST_VARIANTS"]["why"]   # nothing realised yet: no step up
+    cost(core.iso(n), 2000); assert STR._credit_target(n)["THINK_BOOST_VARIANTS"]["target"] == "4"            # the cover already pays the boost's cost
+
+def _tickets_row(tid, state, note):
+    core.store().append("Tickets", [{"id": tid, "state": state, "note": note, "target": "SHORT_SHARE_S2", "dept": "D14"}])
+
+def test_a_move_the_engine_rolled_back_is_said_once_and_not_tried_again_for_seven_days(monkeypatch, setting):
+    ceo(setting); monkeypatch.setattr(STR, "PORTFOLIO", ("SHORT_SHARE_S2",)); monkeypatch.setattr(STR, "effect", lambda key, value, now=None: str(value))
+    monkeypatch.setattr(STR, "targets", lambda now=None: {"SHORT_SHARE_S2": {"target": "20", "why": "below", "numbers": {}, "evidence": "ok", "count": "", "rule": "SHORT_ARMS"}})
+    c, _ = STR.next_move(JAN); row, memo = STR.decide(c, JAN); _tickets_row(row["ticket"], "rolled_back", "D14 short_gate (S-1) ended failed after the change")
+    STR.settle(JAN + dt.timedelta(hours=30)); r = decisions()[0]
+    assert r["state"] == "rolled_back" and r["briefed"] == ""
+    b = STR.brief(JAN + dt.timedelta(hours=31)); assert b.count("Taken back: ") == 1 and "(SHORT_SHARE_S2 stays 40). Why: D14 short_gate (S-1) ended failed after the change." in b
+    assert STR.next_move(JAN + dt.timedelta(days=6))[0] is None and STR.next_move(JAN + dt.timedelta(days=8))[0] is not None
+
+def test_a_share_move_the_running_code_would_not_feel_is_taken_back_by_its_own_ticket(monkeypatch, setting):
+    ceo(setting); monkeypatch.setattr(STR, "PORTFOLIO", ("SHORT_SHARE_S2",))
+    monkeypatch.setattr(STR, "targets", lambda now=None: {"SHORT_SHARE_S2": {"target": "20", "why": "below", "numbers": {}, "evidence": "ok", "count": "", "rule": "SHORT_ARMS"}})
+    c, _ = STR.next_move(JAN); row, memo = STR.decide(c, JAN); _tickets_row(row["ticket"], "applied", "applied"); core.set_setting("SHORT_SHARE_S2", "20")
+    setting("SHORT_FORMAT_FORCE", "S1")                                                                       # overnight a force switch makes the share do nothing
+    out = STR.settle(JAN + dt.timedelta(hours=20)); r = decisions()[0]
+    assert r["state"] == "no_effect" and out and out[0]["body"]["value"] == "40" and out[0]["dedupe_key"] == f"strategy|noeffect|{r['id']}" and out[0]["to_depts"] == ["D14"]
+
+def test_the_replanner_steps_aside_and_the_spin_offs_are_paused_once(setting):
+    from whatifs import replan as RP, manage as MG
+    mon = dt.datetime(2026, 11, 16, 9, 0, tzinfo=dt.timezone.utc)                                            # a Monday
+    sent = []; import whatifs.notify as NTM
+    setting("STRATEGY_ON", "TRUE"); setting("REPLAN_ON", "TRUE"); setattr_ = __import__("pytest").MonkeyPatch(); setattr_.setattr(RP, "proposals", lambda now=None: [{"rung": 1, "key": "X", "to": "1"}])
+    setattr_.setattr(NTM, "send", lambda *a, **k: sent.append(a))
+    try: assert RP.weekly(mon) == [] and sent == []                                                          # Strategy decides; no Monday card
+    finally: setattr_.undo()
+    setting("DEEP_TRIAL_ON", "TRUE"); setting("CASEFILES_ON", "TRUE"); setting("CLAUDE_CREDIT_UNTIL", "2026-12-10"); setting("V12V4_MOVE_DONE", "")
+    assert MG.v12v4_upgrade(core.store()) == ["DEEP_TRIAL_ON", "CASEFILES_ON", "CLAUDE_CREDIT_UNTIL"] and MG.v12v4_upgrade(core.store()) == []
+    assert (core.S("DEEP_TRIAL_ON"), core.S("CASEFILES_ON"), core.S("CLAUDE_CREDIT_UNTIL")) == ("FALSE", "FALSE", "") and core.DEFAULTS["DEEP_TRIAL_ON"][0] == core.DEFAULTS["CASEFILES_ON"][0] == "FALSE"
+    setting("V12V4_MOVE_DONE", ""); setting("DEEP_TRIAL_ON", "TRUE"); setting("CASEFILES_ON", "FALSE")
+    assert MG.v12v4_upgrade(core.store()) == ["DEEP_TRIAL_ON"]                                                # a value he set himself stays
+    assert "Spin-offs: switched off; they come back only rebuilt." in STR.weekly(core.now_utc())
+
+def test_the_lever_table_is_strategys_where_the_plan_is(setting):
+    for k in ("SHORTS_PER_WEEK", "SHORTS_PER_MONTH", "MOVING_SHARE_LONG", "DEEP_TRIAL_ON", "CASEFILES_ON", "THINK_BOOST_VARIANTS", "STANDARD_MAX_LONG_PER_MONTH"): assert LV.owner_of(k) == "D1", k
+    assert (LV.LEVERS["SHORTS_PER_WEEK"]["lo"], LV.LEVERS["SHORTS_PER_WEEK"]["hi"], LV.LEVERS["SHORTS_PER_MONTH"]["lo"], LV.LEVERS["SHORTS_PER_MONTH"]["hi"]) == (2, 4, 8, 16)
+    assert LV.LEVERS["DEEP_TRIAL_ON"]["owner"] == "on" and LV.LEVERS["CASEFILES_ON"]["owner"] == "on" and len(LV.LEVERS) == 93 and LV.issues() == []
+    assert [r["id"] for r in STR.RULES] == ["CREDIT", "SHORT_ARMS", "SLOTS", "SPLIT", "ARMS"]
+    for k in ("SHORT_ARM_MIN", "ARM_MIN_VIDEOS", "RISK_MIN_VIEWS", "STRATEGY_WINDOW_END", "CREDIT_TAPER_DAYS"): assert k in core.DEFAULTS and k not in LV.LEVERS, k
+    setting("STRATEGY_ON", "TRUE"); from whatifs import dash as DS
+    if any(v[0] == "SHORTS_PER_WEEK" for v in getattr(DS, "SETTINGS_MAP", {}).values()):
+        word = next(k for k, v in DS.SETTINGS_MAP.items() if v[0] == "SHORTS_PER_WEEK"); DS.route(f"SET|{word}|4")
+        assert [r for r in decisions() if r["state"] == "hand" and r["key"] == "SHORTS_PER_WEEK"]           # his tap on the dashboard is a hand at once
+
+def test_a_point_judges_the_first_p_items_only(setting):
+    setting("STRATEGY_ON", "TRUE"); setting("SHORT_SHARE_S2", "40")
+    for i, v in enumerate([20, 30, 50, 80, 90, 120, 200, 400]): ladder_row(i, "S1", v, day=i)
+    for i, v in enumerate([10, 10, 20, 20, 30, 30, 40, 300] + [900] * 7): ladder_row(i, "S2", v, day=i)       # seven later winners do not rewrite the eighth item's verdict
+    STR.judge(D0 + dt.timedelta(days=40))
+    nb = json.loads(next(r for r in decisions() if r["state"] == "judged" and r["key"] == "SHORT_SHARE_S2")["numbers"]); assert nb["verdict"] == "below" and nb["median"] == 25.0

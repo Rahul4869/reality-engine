@@ -1422,6 +1422,32 @@ STEP 2'S CHECKS (`gh_runs.js`): run 44116618927 on 37012eb, 15:38 -> 17:04 UTC, 
 WHAT THE OWNER GETS: the channel's plan moves by itself, one step at a time and only inside the money - a fifth long video in a month whose
 calendar and money hold it; he is told once, in the brief that really went, with an Undo that always works; a cell he set by hand is
 counted as his and left alone for 28 days.
+STEP 4 - THE RULE BOOK'S OTHER ROWS, THE LEVER TABLE, THE TWO SPIN-OFFS (3.5). WHAT CHANGED: in `strategy.py` the rules CREDIT, SHORT_ARMS,
+SLOTS, SPLIT, ARMS (that order), `short_items` / `long_items`, `judge_arms` (an arm judged once at a fixed count of ripe items, by its median
+against the others), `arm_targets`, `judge` (both arm rules and the risk line once a week), `risk_line` / `uploads` / `risk_row`,
+`_split_target`, `_credit_target`, `observe` (the column `observed`); `manage.ripe()` and `_analytics(end=)`, the one-time move
+`v12v4_upgrade` with `V12V4_FLIPS`; tab Analytics gains three columns at its end (`ripe_views`, `ripe_sec`, `ripe_at`); DEEP_TRIAL_ON and
+CASEFILES_ON default FALSE (the two unjudged spin-offs stop publishing) with the `replan.weekly` guard; the portfolio levers moved to D1 (93
+in the table); the new cells. Pins moved by design: `test_v12_ladder` 368/369/375, `test_v12_exec` 62/89 (91 -> 93), `test_v12_motion` 638.
+THREE CHANGES AT THE APPLY: (1) the patch's first hunk carried `strategy.py`'s old docstring as context: a copy of the patch with the
+one-line docstring of step 3 in that context was applied (`V4_step4.applied.patch`; nothing else differs). (2) A PIN THE TYPING MISSED:
+`tests/test_v86.py` 202 pins the END of tab Analytics (the memo named it: "the END of tab Analytics: the three ripe columns follow it");
+it now asserts the seven columns before the end and the three ripe columns last. (3) THREE TYPED TESTS met the rule book of this step: a
+fresh Sheet's brief now says "Counting: S1 0 of 8 Shorts, ..." for every arm (the memo's daily Counting line - now pinned, and the "no
+change" wording tested with no rule counting); conftest's format shares 70 / 30 / 0 (OLD_INSIDE) are not the defaults 60 / 20 / 20, so with
+FORMAT_SHARE_* in the portfolio the review rightly records them as HIS hands - the hand test plants the shipped shares; the review now also
+writes the risk line's weekly row (state judged), so the ticket test picks the decision by its key.
+`tests/test_v11_spinoff.py` (the Case Files countdown with force=True while CASEFILES_ON is FALSE): passes - `force` is not stopped by the
+switch. Matrix: two rows (no rule decides on thin numbers and none peeks - `fn:` strategy.judge_arms / judge / risk_line, manage.ripe; a
+decision's effect is observed - `fn:` strategy.observe). SYSTEM.md regenerated.
+STEP 4'S RUN (pytest `-n 8`, fake mode, alone): `test_v12_strategy`, `test_v12_ladder`, `test_v12_exec`, `test_v12_motion`, `test_v12_money`,
+`test_v85`, `test_v86`, `test_v11_deeptrial`, `test_v11_spinoff`, `test_v12_formats`, `test_v12_short`, `test_docs_current`,
+`test_v111_enforce`, `test_v12_org` - 482 passed, 4 failed (above) in 756.41 s; after the fixes `test_v12_strategy` + `test_v86` 70 passed.
+ALONE UNDER `shim/minitest.py`: `test_v12_strategy.py` 47 passed in 8 s; `test_v12_ladder.py` 32 passed in 178 s; `test_v86.py` 23 passed in 9 s; `test_v12_exec.py` 88 passed in 214 s; `test_v12_motion.py` 60 passed in 365 s. `tools/plan_guard.py`: GREEN.
+STEP 3'S CHECKS (`gh_runs.js`): run 44133166356 on 76bf970, 17:05 -> 18:11 UTC, GREEN - "Unit tests: 1803 passed in 3734.40s"; "REHEARSAL: GREEN ... contract script: 41/41 pass; contract final: 23/23 pass" (strategy_live is the 41st).
+WHAT A VIEWER GETS: a format or a Short format that viewers hold less is cut by evidence - judged once, at a fixed count, by its median
+against the others - and never on a peek; the Shorts rise only when the long videos' moving pictures are paid in full; the two spin-offs
+nobody judged stop publishing.
 ### V1c - THE FLOOR, HIS VERDICT AND THE MAKER'S LINE (15-17 Nov 2026) - ACCEPTED (final code commit 9dfc916 GREEN in GitHub Checks run 246: 1768 passed; sweep 58 of 58 ids) - its code b326887, BUILT AGAIN AFTER RED ROUND 2 (the offline writer keeps the asks it is given and marks its punchlines by the joke rule's own measures (open issue 228); `proving/notes/V1c_BUILT.md`; the repair block "THE REPAIR OF RED ROUND 2" under the second pass's 6b); BEFORE IT RED ON ITS SECOND PASS (46615df, 17 Nov 2026: the rehearsal F2/S2 held by joke_density on episode EP202611170305 - 6 punchlines, need 7, the script one word over the line; `proving/notes/V1c_RED_2.md`), NOT ACCEPTED; BEFORE IT BUILT AGAIN (red round 1 on 030f197 repaired: final code commit d39a213 - the floor's media fixture made for the proof's serial runner, a guard over every test file, test_v12_floor split word for word into three files; `proving/notes/V1c_BUILT.md`; the builder's record, the prover's 6b of the first pass, the repair block under it)
 WHAT IT IS FOR, in a viewer's and the owner's words: a finished long video is shown - its first minute - to two strong first-time viewers of two
 model families beside the video he rejected; a film they cannot tell from that one is HELD, a jury that fails its own planted questions holds

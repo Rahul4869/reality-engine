@@ -2,7 +2,7 @@
 # v12 V4: every decision a ticket the Execution Engine executes and verifies, told to the owner with an Undo link that never dies, settled against the
 # gate's own arithmetic, frozen when he takes a hand. What stays his is a list (OWNER_ONLY) a test holds.
 from __future__ import annotations
-import calendar, datetime as dt, hashlib, json, os
+import calendar, datetime as dt, hashlib, json, math, os, statistics
 from whatifs.core import S, log, store, iso, now_utc, parse_iso, set_setting, scrub, DEFAULTS
 
 TAB = "Decisions"
@@ -36,8 +36,15 @@ def _board(field):
         rows = SB._rows(); return SB._num(rows[-1].get(field), float) if rows else None
     return read
 
-def _first_days(now=None): return None              # the median first-days measure of the Ladder's measured Shorts: filled by step 4 (memo 3.5)
-def _hours_per_video(now=None): return None         # the median `h` of the long videos ripe in the last 56 days: filled by step 4 (memo 3.5)
+def _first_days(now=None):
+    """The median first-days measure of the Ladder's measured Shorts posted in the last 28 days (None without one)."""
+    now = now or now_utc(); xs = [v for _a, t, v in short_items() if now - t <= dt.timedelta(days=28)]
+    return float(statistics.median(xs)) if xs else None
+
+def _hours_per_video(now=None):
+    """The median `h` (ripe views x ripe seconds / 3600) of the long videos ripe in the last 56 days (None without one)."""
+    now = now or now_utc(); xs = [v for _a, t, v, at in long_items() if at and now - at <= dt.timedelta(days=56)]
+    return float(statistics.median(xs)) if xs else None
 
 METRICS = {"shorts_engaged_90d": _board("shorts_90"), "long_hours_12m": _board("hours"), "shorts_engaged_first_days": _first_days,
            "long_hours_per_video_28d": _hours_per_video}
@@ -58,11 +65,175 @@ def _slots_target(now):
     return {"STANDARD_MAX_LONG_PER_MONTH": {"target": t, "why": why, "numbers": {"slots": G.slots(now), "shorts": sh, "free_inr": {str(n): f["free_inr"] for n, f in fits.items()}},
                                             "evidence": "ok", "count": ""}}
 
+def short_items(st=None):
+    """[(arm, posted, measure)]: a Ladder row with evidence "measured" whose `first` holds the engaged views of its first LADDER_READ_DAYS processed
+    days - never `engaged`, the total to date that grows with every weekly reading - in publishing order."""
+    out = []
+    for r in (st or store()).rows("Ladder"):
+        if r.get("evidence") != "measured" or not r.get("format"): continue
+        f = _js(r.get("first"), {}); t = parse_iso(r.get("posted"))
+        if "engaged" not in f or t is None: continue
+        try: out.append((str(r["format"]), t, float(f["engaged"])))
+        except (TypeError, ValueError): continue
+    return sorted(out, key=lambda x: x[1])
+
+def long_items(st=None):
+    """[(arm, slot, h, ripe_at)]: a LIVE long video of the new code (its draw_json carries a format) with a RIPE reading; h = ripe_views x ripe_sec / 3600."""
+    st = st or store(); an = {a.get("episode_id"): a for a in st.rows("Analytics") if a.get("ripe_at")}; out = []
+    for e in st.rows("Episodes"):
+        if e.get("status") != "LIVE" or e.get("episode_id") not in an: continue
+        fmt = _js(e.get("draw_json"), {}).get("format"); t = parse_iso(e.get("slot_et")); a = an[e["episode_id"]]
+        if not fmt or t is None: continue
+        try: out.append((str(fmt), t, float(a["ripe_views"]) * float(a["ripe_sec"]) / 3600.0, parse_iso(a.get("ripe_at"))))
+        except (TypeError, ValueError, KeyError): continue
+    return sorted(out, key=lambda x: x[1])
+
+def q1(xs): return statistics.quantiles(xs, n=4, method="inclusive")[0]
+
+def _judged(rows, rule, key):
+    return sorted([r for r in rows if r.get("rule") == rule and r["key"] == key and r["state"] == "judged"], key=lambda r: int(_js(r.get("numbers"), {}).get("point") or 0))
+
+def judge_arms(rule, prefix, items, p1, p2, omin, noun, now=None, st=None):
+    """JUDGEMENT POINTS (research 7): an arm X is judged ONCE at each point p - its FIRST p items (by publishing time) against every item of the OTHER
+    arms published up to X's p-th. BELOW = median(X) < Q1(others). At p1: below -> half the share it held, down to a multiple of 5; at p2: below -> 0
+    (never for the last arm above 0), not below -> the share it held before p1. Writes the rows (state judged); returns how many."""
+    st = st or store(); now = now or now_utc(); rows = _rows(st); n = 0
+    arms = sorted({a for a, *_r in items} | {k[len(prefix):] for k in DEFAULTS if k.startswith(prefix)})
+    for arm in arms:
+        key = prefix + arm; mine = [x for x in items if x[0] == arm]; done = {int(_js(r.get("numbers"), {}).get("point") or 0) for r in _judged(rows, rule, key)}
+        for p in (p1, p2):
+            if len(mine) < p or p in done: continue
+            first = [x[2] for x in mine[:p]]; tp = mine[p - 1][1]; others = [x[2] for x in items if x[0] != arm and x[1] <= tp]
+            if len(others) < omin: continue
+            med, q = float(statistics.median(first)), float(q1(others)); below = med < q; cell = int(float(_cell(key) or 0))
+            if p == p1: held = cell; target = (cell // 2) // 5 * 5 if below else cell
+            else:
+                held = int(_js((_judged(rows, rule, key) or [{}])[0].get("numbers"), {}).get("held") or cell)
+                last = all(int(float(_cell(k) or 0)) == 0 for k in DEFAULTS if k.startswith(prefix) and k != key)
+                target = (cell if last else 0) if below else held
+            verdict = (f"below: the median of its first {p} {noun} ({med:g}) is under the others' first quartile ({q:g}, {len(others)} {noun})" if below
+                       else f"not below: the median of its first {p} {noun} ({med:g}) against the others' first quartile ({q:g}, {len(others)} {noun})")
+            if p == p2 and below and target: verdict += " - the last arm above 0 keeps its share"
+            row = {"id": _did(rule, key, str(p), str(target), now), "ts": iso(now), "rule": rule, "key": key, "old": str(cell), "new": str(p), "why": verdict, "ticket": "",
+                   "numbers": json.dumps({"point": p, "median": med, "q1": q, "n_others": len(others), "verdict": "below" if below else "not below", "target": target, "held": held}),
+                   "effect_before": "", "effect_after": "", "prediction": "", "state": "judged", "told": "", "frozen_until": "", "observed": "", "scored": "", "briefed": ""}
+            st.append(TAB, [row]); rows.append(row); n += 1
+    return n
+
+def arm_targets(rule, prefix, items, p1, omin, noun, now=None, st=None):
+    """{key: target entry}: the newest judgement's target (unless the decision toward it was undone: then the cell); thin evidence -> the cell, counted."""
+    rows = _rows(st); out = {}
+    arms = sorted({k[len(prefix):] for k in DEFAULTS if k.startswith(prefix)})
+    for arm in arms:
+        key = prefix + arm; cell = _cell(key); js = _judged(rows, rule, key); mine = [x for x in items if x[0] == arm]
+        if js:
+            nb = _js(js[-1].get("numbers"), {}); t = str(nb.get("target"))
+            undone = any(r["key"] == key and r["state"] == "undone" and r["ts"] >= js[-1]["ts"] for r in rows)
+            out[key] = {"target": cell if undone else t, "why": js[-1]["why"], "numbers": nb, "evidence": "ok", "count": ""}
+        else:
+            others = [x for x in items if x[0] != arm]
+            out[key] = {"target": cell, "why": f"{arm}: {len(mine)} of {p1} {noun} measured", "numbers": {"n": len(mine)}, "evidence": "thin",
+                        "count": f"{arm} {len(mine)} of {p1} {noun}" if len(mine) < p1 or len(others) < omin else f"{arm} {len(mine)} of {p1} {noun}"}
+    return out
+
+def _short_arms_target(now):
+    return arm_targets("SHORT_ARMS", "SHORT_SHARE_", short_items(), S("SHORT_ARM_MIN", int), S("SHORT_ARM_MIN", int), "Shorts", now)
+
+def _arms_target(now):
+    return arm_targets("ARMS", "FORMAT_SHARE_", long_items(), S("ARM_MIN_VIDEOS", int), S("ARM_OTHERS_MIN", int), "long videos", now)
+
+def judge(now=None, st=None):
+    """The review's judging pass (both arm rules, the risk line once a week)."""
+    n = judge_arms("SHORT_ARMS", "SHORT_SHARE_", short_items(st), S("SHORT_ARM_MIN", int), S("SHORT_ARM_RETIRE", int), S("SHORT_ARM_MIN", int), "Shorts", now, st)
+    n += judge_arms("ARMS", "FORMAT_SHARE_", [x[:3] for x in long_items(st)], S("ARM_MIN_VIDEOS", int), S("ARM_RETIRE_VIDEOS", int), S("ARM_OTHERS_MIN", int), "long videos", now, st)
+    risk_row(now, st); return n
+
+# ------------------------------------------------------------------ THE RISK LINE (rule SPLIT reads it)
+def uploads(now=None, days=28, st=None):
+    """(long, short) uploads in the last `days`: long = Episodes LIVE with a slot in the window; short = EVERY Specials row with a yt_id made in it."""
+    st = st or store(); now = now or now_utc(); lo = now - dt.timedelta(days=days)
+    lg = sum(1 for e in st.rows("Episodes") if e.get("status") == "LIVE" and parse_iso(e.get("slot_et")) and lo <= parse_iso(e["slot_et"]) <= now)
+    sh = sum(1 for r in st.rows("Specials") if r.get("yt_id") and parse_iso(r.get("made") or r.get("ts")) and lo <= parse_iso(r.get("made") or r.get("ts")) <= now)
+    return lg, sh
+
+def risk_line(now=None, st=None):
+    """("ok" | "worse" | "unknown", words): the v48 of the long videos of the last RISK_WINDOW_DAYS against the window before, beside the uploads."""
+    st = st or store(); now = now or now_utc(); w = dt.timedelta(days=S("RISK_WINDOW_DAYS", int))
+    pub = [(parse_iso(r.get("published")), float(r["v48"])) for r in st.rows("Monitor48") if r.get("kind") == "long" and str(r.get("v48") or "").strip() and parse_iso(r.get("published"))]
+    cur = [v for t, v in pub if now - w <= t <= now]; prev = [v for t, v in pub if now - 2 * w <= t < now - w]
+    n_min = S("RISK_MIN_LONG", int); u1, u2 = uploads(now, w.days, st), uploads(now - w, w.days, st)
+    if len(cur) < n_min or len(prev) < n_min:
+        return "unknown", f"not enough long videos yet ({len(cur)} and {len(prev)}; {n_min} are needed in each half)"
+    mc, mp = statistics.median(cur), statistics.median(prev)
+    words = (f"long videos at 48 hours: a median of {mc:.0f} views over {len(cur)} against {mp:.0f} over {len(prev)} in the four weeks before, "
+             f"beside {u1[1]} against {u2[1]} short uploads")
+    if mp < S("RISK_MIN_VIEWS", float): return "unknown", words + " (too few views to judge)"
+    return ("worse" if mc < (1 - S("RISK_DROP_PCT", float) / 100.0) * mp else "ok"), words
+
+def risk_row(now=None, st=None):
+    """Read weekly and stored as a row 'judged' of rule RISK."""
+    st = st or store(); now = now or now_utc()
+    last = [r for r in _rows(st) if r.get("rule") == "RISK"]
+    if last and now - (parse_iso(sorted(last, key=lambda r: r["ts"])[-1]["ts"]) or now) < dt.timedelta(days=7): return None
+    v, words = risk_line(now, st)
+    row = {"id": _did("RISK", "risk_line", v, words[:40], now), "ts": iso(now), "rule": "RISK", "key": "risk_line", "old": "", "new": v, "why": words, "ticket": "",
+           "numbers": json.dumps({"verdict": v}), "effect_before": "", "effect_after": "", "prediction": "", "state": "judged", "told": "", "frozen_until": "",
+           "observed": "", "scored": "", "briefed": ""}
+    st.append(TAB, [row]); return row
+
+def _split_target(now):
+    """RULE SPLIT: RAISE the month by one step (to 16) while the risk line is not 'worse' AND the raised plan still pays the motion the lever asks
+    (MOTION FIRST); LOWER by one step (not under 8) only after STRATEGY_WINDOW_END on two 'worse' readings 28 days apart whose windows began after the
+    last SPLIT decision was applied. The week follows the month; the cell that binds moves first."""
+    from whatifs import governor as G
+    rows = _rows(); m, w = int(float(_cell("SHORTS_PER_MONTH") or 12)), int(float(_cell("SHORTS_PER_WEEK") or 3))
+    days = calendar.monthrange(now.year, now.month)[1]; L = G.max_long_videos(); risk = sorted([r for r in rows if r.get("rule") == "RISK"], key=lambda r: r["ts"])
+    tgt, why = m, f"the month stays at {m} Shorts"
+    last_risk = risk[-1]["new"] if risk else "unknown"
+    mf = G.moving_floor(); f2 = G.month_fit(L, m + 2, now=now); motion = f2["long_left"] * S("BUDGET_SAFETY_MARGIN", float) * mf["inr_s"] * (mf["living_target_s"] - mf["living_s"])
+    if m + 2 <= 16 and last_risk != "worse" and f2["fits"] and f2["free_inr"] >= motion:
+        tgt, why = m + 2, (f"the money pays {m + 2} Shorts after the long videos' moving seconds in full (Rs {f2['free_inr']:.0f} free, Rs {motion:.0f} for motion first)"
+                           + ("; at four a week the Shorts come on four days running, then three quiet days" if min(4, max(2, math.ceil((m + 2) / 4))) == 4 else ""))
+    elif now.strftime("%Y-%m-%d") > str(S("STRATEGY_WINDOW_END") or "") and m - 2 >= 8:
+        applied = [r for r in rows if r.get("rule") == "SPLIT" and r["state"] in ("applied", "verified")]
+        since = max((parse_iso(r["ts"]) for r in applied), default=None)
+        worse = [r for r in risk if r["new"] == "worse" and (since is None or parse_iso(r["ts"]) - dt.timedelta(days=S("RISK_WINDOW_DAYS", int)) >= since)]
+        if len(worse) >= 2 and parse_iso(worse[-1]["ts"]) - parse_iso(worse[0]["ts"]) >= dt.timedelta(days=28):
+            tgt, why = m - 2, f"two 'worse' readings 28 days apart: {worse[-1]['why']}"
+    wt = min(4, max(2, math.ceil(tgt / 4)))
+    mt = m if (w * days // 7 < tgt and wt != w) else tgt                    # the cell that binds moves first: the week when it binds, else the month
+    nums = {"risk": last_risk, "free_inr": f2["free_inr"], "motion_inr": round(motion, 0)}
+    return {"SHORTS_PER_MONTH": {"target": str(mt), "why": why, "numbers": nums, "evidence": "ok", "count": ""},
+            "SHORTS_PER_WEEK": {"target": str(wt), "why": why, "numbers": nums, "evidence": "ok", "count": ""}}
+
+def _credit_target(now):
+    """RULE CREDIT: lane closed -> 0; open -> 4 while UNTIL is CREDIT_TAPER_DAYS or more away, else 0 (the last week walks 4, 2, 0); a step UP only when
+    its cost for the rest of the month fits as extra money AND the cover already realised is at least that cost."""
+    from whatifs import governor as G
+    from whatifs.org import finance as FIN
+    cell = int(float(_cell("THINK_BOOST_VARIANTS") or 0)); c = FIN.lane(now)
+    if not c: return {"THINK_BOOST_VARIANTS": {"target": "0", "why": "the Claude credit's lane is closed", "numbers": {}, "evidence": "ok", "count": ""}}
+    left_days = (dt.date.fromisoformat(c["until"]) - now.date()).days
+    if left_days < S("CREDIT_TAPER_DAYS", int): return {"THINK_BOOST_VARIANTS": {"target": "0", "why": f"the credit ends in {left_days} days: the boost steps down", "numbers": {"days": left_days}, "evidence": "ok", "count": ""}}
+    fit = G.month_fit(G.max_long_videos(), S("SHORTS_PER_MONTH", int), now=now); cost = fit["short_left"] * 2 * S("SHORT_VARIANT_EST_INR", float)
+    up = G.month_fit(G.max_long_videos(), S("SHORTS_PER_MONTH", int), extra_inr=cost, now=now)["fits"] and FIN.cover(now) >= cost
+    t = 4 if up or cell >= 4 else cell
+    return {"THINK_BOOST_VARIANTS": {"target": str(t), "why": (f"the credit paid Rs {FIN.cover(now):.0f} this month; two more scripts a Short cost Rs {cost:.0f} for the rest of it" if up
+                                                            else f"a step up waits: the credit has paid Rs {FIN.cover(now):.0f} of the Rs {cost:.0f} it would cost"),
+                                     "numbers": {"cost_inr": cost, "cover_inr": FIN.cover(now)}, "evidence": "ok", "count": ""}}
+
 RULES = (
+    {"id": "CREDIT", "keys": ("THINK_BOOST_VARIANTS",), "target": _credit_target, "metric": "shorts_engaged_first_days", "board": "shorts", "direction": "up", "horizon": 8},
+    {"id": "SHORT_ARMS", "keys": ("SHORT_SHARE_S1", "SHORT_SHARE_S2", "SHORT_SHARE_S3"), "target": _short_arms_target, "metric": "shorts_engaged_first_days", "board": "shorts", "direction": "up", "horizon": 8},
     {"id": "SLOTS", "keys": ("STANDARD_MAX_LONG_PER_MONTH",), "target": _slots_target, "metric": "long_hours_per_video_28d", "board": "hours", "direction": "up", "horizon": 4},
+    {"id": "SPLIT", "keys": ("SHORTS_PER_MONTH", "SHORTS_PER_WEEK"), "target": _split_target, "metric": "shorts_engaged_90d", "board": "shorts", "direction": "up", "horizon": 12},
+    {"id": "ARMS", "keys": ("FORMAT_SHARE_F1", "FORMAT_SHARE_F2", "FORMAT_SHARE_F3"), "target": _arms_target, "metric": "long_hours_per_video_28d", "board": "hours", "direction": "up", "horizon": 8},
 )
 PORTFOLIO = tuple(k for r in RULES for k in r["keys"])
-WORDS = {"STANDARD_MAX_LONG_PER_MONTH": "{new} long videos a month instead of {old}"}
+WORDS = {"STANDARD_MAX_LONG_PER_MONTH": "{new} long videos a month instead of {old}", "SHORTS_PER_MONTH": "{new} Shorts a month instead of {old}",
+         "SHORTS_PER_WEEK": "{new} Shorts a week instead of {old}", "THINK_BOOST_VARIANTS": "{new} more scripts for every Short instead of {old}",
+         **{f"SHORT_SHARE_S{i}": "Short format S%d: %s%% of the Shorts instead of %s%%" % (i, "{new}", "{old}") for i in (1, 2, 3)},
+         **{f"FORMAT_SHARE_F{i}": "format F%d: %s%% of the long videos instead of %s%%" % (i, "{new}", "{old}") for i in (1, 2, 3)}}
 
 def rule_of(key): return next((r for r in RULES if key in r["keys"]), None)
 
@@ -270,9 +441,10 @@ def weekly(now=None, st=None):
     if rw: out.append(rw)
     c = FIN.lane(now)
     if c: out.append(f"Claude credit: Rs {c['spent_inr']:.0f} used of Rs {c['amount_inr']:.0f}, Rs {c['left_inr']:.0f} left until {c['until']}; what is left on that day lapses.")
-    rows = _rows(st); wk = [r for r in rows if r.get("rule") not in ("HAND", "WATCH") and r["state"] not in ("hand", "watch", "judged") and (parse_iso(r.get("ts")) or now) > now - dt.timedelta(days=7)]
+    out.append("Spin-offs: switched off; they come back only rebuilt.")
+    rows = _rows(st); wk = [r for r in rows if r.get("rule") not in ("HAND", "WATCH", "RISK") and r["state"] not in ("hand", "watch", "judged") and (parse_iso(r.get("ts")) or now) > now - dt.timedelta(days=7)]
     if wk:
-        v = sum(1 for r in wk if r["state"] == "verified"); x = sum(1 for r in wk if r["state"] in TAKEN_BACK + ("undone",)); w = len(wk) - v - x
+        v = sum(1 for r in wk if r.get("observed")); x = sum(1 for r in wk if r["state"] in TAKEN_BACK + ("undone",)); w = len(wk) - v - x
         out.append(f"{len(wk)} decision(s) this week: {v} took effect, {w} not seen yet, {x} taken back.")
     else: out.append("No change this week: every setting is at its target.")
     hand = [r for r in rows if r["state"] == "hand" and (parse_iso(r.get("ts")) or now) > now - dt.timedelta(days=7)]
@@ -280,11 +452,13 @@ def weekly(now=None, st=None):
     return " ".join(out)
 
 def risk_words(now=None):
-    """The watch book's words for the weekly line (memo 3.6; '' until the watch book exists)."""
+    """The risk words of the weekly line: the newest risk line (3.5), then the watch book's (memo 3.6, once it exists)."""
+    rs = sorted([r for r in _rows() if r.get("rule") == "RISK"], key=lambda r: r["ts"]); out = f"Risk line: {rs[-1]['why']}." if rs else ""
     try:
         from whatifs.org import risk as RISK
-        return RISK.words(now)
-    except ImportError: return ""
+        w = RISK.words(now); out = (out + " " + w).strip() if w else out
+    except ImportError: pass
+    return out
 
 def briefed(now=None, st=None):
     """Stamp `briefed` on every row the brief that just WENT carried (rows not later than the brief's own `now`), and the weekly line's clock."""
@@ -402,6 +576,7 @@ def review(brief):
     st = store(); now = now_utc()
     resend = settle(now, st)
     hs = hands(now, st)
+    judge(now, st); observe(now, st)
     risks = book(now, st)
     c, refused = next_move(now, st); memos = list(resend); decided = 0
     if c: _row, memo = decide(c, now, st); memos.append(memo); decided = 1
@@ -417,6 +592,33 @@ def book(now=None, st=None):
         from whatifs.org import risk as RISK
         return RISK.watch(now, st)
     except ImportError: return 0
+
+# ------------------------------------------------------------------ what production DID (a later review fills `observed`; never the gate's arithmetic)
+def observe(now=None, st=None):
+    """SLOTS: the long videos with a slot in the decision's month (once that month is over); SPLIT: the Shorts made in it; a share: the formats of the next
+    ten made after the decision; CREDIT: `asked` of the next Short's write run. The weekly line counts "took effect" from this column."""
+    from whatifs import shorts2 as SH
+    st = st or store(); now = now or now_utc(); n = 0
+    eps = st.rows("Episodes"); sps = st.rows("Specials")
+    for r in _rows(st):
+        if r.get("observed") or r["state"] not in ("applied", "verified") or r.get("rule") in ("HAND", "RISK"): continue
+        t = parse_iso(r.get("ts")) or now; mk = t.strftime("%Y-%m"); over = (now.year, now.month) != (t.year, t.month); obs = None
+        if r["rule"] == "SLOTS" and over:
+            obs = {"long_videos": sum(1 for e in eps if str(e.get("slot_et") or "").startswith(mk) and str(e.get("status") or "").upper() not in ("KILLED", "FAILED", "SKIPPED"))}
+        elif r["rule"] == "SPLIT" and over:
+            obs = {"shorts_made": SH.made_this_month(t)}
+        elif r["key"].startswith("FORMAT_SHARE_"):
+            after = [_js(e.get("draw_json"), {}).get("format") for e in sorted(eps, key=lambda e: str(e.get("created") or e.get("slot_et") or "")) if str(e.get("slot_et") or "") > r["ts"]]
+            after = [f for f in after if f][:10]
+            if len(after) == 10: obs = {f: after.count(f) for f in sorted(set(after))}
+        elif r["key"].startswith("SHORT_SHARE_"):
+            after = [x.get("format") for x in sorted(sps, key=lambda x: str(x.get("ts") or "")) if str(x.get("ts") or "") > r["ts"] and x.get("format")][:10]
+            if len(after) == 10: obs = {f: after.count(f) for f in sorted(set(after))}
+        elif r["rule"] == "CREDIT":
+            nxt = [x for x in sorted(sps, key=lambda x: str(x.get("ts") or "")) if str(x.get("ts") or "") > r["ts"] and "_write" in str(x.get("script") or "")]
+            if nxt: obs = {"asked": _js(nxt[0].get("script"), {}).get("_write", {}).get("asked")}
+        if obs is not None: _save(st, r, observed=obs); n += 1
+    return n
 
 # ------------------------------------------------------------------ UNDO (the whole stack)
 def undo(did, now=None, st=None):

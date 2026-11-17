@@ -365,14 +365,14 @@ def test_the_daily_cells_are_gone_everywhere_and_the_new_levers_are_registered(s
     for k in ("SHORTS_PER_DAY", "SHORTS_KLING_EVERY", "REPLAN_MAX_SHORTS_PER_DAY"):
         assert k not in core.DEFAULTS and k not in LV.LEVERS and LV.owner_of(k) == "", k
     assert not hasattr(SH, "target_today") and not hasattr(__import__("whatifs.shortslab", fromlist=["x"]), "breakouts")
-    assert {LV.owner_of(k) for k in ("SHORTS_PER_WEEK", "SHORTS_PER_MONTH", "SHORTS_BREAKOUT_X", "FOLLOWUP_WITHIN_H")} == {"D14"} and {LV.owner_of(k) for k in ("LADDER_WINDOW_DAYS", "LADDER_MIN_ENGAGED")} == {"D10"}
-    assert LV.LEVERS["SHORTS_PER_WEEK"]["owner"] == "up" and LV.LEVERS["SHORTS_BREAKOUT_X"]["owner"] == "down" and LV.LEVERS["LADDER_WINDOW_DAYS"]["checks"] == ("topic_ladder",)
+    assert {LV.owner_of(k) for k in ("SHORTS_BREAKOUT_X", "FOLLOWUP_WITHIN_H")} == {"D14"} and {LV.owner_of(k) for k in ("SHORTS_PER_WEEK", "SHORTS_PER_MONTH")} == {"D1"} and {LV.owner_of(k) for k in ("LADDER_WINDOW_DAYS", "LADDER_MIN_ENGAGED")} == {"D10"}      # v12 V4: the cadence is Strategy's (BY DESIGN)
+    assert LV.LEVERS["SHORTS_PER_WEEK"]["owner"] == "" and LV.LEVERS["SHORTS_BREAKOUT_X"]["owner"] == "down" and LV.LEVERS["LADDER_WINDOW_DAYS"]["checks"] == ("topic_ladder",)      # v12 V4: raising no longer needs him - the fit gate bounds the money (BY DESIGN)
     assert ("whatifs/ladder.py", "promote") in REG.ENTRY["D10"] and "whatifs/ladder.py" in REG.DEPTS["D10"]["wraps"] and REG.check_owner("topic_ladder") == "D10" and not REG.entry_issues() and not REG.data_issues()
     assert "daily_shorts_cadence" in {r["id"] for r in TRU.RETIRED} and TRU.issues() == []
     assert CT.cadence_words() == "about 1 long video and 3 Shorts a week"
     setting("SHORTS_PER_WEEK", "4"); assert CT.cadence_words().endswith("4 Shorts a week")
     assert DS.route("SET|shorts_per_week|2") == (True, "SHORTS_PER_WEEK = 2") and DS.route("SET|shorts_per_week|9") == (True, "SHORTS_PER_WEEK = 5") and DS.route("SET|shorts_per_day|2")[0] is False
-    assert {"Ladder"} <= set(core.TABS) and core.TABS["Breakout_Queue"][-2:] == ["due", "done"] and core.TABS["Analytics"][-2:] == ["days", "first_json"]
+    assert {"Ladder"} <= set(core.TABS) and core.TABS["Breakout_Queue"][-2:] == ["due", "done"] and core.TABS["Analytics"][-5:-3] == ["days", "first_json"] and core.TABS["Analytics"][-3:] == ["ripe_views", "ripe_sec", "ripe_at"]      # v12 V4: the ripe reading follows (BY DESIGN)
 
 def test_the_replanner_offers_one_more_short_a_week_at_its_real_price(monkeypatch, setting):
     from whatifs import replan as RP

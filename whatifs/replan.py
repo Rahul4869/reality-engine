@@ -34,6 +34,7 @@ def weekly(now=None):
     """Monday: one card with the proposals (Approve all / Not now). Returns the proposals sent."""
     now = now or now_utc()
     if not S("REPLAN_ON", bool) or now.weekday() != 0 or str(S("REPLAN_LAST") or "")[:10] == now.strftime("%Y-%m-%d"): return []
+    if S("STRATEGY_ON", bool): return []                                  # v12 V4: Strategy decides (whatifs/org/strategy.py); month_restore still gives back what an older card changed
     set_setting("REPLAN_LAST", iso(now))
     props = proposals(now)
     if not props: return []

@@ -54,7 +54,7 @@ LEVERS = {
     "SOUND_DESIGN_ON": _b("off", GATE, ("music_bed",)), "TTS_ENGINE": _e(("gemini", "kokoro"), (), "", ("designed_voices",)),
     "CONTRACT_OFF": {"kind": "csv", "owner": "always", "why": "it switches a promised check off", "checks": ()},
     "BREAKOUT_HARD_BAR": _n("int", 50, 95, 5, "down", GATE, ("breakout_bar",)), "CRITIQUE_MIN": _n("float", 4, 9, 1, "down", GATE, ("self_review",)),
-    "SHORTS_PER_WEEK": _n("int", 1, 5, 1, "up", COST), "SHORTS_PER_MONTH": _n("int", 4, 20, 2, "up", COST),                       # v12 V2c-b: the cadence in weeks (the Shorts Studio)
+    "SHORTS_PER_WEEK": _n("int", 2, 4, 1), "SHORTS_PER_MONTH": _n("int", 8, 16, 2),      # v12 V4: Strategy's (D1) - the fit gate and the cadence's own split bound the money                       # v12 V2c-b: the cadence in weeks (the Shorts Studio)
     "SHORTS_BREAKOUT_X": _n("float", 2, 10, 1, "down", COST), "FOLLOWUP_WITHIN_H": _n("int", 24, 96, 24),                          # the double-down line and its clock
     "LADDER_WINDOW_DAYS": _n("int", 14, 60, 7, "", "", ("topic_ladder",)), "LADDER_MIN_ENGAGED": _n("int", 0, 500, 50, "", "", ("topic_ladder",)),   # v12 V2c-b: the promote rule (Growth and Learning)
     "OPENING_FIT": _e(("auto", "fill", "whole"), (), "", ("opening_shown",)), "OPENING_ENLARGE_MAX": _n("float", 1, 3, 0.5, "up", GATE, ("opening_shown",)),   # v12 V2c-b2b: the opening window (Visual Production); wider = softer
@@ -62,6 +62,7 @@ LEVERS = {
     "STOCK_SHARE_MAX_PCT": _n("int", 0, 20, 5, "up", GATE, ("stock_share",)), "SHORT_SOUND_BY_S": _n("float", 0.05, 0.5, 0.1, "up", GATE, ("short_sound",)),   # real footage stays an anchor; a Short sounds from its first frame (Sound)
     "REEL1_DELAY_MIN": _n("int", 0, 120, 30), "NEXT_LINK_ON": _b(),
     "IG_TRIAL_REELS_ON": _b(checks=("release_sheet",)), "SHORT_THUMB_ON": _b(checks=("release_sheet",)),      # v12 V2c-b2: two rows of a Short's release sheet (reach trials: neither costs money nor weakens a gate)
+    "DEEP_TRIAL_ON": _b("on", "it turns one of the month's long videos into a 20-minute trial"), "CASEFILES_ON": _b("on", "it publishes a long video no gate has judged"),      # v12 V4: paused spin-offs (D1)
     "BRAIN_ON": _b("off", "the channel stops learning from its own videos"), "BRAIN_HOLDOUT": _n("float", 0.05, 0.5, 0.1),
     "BUDGET_GUARD_PCT": _n("int", 50, 100, 10, "up", COST), "BREAKOUT_FUND_CAP_INR": _n("int", 0, 3000, 500, "up", COST), "AUTO_FIX_PAID_INR": _n("int", 0, 100, 20, "up", COST),
     "MONTH_RESERVE_INR": _n("int", 0, 1000, 100, "down", "it removes the month's safety reserve"), "THINK_BOOST_VARIANTS": _n("int", 0, 4, 2),      # v12 V4: Finance's reserve (D11); Strategy's boost that ends by itself (D1)

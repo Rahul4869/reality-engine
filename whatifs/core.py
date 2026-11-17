@@ -64,7 +64,7 @@ TABS = {
  "Playbook":     ["rule_id", "department", "rule", "metric", "source", "evidence", "status", "added", "plays_on", "sum_on", "plays_off", "sum_off", "note"],      # v8.7: research-graded rules (K68)
  "Strategy_Log": ["ts", "dimension", "action", "name", "replaces", "mean_at_change", "note"],      # v8.6: every automatic strategy change, its evaluation and any rollback
  "Analytics":    ["episode_id", "yt_id", "pulled", "views", "avg_view_pct", "avg_view_sec", "ret30", "ctr", "ctr_kind", "likes", "shares", "subs", "score", "from_shorts", "diagnosis", "data_note", "shorts_views", "shorts_subs",
-                  "impressions", "wtpi", "rel30", "rel_avg", "engaged_views", "days", "first_json"],      # v12 V2c-b (appended): days = processed days a Short's reading covers, first_json = its first LADDER_READ_DAYS days
+                  "impressions", "wtpi", "rel30", "rel_avg", "engaged_views", "days", "first_json", "ripe_views", "ripe_sec", "ripe_at"],      # v12 V4 (appended): the RIPE reading of a long video, ARM_RIPE_DAYS after its slot (rule ARMS)      # v12 V2c-b (appended): days = processed days a Short's reading covers, first_json = its first LADDER_READ_DAYS days
                  #      # v8.7 (appended): impressions, watch seconds per impression, retention vs similar-length YouTube videos
  "Repairs":      ["ts", "file", "error", "result", "pr"],
  # v7.4: audience research, opening hooks, cut map (all reviewable by a person)
@@ -741,7 +741,7 @@ DEFAULTS = {
  "REPLAN_LAST": ("", "auto"), "REPLAN_PENDING": ("[]", "auto"), "REPLAN_ORIGINALS": ("{}", "auto"), "REPLAN_MONTH": ("", "auto"),
  "SCOUT_ON": ("TRUE", "v11 (K165): weekly tool scout (fal catalog + prices, deprecation watch, Artificial Analysis ranking if AA_API_KEY is set)"),
  "SCOUT_WEEKDAY": ("2", "v11: 0=Mon"), "SCOUT_LAST": ("", "auto"),
- "DEEP_TRIAL_ON": ("TRUE", "v11 (K163): one long slot a month becomes a ~20-minute Deep Trial (three acts + a Jury Room segment)"),
+ "DEEP_TRIAL_ON": ("FALSE", "v11 (K163): one long slot a month becomes a ~20-minute Deep Trial (three acts + a Jury Room segment). v12 V4: PAUSED, not built - it comes back only rebuilt (a lever of D1 that needs the owner to switch on)"),
  "DEEP_TRIAL_DAY": ("18", "v11: the first long slot on or after this day of the month"),
  "DEEP_TRIAL_WORDS_MULT": ("1.9", "v11: narration length multiplier for the Deep Trial (about 20 minutes)"),
  "DEEP_TRIAL_MONTH": ("", "auto"),
@@ -756,7 +756,7 @@ DEFAULTS = {
  "SOUND_WORLDS_ON": ("TRUE", "v11 (K161): per-location sound beds + story events (gavel on the verdict, paper under exhibits, fizzle after the Prototype)"),
  "SOUND_WORLD_MIN_S": ("12", "v11: shortest time a location's bed plays before it changes"),
  "SOUND_EVENTS_MAX": ("12", "v11: story sound events per episode"),
- "CASEFILES_ON": ("TRUE", "v11 (K160): one Case Files countdown a month once enough episodes are archived"),
+ "CASEFILES_ON": ("FALSE", "v11 (K160): one Case Files countdown a month once enough episodes are archived. v12 V4: PAUSED, not built - it publishes a long video no gate has judged (a lever of D1 that needs the owner to switch on)"),
  "CASEFILES_CASES": ("5", "v11: cases per countdown"), "CASEFILES_POOL": ("10", "v11: newest archived episodes considered"),
  "CASEFILES_SEG_SEC": ("75", "v11: seconds taken from each past episode (around its twist)"),
  "CASEFILES_MIN_NEW_SHARE": ("0.35", "v11 G1: new material / runtime must be at least this"),
@@ -894,6 +894,19 @@ DEFAULTS = {
  "STRATEGY_RETRY_DAYS": ("7", "v12 V4: a key whose move the engine refused or rolled back is not moved again for this many days (two such tries: frozen 28 days, a memo to Operations)"),
  "STRATEGY_STALE_H": ("36", "v12 V4: check strategy_live fails when Strategy's newest complete review is older than this many hours"),
  "STRATEGY_WEEKLY_AT": ("", "auto - v12 V4: when the brief last carried Strategy's weekly line"),
+ "SHORT_ARM_MIN": ("8", "v12 V4 (rule SHORT_ARMS): a Short format is judged at its 8th measured Short (and the others need 8 together); a cell, not a lever, until B8 reads its results"),
+ "SHORT_ARM_RETIRE": ("16", "v12 V4 (rule SHORT_ARMS): the second judgement point - below the others' first quartile again: the format's share goes to 0"),
+ "ARM_MIN_VIDEOS": ("8", "v12 V4 (rule ARMS): a long-video format is judged at its 8th RIPE video"),
+ "ARM_RETIRE_VIDEOS": ("12", "v12 V4 (rule ARMS): the second judgement point of a long-video format"),
+ "ARM_OTHERS_MIN": ("4", "v12 V4 (rule ARMS): the other formats need this many ripe videos together before a format is judged"),
+ "ARM_RIPE_DAYS": ("28", "v12 V4: a long video's RIPE reading covers its first this-many days (read once, 3 days later)"),
+ "RISK_WINDOW_DAYS": ("28", "v12 V4 (the risk line): the window of long videos' 48-hour views compared with the window before"),
+ "RISK_MIN_LONG": ("3", "v12 V4 (the risk line): long videos needed in each window, else 'unknown'"),
+ "RISK_MIN_VIEWS": ("200", "v12 V4 (the risk line): the window before must have at least this median of 48-hour views, else 'unknown'"),
+ "RISK_DROP_PCT": ("20", "v12 V4 (the risk line): 'worse' = the median fell by more than this percent"),
+ "STRATEGY_WINDOW_END": ("2027-01-31", "v12 V4 (rule SPLIT): until this day the Shorts are the first road into the Partner Program and no rule takes one away"),
+ "CREDIT_TAPER_DAYS": ("7", "v12 V4 (rule CREDIT): the boost steps down to 0 when the Claude credit ends within this many days"),
+ "V12V4_MOVE_DONE": ("", "v12 V4: set once after the one-time move (the two spin-offs paused, the Max credit's old end date cleared) on a live Sheet"),
  "STRATEGY_TODAY": ("", "auto - v12 V4: the newest review's refusals and counting, for the brief's one line on a day without a decision"),
  "FINANCE_SEEN_TS": ("", "auto - v12 V4: the newest cost summary Finance's watch has read (an overrun after it becomes a memo to Operations)"),
  "GEMINI_CREDIT_USD_MONTH": ("0", "v9.4a: monthly Gemini API credit from Google AI Pro (10 when linked); money view only"),

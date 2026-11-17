@@ -10,7 +10,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `heygen/heygen-video/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 3 standalone Shorts a week, 12 a month at most - every topic starts as a Short and the promote rule picks the long video's topic (`whatifs/ladder.py`); spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 136 code modules, 839 settings, 88 Sheet tabs, 25 GitHub workflows.
+- Size: 136 code modules, 852 settings, 88 Sheet tabs, 25 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -182,8 +182,8 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | LADDER_WINDOW_DAYS | 30 | v12 V2c-b (a lever of Growth and Learning, D10): a Short can be promoted to a long video for this many days after it went public; then its topic is passed over and its kept footage is deleted |
 | SHORTS_BREAKOUT_X | 3 | v12 V2c-b: a Short whose public views at the 24-hour or the 48-hour mark reach this many times the median of the channel's earlier Shorts at the same mark is a WINNER: one follow-up Short is ordered with a clock (FOLLOWUP_WITHIN_H) |
 | FOLLOWUP_WITHIN_H | 48 | v12 V2c-b (a lever of the Shorts Studio, D14): a winner's follow-up Short must be made within this many hours of the order; later the Shorts Studio gets a problem memo that climbs to the owner |
-| CASEFILES_ON | TRUE | one Case Files countdown a month once enough episodes are archived |
-| DEEP_TRIAL_ON | TRUE | one long slot a month becomes a ~20-minute Deep Trial (three acts + a Jury Room segment) |
+| CASEFILES_ON | FALSE | one Case Files countdown a month once enough episodes are archived. v12 V4: PAUSED, not built - it publishes a long video no gate has judged (a lever of D1 that needs the owner to switch on) |
+| DEEP_TRIAL_ON | FALSE | one long slot a month becomes a ~20-minute Deep Trial (three acts + a Jury Room segment). v12 V4: PAUSED, not built - it comes back only rebuilt (a lever of D1 that needs the owner to switch on) |
 | PREPROD_ON | TRUE | the writers' room for the next slot runs early (when nobody waits) through Message Batches at half price; production takes the result as written [FALSE = the room runs inside production] |
 | PAUSED | FALSE | TRUE stops everything |
 
@@ -312,7 +312,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Lessons | 4 | ts, lesson, evidence, applies_to |  |
 | Playbook | 13 | rule_id, department, rule, metric, source, evidence ... | the older research rulebook (whatifs/playbook.py); NOT a Palace playbook |
 | Strategy_Log | 7 | ts, dimension, action, name, replaces, mean_at_change ... |  |
-| Analytics | 25 | episode_id, yt_id, pulled, views, avg_view_pct, avg_view_sec ... |  |
+| Analytics | 28 | episode_id, yt_id, pulled, views, avg_view_pct, avg_view_sec ... |  |
 | Repairs | 5 | ts, file, error, result, pr |  |
 | Research_Brief | 9 | brief_id, brief_date, kind, ref, item, detail ... |  |
 | Hook_Candidates | 14 | episode_id, rank, line, words, type, clarity ... |  |
@@ -637,12 +637,12 @@ By kind: audience_insight 8, failure_lesson 7, owner_preference 27, plan 2, poli
 | id | department | rhythm | runs under the runner | playbook | thinking cap (Rs / month) | levers (Settings cells) |
 |---|---|---|---|---|---|---|
 | D0 | Owner Office | tick | pending (B9) | brief | - | WA_ON, DASH_ON |
-| D1 | Strategy & Planning | daily | review (whatifs/cli.py) | brief | - | STANDARD_MAX_LONG_PER_MONTH, PUBLISH_DAYS, VIDEOS_PER_MONTH_EST, FORMAT_SHARE_F1, FORMAT_SHARE_F2, FORMAT_SHARE_F3, THINK_BOOST_VARIANTS |
+| D1 | Strategy & Planning | daily | review (whatifs/cli.py) | brief | - | STANDARD_MAX_LONG_PER_MONTH, PUBLISH_DAYS, VIDEOS_PER_MONTH_EST, FORMAT_SHARE_F1, FORMAT_SHARE_F2, FORMAT_SHARE_F3, THINK_BOOST_VARIANTS, SHORTS_PER_WEEK, SHORTS_PER_MONTH, MOVING_SHARE_LONG, DEEP_TRIAL_ON, CASEFILES_ON |
 | D2 | R&D - Research | daily | daily (whatifs/cli.py), weekly (whatifs/cli.py) | brief | 300 | RESEARCH_ON, IDEA_MIN_MULTIPLE, RESEARCH_PER_WEEK |
 | D3 | Review Board | weekly | assess (whatifs/cli.py) | brief | 120 | BOARD_MIN_EVIDENCE |
 | D4 | Creative - Ideation & Writers' Room | episode | write (whatifs/episode.py), draft (whatifs/preview.py) | brief | - | ROOM_MODE, ROOM_V2_DRAFTS, REHOOK_MAX_GAP_SEC, JOKE_EVERY_SEC_LONG, COLD_OPEN_LORE_FREE_SEC |
 | D5 | Packaging | episode | package (whatifs/episode.py) | brief | - | PROMISE_BY_SEC |
-| D6 | Visual Production | episode | plan (whatifs/episode.py), assets (whatifs/episode.py), render (whatifs/episode.py) | brief | - | ANIM_SHOTS, VISUAL_CHANGE_MAX_S, PARTICLES_ON, LIVING_CHARACTERS_ON, CAMERA_MOTION, OPENING_FIT, OPENING_ENLARGE_MAX, MOVING_SHARE_LONG, MOVING_SHARE_MIN_LONG, STOCK_SHARE_MAX_PCT, ACT_MIN_S, PLACE_CHANGES_PER_MIN_MAX |
+| D6 | Visual Production | episode | plan (whatifs/episode.py), assets (whatifs/episode.py), render (whatifs/episode.py) | brief | - | ANIM_SHOTS, VISUAL_CHANGE_MAX_S, PARTICLES_ON, LIVING_CHARACTERS_ON, CAMERA_MOTION, OPENING_FIT, OPENING_ENLARGE_MAX, MOVING_SHARE_MIN_LONG, STOCK_SHARE_MAX_PCT, ACT_MIN_S, PLACE_CHANGES_PER_MIN_MAX |
 | D7 | Sound | episode | voice (whatifs/episode.py), short_voice (whatifs/shorts2.py) | brief | - | SOUND_DESIGN_ON, TTS_ENGINE, SHORT_SOUND_BY_S, MAKER_LINE_MAX_WORDS |
 | D8 | QA & Enforcement | episode | script_gate (whatifs/episode.py), final_gate (whatifs/episode.py), short_gate (whatifs/shorts2.py), short_file_gate (whatifs/shorts2.py), release_gate (whatifs/release.py) | brief | - | CONTRACT_OFF, BREAKOUT_HARD_BAR, CRITIQUE_MIN |
 | D9 | Publishing & Distribution | episode | publish (whatifs/episode.py), short_publish (whatifs/release.py) | brief | - | REEL1_DELAY_MIN, NEXT_LINK_ON, IG_TRIAL_REELS_ON, SHORT_THUMB_ON |
@@ -650,7 +650,7 @@ By kind: audience_insight 8, failure_lesson 7, owner_preference 27, plan 2, poli
 | D11 | Finance | daily | watch (whatifs/cli.py) | brief | - | BUDGET_GUARD_PCT, BREAKOUT_FUND_CAP_INR, AUTO_FIX_PAID_INR, MONTH_RESERVE_INR |
 | D12 | Operations | tick | operate (whatifs/org/execute.py) | brief | - | PREFLIGHT_ON |
 | D13 | Audience | episode | seat (whatifs/episode.py), probe (whatifs/episode.py), short_seat (whatifs/shorts2.py), floor (whatifs/episode.py), verdict (whatifs/org/verdicts.py) | brief | - | NUMBERS_PER_MIN_MAX, GRAPHICS_MAX_LONG, GRAPHICS_FREE_SEC, BREATH_EVERY_S, PLAIN_HARD_PER_MIN_MAX, PLAIN_OPENING_HARD_MAX, PLAIN_HARD_PER_SENTENCE_MAX, SHORT_HOOK_WORDS_MAX, SHORT_HOOK_BY_S, SHORT_NUMBERS_MAX, SHORT_EXPERT_MAX, SHORT_PROMISE_WORDS_MAX, INSIDE_MIN_PCT_F1, INSIDE_MIN_PCT_F2, INSIDE_MIN_PCT_F3, LECTURE_MAX_F1, LECTURE_MAX_F2, LECTURE_MAX_F3, ENDING_FREE_S, VIEW_FLOOR_WATCH_S, VIEW_FLOOR_EYE_WAIT_H, VIEW_FLOOR_REFS_MAX, VIEW_FLOOR_DOWNS_MAX |
-| D14 | Shorts Studio | episode | write (whatifs/shorts2.py), make (whatifs/shorts2.py) | brief | - | SHORT_SHARE_S1, SHORT_SHARE_S2, SHORT_SHARE_S3, SHORT_MIN_S, SHORT_MAX_S_S1, SHORT_MAX_S_S2, SHORT_MAX_S_S3, SHORTS_PER_WEEK, SHORTS_PER_MONTH, SHORTS_BREAKOUT_X, FOLLOWUP_WITHIN_H |
+| D14 | Shorts Studio | episode | write (whatifs/shorts2.py), make (whatifs/shorts2.py) | brief | - | SHORT_SHARE_S1, SHORT_SHARE_S2, SHORT_SHARE_S3, SHORT_MIN_S, SHORT_MAX_S_S1, SHORT_MAX_S_S2, SHORT_MAX_S_S3, SHORTS_BREAKOUT_X, FOLLOWUP_WITHIN_H |
 | C | The Council | weekly | pending (B6) | brief | 150 | ORG_SLA_HOURS |
 | L | The Librarian | weekly | pending (B8) | brief | 40 | PALACE_PLAYBOOK_TOKENS, PALACE_PLAYBOOK_TOKENS_BY_DEPT, PALACE_LIMITS_SHARE, PALACE_REVIEW_DAYS, PALACE_KIND_CAPS |
 
@@ -720,6 +720,11 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | FORMAT_SHARE_F2 | D1 | int | 0 to 100 | 20 | - | the next complete run |
 | FORMAT_SHARE_F3 | D1 | int | 0 to 100 | 20 | - | the next complete run |
 | THINK_BOOST_VARIANTS | D1 | int | 0 to 4 | 2 | - | the next complete run |
+| SHORTS_PER_WEEK | D1 | int | 2 to 4 | 1 | - | the next complete run |
+| SHORTS_PER_MONTH | D1 | int | 8 to 16 | 2 | - | the next complete run |
+| MOVING_SHARE_LONG | D1 | int | 20 to 80 | 10 | - | moving_share |
+| DEEP_TRIAL_ON | D1 | bool | - | - | on: it turns one of the month's long videos into a 20-minute trial | the next complete run |
+| CASEFILES_ON | D1 | bool | - | - | on: it publishes a long video no gate has judged | the next complete run |
 | RESEARCH_ON | D2 | bool | - | - | off: it switches off something you rely on | research |
 | IDEA_MIN_MULTIPLE | D2 | float | 2 to 20 | 2 | down: it weakens a quality gate | idea_evidence |
 | RESEARCH_PER_WEEK | D2 | int | 1 to 8 | 2 | up: it costs more money | research_cadence |
@@ -737,7 +742,6 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | CAMERA_MOTION | D6 | enum | dynamic, gentle | - | - | no_frozen_frames |
 | OPENING_FIT | D6 | enum | auto, fill, whole | - | - | opening_shown |
 | OPENING_ENLARGE_MAX | D6 | float | 1 to 3 | 0.5 | up: it weakens a quality gate | opening_shown |
-| MOVING_SHARE_LONG | D6 | int | 20 to 80 | 10 | - | moving_share |
 | MOVING_SHARE_MIN_LONG | D6 | int | 5 to 60 | 5 | down: it weakens a quality gate | moving_share |
 | STOCK_SHARE_MAX_PCT | D6 | int | 0 to 20 | 5 | up: it weakens a quality gate | stock_share |
 | ACT_MIN_S | D6 | float | 6 to 30 | 2 | - | camera_path |
@@ -792,8 +796,6 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | SHORT_MAX_S_S1 | D14 | int | 20 to 60 | 5 | up: it weakens a quality gate | short_shape |
 | SHORT_MAX_S_S2 | D14 | int | 20 to 60 | 5 | up: it weakens a quality gate | short_shape |
 | SHORT_MAX_S_S3 | D14 | int | 20 to 60 | 5 | up: it weakens a quality gate | short_shape |
-| SHORTS_PER_WEEK | D14 | int | 1 to 5 | 1 | up: it costs more money | the next complete run |
-| SHORTS_PER_MONTH | D14 | int | 4 to 20 | 2 | up: it costs more money | the next complete run |
 | SHORTS_BREAKOUT_X | D14 | float | 2 to 10 | 1 | down: it costs more money | the next complete run |
 | FOLLOWUP_WITHIN_H | D14 | int | 24 to 96 | 24 | - | the next complete run |
 | ORG_SLA_HOURS | C | json | 0.25 to 720 | - | always: it changes how fast the organisation must act | the next complete run |

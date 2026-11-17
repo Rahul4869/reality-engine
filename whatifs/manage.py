@@ -521,6 +521,8 @@ def learn():
     except Exception as x: log(f"v12 V2d-b move skipped: {scrub(x)}", "WARN")
     try: v12v2b_upgrade(st)                                      # v12 V2b: F3 joins the mix (the shares 60 / 20 / 20, his own values stay)
     except Exception as x: log(f"v12 V2b move skipped: {scrub(x)}", "WARN")
+    try: v12v4_upgrade(st)                                      # v12 V4: the two spin-offs paused, the Max credit's old end date cleared (his own values stay)
+    except Exception as x: log(f"v12 V4 one-time move skipped: {scrub(x)}", "WARN")
     try:
         from whatifs import craft as CRF; CRF.seed_techniques()       # v9.3.2: the owner's pre-judged technique cards, filed once
     except Exception as x: log(f"technique seeding skipped: {scrub(x)}", "WARN")
@@ -632,6 +634,8 @@ def learn():
             st.append("Lessons", [{"ts": iso(), "lesson": shorts_lesson(e["episode_id"], m, d), "evidence": "YouTube Analytics (traffic source SHORTS)", "applies_to": "showrunner"}])
         _credit_strategies(st, strategy_credits(d, sc, swapped))      # v8.9.1: each (dimension, name) credited once per video, matched on BOTH columns
     if rows: st.append("Analytics", rows)
+    try: ripe(st)                                               # v12 V4 (rule ARMS): the RIPE reading of a long video, once, ARM_RIPE_DAYS + 3 days after its slot
+    except Exception as x: log(f"ripe readings skipped: {scrub(x)}", "WARN")
     try: _reaction_learning([r for r in rows if r.get("data_note") == "ok"])
     except Exception as x: log(f"reaction learning skipped: {scrub(x)}", "WARN")
     _evolve()
@@ -856,6 +860,19 @@ def v12v2b_upgrade(st):
         if str(S(k) or "").strip() == old: set_setting(k, new); done.append(k)
     set_setting("V12V2B_MOVE_DONE", iso() + " " + (",".join(done) or "none"))
     if done: log("v12 V2b: the format shares are 60 / 20 / 20 now - F3 'The walk' joins the mix as an arm")
+    return done
+
+V12V4_FLIPS = [("DEEP_TRIAL_ON", "TRUE", "FALSE"), ("CASEFILES_ON", "TRUE", "FALSE"), ("CLAUDE_CREDIT_UNTIL", "2026-12-10", "")]
+
+def v12v4_upgrade(st):
+    """ONE time on a live Sheet (v12 V4): the two spin-offs are PAUSED, not built (they come back only rebuilt), and the Max credit's old end date is
+    cleared (the credit is now a window he types: CLAUDE_CREDIT_FROM / UNTIL). A cell is moved only while it still holds the OLD value. Never runs twice."""
+    if str(S("V12V4_MOVE_DONE") or "").strip(): return []
+    done = []
+    for k, old, new in V12V4_FLIPS:
+        if str(S(k) or "").strip() == old: set_setting(k, new); done.append(k)
+    set_setting("V12V4_MOVE_DONE", iso() + " " + (",".join(done) or "none"))
+    if done: log("v12 V4: " + ", ".join(done) + " moved (the spin-offs paused; the credit is a window now)")
     return done
 
 V12V2DB_OLD_LIVING = "fal-ai/ltx-video/image-to-video"          # licensed for research only on its provider's own page and listing (read 13 Nov 2026)
@@ -1137,13 +1154,25 @@ def _reaction_learning(rows):
         for les in RX.reaction_lessons(curve, [{"t": float(r["t"]), "kind": r["kind"]} for r in ev], total, label=f"{m['episode_id']}: "):
             st.append("Lessons", [{"ts": iso(), "lesson": les, "evidence": f"{len(ev)} reactions", "applies_to": "reactions"}])
 
-def _analytics(vid, t, dur=None):
+def ripe(st=None, now=None):
+    """v12 V4: every LIVE long video whose slot is ARM_RIPE_DAYS + 3 days old and whose Analytics row has no `ripe_at` is read ONCE to its slot day +
+    ARM_RIPE_DAYS; a pending or failed answer is tried again the next day; a video with no Analytics row gets none. Returns the episodes read."""
+    st = st or store(); now = now or now_utc(); d = S("ARM_RIPE_DAYS", int); an = {a.get("episode_id"): a for a in st.rows("Analytics")}; out = []
+    for e in st.rows("Episodes"):
+        t = parse_iso(e.get("slot_et")); a = an.get(e.get("episode_id"))
+        if e.get("status") != "LIVE" or not e.get("yt_id") or not t or a is None or a.get("ripe_at") or now - t < dt.timedelta(days=d + 3): continue
+        m = _analytics(e["yt_id"], t, end=t + dt.timedelta(days=d))
+        if not m or m.get("pending"): continue
+        st.update("Analytics", "episode_id", e["episode_id"], {"ripe_views": m["views"], "ripe_sec": m["avg_view_sec"], "ripe_at": iso(now)}); out.append(e["episode_id"])
+    return out
+
+def _analytics(vid, t, dur=None, end=None):
     if FAKE:
         r = random.Random(vid); vv = r.randint(200, 9000)
         return {"views": vv, "engaged_views": int(vv * r.uniform(0.45, 0.8)), "avg_view_pct": r.uniform(25, 55), "avg_view_sec": r.uniform(120, 330), "ret30": r.uniform(0.5, 0.8),
                                         "ctr": 0.0, "ctr_kind": "proxy", "likes": 10, "shares": 2, "subs": 3, "from_shorts": r.randint(0, 150)}
     try:
-        p = {"ids": "channel==MINE", "startDate": t.strftime("%Y-%m-%d"), "endDate": now_utc().strftime("%Y-%m-%d"), "filters": f"video=={vid}",
+        p = {"ids": "channel==MINE", "startDate": t.strftime("%Y-%m-%d"), "endDate": (end or now_utc()).strftime("%Y-%m-%d"), "filters": f"video=={vid}",      # v12 V4: `end` = the ripe reading's last day
              "metrics": "views,averageViewPercentage,averageViewDuration,likes,shares,subscribersGained,engagedViews"}      # v11: engaged views = the 'stayed' signal
         a = requests.get("https://youtubeanalytics.googleapis.com/v2/reports", headers=gheaders(), params=p, timeout=30).json()
         if a.get("error"): log(f"analytics error for {vid}: {str(a['error'])[:200]}", "WARN"); return None
@@ -1336,6 +1365,8 @@ def setup():
     except Exception as x: log(f"v12 V2d-b move skipped: {scrub(x)}", "WARN")
     try: v12v2b_upgrade(st)                                      # v12 V2b: F3 joins the mix (the shares 60 / 20 / 20, his own values stay)
     except Exception as x: log(f"v12 V2b move skipped: {scrub(x)}", "WARN")
+    try: v12v4_upgrade(st)                                      # v12 V4: the two spin-offs paused, the Max credit's old end date cleared (his own values stay)
+    except Exception as x: log(f"v12 V4 one-time move skipped: {scrub(x)}", "WARN")
     try:                                                         # v12: the founding knowledge is in the Palace from the first run
         from whatifs.org import palace as PAL, runner as ORGR; PAL.maintain(st); ORGR.install(st)
     except Exception as x: log(f"palace seed skipped: {scrub(x)}", "WARN")

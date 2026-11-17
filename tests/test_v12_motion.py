@@ -635,7 +635,8 @@ def test_the_batch_is_wired_protected_and_documented():
     assert [REG.check_owner(k) for k in ("moving_share", "stock_share", "short_moving", "short_sound")] == ["D6", "D6", "D6", "D7"]
     assert RND.SHOW_CHECKS == 60 and all(k not in RND.ORG_CHECKS and k in RND.metrics() for k in ("moving_share", "stock_share", "short_moving", "short_sound"))
     assert REG.GATE_RUNS["short_file"] == ("D8", "short_file_gate") and ("whatifs/shorts2.py", "short_file_gate") in REG.ENTRY["D8"] and REG.EPISODE_RUNS["short_file"][-1] == ("D14", "make")
-    for k, dept, owner, checks in (("MOVING_SHARE_LONG", "D6", "", ("moving_share",)), ("MOVING_SHARE_MIN_LONG", "D6", "down", ("moving_share",)), ("STOCK_SHARE_MAX_PCT", "D6", "up", ("stock_share",)),
+    for k, dept, owner, checks in (("MOVING_SHARE_LONG", "D1", "", ("moving_share",)),      # v12 V4: moved to D1 (BY DESIGN)
+                                    ("MOVING_SHARE_MIN_LONG", "D6", "down", ("moving_share",)), ("STOCK_SHARE_MAX_PCT", "D6", "up", ("stock_share",)),
                                    ("SHORT_SOUND_BY_S", "D7", "up", ("short_sound",))):
         assert REG.may_change(dept, k) and LEV.LEVERS[k]["owner"] == owner and LEV.LEVERS[k]["checks"] == checks, k
     for k in ("MOTION_LADDER_ON", "MOVING_SHARE_LONG", "MOVING_SHARE_MIN_LONG", "MOVING_SEEN_MIN_PCT", "MOVING_CHANGE_MIN", "SHORT_CHANGE_MIN", "STOCK_ON", "STOCK_SHARE_MAX_PCT", "STOCK_MIN_S", "STOCK_MAX_S",

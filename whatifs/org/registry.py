@@ -16,7 +16,8 @@ DEPTS = {
     "D0":  {"mission": "capture every owner input verbatim, route it, guarantee it is honoured", "cadence": "tick", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/wa.py", "whatifs/notify.py", "whatifs/dash.py", "whatifs/owner_view.py"), "levers": ("WA_ON", "DASH_ON"), "takes": ()},
     "D1":  {"mission": "goals, the monthly and weekly plan, cadence, priorities, budget allocation, urgency", "cadence": "daily", "cap_inr": None, "inject": "brief",
-            "wraps": ("whatifs/replan.py", "whatifs/manage.py", "whatifs/org/strategy.py"), "levers": ("STANDARD_MAX_LONG_PER_MONTH", "PUBLISH_DAYS", "VIDEOS_PER_MONTH_EST", "FORMAT_SHARE_F1", "FORMAT_SHARE_F2", "FORMAT_SHARE_F3", "THINK_BOOST_VARIANTS"), "takes": ()},
+            "wraps": ("whatifs/replan.py", "whatifs/manage.py", "whatifs/org/strategy.py"), "levers": ("STANDARD_MAX_LONG_PER_MONTH", "PUBLISH_DAYS", "VIDEOS_PER_MONTH_EST", "FORMAT_SHARE_F1", "FORMAT_SHARE_F2", "FORMAT_SHARE_F3", "THINK_BOOST_VARIANTS",
+                       "SHORTS_PER_WEEK", "SHORTS_PER_MONTH", "MOVING_SHARE_LONG", "DEEP_TRIAL_ON", "CASEFILES_ON"), "takes": ()},      # v12 V4: the plan's cells are Strategy's
     "D2":  {"mission": "automatic research: outliers, techniques, platform policy, tools, audience, competitors", "cadence": "daily", "cap_inr": 300, "inject": "brief",
             "wraps": ("whatifs/org/rnd.py", "whatifs/outlier_lab.py", "whatifs/demand.py", "whatifs/research.py", "whatifs/scout.py"), "levers": ("RESEARCH_ON", "IDEA_MIN_MULTIPLE", "RESEARCH_PER_WEEK"), "takes": ()},
     "D3":  {"mission": "assess every research and creative memo: evidence, novelty, impact, feasibility, cost, risk", "cadence": "weekly", "cap_inr": 120, "inject": "brief",
@@ -28,7 +29,7 @@ DEPTS = {
             "wraps": ("whatifs/packaging.py", "whatifs/art.py"), "levers": ("PROMISE_BY_SEC",), "takes": ()},
     "D6":  {"mission": "stills, animated scenes, living characters, particles, micro-cuts, the render", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/media.py", "whatifs/anim.py", "whatifs/living.py", "whatifs/render.py", "whatifs/shotplan.py", "whatifs/opening.py", "whatifs/clips.py", "whatifs/motion.py", "whatifs/stock.py", "whatifs/path.py"),
-            "levers": ("ANIM_SHOTS", "VISUAL_CHANGE_MAX_S", "PARTICLES_ON", "LIVING_CHARACTERS_ON", "CAMERA_MOTION", "OPENING_FIT", "OPENING_ENLARGE_MAX", "MOVING_SHARE_LONG", "MOVING_SHARE_MIN_LONG", "STOCK_SHARE_MAX_PCT", "ACT_MIN_S", "PLACE_CHANGES_PER_MIN_MAX"), "takes": ()},      # v12 V2c-b2b: the opening from the Short's footage
+            "levers": ("ANIM_SHOTS", "VISUAL_CHANGE_MAX_S", "PARTICLES_ON", "LIVING_CHARACTERS_ON", "CAMERA_MOTION", "OPENING_FIT", "OPENING_ENLARGE_MAX", "MOVING_SHARE_MIN_LONG", "STOCK_SHARE_MAX_PCT", "ACT_MIN_S", "PLACE_CHANGES_PER_MIN_MAX"), "takes": ()},      # v12 V2c-b2b: the opening from the Short's footage
     "D7":  {"mission": "voices, sound worlds, story events, the music bed, the pause before a punchline", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/voice.py", "whatifs/tts_gemini.py", "whatifs/sound.py"), "levers": ("SOUND_DESIGN_ON", "TTS_ENGINE", "SHORT_SOUND_BY_S", "MAKER_LINE_MAX_WORDS"), "takes": ()},
     "D8":  {"mission": "the Feature Contract, the Impact Map, the enforcement matrix, problem memos, the repair loop", "cadence": "episode", "cap_inr": None, "inject": "brief",
@@ -52,7 +53,7 @@ DEPTS = {
     "D14": {"mission": "the short video as a product of its own: its formats, its brief, three scripts judged blind, every second animated, the loop - built to win alone, never a cut-down", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/shorts2.py",),
             "levers": ("SHORT_SHARE_S1", "SHORT_SHARE_S2", "SHORT_SHARE_S3", "SHORT_MIN_S", "SHORT_MAX_S_S1", "SHORT_MAX_S_S2", "SHORT_MAX_S_S3",
-                       "SHORTS_PER_WEEK", "SHORTS_PER_MONTH", "SHORTS_BREAKOUT_X", "FOLLOWUP_WITHIN_H"), "takes": ()},      # v12 V2c-b: the cadence and the double-down line
+                       "SHORTS_BREAKOUT_X", "FOLLOWUP_WITHIN_H"), "takes": ()},      # v12 V2c-b: the cadence and the double-down line
     "C":   {"mission": "bring research, creative, owner, performance and problem memos together, decide, issue tickets", "cadence": "weekly", "cap_inr": 150, "inject": "brief",
             "wraps": (), "levers": ("ORG_SLA_HOURS",), "takes": ("assessment_memo", "creative_memo")},
     "L":   {"mission": "keep the Palace consolidated, free of duplicates and contradictions, versioned and bounded", "cadence": "weekly", "cap_inr": 40, "inject": "brief",

@@ -59,7 +59,7 @@ def test_tabs_settings_and_the_lever_table_are_honest(monkeypatch):
     assert core.TABS["Tickets"][0] == "id" and "state" in core.TABS["Tickets"] and core.TABS["Lever_Changes"][:3] == ["ts", "change_id", "ticket_id"]
     for k in ("EXEC_ON", "EXEC_VERIFY_RUNS", "EXEC_VERIFY_DAYS", "EXEC_ARM_OUTPUTS", "EXEC_RULES_PER_DEPT", "EXEC_BUILD_RETRIES", "EXEC_BUILD_WAIT_H", "EXEC_AUTO_MERGE_ON"): assert k in core.DEFAULTS
     reg = {k for v in REG.DEPTS.values() for k in v["levers"]}
-    assert LV.issues() == [] and set(LV.LEVERS) == reg and len(reg) == 91 and REG.data_issues() == []          # v12 V4 step 2: + MONTH_RESERVE_INR (D11), THINK_BOOST_VARIANTS (D1) (pins moved BY DESIGN). v12 V1c step 1: + VIEW_FLOOR_WATCH_S, VIEW_FLOOR_EYE_WAIT_H; step 2: + VIEW_FLOOR_REFS_MAX, VIEW_FLOOR_DOWNS_MAX; step 3: + MAKER_LINE_MAX_WORDS (D7) (D13; pins moved BY DESIGN, the memo's 3.9)
+    assert LV.issues() == [] and set(LV.LEVERS) == reg and len(reg) == 93 and REG.data_issues() == []          # v12 V4 step 4: + DEEP_TRIAL_ON, CASEFILES_ON (D1); step 2: + MONTH_RESERVE_INR (D11), THINK_BOOST_VARIANTS (D1) (pins moved BY DESIGN). v12 V1c step 1: + VIEW_FLOOR_WATCH_S, VIEW_FLOOR_EYE_WAIT_H; step 2: + VIEW_FLOOR_REFS_MAX, VIEW_FLOOR_DOWNS_MAX; step 3: + MAKER_LINE_MAX_WORDS (D7) (D13; pins moved BY DESIGN, the memo's 3.9)
     assert all(LV.owner_of(k) and REG.may_change(LV.owner_of(k), k) for k in reg) and LV.owner_of("FAL_STILL_MODEL") == ""
     saved = LV.LEVERS.pop("ANIM_SHOTS"); assert any("ANIM_SHOTS of D6 has no rule" in x for x in LV.issues()) and any("ANIM_SHOTS" in x for x in REG.data_issues()); LV.LEVERS["ANIM_SHOTS"] = saved
     monkeypatch.setitem(LV.LEVERS, "FAL_STILL_MODEL", LV._b()); assert any("FAL_STILL_MODEL, which is no department's lever" in x for x in LV.issues()); monkeypatch.delitem(LV.LEVERS, "FAL_STILL_MODEL")
@@ -86,7 +86,7 @@ def test_inside_its_range_the_direction_decides_whether_the_owner_is_needed(monk
     assert ok("D4", "ROOM_MODE", "v1")["owner"] and not ok("D7", "TTS_ENGINE", "kokoro")["owner"] and ok("D1", "PUBLISH_DAYS", "sun, sat") == {"old": "Sat", "new": "Sat,Sun", "why": "", "owner": LV.PLAN}
     assert ok("D8", "CONTRACT_OFF", "retention")["owner"] == "it switches a promised check off" and ok("D8", "CONTRACT_OFF", "")["owner"] == ""
     assert ok("L", "PALACE_PLAYBOOK_TOKENS_BY_DEPT", '{"D4": 2400.0}')["new"] == '{"D4": 2400}' and ok("C", "ORG_SLA_HOURS", {"ticket": [12, 36]})["new"] == '{"ticket": [12.0, 36.0]}'
-    assert ok("D14", "SHORTS_PER_WEEK", 2)["new"] == "2" and ok("D6", "VISUAL_CHANGE_MAX_S", "3.50")["new"] == "3.5"
+    assert ok("D1", "SHORTS_PER_WEEK", 2)["new"] == "2" and ok("D6", "VISUAL_CHANGE_MAX_S", "3.50")["new"] == "3.5"      # v12 V4: the cadence is Strategy's (BY DESIGN)
     assert LV.same("ANIM_SHOTS", "4", "4.0") and LV.same("PARTICLES_ON", "true", "TRUE") and not LV.same("ANIM_SHOTS", "4", "5") and LV.same("PALACE_KIND_CAPS", "", "{}") and LV.same("ROOM_MODE", "v2", "v2")
     core.set_setting("JOKE_EVERY_SEC_LONG", "soon"); assert "cannot be judged" in ok("D4", "JOKE_EVERY_SEC_LONG", 20)["owner"]          # a hand-typed non-number: the owner looks
     from whatifs import truth as TRU
