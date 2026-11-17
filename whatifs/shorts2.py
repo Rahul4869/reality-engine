@@ -65,6 +65,9 @@ def made_this_month(now=None):
 
 def _order_premise(q):
     st = store(); key = q.get("video_key")
+    from whatifs import ladder as LAD
+    lr = LAD.order_row(key)                                                                             # v12 V4: a long video's order finds its Short's topic
+    if lr and (lr.get("premise") or lr.get("topic")): return lr.get("premise") or lr.get("topic")
     src = next((e for e in st.rows("Episodes") if e.get("episode_id") == key), None) or next((s for s in st.rows("Specials") if s.get("id") == key), {})
     return src.get("premise") or src.get("title") or key
 

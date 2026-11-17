@@ -649,3 +649,30 @@ def test_the_stand_in_list_is_filed_only_in_fake_mode_with_its_switch_and_its_ru
     setting("STRATEGY_ON", "TRUE"); assert STR.intake(JAN) == []
     setting("ARM_STAND_IN_ON", "TRUE"); STR.intake(JAN); c = cands(); assert sorted(r["kind"] for r in c.values()) == ["hand", "machine", "subject"]
     v = FK.features()[0]["how"]["value"]; ok, bad = PB.vet([dict(v, department="packager")]); assert ok and not bad, bad
+
+# ------------------------------------------------------------------ step 7: one rule for a breakout (a long video about a Short gets what a Short gets)
+def _long_winner(monkeypatch, setting, on):
+    from tests.test_v12_ladder import _short
+    from whatifs import breakout as BRK, ladder as LAD
+    monkeypatch.setattr(PUB, "email", lambda *a, **k: True); monkeypatch.setattr(NTF, "in_quiet_hours", lambda now=None: False)
+    setting("STRATEGY_ON", "TRUE" if on else "FALSE"); now = dt.datetime(2026, 12, 3, 12, 0, tzinfo=dt.timezone.utc); st = core.store()
+    _short("SHW", "What if the Moon left tonight?", 10, now=now); st.update("Ladder", "id", "SHW", {"episode_id": "E9", "multiple": 7.5, "state": "PROMOTED"})
+    st.append("Breakout_Queue", [{"ts": core.iso(now - dt.timedelta(days=8)), "video_key": "SHW", "status": "DONE", "plan": "1 follow-up Short", "left": 0}])      # its own follow-up is done
+    st.append("Episodes", [{"episode_id": "E9", "yt_id": "hot", "slot_et": (now - dt.timedelta(hours=49)).strftime("%Y-%m-%dT%H:%M:%SZ"), "status": "LIVE"}])
+    st.append("Monitor48", [{"yt_id": f"old{i}", "kind": "long", "v48": 100} for i in range(3)])
+    monkeypatch.setattr(BRK, "_views", lambda ids: {i: 900 for i in ids})
+    return BRK.monitor(now), now, st, LAD
+
+def test_a_long_video_about_a_short_that_wins_at_48_hours_gets_one_order_under_its_own_id(monkeypatch, setting):
+    found, now, st, LAD = _long_winner(monkeypatch, setting, True)
+    q = [x for x in st.rows("Breakout_Queue") if x["video_key"] == "E9"]
+    assert [f["key"] for f in found] == ["E9"] and len(q) == 1 and q[0]["status"] == "ORDERED" and q[0]["due"]
+    assert not [r for r in st.rows("Owner_Actions") if r["kind"] == "breakout" and "approve" in r["text"].lower()]
+    msg = [r for r in st.rows("Owner_Actions") if r["kind"] == "breakout"]; assert len(msg) == 1 and msg[0]["text"].startswith("A long video is taking off: E9 is at 9.0 times the usual 100")
+    assert json.loads(msg[0]["buttons"]) == [["Stop it", "BREAKOUT NO E9"]] and float(LAD.row("SHW")["multiple"]) == 7.5      # the Short's own multiple is not written over
+    assert SH._order_premise(q[0]) == "What if the Moon left tonight?" and LAD.order_row("E9")["id"] == "SHW"
+
+def test_with_strategy_off_the_long_video_keeps_its_card(monkeypatch, setting):
+    found, now, st, LAD = _long_winner(monkeypatch, setting, False)
+    assert [f["key"] for f in found] == ["E9"] and not [x for x in st.rows("Breakout_Queue") if x["video_key"] == "E9"]
+    assert [r for r in st.rows("Owner_Actions") if r["kind"] == "breakout"]                                                   # the old card, waiting for his tap

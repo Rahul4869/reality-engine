@@ -1478,6 +1478,17 @@ STEP 6'S RUN (pytest `-n 8`, fake mode, alone): `test_v12_strategy`, `test_v12_e
 STEP 5'S CHECKS (`gh_runs.js`): run 44162837069 on e1a2809, 19:50 -> 21:14 UTC, GREEN - "Unit tests: 1825 passed in 4886.03s"; "REHEARSAL: GREEN ... contract script: 41/41 pass; contract final: 23/23 pass".
 WHAT A VIEWER GETS: a new technique is tried on the channel one at a time, only with a dated source and the platform's policy read first,
 and judged like any other arm - never a whole format replaced at once.
+STEP 7 - ONE RULE FOR A BREAKOUT (3.8, issue 103). WHAT CHANGED: `ladder.order_row` (an order's row by key); `ladder.order_followup(key,
+yt_id, views, base, mark, now=None, kind="Short", line=None)` - the new arguments are keywords, the six positional ones stand; with
+STRATEGY_ON `breakout.monitor`'s LONG branch writes ONE follow-up order with a clock instead of the approval card (switch off: the card as
+before); `_order_premise` reads `order_row`. No pin moved (`test_v11_breakout` 45-56 and `test_v12_ladder` 63-342 run and stand). Matrix:
+one row (`fn:` breakout.monitor, ladder.order_followup / order_row). SYSTEM.md regenerated (no change of cells).
+STEP 7'S RUN (pytest `-n 8`, fake mode, alone): `test_v12_strategy`, `test_v11_breakout`, `test_v12_ladder`, `test_v12_short`,
+`test_v111_enforce`, `test_docs_current` - 171 passed in 220.96 s. ALONE UNDER `shim/minitest.py`: `test_v12_strategy.py` 63 passed in 8 s.
+`tools/plan_guard.py`: GREEN.
+STEP 6'S CHECKS (`gh_runs.js`): run 44178221702 on 8fdb483, 21:17 -> 22:36 UTC, GREEN - "Unit tests: 1830 passed in 4506.22s"; "REHEARSAL: GREEN ... contract script: 41/41 pass; contract final: 23/23 pass".
+WHAT A VIEWER GETS: a long video that takes off gets its follow-up Short within hours, ordered with a clock - not after a card waits for
+the owner's tap - so the viewers it brought find the next thing while they are still looking.
 ### V1c - THE FLOOR, HIS VERDICT AND THE MAKER'S LINE (15-17 Nov 2026) - ACCEPTED (final code commit 9dfc916 GREEN in GitHub Checks run 246: 1768 passed; sweep 58 of 58 ids) - its code b326887, BUILT AGAIN AFTER RED ROUND 2 (the offline writer keeps the asks it is given and marks its punchlines by the joke rule's own measures (open issue 228); `proving/notes/V1c_BUILT.md`; the repair block "THE REPAIR OF RED ROUND 2" under the second pass's 6b); BEFORE IT RED ON ITS SECOND PASS (46615df, 17 Nov 2026: the rehearsal F2/S2 held by joke_density on episode EP202611170305 - 6 punchlines, need 7, the script one word over the line; `proving/notes/V1c_RED_2.md`), NOT ACCEPTED; BEFORE IT BUILT AGAIN (red round 1 on 030f197 repaired: final code commit d39a213 - the floor's media fixture made for the proof's serial runner, a guard over every test file, test_v12_floor split word for word into three files; `proving/notes/V1c_BUILT.md`; the builder's record, the prover's 6b of the first pass, the repair block under it)
 WHAT IT IS FOR, in a viewer's and the owner's words: a finished long video is shown - its first minute - to two strong first-time viewers of two
 model families beside the video he rejected; a film they cannot tell from that one is HELD, a jury that fails its own planted questions holds

@@ -26,6 +26,10 @@ def rows():
 def row(i):
     return next((r for r in rows() if r.get("id") == i), None) if i else None
 
+def order_row(key):
+    """v12 V4: the Ladder row of a follow-up order's key - a Short's own id, or the episode id of the long video made about it (one rule for a breakout)."""
+    return row(key) or (next((r for r in rows() if key and r.get("episode_id") == key), None))
+
 def _set(i, **kw): store().update(TAB, "id", i, kw)
 
 def _note(r, add): return (str(r.get("note") or "") + ("; " if r.get("note") else "") + add)[:300]
@@ -332,14 +336,14 @@ def register():
     NT.register("ladder", on_answer=_answer)
 
 # ------------------------------------------------------------------ the winner: one follow-up, ordered with a clock
-def order_followup(key, yt_id, views, base, mark, now=None):
+def order_followup(key, yt_id, views, base, mark, now=None, kind="Short", line=None):
     """The fast clock found a WINNER (`breakout.monitor`): its ladder row says so, ONE follow-up Short is ordered with a clock, the departments get a
     performance memo and the owner one line he can stop with a tap. Nothing waits for his approval. Returns the order row, or None when this
     winner already has one."""
-    now = now or now_utc(); st = store()
-    line = S("SHORTS_WINNER_MIN_VIEWS", float) or 1.0
+    now = now or now_utc(); st = store(); short = kind == "Short"
+    line = (S("SHORTS_WINNER_MIN_VIEWS", float) or 1.0) if line is None else (float(line) or 1.0)       # v12 V4: a long video's line is BREAKOUT_MIN_VIEWS
     mult = round(views / base, 2) if base else round(views / line, 2)
-    r = row(key)
+    r = row(key) if short else None                                                                   # v12 V4: the Short's own multiple is never written over by its long video
     if r and _n(r.get("multiple")) < mult:
         _set(key, multiple=mult, note=_note(r, f"winner at the {mark}-hour mark: {int(views)} views against " + (f"the usual {int(base)}" if base else f"the line of {int(line)} (no history yet)")))
     if any(q.get("video_key") == key for q in st.rows(QUEUE)): return None
@@ -349,7 +353,7 @@ def order_followup(key, yt_id, views, base, mark, now=None):
     try:
         from whatifs.org import runner as ORG, memos as MEM
         if ORG.on():
-            MEM.write({"type": "performance_memo", "from_dept": "D10", "to_depts": ["D14", "D4", "D9"], "subject": f"Short {key} is a winner: a follow-up is ordered"[:140],
+            MEM.write({"type": "performance_memo", "from_dept": "D10", "to_depts": ["D14", "D4", "D9"], "subject": (f"Short {key} is a winner" if short else f"A long video is taking off: {key}") + ": a follow-up is ordered"[:140],
                        "body": {"window": "breakout", "video": str(key)[:60], "metrics": {"views": int(views), "usual": int(base or 0), "multiple": mult, "mark_h": int(mark)},
                                 "changes": [f"one follow-up Short is due by {iso(due)}"]},
                        "dedupe_key": f"ladder|winner|{key}",
@@ -357,11 +361,11 @@ def order_followup(key, yt_id, views, base, mark, now=None):
     except Exception as e: log(f"winner memo not written: {scrub(e)[:120]}", "WARN")
     try:
         from whatifs import notify as NT
-        NT.send("breakout", f"A Short is taking off: {key} is at {rel} after {int(mark)} hours. ONE follow-up Short on its topic is being made within {int(hours)} hours "
+        NT.send("breakout", f"{'A Short' if short else 'A long video'} is taking off: {key} is at {rel} after {int(mark)} hours. ONE follow-up Short on its topic is being made within {int(hours)} hours "
                 f"(paid from the breakout fund or the reserve). Nothing to do. https://youtu.be/{yt_id}", [("Stop it", f"BREAKOUT NO {key}")],
                 tier="now", urgent=True, default="the follow-up is made", expires_h=hours, dedupe_key=f"breakout|{yt_id}")
     except Exception as e: log(f"winner not announced: {scrub(e)[:100]}", "WARN")
-    log(f"ladder: Short {key} is a winner ({rel}); one follow-up ordered, due {iso(due)}")
+    log(f"ladder: {kind} {key} is a winner ({rel}); one follow-up ordered, due {iso(due)}")
     return next((q for q in st.rows(QUEUE) if q.get("video_key") == key), None)
 
 def open_orders(rs=None):

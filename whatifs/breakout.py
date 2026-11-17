@@ -164,7 +164,10 @@ def monitor(now=None):
         hit = (v >= S("BREAKOUT_MULT", float) * base) if base else (v >= S("BREAKOUT_MIN_VIEWS", float))
         if hit:
             found.append({"key": key, "yt_id": y, "views": v, "base": base, "kind": kind})
-            _breakout_card(key, y, v, base, kind)
+            from whatifs import ladder as LAD
+            if kind == "long" and S("STRATEGY_ON", bool) and LAD.order_row(key) and not LAD.row(key):      # v12 V4: ONE rule for a breakout - a long video about a Short gets what a Short gets
+                LAD.order_followup(key, y, v, base, 48, now, kind="long video", line=S("BREAKOUT_MIN_VIEWS", float))      # keyed by the EPISODE's id, never the Short's
+            else: _breakout_card(key, y, v, base, kind)                                                  # an override's long video has no Ladder row: the old card stays
     return found
 
 def _breakout_card(key, y, v, base, kind):
