@@ -19,11 +19,12 @@ def _risks(view):
     return out or ["No risks flagged [rule-based check of spend, holds and open decisions]"]
 
 def compose(kind="daily", demo=False, now=None):
-    from whatifs import owner_view as OV, charts as CH
+    from whatifs import owner_view as OV, charts as CH, scoreboard as SB
     now = now or now_utc(); v = OV.build(demo=demo)
     head = ("[DEMO] " if demo else "") + ("Morning brief" if kind == "daily" else "Weekly brief") + f", {now.astimezone(IST):%a %d %b}"
-    parts = [f"*{head}*", OV.render("today", v), OV.render("numbers", v), OV.render("observations", v), OV.render("strategy", v),
-             OV.render("hot_topics", v), OV.render("recommendations", v)]
+    parts = [f"*{head}*"] + [p for p in (SB.line(now),) if p]                     # v12 V4: the scoreboard is the first thing after the head ("" with STRATEGY_ON FALSE)
+    parts += [OV.render("today", v), OV.render("numbers", v), OV.render("observations", v), OV.render("strategy", v),
+              OV.render("hot_topics", v), OV.render("recommendations", v)]
     if kind == "weekly": parts += [OV.render("experiments", v), OV.render("money", v), learned(demo)]
     parts.append("*Risks*\n" + "\n".join(f"- {r}" for r in (_risks(v) if not demo else ["DEMO: spend at 62% of the cap [Cost_Log]"])))
     chart = CH.numbers_chart(v) or CH.money_chart(v)

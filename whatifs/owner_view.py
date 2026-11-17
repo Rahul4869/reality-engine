@@ -120,7 +120,7 @@ def strategy():
     try: mode = G.budget_mode()
     except Exception: pass
     plan = []
-    if t.get("next_slot"): plan.append(f"Next slot {t['next_slot']['ist']}: long video, then 2-4 Shorts cut from it over the next days.")
+    if t.get("next_slot"): plan.append(f"Next slot {t['next_slot']['ist']}: a long video about the Short viewers picked (three Shorts a week, each a topic of its own).")
     if rec.get("next_cases"): plan.append("Strongest idea on the bench: " + rec["next_cases"][0]["premise"])
     rules = _rows("Data_Rules")[-2:]
     if rules: plan.append("Briefs follow the latest data rules: " + "; ".join(str(r.get("text"))[:70] for r in rules))
@@ -139,7 +139,7 @@ def money():
     by = {}
     for r in _rows("Cost_Log"):
         if str(r.get("ts", "")).startswith(month): by[r.get("provider") or "other"] = by.get(r.get("provider") or "other", 0) + (_f(r.get("inr"), 0) or 0)
-    return {"month_spend": round(spent), "cap": S("BUDGET_CEILING_INR", int), "by_provider": {k: round(v) for k, v in sorted(by.items(), key=lambda kv: -kv[1])},
+    return {"month_spend": round(spent), "cap": int(round(G.cap_inr())), "by_provider": {k: round(v) for k, v in sorted(by.items(), key=lambda kv: -kv[1])},
             "src": "Cost_Log", "date": _date(iso())}
 
 def build(demo=False):

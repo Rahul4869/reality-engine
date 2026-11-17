@@ -51,6 +51,8 @@ RETIRED = [
     {"id": "presenter_silhouette", "pattern": r"(?i)\bonly as silhouettes?\b|\bpresenter silhouettes?\b|\bprocedural silhouette\b|\bfell back to a silhouette\b|\(silhouette\b|\bsilhouette behind\b|\bSilhouetted person\b",
      "flags": 0, "unless": r"\bno\b|\bnot\b|never|retired|gone|removed|deleted|history", "scopes": ("docs", "prompts"),
      "truth": "a character is drawn or absent: it appears only as its approved character art (whatifs/living.py); without approved art nobody is shown and no shape is ever drawn in its place"},
+    {"id": "shorts_cut_from_it", "pattern": r"\bShorts? cut from it\b", "flags": I, "unless": r"\bno\b|\bnot\b|never|retired|gone|removed|history", "scopes": ("docs", "prompts"),
+     "truth": "v12 V4: the next slot is a long video about the Short viewers picked; the Shorts are three a week, each a topic of its own (whatifs/ladder.py) - none is cut from a long video"},
 ]
 
 # Ratchet baseline for the "prompts" scope: strings in code that MUST name an old value (a one-time setting move has to say what it replaces).

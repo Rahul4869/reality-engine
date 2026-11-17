@@ -569,6 +569,9 @@ def learn():
         from whatifs import pilots as PLT
         PLT.measure()                                          # v12 B5: the Outlier Lab and the search-demand scores run in R&D's daily run (whatifs/org/rnd.py)
     except Exception as x: log(f"pilots / Outlier Lab skipped: {scrub(x)}", "WARN")
+    try:                                                        # v12 V4 (the scoreboard, D10): one row a day of the Partner Program's own numbers
+        from whatifs import scoreboard as SB; SB.keep()
+    except Exception as x: log(f"scoreboard reading skipped: {scrub(x)}", "WARN")
     try:                                                        # v12: Knowledge Palace upkeep, then mirrors of the learning core (just updated above) and the show records
         from whatifs.org import palace as PAL; PAL.daily(st)
     except Exception as x: log(f"palace upkeep skipped: {scrub(x)}", "WARN")

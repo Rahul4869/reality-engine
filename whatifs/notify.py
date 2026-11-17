@@ -167,7 +167,11 @@ def digest(now=None, force=False):
     except Exception: spent = 0.0
     try: cover = G.credit_cover_inr()
     except Exception: cover = 0.0
-    lines = [f"<p><b>Mode:</b> {G.budget_mode()} · <b>spend this month:</b> Rs {spent:.0f} of Rs {G.cap_inr():.0f}"
+    try:
+        from whatifs import scoreboard as SB; sb = SB.line(now)                      # v12 V4: the scoreboard is the digest's first paragraph ("" with STRATEGY_ON FALSE)
+    except Exception as e: sb = ""; log(f"digest: the scoreboard line was not built: {scrub(e)[:120]}", "WARN")
+    lines = (["<p>" + sb.replace("&", "&amp;").replace("<", "&lt;") + "</p>"] if sb else [])
+    lines += [f"<p><b>Mode:</b> {G.budget_mode()} · <b>spend this month:</b> Rs {spent:.0f} of Rs {G.cap_inr():.0f}"
              + (f" (about Rs {cover:.0f} of it covered by free credits)" if cover > 0 else "") + "</p>",
              "<p><b>This week:</b> " + (", ".join(f"{str(e.get('title') or e.get('episode_id'))[:50]} [{e.get('status')}]" for e in recent) or "no videos yet") + "</p>"]
     if opens:

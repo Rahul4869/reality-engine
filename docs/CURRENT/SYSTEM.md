@@ -10,7 +10,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `heygen/heygen-video/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 3 standalone Shorts a week, 12 a month at most - every topic starts as a Short and the promote rule picks the long video's topic (`whatifs/ladder.py`); spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 133 code modules, 823 settings, 86 Sheet tabs, 25 GitHub workflows.
+- Size: 134 code modules, 826 settings, 87 Sheet tabs, 25 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -36,7 +36,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 ## 4. Truth rules (enforced by `whatifs/truth.py`)
 - Follow only `docs/CURRENT/` and `CLAUDE.md`. `docs/ARCHIVE/` is history: never follow it.
 - Version labels and rule numbers inside code comments are history labels, not instructions.
-- Retired concepts (17 rules). Naming one in a current doc, a module docstring or a prompt fails Plan Guard, the tests and check `docs_current`:
+- Retired concepts (18 rules). Naming one in a current doc, a module docstring or a prompt fails Plan Guard, the tests and check `docs_current`:
   - `brand_what_ifs`: the brand is Reality Engine and the show is Reality on Trial.
   - `old_month_cap`: the cap is Rs 5,000 a month all-in (November 2026 only: Rs 5,226).
   - `kling_v3_path`: the hero clip model is the cell FAL_HERO_MODEL, picked by value from the table CLIP_MODELS (whatifs/clips.py); that old path was never a model fal lists.
@@ -54,6 +54,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
   - `daily_shorts_cadence`: the Shorts cadence is set in weeks: SHORTS_PER_WEEK (3) and SHORTS_PER_MONTH (12); every topic starts as a Short (whatifs/ladder.py).
   - `cutdown_reels`: a long video makes no cut-down reels: the channel's short videos are the standalone Shorts (whatifs/shorts2.py), each sent through whatifs/release.py; the pull from a Short to its long video is the related-video link, set by hand.
   - `presenter_silhouette`: a character is drawn or absent: it appears only as its approved character art (whatifs/living.py); without approved art nobody is shown and no shape is ever drawn in its place.
+  - `shorts_cut_from_it`: v12 V4: the next slot is a long video about the Short viewers picked; the Shorts are three a week, each a topic of its own (whatifs/ladder.py) - none is cut from a long video.
 - Every Settings cell must be read by code. 8 cells are read by NO code (their notes start with 'NOT ACTIVE'); changing one changes nothing. The list may only shrink (limit 8); a new unread cell fails Plan Guard, the tests and check `docs_current`:
   - `CACHE_ALIGN_EFFORT`: each call keeps the effort its task is routed with; two efforts on one cached prefix cost one extra cache write, logged on every run.
   - `ROOM_VALUE_ON`: the blind test of the writers' room against a single prompt was never built; tab Room_Value stays empty. Owner, 10 Nov 2026: build it (with the learning loop).
@@ -382,6 +383,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Ladder | 28 | id, topic, premise, title, format, hook ... |  |
 | Floor_Log | 13 | ts, session_id, episode_id, sha, family, role ... |  |
 | Owner_Verdicts | 17 | ref, kind, title, url, topic, asked ... |  |
+| Scoreboard | 5 | date, subs, hours, shorts_90, src |  |
 
 ## 9. Modules
 | module | purpose |
@@ -465,6 +467,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | whatifs/room.py | Writers' room v1 and the shared room steps: scout, showrunner, production bible, writer, critic and policy-safety gate, promise shot. |
 | whatifs/room2.py | Writers' room v2 (the default): diverse drafts from one strong writer, a blind cross-family jury, one checklist revision and the joke tournament. |
 | whatifs/sampler.py | The per-episode draw (runtime, counts, strategies): a bandit with exploration. |
+| whatifs/scoreboard.py | The scoreboard: the Partner Program's own numbers every morning, each beside the pace its bar needs. |
 | whatifs/scout.py | The weekly tool scout: new models, prices and deprecations from the fal catalog and Artificial Analysis. |
 | whatifs/sheets.py | The one-time character sheets workflow: expression sheets and the courtroom set under a hard lifetime image cap. |
 | whatifs/shorts2.py | Shorts Studio (D14): the standalone Short as a product of its own - a Short format as data, three scripts judged blind, every second an animated clip planned by code, the loop closed by code, and the viewer's seat for a Short before any picture is paid. |

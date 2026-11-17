@@ -1343,6 +1343,30 @@ and the two floor tests with the organisation off - 115 passed, 1 failed (the pi
 `tools/plan_guard.py`: GREEN. Break S0-01 is in the break list.
 WHAT A VIEWER GETS: with the organisation switched off, a long video's opening is still judged by two first-time readers (before, the
 line-up's verdict was silently lost and the check said N/A).
+STEP 1 - THE SCOREBOARD (3.0 + 3.2). FIRST ACT, MEASURED ON 369ee3e (17 Nov 2026 12:47 UTC; read-only scratch script, fake mode, a fresh
+local store after `manage.setup`; before the patch): `month_room_inr()` 4,506; `full_episode_inr()` 618.79; `full_episode_inr(kind="ladder")`
+583.81; `short_inr()` 101.15; `split()` room 4,506, 14 days left, free 1,791; `moving_plan()` living 196 s, bought 40%, free 1,791. THE
+MEMO'S MONEY PARAGRAPH (3.12) SAID AGAIN WITH THEM: a long video about a promoted Short Rs 583.81 with the floor's line (the memo: about 584
+- holds); a Short Rs 101.15 (about 101 - holds); the month's free money is Rs 1,791 with 14 of its days left (`split()` measures the month
+as it stands on 17 Nov, not the memo's "about Rs 224 free in a full month" - not the same quantity, so neither confirmed nor refuted). The
+long kind's TEXT lines: writing 166, hook_lab 4, probe 0.5; a Short's writing 36; D2 + D3 caps 420 -> `CREDIT_COVER_MONTH_MAX_INR`'s
+default = 1.5 x 2,178.2 -> 3,300 (step 2 types 3300: CONFIRMED). (The script's one fault, fixed before its run: it read
+`SHORT_VARIANT_EST_INR`, a cell step 2 adds, as a number - it now falls back to step 2's default 12.)
+WHAT CHANGED: `STRATEGY_ON` (TRUE) and `tests/conftest.py` `OLD_STRATEGY` (FALSE for the older tests, beside `OLD_VIEW`); NEW
+`whatifs/scoreboard.py` (PROTECTED) - `read` (the two free reads), `keep` (one row a UTC day; `manage.learn` calls it in its own try), `bars`
+(cell `YPP_BARS`), `sub_pace`, `eta`, `line` (the memo's words); tab `Scoreboard` (86 -> 87 tabs); cells `YPP_BARS`,
+`SCOREBOARD_ELIGIBLE_PCT`; `digests.compose` puts the line right after the head and `notify.digest` makes it the first `<p>` (switch off:
+both exactly as before); `owner_view` says the corrected strategy sentence and the cap from `governor.cap_inr()`; `truth.RETIRED` gains
+`shorts_cut_from_it` with its SAMPLES pair. ONE CHANGE AT THE APPLY: the plan guard refused the module's two-line docstring (rule 8: ONE
+line) - it is one line now, the rest a comment under it (no code changed). Matrix: one row (the scoreboard, `fn:` scoreboard.read / keep /
+line, digests.compose, notify.digest). SYSTEM.md regenerated.
+STEP 1'S RUN (pytest `-n 8`, fake mode, alone): `test_v12_strategy`, `test_docs_current`, `test_v103`, `test_v94a`, `test_v12_b0b`,
+`test_v85`, `test_v86` and the four the memo names as building a fresh Sheet (`test_v12_opening_e2e`, `test_v91_flaky_root`,
+`test_v91_matrix`, `test_v12_floor_his_word` - the floor's lists moved there) - 183 passed in 598.87 s, no pin moved; `test_v111_enforce`
+(the matrix) 14 passed. ALONE UNDER `shim/minitest.py`: `test_v12_strategy.py` 12 passed in 2 s; `test_docs_current.py` 33 passed in 26 s. `tools/plan_guard.py`: GREEN. Breaks S1-01 to S1-04 are in the list.
+STEP 0'S CHECKS (read with `gh_runs.js`): run 44086327940 on 369ee3e, 12:46 -> about 14:15 UTC, GREEN - "Unit tests: 1770 passed in 5054.57s"; the free rehearsal "REHEARSAL: GREEN ... contract script: 40/40 pass; contract final: 23/23 pass".
+WHAT THE OWNER GETS: his morning brief opens on the Partner Program's own numbers - subscribers, the Shorts views that count, the long
+watch hours - each with the pace its bar needs ("about N days at this pace"), the same line on the e-mail's first paragraph.
 ### V1c - THE FLOOR, HIS VERDICT AND THE MAKER'S LINE (15-17 Nov 2026) - ACCEPTED (final code commit 9dfc916 GREEN in GitHub Checks run 246: 1768 passed; sweep 58 of 58 ids) - its code b326887, BUILT AGAIN AFTER RED ROUND 2 (the offline writer keeps the asks it is given and marks its punchlines by the joke rule's own measures (open issue 228); `proving/notes/V1c_BUILT.md`; the repair block "THE REPAIR OF RED ROUND 2" under the second pass's 6b); BEFORE IT RED ON ITS SECOND PASS (46615df, 17 Nov 2026: the rehearsal F2/S2 held by joke_density on episode EP202611170305 - 6 punchlines, need 7, the script one word over the line; `proving/notes/V1c_RED_2.md`), NOT ACCEPTED; BEFORE IT BUILT AGAIN (red round 1 on 030f197 repaired: final code commit d39a213 - the floor's media fixture made for the proof's serial runner, a guard over every test file, test_v12_floor split word for word into three files; `proving/notes/V1c_BUILT.md`; the builder's record, the prover's 6b of the first pass, the repair block under it)
 WHAT IT IS FOR, in a viewer's and the owner's words: a finished long video is shown - its first minute - to two strong first-time viewers of two
 model families beside the video he rejected; a film they cannot tell from that one is HELD, a jury that fails its own planted questions holds

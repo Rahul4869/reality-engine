@@ -26,6 +26,7 @@ SAMPLES = {
     "daily_shorts_cadence":   ("Cadence: 1.5 standalone Shorts per day (SHORTS_PER_DAY).", "Cadence: 3 standalone Shorts a week (SHORTS_PER_WEEK); thirty near-identical Shorts a day would be spam."),
     "presenter_silhouette":   ("Show the roles only as silhouettes, hands on a console or backs of heads.", "A character appears only as its approved art; without it nobody is shown and no silhouette is ever drawn."),
     "cutdown_reels":          ("Four bridge Shorts cut from each long video go out on the following days (REELS_PER_VIDEO).", "The standalone Shorts reach Instagram Reels and Facebook Reels; REEL1_DELAY_MIN minutes after its slot a long video's release step runs."),
+    "shorts_cut_from_it":     ("Next slot Tue 18 Nov 18:00: long video, then 2-4 Shorts cut from it over the next days.", "Next slot Tue 18 Nov 18:00: a long video about the Short viewers picked (three Shorts a week, each a topic of its own)."),
 }
 
 def _mini(tmp_path):

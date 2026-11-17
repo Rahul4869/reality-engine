@@ -175,6 +175,9 @@ TABS = {
  # the strongest label: `agree` scores the floor's prediction against it, and a long video he approved is a reference of the floor. Written by
  # verdicts.sync / record, maker._answer / take and HIS OWN HAND (verdict, text, maker_line) - code never rewrites words he typed, never removes a row
  "Owner_Verdicts":  ["ref", "kind", "title", "url", "topic", "asked", "verdict", "text", "maker_line", "seen", "via", "floor", "agree", "action_id", "line_seen", "line_used", "told"],
+ # v12 V4 (the scoreboard, whatifs/scoreboard.py): one row per UTC date - the Partner Program's own numbers as read that day (subscribers, the long
+ # watch hours counted at SCOREBOARD_ELIGIBLE_PCT, the Shorts views of 90 days); written by scoreboard.keep alone, never updated or removed
+ "Scoreboard":      ["date", "subs", "hours", "shorts_90", "src"],
 }
 
 class LocalStore:
@@ -1143,6 +1146,11 @@ DEFAULTS = {
  "BOARD_MIN_EVIDENCE": ("5", "the Review Board rejects a research memo whose evidence score is below this (0-10; the score can never exceed what code could verify about its sources)"),
  "BOARD_ORDERS": ("2", "how many orders each Review Board judge reads the memos in (2 = original and reversed: judges change their verdict with the order)"),
  "BOARD_MAX_MEMOS": ("6", "research memos one Review Board session judges (plus one planted canary); the rest wait for the next session (1-10)"),
+ # v12 V4: the CEO and the ladder (the scoreboard, finance wired, Strategy's loop and rule book, the watch book, the arm book, the owner's desk)
+ "STRATEGY_ON": ("TRUE", "v12 V4 (D1, D10, D11): TRUE = the scoreboard leads his brief, finance is wired, Strategy reviews and decides by its rule book, the watch book acts the same day and the owner's desk answers; FALSE = exactly the behaviour of the code V4 is built on: the Monday re-planner card, the long video's breakout card, no review, no watch, no desk, the credit a view, month_spend in every reader"),
+ "YPP_BARS": ('[{"until": "2027-01-31", "subs": 1000, "hours": 4000, "shorts": 10000000}, {"until": "", "subs": 1000, "hours": 8000, "shorts": 20000000}]',
+              "v12 V4 (the scoreboard): the Partner Program's bars as data (YouTube Help 72851 and 12843009, read 16 Nov 2026) - the first entry whose `until` is empty or not yet past is the bar; a later entry is the rise the brief announces"),
+ "SCOREBOARD_ELIGIBLE_PCT": ("100", "v12 V4 (the scoreboard): of the long watch hours YouTube's API reports, the share Studio's Earn page counts as eligible - typed from Studio; no API gives it"),
 }
 _settings_cache = None
 def settings(refresh=False) -> dict:
