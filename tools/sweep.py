@@ -354,6 +354,7 @@ def strategy_of(core, ep, org=True):
     if core.S("SHORT_SHARE_S2") != "20": p.append(f"(b) after the engine's pass SHORT_SHARE_S2 reads {core.S('SHORT_SHARE_S2')}")
     said = NT.answer(sa[0]["id"], f"STRATEGY UNDO {d['id']}")                                                     # (c)
     if core.S("SHORT_SHARE_S2") != "40" or next(r for r in st.rows("Decisions") if r["id"] == d["id"])["state"] != "undone": p.append(f"(c) the Undo did not take it back ({said[:80]})")
+    for k in ("THINK_BOOST_VARIANTS", "STANDARD_MAX_LONG_PER_MONTH", "SHORTS_PER_MONTH", "SHORTS_PER_WEEK"): STR.hand(k, core.S(k))      # (d) proves the trial opens when nothing else may move (P10; V4's finish C12 lets SPLIT move)
     real = STR.now_utc; STR.now_utc = lambda: real() + dt.timedelta(days=1)                                      # (d) a planted day later
     try: CLI.strategy_round()
     finally: STR.now_utc = real

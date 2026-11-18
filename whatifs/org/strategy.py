@@ -202,9 +202,9 @@ def _split_target(now):
         if len(worse) >= 2 and parse_iso(worse[-1]["ts"]) - parse_iso(worse[0]["ts"]) >= dt.timedelta(days=28):
             tgt, why = m - 2, f"two 'worse' readings 28 days apart: {worse[-1]['why']}"
     wt = min(4, max(2, math.ceil(tgt / 4)))
-    mt = m if (w * days // 7 < tgt and wt != w) else tgt                    # the cell that binds moves first: the week when it binds, else the month
+    wait = "SHORTS_PER_WEEK" if (w * days // 7 < tgt and wt != w) else ""      # the cell that binds moves first: the month WAITS for the week (V4's finish C12)
     nums = {"risk": last_risk, "free_inr": f2["free_inr"], "motion_inr": round(motion, 0)}
-    return {"SHORTS_PER_MONTH": {"target": str(mt), "why": why, "numbers": nums, "evidence": "ok", "count": ""},
+    return {"SHORTS_PER_MONTH": {"target": str(tgt), "why": why, "numbers": nums, "evidence": "ok", "count": "", "wait": wait},
             "SHORTS_PER_WEEK": {"target": str(wt), "why": why, "numbers": nums, "evidence": "ok", "count": ""}}
 
 def _credit_target(now):
@@ -271,7 +271,7 @@ def effect(key, value, now=None):
     if key in ("SHORTS_PER_MONTH", "SHORTS_PER_WEEK"):
         partner = "SHORTS_PER_WEEK" if key == "SHORTS_PER_MONTH" else "SHORTS_PER_MONTH"; t = targets(now)
         pv = _cell(partner)
-        if partner in t and key in t and str(t[partner]["target"]) != pv and str(t[key]["target"]) != _cell(key): pv = t[partner]["target"]      # the partner at ITS target
+        if partner in t and str(t[partner]["target"]) != pv: pv = t[partner]["target"]      # the partner at ITS target whenever it is off it - gate, effect_after and settle alike (V4's finish C12)
         m, w = (int(float(value)), int(float(pv))) if key == "SHORTS_PER_MONTH" else (int(float(pv)), int(float(value)))
         days = calendar.monthrange(now.year, now.month)[1]; L = G.max_long_videos()
         k = max([j for j in range(0, m + 1) if G.month_fit(L, j, now=now)["fits"]] or [0])
@@ -333,6 +333,7 @@ def next_move(now=None, st=None):
         if key not in t or _frozen(rows, key, now) or _retry_wait(rows, key, now): continue
         if any(r["key"] == key and r["state"] in IN_FORCE for r in rows): continue
         tg = t[key]; old = _cell(key)
+        if tg.get("wait") and tg["wait"] in t and not at_target(tg["wait"], t[tg["wait"]]["target"], now): continue      # memo 3.5: the binding cell moves first
         if at_target(key, tg["target"], now): continue
         new = _step(key, old, tg["target"]); dept = LV.owner_of(key)
         why = LV.check(dept, key, new)["why"]

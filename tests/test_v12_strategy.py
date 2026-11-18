@@ -279,12 +279,12 @@ def test_rule_slots_moves_one_step_when_the_calendar_and_the_money_hold_five(set
     assert memo["body"]["lever_class"] == "B" and memo["body"]["target"] == "STANDARD_MAX_LONG_PER_MONTH" and memo["body"]["value"] == "5" and memo["body"]["decision_ref"] == row["id"]
     assert memo["dedupe_key"] == f"strategy|{row['id']}" and memo["subject"] == "Strategy: 5 long videos a month instead of 4" and memo["to_depts"] == ["D1"]
     assert json.loads(row["prediction"])["metric"] == "long_hours_per_video_28d" and json.loads(row["prediction"])["board"] == "hours"
-    assert STR.next_move(JAN)[0] is None                                                                # one decision in force on a key: nothing more on it
+    assert (STR.next_move(JAN)[0] or {}).get("key") != "STANDARD_MAX_LONG_PER_MONTH"                     # one decision in force on a key: nothing more on it (V4's finish C12: SPLIT may move another key - BY DESIGN)
 
 def test_a_four_saturday_month_holds_five_at_its_target_and_the_three_gates_refuse_in_words(monkeypatch, setting):
     ceo(setting); setting("STANDARD_MAX_LONG_PER_MONTH", "5")
     assert STR.targets(FEB)["STANDARD_MAX_LONG_PER_MONTH"]["target"] == 4 and STR.at_target("STANDARD_MAX_LONG_PER_MONTH", 4, FEB)   # 5 does what 4 does: nothing is moved back for ever
-    assert STR.next_move(FEB) == (None, [])
+    c0, r0 = STR.next_move(FEB); assert (c0 or {}).get("key") != "STANDARD_MAX_LONG_PER_MONTH" and not [x for x in r0 if "STANDARD_MAX_LONG_PER_MONTH" in x], (c0, r0)   # V4's finish C12: SPLIT may move another key - BY DESIGN
     setting("STANDARD_MAX_LONG_PER_MONTH", "4"); plant_target(monkeypatch, "STANDARD_MAX_LONG_PER_MONTH", 5)
     assert STR.next_move(FEB) == (None, [])                                                             # 4 is AT a target of 5 here (effect 4 both): passed without a word (D-STR9)
     setting("STANDARD_MAX_LONG_PER_MONTH", "7"); plant_target(monkeypatch, "STANDARD_MAX_LONG_PER_MONTH", 4)
@@ -351,7 +351,7 @@ def test_his_hand_on_a_portfolio_cell_is_recorded_once_said_in_the_week_and_froz
     for k in ("FORMAT_SHARE_F1", "FORMAT_SHARE_F2", "FORMAT_SHARE_F3"): setting(k, core.DEFAULTS[k][0])   # the shares as shipped (conftest's 70 / 30 / 0 would be his hands too)
     RN.run("D1", "review", STR.review); RN.run("D1", "review", STR.review)                              # two reviews: ONE hand row
     h = [r for r in decisions() if r["state"] == "hand"]; assert len(h) == 1 and h[0]["key"] == "STANDARD_MAX_LONG_PER_MONTH" and h[0]["new"] == "6"
-    assert core.parse_iso(h[0]["frozen_until"]) > core.now_utc() + dt.timedelta(days=27) and not [r for r in decisions() if r["state"] == "decided"]   # the key is frozen
+    assert core.parse_iso(h[0]["frozen_until"]) > core.now_utc() + dt.timedelta(days=27) and not [r for r in decisions() if r["state"] == "decided" and r["key"] == "STANDARD_MAX_LONG_PER_MONTH"]   # the key is frozen (V4's finish C12: SPLIT may move another key - BY DESIGN)
     assert "Outside Strategy: STANDARD_MAX_LONG_PER_MONTH = 6 - counted as your own values and left alone for 28 days." in STR.weekly(core.now_utc() + dt.timedelta(hours=1))
 
 def test_a_cell_put_back_after_a_change_without_effect_is_not_his_hand(setting):
@@ -378,7 +378,7 @@ def test_undo_before_the_change_rejects_the_ticket_and_freezes_the_key(monkeypat
     a = next(a for a in core.store().rows("Owner_Actions") if a.get("kind") == "strategy")
     out = NTF.answer(a["id"], f"STRATEGY UNDO {row['id']}"); r = decisions()[0]
     assert out == "undone: it had not been changed yet" and r["state"] == "undone" and MEMO.get(row["ticket"])["status"] == "rejected"
-    assert core.S("STANDARD_MAX_LONG_PER_MONTH") == "4" and STR.next_move(JAN + dt.timedelta(days=1))[0] is None            # the review the day after decides nothing on that key
+    assert core.S("STANDARD_MAX_LONG_PER_MONTH") == "4" and (STR.next_move(JAN + dt.timedelta(days=1))[0] or {}).get("key") != "STANDARD_MAX_LONG_PER_MONTH"            # the review the day after decides nothing on that key (V4's finish C12: SPLIT may move another key - BY DESIGN)
     assert NTF.answer(a["id"], f"STRATEGY UNDO {row['id']}").endswith("already ANSWERED")
 
 def test_undo_of_the_oldest_decision_takes_the_whole_stack_back_one_ticket_at_a_time(monkeypatch, setting):
@@ -496,7 +496,7 @@ def test_split_moves_the_binding_week_first_then_the_month(monkeypatch, setting)
     ceo(setting); setting("SHORTS_PER_MONTH", "12"); setting("SHORTS_PER_WEEK", "3")
     nov = dt.datetime(2026, 11, 2, 12, 0, tzinfo=dt.timezone.utc)                                            # a 30-day month
     monkeypatch.setattr(G, "moving_floor", lambda kind=None, runtime=None: {"on": False, "inr_s": 0.0, "living_target_s": 0, "living_s": 0})
-    t = STR._split_target(nov); assert (t["SHORTS_PER_MONTH"]["target"], t["SHORTS_PER_WEEK"]["target"]) == ("12", "4")     # the week binds (3 x 30 // 7 = 12 < 14): it moves first
+    t = STR._split_target(nov); assert (t["SHORTS_PER_MONTH"]["target"], t["SHORTS_PER_WEEK"]["target"]) == ("14", "4") and t["SHORTS_PER_MONTH"]["wait"] == "SHORTS_PER_WEEK"     # the week binds (3 x 30 // 7 = 12 < 14): it moves first
     setting("SHORTS_PER_WEEK", "4"); t = STR._split_target(nov); assert t["SHORTS_PER_MONTH"]["target"] == "14" and "four days running" in t["SHORTS_PER_MONTH"]["why"]
     monkeypatch.setattr(G, "moving_floor", lambda kind=None, runtime=None: {"on": True, "inr_s": 10.0 ** 6, "living_target_s": 60, "living_s": 10})      # the motion is not paid in full
     assert STR._split_target(nov)["SHORTS_PER_MONTH"]["target"] == "12"                                       # MOTION FIRST: no raise
@@ -504,6 +504,24 @@ def test_split_moves_the_binding_week_first_then_the_month(monkeypatch, setting)
     core.store().append("Decisions", [{"id": f"DEC-risk{i}", "ts": core.iso(nov - dt.timedelta(days=28 * i)), "rule": "RISK", "key": "risk_line", "new": "worse", "state": "judged",
                                        "why": "worse"} for i in (0, 1)])
     assert STR._split_target(nov)["SHORTS_PER_MONTH"]["target"] == "12"                                       # worse: no raise - and no lowering before STRATEGY_WINDOW_END
+
+def test_split_raises_the_week_then_the_month_through_the_gates_and_settle_keeps_the_week(monkeypatch, setting):
+    """V4's finish C12 (test-gap reader): with the shipped cells 12 / 3 rule SPLIT never raised. Memo 3.5 WORKED: the week 3 -> 4 first (14 against
+    12), the next review the month 12 -> 14 - and the week's move is not taken back as "no effect" in between."""
+    from whatifs import governor as G
+    from whatifs.org import execute as EX
+    ceo(setting); setting("SHORTS_PER_MONTH", "12"); setting("SHORTS_PER_WEEK", "3"); nov = dt.datetime(2026, 11, 2, 12, 0, tzinfo=dt.timezone.utc)
+    monkeypatch.setattr(G, "moving_floor", lambda kind=None, runtime=None: {"on": False, "inr_s": 0.0, "living_target_s": 0, "living_s": 0})
+    monkeypatch.setattr(G, "month_fit", lambda n_long, n_short, extra_inr=0.0, now=None: {"room_inr": 9000, "long_inr": 600, "short_inr": 100, "reserve_inr": 0,
+                        "need_inr": 100 * n_short, "free_inr": 9000 - 100 * n_short, "fits": True, "long_left": 2, "short_left": n_short})
+    for k in ("THINK_BOOST_VARIANTS", "SHORT_SHARE_S1", "SHORT_SHARE_S2", "SHORT_SHARE_S3", "STANDARD_MAX_LONG_PER_MONTH"): STR.hand(k, core.S(k), nov)   # only SPLIT may move here
+    c, refused = STR.next_move(nov)
+    assert c and (c["key"], c["old"], c["new"], c["effect_before"], c["effect_after"]) == ("SHORTS_PER_WEEK", "3", "4", 12, 14), (c, refused)
+    row, _m = STR.decide(c, nov); setting("SHORTS_PER_WEEK", "4")                                                   # the engine applies it
+    monkeypatch.setattr(EX, "state_of", lambda tid, st=None: ("applied", "") if tid == row["ticket"] else None)
+    nxt = nov + dt.timedelta(days=1)
+    assert STR.settle(nxt) == [] and next(r for r in decisions() if r["id"] == row["id"])["state"] == "applied"      # never "no effect"
+    c2, _r = STR.next_move(nxt); assert c2 and (c2["key"], c2["old"], c2["new"]) == ("SHORTS_PER_MONTH", "12", "14"), c2
 
 def test_the_credit_boost_walks_down_in_the_last_week_and_steps_up_only_on_realised_cover(setting):
     from whatifs.org import finance as F
