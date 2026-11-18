@@ -366,6 +366,15 @@
    "from": "BUILD",
    "to": "BUILT",
    "why": ""
+  },
+  {
+   "at": "2026-11-18T07:37:02Z",
+   "batch": "V4",
+   "by": "",
+   "commit": "7899300",
+   "from": "BUILT",
+   "to": "PROVING",
+   "why": ""
   }
  ],
  "order": [
@@ -382,8 +391,8 @@
   "B10",
   "V3"
  ],
- "phase": "BUILT",
+ "phase": "PROVING",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-18T07:34:58Z"
+ "updated": "2026-11-18T07:37:02Z"
 }
