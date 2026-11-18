@@ -77,18 +77,20 @@ def tick(now=None):
         except Exception as e:
             row.update(verdict="STORED", how=f"Your input {n} is stored on the tab; it could not be filed ({scrub(e)[:200]})"); st.append(DESK, [row]); out.append(row); continue
         row["memo"] = m["id"]
-        if rec:
-            v, how, new = verdict(rec[0], rec[1], now)
-            if v == "ADOPTED":
-                from whatifs.org import strategy as STR
-                try: t = _ticket(n, rec[0], new, STR._cell(rec[0]), now, f"desk|{n}"); row["ticket"] = t["id"]
-                except Exception as e: v, how = "PARKED", f"the ticket could not be written ({scrub(e)[:160]})"
-            row.update(verdict=v, how=how)
-            if v == "PARKED" and new == "FIT":
-                from whatifs import notify as NT
-                row["action"] = NT.send("desk", f"Your input {n}: {how}.", [("Do it anyway", f"DESK DO {n}")], tier="week", default="it stays parked", dedupe_key=f"desk|{n}")
-        else:
-            row.update(verdict="PARKED", how=f"stored word for word as input {n}; no rule of Strategy can act on it; the Council reads it when it exists (B6b)")
+        try:
+            if rec:
+                v, how, new = verdict(rec[0], rec[1], now)
+                if v == "ADOPTED":
+                    from whatifs.org import strategy as STR
+                    try: t = _ticket(n, rec[0], new, STR._cell(rec[0]), now, f"desk|{n}"); row["ticket"] = t["id"]
+                    except Exception as e: v, how = "PARKED", f"the ticket could not be written ({scrub(e)[:160]})"
+                row.update(verdict=v, how=how)
+                if v == "PARKED" and new == "FIT":
+                    from whatifs import notify as NT
+                    row["action"] = NT.send("desk", f"Your input {n}: {how}.", [("Do it anyway", f"DESK DO {n}")], tier="week", default="it stays parked", dedupe_key=f"desk|{n}")
+            else:
+                row.update(verdict="PARKED", how=f"stored word for word as input {n}; no rule of Strategy can act on it; the Council reads it when it exists (B6b)")
+        except Exception as e: row.update(verdict="STORED", how=f"stored word for word as input {n}; it could not be judged ({scrub(e)[:160]})")      # V4's finish C18
         st.append(DESK, [row]); out.append(row)
         try: _close(m["id"], n, now)
         except Exception as e: log(f"desk: the owner memo of input {n} was not closed: {scrub(e)[:160]}", "WARN")
