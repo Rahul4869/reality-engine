@@ -519,7 +519,7 @@ def settle(now=None, st=None):
                     try: MEM.resolve(m["id"], "D1", "repair_verified", f"Decisions:{r['id']}", "a move on that key was verified", st, now)
                     except Exception as e: log(f"strategy: the stuck memo was not closed: {scrub(e)[:120]}", "WARN")
         elif state in ("refused", "failed", "rolled_back"): _back(st, r, "rolled_back" if state == "rolled_back" else "refused", note, now)
-        elif state in ("applied", "dispatched", "intent"):
+        elif state == "applied":
             if r["state"] != "applied": _save(st, r, state="applied")
             if r.get("rule") != "TRIAL" and json.dumps(effect(r["key"], _cell(r["key"]), now)) != str(r.get("effect_after") or ""):      # a rulebook trial is no cell: the rulebook judges it
                 _back(st, r, "no_effect", f"the running code would not do what was decided ({r['key']} = {_cell(r['key'])})", now)
@@ -545,7 +545,8 @@ def hands(now=None, st=None):
         if v == str(DEFAULTS.get(key, ("",))[0]).strip(): continue
         live = [r for r in rows if r["key"] == key and r["rule"] != "HAND" and (r["state"] in IN_FORCE + ("verified", "no_effect")
                 or (r["state"] == "undone" and not _js(r.get("numbers"), {}).get("undo_done")))]            # a change of ours still on its way in or out is no hand
-        if live and str(sorted(live, key=lambda r: r["ts"])[-1]["new"]) == v: continue
+        nw = sorted(live, key=lambda r: r["ts"])[-1] if live else None
+        if nw and (str(nw["new"]) == v or (nw["state"] == "no_effect" and str(nw["old"]) == v)): continue      # V4's finish C7: a take-back of ours is no hand
         if any(r["key"] == key and r["state"] == "hand" and str(r["new"]) == v for r in rows): continue
         out.append(hand(key, v, now, st))
     return out
@@ -702,8 +703,9 @@ def observe(now=None, st=None):
             after = [x.get("format") for x in sorted(sps, key=lambda x: str(x.get("ts") or "")) if str(x.get("ts") or "") > r["ts"] and x.get("format")][:10]
             if len(after) == 10: obs = {f: after.count(f) for f in sorted(set(after))}
         elif r["rule"] == "CREDIT":
-            nxt = [x for x in sorted(sps, key=lambda x: str(x.get("ts") or "")) if str(x.get("ts") or "") > r["ts"] and "_write" in str(x.get("script") or "")]
-            if nxt: obs = {"asked": _js(nxt[0].get("script"), {}).get("_write", {}).get("asked")}
+            ss = sorted((x for x in st.rows("Takeaways") if x.get("dept") == "D14" and x.get("trigger") == "write" and str(x.get("ts") or "") > r["ts"]
+                         and "asked" in _js(x.get("measures"), {})), key=lambda x: str(x.get("ts") or ""))
+            if ss: obs = {"asked": _js(ss[0].get("measures"), {}).get("asked")}                    # V4's finish C4 (P9): the write run's own measures (tab Takeaways), never the stored lines
         if obs is not None: _save(st, r, observed=obs); n += 1
     return n
 

@@ -60,14 +60,15 @@ def _rows():
     return sorted((r for r in store().rows("Scoreboard") if str(r.get("date") or "")), key=lambda r: str(r["date"]))
 
 def sub_pace(rows, now=None):
-    """Subscribers a day: (today's subs - the subs of the newest row dated at least 28 days before today) / the days between; None without both."""
-    today = _day(now)
-    cur = next((_num(r.get("subs"), int) for r in rows if str(r.get("date")) == today.isoformat()), None)
-    if cur is None: return None
-    old = [r for r in rows if _num(r.get("subs"), int) is not None and str(r.get("date")) <= (today - dt.timedelta(days=PACE_DAYS)).isoformat()]
+    """Subscribers a day at the NEWEST reading: (its subs - the subs of the newest row dated at least 28 days before it) / the days between; None
+    without both. A brief can leave before the day's reading: the pace is the reading's the line shows (V4's finish C5, P8)."""
+    have = [r for r in rows if _num(r.get("subs"), int) is not None]
+    if not have: return None
+    c = have[-1]; day = dt.date.fromisoformat(str(c["date"]))
+    old = [r for r in have if str(r.get("date")) <= (day - dt.timedelta(days=PACE_DAYS)).isoformat()]
     if not old: return None
-    o = old[-1]; days = (today - dt.date.fromisoformat(str(o["date"]))).days
-    return (cur - _num(o["subs"], int)) / days
+    o = old[-1]; days = (day - dt.date.fromisoformat(str(o["date"]))).days
+    return (_num(c["subs"], int) - _num(o["subs"], int)) / days
 
 def eta(v, bar, pace):
     """Days to the bar at this pace: 0 when reached; None without a positive pace."""

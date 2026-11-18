@@ -69,7 +69,7 @@ def lock(vid, why, now=None, title=""):
     head = (f"The uploads are closed: {title or vid} is gone from YouTube and you did not say that you deleted it." if str(why).startswith("gone")
             else f"The uploads are closed: {why}.")
     return NT.send("risk_lock", head + " Look at it in Studio first - the next violation inside 90 days is a strike. One tap opens the uploads again.",
-                   [("Open the uploads", f"RISK OPEN {vid}")], tier="now", urgent=True, dedupe_key=f"risk_lock|{vid}")
+                   [("Open the uploads", f"RISK OPEN {vid}")], tier="now", urgent=True, default="the uploads stay closed until you open them", dedupe_key=f"risk_lock|{vid}")
 
 def _act_platform(f, now, st):
     from whatifs import notify as NT
@@ -196,8 +196,11 @@ def _gone(row, choice):
     if c.startswith("RISK MINE"):
         from whatifs.org import strategy as STR
         st = store(); now = now_utc()
-        row = _row({"id": "platform_flag"}, {"point": vid, "kind": "his_delete", "numbers": {"vid": vid}}, "watch", "his own delete", now)
-        row["id"] = STR._did("WATCH", "platform_flag", vid, "mine", now); st.append("Decisions", [row])
+        for r in _rows(st):                                                               # V4's finish C6: the danger he answered is no live danger
+            if r["key"] == "platform_flag" and str(r.get("new")) == vid and r["state"] == "watch":
+                st.update("Decisions", "id", r["id"], {"state": "judged", "why": f"{r['why']} - you deleted it yourself; nothing was closed"[:500], "briefed": r.get("briefed") or iso(now)})
+        row = _row({"id": "platform_flag"}, {"point": vid, "kind": "his_delete", "numbers": {"vid": vid}}, "judged", "his own delete", now)
+        row["id"] = STR._did("WATCH", "platform_flag", vid, "mine", now); row["briefed"] = iso(now); st.append("Decisions", [row])
         return "noted: you deleted it - nothing was closed"
     if c.startswith("RISK CLOSE"): lock(vid, "gone", title=_title(vid)); return "the uploads are closed"
     return "recorded"

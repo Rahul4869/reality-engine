@@ -55,6 +55,12 @@ def test_each_pace_is_said_as_it_is(setting, old, today, says):
     plant(*([{"date": "2026-10-19", "subs": old}] if old is not None else []), {"date": "2026-11-16", "subs": today})
     assert says in SB.line(SB_NOW), SB.line(SB_NOW)
 
+def test_the_pace_is_the_newest_readings_when_the_brief_leaves_before_the_days_reading(setting):
+    """V4's finish C5 (P8): the brief can leave before the learning job's reading of the day; the line showed yesterday's subscribers and said
+    "no pace yet" although 28 days of readings existed. The pace is the newest reading's."""
+    setting("STRATEGY_ON", "TRUE"); plant({"date": "2026-10-18", "subs": 12}, {"date": "2026-11-15", "subs": 40})
+    assert "40 of 1,000 subscribers (about 960 days at this pace)" in SB.line(SB_NOW), SB.line(SB_NOW)
+
 def test_the_bars_are_data_and_the_rise_is_said_until_it_comes(setting):
     setting("STRATEGY_ON", "TRUE"); plant({"date": "2027-02-01", "subs": 40})
     after = SB.line(dt.datetime(2027, 2, 1, 4, 0, tzinfo=dt.timezone.utc))
@@ -166,6 +172,9 @@ def test_the_cap_stays_a_breaker_beyond_the_credits_monthly_most(setting):
     now = core.now_utc(); cap5000(setting); lane(setting, frm=day(now.replace(day=1)), until=day(now + dt.timedelta(days=20)))
     cost(core.iso(now), 9000)                                                                           # Rs 9,000 of Claude rows in an open window this month
     assert FIN.cover() == core.S("CREDIT_COVER_MONTH_MAX_INR", float) and G.own_spend_inr() == 9000 - FIN.cover() and G.monthly_cap_reached()
+
+def test_the_cover_ceilings_note_says_it_was_measured():
+    n = core.DEFAULTS["CREDIT_COVER_MONTH_MAX_INR"][1]; assert "TO BE CONFIRMED" not in n and "MEASURED on 369ee3e" in n, n
 
 def test_closed_the_money_is_the_bases_and_open_no_word_says_more_than_his_own(monkeypatch, setting):
     now = core.now_utc(); cap5000(setting); texts = []
@@ -345,6 +354,14 @@ def test_his_hand_on_a_portfolio_cell_is_recorded_once_said_in_the_week_and_froz
     assert core.parse_iso(h[0]["frozen_until"]) > core.now_utc() + dt.timedelta(days=27) and not [r for r in decisions() if r["state"] == "decided"]   # the key is frozen
     assert "Outside Strategy: STANDARD_MAX_LONG_PER_MONTH = 6 - counted as your own values and left alone for 28 days." in STR.weekly(core.now_utc() + dt.timedelta(hours=1))
 
+def test_a_cell_put_back_after_a_change_without_effect_is_not_his_hand(setting):
+    """V4's finish C7: a decision taken back for no effect leaves the cell at its `old`; when that is not the default, hands() called it HIS value."""
+    from whatifs.org import strategy as STR
+    setting("STRATEGY_ON", "TRUE"); setting("SHORTS_PER_MONTH", "14"); n = core.now_utc(); s = core.store()
+    s.append("Decisions", [{"id": "DEC-h1", "ts": core.iso(n - dt.timedelta(days=3)), "rule": "SPLIT", "key": "SHORTS_PER_MONTH", "old": "12", "new": "14", "state": "verified", "why": "w", "numbers": "{}"},
+                           {"id": "DEC-h2", "ts": core.iso(n - dt.timedelta(days=1)), "rule": "SPLIT", "key": "SHORTS_PER_MONTH", "old": "14", "new": "16", "state": "no_effect", "why": "w", "numbers": "{}"}])
+    assert [r for r in STR.hands(n) if r["key"] == "SHORTS_PER_MONTH"] == []
+
 def test_a_decision_is_a_ticket_or_the_check_fails_only_text(monkeypatch, setting):
     from whatifs.org import runner as RN, memos as MEMO
     setting("STRATEGY_ON", "TRUE"); setting("ORG_SINCE", core.iso(now() - dt.timedelta(days=3))); monkeypatch.setattr(STR, "PORTFOLIO", ("FORMAT_SHARE_F1",))
@@ -497,6 +514,20 @@ def test_the_credit_boost_walks_down_in_the_last_week_and_steps_up_only_on_reali
     assert STR._credit_target(n)["THINK_BOOST_VARIANTS"]["target"] == "0" and "waits" in STR._credit_target(n)["THINK_BOOST_VARIANTS"]["why"]   # nothing realised yet: no step up
     cost(core.iso(n), 2000); assert STR._credit_target(n)["THINK_BOOST_VARIANTS"]["target"] == "4"            # the cover already pays the boost's cost
 
+def test_a_credit_decision_is_observed_from_the_next_shorts_write_session(setting):
+    """V4's finish C4 (P9): `observed` of rule CREDIT looked for `_write` in tab Specials' script, which holds the spoken lines only - the weekly
+    line would have said "not seen yet" for ever. `asked` is in the measures of D14's write session."""
+    from whatifs.org import strategy as STR
+    setting("STRATEGY_ON", "TRUE"); t0 = core.now_utc() - dt.timedelta(days=2); s = core.store()
+    s.append("Decisions", [{"id": "DEC-cr1", "ts": core.iso(t0), "rule": "CREDIT", "key": "THINK_BOOST_VARIANTS", "old": "0", "new": "2", "state": "verified",
+                            "why": "w", "numbers": "{}", "observed": "", "briefed": "x"}])
+    s.append("Specials", [{"ts": core.iso(t0 + dt.timedelta(hours=3)), "id": "SHCR1", "kind": "short", "script": "You wake up.\nThe sun is late."}])
+    s.append("Takeaways", [{"id": "TK-cr0", "ts": core.iso(t0 - dt.timedelta(hours=1)), "session_id": "S-cr0", "dept": "D14", "trigger": "write", "episode_id": "SHCR0",
+                            "kind": "takeaway", "measures": json.dumps({"asked": 3})},                                   # before the decision: not its effect
+                           {"id": "TK-cr1", "ts": core.iso(t0 + dt.timedelta(hours=2)), "session_id": "S-cr1", "dept": "D14", "trigger": "write", "episode_id": "SHCR1",
+                            "kind": "takeaway", "measures": json.dumps({"variants": 5, "asked": 5, "won": 3})}])
+    assert STR.observe() == 1 and json.loads(next(r for r in s.rows("Decisions") if r["id"] == "DEC-cr1")["observed"]) == {"asked": 5}
+
 def _tickets_row(tid, state, note):
     core.store().append("Tickets", [{"id": tid, "state": state, "note": note, "target": "SHORT_SHARE_S2", "dept": "D14"}])
 
@@ -516,6 +547,16 @@ def test_a_share_move_the_running_code_would_not_feel_is_taken_back_by_its_own_t
     setting("SHORT_FORMAT_FORCE", "S1")                                                                       # overnight a force switch makes the share do nothing
     out = STR.settle(JAN + dt.timedelta(hours=20)); r = decisions()[0]
     assert r["state"] == "no_effect" and out and out[0]["body"]["value"] == "40" and out[0]["dedupe_key"] == f"strategy|noeffect|{r['id']}" and out[0]["to_depts"] == ["D14"]
+
+def test_settle_waits_while_the_engine_is_still_applying_a_change(monkeypatch, setting):
+    """V4's finish C8: settle read an engine row in state 'intent' (an apply under way or interrupted) as applied - with the cell still at its old
+    value the decision was called "no effect" and taken back."""
+    from whatifs.org import strategy as STR, execute as EX
+    setting("STRATEGY_ON", "TRUE"); setting("SHORT_SHARE_S2", "40"); n = core.now_utc(); s = core.store()
+    s.append("Decisions", [{"id": "DEC-i1", "ts": core.iso(n - dt.timedelta(hours=2)), "rule": "SHORT_ARMS", "key": "SHORT_SHARE_S2", "old": "40", "new": "20", "state": "decided",
+                            "ticket": "T-i1", "why": "w", "numbers": "{}", "effect_after": json.dumps(STR.effect("SHORT_SHARE_S2", "20", n))}])
+    monkeypatch.setattr(EX, "state_of", lambda tid, st=None: ("intent", "") if tid == "T-i1" else None)
+    assert STR.settle(n) == [] and next(r for r in s.rows("Decisions") if r["id"] == "DEC-i1")["state"] == "decided"
 
 def test_the_replanner_steps_aside_and_the_spin_offs_are_paused_once(setting):
     from whatifs import replan as RP, manage as MG
@@ -584,6 +625,16 @@ def test_his_own_delete_closes_nothing_and_is_not_asked_again_and_an_unanswered_
     live_episode(3, "v3"); states(monkeypatch, {"v1": {"upload": "processed"}, "v2": {"upload": "deleted"}})       # v3 is gone and he says nothing
     RISK.run(); NTF.expire_defaults(now=core.now_utc() + dt.timedelta(hours=13))
     assert core.S("UPLOAD_LOCK") == "on" and next(x for x in core.store().rows("Owner_Actions") if x["kind"] == "risk_lock")["text"].startswith("The uploads are closed: Case 3 is gone from YouTube and you did not say")
+
+def test_his_own_delete_puts_no_question_on_the_research_agenda_and_no_watch_line_in_his_week(monkeypatch, setting):
+    """V4's finish C6: after "I deleted it" the watch book's rows still read as a live danger - R&D was asked a paid question about "his own
+    delete" and the weekly line said "Watch: ... his own delete"."""
+    from whatifs.org import rnd as RNDM
+    setting("STRATEGY_ON", "TRUE"); setting("UPLOAD_LOCK", "off"); live_episode(1, "v1"); live_episode(2, "v2")
+    states(monkeypatch, {"v1": {"upload": "processed"}}); RISK.run()
+    a = next(x for x in core.store().rows("Owner_Actions") if x["kind"] == "risk_gone"); assert NTF.answer(a["id"], "RISK MINE v2").startswith("noted")
+    assert [x for x in RNDM.gaps() if x["source"] == "risk"] == [] and RISK.words() == ""
+    RISK.run(); assert len([x for x in core.store().rows("Owner_Actions") if x["kind"] == "risk_gone"]) == 1 and core.S("UPLOAD_LOCK") == "off"
 
 def test_a_failed_read_locks_nothing_and_a_limited_video_is_a_line_only(monkeypatch, setting):
     setting("STRATEGY_ON", "TRUE"); setting("UPLOAD_LOCK", "off"); live_episode(1, "v1")
@@ -798,3 +849,23 @@ def test_a_ticket_on_a_short_share_changes_the_real_short_pick_over_ten_planted_
     assert FMT.short_pick("SHF4NEW", hist) == "S1"                                                              # S1 is furthest below its 4 of ten
     by_ticket(monkeypatch, "SHORT_SHARE_S3", 40)
     assert FMT.short_pick("SHF4NEW", hist) == "S3"                                                              # 40 / 40 / 40: S3 is now furthest below
+
+def test_every_card_v4_sends_names_its_default_and_a_deadline_unless_the_memo_keeps_it_open():
+    """V4's finish C9 (RR-22, the owner's item 150): every card to him carries a deadline and a default. The memo keeps three open on purpose:
+    'strategy' and 'desk' tell what was done (an Undo link never dies) and 'risk_lock' is a lock only his tap opens - each still names its default."""
+    import re
+    OPEN_BY_DESIGN = ("strategy", "desk", "risk_lock")
+    def calls(src, name="NT.send("):
+        out, i = [], src.find(name)
+        while i >= 0:
+            j, depth = i + len(name), 1
+            while depth: depth += {"(": 1, ")": -1}.get(src[j], 0); j += 1
+            out.append(src[i:j]); i = src.find(name, j)
+        return out
+    seen = []
+    for rel in ("whatifs/org/strategy.py", "whatifs/org/risk.py", "whatifs/org/desk.py"):
+        for c in calls(open(os.path.join(ROOT, rel), encoding="utf-8").read()):
+            kind = re.match(r'NT\.send\(\s*"([a-z_]+)"', c).group(1); seen.append(kind)
+            assert "default=" in c, (rel, kind)
+            assert "expires_h=" in c or kind in OPEN_BY_DESIGN, (rel, kind)
+    assert sorted(set(seen)) == ["desk", "risk_gone", "risk_lock", "strategy"], seen
