@@ -894,3 +894,22 @@ channels reach 10 million views; any measured reach effect of Meta's AI label; a
   New H31 (of two looks at the same opening scene, which thumbnail wins), H32 (the two families agree on the new film against the rejected one in nine
   sessions of ten), H33 (a scene of the viewer's own place holds a viewer at a retention cliff as the trial's staged scene does). O22 - nothing of the floor
   has met a real judge: before its hold is trusted the pilot measures what ONE answer is worth (`BUILD_STATE.md` open issue 201).
+  V4 THE CEO AND THE LADDER (the redesign's 4.4, 4.7 to 4.9 and 11.4; the owner's items 39, 52, 53, 55, 56, 57, 60, 65, 80 and, in the finish, 136, 150 and
+  160). BUILT 18 Nov 2026 on final code commit 8fa7742 - NOT accepted when this note was written: `handoff_v12/BUILD_STATE.md` says whether its prover's block is
+  green. THE ORDER AFTER IT: as `STATE.json` lists it - V5, DRAWN BY CODE, B6b, B7, B8, B9, B10, and V3 LAST; the owner's item 139 fits the scope to Sat 21 Nov 12:30 UTC.
+  WHAT THE BUILD CHANGED IN THIS SECTION, with reasons (the record is in `BUILD_STATE.md`): (1) 4.4 "long videos a month (start 5)": the start is 4 (11.10; the
+  money) and a fifth is decided by the FIT in a month that has the slot. (2) "a weekly review": the review runs DAILY and speaks daily in one line, weekly in
+  full. (3) "a format arm below the other arm's lower quartile after 8 ... loses half its share, after 12 it is retired": judged ONCE at each fixed point on
+  exactly those videos, and an arm no longer below gets its share back. (4) 11.4 "until 1 Feb 2027 D1 reports the split": it may ADD Shorts before that date
+  when the moving seconds are paid in full; it never takes one away before it. (5) "the promotion bar, animated seconds per video" as levers Strategy moves:
+  owned, but no rule moves them - no number exists that a rule could read. (6) 4.7 "the compilation from month 2" and the Deep Trial: PAUSED, not built.
+  (7) 4.9 "TESTED": V4 never says it. (8) 4.4 / items 53 and 60, the channel's name and subject "as experiment arms": candidates in the arm book, PARKED until
+  a reader in the topic pick exists (V5). (9) THE FINISH (the owner's item 160): a code change the ORGANISATION asks for by ticket is refused before any build
+  starts, logged and told to him once (cell `ORG_BUILDS_ON` FALSE) until the batch B-ORG gives build requests a cost estimate and a cap; his own builds and the
+  repair loop are not touched. (10) THE FINISH (item 136): no tile on his phone shows a number without its source - the Shorts tile is a computed proxy
+  (engaged views / views over the Shorts' own readings, his own median beside it), never Studio's name; the ranges nobody sourced are gone. (11) Memo 3.10's
+  "ONE WHOLE MONTH" test is NOT built: a planted month whose money fits no raise makes one decision and cannot fail under its break; the whole month is walked
+  on whole productions by the rehearsal and the sweep (a deviation recorded for Fable's re-audit). New H34 (a Short chosen from five or seven scripts holds
+  more viewers in its first days than one chosen from three), H35 (a month in which Strategy moved a lever shows the predicted direction more often than
+  chance), H36 (the risk line turns "worse" before the long videos' monthly hours fall), H37 (a Short format judged below the others' lower quartile at 8 is
+  still below at 16).
