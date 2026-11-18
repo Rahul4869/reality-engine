@@ -375,6 +375,15 @@
    "from": "BUILT",
    "to": "PROVING",
    "why": ""
+  },
+  {
+   "at": "2026-11-18T10:34:08Z",
+   "batch": "V4",
+   "by": "",
+   "commit": "7899300",
+   "from": "PROVING",
+   "to": "RED",
+   "why": ""
   }
  ],
  "order": [
@@ -391,8 +400,10 @@
   "B10",
   "V3"
  ],
- "phase": "PROVING",
- "red_notes": [],
- "red_rounds": 0,
- "updated": "2026-11-18T07:37:02Z"
+ "phase": "RED",
+ "red_notes": [
+  "V4_RED_1.md"
+ ],
+ "red_rounds": 1,
+ "updated": "2026-11-18T10:34:08Z"
 }
