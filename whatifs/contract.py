@@ -551,6 +551,16 @@ def p_camera_path(ctx):
                   + ("; every picture at eye level" if r["angles"] else "; angle not assigned by code") + "; every act opens on its own picture"
                   + (f"; {n_} scene(s) asked in their act's place" if n_ else ""))      # at the very end: the sweep prints this evidence up to "; every picture"
 
+def p_drawn_plan(ctx):
+    """v12 DRAWN (D6): on the shot list, BEFORE any picture is paid - a drawn scene only in the arm with the switch on and only on an explaining
+    moment; clean, verify and the layout asked AGAIN (never the mark); no composition twice, and no template's first use repeating the last
+    drawn video's as the plan saw it."""
+    from whatifs import scenes as SCN
+    d = ctx.get("d") if isinstance(ctx.get("d"), dict) else {}; units = ctx.get("units") or []
+    total = float(ctx.get("total") or (units[-1].get("end") if units else 0) or 0)
+    st, why = SCN.plan_report(ctx.get("shots") or [], units, d, total)
+    return {"PASS": PASS, "FAIL": FAIL}.get(st, NA), why
+
 def p_camera_shown(ctx):
     """v12 V2b (the camera path, D6): on what the RENDER recorded (ctx['path_states']), never the plan - every still state of an act showed a picture of
     its own act, moved one of the path's moves (never backwards, never rolled, always recorded) and travelled in its act's direction."""
@@ -883,6 +893,7 @@ FEATURES = [
     ("format_kept", "script", p_format_kept, "the script is what its format says: a format that is not a trial does not sound like one, a trial has its Show Plan (formats as data)"),
     ("viewer_inside", "script", p_viewer_inside, "the voice speaks to YOU, now: at least the format's share of sentences put the viewer inside the scene, never a run of sentences from outside longer than its limit, and no beat explains before it shows (inside the format)"),
     ("camera_path",   "script", p_camera_path,   "one place per act, seen from where the viewer stands: every act opens on a picture of its own, every picture at eye level holds its act's place, the acts are joined to an allowance (inside the format)"),
+    ("drawn_plan",    "script", p_drawn_plan,    "the explaining moments drawn by code: a scene only in the drawn arm and only on an explaining moment, every word, number, name-value pair and arrow the script's own, readable at the work size, no composition twice and none repeating the last drawn video's (drawn by code)"),
     ("format_ending", "script", p_format_ending,"the video ends as its format ends - F1 on the question to the viewer, F3 on the arrival - with no ask and no pointer to another video in its last seconds, and carries only the asks of its format (inside the format)"),
     ("topic_ladder", "script", p_topic_ladder, "every topic starts as a Short: this long video is about the topic of a Short the promote rule took, or was made under an override on record (the ladder)"),
     ("opening_footage", "script", p_opening_footage, "a long video about a promoted Short opens on that Short's own footage, laid by code under its first sentences - or was made under an override, which has none (the opening)"),

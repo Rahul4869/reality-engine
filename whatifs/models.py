@@ -143,7 +143,7 @@ ROUTES = {
     "scout": ("opus", "creative"), "showrunner": ("opus", "creative"), "bible": ("opus", "creative"), "premise_bank": ("opus", "creative"),
     "bench": ("opus", "creative"), "premise_judge": ("opus", "judge"), "owners_cut": ("opus", "judge"),
     "writer": ("script", "creative"), "rewrite": ("script", "creative"),
-    "memo": ("sonnet", "edit"), "objections": ("sonnet", "edit"), "director_read": ("sonnet", "edit"), "director": ("sonnet", "edit"),
+    "memo": ("sonnet", "edit"), "objections": ("sonnet", "edit"), "director_read": ("sonnet", "edit"), "director": ("sonnet", "edit"), "scene": ("sonnet", "edit"),
     "length": ("sonnet", "edit"), "format": ("sonnet", "edit"), "retention": ("sonnet", "edit"), "humanize": ("sonnet", "edit"),
     "factfix": ("sonnet", "edit"), "packager": ("sonnet", "edit"), "immersion": ("sonnet", "edit"),
     "hooks": ("sonnet", "edit"), "strategy": ("sonnet", "edit"), "brief": ("sonnet", "edit"), "repair": ("sonnet", "edit"),

@@ -637,7 +637,7 @@ def test_the_replanner_steps_aside_and_the_spin_offs_are_paused_once(setting):
 def test_the_lever_table_is_strategys_where_the_plan_is(setting):
     for k in ("SHORTS_PER_WEEK", "SHORTS_PER_MONTH", "MOVING_SHARE_LONG", "DEEP_TRIAL_ON", "CASEFILES_ON", "THINK_BOOST_VARIANTS", "STANDARD_MAX_LONG_PER_MONTH"): assert LV.owner_of(k) == "D1", k
     assert (LV.LEVERS["SHORTS_PER_WEEK"]["lo"], LV.LEVERS["SHORTS_PER_WEEK"]["hi"], LV.LEVERS["SHORTS_PER_MONTH"]["lo"], LV.LEVERS["SHORTS_PER_MONTH"]["hi"]) == (2, 4, 8, 16)
-    assert LV.LEVERS["DEEP_TRIAL_ON"]["owner"] == "on" and LV.LEVERS["CASEFILES_ON"]["owner"] == "on" and len(LV.LEVERS) == 93 and LV.issues() == []
+    assert LV.LEVERS["DEEP_TRIAL_ON"]["owner"] == "on" and LV.LEVERS["CASEFILES_ON"]["owner"] == "on" and len(LV.LEVERS) == 95 and LV.issues() == []      # v12 DRAWN step 1: + DRAWN_SHARE_PCT, DRAWN_TEXT_MIN_PCT (a pin moved BY DESIGN)
     assert [r["id"] for r in STR.RULES] == ["CREDIT", "SHORT_ARMS", "SLOTS", "SPLIT", "ARMS", "TRIAL"]
     for k in ("SHORT_ARM_MIN", "ARM_MIN_VIDEOS", "RISK_MIN_VIEWS", "STRATEGY_WINDOW_END", "CREDIT_TAPER_DAYS"): assert k in core.DEFAULTS and k not in LV.LEVERS, k
     setting("STRATEGY_ON", "TRUE"); from whatifs import dash as DS

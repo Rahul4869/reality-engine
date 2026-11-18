@@ -666,6 +666,12 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
         S_["shots"] = shots = INS.open_acts(shots, units)
         from whatifs import path as PATH                        # v12 V2b (D6): THE MARKS COME FIRST - every shot of an act knows its act, place and direction before the scenes and the living seconds are placed
         S_["shots"], S_["path"] = PATH.mark(shots, units, vo.duration, (S_.get("room") or {}).get("bible") or {}, ep); shots = S_["shots"]
+        from whatifs import scenes as SCN                       # v12 DRAWN (D6): the explaining moments of a video in the drawn arm get a scene of the house kit (data; one writer's call a video)
+        if SCN.on():
+            new_ = "drawn" not in d
+            S_["shots"] = shots = ORG.work("D6", "drawn", ep, lambda b: SCN.place(shots, units, ep, d, vo.duration, stage in (None, "plan")), measure=SCN.m_place)
+            if new_ and stage in (None, "plan") and os.path.exists(os.path.join(out, "plan.json")):      # the writer's reply survives a resume: the SAME "plan" checkpoint again, with d["drawn"] (C6: none without checkpoints)
+                P_ = json.load(open(os.path.join(out, "plan.json"))); P_["d"]["drawn"] = d["drawn"]; CK.save(out, ep, "plan", {"plan.json": P_})
         if S_.get("probe") is None: S_["probe"] = _probe(S_, ep, units)          # v12 V1b: a plan saved before the layman test carries no line-up yet
         from whatifs import anim as ANIM                        # v10.2 (K152): exactly ANIM_SHOTS animated scenes, at the retention cliffs
         ANIM.apply(shots, units, plan); S_["shots"] = shots
@@ -830,10 +836,10 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     st.update("Episodes", "episode_id", ep, {"title": title, "yt_id": vid, "slot_et": slot_iso, "status": "UPLOADED", "updated": iso()})   # recorded at once: no double upload
     if vid and ORG.on(): CANON.on_air(ep, vid)                    # v12 B6a: the platform confirmed the upload - this case is now the show's canon
     try:                                                         # v11 (K155): the brain's features + a logged forecast for this video
-        from whatifs import brain as BRN
+        from whatifs import brain as BRN, scenes as SCN
         hk = (hook_rec or {}).get("archetype") or (pkg.get("hook_shape") if isinstance(pkg, dict) else "") or "unknown"
         BRN.tag(ep, "long", title=title, premise=room["spine"].get("premise", ""), hook=hk, sec=vo.duration, lead=((d.get("show_plan") or {}).get("lead") or ""),
-                origin="owner_idea" if d.get("owner_brief") else "ai", yt_id=vid, arm={"playbook": d.get("playbook") or {}, "format": d.get("format") or ""})      # v12: the video's experiment arms are in its features (the Execution Engine verifies an arm there); V2b: its format is an arm (DESIGN QUESTION 17)
+                origin="owner_idea" if d.get("owner_brief") else "ai", yt_id=vid, arm={"playbook": d.get("playbook") or {}, "format": d.get("format") or ""} | SCN.feature(d))      # v12: the video's experiment arms are in its features (the Execution Engine verifies an arm there); V2b: its format is an arm (DESIGN QUESTION 17)
         BRN.forecast(ep, "long", hook=hk)
     except Exception as e: log(f"brain tag skipped: {scrub(e)}", "WARN", ep)
     try:

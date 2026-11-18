@@ -1199,6 +1199,14 @@ DEFAULTS = {
  "YPP_BARS": ('[{"until": "2027-01-31", "subs": 1000, "hours": 4000, "shorts": 10000000}, {"until": "", "subs": 1000, "hours": 8000, "shorts": 20000000}]',
               "v12 V4 (the scoreboard): the Partner Program's bars as data (YouTube Help 72851 and 12843009, read 16 Nov 2026) - the first entry whose `until` is empty or not yet past is the bar; a later entry is the rise the brief announces"),
  "SCOREBOARD_ELIGIBLE_PCT": ("100", "v12 V4 (the scoreboard): of the long watch hours YouTube's API reports, the share Studio's Earn page counts as eligible - typed from Studio; no API gives it"),
+ # v12 DRAWN (D6): the explaining moments drawn by code (whatifs/drawn.py, whatifs/scenes.py)
+ "DRAWN_ON": ("TRUE", "v12 DRAWN (D6): TRUE = in a long video of the drawn arm each number card after the first minute becomes a diagram in the show's colours that draws itself on the narrator's words (a scene is DATA of the house kit; every word, number, pair and arrow is the script's own; a scene that cannot be drawn or read is its picture's moving still; checks drawn_plan and drawn_shown). FALSE = the number cards as before and no writer's call"),
+ "DRAWN_SHARE_PCT": ("25", "v12 DRAWN: the share of long videos whose number cards are drawn scenes - an experiment arm, drawn by a hash of the episode's id (so at four videos a month the share is true only on average); a lever (0-50)"),
+ "DRAWN_MIN_S": ("2.4", "v12 DRAWN: an explaining moment's line must last at least this many seconds to carry a drawn scene (a starting value)"),
+ "DRAWN_TEXT_MIN_PCT": ("5.0", "v12 DRAWN: the smallest text of a drawn scene, in percent of the frame's height (about 11 points on a phone held upright; no platform gives a minimum: a starting value and a lever, 4-8)"),
+ "DRAWN_WORDS_MAX": ("30", "v12 DRAWN: the most words on screen in one drawn scene, its title not counted - three full rungs at their longest (a 1-3-word time and a 5-7-word event a rung: 18 to 30 words; measured on twenty real-length timelines: at 14 none was drawn, at 28 nineteen of twenty): never a flood of four or five (a starting value)"),
+ "DRAWN_HOLD_MAX_S": ("2.0", "v12 DRAWN: the longest a drawn scene stands still before every part of it pulses once (the upper end of a change every 1.5-2 s; a starting value)"),
+ "DRAWN_EST_INR": ("38", "v12 DRAWN: the estimate of the drawn scenes' one writer's call a long video, at the bound that cannot be exceeded - the sonnet chain falls back to Opus, its input at the 1-hour cache-write price: 2,300 x USD 4 x 2 + 18,000 x USD 20 a million = USD 0.378 = Rs 37.5 at 99 (NOT measured on a bill); a line of its own in the estimate"),
 }
 _settings_cache = None
 def settings(refresh=False) -> dict:

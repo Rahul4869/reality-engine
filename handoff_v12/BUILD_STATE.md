@@ -1271,6 +1271,40 @@ DECIDED BY THE FINISHER (P14, 18 Nov 2026; `DRAWN_FINISH_NOTES.md`): test 8's li
 THE BATCH ORDER (18 Nov 2026): DRAWN before V5 - the owner's item 115, the relay's RR-48 and RR-54 (commit 1c13358); flagged for Fable's re-audit (register rows G4, G14).
 
 Designed by the Fable session local_f4b3eb5f (16 Nov 2026) and place-checked against V1c's final code by an Opus session (V4_PASTE_CHECK.md); pasted word for word under plan A13 (a).
+
+#### Step 4 BUILD (the Opus typist `local_77a7a068`, effort xhigh; each step applied in a scratch export of ddfd4d5 first, tested there, then committed exactly as tested - `DRAWN_TYPIST_REPORT.md`)
+STEP 1 (memo 3.1, 3.3, 3.6, 3.7, 3.9, 3.11; C1-C9, C13, C15 a/b/c) - the kit, the closed scene language, the layout and its timing, the plan step:
+NEW `whatifs/drawn.py` (kit, TEMPLATES, clean, from_graphic, expand, layout + timing + pulses) and `whatifs/scenes.py` (on, arm, opts, slots,
+cue_s, sentences, verify (1)-(4), ask, last_used, place, feature, m_place, plan_report); prompts.SCENE_SYSTEM; models.ROUTES "scene" (sonnet,
+edit); fakes "scene"; seven cells (DRAWN_ON, DRAWN_SHARE_PCT 25, DRAWN_MIN_S 2.4, DRAWN_TEXT_MIN_PCT 5.0, DRAWN_WORDS_MAX 30, DRAWN_HOLD_MAX_S
+2.0, DRAWN_EST_INR 38); costguard's line `drawn_scenes`; episode.py's D6 run "drawn" after PATH.mark with the second "plan" save (C6) and
+BRN.tag's `| SCN.feature(d)`; contract `drawn_plan` (script); levers DRAWN_SHARE_PCT and DRAWN_TEXT_MIN_PCT; registry (D6 wraps + ENTRY
+"drawn", CHECK_OWNER); rnd SHOW_CHECKS 61; conftest OLD_DRAWN (+ test_v12_floor_his_word.py, test_v12_opening_e2e.py, test_v91_flaky_root.py);
+tests/test_v12_drawn.py (17 tests at this step); docs/CURRENT/SYSTEM.md by gen_docs (73 checks, 42 at the script stage; 870 settings).
+PLACES MOVED AT ddfd4d5 (the place-check): conftest - V4's OLD_STRATEGY where OLD_DRAWN goes (both kept); test_v12_floor.py 1383-1386 - the
+test moved to test_v12_floor_his_word.py (OLD_DRAWN typed at its lines 41, 44); core.DEFAULTS' end after V4's three cells; registry - V4 wired
+D1 and moved MOVING_SHARE_LONG to it: DRAWN_SHARE_PCT is D1's lever by the memo's DESIGN QUESTION E, DRAWN_TEXT_MIN_PCT D6's; rnd - V4's
+strategy_live in ORG_CHECKS (SHOW_CHECKS 60 -> 61 for drawn_plan only).
+PINS MOVED BY DESIGN: test_v12_exec.py 62 (levers 93 -> 95) and 507 (script 41 -> 42; V4 had moved it 40 -> 41 without a note - missed by
+the typing, found by its own red); test_v12_strategy.py 640 (levers 93 -> 95; missed by the typing, found red at step 4's run, typed here);
+test_v12_cutdowns.py 40 (42 / 73); test_v12_motion.py 633 (73); test_v12_inside.py 649, test_v12_release.py 436 (SHOW_CHECKS 61).
+PINS THAT STAY TRUE (read and run): test_v12_exec.py 328 (the literal `arm={...}`, BRN.tag once), test_v12_rnd.py 428, test_docs_current.py 63,
+test_v12_strategy.py 222 and 272, test_v12_opening.py 324, test_v12_money.py 421, test_v12_motion.py 632, test_v12_floor.py 643/646,
+test_v12_creative.py 288-291.
+THE FINISHER'S DQ-1 (18 Nov 2026): the ladder's boxes `t` 3.4, dot 0.2, text 8.2 columns; the compare's value box 5 columns (22 characters),
+its bar 6.75 - measured against DejaVuSans-Bold at the 5% minimum (the memo's 33.5 px a character is 34.2 for this font); the bounds
+unchanged. Test 5 red first ("a text does not fit: Abcdefghijklmn"); its new assertion (a 24-character value refused) passed on the old code.
+THE FINISHER'S DQ-2 (18 Nov 2026, AMENDED): DRAWN_WORDS_MAX 14 -> 30. Its new test seen RED at 14 ("too many words on screen").
+TO VERIFY 1, second half (`drawn2/to_measure.py`: twenty real-length three-rung timelines and twenty compares through clean_graphic ->
+from_graphic -> layout at 1920 x 1080): at 14 - timelines 0 of 20 (20 by "too many words on screen", 0 by fit), compares 19 of 20 (1 by
+words); at 28 - timelines 19 of 20 (1 by words: "Climbing a tower of sand", 29 words), compares 20 of 20; at 30 - 20 of 20 and 20 of 20.
+TESTS (scratch, Git Bash, fast ffmpeg first, WI_FAKE=1, one run at a time): red first without the step's code (ImportError, 0.27 s);
+tests/test_v12_drawn.py 17 passed, 201.8 s; wiring and pins (b0b's unused-function test, org, exec, rnd, docs_current, cutdowns, inside,
+motion, release, floor_his_word, opening_e2e, v91_flaky_root) 516 passed + the exec 507 pin (then 89 passed, 223 s), 1444 s; strategy 95
+passed, 11.4 s; truth GREEN; Plan Guard GREEN; minitest each changed file alone: drawn 16/0 195 s, cutdowns 50/0 147 s, exec 89/0 216 s,
+floor_his_word 2/0 263 s, opening_e2e 3/0 428 s, release 34/0 292 s, v91_flaky_root 3/0 344 s, inside 99/0 402 s, motion 60/0 371 s,
+strategy 95/0 11 s.
+THE PREVIOUS CHECKS: run 44369244828 on f2eae87 - completed/success (Unit tests success, Free rehearsal success).
 ### V4 - THE CEO AND THE LADDER (16-18 Nov 2026) - ACCEPTED (final code commit ddfd4d5 GREEN in GitHub Checks run 277: 1865 passed; sweep 58 of 58 ids) - its code 5272fea, BUILT AGAIN AFTER RED ROUND 1 (repairs C23 to C25 by Opus under item 130; the first pass was RED on 7899300, its code 8fa7742: an overrun memo on every long video of the sweep, the rehearsal F3/S1 held by `impact_map`, sweep part B without the watch line; `proving/notes/V4_RED_1.md`) - BUILT before it (final code commit 8fa7742) (the designer's record: steps 1 to 3; the Opus builder writes steps 4 to 6a, the Fable finisher `FINISHED BY FABLE`, the prover 6b and 7)
 THE BATCH'S START: the first check (the batch before on the record, GitHub's run of its final code commit, a clean tree) and the usage
 figures are written by the session that pastes this record at V1c's acceptance. NOT SPLIT (open issue 189: `next.py` has no move for a

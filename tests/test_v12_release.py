@@ -433,7 +433,7 @@ def test_the_release_is_wired_into_the_contract_the_registry_the_levers_and_the_
     from whatifs.org import registry as REG, levers as LV, rnd as RND
     import tools.repair as REP
     stage = {f[0]: f[1] for f in CON.FEATURES}; assert stage["release_sheet"] == "release" and REG.check_owner("release_sheet") == "D9"
-    assert "release_sheet" not in RND.ORG_CHECKS and "release_sheet" in RND.metrics() and RND.SHOW_CHECKS == 60     # v12 V1c step 4: + one_story; step 3: + makers_line; step 1: + viewer_floor (a pin moved BY DESIGN). a promise about the show: researchable (49: the two checks of the cut-down reels left in V2c-b2b2)
+    assert "release_sheet" not in RND.ORG_CHECKS and "release_sheet" in RND.metrics() and RND.SHOW_CHECKS == 61     # v12 DRAWN step 1: + drawn_plan. v12 V1c step 4: + one_story; step 3: + makers_line; step 1: + viewer_floor (a pin moved BY DESIGN). a promise about the show: researchable (49: the two checks of the cut-down reels left in V2c-b2b2)
     assert ("whatifs/release.py", "short_publish") in REG.ENTRY["D9"] and ("whatifs/release.py", "release_gate") in REG.ENTRY["D8"] and REG.entry_issues() == [] and REG.data_issues() == []
     assert REG.EPISODE_RUNS["release"] == (("D9", "short_publish"),) and REG.GATE_RUNS["release"] == ("D8", "release_gate") and "whatifs/release.py" in REG.DEPTS["D9"]["wraps"]
     for k in ("IG_TRIAL_REELS_ON", "SHORT_THUMB_ON"):

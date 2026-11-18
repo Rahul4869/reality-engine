@@ -381,6 +381,23 @@ def fake_reply(key, prompt):
     if key == "critic":
         return json.dumps({"scores": {k: 8 for k in ["hook_strength", "curiosity_gap", "escalation", "unpredictable_answer", "science_plausible", "pacing_variety",
             "humour_cringe_free", "originality_vs_recent", "policy_safe", "title_thumb_promise_kept", "sounds_human", "psychological_pull"]}, "verdict": "PASS", "fixes": {}})
+    if key == "scene":                                             # v12 DRAWN: the drawn scenes' writer - the graphic's own kind and fields, cued on the line's first word;
+        m = re.search(r"SLOTS: (\[.*\])", prompt, re.S); out = []      # a line that says "because" becomes a flow: cause (the words after it), then effect
+        def cut34(t):
+            t = " ".join(str(t).strip(" .,;").split())
+            return t if len(t) <= 34 else t[:t.rfind(" ", 0, 35)] if t.rfind(" ", 0, 35) > 0 else t[:34]
+        for e in (json.loads(m.group(1)) if m else []):
+            g = e.get("graphic") or {}; line = str(e.get("line") or ""); cue = [(line.split() or [""])[0].strip(".,;:!?")]
+            if " because " in line:
+                eff, cause = line.split(" because ", 1)
+                out.append({"unit": e.get("unit"), "template": "flow", "slots": {"label": str(g.get("label") or "")[:48], "links": [cut34(cause), cut34(eff)]}, "cues": cue})
+            elif g.get("kind") == "timeline":
+                out.append({"unit": e.get("unit"), "template": "ladder", "slots": {"label": g.get("label", ""), "rungs": [{"t": x.get("t", ""), "text": x.get("text", "")} for x in g.get("events") or []]}, "cues": cue})
+            elif g.get("kind") == "compare":
+                out.append({"unit": e.get("unit"), "template": "compare", "slots": {"label": g.get("label", ""), "unit": g.get("unit", ""), "a": g.get("a"), "b": g.get("b")}, "cues": cue})
+            else:
+                out.append({"unit": e.get("unit"), "template": "count", "slots": {"label": g.get("label", ""), "from": g.get("from", 0), "to": g.get("to", 100), "unit": g.get("unit", "")}, "cues": cue})
+        return json.dumps({"scenes": out})
     if key == "director":
         m = re.search(r"There are (\d+) shots", prompt); n = int(m.group(1)) if m else 10
         mm = re.search(r"\n(\d+): ", prompt); off = int(mm.group(1)) if mm else 0

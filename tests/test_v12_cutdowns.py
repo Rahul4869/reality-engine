@@ -36,7 +36,7 @@ def _wire(monkeypatch, status="public"):
 def test_no_check_no_setting_no_role_and_no_module_of_the_cut_downs_is_left():
     ids = [f[0] for f in CON.FEATURES]; by = {}
     for f in CON.FEATURES: by[f[1]] = by.get(f[1], 0) + 1
-    assert "shorts" not in ids and "short_covers" not in ids and by == {"script": 41, "final": 23, "short": 5, "short_file": 2, "release": 1} and len(ids) == 72, by      # v12 V4 step 3: + strategy_live (BY DESIGN). v12 V1c step 4: + one_story; step 3: + makers_line; step 1: + viewer_floor (a pin moved BY DESIGN). v12 V2b: + viewer_inside, format_ending, camera_path, camera_shown
+    assert "shorts" not in ids and "short_covers" not in ids and by == {"script": 42, "final": 23, "short": 5, "short_file": 2, "release": 1} and len(ids) == 73, by      # v12 DRAWN step 1: + drawn_plan. v12 V4 step 3: + strategy_live (BY DESIGN). v12 V1c step 4: + one_story; step 3: + makers_line; step 1: + viewer_floor (a pin moved BY DESIGN). v12 V2b: + viewer_inside, format_ending, camera_path, camera_shown
     assert not [k for k in GONE_CELLS if k in core.DEFAULTS], "a Settings cell of the cut-downs is back"
     assert "REEL1_DELAY_MIN" in core.DEFAULTS and "release step" in core.DEFAULTS["REEL1_DELAY_MIN"][1], "the release step keeps its delay cell, and the note says what it is now"
     from whatifs import models, prompts, room, cta, art, episode

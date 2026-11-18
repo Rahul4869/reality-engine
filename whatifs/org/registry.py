@@ -17,7 +17,7 @@ DEPTS = {
             "wraps": ("whatifs/wa.py", "whatifs/notify.py", "whatifs/dash.py", "whatifs/owner_view.py", "whatifs/org/desk.py"), "levers": ("WA_ON", "DASH_ON"), "takes": ()},
     "D1":  {"mission": "goals, the monthly and weekly plan, cadence, priorities, budget allocation, urgency", "cadence": "daily", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/replan.py", "whatifs/manage.py", "whatifs/org/strategy.py", "whatifs/org/risk.py"), "levers": ("STANDARD_MAX_LONG_PER_MONTH", "PUBLISH_DAYS", "VIDEOS_PER_MONTH_EST", "FORMAT_SHARE_F1", "FORMAT_SHARE_F2", "FORMAT_SHARE_F3", "THINK_BOOST_VARIANTS",
-                       "SHORTS_PER_WEEK", "SHORTS_PER_MONTH", "MOVING_SHARE_LONG", "DEEP_TRIAL_ON", "CASEFILES_ON"), "takes": ()},      # v12 V4: the plan's cells are Strategy's
+                       "SHORTS_PER_WEEK", "SHORTS_PER_MONTH", "MOVING_SHARE_LONG", "DEEP_TRIAL_ON", "CASEFILES_ON", "DRAWN_SHARE_PCT"), "takes": ()},      # v12 V4: the plan's cells are Strategy's. v12 DRAWN: + the drawn arm's share (the memo's design question E: D1 once it is wired)
     "D2":  {"mission": "automatic research: outliers, techniques, platform policy, tools, audience, competitors", "cadence": "daily", "cap_inr": 300, "inject": "brief",
             "wraps": ("whatifs/org/rnd.py", "whatifs/outlier_lab.py", "whatifs/demand.py", "whatifs/research.py", "whatifs/scout.py"), "levers": ("RESEARCH_ON", "IDEA_MIN_MULTIPLE", "RESEARCH_PER_WEEK"), "takes": ()},
     "D3":  {"mission": "assess every research and creative memo: evidence, novelty, impact, feasibility, cost, risk", "cadence": "weekly", "cap_inr": 120, "inject": "brief",
@@ -28,8 +28,9 @@ DEPTS = {
     "D5":  {"mission": "titles, thumbnails, the promise, packaging tests", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/packaging.py", "whatifs/art.py"), "levers": ("PROMISE_BY_SEC",), "takes": ()},
     "D6":  {"mission": "stills, animated scenes, living characters, particles, micro-cuts, the render", "cadence": "episode", "cap_inr": None, "inject": "brief",
-            "wraps": ("whatifs/media.py", "whatifs/anim.py", "whatifs/living.py", "whatifs/render.py", "whatifs/shotplan.py", "whatifs/opening.py", "whatifs/clips.py", "whatifs/motion.py", "whatifs/stock.py", "whatifs/path.py"),
-            "levers": ("ANIM_SHOTS", "VISUAL_CHANGE_MAX_S", "PARTICLES_ON", "LIVING_CHARACTERS_ON", "CAMERA_MOTION", "OPENING_FIT", "OPENING_ENLARGE_MAX", "MOVING_SHARE_MIN_LONG", "STOCK_SHARE_MAX_PCT", "ACT_MIN_S", "PLACE_CHANGES_PER_MIN_MAX"), "takes": ()},      # v12 V2c-b2b: the opening from the Short's footage
+            "wraps": ("whatifs/media.py", "whatifs/anim.py", "whatifs/living.py", "whatifs/render.py", "whatifs/shotplan.py", "whatifs/opening.py", "whatifs/clips.py", "whatifs/motion.py", "whatifs/stock.py", "whatifs/path.py", "whatifs/drawn.py", "whatifs/scenes.py"),
+            "levers": ("ANIM_SHOTS", "VISUAL_CHANGE_MAX_S", "PARTICLES_ON", "LIVING_CHARACTERS_ON", "CAMERA_MOTION", "OPENING_FIT", "OPENING_ENLARGE_MAX", "MOVING_SHARE_MIN_LONG", "STOCK_SHARE_MAX_PCT", "ACT_MIN_S", "PLACE_CHANGES_PER_MIN_MAX",
+                       "DRAWN_TEXT_MIN_PCT"), "takes": ()},      # v12 DRAWN: the drawn scenes' smallest text (the arm's share is D1's: the memo's design question E, D1 wired by V4)      # v12 V2c-b2b: the opening from the Short's footage
     "D7":  {"mission": "voices, sound worlds, story events, the music bed, the pause before a punchline", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/voice.py", "whatifs/tts_gemini.py", "whatifs/sound.py"), "levers": ("SOUND_DESIGN_ON", "TTS_ENGINE", "SHORT_SOUND_BY_S", "MAKER_LINE_MAX_WORDS"), "takes": ()},
     "D8":  {"mission": "the Feature Contract, the Impact Map, the enforcement matrix, problem memos, the repair loop", "cadence": "episode", "cap_inr": None, "inject": "brief",
@@ -79,7 +80,7 @@ CREATIVE_RUNS = (("D4", "write"), ("D5", "package"), ("D6", "plan"))      # judg
 ENTRY = {
     "D4":  (("whatifs/episode.py", "write"), ("whatifs/preview.py", "draft")),      # v12 B6a: pre-production writing is a D4 run too
     "D5":  (("whatifs/episode.py", "package"),),
-    "D6":  (("whatifs/episode.py", "plan"), ("whatifs/episode.py", "assets"), ("whatifs/episode.py", "render")),
+    "D6":  (("whatifs/episode.py", "plan"), ("whatifs/episode.py", "assets"), ("whatifs/episode.py", "render"), ("whatifs/episode.py", "drawn")),      # v12 DRAWN: the explaining moments (only with DRAWN_ON: not an EPISODE_RUN)
     "D7":  (("whatifs/episode.py", "voice"), ("whatifs/shorts2.py", "short_voice")),      # v12 V2c: a Short is voiced by the same voice job
     "D8":  (("whatifs/episode.py", "script_gate"), ("whatifs/episode.py", "final_gate"), ("whatifs/shorts2.py", "short_gate"), ("whatifs/shorts2.py", "short_file_gate"), ("whatifs/release.py", "release_gate")),      # v12 V2c-b2: the gate after a Short's uploads
     "D9":  (("whatifs/episode.py", "publish"), ("whatifs/release.py", "short_publish")),      # v12 V2c-b2: a Short goes out through Publishing's own run
@@ -121,6 +122,7 @@ CHECK_OWNER = {
     "viewer_floor": "D13",                                                                                                          # v12 V1c: the judged floor
     "makers_line": "D7",                                                                                                            # v12 V1c: the maker's line
     "one_story": "D5",                                                                                                              # v12 V1c: one story (the thumbnail is the picture the film opens on)
+    "drawn_plan": "D6",                                                                                                             # v12 DRAWN: the drawn scenes on the shot list
 }
 
 def runnable(dept):

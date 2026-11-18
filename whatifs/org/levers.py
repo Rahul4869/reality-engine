@@ -59,6 +59,8 @@ LEVERS = {
     "LADDER_WINDOW_DAYS": _n("int", 14, 60, 7, "", "", ("topic_ladder",)), "LADDER_MIN_ENGAGED": _n("int", 0, 500, 50, "", "", ("topic_ladder",)),   # v12 V2c-b: the promote rule (Growth and Learning)
     "OPENING_FIT": _e(("auto", "fill", "whole"), (), "", ("opening_shown",)), "OPENING_ENLARGE_MAX": _n("float", 1, 3, 0.5, "up", GATE, ("opening_shown",)),   # v12 V2c-b2b: the opening window (Visual Production); wider = softer
     "MOVING_SHARE_LONG": _n("int", 20, 80, 10, "", "", ("moving_share",)), "MOVING_SHARE_MIN_LONG": _n("int", 5, 60, 5, "down", GATE, ("moving_share",)),      # v12 V2d-b: the target the money buys toward, and the floor (Visual Production)
+    "DRAWN_SHARE_PCT": _n("int", 0, 50, 25, "", "the share of long videos whose number cards are drawn scenes: an experiment arm", ("drawn_plan",)),      # v12 DRAWN: Strategy's (D1: the memo's design question E) and the drawn scenes' smallest text (Visual Production); step 2 adds drawn_shown (levers.issues: a check it names must exist)
+    "DRAWN_TEXT_MIN_PCT": _n("float", 4.0, 8.0, 0.5, "down", "the smallest text of a drawn scene, in percent of the frame's height", ("drawn_plan",)),
     "STOCK_SHARE_MAX_PCT": _n("int", 0, 20, 5, "up", GATE, ("stock_share",)), "SHORT_SOUND_BY_S": _n("float", 0.05, 0.5, 0.1, "up", GATE, ("short_sound",)),   # real footage stays an anchor; a Short sounds from its first frame (Sound)
     "REEL1_DELAY_MIN": _n("int", 0, 120, 30), "NEXT_LINK_ON": _b(),
     "IG_TRIAL_REELS_ON": _b(checks=("release_sheet",)), "SHORT_THUMB_ON": _b(checks=("release_sheet",)),      # v12 V2c-b2: two rows of a Short's release sheet (reach trials: neither costs money nor weakens a gate)

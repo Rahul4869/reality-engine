@@ -88,6 +88,9 @@ def lines(kind="long", kling=None, stills=None, living=None, table_read=None, fm
     from whatifs.org import floor as FLOOR                                # v12 V1c: the judged floor's session (two looks of each judge) - its estimate, not a bill
     if FLOOR.on(): L.append(_line("floor", "the judged floor: two strong first-time viewers of two model families watch the opening beside the rejected video's", 1,
                                   S("VIEW_FLOOR_EST_INR", float), "ai_writing", "", None, {"watch:floor_gemini": 2, "watch:floor_claude": 2}))
+    from whatifs import scenes as SCN                                     # v12 DRAWN: the drawn scenes' one writer's call - in EVERY long video's estimate (three in four do not pay it)
+    if SCN.on() and S("DRAWN_SHARE_PCT", int) > 0: L.append(_line("drawn_scenes", "the explaining scenes drawn by code: one writer's call for the video's diagrams", 1,
+                                                                    S("DRAWN_EST_INR", float), "ai_writing", "", None, {"text:scene": 1}))
     return L + [_line(k_, "a small community line", 1, v, k_) for k_, v in v91_lines().items() if v]
 
 def estimate_lines():
