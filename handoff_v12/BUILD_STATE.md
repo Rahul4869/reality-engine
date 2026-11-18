@@ -1489,6 +1489,23 @@ STEP 7'S RUN (pytest `-n 8`, fake mode, alone): `test_v12_strategy`, `test_v11_b
 STEP 6'S CHECKS (`gh_runs.js`): run 44178221702 on 8fdb483, 21:17 -> 22:36 UTC, GREEN - "Unit tests: 1830 passed in 4506.22s"; "REHEARSAL: GREEN ... contract script: 41/41 pass; contract final: 23/23 pass".
 WHAT A VIEWER GETS: a long video that takes off gets its follow-up Short within hours, ordered with a clock - not after a card waits for
 the owner's tap - so the viewers it brought find the next thing while they are still looking.
+STEP 8 - THE OWNER'S DESK (3.9, redesign 4.9, until B9). WHAT CHANGED: tabs `Owner_Input` (input) and `Owner_Desk` (n, ts, sha, verbatim,
+verdict, how, memo, ticket, action, briefed) - 91 tabs in all (the memo's 86 -> 91); NEW `whatifs/org/desk.py` (PROTECTED; D0 wraps it and
+stays PENDING until B9) - `recognise` (HEAD + one of three patterns + TAIL on the whole lower-cased input, with `search` so the anchors carry
+the WHOLE-input rule: D-DESK1), `verdict` (RANGE, EFFECT, FIT; "Do it anyway" overrides FIT only: D-DESK2), `tick` (an input not yet on the
+desk: stored word for word; an owner memo D0 -> D1 closed in the same tick by D1 with `desk_answered`; ADOPTED = one step now as a ticket
+`DESK-{n}` (D-DESK3), PARKED with the gate's words; the engine off or a MemoError = STORED: D-DESK4), `lines`, `briefed`, `_do`, `register`;
+`schemas.TYPES["owner_memo"]["resolved_by"]` gains `desk_answered`; `memos._proof_problem`: the ref "Owner_Desk:{n}" must be a row with a
+verdict; `manage.tick` calls `desk.tick()` in its own try after `VERS.sync()` (a paused channel returns before: his input waits);
+`strategy.brief` lists the desk's lines and `briefed` stamps them only when the brief went. No pin moved. ONE CHANGE AT THE APPLY: the
+module's docstring is one line (the plan guard). Matrix: one row (`fn:` desk.tick / recognise / verdict / lines, strategy.briefed).
+SYSTEM.md regenerated.
+STEP 8'S RUN (pytest `-n 8`, fake mode, alone): `test_v12_strategy`, `test_v12_org`, `test_v12_rnd`, `test_v94a` (the tick),
+`test_docs_current`, `test_v111_enforce` - 288 passed in 127.65 s. ALONE UNDER `shim/minitest.py`: `test_v12_strategy.py` 68 passed in 8 s.
+`tools/plan_guard.py`: GREEN.
+STEP 7'S CHECKS (`gh_runs.js`): run 44191757646 on 8e80046, 22:36 -> 00:08 UTC, GREEN - "Unit tests: 1832 passed in 5216.08s"; "REHEARSAL: GREEN ... contract script: 41/41 pass; contract final: 23/23 pass".
+WHAT THE OWNER GETS: what he types in the tab Owner_Input is kept word for word and answered in his next brief; a whole request code can
+recognise (e.g. "4 shorts a week") is done one step at a time as a ticket, anything else is kept for the Council with the reason in words.
 ### V1c - THE FLOOR, HIS VERDICT AND THE MAKER'S LINE (15-17 Nov 2026) - ACCEPTED (final code commit 9dfc916 GREEN in GitHub Checks run 246: 1768 passed; sweep 58 of 58 ids) - its code b326887, BUILT AGAIN AFTER RED ROUND 2 (the offline writer keeps the asks it is given and marks its punchlines by the joke rule's own measures (open issue 228); `proving/notes/V1c_BUILT.md`; the repair block "THE REPAIR OF RED ROUND 2" under the second pass's 6b); BEFORE IT RED ON ITS SECOND PASS (46615df, 17 Nov 2026: the rehearsal F2/S2 held by joke_density on episode EP202611170305 - 6 punchlines, need 7, the script one word over the line; `proving/notes/V1c_RED_2.md`), NOT ACCEPTED; BEFORE IT BUILT AGAIN (red round 1 on 030f197 repaired: final code commit d39a213 - the floor's media fixture made for the proof's serial runner, a guard over every test file, test_v12_floor split word for word into three files; `proving/notes/V1c_BUILT.md`; the builder's record, the prover's 6b of the first pass, the repair block under it)
 WHAT IT IS FOR, in a viewer's and the owner's words: a finished long video is shown - its first minute - to two strong first-time viewers of two
 model families beside the video he rejected; a film they cannot tell from that one is HELD, a jury that fails its own planted questions holds

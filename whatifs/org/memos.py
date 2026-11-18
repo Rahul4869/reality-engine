@@ -200,6 +200,9 @@ def _proof_problem(m, kind, ref, by, rs, st=None):
         if t is None or t["type"] != "ticket": return f"'{ref}' is not a ticket"
         if t["status"] != "resolved" or (t["resolution"] or {}).get("kind") != "lever_verified": return f"ticket {ref} has not been executed and verified"
     if kind == "owner_answer" and by != "owner": return "only the owner's own answer closes a memo this way"
+    if kind == "desk_answered":                                                    # v12 V4: the owner's desk answered it - the ref is a row of tab Owner_Desk with a verdict
+        n = ref.split(":", 1)[1] if ref.startswith("Owner_Desk:") else ""
+        if not n or not any(str(r.get("n")) == n and str(r.get("verdict") or "").strip() for r in (st or store()).rows("Owner_Desk")): return f"'{ref}' is not a row of tab Owner_Desk with a verdict"
     return ""
 
 def resolve(mid, by, kind, ref, note="", st=None, now=None):

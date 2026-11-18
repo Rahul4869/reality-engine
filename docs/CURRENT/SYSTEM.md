@@ -10,7 +10,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `heygen/heygen-video/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 3 standalone Shorts a week, 12 a month at most - every topic starts as a Short and the promote rule picks the long video's topic (`whatifs/ladder.py`); spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 137 code modules, 862 settings, 89 Sheet tabs, 25 GitHub workflows.
+- Size: 138 code modules, 862 settings, 91 Sheet tabs, 25 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -387,6 +387,8 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Scoreboard | 5 | date, subs, hours, shorts_90, src |  |
 | Decisions | 18 | id, ts, rule, key, old, new ... |  |
 | Candidates | 11 | id, ts, kind, title, how, sources ... |  |
+| Owner_Input | 1 | input |  |
+| Owner_Desk | 10 | n, ts, sha, verbatim, verdict, how ... |  |
 
 ## 9. Modules
 | module | purpose |
@@ -502,6 +504,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | whatifs/org/board.py | Review Board (D3): every research memo judged blind by strong judges of two model families on a fixed yes/no checklist, with a planted canary in every session; scores and the verdict are computed by code. |
 | whatifs/org/canon.py | World canon: the show's living bible as Palace items - the cast mirrored from the character bible, a case record written by code after every D4 write and accepted only when the upload is confirmed, the continuity debt the next script must pay, and the check canon_in_brief. |
 | whatifs/org/cite.py | Creative citations: the rule the creative model calls receive, quote-anchored verification of every Palace item a model says it applied, creative memos with the same-idea guard, and the episode checks palace_injected / palace_cited. |
+| whatifs/org/desk.py | The owner's desk: what he types in tab Owner_Input is kept word for word, judged by code and answered in the next brief. |
 | whatifs/org/execute.py | Execution Engine: turns a ticket into a typed change, writes it down before and after, verifies it with evidence another component wrote later, and rolls it back when that fails. |
 | whatifs/org/finance.py | Finance (D11): the money is his own - the Claude credit's lane and meter, one boost that ends by itself, the daily watch. |
 | whatifs/org/floor.py | The judged floor (D13): two strong first-time viewers of two model families compare the first minute of a finished long video with the video the owner rejected, in both orders, beside a planted ladder; the verdict is computed by code. |
@@ -662,7 +665,7 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 
 | type | from | to | kind | acknowledge / resolve | closed by | purpose |
 |---|---|---|---|---|---|---|
-| owner_memo | D0 | any | ask | 1 / 24 | ticket_executed, owner_answer | the owner's words VERBATIM, the interpretation and the departments it affects |
+| owner_memo | D0 | any | ask | 1 / 24 | ticket_executed, owner_answer, desk_answered | the owner's words VERBATIM, the interpretation and the departments it affects |
 | research_memo | D2 | D3 | ask | 24 / 48 | assessment_memo | a research question, what was found, the dated sources, proposed actions, expected impact, cost and the departments it targets |
 | assessment_memo | D3 | C | ask | 168 / 168 | decision_memo | the blind cross-family jury's scores for one memo and its verdict |
 | creative_memo | D4, D5, D6, D7 | C | ask | 84 / 84 | decision_memo, assessment_memo | a new idea, an experiment proposal, a joke or hook bank, a world-building proposal |

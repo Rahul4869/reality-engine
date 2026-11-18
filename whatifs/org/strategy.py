@@ -414,6 +414,8 @@ def brief(now=None, st=None):
         else:
             a = _action(r, st); lnk = NT.link(f"STRATEGY UNDO {r['id']}", a["id"]) if a else ""
             lines.append(text_of(r) + (f" Undo: {lnk}" if lnk else ""))
+    from whatifs.org import desk as DESK
+    lines += DESK.lines(now, st)                                                       # the owner's desk: his inputs answered (3.9)
     wk = weekly(now, st)
     if wk: lines.append(wk)
     if not lines:
@@ -468,11 +470,8 @@ def briefed(now=None, st=None):
         if r.get("briefed") or r["state"] == "hand" or (parse_iso(r.get("ts")) or now) > now: continue
         _save(st, r, briefed=iso(now)); n += 1
     if _weekly_due(now): set_setting("STRATEGY_WEEKLY_AT", iso(now))
-    try:
-        from whatifs.org import desk as DESK
-        n += DESK.briefed(now, st)
-    except ImportError: pass
-    return n
+    from whatifs.org import desk as DESK
+    return n + DESK.briefed(now, st)
 
 # ------------------------------------------------------------------ settling what the engine did
 def _ticket_in_flight(key, st):

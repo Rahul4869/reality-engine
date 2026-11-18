@@ -39,7 +39,7 @@ EVIDENCE = _arr(_obj(("source", "date", "type"), {"source": _s(3, 200), "url": _
 TYPES = {
     "owner_memo": {
         "from": ("D0",), "to": ANY, "mode": "ask", "urgency": "P0", "ack_h": 1, "resolve_h": 24, "fixed": True, "done_when": None, "owner_visible": True,
-        "resolved_by": ("ticket_executed", "owner_answer"), "reject_by": ("owner",),
+        "resolved_by": ("ticket_executed", "owner_answer", "desk_answered"), "reject_by": ("owner",),      # v12 V4: the owner's desk answers it at once (open issue 56)
         "purpose": "the owner's words VERBATIM, the interpretation and the departments it affects",
         "sla": "acknowledged within one tick (1 h allows for a late cron), resolved within 24 h or escalated",
         "body": _obj(("verbatim", "interpretation"), {"verbatim": _s(1, 4000), "interpretation": _s(10, 800), "channel": _s(0, 40), "received": _s(0, 25)}),

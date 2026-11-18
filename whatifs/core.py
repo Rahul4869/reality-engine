@@ -185,6 +185,10 @@ TABS = {
  # v12 V4 (the arm book, strategy.file - the ONE writer): one row per candidate a filer brings (machine, hand, subject, name) with dated sources and the
  # monetisation policy read first; rule TRIAL opens ONE at a time as a decision. Text from outside is DATA: it never reaches a prompt
  "Candidates":      ["id", "ts", "kind", "title", "how", "sources", "policy", "filed_by", "state", "ticket", "note"],
+ # v12 V4 (the owner's desk, whatifs/org/desk.py, until B9): HE types an idea into Owner_Input (one column); THE MACHINE writes Owner_Desk - the input word
+ # for word, the verdict by code (ADOPTED only for a request code recognises, else PARKED), its memo and ticket, and `briefed` once a brief carried the answer
+ "Owner_Input":     ["input"],
+ "Owner_Desk":      ["n", "ts", "sha", "verbatim", "verdict", "how", "memo", "ticket", "action", "briefed"],
 }
 
 class LocalStore:
