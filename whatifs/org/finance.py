@@ -6,6 +6,7 @@ import json, time
 from whatifs.core import S, log, store, iso, now_utc, set_setting, scrub
 
 COVER_TTL_S = 600                     # tab Cost_Log is read at most once in this many seconds a process (forget() for tests; the family of open issue 214)
+SUMMARY_ITEM = "cost_lines_summary"      # costguard.reconcile's row; models.py writes another summary row (ai_per_video_summary) that holds no cost lines (V4's repair C23)
 _cache = {}
 
 def on():
@@ -87,10 +88,10 @@ def overruns(st=None, now=None):
     Returns (memos to send, how many were resolved, the newest ts read)."""
     from whatifs.org import memos as MEM, registry as REG
     st = st or store(); now = now or now_utc(); seen = str(S("FINANCE_SEEN_TS") or "")
-    rows = st.rows("Cost_Log"); new = sorted((r for r in rows if r.get("basis") == "summary" and str(r.get("ts") or "") > seen), key=lambda r: str(r.get("ts") or ""))
+    rows = st.rows("Cost_Log"); new = sorted((r for r in rows if r.get("basis") == "summary" and r.get("item") == SUMMARY_ITEM and str(r.get("ts") or "") > seen), key=lambda r: str(r.get("ts") or ""))
     kind_of = {}
     for r in rows:
-        if r.get("basis") == "summary": kind_of[str(r.get("episode_id") or "")] = _summary(r)[0]
+        if r.get("basis") == "summary" and r.get("item") == SUMMARY_ITEM: kind_of[str(r.get("episode_id") or "")] = _summary(r)[0]
     to = "D12" if REG.takes("D12", "problem_memo") else "D8"
     out, resolved = [], 0
     for r in new:

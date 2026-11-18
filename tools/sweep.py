@@ -343,7 +343,7 @@ def _strategy_of(core, ep, org=True):
         before = (len(st.rows("Decisions")), len(acts("strategy")))
         core.set_setting("STRATEGY_ON", "TRUE"); CLI.strategy_round()
         if (len(st.rows("Decisions")), len(acts("strategy"))) != before: return False, "the organisation is off and a round of Strategy wrote a row or a message"
-        return True, "the month's decision held: the organisation is off, nothing was written"
+        return True, "the month's decision held: the organisation is off, nothing was written (0 decisions)"
     for k, v in (("STRATEGY_ON", "TRUE"), ("ARM_STAND_IN_ON", "TRUE"), ("PLAYBOOK_ON", "TRUE"), ("SHORT_FORMAT_FORCE", ""), ("SHORT_SHARE_S2", "40")): core.set_setting(k, v)
     own = next((r for r in st.rows("Ladder") if r.get("id") == "SH" + ep[2:]), None)
     t0 = core.parse_iso((own or {}).get("posted")) or core.now_utc(); base = t0 - dt.timedelta(hours=20)

@@ -250,6 +250,16 @@ def test_finance_watch_keeps_the_months_cover_and_turns_an_overrun_into_a_memo(s
     done = next(m for m in MEM.find(live=False, type="problem_memo", from_dept="D11") if m["dedupe_key"] == "overrun|EP1")
     assert done["status"] == "resolved" and done["resolution"]["kind"] == "repair_verified" and done["resolution"]["ref"] == "Cost_Log:EP2"
 
+def test_only_the_cost_lines_summary_is_read_as_an_overrun(setting):
+    """V4's repair C23 (RED round 1, reds 3 and 5): Finance read the older row `ai_per_video_summary` (models.py 364: basis "summary", no role) as a
+    cut cost summary - a false "cost more than its estimate" memo to Operations on every long video."""
+    from whatifs.org import finance as FIN
+    setting("STRATEGY_ON", "TRUE"); n = core.iso(core.now_utc())
+    core.store().append("Cost_Log", [{"ts": n, "episode_id": "EPC23", "item": "ai_per_video_summary", "provider": "summary", "units": 0, "inr": 0, "basis": "summary"},
+                                     {"ts": n, "episode_id": "EPC23", "item": "cost_lines_summary", "provider": "summary", "units": 0, "inr": 0, "basis": "summary",
+                                      "role": 'ladder: {"over": [], "unlisted": []}'}])
+    memos, _resolved, seen = FIN.overruns(); assert memos == [] and seen == n, memos
+
 def test_the_ceos_round_runs_only_when_a_decision_could_become_a_ticket(monkeypatch, setting):
     from whatifs import cli as CLI
     calls = []; monkeypatch.setattr(FIN, "watch", lambda b: (calls.append(1), RUN.Out({"ok": 1}))[1])
@@ -997,3 +1007,10 @@ def test_the_ceos_month_holds_when_a_rehearsal_pair_forces_a_short_format(monkey
     ok, said = SW.strategy_of(core, "EP209912310900", org=True)
     assert ok and said.startswith("the month's decision held:"), said
     assert os.environ.get("WI_SHORT_FORMAT") == "S1"                                                    # put back for the rest of the pair
+
+def test_with_the_organisation_off_the_ceos_month_says_its_count_of_decisions(setting):
+    """V4's repair C24 (RED round 1, red 4): part B's words "nothing was written" had no number for the block's watch line `(\\d+) decision`."""
+    import re
+    from tools import sweep as SW
+    setting("ORG_ON", "FALSE"); ok, said = SW.strategy_of(core, "EP209912310901", org=False)
+    m = re.search(r"(\d+) decision", said); assert ok and said.startswith("the month's decision held:") and m and m.group(1) == "0", said
