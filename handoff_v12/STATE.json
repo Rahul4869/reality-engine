@@ -402,6 +402,15 @@
    "from": "REPAIR",
    "to": "BUILT",
    "why": ""
+  },
+  {
+   "at": "2026-11-18T15:14:24Z",
+   "batch": "V4",
+   "by": "",
+   "commit": "ddfd4d5",
+   "from": "BUILT",
+   "to": "PROVING",
+   "why": ""
   }
  ],
  "order": [
@@ -418,10 +427,10 @@
   "B10",
   "V3"
  ],
- "phase": "BUILT",
+ "phase": "PROVING",
  "red_notes": [
   "V4_RED_1.md"
  ],
  "red_rounds": 1,
- "updated": "2026-11-18T14:46:39Z"
+ "updated": "2026-11-18T15:14:24Z"
 }
