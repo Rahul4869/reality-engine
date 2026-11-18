@@ -180,7 +180,7 @@ def digest(now=None, force=False):
                        + (f" (about Rs {cover:.0f} of it covered by free credits)" if cover > 0 else "") + "</p>")
     lines.append("<p><b>This week:</b> " + (", ".join(f"{str(e.get('title') or e.get('episode_id'))[:50]} [{e.get('status')}]" for e in recent) or "no videos yet") + "</p>")
     if opens:
-        lines.append("<p><b>Waiting for you (optional):</b></p><ul>" + "".join(f"<li>{r['text'][:160]} " + " ".join(f"<a href='{link(v, r['id'])}'>{l}</a>" for l, v in json.loads(r.get('buttons') or '[]') if _link(v, r['id'])) + "</li>" for r in opens[:12]) + "</ul>")
+        lines.append("<p><b>Waiting for you (optional):</b></p><ul>" + "".join(f"<li>{r['text'][:160]} " + " ".join(f"<a href='{link(v, r['id'])}'>{l}</a>" for l, v in json.loads(r.get('buttons') or '[]') if link(v, r['id'])) + "</li>" for r in opens[:12]) + "</ul>")
     else: lines.append("<p>Nothing is waiting for you.</p>")
     try:
         from whatifs import publish as PUB

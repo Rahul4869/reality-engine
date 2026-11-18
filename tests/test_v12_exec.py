@@ -432,6 +432,20 @@ def test_a_code_ticket_that_cannot_become_a_build_is_refused(monkeypatch, settin
     hub = Hub(monkeypatch); setting("BUILDS_ON", flag); t = ticket(to, "E", "code:x", dict(value)); EXE.apply(MEM.get(t["id"]))
     assert trow(t["id"])["state"] == "refused" and why in trow(t["id"])["note"] and not hub.sent and not [m for m in MEM.rows() if m["type"] == "build_request"]
 
+def test_a_code_change_the_organisation_asks_for_is_refused_and_told_until_b_org(monkeypatch, setting):
+    """RR-36 (the owner's item 160): until the batch B-ORG gives build requests a cost estimate and a cap, a code change the organisation asks
+    for by ticket is refused before any build starts - logged and told to him once with a deadline and a default; the request stays on its ticket."""
+    from whatifs.org import strategy as STR
+    assert core.DEFAULTS["ORG_BUILDS_ON"][0] == "FALSE" and "ORG_BUILDS_ON" in STR.OWNER_ONLY
+    hub = Hub(monkeypatch); setting("BUILDS_ON", "TRUE"); setting("ORG_BUILDS_ON", "FALSE")
+    t = ticket("D12", "E", "code:pause-check", dict(BUILD), subject="Add a sound check for the pause before a punchline"); EXE.apply(MEM.get(t["id"]))
+    held = [a for a in st().rows("Owner_Actions") if a["kind"] == "org_build_held"]
+    assert trow(t["id"])["state"] == "refused" and "ORG_BUILDS_ON" in trow(t["id"])["note"] and not hub.sent, trow(t["id"])
+    assert not [m for m in MEM.rows() if m["type"] == "build_request"] and MEM.get(t["id"])["body"]["value"]["spec"] == BUILD["spec"]      # nothing lost
+    assert len(held) == 1 and t["id"] in held[0]["text"] and held[0]["expires_at"] and held[0]["default_action"] == "nothing is built", held
+    setting("ORG_BUILDS_ON", "TRUE"); t2 = ticket("D12", "E", "code:pause-check-2", dict(BUILD), subject="Add a second sound check")
+    EXE.apply(MEM.get(t2["id"])); assert [x[0] for x in hub.sent] == ["claude-build.yml"]                                                  # B-ORG's switch: the same road builds
+
 @pytest.mark.parametrize("files,why", [
     ([dict(NEW_TEST, status="modified")], "an existing test is changed"), ([dict(NEW_TEST, deletions=2)], "an existing test is changed"),
     ([NEW_TEST, {"filename": "whatifs/governor.py", "status": "modified", "additions": 1, "deletions": 0}], "whatifs/governor.py: outside the automatic scope"),

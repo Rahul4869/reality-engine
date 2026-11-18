@@ -82,6 +82,35 @@ def test_the_scoreboard_is_the_first_thing_after_the_head_of_both_briefs(monkeyp
     setting("STRATEGY_ON", "FALSE"); mails.clear()
     assert DG.compose("daily", now=SB_NOW)[0].split("\n\n")[1] != WORKED and NT.digest(now=SB_NOW, force=True) and mails[0].startswith("<p><b>Mode:</b>")
 
+def test_the_evening_digest_goes_out_when_an_open_card_has_buttons(monkeypatch, setting):
+    """V4's finish C1: notify.digest still named `_link` after it became `link` - with any open card that has a button (every real card) the digest
+    raised NameError inside notify.tick, which swallows it: he never got the evening digest again."""
+    from whatifs import publish as PUBM
+    box = []; monkeypatch.setattr(PUBM, "email", lambda subject, html, *a, **k: (box.append(html), True)[1])
+    for flag in ("FALSE", "TRUE"):
+        setting("STRATEGY_ON", flag); box.clear()
+        NT.send("idea", f"Open thing {flag}", [("OK", "OK")], tier="week", default="noted", expires_h=24, dedupe_key=f"c1|{flag}")
+        assert NT.digest(now=SB_NOW, force=True) and len(box) == 1, box
+        assert "Waiting for you (optional)" in box[0] and f"Open thing {flag}" in box[0]
+        assert (">OK</a>" in box[0]) == bool(NT.link("OK", "x"))          # the button's link is there whenever links can be made (GH_REPO set)
+
+def test_no_dashboard_tile_shows_a_number_without_its_source_and_the_shorts_tile_is_a_computed_proxy(setting):
+    """V4's finish C2 (P13; RR-4, RR-8; the owner's item 136): the Shorts tile read a constant 0 and three tiles carried ranges nobody sourced.
+    The Shorts tile is computed from the Shorts' own readings (engaged views / views), called a proxy, with his own median beside it."""
+    import re
+    from whatifs import dash as DSH
+    SOURCES = ("YouTube Help", "your own median", "not enough Shorts yet")
+    def unsourced(k): return sorted(n for n, t in k.items() if re.search(r"\d", str(t["good"])) and not any(s in str(t["good"]) for s in SOURCES))
+    k = DSH._progress()["kpis"]; assert unsourced(k) == [], unsourced(k)
+    assert k["stay"]["v"] == "-" and k["stay"]["good"] == "not enough Shorts yet (0 of 3 read)", k["stay"]
+    assert "proxy" in k["stay"]["label"] and "swipe" not in k["stay"]["label"].lower() and "(YouTube Help" in k["hours_week"]["good"]
+    core.store().append("Analytics", [{"episode_id": f"SHP{i}", "yt_id": f"shp{i}", "pulled": f"2026-11-1{i}T09:00:00Z", "views": "1000",
+                                       "engaged_views": str(e), "days": "3", "data_note": "ok (short)"} for i, e in enumerate((600, 500, 700))])
+    core.store().append("Analytics", [{"episode_id": "EPLONG1", "yt_id": "lng1", "views": "5000", "engaged_views": "100", "avg_view_sec": "200"}])   # a long video: not a Short
+    k = DSH._progress()["kpis"]
+    assert (k["stay"]["v"], k["stay"]["unit"], k["stay"]["good"]) == (70, "%", "your own median: 60% over 3 Shorts"), k["stay"]
+    assert unsourced(k) == []
+
 def test_the_stale_shorts_sentence_is_retired_and_the_money_shows_the_cap_in_force(monkeypatch, setting):
     monkeypatch.setattr(OV, "today", lambda: {"next_slot": {"ist": "Tue 18 Nov 18:00"}})
     assert OV.strategy()["plan"][0] == "Next slot Tue 18 Nov 18:00: a long video about the Short viewers picked (three Shorts a week, each a topic of its own)."

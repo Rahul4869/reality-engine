@@ -285,6 +285,16 @@ def _spec_text(req, t):
                      + [f"- {x}" for x in b["tests_to_add"]] + ["ACCEPTANCE: " + str(b["acceptance"]),
                       "Put new tests in NEW files named tests/test_*.py. Do not edit or delete an existing test: a change that needs that is read by the owner first."])
 
+def _org_build_held(t, now):
+    """v12 V4 (RR-36): an organisation build request refused while ORG_BUILDS_ON is FALSE - logged and told to the owner once (nothing lost: the spec stays on the ticket)."""
+    log(f"execution engine: the build of ticket {t['id']} is refused - organisation builds are off until B-ORG (ORG_BUILDS_ON)", "WARN")
+    try:
+        from whatifs import notify as NT
+        NT.send("org_build_held", f"The organisation asked for a code change: {str(t.get('subject') or '')[:160]}. Builds the organisation asks for stay off "
+                f"until their caps exist (batch B-ORG): nothing was built and nothing was spent. The request is kept on ticket {t['id']}.",
+                (), tier="week", default="nothing is built", expires_h=72, dedupe_key=f"org_build|{t['id']}")
+    except Exception as e: log(f"execution engine: the refused build was not told: {scrub(e)[:120]}", "WARN")
+
 def _plan_build(t, row, st, now):
     if row["dept"] != "D12": raise Refused("a code change is built by Operations: address a lever class E ticket to D12")
     if not S("BUILDS_ON", bool): raise Refused("builds are switched off (BUILDS_ON)")
@@ -294,6 +304,8 @@ def _plan_build(t, row, st, now):
            "done_when": "the pull request is merged and every check on the merge commit is green"}
     c, p = SC.check_memo(req, now)
     if p: raise Refused("not a valid build request: " + "; ".join(p[:3]))
+    if not S("ORG_BUILDS_ON", bool):
+        _org_build_held(t, now); raise Refused("code changes the organisation asks for are off until the batch B-ORG adds their caps (ORG_BUILDS_ON)")
     return {"target": str(t["body"].get("target") or "code")[:200], "old": "", "new": "", "undo": [{"op": "revert_build"}], "request": req, "need": "merge"}
 
 def _dispatch(row, req, t, why, st, now):

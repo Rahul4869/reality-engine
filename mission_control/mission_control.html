@@ -398,12 +398,12 @@ const DEMO = {
   progress: {
     subs: 214, watch_hours: 486, shorts_views_90d: 128400, old_bar_deadline: "2027-01-31",
     series_14d: Array.from({ length: 14 }, (_, i) => { const v = Math.round(380 + i * 95 + (i % 3) * 140 + (i === 11 ? 900 : 0)); return { d: new Date(now - (13 - i) * D).toISOString().slice(0, 10), views: v, engaged: Math.round(v * (0.62 + (i % 4) * 0.03)) }; }),
-    kpis: { ctr: { v: 6.4, unit: "%", label: "Click-through", good: "4–8% is healthy", trend: "up" },
-            rel30: { v: 0.58, unit: "", label: "30-s hold vs similar videos", good: "above 0.50 beats most", trend: "up" },
-            apv: { v: 41, unit: "%", label: "Average % watched", good: "35–45% is solid", trend: "flat" },
-            stay: { v: 74, unit: "%", label: "Shorts kept past the swipe", good: "70%+ is strong", trend: "up" },
+    kpis: { ctr: { v: 6.4, unit: "%", label: "Click-through", good: "higher is better", trend: "up" },
+            rel30: { v: 0.58, unit: "", label: "30-s hold vs similar videos", good: "higher is better", trend: "up" },
+            apv: { v: 41, unit: "%", label: "Average % watched", good: "higher is better", trend: "flat" },
+            stay: { v: 66, unit: "%", label: "Shorts: engaged views per view (a proxy)", good: "your own median: 61% over 12 Shorts", trend: "up" },
             subs1k: { v: 3.1, unit: "", label: "Subs per 1,000 views", good: "rising is the goal", trend: "down" },
-            hours_week: { v: 118, unit: " h", label: "Watch hours this week", good: "1,000 subs + 8,000 h unlocks ads", trend: "up" } } },
+            hours_week: { v: 118, unit: " h", label: "Watch hours this week", good: "the bar: 4,000 h of long videos in 12 months and 1,000 subscribers (YouTube Help 72851)", trend: "up" } } },
   learned: [
     { text: "Shorts that open on “your” plus a number keep 9% more viewers past the swipe.", confidence: "high", loop: "fast" },
     { text: "A brand-new picture right after a number lands holds viewers better than a reused crop.", confidence: "medium", loop: "medium" },

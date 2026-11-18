@@ -10,7 +10,8 @@ IN_FORCE = ("decided", "applied")                         # a decision whose tic
 TAKEN_BACK = ("rolled_back", "refused", "no_effect", "void")
 DECIDED_MAX_H = 26                                        # a row "decided" this long whose ticket is not on tab Memos: its memo is sent once more, then it is void
 OWNER_ONLY = ("BUDGET_CEILING_INR", "BUDGET_FLOOR_INR", "MONTH_CAP_OVERRIDES", "BUDGET_MODE", "PAUSED", "PUBLISH_DAYS",
-              "CREDIT_COVER_MONTH_MAX_INR", "CLAUDE_CREDIT_USD_MONTH", "CLAUDE_CREDIT_FROM", "CLAUDE_CREDIT_UNTIL")     # item 53: the cap and deleting stay his
+              "CREDIT_COVER_MONTH_MAX_INR", "CLAUDE_CREDIT_USD_MONTH", "CLAUDE_CREDIT_FROM", "CLAUDE_CREDIT_UNTIL",     # item 53: the cap and deleting stay his
+              "ORG_BUILDS_ON")     # RR-36: only B-ORG turns the organisation's builds on
 
 def on():
     """Strategy is part of the CEO (STRATEGY_ON); FALSE = exactly the code V4 is built on (the Monday re-planner card, no review)."""

@@ -1185,6 +1185,7 @@ DEFAULTS = {
  "EXEC_BUILD_WAIT_H": ("6", "hours a code build may take to open its pull request before it counts as failed (1-48)"),
  "EXEC_TICK_AT": ("", "auto: when the Execution Engine's tick pass last finished (check lever_verified fails when tickets wait and this is more than a day old)"),
  "EXEC_AUTO_MERGE_ON": ("TRUE", "TRUE = a code build asked for by ticket merges by itself when every check is green AND its real diff only adds new test files (nothing deleted, no other file); anything else waits for the owner's Merge tap [FALSE = the owner merges every build]"),
+ "ORG_BUILDS_ON": ("FALSE", "v12 V4 (RR-36, the owner's item 160): FALSE = a code change the organisation asks for by ticket (lever class E) is refused before any build starts, logged and told to the owner once; the after-launch batch B-ORG turns it on with its caps (a build request carries no cost estimate or cap today). Not touched: his own builds (the dashboard, WhatsApp, a card's Build button) and the repair loop (tools/repair.py)"),
  # v12 B5: R&D (D2) and the Review Board (D3)
  "RESEARCH_PER_WEEK": ("4", "questions the weekly deep research asks (web search, about Rs 10-15 each, inside the R&D cap of Rs 300 a month); the owner's own questions (P0) are asked on top (1-8)"),
  "RESEARCH_EST_INR": ("15", "rupees one research question is assumed to cost before any is measured; the weekly run stops asking when the R&D budget left is below this or the median measured cost, whichever is higher"),

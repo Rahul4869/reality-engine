@@ -1,6 +1,6 @@
 """The phone dashboard's data snapshot and its taps (never contains secrets, scripts or unreleased premises). See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
-import base64, datetime as dt, json, re
+import base64, datetime as dt, json, re, statistics
 from whatifs.core import S, log, store, iso, now_utc, parse_iso, env, set_setting, scrub, FAKE
 
 MODE_IDS = {"lean": "runway", "runway": "runway", "standard": "standard", "growth": "growth"}
@@ -65,6 +65,7 @@ def _decided():
                     "default_label": r.get("default_action") or "It stays", "default_at": "", "window_h": 0, "verbs": {str(lbl)[:24]: f"ACT|{r['id']}|{i}" for i, (lbl, _v) in enumerate(btns)}})
     return out
 
+STAY_MIN = 3      # v12 V4 (P13): a median of his own needs three Shorts read
 def _progress():
     rows = store().rows("Analytics")
     views = sum(_f(r.get("views")) for r in rows)
@@ -74,12 +75,17 @@ def _progress():
         v = [x for x in v if x is not None]
         return round(sum(v) / len(v) * scale, 2) if v else 0
     subs = sum(_f(r.get("subs")) for r in rows)
-    k = {"ctr": {"v": avg("ctr"), "unit": "%", "label": "Click-through", "good": "4–8% is healthy", "trend": "flat"},
+    stay = [100.0 * _f(r.get("engaged_views")) / _f(r.get("views")) for r in rows
+            if str(r.get("days") or "").strip() and _f(r.get("views")) > 0 and str(r.get("engaged_views") or "").strip()]      # v12 V4 (P13): the Shorts' own readings (brain.ingest_shorts), in the order first read
+    from whatifs import scoreboard as SBD
+    bar = SBD.bars(); bar_src = "72851" if str(bar.get("until") or "") else "12843009"                                     # the Partner Program's bar of today (YPP_BARS) and its page
+    k = {"ctr": {"v": avg("ctr"), "unit": "%", "label": "Click-through", "good": "higher is better", "trend": "flat"},
          "rel30": {"v": avg("ret30"), "unit": "", "label": "30-s hold", "good": "higher is better", "trend": "flat"},
-         "apv": {"v": avg("avg_view_pct"), "unit": "%", "label": "Average % watched", "good": "35–45% is solid", "trend": "flat"},
-         "stay": {"v": 0, "unit": "%", "label": "Shorts kept past the swipe", "good": "70%+ is strong", "trend": "flat"},
+         "apv": {"v": avg("avg_view_pct"), "unit": "%", "label": "Average % watched", "good": "higher is better", "trend": "flat"},
+         "stay": ({"v": round(stay[-1]), "unit": "%", "good": f"your own median: {round(statistics.median(stay))}% over {len(stay)} Shorts"} if len(stay) >= STAY_MIN
+                  else {"v": "-", "unit": "", "good": f"not enough Shorts yet ({len(stay)} of {STAY_MIN} read)"}) | {"label": "Shorts: engaged views per view (a proxy)", "trend": "flat"},
          "subs1k": {"v": round(subs / views * 1000, 2) if views else 0, "unit": "", "label": "Subs per 1,000 views", "good": "rising is the goal", "trend": "flat"},
-         "hours_week": {"v": round(hours, 1), "unit": " h", "label": "Watch hours (all videos)", "good": "1,000 subs + 8,000 h unlocks ads (from 1 Feb 2027)", "trend": "flat"}}
+         "hours_week": {"v": round(hours, 1), "unit": " h", "label": "Watch hours (all videos)", "good": f"the bar: {int(bar['hours']):,} h of long videos in 12 months and {int(bar['subs']):,} subscribers (YouTube Help {bar_src})", "trend": "flat"}}
     return {"subs": int(subs), "watch_hours": round(hours), "shorts_views_90d": int(sum(_f(r.get("shorts_views")) for r in rows)),
             "old_bar_deadline": "2027-01-31", "series_14d": [], "kpis": k}
 
