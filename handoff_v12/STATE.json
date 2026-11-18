@@ -446,6 +446,15 @@
    "from": "DESIGN",
    "to": "DESIGN_REVIEW",
    "why": "the record's steps 1 to 3 pasted (7c..., word for word); the design review (two Opus MAX rounds under item 130) committed word for word as reviews/DRAWN_design.md"
+  },
+  {
+   "at": "2026-11-18T18:23:38Z",
+   "batch": "DRAWN",
+   "by": "DRAWN's finisher local_9bd024dc (Opus 5.5, max), on the relay's RR-54",
+   "commit": "",
+   "from": "DESIGN_REVIEW",
+   "to": "BUILD",
+   "why": "the review's verdict 'VERDICT: APPROVED WITH CORRECTIONS AT THE BUILD' is the first line of reviews/DRAWN_design.md (commit after 2a9a2b3); the typist applies the typed-ahead patches 1, 5, 2, 3, 4"
   }
  ],
  "order": [
@@ -462,8 +471,8 @@
   "B10",
   "V3"
  ],
- "phase": "DESIGN_REVIEW",
+ "phase": "BUILD",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-18T18:23:18Z"
+ "updated": "2026-11-18T18:23:38Z"
 }
