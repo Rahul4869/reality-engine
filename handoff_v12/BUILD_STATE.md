@@ -1529,6 +1529,40 @@ minitest due). `tools/plan_guard.py`: GREEN.
 STEP 8'S CHECKS (`gh_runs.js`): run 44205430516 on b9de4ca, 00:09 -> 01:27 UTC, GREEN - "Unit tests: 1837 passed in 4465.65s"; "REHEARSAL: GREEN ... contract script: 41/41 pass; contract final: 23/23 pass".
 WHAT A BUYER GETS: the sweep proves one month of the CEO on every long-video id; the buyer's `CLAUDE.md` says how to add a rule, a danger
 and a boost without breaking the money.
+STEP 9, PART B - THE REHEARSAL MONTH, THE READERS, THE BLOCK, THE DOCS, THE BREAK LIST (3.10). WHAT CHANGED:
+- `tools/rehearsal.py` THE REHEARSAL MONTH: twelve planted Shorts with readings (ids `RM..`, no format, so the arm rules do not count them), four
+  promotions by `ladder.promote` - one before each of four long-video slots, each topic then used (`ladder.use`) - and the CEO's month on the
+  rehearsal's own Sheet (`sweep.strategy_of`), the decision told to the owner WORD FOR WORD (`Owner_Actions` text == `strategy.text_of`); it
+  prints "strategy: 12 Shorts tested, 4 promoted, 2 decisions (SHORT_SHARE_S2 40 -> 20, told word for word; the trial), 1 undo | scoreboard:
+  ...". The sweep's rehearsal branch takes those words (`rehearsal.STRATEGY_SAID`) - walking the month twice on one Sheet would plant twice.
+  `strategy_of`'s words now COUNT the month's decisions ("2 decisions (...)") - the block's watch line reads that number (never typed).
+- FOUR REAL-READER TESTS (3.10, per portfolio key; each cell moved BY A TICKET - `next_move` -> `decide` -> the ticket -> `execute.engine_tick` -
+  then the real reader asked): `shorts2.cadence` (12 of 12 made -> a 13th due), `governor.can_start_episode` (4 of 4 -> a fifth starts),
+  `formats.pick` over ten planted episodes (F1 -> F3 after FORMAT_SHARE_F3 20 -> 40), `formats.short_pick` over ten planted Shorts (S1 -> S3
+  after SHORT_SHARE_S3 20 -> 40); each with its break "the reader ignores the cell" (S9-01 to S9-04). The fifth reader test (`shorts2.write`,
+  five requests) was typed at step 2.
+- `proving/blocks/V4.json`: V1c's promoted block whole + the counter `strategy_month_held` on parts A, B and C + the rehearsal line
+  "strategy:" + the watch line "decisions per rehearsal month" (`(\d+) decision` on the result's `strategy`); `expect_tests` 1841 (collected
+  on the working tree of step 9b). DESIGN QUESTION D-BLK1: the memo's "warned over 3" cannot be expressed - `proving/verdict.py` knows
+  `warn_under` only and `proving/` is never changed; the line records its lowest and highest value.
+- DOCS: `PLATFORM_FACTS.md` four dated rows (research 1, 3 with the ACTIVE rule, 4, 6); the ledger's paragraph "V4 BUILT" (items 39, 52, 53, 55
+  to 58, 60, 65, 80 and where each is executed) at the end of its part I; the matrix rows were written step by step (twelve in all). THE
+  MANUAL FOR A BUYER DOES NOT EXIST (README.md is one line): nothing invented - the cells and tabs are said in their own notes and so in
+  SYSTEM.md (DESIGN QUESTION D-DOC1, open issue P18). SYSTEM.md regenerated.
+- `proving/breaks/V4.json`: 46 breaks - the 39 typed ahead (S1-01 re-aimed at the line step 3 changed), S2-08 / S3-08 (the apply's two
+  playbook fixes), S5-06 (P11: production ignores the lock), S9-01 to S9-04 (the readers). PRE-CHECK on the working tree (each break applied, its tests run serially, the file put back and its hash compared): 46 CAUGHT, 0 MISSED, 0 VOID - the proof is `breaks.py V4` on the clean committed tree.
+NOT TYPED (said plainly, for the Fable finisher): the memo's "ONE WHOLE MONTH with ids no other file uses" as a pytest test - the rehearsal
+month and every sweep id walk a month of the CEO on a whole production, but no test file walks thirty planted days of reviews; and "every
+WORKED figure of this memo that is not a rupee as an assertion" was checked only where the typing met one (the line's words, the Counting
+line, the refusals' words) - not row by row against the memo.
+STEP 9B'S RUNS (fake mode, alone): `test_v12_strategy`, `test_docs_current`, `test_v111_enforce`, `test_integration`, `test_v12_b0b`,
+`test_v12_palace` - 190 passed in 155.54 s; one sweep id `EP209901010900` in rehearsal mode ok in 193 s and produce mode ok in 119 s, both
+"the month's decision held: 2 decisions (...)". ALONE UNDER `shim/minitest.py`: `test_v12_strategy.py` 72 passed in 9 s. `tools/plan_guard.py`:
+GREEN.
+STEP 9A'S CHECKS (`gh_runs.js`): run 44216115537 on 090b12e, 01:28 -> 02:58 UTC, GREEN - "Unit tests: 1837 passed in 5186.80s"; "REHEARSAL: GREEN ... contract script: 41/41 pass; contract final: 23/23 pass". USAGE AT THE END OF THE BUILD (18 Nov 03:01 UTC): weekly all models 84%, weekly Fable 100%; this session's context 54% (it was compacted once, before the apply).
+WHAT A VIEWER OR A BUYER GETS: the rehearsal GitHub runs on every push now walks a month of the CEO - four topics promoted from tested Shorts,
+one decision told to the owner in exactly the words he gets, executed and taken back by his tap - so a change that breaks the loop cannot
+reach the channel unseen; a decision on any portfolio cell is proven to change the code that makes the next video.
 ### V1c - THE FLOOR, HIS VERDICT AND THE MAKER'S LINE (15-17 Nov 2026) - ACCEPTED (final code commit 9dfc916 GREEN in GitHub Checks run 246: 1768 passed; sweep 58 of 58 ids) - its code b326887, BUILT AGAIN AFTER RED ROUND 2 (the offline writer keeps the asks it is given and marks its punchlines by the joke rule's own measures (open issue 228); `proving/notes/V1c_BUILT.md`; the repair block "THE REPAIR OF RED ROUND 2" under the second pass's 6b); BEFORE IT RED ON ITS SECOND PASS (46615df, 17 Nov 2026: the rehearsal F2/S2 held by joke_density on episode EP202611170305 - 6 punchlines, need 7, the script one word over the line; `proving/notes/V1c_RED_2.md`), NOT ACCEPTED; BEFORE IT BUILT AGAIN (red round 1 on 030f197 repaired: final code commit d39a213 - the floor's media fixture made for the proof's serial runner, a guard over every test file, test_v12_floor split word for word into three files; `proving/notes/V1c_BUILT.md`; the builder's record, the prover's 6b of the first pass, the repair block under it)
 WHAT IT IS FOR, in a viewer's and the owner's words: a finished long video is shown - its first minute - to two strong first-time viewers of two
 model families beside the video he rejected; a film they cannot tell from that one is HELD, a jury that fails its own planted questions holds

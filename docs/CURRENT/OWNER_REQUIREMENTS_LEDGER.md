@@ -186,6 +186,19 @@ enforcement or it does not exist). A designer reads the items themselves; this i
    stay word for word in `02`; this ledger and the Palace's owner items are the structured digest that departments and models read; a file that serves no
    reader is archived. A standing rule for every batch's docs step and for B10's hand-over package.
 
+**V4 BUILT - THE CEO AND THE LADDER (17 Nov 2026; built, NOT yet accepted)**. Where each of his items is executed: items 39, 52, 65 (the CEO acts
+by itself, ahead of trouble) - D1's daily `strategy.review` in the learning job (`cli.strategy_round`): one move a review through RANGE, EFFECT and FIT
+(`strategy.next_move`), each a ticket the Execution Engine applies and verifies (`strategy.decide`), check `strategy_live`; the watch book (`risk.WATCH`,
+`risk.run`): a rejected or vanished video closes the uploads the same day (`risk.lock`) and holds production at the gate. Items 53, 60 (what stays
+his) - `strategy.OWNER_ONLY` (the cap, the credit cells, PAUSED, the publishing days), one tap undoes (`strategy.undo`), a cell he sets by hand is
+his for 28 days (`strategy.hands`), his own words are answered in the next brief (`desk.tick`, tabs Owner_Input and Owner_Desk). Item 55 (eligible
+views) - the scoreboard first in every brief (`scoreboard.line`, `digests.compose`, `notify.digest`). Items 56, 57 (the credits are a bonus with an
+end date; rails are measures) - Finance's lane and meter (`finance.lane`, `finance.cover`, `finance.boost`, `governor.own_spend_inr`: what the credit
+paid is never counted as his), formats judged once at a fixed count by their median (`strategy.judge_arms`). Item 58 (the best models,
+judiciously) - the boost asks the strongest writers for more Short scripts only while the credit lasts (`shorts2.write` through `finance.boost`).
+Item 80 (the platforms' new features) - the arm book: a candidate needs a dated source and a policy reading, one trial at a time (`strategy.file`,
+tab Candidates). A long video that takes off gets its follow-up Short with a clock (`breakout.monitor`, `ladder.order_followup`).
+
 ## J. THE OWNER'S WORDS OF 14 AND 15 NOV 2026 (items 67 to 100 of the handoff's `02_OWNER_VERBATIM.md`, word for word there): what each means for the product and which batch executes it
 As section I: NOTHING HERE IS BUILT UNLESS ITS LINE SAYS SO; a designer reads the items themselves. Most of these items govern how the BUILD is run (its
 sessions, tools and estimates) and nothing of the product - they are listed last, in one line, and live in the plan and in `02`.

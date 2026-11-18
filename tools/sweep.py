@@ -226,7 +226,8 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
                 ok_f, res["floor"] = floor_of(core, ep, climbed=True)
                 if not ok_f: res["outcome"] = "odd"; res["problems"].append("the floor, his line or one story: " + res["floor"]); res["error"] = res["floor"][:300]
             if res["outcome"] == "ok":                                              # v12 V4: THE SWEEP WALKS THE CEO - a month of Strategy on the id's own Sheet
-                ok_s, res["strategy"] = strategy_of(core, ep, org)
+                from tools import rehearsal as REH4                               # the rehearsal walked the month itself (its words): a second walk would plant twice
+                ok_s, res["strategy"] = (True, REH4.STRATEGY_SAID[-1]) if REH4.STRATEGY_SAID else strategy_of(core, ep, org)
                 if not ok_s: res["outcome"] = "odd"; res["problems"].append("the CEO's month: " + res["strategy"]); res["error"] = res["strategy"][:300]
         else:                                                                      # the recipe of the end-to-end test in tests/test_v12_org.py
             core._store = core.LocalStore(os.path.join(work, "sheet.json")); core._store.ensure_tabs(); core._settings_cache = None
@@ -379,7 +380,9 @@ def strategy_of(core, ep, org=True):
     STR.briefed(now)
     if "Strategy decided:" in DG.compose("daily", now=now + dt.timedelta(minutes=1))[0]: p.append("(f) the decision's line is shown again after it went")
     if p: return False, "; ".join(p)
-    return True, f"the month's decision held: one judgement, SHORT_SHARE_S2 40 -> 20 decided, told, executed and undone; the trial opened; a rejected video closed and reopened the uploads"
+    n_dec = sum(1 for r in st.rows("Decisions") if r.get("rule") not in ("HAND", "WATCH", "RISK") and r.get("state") not in ("judged", "hand", "watch"))   # counted, never typed
+    return True, (f"the month's decision held: {n_dec} decisions (SHORT_SHARE_S2 40 -> 20 decided, told, executed and undone; the trial opened); one judgement; "
+                  "a rejected video closed and reopened the uploads")
 
 def summary(results):
     by = {}

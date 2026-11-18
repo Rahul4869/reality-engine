@@ -17,6 +17,8 @@ class ToneVoice:
 
 from whatifs.core import S, TABS
 
+STRATEGY_SAID = []        # v12 V4: the CEO's month as the rehearsal walked it - the sweep's rehearsal branch takes these words
+
 def run(ep_id=None):
     """ep_id = a fixed id for the long episode (the sweep); else the id is the minute. The Shorts' ids are derived from it, so one id reproduces the whole run."""
     assert os.environ.get("WI_FAKE") == "1", "rehearsal needs WI_FAKE=1"
@@ -163,6 +165,30 @@ def run(ep_id=None):
             ("his tap was not kept or not scored", {k: vr1c.get(k) for k in ("verdict", "via", "floor", "agree")}, [x.get("status") for x in ses1c])
         assert [x for x, _v in VER1c.references("EP" + "0" * 12)] == [epid], "his thumbs-up did not make the video a reference"
         print("floor:", said1c[:300], "| his line, as he typed it:", line1c, "| the flop stand-in:", vf1c[1][:90], "|", out1c[:110])
+        # v12 V4: THE REHEARSAL MONTH (memo 3.10, redesign section 6) - twelve Shorts with readings ("tested"; no format, so the CEO's arm rules do not
+        # count them), four promotions by ladder.promote - one before each of four long-video slots, each topic then used - and the CEO's month on this
+        # Sheet (sweep.strategy_of: one judgement, one decision told to the owner word for word with its Undo, executed and undone, the trial, the lock).
+        from tools.sweep import strategy_of as strat4
+        from whatifs.org import strategy as STR4
+        from whatifs import scoreboard as SB4
+        t4 = now_utc(); b4 = t4 - dt.timedelta(days=9)
+        st.append("Ladder", [{"id": f"RM{i4:02d}{epid[-8:]}", "topic": f"rehearsal month topic {i4} {epid}", "title": f"Month topic {i4}", "premise": f"What if month topic {i4}?",
+                              "state": "READ", "evidence": "measured", "posted": iso_now(b4 + dt.timedelta(hours=6 * i4)), "engaged": str(400 + 37 * i4), "views": str(1200 + 111 * i4),
+                              "watched": str(round(0.40 + 0.01 * i4, 2)), "subs": str(2 + i4 % 3), "shares": str(3 + i4 % 4), "days": "3"} for i4 in range(12)])
+        prom4 = []
+        for k4 in range(4):
+            s4 = t4 + dt.timedelta(days=7 * k4)
+            r4 = LAD12.promote(s4); assert r4 and r4.get("state") == "PROMOTED", ("no promotion before long-video slot", k4 + 1, LAD12.why_not(s4))
+            prom4.append(r4["id"]); assert LAD12.use(r4["id"], f"EPRM{k4}{epid[-8:]}", s4), ("a promoted topic was not used", r4["id"])
+        ok4, said4 = strat4(core12, epid, org=True); assert ok4, ("the CEO's month did not hold", said4)
+        dec4 = next(x for x in st.rows("Decisions") if x.get("key") == "SHORT_SHARE_S2" and x.get("state") == "undone")
+        act4 = next(a for a in st.rows("Owner_Actions") if a.get("kind") == "strategy" and dec4["id"] in str(a.get("buttons")))
+        assert act4["text"] == STR4.text_of(dec4), ("the owner was not told the decision word for word", act4["text"][:200], STR4.text_of(dec4)[:200])
+        n4 = sum(1 for x in st.rows("Decisions") if x.get("rule") not in ("HAND", "WATCH", "RISK") and x.get("state") not in ("judged", "hand", "watch"))
+        u4 = sum(1 for x in st.rows("Decisions") if x.get("state") == "undone")
+        STRATEGY_SAID[:] = [said4]                                                           # the sweep's rehearsal branch takes these words (a second walk would plant twice)
+        print("strategy:", sum(1 for x in st.rows("Ladder") if str(x.get("id", "")).startswith("RM")), "Shorts tested,", len(prom4), "promoted,", n4,
+              "decisions (" + dec4["key"] + " " + dec4["old"] + " -> " + dec4["new"] + ", told word for word; the trial),", u4, "undo | scoreboard:", SB4.line()[:200])
         # v7.2 independent checks on the real rendered files
         from whatifs import qc as QC
         from whatifs.render import probe_dur

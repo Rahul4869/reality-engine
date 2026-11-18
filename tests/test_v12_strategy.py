@@ -724,3 +724,48 @@ def test_with_the_engine_off_an_input_is_stored_and_said_so(setting):
     ceo(setting); setting("EXEC_ON", "FALSE"); typed("3 shorts a week"); DESK.tick(JAN)
     r = desk()["3 shorts a week"]; assert r["verdict"] == "STORED" and r["how"] == "stored word for word; the organisation is switched off, so nothing was filed" and not r["memo"]
     setting("STRATEGY_ON", "FALSE"); typed("4 shorts a week"); assert DESK.tick(JAN) == [] and "4 shorts a week" not in desk()                  # FALSE: exactly the code V4 is built on
+
+# ------------------------------------------------------------------ 3.10: per portfolio key ONE test - the cell moved BY A TICKET, the REAL reader asked
+def by_ticket(monkeypatch, key, target):
+    """A portfolio cell moved the way Strategy moves it: next_move -> decide -> the ticket written -> the Execution Engine applies it (never typed)."""
+    from whatifs.org import memos as MEMO
+    monkeypatch.setattr(STR, "PORTFOLIO", (key,))
+    monkeypatch.setattr(STR, "targets", lambda now=None: {key: {"target": str(target), "why": "w", "numbers": {}, "evidence": "ok", "count": "", "rule": "T"}})
+    monkeypatch.setattr(STR, "rule_of", lambda k: {"id": "T", "metric": "shorts_engaged_90d", "board": "shorts", "direction": "up", "horizon": 4})
+    monkeypatch.setattr(STR, "effect", lambda k, value, now=None: int(float(value)))
+    t = core.now_utc() - dt.timedelta(minutes=5); c, why = STR.next_move(t); assert c and c["key"] == key, why
+    row, memo = STR.decide(c, t); MEMO.write(memo); EX.engine_tick(now=core.now_utc())
+    assert core.S(key) == str(target), (key, core.S(key), [r["state"] for r in decisions()])
+
+def test_a_ticket_on_shorts_per_month_makes_a_13th_short_due_in_the_real_cadence(monkeypatch, setting):
+    ceo(setting); setting("SHORTS_PER_WEEK", "4"); t = dt.datetime(2026, 12, 20, 12, 0, tzinfo=dt.timezone.utc)
+    core.store().append("Specials", [{"id": f"SHM4{i:02d}", "kind": "short", "ts": core.iso(dt.datetime(2026, 12, 1 + i, 9, 0, tzinfo=dt.timezone.utc)),
+                                      "made": core.iso(dt.datetime(2026, 12, 1 + i, 10, 0, tzinfo=dt.timezone.utc))} for i in range(12)])
+    due, why = SH.cadence(t); assert not due and why == "12 of 12 Shorts were made this month", why
+    by_ticket(monkeypatch, "SHORTS_PER_MONTH", 13)
+    assert SH.cadence(t)[0] is True                                                                             # the reader follows the cell the ticket moved
+
+def test_a_ticket_on_the_long_videos_lets_a_fifth_video_start_in_the_real_gate(monkeypatch, setting):
+    ceo(setting); mk = core.now_utc().strftime("%Y-%m")
+    core.store().append("Episodes", [{"episode_id": f"EPM4{i}", "status": "LIVE", "slot_et": f"{mk}-0{i + 1}T10:00:00Z"} for i in range(4)])
+    ok, why = G.can_start_episode(); assert not ok and "at most 4 long videos a month" in why, why
+    by_ticket(monkeypatch, "STANDARD_MAX_LONG_PER_MONTH", 5)
+    assert G.can_start_episode()[0] is True                                                                     # a fifth video starts
+
+def test_a_ticket_on_a_format_share_changes_the_real_pick_over_ten_planted_episodes(monkeypatch, setting):
+    from whatifs import formats as FMT
+    ceo(setting); setting("FORMAT_FORCE", ""); monkeypatch.delenv("WI_FORMAT", raising=False)
+    for k, v in (("FORMAT_SHARE_F1", "60"), ("FORMAT_SHARE_F2", "20"), ("FORMAT_SHARE_F3", "20")): setting(k, v)
+    core.store().append("Episodes", [{"episode_id": f"EPF4{i}", "status": "LIVE", "draw_json": json.dumps({"format": f})} for i, f in enumerate(["F1"] * 5 + ["F2"] * 3 + ["F3"] * 2)])
+    assert FMT.pick("EPF4NEW") == "F1"                                                                          # F1 is furthest below its 6 of ten
+    by_ticket(monkeypatch, "FORMAT_SHARE_F3", 40)
+    assert FMT.pick("EPF4NEW") == "F3"                                                                          # 60 / 20 / 40: F3 is now furthest below
+
+def test_a_ticket_on_a_short_share_changes_the_real_short_pick_over_ten_planted_shorts(monkeypatch, setting):
+    from whatifs import formats as FMT
+    ceo(setting); setting("SHORT_FORMAT_FORCE", ""); monkeypatch.delenv("WI_SHORT_FORMAT", raising=False)
+    for k, v in (("SHORT_SHARE_S1", "40"), ("SHORT_SHARE_S2", "40"), ("SHORT_SHARE_S3", "20")): setting(k, v)
+    hist = ["S1"] * 3 + ["S2"] * 5 + ["S3"] * 2
+    assert FMT.short_pick("SHF4NEW", hist) == "S1"                                                              # S1 is furthest below its 4 of ten
+    by_ticket(monkeypatch, "SHORT_SHARE_S3", 40)
+    assert FMT.short_pick("SHF4NEW", hist) == "S3"                                                              # 40 / 40 / 40: S3 is now furthest below
