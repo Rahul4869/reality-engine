@@ -141,6 +141,8 @@ def _row(w, f, state, why, now):
             "numbers": json.dumps(dict(f.get("numbers") or {}, kind=f.get("kind"), dedupe=f"{w['id']}|{f['point']}"), default=str), "effect_before": "", "effect_after": "",
             "prediction": "", "ticket": "", "state": state, "told": "", "frozen_until": "", "observed": "", "scored": "", "briefed": ""}
 
+def _point(w, p, kind): return (str(p)[:80], kind) if w["id"] == "platform_flag" else (str(p)[:80], None)      # V4's finish C14: a video's point is (id, what YouTube says)
+
 def run(now=None, st=None):
     """(rows written, memos for Strategy's Out.memos). A danger that fires at a fixed point with no `watch` row yet gets its row and its act; at the next
     fixed point at which it no longer fires, a `judged` row 'cleared' is written and its one live memo is closed by the watch itself."""
@@ -150,13 +152,15 @@ def run(now=None, st=None):
     for w in WATCH:
         try: found = w["measure"](now, st) or []
         except Exception as e: log(f"watch book: {w['id']} could not be read: {scrub(e)[:140]}", "WARN"); continue
-        mine = [r for r in rows if r["key"] == w["id"]]; seen = {str(r.get("new")) for r in mine}
+        mine = [r for r in rows if r["key"] == w["id"]]; seen = {_point(w, r.get("new"), _js(r.get("numbers"), {}).get("kind")) for r in mine}
         for f in found:
-            if str(f["point"])[:80] in seen: continue
+            if _point(w, f["point"], f.get("kind")) in seen or (str(f["point"])[:80], "his_delete") in seen: continue
             if f["fires"]:
+                if w["id"] == "platform_flag":
+                    try: _act_platform(f, now, st)
+                    except Exception as e: log(f"watch book: the act on {f['point']} failed ({scrub(e)[:120]}) - tried again at the next review", "WARN"); continue
                 row = _row(w, f, "watch", f["why"], now); st.append("Decisions", [row]); rows.append(row); n += 1
-                if w["id"] == "platform_flag": _act_platform(f, now, st)
-                elif w["memo"]:
+                if w["memo"]:
                     att = 1 + sum(1 for r in mine if r["state"] == "watch")
                     out.append({"type": "problem_memo", "from_dept": "D1", "to_depts": [w["owner"]], "owner_visible": False, "subject": f"Risk: {f['why']}"[:140],
                                 "body": {"what_failed": f["why"][:400], "where": f"Decisions:{row['id']}", "attempt": att, "error_class": f["kind"]},

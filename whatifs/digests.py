@@ -24,7 +24,10 @@ def compose(kind="daily", demo=False, now=None):
     now = now or now_utc(); v = OV.build(demo=demo)
     head = ("[DEMO] " if demo else "") + ("Morning brief" if kind == "daily" else "Weekly brief") + f", {now.astimezone(IST):%a %d %b}"
     from whatifs.org import strategy as STR
-    parts = [f"*{head}*"] + [p for p in (SB.line(now), STR.brief(now)) if p]      # v12 V4: the scoreboard, then Strategy's part *Decisions* ("" with STRATEGY_ON FALSE)
+    def _part(fn, name):                                                       # V4's finish C16: each part of the CEO in its own try
+        try: return fn(now)
+        except Exception as e: log(f"{kind} brief: {name} was not built: {scrub(e)[:120]}", "WARN"); return f"{name}: not available right now ({scrub(e)[:80]})"
+    parts = [f"*{head}*"] + [p for p in (_part(SB.line, "Scoreboard"), _part(STR.brief, "*Decisions*")) if p]      # v12 V4: the scoreboard, then Strategy's part *Decisions* ("" with STRATEGY_ON FALSE)
     parts += [OV.render("today", v), OV.render("numbers", v), OV.render("observations", v), OV.render("strategy", v),
               OV.render("hot_topics", v), OV.render("recommendations", v)]
     if kind == "weekly": parts += [OV.render("experiments", v), OV.render("money", v), learned(demo)]
@@ -46,9 +49,9 @@ def send(kind="daily", demo=False, now=None):
     sent = "email"
     if WA.configured() or FAKE:
         if WA.in_window(now) or FAKE:
-            WA.send_text(text)
+            took = WA.send_text(text) or FAKE
             if chart: WA.send_image(chart, "Numbers" + (" (DEMO)" if demo else ""))
-            WA.send_buttons("Open a section:", [("Menu", "MENU|menu"), ("Numbers", "MENU|numbers"), ("What to post", "MENU|recommendations")]); sent = "whatsapp"
+            WA.send_buttons("Open a section:", [("Menu", "MENU|menu"), ("Numbers", "MENU|numbers"), ("What to post", "MENU|recommendations")]); sent = "whatsapp" if took else "whatsapp_failed"      # V4's finish C15: stamped only when WhatsApp took the text
         else:
             WA.send_template(f"Your {kind} brief is ready ({text.splitlines()[0].strip('*')}).", ["Menu", "Numbers", "Pause"], ["MENU|menu", "MENU|numbers", "PAUSE"]); sent = "template"
     mailed = False

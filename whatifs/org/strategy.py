@@ -576,10 +576,11 @@ def review(brief):
     from whatifs.org.runner import Out
     brief.take()                                                                   # the runner's contract: a department run takes its playbook (D1 decides by rule)
     st = store(); now = now_utc()
+    try: risks, risk_memos = book(now, st)                                   # the watch book first, alone: a fault elsewhere never keeps the uploads open (V4's finish C14)
+    except Exception as e: log(f"strategy: the watch book failed: {scrub(e)[:160]}", "WARN"); risks, risk_memos = 0, []
     resend = settle(now, st)
     hs = hands(now, st)
     judge(now, st); observe(now, st)
-    risks, risk_memos = book(now, st)
     cands = intake(now, st)
     c, refused = next_move(now, st); memos = list(resend) + list(risk_memos); decided = 0
     if c: _row, memo = decide(c, now, st); memos.append(memo); decided = 1
@@ -760,6 +761,8 @@ def live_issues(st=None, now=None):
     from whatifs.org import runner as ORG, memos as MEM
     if not on(): return [], {}, "Strategy is switched off (STRATEGY_ON)"
     if not ORG.on(): return [], {}, "organisation switched off"
+    from whatifs.org import execute as EX
+    if not EX.on(): return [], {}, "the Execution Engine is switched off (EXEC_ON): Strategy cannot decide, so it does not review"
     st = st or store(); now = now or now_utc(); since = parse_iso(S("ORG_SINCE")); lim = dt.timedelta(hours=S("STRATEGY_STALE_H", float))
     if not since or now - since < lim:
         return [], {}, f"Strategy has not reviewed yet: the organisation started {round((now - since).total_seconds() / 3600) if since else 0} h ago"

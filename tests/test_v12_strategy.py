@@ -117,6 +117,12 @@ def test_no_dashboard_tile_shows_a_number_without_its_source_and_the_shorts_tile
     assert (k["stay"]["v"], k["stay"]["unit"], k["stay"]["good"]) == (70, "%", "your own median: 60% over 3 Shorts"), k["stay"]
     assert unsourced(k) == []
 
+def test_one_bad_cell_never_stops_the_morning_brief(setting):
+    """V4's finish C16: the scoreboard and Strategy's part had no try in the brief - one mistyped date in YPP_BARS raised in compose: no brief went."""
+    setting("STRATEGY_ON", "TRUE"); plant({"date": "2026-11-16", "subs": 40})
+    setting("YPP_BARS", '[{"until": "31 Jan 2027", "subs": 1000, "hours": 4000, "shorts": 10000000}, {"until": "", "subs": 1000, "hours": 8000, "shorts": 20000000}]')
+    txt = DG.compose("daily", now=SB_NOW)[0]; assert "Scoreboard: not available right now" in txt and "*Risks*" in txt, txt[:400]
+
 def test_the_stale_shorts_sentence_is_retired_and_the_money_shows_the_cap_in_force(monkeypatch, setting):
     monkeypatch.setattr(OV, "today", lambda: {"next_slot": {"ist": "Tue 18 Nov 18:00"}})
     assert OV.strategy()["plan"][0] == "Next slot Tue 18 Nov 18:00: a long video about the Short viewers picked (three Shorts a week, each a topic of its own)."
@@ -345,6 +351,17 @@ def test_what_was_shown_is_stamped_only_when_it_went(monkeypatch, setting):
     DG.send("daily", now=JAN + dt.timedelta(hours=21)); assert decisions()[0]["briefed"] == core.iso(JAN + dt.timedelta(hours=21))
     assert core.S("STRATEGY_WEEKLY_AT") == core.iso(JAN + dt.timedelta(hours=21))
 
+def test_a_brief_whatsapp_did_not_take_is_not_stamped(monkeypatch, setting):
+    """V4's finish C15: digests.send said "whatsapp" whatever WhatsApp answered - with the e-mail failing too, every row was stamped as shown."""
+    from whatifs import wa as WA
+    ceo(setting); c, _ = STR.next_move(JAN); STR.decide(c, JAN)
+    monkeypatch.setattr(DG, "FAKE", False); monkeypatch.setattr(WA, "configured", lambda: True); monkeypatch.setattr(WA, "in_window", lambda *a, **k: True)
+    for f in ("send_image", "send_buttons", "send_template"): monkeypatch.setattr(WA, f, lambda *a, **k: "")
+    monkeypatch.setattr(PUB, "email", lambda *a, **k: False)
+    monkeypatch.setattr(WA, "send_text", lambda *a, **k: ""); DG.send("daily", now=JAN + dt.timedelta(hours=20)); assert decisions()[0]["briefed"] == ""
+    monkeypatch.setattr(WA, "send_text", lambda *a, **k: "wamid.1"); DG.send("daily", now=JAN + dt.timedelta(hours=21))
+    assert decisions()[0]["briefed"] == core.iso(JAN + dt.timedelta(hours=21))
+
 def test_his_hand_on_a_portfolio_cell_is_recorded_once_said_in_the_week_and_frozen(setting):
     from whatifs.org import runner as RN
     ceo(setting); setting("STANDARD_MAX_LONG_PER_MONTH", "6")                                         # set by hand in the Sheet
@@ -407,6 +424,11 @@ def test_strategy_live_is_na_on_an_empty_sheet_fails_when_stale_and_passes_after
     assert "strategy_live" in RND_ORG_CHECKS() and REG.CHECK_OWNER["strategy_live"] == "D1" and [f for f in CON.FEATURES if f[0] == "strategy_live"][0][1] == "script"
 def RND_ORG_CHECKS():
     from whatifs.org import rnd as RND; return RND.ORG_CHECKS
+
+def test_strategy_live_is_na_while_the_engine_is_off(setting):
+    """V4's finish C13: with the Execution Engine off the round never runs (cli.strategy_round), yet the check FAILED after 36 h - every long video held."""
+    setting("STRATEGY_ON", "TRUE"); setting("EXEC_ON", "FALSE"); setting("ORG_SINCE", core.iso(core.now_utc() - dt.timedelta(hours=40)))
+    s, why = CON.p_strategy_live({}); assert s == CON.NA and "EXEC_ON" in why, (s, why)
 
 def test_every_inbound_memo_of_a_review_is_dispositioned(setting):
     from whatifs.org import memos as MEMO, runner as RN
@@ -653,6 +675,25 @@ def test_his_own_delete_puts_no_question_on_the_research_agenda_and_no_watch_lin
     a = next(x for x in core.store().rows("Owner_Actions") if x["kind"] == "risk_gone"); assert NTF.answer(a["id"], "RISK MINE v2").startswith("noted")
     assert [x for x in RNDM.gaps() if x["source"] == "risk"] == [] and RISK.words() == ""
     RISK.run(); assert len([x for x in core.store().rows("Owner_Actions") if x["kind"] == "risk_gone"]) == 1 and core.S("UPLOAD_LOCK") == "off"
+
+def test_a_limited_video_later_rejected_closes_the_uploads_and_a_failed_act_is_tried_again(monkeypatch, setting):
+    """V4's finish C14: the point was the video alone (age-restricted, then rejected: skipped); the row was written before the act (a failed act was
+    never tried again); the watch ran after every other part of the review (an unrelated fault kept the uploads open)."""
+    from whatifs.org import runner as RUNX
+    setting("STRATEGY_ON", "TRUE"); setting("UPLOAD_LOCK", "off"); live_episode(1, "v1")
+    states(monkeypatch, {"v1": {"upload": "processed", "rating": "ytAgeRestricted"}}); RISK.run(); assert core.S("UPLOAD_LOCK") == "off"
+    states(monkeypatch, {"v1": {"upload": "rejected", "reason": "inappropriate"}})
+    real = RISK.lock; monkeypatch.setattr(RISK, "lock", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("planted")))
+    RISK.run(); assert core.S("UPLOAD_LOCK") == "off"                                                      # the act failed: no row - tried again
+    monkeypatch.setattr(RISK, "lock", real); RISK.run(); lk = [a for a in core.store().rows("Owner_Actions") if a["kind"] == "risk_lock"]
+    assert core.S("UPLOAD_LOCK") == "on" and len(lk) == 1 and lk[0]["text"] == ("The uploads are closed: YouTube rejected Case 1 (inappropriate). Look at it in "
+           "Studio first - the next violation inside 90 days is a strike. One tap opens the uploads again."), lk
+    setting("UPLOAD_LOCK", "off"); live_episode(2, "v2")
+    core.store().append("Monitor48", [{"kind": "long", "published": core.iso(core.now_utc()), "v48": "n/a"}])     # an unrelated fault in the review
+    states(monkeypatch, {"v1": {"upload": "rejected", "reason": "inappropriate"}, "v2": {"upload": "rejected", "reason": "spam"}})
+    try: RUNX.run("D1", "review", STR.review)
+    except Exception: pass
+    assert core.S("UPLOAD_LOCK") == "on"                                                                  # the watch ran first
 
 def test_a_failed_read_locks_nothing_and_a_limited_video_is_a_line_only(monkeypatch, setting):
     setting("STRATEGY_ON", "TRUE"); setting("UPLOAD_LOCK", "off"); live_episode(1, "v1")
