@@ -988,3 +988,12 @@ def test_a_whole_request_inside_the_gates_is_adopted_and_do_it_anyway_overrides_
     assert r["verdict"] == "PARKED" and r["action"] and "tap Do it anyway" in r["how"], r
     assert str(NTF.answer(r["action"], f"DESK DO {r['n']}")).startswith("done:")
     t = next(x for x in core.store().rows("Owner_Desk") if str(x["n"]) == str(r["n"]))["ticket"]; assert MEMX.get(t)["body"]["value"] == "5"
+
+def test_the_ceos_month_holds_when_a_rehearsal_pair_forces_a_short_format(monkeypatch, setting):
+    """V4's finish C22 (the builder's block on 0a63da8 was RED): the block's rehearsal pairs force a Short format (WI_SHORT_FORMAT); `effect` then rightly
+    says a share move changes nothing, so the judge's step (a) found no S2 decision. The judge clears the pair's forced Short format for its month."""
+    from tools import sweep as SW
+    monkeypatch.setenv("WI_SHORT_FORMAT", "S1")
+    ok, said = SW.strategy_of(core, "EP209912310900", org=True)
+    assert ok and said.startswith("the month's decision held:"), said
+    assert os.environ.get("WI_SHORT_FORMAT") == "S1"                                                    # put back for the rest of the pair

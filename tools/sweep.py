@@ -323,6 +323,13 @@ def child(ep, a, base):
     return res
 
 def strategy_of(core, ep, org=True):
+    """v12 V4: the CEO's month on the id's own Sheet (see _strategy_of). A rehearsal pair's forced Short format belongs to its production, not to this month (V4's finish C22)."""
+    saved = os.environ.pop("WI_SHORT_FORMAT", None)
+    try: return _strategy_of(core, ep, org)
+    finally:
+        if saved is not None: os.environ["WI_SHORT_FORMAT"] = saved
+
+def _strategy_of(core, ep, org=True):
     """v12 V4: (ok, words) - THE SWEEP WALKS THE CEO on the id's own Sheet, after its video. With the organisation OFF no ticket can exist: a round must
     write NOTHING. With it ON: (a) sixteen planted measured Ladder rows, all earlier than the id's own climbed Short (S1 and S3 four each, then S2's
     eight) -> ONE judgement, ONE decision SHORT_SHARE_S2 40 -> 20, its ticket, ONE "strategy" action; (b) the engine's pass sets the cell; (c) the Undo
