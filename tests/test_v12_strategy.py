@@ -330,6 +330,15 @@ def test_the_ticket_is_told_once_it_exists_and_the_brief_carries_the_whole_text_
     assert b.startswith("*Decisions*\n- Strategy decided: 5 long videos") and "Undo: https://github.com/owner/repo/issues/new?title=" in b and "Strategy, week of" in b
     assert a["kind"] in NTF.INFORM_KINDS and not [r for r in NTF.open_rows() if r.get("kind") not in NTF.INFORM_KINDS]
 
+def test_a_decision_reaches_the_brief_only_with_its_undo_link_and_a_late_tell_still_comes(setting):
+    """V4's finish C17: the brief printed a decision before it was told ("tap Undo", no link) and stamped it; tell served only rows still 'decided'."""
+    from whatifs.org import memos as MEMX
+    ceo(setting); c, _ = STR.next_move(JAN); row, memo = STR.decide(c, JAN)
+    assert "Strategy decided:" not in STR.brief(JAN + dt.timedelta(hours=1))                                    # not told yet: not in the brief
+    STR.briefed(JAN + dt.timedelta(hours=1)); assert decisions()[0]["briefed"] == ""                              # and not stamped
+    MEMX.write(memo); core.store().update("Decisions", "id", row["id"], {"state": "applied"})                     # the next review settled it before any tell
+    assert STR.tell() == 1 and decisions()[0]["told"] and "Strategy decided:" in STR.brief(JAN + dt.timedelta(hours=2))
+
 def test_a_day_without_a_decision_says_no_change_or_the_first_refusal(monkeypatch, setting):
     ceo(setting); setting("STRATEGY_WEEKLY_AT", core.iso(JAN))
     assert STR.brief(JAN).startswith("*Decisions*\n- Strategy today: no change. Counting: S1 0 of 8 Shorts, ")     # a fresh Sheet: every arm counts toward its point
@@ -342,8 +351,9 @@ def test_a_day_without_a_decision_says_no_change_or_the_first_refusal(monkeypatc
     setting("STRATEGY_ON", "FALSE"); assert STR.brief(JAN) == ""
 
 def test_what_was_shown_is_stamped_only_when_it_went(monkeypatch, setting):
+    from whatifs.org import memos as MEMX
     from whatifs import wa as WA
-    ceo(setting); c, _ = STR.next_move(JAN); STR.decide(c, JAN)
+    ceo(setting); c, _ = STR.next_move(JAN); _r, memo = STR.decide(c, JAN); MEMX.write(memo); STR.tell(JAN)      # told first: a decision reaches the brief with its Undo link (V4's finish C17 - BY DESIGN)
     monkeypatch.setattr(DG, "FAKE", False); monkeypatch.setattr(WA, "configured", lambda: False)
     monkeypatch.setattr(PUB, "email", lambda *a, **k: False)                                            # the e-mail failed
     DG.send("daily", now=JAN + dt.timedelta(hours=20)); assert decisions()[0]["briefed"] == ""        # nothing stamped: the next brief carries it
@@ -353,8 +363,9 @@ def test_what_was_shown_is_stamped_only_when_it_went(monkeypatch, setting):
 
 def test_a_brief_whatsapp_did_not_take_is_not_stamped(monkeypatch, setting):
     """V4's finish C15: digests.send said "whatsapp" whatever WhatsApp answered - with the e-mail failing too, every row was stamped as shown."""
+    from whatifs.org import memos as MEMX
     from whatifs import wa as WA
-    ceo(setting); c, _ = STR.next_move(JAN); STR.decide(c, JAN)
+    ceo(setting); c, _ = STR.next_move(JAN); _r, memo = STR.decide(c, JAN); MEMX.write(memo); STR.tell(JAN)      # told first: a decision reaches the brief with its Undo link (V4's finish C17 - BY DESIGN)
     monkeypatch.setattr(DG, "FAKE", False); monkeypatch.setattr(WA, "configured", lambda: True); monkeypatch.setattr(WA, "in_window", lambda *a, **k: True)
     for f in ("send_image", "send_buttons", "send_template"): monkeypatch.setattr(WA, f, lambda *a, **k: "")
     monkeypatch.setattr(PUB, "email", lambda *a, **k: False)

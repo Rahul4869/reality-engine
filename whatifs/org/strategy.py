@@ -391,7 +391,7 @@ def tell(now=None, st=None):
     if not on(): return 0
     st = st or store(); n = 0
     for r in _rows(st):
-        if r["state"] != "decided" or r.get("told") or not MEM.get(r["ticket"], st): continue
+        if r["state"] not in IN_FORCE + ("verified",) or r.get("told") or not r.get("ticket") or not MEM.get(r["ticket"], st): continue      # V4's finish C17: told late, never lost
         aid = NT.send("strategy", text_of(r), [("Undo", f"STRATEGY UNDO {r['id']}")], tier="week", default="it stays", dedupe_key=f"strategy|{r['id']}")
         MEM.note_owner_told(r["ticket"], aid, st, now); _save(st, r, told=str(aid)); n += 1
     return n
@@ -414,6 +414,7 @@ def brief(now=None, st=None):
             lines.append(f"Taken back: {plain(r['key'], r['old'], r['new'])} ({r['key']} stays {r['old']}). Why: {ex}.")
         elif r["state"] == "undone": continue
         else:
+            if not r.get("told"): continue      # V4's finish C17: a decision reaches the brief with its Undo link
             a = _action(r, st); lnk = NT.link(f"STRATEGY UNDO {r['id']}", a["id"]) if a else ""
             lines.append(text_of(r) + (f" Undo: {lnk}" if lnk else ""))
     from whatifs.org import desk as DESK
@@ -470,6 +471,7 @@ def briefed(now=None, st=None):
     st = st or store(); now = now or now_utc(); n = 0
     for r in _rows(st):
         if r.get("briefed") or r["state"] == "hand" or (parse_iso(r.get("ts")) or now) > now: continue
+        if r["state"] in IN_FORCE + ("verified",) and not r.get("told"): continue      # not shown yet: not stamped
         _save(st, r, briefed=iso(now)); n += 1
     if _weekly_due(now): set_setting("STRATEGY_WEEKLY_AT", iso(now))
     from whatifs.org import desk as DESK
