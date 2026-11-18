@@ -46,11 +46,9 @@ Settings cell) and the check results. The Checks workflow re-runs everything; wh
 pipeline run uses the new code. Nothing restarts.
 
 ## Recipes (non-obvious rules of this codebase)
-- **Text models**: route a role by its job in `models.ROUTES`; pass system prompts as `prompts.Packed` so they are cached; never retry a cut reply
-  with MORE tokens (lower the effort, `models.TIGHT_NOTE`).
+- **Text models**: route a role by its job in `models.ROUTES`; pass system prompts as `prompts.Packed` so they are cached; never retry a cut reply with MORE tokens (lower the effort, `models.TIGHT_NOTE`).
 - **Image and clip models** are Settings cells (`FAL_STILL_MODEL`, `FAL_PREMIUM_MODEL`, `FAL_LIVING_MODEL`, `FAL_HERO_MODEL`) with `PRICE_*` cells; the two clip models are rows of `CLIP_MODELS`.
-  A new provider needs: a call with cost logging, a pre-flight check (`whatifs/preflight.py`), a switch, fake replies, tests, prices verified on the
-  provider's page.
+  A new provider needs: a call with cost logging, a pre-flight check (`whatifs/preflight.py`), a switch, fake replies, tests, prices verified on the provider's page.
 - **The clip market** (`whatifs/clips.py`, department D6; cell `CLIP_MODELS`): the hero clip model is PICKED BY VALUE, never typed. A model = a ROW of the table, written from
   the provider's OWN model page and API schema (price per second by size, shortest and longest clip, the start-picture field, where the clip's shape comes from, its rank
   with its error band, the page, the day read). `clips.pick` is the rule and is pure: the best rank at or under `governor.line_usd_s()` (what the month's plan can pay for
@@ -169,8 +167,7 @@ pipeline run uses the new code. Nothing restarts.
   taste. `audience.shape` (the first shot a picture, number graphics inside the budget) is D13's own run right before the Animation Director,
   `audience.breathe` runs inside the voice job, and the script gate judges `viewer_promise` / `viewer_breath` / `viewer_numbers` on the shot list and the
   REAL voice timeline. A new viewer rule = a pure measure in `audience.py` + a repair by code where code can repair + a contract check; its numbers are
-  levers of D13. A heading, a source's year and a place in the story ("hour 1") are not numbers (`audience.count_numbers`). The redesign that
-  ordered this is `handoff_v12/BREAKOUT_REDESIGN.md`.
+  levers of D13. A heading, a source's year and a place in the story ("hour 1") are not numbers (`audience.count_numbers`). The redesign that ordered this is `handoff_v12/BREAKOUT_REDESIGN.md`.
 - **The layman test** (`whatifs/org/layman.py`, department D13): the expert words a layman would not know are COUNTED by code - only words
   code can RECOGNISE as expert (`layman.unfamiliar`: the list `layman.EXPERT`, or a scientific affix; a word in `whatifs/org/seed/everyday.txt` is never
   counted). Never count a word for being long or unknown to us: that held 1 of 20 test episodes for four ordinary words. The budget is judged by check
@@ -198,3 +195,6 @@ pipeline run uses the new code. Nothing restarts.
   task name to `registry.PROMPT` (tasks / key / propose / must); judges and mechanical passes are never added. A pre-production draft is adopted only
   through `runner.work(adopt=<its D4 draft run>)`. Case records are written by `canon.record` and become canon only through `canon.on_air`; never
   write a `world_canon` case by hand and never edit one that aired. A new fake reply that should cite needs nothing: `fakes.fake_cite` does it.
+- **Strategy, the watch book, the credit lane** (v12 V4; `whatifs/org/strategy.py`, `risk.py`, `finance.py`): a rule of the CEO is ONE row of `strategy.RULES` whose keys are levers; never write a Settings cell from a rule - `next_move` moves ONE key one step through RANGE, EFFECT (`strategy.effect` must know what the code does with the key) and FIT, and `decide` makes it a ticket.
+  A cell he owns is in `strategy.OWNER_ONLY`; a key he set by hand is a `hand` row no rule moves for 28 days. A new danger is ONE row of `risk.WATCH` (owner department, a measure -> findings with a fixed `point` and `fires`, memo True/False): judge only at fixed points, never on a peek; a failed read is never a finding; the act is a lock, a message or ONE memo the watch closes itself.
+  Money the credit paid is never his: every reader of his month asks `governor.own_spend_inr()`, never `month_spend()`; a boost is a `THINK_BOOST_*` cell of D1 with its own line in `costguard.lines` (shown only above 0), read through `finance.boost(key)`, so it ends by itself when the lane closes.

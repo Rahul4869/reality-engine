@@ -1506,6 +1506,29 @@ STEP 8'S RUN (pytest `-n 8`, fake mode, alone): `test_v12_strategy`, `test_v12_o
 STEP 7'S CHECKS (`gh_runs.js`): run 44191757646 on 8e80046, 22:36 -> 00:08 UTC, GREEN - "Unit tests: 1832 passed in 5216.08s"; "REHEARSAL: GREEN ... contract script: 41/41 pass; contract final: 23/23 pass".
 WHAT THE OWNER GETS: what he types in the tab Owner_Input is kept word for word and answered in his next brief; a whole request code can
 recognise (e.g. "4 shorts a week") is done one step at a time as a ticket, anything else is kept for the Council with the reason in words.
+STEP 9, PART A - THE SWEEP, THE FOUNDING ITEMS, THE RECIPES (3.10). WHAT CHANGED: `tools/sweep.py` - NEW `strategy_of(core, ep, org)` after
+`floor_of` on every long-video id (produce and rehearsal branches): organisation OFF = a round writes NOTHING; ON = (a) sixteen planted
+measured Ladder rows -> ONE judgement, ONE decision SHORT_SHARE_S2 40 -> 20, its ticket, ONE "strategy" action, (b) the engine's pass sets
+the cell, (c) the Undo takes it back, (d) the next round a planted day later decides nothing on that key and opens the stand-in's trial,
+(e) a planted rejected video closes the uploads and one tap opens them, (f) a Scoreboard row, both briefs lead with "Scoreboard:", the
+decision's line shown once; `summary()` counts `strategy_month_held`. Six founding items `v4.*` in `whatifs/org/seed/build.json` (132 ->
+138; narrow departments D1, D9, D11; real code references). The three recipes in the repo's `CLAUDE.md`.
+FOUR CHANGES AT THE APPLY (the first single-id sweep found three): (1) `CLAUDE.md` was at its 200-line limit (V1c filled it; `truth`
+refuses more): the three recipes are ONE bullet of three lines, and three short continuation lines elsewhere are joined onto the line
+before them (no word changed) - the file stays at 200. (2) TWO FOUNDING SUMMARIES WERE OVER THE PALACE'S 400 CHARACTERS (436, 419): the
+long video was HELD at the script gate by `palace_health` ("summary must be 20-400 characters"); both are cut to 395 (no claim removed).
+(3) A TYPING FAULT OF THE `levers.py` KIND: the new counter's trailing comment swallowed `"bad_ids"` of `summary()` (KeyError 'bad_ids');
+the entry is on its own line again - a scan of every added Python line of V4 for a comment followed by a dict entry found no other.
+(4) Part (f) composed the brief at the real "now", but the trial's decision of (d) is dated a planted day later, and `strategy.brief`
+rightly shows a row only once its time has come (the undone decision of (c) is never said again, by design): (f) now composes on (d)'s
+day. DESIGN QUESTION D-SW4: "the decision's line shown" in (f) is the TRIAL's line (the share's decision was undone in (c)).
+STEP 9A'S RUNS (fake mode, alone): `test_v12_palace`, `test_docs_current`, `test_v111_enforce` - 86 passed in 18.72 s; ONE SWEEP ID ALONE,
+`EP209901010900`: produce mode ok in 120 s, rehearsal mode ok in 189 s, both "the month's decision held: one judgement, SHORT_SHARE_S2 40 ->
+20 decided, told, executed and undone; the trial opened; a rejected video closed and reopened the uploads". No test file changed (no
+minitest due). `tools/plan_guard.py`: GREEN.
+STEP 8'S CHECKS (`gh_runs.js`): run 44205430516 on b9de4ca, 00:09 -> 01:27 UTC, GREEN - "Unit tests: 1837 passed in 4465.65s"; "REHEARSAL: GREEN ... contract script: 41/41 pass; contract final: 23/23 pass".
+WHAT A BUYER GETS: the sweep proves one month of the CEO on every long-video id; the buyer's `CLAUDE.md` says how to add a rule, a danger
+and a boost without breaking the money.
 ### V1c - THE FLOOR, HIS VERDICT AND THE MAKER'S LINE (15-17 Nov 2026) - ACCEPTED (final code commit 9dfc916 GREEN in GitHub Checks run 246: 1768 passed; sweep 58 of 58 ids) - its code b326887, BUILT AGAIN AFTER RED ROUND 2 (the offline writer keeps the asks it is given and marks its punchlines by the joke rule's own measures (open issue 228); `proving/notes/V1c_BUILT.md`; the repair block "THE REPAIR OF RED ROUND 2" under the second pass's 6b); BEFORE IT RED ON ITS SECOND PASS (46615df, 17 Nov 2026: the rehearsal F2/S2 held by joke_density on episode EP202611170305 - 6 punchlines, need 7, the script one word over the line; `proving/notes/V1c_RED_2.md`), NOT ACCEPTED; BEFORE IT BUILT AGAIN (red round 1 on 030f197 repaired: final code commit d39a213 - the floor's media fixture made for the proof's serial runner, a guard over every test file, test_v12_floor split word for word into three files; `proving/notes/V1c_BUILT.md`; the builder's record, the prover's 6b of the first pass, the repair block under it)
 WHAT IT IS FOR, in a viewer's and the owner's words: a finished long video is shown - its first minute - to two strong first-time viewers of two
 model families beside the video he rejected; a film they cannot tell from that one is HELD, a jury that fails its own planted questions holds

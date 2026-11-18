@@ -225,6 +225,9 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
             if res["outcome"] == "ok":                                              # v12 V1c: the rehearsal's long video (it climbed) - the floor, his line, one story
                 ok_f, res["floor"] = floor_of(core, ep, climbed=True)
                 if not ok_f: res["outcome"] = "odd"; res["problems"].append("the floor, his line or one story: " + res["floor"]); res["error"] = res["floor"][:300]
+            if res["outcome"] == "ok":                                              # v12 V4: THE SWEEP WALKS THE CEO - a month of Strategy on the id's own Sheet
+                ok_s, res["strategy"] = strategy_of(core, ep, org)
+                if not ok_s: res["outcome"] = "odd"; res["problems"].append("the CEO's month: " + res["strategy"]); res["error"] = res["strategy"][:300]
         else:                                                                      # the recipe of the end-to-end test in tests/test_v12_org.py
             core._store = core.LocalStore(os.path.join(work, "sheet.json")); core._store.ensure_tabs(); core._settings_cache = None
             for k, v in TEST_SETTINGS.items(): core.set_setting(k, v)
@@ -257,6 +260,9 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
             if res["outcome"] == "ok":                                              # v12 V1c: THE SWEEP WALKS THE FLOOR, HIS LINE AND ONE STORY - judged by first-time viewers, his line kept, the thumbnail the opening
                 ok_f, res["floor"] = floor_of(core, ep, climbed=res.get("ladder") == "climbed")
                 if not ok_f: res["outcome"] = "odd"; res["problems"].append("the floor, his line or one story: " + res["floor"]); res["error"] = res["floor"][:300]
+            if res["outcome"] == "ok":                                              # v12 V4: THE SWEEP WALKS THE CEO - a month of Strategy on the id's own Sheet
+                ok_s, res["strategy"] = strategy_of(core, ep, org)
+                if not ok_s: res["outcome"] = "odd"; res["problems"].append("the CEO's month: " + res["strategy"]); res["error"] = res["strategy"][:300]
         res.update(evidence(core, ep, org))
     except BaseException as e:                                                      # a crash is a result too: the last line of the traceback names it
         if isinstance(e, KeyboardInterrupt): raise
@@ -315,6 +321,66 @@ def child(ep, a, base):
     if not a.keep: shutil.rmtree(work, ignore_errors=True)                         # production refuses to start under 1 GB free disk: never leave episode folders behind
     return res
 
+def strategy_of(core, ep, org=True):
+    """v12 V4: (ok, words) - THE SWEEP WALKS THE CEO on the id's own Sheet, after its video. With the organisation OFF no ticket can exist: a round must
+    write NOTHING. With it ON: (a) sixteen planted measured Ladder rows, all earlier than the id's own climbed Short (S1 and S3 four each, then S2's
+    eight) -> ONE judgement, ONE decision SHORT_SHARE_S2 40 -> 20, its ticket, ONE "strategy" action; (b) the engine's pass sets the cell; (c) the Undo
+    takes it back; (d) the next round, a planted day later, decides nothing on that key and opens the stand-in's trial; (e) a planted rejected video
+    closes the uploads and one tap opens them; (f) the scoreboard leads both briefs and the decision's line is shown once."""
+    import json as _j
+    from whatifs.org import strategy as STR, execute as EX, risk as RISK, memos as MEM
+    from whatifs import cli as CLI, digests as DG, notify as NT, scoreboard as SB
+    st = core.store(); acts = lambda kind: [a for a in st.rows("Owner_Actions") if a.get("kind") == kind]
+    if not org:
+        before = (len(st.rows("Decisions")), len(acts("strategy")))
+        core.set_setting("STRATEGY_ON", "TRUE"); CLI.strategy_round()
+        if (len(st.rows("Decisions")), len(acts("strategy"))) != before: return False, "the organisation is off and a round of Strategy wrote a row or a message"
+        return True, "the month's decision held: the organisation is off, nothing was written"
+    for k, v in (("STRATEGY_ON", "TRUE"), ("ARM_STAND_IN_ON", "TRUE"), ("PLAYBOOK_ON", "TRUE"), ("SHORT_FORMAT_FORCE", ""), ("SHORT_SHARE_S2", "40")): core.set_setting(k, v)
+    own = next((r for r in st.rows("Ladder") if r.get("id") == "SH" + ep[2:]), None)
+    t0 = core.parse_iso((own or {}).get("posted")) or core.now_utc(); base = t0 - dt.timedelta(hours=20)
+    plan = [("S1", v) for v in (20, 30, 50, 80)] + [("S3", v) for v in (90, 120, 200, 400)] + [("S2", v) for v in (10, 10, 20, 20, 30, 30, 40, 300)]
+    st.append("Ladder", [{"id": f"SW{ep[-8:]}{i:02d}", "format": f, "posted": core.iso(base + dt.timedelta(hours=i)), "state": "POSTED", "evidence": "measured",
+                          "first": _j.dumps({"days": 3, "engaged": v})} for i, (f, v) in enumerate(plan)])
+    p = []
+    CLI.strategy_round()                                                                                          # (a)
+    js = [r for r in st.rows("Decisions") if r.get("state") == "judged" and r.get("rule") in ("SHORT_ARMS", "ARMS")]
+    ds = [r for r in st.rows("Decisions") if r.get("rule") not in ("HAND", "WATCH", "RISK") and r.get("state") not in ("judged", "hand", "watch")]
+    if len(js) != 1 or len(ds) != 1 or (ds[0]["key"], ds[0]["old"], ds[0]["new"]) != ("SHORT_SHARE_S2", "40", "20"): return False, f"(a) {len(js)} judgement(s), decisions {[(d['key'], d['old'], d['new']) for d in ds]}"
+    d = ds[0]; sa = acts("strategy")
+    if not MEM.get(d["ticket"]) or len(sa) != 1 or not sa[0]["text"].startswith("Strategy decided:"): return False, f"(a) the ticket or the action is missing ({len(sa)} action(s))"
+    EX.engine_tick()                                                                                              # (b)
+    if core.S("SHORT_SHARE_S2") != "20": p.append(f"(b) after the engine's pass SHORT_SHARE_S2 reads {core.S('SHORT_SHARE_S2')}")
+    said = NT.answer(sa[0]["id"], f"STRATEGY UNDO {d['id']}")                                                     # (c)
+    if core.S("SHORT_SHARE_S2") != "40" or next(r for r in st.rows("Decisions") if r["id"] == d["id"])["state"] != "undone": p.append(f"(c) the Undo did not take it back ({said[:80]})")
+    real = STR.now_utc; STR.now_utc = lambda: real() + dt.timedelta(days=1)                                      # (d) a planted day later
+    try: CLI.strategy_round()
+    finally: STR.now_utc = real
+    again = [r for r in st.rows("Decisions") if r.get("key") == "SHORT_SHARE_S2" and r["id"] != d["id"] and r.get("state") not in ("judged",)]
+    cs = {r["kind"]: r for r in st.rows("Candidates")}
+    if again: p.append("(d) the next round moved SHORT_SHARE_S2 again")
+    if (cs.get("machine") or {}).get("state") != "trial" or (cs.get("hand") or {}).get("state") != "for his desk (B9)": p.append(f"(d) the candidates read {[(k, v.get('state')) for k, v in cs.items()]}")
+    else:
+        EX.engine_tick(); er = EX.state_of(cs["machine"]["ticket"])
+        if not er or er[0] != "applied": p.append(f"(d) the trial's ticket is {er}")
+    st.append("Specials", [{"id": f"SWREJ{ep[-6:]}", "kind": "short", "title": "a planted rejected Short", "yt_id": f"rej{ep[-6:]}", "made": core.iso(core.now_utc())}])
+    vs = RISK._video_states; RISK._video_states = lambda ids: {i: ({"upload": "rejected", "reason": "planted by the sweep"} if i.startswith("rej") else {"upload": "processed"}) for i in ids}
+    try: RISK.run()                                                                                               # (e)
+    finally: RISK._video_states = vs
+    lk = acts("risk_lock"); wr = [r for r in st.rows("Decisions") if r.get("rule") == "WATCH" and r.get("key") == "platform_flag"]
+    if core.S("UPLOAD_LOCK") != "on" or len(lk) != 1 or len(wr) != 1: p.append(f"(e) lock {core.S('UPLOAD_LOCK')}, {len(lk)} lock action(s), {len(wr)} watch row(s)")
+    elif not str(NT.answer(lk[0]["id"], f"RISK OPEN rej{ep[-6:]}")).startswith("the uploads are open") or core.S("UPLOAD_LOCK") != "off": p.append("(e) the tap did not open the uploads")
+    SB.keep(); now = core.now_utc() + dt.timedelta(days=1, minutes=1)                                            # (f) on (d)'s planted day: the trial's decision is dated then
+    if not st.rows("Scoreboard"): p.append("(f) no Scoreboard row")
+    for kind in ("daily", "weekly"):
+        parts = DG.compose(kind, now=now)[0].split("\n\n")
+        if len(parts) < 2 or not parts[1].startswith("Scoreboard:"): p.append(f"(f) the {kind} brief does not lead with the scoreboard")
+    if "Strategy decided:" not in DG.compose("daily", now=now)[0]: p.append("(f) the brief does not carry the decision's line")
+    STR.briefed(now)
+    if "Strategy decided:" in DG.compose("daily", now=now + dt.timedelta(minutes=1))[0]: p.append("(f) the decision's line is shown again after it went")
+    if p: return False, "; ".join(p)
+    return True, f"the month's decision held: one judgement, SHORT_SHARE_S2 40 -> 20 decided, told, executed and undone; the trial opened; a rejected video closed and reopened the uploads"
+
 def summary(results):
     by = {}
     for r in results: by[r["outcome"]] = by.get(r["outcome"], 0) + 1
@@ -331,7 +397,9 @@ def summary(results):
             "money_agreed": sum(1 for r in results if str(r.get("money") or "").startswith("every paid picture") and r["outcome"] == "ok"),
             "ladder_rules_held": sum(1 for r in results if str(r.get("motion") or "").startswith("the ladder's rules held") and r["outcome"] == "ok"),
             "format_inside_held": sum(1 for r in results if str(r.get("inside") or "").startswith("inside the format held") and r["outcome"] == "ok"),
-            "floor_judged": sum(1 for r in results if str(r.get("floor") or "").startswith("the floor judged") and r["outcome"] == "ok"), "bad_ids": sorted(r["id"] for r in results if r["outcome"] != "ok"), "fail_classes": {k: sorted(set(v)) for k, v in sorted(fails.items())},
+            "floor_judged": sum(1 for r in results if str(r.get("floor") or "").startswith("the floor judged") and r["outcome"] == "ok"),
+            "strategy_month_held": sum(1 for r in results if str(r.get("strategy") or "").startswith("the month's decision held") and r["outcome"] == "ok"),      # v12 V4
+            "bad_ids": sorted(r["id"] for r in results if r["outcome"] != "ok"), "fail_classes": {k: sorted(set(v)) for k, v in sorted(fails.items())},
             "warn_classes": {k: len(v) for k, v in sorted(warn.items())}, "degraded_classes": {k: len(v) for k, v in sorted(deg.items())}, "owner_message_kinds": {k: len(v) for k, v in sorted(own.items())}}
 
 def main(argv=None):
