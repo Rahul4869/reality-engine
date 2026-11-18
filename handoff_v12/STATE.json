@@ -437,6 +437,15 @@
    "from": "ACCEPTED",
    "to": "DESIGN",
    "why": "RR-54: DRAWN before V5 (the owner's item 115, RR-48); its design approved with corrections C1-C15, typed ahead; pasted word for word under plan A13 (a)"
+  },
+  {
+   "at": "2026-11-18T18:23:18Z",
+   "batch": "DRAWN",
+   "by": "DRAWN's finisher local_9bd024dc (Opus 5.5, max), on the relay's RR-54",
+   "commit": "",
+   "from": "DESIGN",
+   "to": "DESIGN_REVIEW",
+   "why": "the record's steps 1 to 3 pasted (7c..., word for word); the design review (two Opus MAX rounds under item 130) committed word for word as reviews/DRAWN_design.md"
   }
  ],
  "order": [
@@ -453,8 +462,8 @@
   "B10",
   "V3"
  ],
- "phase": "DESIGN",
+ "phase": "DESIGN_REVIEW",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-18T18:22:58Z"
+ "updated": "2026-11-18T18:23:18Z"
 }
