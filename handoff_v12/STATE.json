@@ -21,10 +21,18 @@
    "github_run": 246,
    "on": "2026-11-17T12:30:00Z",
    "verdict": "V1c_9dfc916_1.json"
+  },
+  {
+   "batch": "V4",
+   "final_code_commit": "ddfd4d5f1dbd59fe43b57a1065353b1793f6dfc4",
+   "github_run": 277,
+   "on": "2026-11-18T18:11:56Z",
+   "verdict": "V4_ddfd4d5_1.json"
   }
  ],
  "audit_queue": [
-  "V1c"
+  "V1c",
+  "V4"
  ],
  "audited": [
   {
@@ -411,6 +419,15 @@
    "from": "BUILT",
    "to": "PROVING",
    "why": ""
+  },
+  {
+   "at": "2026-11-18T18:11:56Z",
+   "batch": "V4",
+   "by": "",
+   "commit": "ddfd4d5",
+   "from": "PROVING",
+   "to": "ACCEPTED",
+   "why": ""
   }
  ],
  "order": [
@@ -427,10 +444,10 @@
   "B10",
   "V3"
  ],
- "phase": "PROVING",
+ "phase": "ACCEPTED",
  "red_notes": [
   "V4_RED_1.md"
  ],
  "red_rounds": 1,
- "updated": "2026-11-18T15:14:24Z"
+ "updated": "2026-11-18T18:11:56Z"
 }
