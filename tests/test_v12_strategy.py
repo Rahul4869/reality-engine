@@ -1014,3 +1014,24 @@ def test_with_the_organisation_off_the_ceos_month_says_its_count_of_decisions(se
     from tools import sweep as SW
     setting("ORG_ON", "FALSE"); ok, said = SW.strategy_of(core, "EP209912310901", org=False)
     m = re.search(r"(\d+) decision", said); assert ok and said.startswith("the month's decision held:") and m and m.group(1) == "0", said
+
+def test_a_shorts_hook_without_a_question_or_you_follows_the_hook_labs_line(tmp_path):
+    """V4's repair C25 (RED round 1, reds 1 and 2): the F3/S1 rehearsal was held by impact_map - its long video opened on its Short's hook "Something is
+    wrong with the rain." (no question, no "you": enforce.v1_hook) and the first "you" started at 3.06 s. A Short's hook leads only when the line itself
+    carries that stake; otherwise the hook lab's line leads and the Short's hook follows it, word for word."""
+    from whatifs import hooks as HOOKS, enforce as EN, contract as CON
+    hook, sid = "Something is wrong with the rain.", "SHC25"
+    rest = "[DIRECTOR] You find out what happens to you when the rain stops at exactly noon.\n[CURIOUS] The strangest part is what happens to your street."
+    spoken = lambda s: [l for l in s.split("\n") if l.strip() and not l.startswith("##")]
+    for script in (f"## BEAT 1\n[DIRECTOR] [tension] {hook}\n{rest}", f"## BEAT 1\n{rest}"):          # the writer opened on the hook / did not
+        new, rec = HOOKS.run_hooks(script, {"premise": "What if the rain stopped at noon?"}, "EPC25", str(tmp_path), proven={"line": hook, "short": sid})
+        assert rec.get("source") != "short" and rec.get("second") == {"line": hook, "short": sid} and rec["applied"], {k: rec.get(k) for k in ("source", "second", "applied", "status")}
+        first = next(c["line"] for c in rec["candidates"] if c["id"] == rec["chosen_id"]); sp = spoken(new)
+        assert sp[0].endswith(first) and sp[1].endswith(hook) and new.count(hook) == 1, sp[:3]
+        ok, said = CON.p_hook({"hook_rec": rec, "d": {"ladder": sid}})
+        assert EN.v1_hook([{"text": first, "start": 0.35}])[0] and ok == CON.PASS and f"the hook of Short {sid} follows it" in said, said
+        assert CON.p_hook({"hook_rec": rec, "d": {"ladder": "SH_OTHER"}})[0] == CON.FAIL and CON.p_hook({"hook_rec": rec, "d": {}})[0] == CON.FAIL      # the hook of another Short proves nothing
+    you = "Your rain just stopped falling."
+    keep, rec2 = HOOKS.run_hooks(f"## BEAT 1\n[DIRECTOR] [tension] {you}\n{rest}", {}, "EPC25B", str(tmp_path), proven={"line": you, "short": sid})
+    assert rec2["source"] == "short" and rec2["applied"] and "second" not in rec2 and spoken(keep)[0].endswith(you)          # a hook with "you" still leads, word for word
+    assert HOOKS.stake(you) and HOOKS.stake("Why is the rain falling up?") and not HOOKS.stake(hook) and not HOOKS.stake("The rain is yours now.")

@@ -238,12 +238,24 @@ def proven_record(script, proven, episode=""):
             "candidates": [c], "rejected": [], "type_mix": {}, "chosen_id": "h0", "status": "pending", "applied": False,
             "notes": [f"The opening line is the hook of Short {sid}, word for word: no hook lab was run."]}
 
+def stake(line):
+    """V4's repair C25: does a line by itself carry what a long video's first three seconds must hold - a question or a 'you' stake? Asked with the
+    rule's own function (enforce.v1_hook) on the line alone, because the next line's time is not known before the voice is made (the red F3/S1
+    rehearsal missed by 0.06 s): a Short's hook leads a long video only when it does."""
+    from whatifs import enforce as _EN
+    return bool(_EN.v1_hook([{"text": str(line or ""), "start": 0.0}])[0])
+
 def run_hooks(script, spine, episode, out_dir, ask_fn=None, proven=None):
     """Stage entry point for episode.py. Returns (script, record|None). NEVER raises; on any failure the script is returned unchanged.
-    proven = {line, short}: the hook of the Short a long video is about (whatifs/opening.py) - used as the first line instead of the lab."""
+    proven = {line, short}: the hook of the Short a long video is about (whatifs/opening.py) - used as the first line instead of the lab when the line
+    itself carries a question or a 'you' stake (stake); otherwise the lab's line leads and the Short's line follows it, word for word (V4's repair C25)."""
     if not S("HOOKS_ON", bool): return script, None
+    second = None
     try:
         rec = proven_record(script, proven, episode) if proven else None
+        if rec and not stake(rec["candidates"][0]["line"]):        # V4's repair C25: a hook without a question or "you" follows the lab's line, word for word
+            second = {"line": rec["candidates"][0]["line"], "short": rec["short"]}; rec = None
+            log(f"the hook of Short {second['short']} has no question and no 'you' (the first three seconds' rule, enforce.v1_hook): the hook lab's line leads, the Short's line follows it", episode=episode)
         if rec:
             script = decide(rec, script)
             if not rec["applied"] and rec.get("apply_note") == "writer's opening already says this":      # the writer opened on the Short's own words: that IS the proven line in place
@@ -253,8 +265,11 @@ def run_hooks(script, spine, episode, out_dir, ask_fn=None, proven=None):
             return script, rec
     except Exception as e: log(f"the Short's hook could not be used ({scrub(e)[:120]}): the hook lab runs", "WARN", episode)
     try:
+        if second: script = apply_to_script(script, second["line"])[0]      # V4's repair C25: the Short's own line first (unless the writer opened on it), so the lab's line goes before it
         rec = build_record(script, spine, episode, ask_fn)
-        script = decide(rec, script); save(rec, out_dir)
+        script = decide(rec, script)
+        if second: rec["second"] = second; rec["notes"].append(f"The hook of Short {second['short']} follows the lab's line word for word: it has no question and no 'you' for the first three seconds (V4's repair C25).")
+        save(rec, out_dir)
         log(f"opening hooks: {len(rec['candidates'])} candidates, {len(rec['rejected'])} rejected, status {rec['status']}, scored by {rec['scored_by']}", episode=episode)
         return script, rec
     except Exception as e:

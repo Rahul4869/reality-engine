@@ -68,6 +68,11 @@ def p_hook(ctx):
     n = len(rec.get("candidates") or []); sc = rec.get("score") or rec.get("winner_score")
     if n < S("CONTRACT_HOOK_MIN_CANDIDATES", int): return FAIL, f"only {n} hook candidates (need {S('CONTRACT_HOOK_MIN_CANDIDATES', int)})"
     if sc is not None and float(sc) < S("CONTRACT_HOOK_MIN_SCORE", float): return FAIL, f"winning hook scored {sc} (bar {S('CONTRACT_HOOK_MIN_SCORE', float)})"
+    sec = rec.get("second") or {}                              # V4's repair C25: the lab's line leads and the hook of THIS video's Short follows it, word for word
+    if sec:
+        ref = str((ctx.get("d") or {}).get("ladder") or "") if isinstance(ctx.get("d"), dict) else ""
+        if not ref or str(sec.get("short") or "") != ref: return FAIL, f"the second line was taken from Short {sec.get('short') or '?'}, but this video is about {ref or 'no Short'}"
+        return PASS, f"{n} candidates, winner {sc if sc is not None else 'chosen'} by {rec.get('scored_by', '?')}; the hook of Short {ref} follows it, word for word (no question and no 'you' of its own)"
     return PASS, f"{n} candidates, winner {sc if sc is not None else 'chosen'} by {rec.get('scored_by', '?')}"
 
 def p_owners_cut(ctx):

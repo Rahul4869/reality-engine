@@ -114,7 +114,7 @@ def run(ep_id=None):
         op12 = {x["feature"]: x for x in st_rows("Feature_Ledger") if x.get("episode_id") == epid and x.get("feature") in ("opening_footage", "opening_shown", "hook_lab")}
         assert all((op12.get(k) or {}).get("status") == "PASS" for k in ("opening_footage", "opening_shown", "hook_lab")) and used12[0]["id"] in str(op12["opening_shown"].get("evidence")) \
             and "hook of Short " + used12[0]["id"] in str(op12["hook_lab"].get("evidence")), ("the long video does not open on its Short's footage or its hook", {k: (v.get("status"), v.get("evidence")) for k, v in op12.items()})
-        print("opening:", str(op12["opening_shown"]["evidence"])[:240], "| first line: the Short's hook")
+        print("opening:", str(op12["opening_shown"]["evidence"])[:240], "| first line:", "the lab's line, then the Short's hook" if "follows it" in str(op12["hook_lab"].get("evidence")) else "the Short's hook")
         # v12 V2d: THE MONEY - the hero clip model is the one the clip market picks, every clip was bought by the second, and what each run really paid
         # for pictures and clips is set against the lines of its estimate (the long video and both Shorts): nothing paid without a line, no counted line exceeded.
         from whatifs import clips as CL12, governor as G12, core as core12
@@ -254,7 +254,9 @@ def run(ep_id=None):
         # v7.4 checks: research brief, the opening line, reviewable cut map. v12 V2c-b2b: this long video is about a promoted Short, so its first line is that
         # Short's own hook and no hook lab ran (the lab's ten lines and their rules are proven by the long video made under an override, tests/test_v12_opening_e2e.py)
         d74 = os.path.dirname(r["master"])
-        hk = json.load(open(os.path.join(d74, "hooks.json"))); assert hk.get("source") == "short" and hk.get("short") == used12[0]["id"] and hk.get("applied") and len(hk["candidates"]) == 1, ("the opening line is not the promoted Short's hook", {k: hk.get(k) for k in ("source", "short", "applied", "status")})
+        from whatifs import hooks as HK74; hk = json.load(open(os.path.join(d74, "hooks.json"))); sec = hk.get("second") or {}      # V4's repair C25: a hook without a question or "you" follows the lab's line
+        assert hk.get("applied") and ((hk.get("source") == "short" and hk.get("short") == used12[0]["id"] and len(hk["candidates"]) == 1 and HK74.stake(hk["candidates"][0]["line"]))
+                                      or (sec.get("short") == used12[0]["id"] and not HK74.stake(sec.get("line")))), ("the opening line is neither the promoted Short's hook nor the lab's line before it", {k: hk.get(k) for k in ("source", "short", "applied", "status", "second")})
         cm = json.load(open(os.path.join(d74, "cutmap.json"))); assert cm["apply_policy"].startswith("REVIEW ONLY"), "cut map must stay review-only"
         assert st.rows("Research_Brief") and st.rows("Hook_Candidates"), "v7.4 reports missing from the store"
         print("v7.4 checks ok")
