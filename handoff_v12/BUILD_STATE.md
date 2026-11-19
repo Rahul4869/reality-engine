@@ -1305,6 +1305,14 @@ passed, 11.4 s; truth GREEN; Plan Guard GREEN; minitest each changed file alone:
 floor_his_word 2/0 263 s, opening_e2e 3/0 428 s, release 34/0 292 s, v91_flaky_root 3/0 344 s, inside 99/0 402 s, motion 60/0 371 s,
 strategy 95/0 11 s.
 THE PREVIOUS CHECKS: run 44369244828 on f2eae87 - completed/success (Unit tests success, Free rehearsal success).
+STEP 5 (the dispatcher's ruling of 17 Nov, its step 5) - the cast as a sheet, the mouth on the voice, FOUND BUILT: one test,
+`test_the_cast_sheet_rig_is_built_and_off_until_his_art_is_approved` in tests/test_v12_drawn.py ((a) no locked portrait on a fresh Sheet, a
+PENDING row or a row without a file not approved; (c) the mouth marks frames only inside a word, +-1 frame, never every frame;
+LIVING_CHARACTERS_ON set by the test itself, C15 d). NAMED, NO TWIN TYPED: (b) is tests/test_v12_motion.py 357-361; (a)'s positive half is
+tests/test_v9_matrix.py::test_sheets_lifetime_cap_idempotent_and_lock (81). No production code, no cell, no check, no workflow; red first not
+applicable (its break (c), "speaking answers every frame", is the red evidence). Places: none moved (the patch appends to the test file).
+TESTS: the test 1 passed, 0.25 s; minitest tests/test_v12_drawn.py at this step's tree 18/0, 193 s; gen_docs: no change.
+THE PREVIOUS CHECKS: run 44413871345 on 5c2094d (step 1) - completed/success; Unit tests: 1882 passed in 5423.20s; Free rehearsal success.
 ### V4 - THE CEO AND THE LADDER (16-18 Nov 2026) - ACCEPTED (final code commit ddfd4d5 GREEN in GitHub Checks run 277: 1865 passed; sweep 58 of 58 ids) - its code 5272fea, BUILT AGAIN AFTER RED ROUND 1 (repairs C23 to C25 by Opus under item 130; the first pass was RED on 7899300, its code 8fa7742: an overrun memo on every long video of the sweep, the rehearsal F3/S1 held by `impact_map`, sweep part B without the watch line; `proving/notes/V4_RED_1.md`) - BUILT before it (final code commit 8fa7742) (the designer's record: steps 1 to 3; the Opus builder writes steps 4 to 6a, the Fable finisher `FINISHED BY FABLE`, the prover 6b and 7)
 THE BATCH'S START: the first check (the batch before on the record, GitHub's run of its final code commit, a clean tree) and the usage
 figures are written by the session that pastes this record at V1c's acceptance. NOT SPLIT (open issue 189: `next.py` has no move for a

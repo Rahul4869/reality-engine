@@ -338,3 +338,25 @@ def test_without_checkpoints_a_video_of_the_arm_finishes_and_pays_the_call_once(
     r = EP.produce(slot)                                                                       # C6: no plan.json to save again - never a crash
     assert r["ok"], r
     assert c["text:scene"] == 1
+
+
+# ------------------------------------------------------------------ STEP 5: the cast as a sheet, the mouth on the voice - FOUND BUILT, proved here
+# (b) drawn or absent is asserted by the accepted test_v12_motion.py (lines 357-361: has_art without art, with one character's art, with the switch
+# off) and the positive half of (a) by test_v9_matrix.py::test_sheets_lifetime_cap_idempotent_and_lock (line 81): no twin is typed for them.
+def test_the_cast_sheet_rig_is_built_and_off_until_his_art_is_approved(setting):
+    from whatifs import sheets as SH, living as LV
+    setting("LIVING_CHARACTERS_ON", "TRUE")                                                    # C15 (d): no later OLD_ cell may flip it silently
+    assert SH.locked_portraits() == {} and not any(LV.has_art(k) for k in LV.SPEAKER_CHAR)     # (a), (b) a fresh Sheet: no sheet, nobody drawn
+    row = {"ts": core.iso(), "character": "VALE", "expression": "neutral", "file": "drive:test-vale-neutral", "status": "LOCKED"}
+    core.store().append("Character_Sheets", [dict(row, status="PENDING"), dict(row, expression="smug", file="")])
+    assert SH.locked_portraits() == {} and not LV.has_art("DIRECTOR")                         # another status, or no file: not approved art
+    core.store().append("Character_Sheets", [row])
+    assert SH.locked_portraits() == {("VALE", "neutral"): "drive:test-vale-neutral"}
+    assert LV.has_art("DIRECTOR") and not any(LV.has_art(k) for k in ("SKEPTIC", "JUDGE", "WITNESS"))
+    t0, fps, n = 10.0, 30, 60                                                                  # (c) the mouth on the voice: a 2-second cutaway at the film's second 10
+    words = [{"w": "the", "s": t0 + 0.2, "e": t0 + 0.5}, {"w": "moon", "s": t0 + 0.9, "e": t0 + 1.3}]       # the shape the voice writes (voice.py: film seconds)
+    on = LV.speaking(words, t0, fps, n)
+    inside = lambda f: any(int(w["s"] * fps - t0 * fps) - 1 <= f <= int(w["e"] * fps - t0 * fps) + 1 for w in words)
+    assert on and all(inside(f) for f in on)
+    assert any(5 <= f <= 16 for f in on) and any(26 <= f <= 40 for f in on)                  # at least one frame in each word
+    assert len(on) < n                                                                         # never "speaking" in every frame
