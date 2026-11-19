@@ -1,5 +1,6 @@
 """v12 DRAWN BY CODE (D6): the house kit, the closed scene language, verify, the layout and its timing, the plan step and check drawn_plan - every rule both ways, one fault at a time."""
 import datetime as dt, json, math, os, re
+import numpy as np, cv2
 import pytest
 from whatifs import core, drawn as DRAWN, scenes as SCN
 from whatifs.core import S
@@ -360,3 +361,102 @@ def test_the_cast_sheet_rig_is_built_and_off_until_his_art_is_approved(setting):
     assert on and all(inside(f) for f in on)
     assert any(5 <= f <= 16 for f in on) and any(26 <= f <= 40 for f in on)                  # at least one frame in each word
     assert len(on) < n                                                                         # never "speaking" in every frame
+
+
+# ------------------------------------------------------------------ STEP 2: 2. the kit's contrast
+def _rel(rgb): return sum(w * float(DRAWN.lum(c)) for w, c in zip((0.2126, 0.7152, 0.0722), rgb))
+
+
+def test_every_text_colour_keeps_four_and_a_half_to_one_on_the_worst_ground():
+    worst = tuple(round(255 * (1 - DRAWN.SCRIM) + c * DRAWN.SCRIM) for c in DRAWN.PALETTE["panel"]); assert worst == (59, 62, 67)
+    assert abs(_rel(worst) - 0.0478) < 0.0005
+    got = {k: round(DRAWN.ratio(_rel(DRAWN.PALETTE[k]), _rel(worst)), 1) for k in ("ink", "a", "b", "dim")}
+    assert got == {"ink": 9.7, "a": 6.9, "b": 6.5, "dim": 5.2} and min(got.values()) >= 4.5
+    assert DRAWN.ratio(_rel((90, 96, 104)), _rel(worst)) < 4.5                                 # a planted grey fails
+    sc = dict(DRAWN.TEMPLATES["count"]["gold"], slots=dict(DRAWN.TEMPLATES["count"]["gold"]["slots"], label="#ff0000"))
+    assert DRAWN.clean(sc) == (None, "not in the scene language: label")                       # a colour cannot be written into a slot
+
+
+# ------------------------------------------------------------------ 7. the proof, both kinds of pairs measured
+def _L(t, v=0, dur=8.0, cues=None, W=640, H=360, slots=None):
+    sc = dict(DRAWN.TEMPLATES[t]["gold"], variant=v, **({"slots": slots} if slots else {}))
+    return DRAWN.layout(DRAWN.expand(sc), W, H, dur, cues, **OPTS)
+
+
+def test_the_proof_passes_the_gold_scenes_and_fails_each_planted_fault(monkeypatch, capsys):
+    rows = []
+    for t in DRAWN.TEMPLATES:
+        for v in (0, 1):
+            r = DRAWN.proof(_L(t, v), 30, 2.0); rows.append(("good", t, v, r["still_s"], r["kit_pct"])); assert r["ok"], (t, v, r)
+    for dur, cues in ((8.0, None), (12.0, None), (8.0, [None, 8.0 - 1.2 - 0.9 + 0.15]), (12.0, [None, 12.0 - 1.2 - 0.9 + 0.15])):      # C2: a screen of text alone pulses too
+        r = DRAWN.proof(_L("count", 0, dur, cues), 30, 2.0); rows.append(("good", "count", dur, r["still_s"], r["kit_pct"])); assert r["ok"], (dur, cues, r)
+    two = {"label": "How high", "rungs": [{"t": "1 minute", "text": "Over the roofs"}, {"t": "1 day", "text": "Into space"}]}
+    assert DRAWN.proof(_L("ladder", 0, 8.0, slots=two), 30, 2.0)["ok"]
+    L = _L("count", 0); L["pulses"] = []; r = DRAWN.proof(L, 30, 2.0); rows.append(("bad: no pulse", "count", 0, r["still_s"], r["kit_pct"]))
+    assert not r["ok"] and r["why"].startswith("it stands still")
+    assert DRAWN.proof(_L("count", 0), 30, 2.0, budget_s=0.0)["why"] == "over the time limit"
+    assert DRAWN.proof(_L("flow", 0, W=1920, H=1080), 30, 2.0)["ok"]                         # one layout at 1920: proved at its own size (a, the moving part, at 480)
+    real = DRAWN.layer
+    monkeypatch.setattr(DRAWN, "layer", lambda L_, t, draw=None: (lambda c, a: (np.clip(c + np.float32([60, -120, 60]), 0, 255), a))(*real(L_, t, draw)))      # the finisher's F-1: every kit colour off the palette, its pulse tint kept
+    r = DRAWN.proof(_L("count", 0), 30, 2.0); rows.append(("bad: off the palette", "count", 0, r["still_s"], r["kit_pct"]))
+    assert not r["ok"] and r["why"].startswith("only")
+    print("\nDRAWN PROOF PAIRS (kind, template, variant or line, still_s, kit_pct):"); [print(" ", x) for x in rows]      # the builder writes these into the record
+
+
+# ------------------------------------------------------------------ 8. ink, through the real encoder, at both work sizes
+def _picture(tmp_path, W, H):
+    from PIL import Image
+    yy, xx = np.mgrid[0:H, 0:W]; im = np.dstack([(xx * 255 // max(1, W - 1)), (yy * 255 // max(1, H - 1)), ((xx + yy) % 255)]).astype(np.uint8)
+    p = str(tmp_path / f"pic{W}.png"); Image.fromarray(im).save(p); return p
+
+
+def test_ink_reads_the_text_on_the_finished_file_and_its_limit_stands_only_on_measured_pairs(tmp_path, monkeypatch, capsys):
+    from whatifs import render as RN
+    rows = []
+    for W, H in ((640, 360), (1920, 1080)):
+        monkeypatch.setattr(RN, "work_size", lambda W=W, H=H: (W, H)); monkeypatch.setattr(RN, "out_size", lambda W=W, H=H: (W, H))
+        pic = _picture(tmp_path, W, H); f_ = RN.fps(); n = 8
+        def enc(L, name, bg=pic):
+            p = str(tmp_path / f"{name}{W}.mp4"); RN.drawn_segment(L, bg, p, n, int(7.5 * f_), int(8.0 * f_)); return RN.frame_at(p, (n - 2) / f_)
+        for t in DRAWN.TEMPLATES:
+            L = _L(t, 0, W=W, H=H); g = enc(L, t); assert g is not None
+            v = DRAWN.ink(g, L); rows.append(("good", t, W, v)); assert v >= 4.5, (t, W, v)
+        L = _L("compare", 0, W=W, H=H)
+        still = str(tmp_path / f"still{W}.mp4"); from PIL import Image
+        bgr = cv2.cvtColor(np.asarray(Image.open(pic).convert("RGB")), cv2.COLOR_RGB2BGR); RN._pipe(still, (bgr for _ in range(n)), n, W, H)
+        rows.append(("bad: the still alone", "compare", W, DRAWN.ink(RN.frame_at(still, 0.1), L)))
+        Lp = json.loads(json.dumps(L))
+        for it in Lp["items"]:
+            if it.get("text"): it["colour"] = "panel"
+        rows.append(("bad: text in the panel's colour", "compare", W, DRAWN.ink(enc(Lp, "panel"), L)))
+        La = json.loads(json.dumps(L))
+        for it in La["items"]:
+            if it.get("text"): it["alpha"] = 0.3
+        rows.append(("bad: text at 30% opacity", "compare", W, DRAWN.ink(enc(La, "faint"), L)))
+    print("\nDRAWN INK PAIRS (kind, template, width, ratio to 1):"); [print(" ", x) for x in rows]          # the builder writes these into the record
+    goods = [x[3] for x in rows if x[0] == "good"]
+    blank = [x[3] for x in rows if x[0] in ("bad: the still alone", "bad: text in the panel's colour")]
+    faint = [x[3] for x in rows if x[0] == "bad: text at 30% opacity"]
+    lim = float(core.DEFAULTS["DRAWN_INK_MIN"][0])
+    assert len(goods) == 10 and len(blank) == 4 and len(faint) == 2, rows
+    assert min(goods) >= 4.5, ("every gold scene's text reads at least 4.5 to 1 on the finished file", rows)
+    assert max(blank) <= 1.5, ("a frame that does not carry our text reads about 1 to 1", rows)
+    assert max(faint) <= 2.6, ("a text at 30% opacity is faint: under 2.6 to 1 (source 6 on this test's grounds: 1.9 to 2.5)", rows)
+    assert max(blank + faint) < lim < min(goods), ("the cell's own limit lies between every measured bad and every measured good", lim, rows)
+
+
+# ------------------------------------------------------------------ 11. check drawn_shown (its unit half; the master's half is in test_v12_drawn_film_b.py)
+def test_check_drawn_shown_says_na_pass_and_fails_each_lie(setting):
+    from whatifs import contract as CON
+    shots, units, total = _film(); sc = {"v": 1, "template": "count", "variant": 0, "slots": DRAWN.from_graphic(G_COUNT)[0]["slots"], "cues": [], "by": "code"}
+    withsc = [dict(s, scene=sc) if k == 1 else s for k, s in enumerate(shots)]
+    ctx = lambda sh, dr: {"master": None, "shots": sh, "drawn": dr}
+    arm = {"plan": {"arm": True}, "proof": {}, "L": {}, "states": []}
+    setting("DRAWN_ON", "FALSE"); assert CON.p_drawn_shown(ctx(shots, arm)) == ("N/A", "not applicable: the drawn scenes are switched off")
+    _arm_on(setting); assert CON.p_drawn_shown(ctx(shots, dict(arm, plan={"arm": False}))) == ("N/A", "not applicable: this video is not in the drawn arm")
+    assert CON.p_drawn_shown(ctx(shots, arm)) == ("PASS", "the drawn arm held: no explaining moment in this film")
+    st, why = CON.p_drawn_shown(ctx(withsc, dict(arm, proof={1: {"ok": False, "why": "its text reached only 1.2 to 1 on the finished file"}})))
+    assert st == "PASS" and "0 scene(s) drawn, 1 shown as its still: 1: its text reached only" in why                  # a still is never a failure
+    assert CON.p_drawn_shown(ctx(withsc, arm))[0] == "FAIL"                                                            # a scene, no drawn state, no reason
+    assert CON.p_drawn_shown(ctx(shots, dict(arm, states=[(4.0, 6.0, 1, 0)])))[0] == "FAIL"                           # a state recorded drawn on a shot without a scene
+    assert CON.p_drawn_shown(ctx(withsc, dict(arm, states=[(4.0, 6.0, 1, 0)], L={1: None})))[0] == "FAIL"            # recorded drawn, and its master cannot be read

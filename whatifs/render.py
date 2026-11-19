@@ -409,6 +409,27 @@ def graphic_segment(g, bg_path, path, nframes):
             yield cv2.cvtColor(np.asarray(im), cv2.COLOR_RGB2BGR)
     return _pipe(path, frames(), nframes, ww, wh)
 
+def drawn_segment(L, bg_path, path, nframes, start, total):
+    """v12 DRAWN: a piece of a drawn scene - its ground exactly as graphic_segment makes it (the picture blurred; none without one), frame f drawn at
+    second (start + f) / fps of the line: ONE clock across the line's pieces (start = the piece's first frame, total = the line's frame count)."""
+    from whatifs import drawn as DRAWN
+    ww, wh = work_size(); bg = None
+    if bg_path and os.path.exists(bg_path):
+        bg = np.asarray(Image.open(bg_path).convert("RGB").resize((ww, wh)).filter(ImageFilter.GaussianBlur(14)))
+    f_ = fps()
+    def frames():
+        for f in range(nframes):
+            yield DRAWN.frame(L, (start + f) / f_, bg, push=(start + f) / max(1, total - 1))
+    return _pipe(path, frames(), nframes, ww, wh)
+
+def frame_at(path, t, w=640):
+    """v12 DRAWN: one grey frame of a file at second t (w pixels wide), or None when ffmpeg gave nothing."""
+    r = subprocess.run(["ffmpeg", "-v", "error", "-ss", f"{max(0.0, float(t)):.3f}", "-i", path, "-frames:v", "1", "-vf", f"scale={int(w)}:-2,format=gray", "-f", "rawvideo", "-"],
+                       capture_output=True, timeout=60)
+    n = len(r.stdout or b"")
+    if not n or n % int(w): return None
+    return np.frombuffer(r.stdout, np.uint8).reshape(n // int(w), int(w))
+
 def probe_dur(p):
     r = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", p], capture_output=True, text=True)
     try: return float(r.stdout.strip())

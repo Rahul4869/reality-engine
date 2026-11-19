@@ -1313,6 +1313,34 @@ tests/test_v9_matrix.py::test_sheets_lifetime_cap_idempotent_and_lock (81). No p
 applicable (its break (c), "speaking answers every frame", is the red evidence). Places: none moved (the patch appends to the test file).
 TESTS: the test 1 passed, 0.25 s; minitest tests/test_v12_drawn.py at this step's tree 18/0, 193 s; gen_docs: no change.
 THE PREVIOUS CHECKS: run 44413871345 on 5c2094d (step 1) - completed/success; Unit tests: 1882 passed in 5423.20s; Free rehearsal success.
+STEP 2 (memo 3.1 drawing, 3.4, 3.5, 3.6 drawn_shown, 3.7 two cells, 3.11; C2, C10, C11) - the render, the record, the file: drawn.py's Own
+seam, layer, frame, proof, lum, ratio, ink; render.drawn_segment and frame_at; scenes.proof, audit, shown_report; episode._render (the proof
+before the pieces, no effect and no overlay on a scene, the still after an exception, `drawn` in segmeta), rerender_times(only=), the audit
+before the gate, cctx["drawn"]; contract `drawn_shown` (final); DRAWN_INK_MIN 3.0 and DRAWN_RENDER_MAX_S 90; the share lever's checks
+("drawn_plan", "drawn_shown"); rnd SHOW_CHECKS 62; tests 2, 7, 8 and 11's unit half in tests/test_v12_drawn.py; the whole productions in NEW
+tests/test_v12_drawn_film.py (three) and NEW tests/test_v12_drawn_film_b.py (two: the first file took 507 s under minitest, over 450 - split
+word for word, ruling 4 (E)); docs/CURRENT/SYSTEM.md by gen_docs (74 checks, 24 final; 872 settings).
+PLACES: none moved at ddfd4d5 beyond step 1's (episode.py's render, render.py, contract.py applied unchanged). PINS MOVED BY DESIGN:
+test_v12_cutdowns.py 40 (final 24, 74), test_v12_motion.py 633 (74) and 636, test_v12_exec.py 507 (final 24), test_v12_inside.py 649 and
+test_v12_release.py 436 (SHOW_CHECKS 62).
+P14 (the finisher, 18 Nov 2026): test 8's last lines and DRAWN_INK_MIN's note typed word for word (DRAWN_FINISH_NOTES.md, THE EXACT WORDS).
+THE FINISHER'S CORRECTION F-1: test 7's planted off-palette colour becomes `np.clip(c + np.float32([60, -120, 60]), 0, 255)` (the constant
+colour also removed the pulse, so the hold rule fired first: "it stands still 3.6 s").
+THE PAIRS OF TEST 8 (kind, template, width, ratio to 1): good at 640 - count 6.8, ladder 6.43, compare 7.23, flow 6.36, part 7.55; good at 1920
+- count 6.97, ladder 6.8, compare 7.7, flow 6.47, part 7.81; the still alone 1.0 / 1.0; text in the panel's colour 1.12 / 1.11; text at 30%
+opacity 1.58 / 1.59 (640 / 1920). The limit 3.0 lies strictly between: P14 holds on the measured pairs.
+THE PAIRS OF TEST 7 (template, variant or line, still_s, kit_pct): good - count 2.08 1.0 (both variants), ladder 2.0 / 2.04 1.0, compare 2.0
+1.0, flow 2.24 0.951, part 2.0 0.9991 / 0.9988, count on 8 s and 12 s 2.08 1.0, cued 1.35 1.0; bad without pulses 3.58 1.0; bad off the
+palette 2.08 0.0. Apart: still 1.34 s, kit 0.951 (the finisher's third of the limit: 0.83 s, 0.30). The smallest pulsing area: not printed.
+TO VERIFY 3 / P15 (`drawn2/to_verify3.py`: the five gold scenes, a 6-second line, every frame at 30 fps on a blurred picture): 640 x 360 mean
+45.9 ms a frame (count 37.4, ladder 38.1, compare 39.9, flow 64.8, part 49.2); 1920 x 1080 mean 379.5 ms (count 306.3, ladder 291.9, compare
+335.4, flow 560.9, part 403.2 - a 6-second scene 52.5 to 101.0 s to draw on this laptop); the proof 0.64-1.16 s at 640, 5.0-9.9 s at 1920
+(limit 90). The finisher judged P15 acceptable for the launch, no change.
+TESTS: red first on step 5's tree - 9 failed, each on missing step-2 code; tests/test_v12_drawn.py + test_v12_drawn_film.py +
+test_v12_drawn_film_b.py 27 passed, 752.8 s (after F-1; the first run 26 of 27); wiring and pins (b0b's unused-function test, org, exec, rnd,
+docs_current, cutdowns, inside, motion, release) 509 passed, 884 s; truth GREEN; Plan Guard GREEN; minitest: drawn 22/0 259 s, drawn_film 3/0
+307 s, drawn_film_b 2/0 211 s, cutdowns 50/0 145 s, exec 89/0 222 s, release 34/0 292 s, inside 99/0 406 s, motion 60/0 374 s.
+THE PREVIOUS CHECKS: run 44427865773 on 85e3958 (step 5) - completed/success; Unit tests: 1883 passed in 3863.12s; Free rehearsal success.
 ### V4 - THE CEO AND THE LADDER (16-18 Nov 2026) - ACCEPTED (final code commit ddfd4d5 GREEN in GitHub Checks run 277: 1865 passed; sweep 58 of 58 ids) - its code 5272fea, BUILT AGAIN AFTER RED ROUND 1 (repairs C23 to C25 by Opus under item 130; the first pass was RED on 7899300, its code 8fa7742: an overrun memo on every long video of the sweep, the rehearsal F3/S1 held by `impact_map`, sweep part B without the watch line; `proving/notes/V4_RED_1.md`) - BUILT before it (final code commit 8fa7742) (the designer's record: steps 1 to 3; the Opus builder writes steps 4 to 6a, the Fable finisher `FINISHED BY FABLE`, the prover 6b and 7)
 THE BATCH'S START: the first check (the batch before on the record, GitHub's run of its final code commit, a clean tree) and the usage
 figures are written by the session that pastes this record at V1c's acceptance. NOT SPLIT (open issue 189: `next.py` has no move for a

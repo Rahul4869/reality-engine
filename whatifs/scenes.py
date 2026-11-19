@@ -332,6 +332,64 @@ def m_place(shots):
     except Exception: return {"slots": 0, "drawn_by_writer": 0, "drawn_by_code": 0, "kept_card": 0}
 
 
+# ---------------------------------------------------------------- the render and the finished file (step 2)
+def proof(scene, units, i, dur, fps):
+    """THE layout of the render (the only one: at the work size, on the line the render cuts) and drawn.proof on it: the report plus "L"."""
+    from whatifs import render as RN
+    sc, why = DRAWN.clean({k: scene.get(k) for k in ("v", "template", "variant", "slots", "cues")})
+    if why: raise DRAWN.Refused(why)
+    free = DRAWN.expand(sc); o = opts()
+    L = DRAWN.layout(free, *RN.work_size(), float(dur), _cues(free, units[i], float(dur)), **o)
+    return dict(DRAWN.proof(L, fps, o["hold_max"], budget_s=S("DRAWN_RENDER_MAX_S", float)), L=L)
+
+
+def audit(master, job):
+    """The finished file, read where each drawn scene has finished drawing (its last drawn state's end - 0.25 s): a scene whose text does not reach
+    DRAWN_INK_MIN on the master (or whose frame could not be read) returns every drawn state of its shot as (middle second, (i, k)) - their still."""
+    from whatifs import render as RN
+    out = []; f_ = float(job.fps)
+    for i, r in sorted((getattr(job, "drawn", {}) or {}).items()):
+        st_ = [m for m in job.segmeta if m.get("i") == i and m.get("drawn")]
+        if not st_ or not isinstance(r, dict) or not r.get("L"): continue
+        g = RN.frame_at(master, max((m["f0"] + m["nf"]) / f_ for m in st_) - 0.25)
+        v = DRAWN.ink(g, r["L"]) if g is not None else 0.0; r["ink"] = v
+        if g is None or v < S("DRAWN_INK_MIN", float):
+            out += [((m["f0"] + m["nf"] / 2) / f_, (m["i"], m["k"])) for m in st_]
+            r["ok"] = False; r["why"] = "its frame could not be read on the finished file" if g is None else f"its text reached only {v:.1f} to 1 on the finished file"      # the reason drawn_shown asks for
+    return out
+
+
+def shown_report(master, shots, drawn):
+    """(status, words) of check drawn_shown, on what the RENDER recorded and the master itself: a state recorded drawn must sit on a shot with a
+    scene, a scene without a drawn state must have its reason on record, and a shot still recorded drawn is measured AGAIN on the master with the
+    proof's own L. A scene shown as its still is never a failure."""
+    from whatifs import render as RN
+    dr = drawn or {}; plan = dr.get("plan") or {}; proof_ = dr.get("proof") or {}; Ls = dr.get("L") or {}; states = dr.get("states") or []
+    sc_ = {i for i, s in enumerate(shots or []) if isinstance(s, dict) and isinstance(s.get("scene"), dict)}
+    if not on(): return ("FAIL", "a state is recorded drawn with the drawn scenes switched off") if states else ("N/A", "not applicable: the drawn scenes are switched off")
+    if not plan.get("arm"): return ("FAIL", "a state is recorded drawn outside the drawn arm") if states else ("N/A", "not applicable: this video is not in the drawn arm")
+    by_i = {}
+    for x in states: by_i.setdefault(x[2], []).append(x)
+    for i in by_i:
+        if i not in sc_: return "FAIL", f"a state is recorded drawn on shot {i}, which carries no scene"
+    stills = []
+    for i in sorted(sc_):
+        if i not in by_i:
+            why = str((proof_.get(i) or proof_.get(str(i)) or {}).get("why") or "")
+            if not why: return "FAIL", f"shot {i} has a scene, no drawn state and no reason on record"
+            stills.append(f"{i}: {why}")
+    lows = []
+    for i, xs in sorted(by_i.items()):
+        L = Ls.get(i) or Ls.get(str(i))
+        g = RN.frame_at(master, max(x[1] for x in xs) - 0.25) if (L and master) else None
+        v = DRAWN.ink(g, L) if g is not None else 0.0
+        if v < S("DRAWN_INK_MIN", float): return "FAIL", f"shot {i} is recorded drawn but its text reaches only {v:.1f} to 1 on the master (limit {S('DRAWN_INK_MIN', float):.1f})"
+        lows.append(v)
+    if not by_i and not stills: return "PASS", "the drawn arm held: no explaining moment in this film"
+    return "PASS", (f"the drawn arm held: {len(by_i)} scene(s) drawn" + (f" (lowest contrast of a text on the film {min(lows):.1f} to 1)" if lows else "")
+                    + f", {len(stills)} shown as its still" + (": " + "; ".join(stills) if stills else ""))[:380]
+
+
 def plan_report(shots, units, d, total):
     """(status, words) of check drawn_plan, on the shot list before any picture is paid: it asks clean, verify and layout AGAIN (never trusts the
     mark) and judges the variety on what the plan saw (d["drawn"]["last"])."""

@@ -561,6 +561,13 @@ def p_drawn_plan(ctx):
     st, why = SCN.plan_report(ctx.get("shots") or [], units, d, total)
     return {"PASS": PASS, "FAIL": FAIL}.get(st, NA), why
 
+def p_drawn_shown(ctx):
+    """v12 DRAWN (D6): on what the RENDER recorded and the master itself - a state recorded drawn sits on a shot with a scene, a scene shown as its
+    still has its reason on record, and every shot still recorded drawn is read AGAIN on the master with the proof's own layout."""
+    from whatifs import scenes as SCN
+    st, why = SCN.shown_report(ctx.get("master"), ctx.get("shots") or [], ctx.get("drawn") or {})
+    return {"PASS": PASS, "FAIL": FAIL}.get(st, NA), why
+
 def p_camera_shown(ctx):
     """v12 V2b (the camera path, D6): on what the RENDER recorded (ctx['path_states']), never the plan - every still state of an act showed a picture of
     its own act, moved one of the path's moves (never backwards, never rolled, always recorded) and travelled in its act's direction."""
@@ -935,6 +942,7 @@ FEATURES = [
     ("breakout_bar",  "final",  p_breakout_bar, "Breakout Score >= BREAKOUT_HARD_BAR (no upload below it)"),
     ("aliveness",     "final",  p_alive,        "no stretch of the video looks like a still photo"),
     ("camera_shown",  "final",  p_camera_shown, "what the render recorded keeps the camera path: every still state of an act showed a picture of its own act, never moved backwards or rolled, and travelled one way (inside the format)"),
+    ("drawn_shown",   "final",  p_drawn_shown,  "what the render recorded keeps the drawn scenes honest: a scene recorded drawn was drawn, readable on the finished file, and a scene that could not be drawn or read was shown as its moving still with its reason (drawn by code)"),
     ("opening_shown", "final",  p_opening_shown,"the finished film opens on its Short's footage: the opening clips are the files cut from that Short's archive and the frames of the film match them (the opening)"),
     ("moving_share",  "final",  p_moving_share, "the share of the finished film that really moves - measured on the file where the renderer played a clip made by a model - is at least MOVING_SHARE_MIN_LONG, and the seconds of clip the video paid for are on screen and moving (the motion ladder)"),
     ("stock_share",   "final",  p_stock_share,  "real footage (NASA, Pexels) is a short anchor: STOCK_SHARE_MAX_PCT of the film at most, never the first picture, never two in a row, changed, no clip whose title names a person, every credit in the description"),

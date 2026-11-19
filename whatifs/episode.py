@@ -337,9 +337,11 @@ class Job:
         self.video = RN.concat([m["path"] for m in self.segmeta], os.path.join(self.out, "video.mp4"))
         aud = os.path.join(self.out, "mix.wav")
         self.master = RN.mux(self.video, aud, os.path.join(self.out, "master.mp4")); return self.master
-    def rerender_times(self, times):
-        """Re-render only the segments around the given seconds (a black or frozen stretch) with a different crop and grade, then re-stitch."""
-        self.fixn += 1; fps = self.fps; hit = [m for m in self.segmeta if any(m["f0"] / fps - 1.0 <= t <= (m["f0"] + m["nf"]) / fps + 1.0 for t in times)]
+    def rerender_times(self, times, only=None):
+        """Re-render only the segments around the given seconds (a black or frozen stretch) with a different crop and grade, then re-stitch.
+        v12 DRAWN: only = a set of (i, k) - exactly those states (the drawn scenes' audit); None = every state near the seconds, as before."""
+        self.fixn += 1; fps = self.fps; hit = [m for m in self.segmeta if any(m["f0"] / fps - 1.0 <= t <= (m["f0"] + m["nf"]) / fps + 1.0 for t in times)
+                                               and (only is None or (m["i"], m["k"]) in only)]
         RN.set_overlay(self.overlay)
         for m in hit:
             img = m.get("img") or next((p for _, p in sorted(self.files["img"].items())), None); RN.set_cursor(m["f0"])
@@ -350,9 +352,9 @@ class Job:
             try:
                 if img: RN.parallax_segment(img, m["path"], m["nf"], seed=f"{self.ep}fix{self.fixn}{m['i']}", detail=True, focus="center", look=RN.LOOKS[self.fixn % len(RN.LOOKS)], **pk_); m["move"] = RN._LAST["move"] or ""; m["sign"] = pk_.get("sign", 0)
                 else: RN.graphic_segment({"label": "", "from": 0, "to": 0}, None, m["path"], m["nf"]); m["move"] = ""; m["sign"] = 0
-                m["clip"] = False; m["fallback"] = False                # v12 V2d-b: whatever played here before, it is a still picture now (the moving-share record follows); V2b: the record says the move AND the direction it was re-drawn with (check camera_shown reads it after the repair)
+                m["clip"] = False; m["fallback"] = False; m["drawn"] = False                # v12 DRAWN: a re-drawn state is never a drawn scene | v12 V2d-b: whatever played here before, it is a still picture now (the moving-share record follows); V2b: the record says the move AND the direction it was re-drawn with (check camera_shown reads it after the repair)
             except Exception as e:
-                log(f"segment {m['i']} re-render failed: {e} -> plain fallback", "WARN"); RN.graphic_segment({"label": "", "from": 0, "to": 0}, img, m["path"], m["nf"]); m["move"] = ""; m["sign"] = 0; m["fallback"] = True
+                log(f"segment {m['i']} re-render failed: {e} -> plain fallback", "WARN"); RN.graphic_segment({"label": "", "from": 0, "to": 0}, img, m["path"], m["nf"]); m["move"] = ""; m["sign"] = 0; m["fallback"] = True; m["drawn"] = False
         RN.set_overlay(None); return self.rebuild_video()
     def repair_assets(self, codes, idx, cap_inr):
         """Paid repair, capped in rupees: re-make missing pictures, failed Kling clips and the pictures a vision check flagged; then one free re-render."""
@@ -457,7 +459,8 @@ def _render(job):
     micro_ = _V91.on("MICRO_CUTS_ON", ep)                                      # v9.3: computed once per render
     MERGED_UNITS.clear()                                                         # v11.1: a still line under UNIT_MERGE_SEC (own picture or not) continues the previous shot (no sub-second picture flash = no overload)
     from whatifs import motion as MOT, stock as STK                              # v12 V2d-b: A PAID CLIP IS SHOWN WHOLE - a clip longer than its line runs on into
-    ladder_ = MOT.on(); clip_s_ = {}; job.absent = 0                              # the stills that follow, and no micro-cut ever shows its start picture in its place
+    ladder_ = MOT.on(); clip_s_ = {}; job.absent = 0; job.drawn = {}             # the stills that follow, and no micro-cut ever shows its start picture in its place
+    from whatifs import scenes as SCN                                            # v12 DRAWN (C10): the render imports the drawn scenes itself (job.drawn: each scene's proof and L)
     MOT.merge(bounds, shots, MERGED_UNITS, keep=MOT.MOVING if ladder_ else ("kling",))      # ... and a line that carries a paid clip is never merged away (red 1: its clip began late and lost its end)
     if ladder_:
         for i, s in enumerate(shots[:len(units)]):
@@ -480,7 +483,13 @@ def _render(job):
         pm_ = s.get("path") if path_ else None
         from whatifs.shotplan import pieces_for as _pieces_for
         opening_ = a < S("OPENING_WINDOW_SEC", float)
-        pieces = 1 if (s.get("short") and i in files["clips"]) else _pieces_for(dur, s["type"], opening_, ep)      # v12 V2c-b2b: a clip cut from the Short's footage plays whole | v9.3: micro-cuts (MICRO_CUTS_ON); OFF = the v9.2 rule (1 / 2 / 3 pieces)
+        sc_ = s.get("scene") if (s["type"] == "graphic" and SCN.on()) else None; dr_ = None      # v12 DRAWN: drawn or its still is decided on THE layout of the render, before the line is cut
+        if sc_:
+            try: dr_ = SCN.proof(sc_, units, i, dur, fps)
+            except Exception as e:
+                log(f"drawn scene {i} not proved: {e} -> its still", "WARN"); dr_ = {"ok": False, "why": str(e)[:120]}
+            job.drawn[i] = dr_
+        pieces = 1 if (s.get("short") and i in files["clips"]) else _pieces_for(dur, "still" if (sc_ and not dr_["ok"]) else s["type"], opening_, ep)      # v12 DRAWN: a refused scene's line is cut as a still is | v12 V2c-b2b: a clip cut from the Short's footage plays whole | v9.3: micro-cuts (MICRO_CUTS_ON); OFF = the v9.2 rule (1 / 2 / 3 pieces)
         cut = [int(n_total * k / pieces) for k in range(pieces + 1)]
         cd = 0.0
         if i in files["clips"] and s["type"] in ("kling", "living"):
@@ -495,13 +504,22 @@ def _render(job):
         for k in range(pieces):
             nf = cut[k + 1] - cut[k]; p = os.path.join(out, f"seg{i:03d}_{k}.mp4"); f0 = int(round(a * fps)) + cut[k]
             RN.set_overlay(job.overlay); RN.set_cursor(f0)
-            fxk = s.get("pov_fx") if k == 0 else None                  # v8.10: the POV camera effect (every shot type), locked to the sound event at this unit's start
+            fxk = s.get("pov_fx") if (k == 0 and not (dr_ and dr_["ok"])) else None                  # v12 DRAWN: a proved scene takes no camera effect | v8.10: the POV camera effect (every shot type), locked to the sound event at this unit's start
             mv_ = {"m": "", "s": 0}                                             # v12 V2b: the move a still state was really drawn with ("" for a clip, a graphic, a cutaway)
             def draw(path, ovl):
                 RN.set_overlay(RN.with_fx(ovl, fxk, nf, f"{ep}{i}{k}", f0)); RN.set_cursor(f0)
                 if k == 0 and i in files["clips"] and s["type"] == "stock" and STK.on(): RN.clip_segment(files["clips"][i], path, nf, stock=True)      # v12 V2d-b: real footage is CHANGED (cropped in, slowed) and never looped
                 elif k == 0 and i in files["clips"]: RN.clip_segment(files["clips"][i], path, nf, loop=s["type"] == "stock", push=(0.07 if i in strong else 0.035) if (s["type"] == "living" and dyn and not ladder_) else 0.0)
-                elif s["type"] == "graphic": RN.graphic_segment(s.get("graphic") or {}, img, path, nf)      # v11.1: every piece re-animates
+                elif s["type"] == "graphic" and dr_ and dr_["ok"]:          # v12 DRAWN: the proved scene, nothing over it (no overlay, no effect): the film's frames ARE the proof's
+                    try: RN.set_overlay(None); RN.drawn_segment(dr_["L"], img, path, nf, cut[k], n_total)
+                    except Exception as e:
+                        dr_["ok"] = False; dr_["why"] = "the render failed: " + str(e)[:80]; log(f"drawn scene {i}.{k}: {e} -> its still", "WARN")
+                        RN.set_overlay(ovl); RN.set_cursor(f0)
+                        if not img: RN.graphic_segment(s.get("graphic") or {}, None, path, nf)          # C10: without a picture the card keeps its numbers, never the "0"
+                        else:
+                            RN.parallax_segment(img, path, nf, seed=f"{ep}{i}{k}d", detail=True, look=RN.LOOKS[(reuse + 1) % len(RN.LOOKS)], **({"sign": pm_["sign"], "pool": PATH.MOVES} if pm_ else {}))
+                            mv_["m"] = RN._LAST["move"] or ""; mv_["s"] = pm_["sign"] if pm_ else 0
+                elif s["type"] == "graphic" and (not sc_ or not img): RN.graphic_segment(s.get("graphic") or {}, img, path, nf)      # v11.1: every piece re-animates (v12 DRAWN: a refused scene with a picture is its still below)
                 elif s["type"] == "reaction":                    # v9.2: the code-made reaction cutaway (no image bought)
                     from whatifs import shotplan as SP, living as LV
                     spk_ = s.get("speaker") or units[i].get("speaker"); u_ = units[i] if i < len(units) else {}
@@ -526,7 +544,8 @@ def _render(job):
                 RN.set_overlay(job.overlay); RN.set_cursor(f0); RN.graphic_segment({"label": "", "from": 0, "to": 0}, img, p, nf)
             segs.append(p); job.segmeta.append({"path": p, "i": i, "k": k, "f0": f0, "nf": nf, "img": img, "type": s["type"], "short": bool(s.get("short")),
                                                 "clip": bool(drawn_ and k == 0 and i in files["clips"]),      # v12 V2d-b: what this segment really shows - the checks read the render, never the plan
-                                                "act": (pm_ or {}).get("act"), "src": src_, "move": mv_["m"] if drawn_ else "", "sign": mv_["s"] if drawn_ else 0, "fallback": not drawn_})      # v12 V2b: the camera path's record
+                                                "act": (pm_ or {}).get("act"), "src": src_, "move": mv_["m"] if drawn_ else "", "sign": mv_["s"] if drawn_ else 0, "fallback": not drawn_,      # v12 V2b: the camera path's record
+                                                "drawn": bool(drawn_ and dr_ and dr_["ok"])})      # v12 DRAWN: what was really drawn (the audit and drawn_shown read this, never the plan)
     RN.set_overlay(None)
     job.video = RN.concat(segs, os.path.join(out, "video.mp4"))
     events = []
@@ -778,6 +797,11 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         master = job.master; log(f"QC after fixes: {'PASS' if chk['ok'] else 'still failing: ' + '; '.join(p['code'] for p in chk['problems'])} (fixes: {', '.join(notes) or 'none'}; paid Rs {spent:.0f})")
     if not chk["ok"] and S("HOLD_ON_QC_FAIL", bool): return _hold(st, ep, out, chk, notes, fix)
     if not chk["ok"]: log("QC failed but HOLD_ON_QC_FAIL is FALSE - uploading anyway (not recommended)", "ERROR")
+    from whatifs import scenes as SCN                           # v12 DRAWN: the finished file is measured; a scene that cannot be read there becomes its still BEFORE the gate
+    bad_ = SCN.audit(master, job) if SCN.on() else []
+    if bad_:
+        job.rerender_times([t for t, _ in bad_], only={k for _, k in bad_}); master = job.master
+        log(f"drawn: {len(bad_)} scene state(s) could not be read on the finished file -> their still", "WARN", ep)
     RX.record(ep, rx, (d.get("strategies") or {}).get("banter", ""), total_sec=vo.duration)
     holds = [(m_["f0"] / job.fps, (m_["f0"] + m_["nf"]) / job.fps) for m_ in getattr(job, "segmeta", [])                 # v9.3: every still picture state as rendered
              if m_.get("nf") and m_.get("i") is not None and m_["i"] < len(shots) and shots[m_["i"]].get("type") == "still" and m_["i"] not in (files.get("clips") or {})]
@@ -808,6 +832,9 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
             "chips": list(getattr(job, "chips", None) or []),                                                                            # v12 V2b: the name chips the render drew
             "path_states": [{"t0": t_(m_)[0], "t1": t_(m_)[1], "i": m_["i"], "type": m_.get("type"), "act": m_.get("act"), "src": m_.get("src"), "move": m_.get("move", ""),
                              "sign": m_.get("sign", 0), "fallback": bool(m_.get("fallback"))} for m_ in sm_]}                                 # v12 V2b: the camera path as the render recorded it (a key of its own: ctx['states'] stays as it is)
+    jd_ = getattr(job, "drawn", {}) or {}                       # v12 DRAWN (check drawn_shown): the plan's record, each proof (without its L), THE L of each scene and the states really drawn
+    cctx["drawn"] = {"plan": (d.get("drawn") or {}), "proof": {i: {k: v for k, v in r.items() if k != "L"} for i, r in jd_.items()}, "L": {i: r.get("L") for i, r in jd_.items()},
+                     "states": [t_(m_) + (m_["i"], m_["k"]) for m_ in sm_ if m_.get("drawn")]}
     from whatifs import maker as MAKER                          # v12 V1c (check makers_line): the description that is SENT, his line, its record, and what the render showed under it
     cctx["description"] = PUB.clean_meta(title, desc, [])[1]
     if "maker" in S_: cctx["maker"] = mk_

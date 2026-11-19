@@ -1207,6 +1207,8 @@ DEFAULTS = {
  "DRAWN_WORDS_MAX": ("30", "v12 DRAWN: the most words on screen in one drawn scene, its title not counted - three full rungs at their longest (a 1-3-word time and a 5-7-word event a rung: 18 to 30 words; measured on twenty real-length timelines: at 14 none was drawn, at 28 nineteen of twenty): never a flood of four or five (a starting value)"),
  "DRAWN_HOLD_MAX_S": ("2.0", "v12 DRAWN: the longest a drawn scene stands still before every part of it pulses once (the upper end of a change every 1.5-2 s; a starting value)"),
  "DRAWN_EST_INR": ("38", "v12 DRAWN: the estimate of the drawn scenes' one writer's call a long video, at the bound that cannot be exceeded - the sonnet chain falls back to Opus, its input at the 1-hour cache-write price: 2,300 x USD 4 x 2 + 18,000 x USD 20 a million = USD 0.378 = Rs 37.5 at 99 (NOT measured on a bill); a line of its own in the estimate"),
+ "DRAWN_INK_MIN": ("3.0", "v12 DRAWN: the lowest contrast of a drawn scene's text, read on the FINISHED FILE (ratio to 1, WCAG's form on the encoder's luma); under it the scene is shown as its still. A limit set only from measured pairs (test 8: every good at least 4.5; a frame without our text at most 1.5; a text at 30% opacity at most 2.6; this value strictly between them) - never moved to make a video pass"),
+ "DRAWN_RENDER_MAX_S": ("90", "v12 DRAWN: seconds the proof of one drawn scene may take before it is refused (its still is shown)"),
 }
 _settings_cache = None
 def settings(refresh=False) -> dict:

@@ -122,7 +122,7 @@ CHECK_OWNER = {
     "viewer_floor": "D13",                                                                                                          # v12 V1c: the judged floor
     "makers_line": "D7",                                                                                                            # v12 V1c: the maker's line
     "one_story": "D5",                                                                                                              # v12 V1c: one story (the thumbnail is the picture the film opens on)
-    "drawn_plan": "D6",                                                                                                             # v12 DRAWN: the drawn scenes on the shot list
+    "drawn_plan": "D6", "drawn_shown": "D6",                                                                                        # v12 DRAWN: the drawn scenes on the shot list and on the finished file
 }
 
 def runnable(dept):

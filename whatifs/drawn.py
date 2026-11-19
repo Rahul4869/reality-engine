@@ -1,6 +1,8 @@
 """Drawn by code (D6): the house kit and its closed scene language - a scene is DATA (a template, its slots, its cue words), checked, expanded, laid out and timed here alone. See docs/CURRENT/SYSTEM.md."""
-import math, re
-from PIL import ImageFont
+import math, re, time
+import numpy as np
+import cv2
+from PIL import Image, ImageDraw, ImageFont
 from whatifs.media import font as _media_font, _fmt
 
 # ---------------------------------------------------------------- the kit: the house look (module constants, not levers)
@@ -317,3 +319,192 @@ def layout(free, W, H, dur, cue_s, text_min, words_max, hold_max):
     at = {i_: k for k, st in enumerate(steps) for i_ in st["show"]}
     for p in items: p["step"] = at.get(p["id"], 0)
     return {"W": W, "H": H, "dur": dur, "title": free.get("title", ""), "items": items, "steps": steps, "pulses": pulses, "texts": texts, "hold_max": float(hold_max)}
+
+
+# ---------------------------------------------------------------- drawing: ONE seam for shapes; text always by PIL into an alpha mask
+def ease(x):
+    """The kit's one easing: e = 1 - (1 - x) ** 3, x clipped to 0..1."""
+    x = min(1.0, max(0.0, float(x)))
+    return 1 - (1 - x) ** 3
+
+
+class Own:
+    """The default drawing seam: rect, line, arc and poly on a float layer that keeps STRAIGHT colour beside its alpha (never premultiplied),
+    drawn at twice the size with OpenCV's anti-aliased calls inside each shape's own box and reduced with INTER_AREA."""
+    def __init__(self, W, H, k=2):
+        self.W, self.H, self.k = int(W), int(H), int(k)
+        self.col = np.zeros((self.H * k, self.W * k, 3), np.float32); self.alp = np.zeros((self.H * k, self.W * k), np.float32)
+
+    def _roi(self, x0, y0, x1, y1, pad):
+        k = self.k; a = max(0, int(math.floor(min(x0, x1) * k - pad))); b = max(0, int(math.floor(min(y0, y1) * k - pad)))
+        c = min(self.W * k, int(math.ceil(max(x0, x1) * k + pad)) + 1); d = min(self.H * k, int(math.ceil(max(y0, y1) * k + pad)) + 1)
+        return a, b, c, d
+
+    def _put(self, roi, mask, rgb, a):
+        x0, y0, x1, y1 = roi
+        if x1 <= x0 or y1 <= y0: return
+        m = mask.astype(np.float32) / 255.0 * float(a); al = self.alp[y0:y1, x0:x1]; na = al + m * (1 - al)
+        cs = self.col[y0:y1, x0:x1]; nz = na > 1e-6
+        mix = (cs * (al * (1 - m))[..., None] + np.asarray(rgb, np.float32)[None, None, :] * m[..., None])
+        cs[nz] = mix[nz] / na[nz][:, None]; self.alp[y0:y1, x0:x1] = na
+
+    def _pts(self, pts, roi): return np.int32([[(x * self.k - roi[0]) * 16, (y * self.k - roi[1]) * 16] for x, y in pts])
+
+    def rect(self, x0, y0, x1, y1, rgb, a=1.0, width=0.0):
+        w = max(1, int(round(width * self.k))) if width > 0 else -1; roi = self._roi(x0, y0, x1, y1, max(2, w + 2))
+        mask = np.zeros((roi[3] - roi[1], roi[2] - roi[0]), np.uint8); p = self._pts(((x0, y0), (x1, y1)), roi)
+        cv2.rectangle(mask, tuple(int(v) for v in p[0]), tuple(int(v) for v in p[1]), 255, w, cv2.LINE_AA, 4); self._put(roi, mask, rgb, a)
+
+    def line(self, pts, rgb, a=1.0, width=1.0):
+        w = max(1, int(round(width * self.k))); xs, ys = [p[0] for p in pts], [p[1] for p in pts]; roi = self._roi(min(xs), min(ys), max(xs), max(ys), w + 2)
+        mask = np.zeros((roi[3] - roi[1], roi[2] - roi[0]), np.uint8); cv2.polylines(mask, [self._pts(pts, roi)], False, 255, w, cv2.LINE_AA, 4); self._put(roi, mask, rgb, a)
+
+    def arc(self, cx, cy, r, a0, a1, rgb, a=1.0, width=1.0):
+        w = max(1, int(round(width * self.k))); roi = self._roi(cx - r, cy - r, cx + r, cy + r, w + 2)
+        mask = np.zeros((roi[3] - roi[1], roi[2] - roi[0]), np.uint8); c = self._pts(((cx, cy),), roi)[0]
+        cv2.ellipse(mask, (int(c[0]), int(c[1])), (int(r * self.k * 16), int(r * self.k * 16)), 0, a0, a1, 255, w, cv2.LINE_AA, 4); self._put(roi, mask, rgb, a)
+
+    def poly(self, pts, rgb, a=1.0):
+        xs, ys = [p[0] for p in pts], [p[1] for p in pts]; roi = self._roi(min(xs), min(ys), max(xs), max(ys), 2)
+        mask = np.zeros((roi[3] - roi[1], roi[2] - roi[0]), np.uint8); cv2.fillPoly(mask, [self._pts(pts, roi)], 255, cv2.LINE_AA, 4); self._put(roi, mask, rgb, a)
+
+    def result(self):
+        """(colour RGB float, alpha float) at the layer's own size: premultiplied only for the reduction, straight again after it."""
+        pm = cv2.resize(self.col * self.alp[..., None], (self.W, self.H), interpolation=cv2.INTER_AREA); al = cv2.resize(self.alp, (self.W, self.H), interpolation=cv2.INTER_AREA)
+        return pm / np.maximum(al, 1e-6)[..., None], al
+
+
+def _tint(t, L):
+    """The hold rule's pulse at second t: up to TINT, up for a quarter second and down for a quarter second around each peak."""
+    return max([TINT * max(0.0, 1 - abs(t - p["peak"]) / (PULSE / 2)) for p in L["pulses"]] or [0.0])
+
+
+def _mixc(c, to, w): return tuple(c[j] + (to[j] - c[j]) * w for j in range(3))
+
+
+def _text_mask(it, text, px, bold):
+    """(x, y, mask 0..1) of a text drawn alone at L's size inside its item box (placed as the layout placed it)."""
+    f = font(px, bold); tw = f.getlength(text); asc, desc = f.getmetrics(); bx = it["box"]; al = it.get("align") or "c"
+    x = bx[0] if al == "l" else bx[2] - tw if al == "r" else bx[0] + (bx[2] - bx[0] - tw) / 2; y = bx[1] + (bx[3] - bx[1] - asc - desc) / 2
+    x0, y0 = int(math.floor(x)), int(math.floor(y)); im = Image.new("L", (int(math.ceil(tw)) + 4, asc + desc + 4), 0)
+    ImageDraw.Draw(im).text((x - x0, y - y0), text, font=f, fill=255)
+    return x0, y0, np.asarray(im, np.float32) / 255.0
+
+
+def layer(L, t, draw=None):
+    """The scene's own layer at second t, alone: (colour RGB float, alpha float) at L's size. Every item whose step has begun, drawn to the fraction
+    e((t - t0) / on) of its step; the pulse tints every item on screen (C2). Shapes go through the seam `draw` (default Own); text is always PIL's."""
+    W, H = L["W"], L["H"]; sd = draw(W, H) if draw is not None else Own(W, H); tau = _tint(t, L); sw = STROKE * H; texts = []
+    for it in L["items"]:
+        st = L["steps"][it.get("step", 0)]
+        if t < st["t0"]: continue
+        p = ease((t - st["t0"]) / max(1e-6, st["on"])); how = st["how"]; base = PALETTE[it["colour"]]
+        rgb = _mixc(base, PALETTE["a"] if it["colour"] == "ink" else PALETTE["ink"], tau); a = float(it.get("alpha", 1.0))
+        if it["kind"] in ("label", "value"):
+            txt = _fmt(it["of"] + (it["value"] - it["of"]) * p, it.get("unit", "")) if (it.get("runs") and how == "count") else it["text"]
+            texts.append((it, txt, rgb, a * (1.0 if how == "count" else p))); continue
+        x0, y0, x1, y1 = it["box"]; fr = max(0.0, min(1.0, float(it["value"]) / float(it["of"] or 1)))
+        grow = p if how in ("draw", "grow", "count") else 1.0; fade = p if how in ("fade", "pop") else 1.0
+        if it["kind"] == "bar":
+            if it.get("dir") == "up": sd.rect(x0, y1 - (y1 - y0) * fr * grow, x1, y1, rgb, a * fade)
+            else: sd.rect(x0, y0, x0 + (x1 - x0) * fr * grow, y1, rgb, a * fade)
+        elif it["kind"] == "ring":
+            r = min(x1 - x0, y1 - y0) / 2 * 0.94; th = max(sw, 0.12 * r)
+            sd.arc((x0 + x1) / 2, (y0 + y1) / 2, r - th / 2, -90, -90 + 360 * fr * grow, rgb, a * fade, th)
+        elif it["kind"] == "dot":
+            s = (0.6 + 0.4 * p) if how == "pop" else 1.0; r = min(x1 - x0, y1 - y0) / 2 * s; cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+            sd.poly([(cx + r * math.cos(q * math.pi / 16), cy + r * math.sin(q * math.pi / 16)) for q in range(32)], rgb, a * fade)
+        elif it["kind"] == "box":
+            sd.rect(x0, y0, x1, y1, _mixc(PALETTE["panel"], PALETTE["ink"], tau), a * p)
+            per = [(x0, y0), (x1, y0), (x1, y1), (x0, y1), (x0, y0)]; pts = [_lerp(per, j / 32.0) for j in range(int(round(32 * p)) + 1)]      # the outline draws itself
+            if len(pts) >= 2: sd.line(pts, rgb, a, sw)
+        elif it["kind"] in ("arrow", "line"):
+            cx = (x0 + x1) / 2; tip = y0 + (y1 - y0) * grow; sd.line([(cx, y0), (cx, tip)], rgb, a, sw)
+            if it["kind"] == "arrow" and grow > 0.5: hw = (x1 - x0) / 2; sd.poly([(cx - hw, tip - hw), (cx + hw, tip - hw), (cx, tip)], rgb, a)
+    col, alp = sd.result() if hasattr(sd, "result") else Own(W, H).result()
+    for it, txt, rgb, a in texts:                                # TEXT is composited by the layer itself, whatever the backend
+        x, y, m = _text_mask(it, txt, it["px"], it.get("bold", False)); h, w = m.shape
+        xa, ya, xb, yb = max(0, x), max(0, y), min(W, x + w), min(H, y + h)
+        if xb <= xa or yb <= ya: continue
+        mm = m[ya - y:yb - y, xa - x:xb - x] * a; al = alp[ya:yb, xa:xb]; na = al + mm * (1 - al); cs = col[ya:yb, xa:xb]; nz = na > 1e-6
+        mix = cs * (al * (1 - mm))[..., None] + np.asarray(rgb, np.float32)[None, None, :] * mm[..., None]; cs[nz] = mix[nz] / na[nz][:, None]; alp[ya:yb, xa:xb] = na
+    return col, alp
+
+
+def _lerp(per, f):
+    """The point at fraction f (0..1) along a closed rectangle's perimeter of four equal steps (a box's outline drawing itself)."""
+    f = max(0.0, min(1.0, f)) * 4; k = min(3, int(f)); r = f - k; a, b = per[k], per[k + 1]
+    return (a[0] + (b[0] - a[0]) * r, a[1] + (b[1] - a[1]) * r)
+
+
+def frame(L, t, bg=None, push=0.0, draw=None):
+    """One frame (H, W, 3) BGR uint8 at L's own size: the ground (bg = an RGB array already blurred, enlarged by 1 + 0.04 * push about its centre;
+    else flat panel), the scrim, then the scene's layer."""
+    W, H = L["W"], L["H"]
+    if bg is None: g = np.empty((H, W, 3), np.float32); g[:] = PALETTE["panel"]
+    else:
+        g = np.asarray(bg, np.float32); z = 1 + 0.04 * max(0.0, float(push))
+        if z > 1.0001:
+            g = cv2.resize(g, (int(round(W * z)), int(round(H * z))), interpolation=cv2.INTER_LINEAR); ox, oy = (g.shape[1] - W) // 2, (g.shape[0] - H) // 2; g = g[oy:oy + H, ox:ox + W]
+    g = g * (1 - SCRIM) + np.asarray(PALETTE["panel"], np.float32) * SCRIM
+    col, alp = layer(L, t, draw)
+    out = g * (1 - alp[..., None]) + col * alp[..., None]
+    return cv2.cvtColor(np.clip(out + 0.5, 0, 255).astype(np.uint8), cv2.COLOR_RGB2BGR)
+
+
+def proof(L, fps, hold_max, change_px=0.002, kit_min=0.90, budget_s=90.0):
+    """On the ONE L the film is drawn from, on the flat panel: (a) IT MOVES - the longest run of samples (every half second, every step's end, every
+    pulse's peak; each reduced to a width of 480) without a change of more than change_px of the pixels by more than 8 grey levels must stay within
+    hold_max + 0.5 s; (b) IT FITS THE KIT - at the last sample outside every pulse, of the layer's pixels above alpha 0.5 the share within 24 levels
+    of a PALETTE colour must be at least kit_min; (c) a time limit. Never raises for a failed measure: ok False and why."""
+    t_start = time.monotonic(); dur = float(L["dur"])
+    ts = sorted({round(min(dur, k * 0.5), 4) for k in range(int(dur / 0.5) + 1)} | {round(s["t0"] + s["on"], 4) for s in L["steps"] if s["t0"] + s["on"] <= dur}
+                | {round(p["peak"], 4) for p in L["pulses"] if p["peak"] <= dur})
+    prev = None; run0 = ts[0]; still = 0.0; n = 0
+    for k, t in enumerate(ts):
+        fr = frame(L, t); w = 480; g = cv2.cvtColor(cv2.resize(fr, (w, max(1, int(round(fr.shape[0] * w / fr.shape[1])))), interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2GRAY).astype(np.int16)
+        if prev is not None and float(np.mean(np.abs(g - prev) > 8)) > change_px: run0 = t
+        still = max(still, t - run0); prev = g; n += 1
+        if time.monotonic() - t_start > budget_s:
+            return {"ok": False, "why": "over the time limit", "still_s": round(still, 2), "kit_pct": 0.0, "ms": round(1000 * (time.monotonic() - t_start) / max(1, n), 1)}
+    quiet = [t for t in ts if _tint(t, L) == 0.0] or ts
+    col, alp = layer(L, quiet[-1]); sel = alp > 0.5
+    if sel.any():
+        px_ = col[sel]; d = np.min(np.stack([np.max(np.abs(px_ - np.asarray(c, np.float32)), axis=1) for c in PALETTE.values()]), axis=0); kit = float(np.mean(d <= 24))
+    else: kit = 0.0
+    ms = round(1000 * (time.monotonic() - t_start) / max(1, n), 1); out = {"ok": True, "why": "", "still_s": round(still, 2), "kit_pct": round(kit, 4), "ms": ms}
+    if still > hold_max + 0.5: out.update(ok=False, why=f"it stands still {still:.1f} s")
+    elif kit < kit_min: out.update(ok=False, why=f"only {kit:.0%} of it is in the kit's colours")
+    return out
+
+
+def lum(grey):
+    """Relative luminance (WCAG 2) of sRGB grey levels 0..255 (a number or an array)."""
+    c = np.asarray(grey, np.float64) / 255.0
+    return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+
+
+def ratio(l1, l2):
+    """WCAG's contrast ratio of two relative luminances: (lighter + 0.05) / (darker + 0.05)."""
+    a, b = max(float(l1), float(l2)), min(float(l1), float(l2))
+    return (a + 0.05) / (b + 0.05)
+
+
+def ink(gray, L):
+    """The lowest contrast of a text of L on a grey frame of the FINISHED FILE (any size): per text, the mean luminance of its ink (the text drawn
+    alone, reduced to the frame's size, above 0.5, eroded by one pixel) against its box's ground (the box minus the ink dilated by two pixels). A
+    picture that does not carry our text gives about 1."""
+    g = np.asarray(gray, np.float64); h, w = g.shape[:2]; sx, sy = w / float(L["W"]), h / float(L["H"]); low = None; k3 = np.ones((3, 3), np.uint8)
+    for it in L["items"]:
+        if not it.get("text") or not it.get("tbox"): continue
+        x, y, m = _text_mask(it, it["text"], it["px"], it.get("bold", False)); full = np.zeros((L["H"], L["W"]), np.float32)
+        ya, xa = max(0, y), max(0, x); yb, xb = min(L["H"], y + m.shape[0]), min(L["W"], x + m.shape[1])
+        if xb > xa and yb > ya: full[ya:yb, xa:xb] = m[ya - y:yb - y, xa - x:xb - x]
+        small = cv2.resize(full, (w, h), interpolation=cv2.INTER_AREA) > 0.5
+        inkm = cv2.erode(small.astype(np.uint8), k3, iterations=1).astype(bool); near = cv2.dilate(small.astype(np.uint8), k3, iterations=2).astype(bool)
+        b = it["tbox"]; box = np.zeros((h, w), bool); box[int(b[1] * sy):int(math.ceil(b[3] * sy)), int(b[0] * sx):int(math.ceil(b[2] * sx))] = True
+        ground = box & ~near
+        if not inkm.any() or not ground.any(): continue
+        r = ratio(float(np.mean(lum(g[inkm]))), float(np.mean(lum(g[ground]))))
+        low = r if low is None else min(low, r)
+    return round(low, 2) if low is not None else 1.0
