@@ -1425,6 +1425,17 @@ passed + 1 red (the inside ladder trial: C-P19's first conftest form) -> after t
 39/0, film 3/0, film_b 3/0, b0b 20/0, floor_his_word 2/0, opening_e2e 3/0, v91_flaky_root 3/0; truth GREEN; Plan Guard GREEN; gen_docs:
 SYSTEM.md. Collected now: 1910 tests (expect_tests re-counted). THE BREAKS: 19 more in proving/breaks/DRAWN.json (FIN-P19a to c, FIN-F02 to F14
 with F11a/b, FIN-T02, FIN-DQ3), each find exactly once on this code.
+AFTER THE CORRECTIONS (the corrections typist `local_c26c0e6a`, 19 Nov 2026): 8c55916's Checks run 44473184622 completed/success - Unit tests:
+1910 passed in 4326.40s; REHEARSAL: GREEN (script 42/42, final 24/24). F-15 (15ad37a): the builder's draft takeaway drawn.takeaway word for word
+into whatifs/org/seed/build.json (test_v12_palace 39 passed). breaks.py DRAWN on 15ad37a: 66 caught, 11 MISSED, 0 void of 77 - all eleven from
+the step-4 list, none of the corrections'. F-16 (447643d, tests only, no production line): the assertions the eleven missed (a bottom-edge box;
+two lines in test 4; the FAIL's reason in check drawn_plan's and drawn_shown's tests; a unit test of drawn_segment's clock; the camera effect's
+guard pinned in T-2's test; the production re-renders at the named state's first second) - each seen RED with its break applied by hand in
+scratch, then reverted; the breaks' tests lists of D2-01, D2-02, D2-03, D2-07, D2-17, D2-18 gain them (D2-07 the whole production). breaks.py
+DRAWN on 447643d: 77 caught, 0 MISSED, 0 void of 77 listed (3305 s).
+THE TYPIST'S OWN CATCH: 15ad37a's Checks run 44484128544 FAILED - Unit tests: 2 failed, 1908 passed (tests/test_docs_current.py: SYSTEM.md's
+founding-knowledge count) - F-15's seed item needed `python tools/gen_docs.py`, which was not run with it. THIS commit: docs/CURRENT/SYSTEM.md
+regenerated, test_docs_current 33 passed; no file of whatifs / tools / tests changes, so the breaks' result on 447643d stands.
 ### V4 - THE CEO AND THE LADDER (16-18 Nov 2026) - ACCEPTED (final code commit ddfd4d5 GREEN in GitHub Checks run 277: 1865 passed; sweep 58 of 58 ids) - its code 5272fea, BUILT AGAIN AFTER RED ROUND 1 (repairs C23 to C25 by Opus under item 130; the first pass was RED on 7899300, its code 8fa7742: an overrun memo on every long video of the sweep, the rehearsal F3/S1 held by `impact_map`, sweep part B without the watch line; `proving/notes/V4_RED_1.md`) - BUILT before it (final code commit 8fa7742) (the designer's record: steps 1 to 3; the Opus builder writes steps 4 to 6a, the Fable finisher `FINISHED BY FABLE`, the prover 6b and 7)
 THE BATCH'S START: the first check (the batch before on the record, GitHub's run of its final code commit, a clean tree) and the usage
 figures are written by the session that pastes this record at V1c's acceptance. NOT SPLIT (open issue 189: `next.py` has no move for a
