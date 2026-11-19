@@ -424,8 +424,10 @@ def drawn_segment(L, bg_path, path, nframes, start, total):
 
 def frame_at(path, t, w=640):
     """v12 DRAWN: one grey frame of a file at second t (w pixels wide), or None when ffmpeg gave nothing."""
-    r = subprocess.run(["ffmpeg", "-v", "error", "-ss", f"{max(0.0, float(t)):.3f}", "-i", path, "-frames:v", "1", "-vf", f"scale={int(w)}:-2,format=gray", "-f", "rawvideo", "-"],
-                       capture_output=True, timeout=60)
+    try:
+        r = subprocess.run(["ffmpeg", "-v", "error", "-ss", f"{max(0.0, float(t)):.3f}", "-i", path, "-frames:v", "1", "-vf", f"scale={int(w)}:-2,format=gray", "-f", "rawvideo", "-"],
+                           capture_output=True, timeout=60)
+    except (subprocess.TimeoutExpired, OSError): return None
     n = len(r.stdout or b"")
     if not n or n % int(w): return None
     return np.frombuffer(r.stdout, np.uint8).reshape(n // int(w), int(w))

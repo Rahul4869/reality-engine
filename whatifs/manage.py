@@ -512,6 +512,8 @@ def learn():
     except Exception as x: log(f"v12 V1 flips skipped: {scrub(x)}", "WARN")
     try: v12v2c_upgrade(st)                                      # v12 V2c: a Short shows no character, so it no longer waits for the character masters
     except Exception as x: log(f"v12 V2c flips skipped: {scrub(x)}", "WARN")
+    try: v12drawn_upgrade(st)                                    # v12 DRAWN (P19): the talking cast off until DRAWN-b
+    except Exception as x: log(f"v12 DRAWN flips skipped: {scrub(x)}", "WARN")
     try: v12v2cb_upgrade(st)                                     # v12 V2c-b: the Shorts cadence is set in weeks now (3 a week, 12 a month); the old cells are marked
     except Exception as x: log(f"v12 V2c-b move skipped: {scrub(x)}", "WARN")
     try: v12v2cb2_upgrade(st)                                    # v12 V2c-b2: 'made' is a field of a Short's record now; the Shorts an older job made get it once
@@ -768,6 +770,21 @@ def v12v2c_upgrade(st):
         if k in done: set_setting(k, new)
     set_setting("V12V2C_FLIPS_DONE", iso() + " " + (",".join(done) or "none"))
     if done: log("v12 V2c: a Short no longer waits for the character masters (it shows no character): " + ", ".join(done))
+    return done
+
+# v12 DRAWN (P19, RR-43): the talking cast stays OFF until DRAWN-b's step B1 shows its 3:4 art at its own shape (today it is stretched to
+# 16:9). Moved once, only where the cell still holds the old default (a value the owner typed is never touched).
+V12DRAWN_FLIPS = (("LIVING_CHARACTERS_ON", "TRUE", "FALSE"),)
+
+def v12drawn_upgrade(st):
+    """ONE time: LIVING_CHARACTERS_ON TRUE -> FALSE where the cell still holds the old default (P19: no widened face before DRAWN-b). Never runs twice."""
+    if str(S("V12DRAWN_FLIPS_DONE") or "").strip(): return []
+    have = {r.get("key"): str(r.get("value", "")).strip() for r in st.rows("Settings")}
+    done = [k for k, old, new in V12DRAWN_FLIPS if have.get(k) == old]
+    for k, old, new in V12DRAWN_FLIPS:
+        if k in done: set_setting(k, new)
+    set_setting("V12DRAWN_FLIPS_DONE", iso() + " " + (",".join(done) or "none"))
+    if done: log("v12 DRAWN: the talking cast is off until its art can be shown at its own shape (P19): " + ", ".join(done))
     return done
 
 # v12 V2c-b (the ladder): the Shorts cadence is set in weeks - 3 Shorts a week, 12 a month (SHORTS_PER_WEEK, SHORTS_PER_MONTH). The three cells
@@ -1356,6 +1373,8 @@ def setup():
     except Exception as x: log(f"v12 V1 flips skipped: {scrub(x)}", "WARN")
     try: v12v2c_upgrade(st)                                      # v12 V2c: a Short shows no character, so it no longer waits for the character masters
     except Exception as x: log(f"v12 V2c flips skipped: {scrub(x)}", "WARN")
+    try: v12drawn_upgrade(st)                                    # v12 DRAWN (P19): the talking cast off until DRAWN-b
+    except Exception as x: log(f"v12 DRAWN flips skipped: {scrub(x)}", "WARN")
     try: v12v2cb_upgrade(st)                                     # v12 V2c-b: the Shorts cadence is set in weeks now (3 a week, 12 a month); the old cells are marked
     except Exception as x: log(f"v12 V2c-b move skipped: {scrub(x)}", "WARN")
     try: v12v2cb2_upgrade(st)                                    # v12 V2c-b2: 'made' is a field of a Short's record now; the Shorts an older job made get it once

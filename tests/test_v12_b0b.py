@@ -161,7 +161,7 @@ def test_sweep_summary_counts_every_hold_crash_and_class():
 def test_sweep_refuses_a_work_folder_inside_the_repo_and_reports_a_dead_child(tmp_path, monkeypatch):
     with pytest.raises(SystemExit) as e: SW.main(["--n", "1", "--work", os.path.join(ROOT, "sweep_work")])
     assert "OUTSIDE the repo" in str(e.value) and not os.path.exists(os.path.join(ROOT, "sweep_work"))
-    class A: logs = str(tmp_path); repo = ROOT; mode = "produce"; slot_h = 10; org = "on"; timeout = 60; keep = False
+    class A: logs = str(tmp_path); repo = ROOT; mode = "produce"; slot_h = 10; org = "on"; timeout = 60; keep = False; drawn_moments = False          # DQ-3 AMENDED: the namespace carries the flag --drawn-moments (moved BY DESIGN)
     class Done: returncode = 3
     def fake_run(cmd, stdout=None, **k): stdout.write("Traceback\nImportError: no module\n"); return Done()
     monkeypatch.setattr(SW.subprocess, "run", fake_run)

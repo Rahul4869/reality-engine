@@ -1233,8 +1233,8 @@ accepted test already asserts a clause, the builder NAMES that test in the recor
      those two stretches, give or take one frame, and at least one frame is marked in each.
 One deliberate break for (c) if it is new (the function answers "speaking" for every frame -> caught); (b)'s break exists in V2d-b's list.
 No money, no cell, no check, no workflow. TO CONFIRM by the place-check: the shape of `words`; what `speaking` returns.
-THE LAUNCH PACK'S LINE: "The talking cast is built and stays off by itself: it turns on when you approve the cast sheet's art - the one
-approval that is already on your setup list."
+THE LAUNCH PACK'S LINE (the finisher's C-P19, 19 Nov 2026): "The talking cast is built and OFF until its art can be shown at its own shape
+(DRAWN-b, step B1): approving the cast's art - or its lock by default after 72 hours - changes nothing on screen until then."
 **STEP 6 - THE RESTYLE AS A TRIAL ARM THAT CANNOT FIRE: A FRAME, NOT YET TO THE A4 STANDARD.** The decisions are made here; the exact
 words of code are NOT, because three files it leans on were not read. WHO COMPLETES IT: a Fable designer after the reset, or - the
 dispatcher's ruling under item 130 - an Opus session that reads `clips.py`, `media.animate`, `tests/paid_calls.py` and `preflight.py` whole,
@@ -1386,6 +1386,45 @@ that EQUAL n, it has no floor; expect_tests 1893. THE BREAKS proving/breaks/DRAW
 step 2: 18; step 3: 3), each find checked EXACTLY once on this code and each test present; NOT run here (breaks.py runs after the
 corrections typist's commit, by the finisher's order).
 THE PREVIOUS CHECKS: run 44450144665 on 713c412 (step 3) - completed/success; Unit tests: 1893 passed in 6150.69s; Free rehearsal success.
+THE FINISHER'S CORRECTIONS (typed by `local_c26c0e6a`, Opus 5.5 xhigh, 19 Nov 2026; `DRAWN_CORRECTIONS.md`; ONE commit after step 4's Checks run
+44462862986 on ff580df was completed/success): each typed first in a scratch export of ddfd4d5 + the five re-cut patches (1, 5, 2, 3, 4; its code
+byte for byte ff580df's), each F's test seen RED on the code before its fix, then the fix word for word, then GREEN; the 15 changed files applied
+here byte for byte as tested.
+C-P19 (P19, RR-43 (2)): LIVING_CHARACTERS_ON's default "FALSE" with its note; V12DRAWN_FLIPS_DONE; `manage.v12drawn_upgrade` (the one-time move
+TRUE -> FALSE where the cell still holds the old default), called in learn() and setup() after v12v2c_upgrade; conftest's OLD_LIVING in every
+place OLD_DRAWN is applied - AMENDED by the finisher to carry V12DRAWN_FLIPS_DONE "test" (its first form was undone by setup()'s move:
+tests/test_v12_inside.py's ladder trial drew no character, measured with the marker set: green alone); gen_docs. RED: "assert 'TRUE' == 'FALSE'".
+F-2 the code's own scene of a Director's graphic passes verify (`scenes._plain`; `_own` / `_pairs` compare plain strings; verify's first lines
+recompute the code's scene) - RED "a value the script does not give to that name: The floor drops - fast = Second 1". F-3 a proved scene with no
+drawn state gets its reason (`audit`), a proof exception's empty text its type's name - RED "ok True". F-4 a writer's odd reply never raises -
+RED "TypeError: 'bool' object is not iterable". F-5 a timed-out frame read is None, the second save inside try, shown_report FAILs a frame it
+cannot read - RED "TimeoutExpired". F-6 a cause word reads its own sentence (one sentence back when it opens one) - RED (test 4's new cases): the
+arrow across two sentences was passed. F-7 a number with its scale word is ONE number (`_scaled`) - RED: The Sun = 150 passed on "150 million
+km". F-8 the nearest value weighs every number of the sentence - RED: The Moon = 225000000 passed. F-9 a resume that drops a template's first use
+never repeats the last video's composition - RED: shot 4 kept compare0 (= last). F-10 the learning core counts only the scenes shown (`feature(d,
+shown)`; the BRN.tag literal pinned by test_v12_exec.py 328 unchanged) - RED (the refused production): Video_Features.arm drawn ['count1',
+'count0'] held the refused count1. F-11 the audit and drawn_shown read the master at the scene's own width - RED (test 12): w None six times
+against 640. F-12 a scene whose later piece failed is its still, never measured half-built (a new production in test_v12_drawn_film_b.py, minute
+4) - RED: why "its text reached only 1.0 to 1 on the finished file". F-13 the cue lands on the phrase's last anchor - RED: "The Sun" at 0.0. F-14
+an unread last video is stored as None and drawn_plan says "the last drawn video could not be read" - RED "assert {} is None".
+T-1 the planted proof RAISES Refused (the refused production: green). T-2 STOPPED as first written (its 1.0 s pieces HELD that production:
+contract:visual_change) - AMENDED by the finisher to a pin of _render's cutting line (green). T-3 to T-6 green. DQ-3 AMENDED: `tools/sweep.py`
+flag --drawn-moments and `drawn_moments()` - on the id's OWN Sheet, after its setup and before its long video, DRAWN_SHARE_PCT 100,
+GRAPHICS_FREE_SEC 0, DRAWN_MIN_S 1.0, exactly the three cells tests/test_v12_drawn_film.py's _setup sets and nothing else; one() calls it only
+under the flag, the flag reaches the child as --org does; the rehearsal path builds its own Sheet in run() and never takes it. T-7 - RED "module
+'tools.sweep' has no attribute 'drawn_moments'", then green. THE BLOCK'S PART "drawn" (written after this commit): --ids two ids that draw with
+the flag, --org on, --drawn-moments; it is the ONLY part that sets cells - under the defaults 0 of 80 ids keep a slot (DQ-3) - and drawn_ids is
+held as an equality on the part 'drawn' (its ids chosen because their films keep a slot), because verdict.py has no floor - the finisher's DQ-3.
+PINS MOVED BY DESIGN (each with its comment): test_v12_drawn.py's never-stops test `last == {}` -> `is None` (F-14 changes exactly that);
+test_v12_b0b.py 164 the fake args A gains drawn_moments = False (the flag); F-5's test patches RN.subprocess "run" (=
+whatifs.render.subprocess.run; the minitest shim reads a string target as a module path).
+TESTS (NEW runs on the corrected code, Git Bash, the fast ffmpeg first, WI_FAKE=1, one at a time): the drawn files + short, b0b, palace, inside,
+floor, motion, cutdowns, org, exec, rnd, docs_current, tableread, v810, v82, v9_matrix, floor_his_word, opening_e2e, v91_flaky_root (-n 4): 836
+passed + 1 red (the inside ladder trial: C-P19's first conftest form) -> after the amendment test_v12_inside whole 101 passed; the wiring
+(docs_current, b0b, org, exec, rnd, short) 306 passed + 1 red (b0b's fake args) -> b0b + drawn + docs_current 92 passed; minitest alone: drawn
+39/0, film 3/0, film_b 3/0, b0b 20/0, floor_his_word 2/0, opening_e2e 3/0, v91_flaky_root 3/0; truth GREEN; Plan Guard GREEN; gen_docs:
+SYSTEM.md. Collected now: 1910 tests (expect_tests re-counted). THE BREAKS: 19 more in proving/breaks/DRAWN.json (FIN-P19a to c, FIN-F02 to F14
+with F11a/b, FIN-T02, FIN-DQ3), each find exactly once on this code.
 ### V4 - THE CEO AND THE LADDER (16-18 Nov 2026) - ACCEPTED (final code commit ddfd4d5 GREEN in GitHub Checks run 277: 1865 passed; sweep 58 of 58 ids) - its code 5272fea, BUILT AGAIN AFTER RED ROUND 1 (repairs C23 to C25 by Opus under item 130; the first pass was RED on 7899300, its code 8fa7742: an overrun memo on every long video of the sweep, the rehearsal F3/S1 held by `impact_map`, sweep part B without the watch line; `proving/notes/V4_RED_1.md`) - BUILT before it (final code commit 8fa7742) (the designer's record: steps 1 to 3; the Opus builder writes steps 4 to 6a, the Fable finisher `FINISHED BY FABLE`, the prover 6b and 7)
 THE BATCH'S START: the first check (the batch before on the record, GitHub's run of its final code commit, a clean tree) and the usage
 figures are written by the session that pastes this record at V1c's acceptance. NOT SPLIT (open issue 189: `next.py` has no move for a
@@ -12639,6 +12678,9 @@ Rehearsal asserts `docs_current` ran and passed.
    `timeout-minutes: 120`; this round the unit tests ran 52 min (5272fea) to 1 h 36 min (b273bba, whole job 100 min); ddfd4d5's job 92 min (tests 1 h 28 min).
    The long runs fell when several pushes ran at once. A job cut at 120 minutes is no verdict on the code (8.5) but it holds a batch's acceptance until a
    new run; standing rule 1 needs that run green.
+247. (DRAWN-b's writer, P19, 18 Nov 2026; its launch condition given to DRAWN's finishing pass by the relay's RR-43 (2) -> DRAWN-b, step B1) P19: the
+   launch condition BUILT by DRAWN's finisher (C-P19): the talking cast is OFF by default, moved off once where a Sheet held the old default; DRAWN-b's
+   B1 turns it on again with its own one-time move when the art is shown at its own shape.
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - (V1c's prover, 16 Nov 2026) THE SERIAL SUITE IS `shim/minitest.py`, NOT PYTEST: it knows only its own fixtures (`tmp_path_factory` is not one: open issue

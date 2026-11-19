@@ -34,10 +34,14 @@ def test_a_whole_production_in_the_arm_draws_proves_and_records(monkeypatch, set
     def spy_d(L, bg, path, *a):
         assert RN._OVL["obj"] is None, "something was drawn over a drawn scene"; calls["drawn"].append(_seg_i(path)); return real_d(L, bg, path, *a)
     monkeypatch.setattr(RN, "drawn_segment", spy_d); monkeypatch.setattr(RN, "graphic_segment", lambda g, bg, path, n: (calls["graphic"].append(_seg_i(path)), real_g(g, bg, path, n))[1])
+    real_f = RN.frame_at; ws = []
+    monkeypatch.setattr(RN, "frame_at", lambda p, t, **k: (ws.append(k.get("w")), real_f(p, t, **k))[1])          # F-11: the audit's and the check's reads at the scene's own width
     try:
         r = EP.produce(slot); assert r["ok"], r
         job = jobs[-1]; drawn = [m for m in job.segmeta if m.get("drawn")]
         assert drawn, "this id's film drew no scene: name another id in the record (TO VERIFY 1)"
+        lw = {int(x["L"]["W"]) for x in job.drawn.values() if isinstance(x, dict) and x.get("L")}
+        assert ws and len(lw) == 1 and all(w in lw for w in ws), (ws, lw)                                       # every frame read passes w = the scene's layout width
         assert not ({m["i"] for m in drawn} & {x[0] for x in calls["graphic"] if x}), "a drawn scene's line also played the number card"
         assert c["text:scene"] == 1 and [l for l in CG.lines("long") if l["key"] == "drawn_scenes"]
         led = _ledger(); assert led["drawn_plan"][0] == "PASS" and led["drawn_shown"][0] == "PASS", led
@@ -66,11 +70,13 @@ def test_the_same_film_with_the_switch_off_asks_nothing_and_draws_nothing(monkey
 def test_a_refused_scene_is_its_moving_still_and_a_failed_render_never_the_zero_card(monkeypatch, setting):
     from whatifs import episode as EP, render as RN
     from whatifs.shotplan import pieces_for
-    slot, ep, jobs = _setup(monkeypatch, setting, minute=1); seen = []; zero = []
+    from whatifs import drawn as DRAWN
+    slot, ep, jobs = _setup(monkeypatch, setting, minute=1); seen = []; zero = []; comp = {}
     real_proof = SCN.proof
     def proof(sc, units, i, dur, fps):
-        seen.append(i)
-        return {"ok": False, "why": "planted refusal"} if len(seen) == 1 else real_proof(sc, units, i, dur, fps)
+        seen.append(i); comp.setdefault(i, f"{sc['template']}{sc['variant']}")
+        if len(seen) == 1: raise DRAWN.Refused("planted refusal")                                                      # T-1: the proof RAISES - the render's except gives the reason
+        return real_proof(sc, units, i, dur, fps)
     monkeypatch.setattr(SCN, "proof", proof)
     def boom(*a, **k): raise RuntimeError("planted encoder fault")
     monkeypatch.setattr(RN, "drawn_segment", boom)
@@ -86,4 +92,6 @@ def test_a_refused_scene_is_its_moving_still_and_a_failed_render_never_the_zero_
         for i in seen[1:]:                                                                                                    # the render failed: its still, never the "0"
             assert job.drawn[i]["ok"] is False and job.drawn[i]["why"].startswith("the render failed") and not any(z[0] and z[0][0] == i and z[2] for z in zero)
         assert _ledger()["drawn_shown"][0] == "PASS" and "shown as its still" in _ledger()["drawn_shown"][1]
+        arm = json.loads(next(x for x in core.store().rows("Video_Features") if x["video_key"] == ep)["arm"])
+        assert comp[i0] not in (arm.get("drawn") or []), (comp, arm)                                                         # F-10: the learning core never counts a scene no viewer saw
     finally: shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True)

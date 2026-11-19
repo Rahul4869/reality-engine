@@ -11,6 +11,13 @@ STOP = ("the", "and", "but", "its", "this", "that", "these", "those", "with", "f
         "will", "would", "can", "could", "then", "than", "when", "what", "who")      # C1: never an anchor
 _TOK = re.compile(r"\d[\d,]*(?:\.\d+)?|[a-z]+|[.,;:!?]")
 _NUM = re.compile(r"\d[\d,]*\.?\d*")
+_SCALE = re.compile(r"(\d[\d,]*(?:\.\d+)?)\s*(thousand|million|billion|trillion)\b", re.I)
+_MUL = {"thousand": 1e3, "million": 1e6, "billion": 1e9, "trillion": 1e12}
+
+
+def _scaled(text):
+    """'150 million' -> '150000000': a number with its scale word is ONE number, never the bare 150 (verify reads digits)."""
+    return _SCALE.sub(lambda m: f"{float(m.group(1).replace(',', '')) * _MUL[m.group(2).lower()]:.0f}", str(text or ""))
 
 
 def on(): return S("DRAWN_ON", bool)
@@ -44,10 +51,18 @@ def slots(shots, units, total):
 def _key(w): return re.sub(r"[^a-z0-9]", "", str(w or "").lower())
 
 
+def _plain(s):
+    """A graphic's string as from_graphic draws it: the kit's quotes and dashes made plain, spaces collapsed, lower case (C4)."""
+    s = str(s if s is not None else "")
+    for a, b in DRAWN.SWAP.items(): s = s.replace(a, b)
+    return " ".join(s.split()).strip().lower()
+
+
 def cue_s(unit, phrase, dur=None):
     """The second, from the line's start, at which the phrase's first word is spoken: from the unit's timed words where it carries them (the reader
     living.render is given), else dur * k / n for the k-th (from 0) of the line's n words; None when the phrase is empty or its word is not in the line."""
-    first = next((_key(w) for w in str(phrase or "").split() if _key(w)), "")
+    ws_ = [_key(w) for w in str(phrase or "").split() if _key(w)]; an_ = [w for w in ws_ if len(w) >= 3 and w.isalpha() and w not in STOP]
+    first = an_[-1] if an_ else (ws_[0] if ws_ else "")          # the phrase's last ANCHOR (C1's), never "the": the word the narrator lands on
     if not first: return None
     t0 = float(unit.get("start") or 0); ws = unit.get("words") or []
     if ws:
@@ -98,28 +113,28 @@ def _walk(x, strs, nums):
 
 def sentences(texts):
     """C3: each of the three lines cut by layman._SENT.split(audience.spoken(text)) - the cut inside.sentences itself uses, without its four-word filter."""
-    return [s.strip() for t in texts for s in LAY._SENT.split(AUD.spoken(t or "")) if s.strip()]
+    return [s.strip() for t in texts for s in LAY._SENT.split(_scaled(AUD.spoken(t or ""))) if s.strip()]
 
 
 def _own(graphic):
     """The graphic's own entries (a name and its value; a time and its event): drawn as the Director gave them, never asked for a sentence."""
     g = graphic or {}; out = set()
     if g.get("kind") == "compare":
-        for e in (g.get("a") or {}, g.get("b") or {}): out.add((str(e.get("name", "")).strip().lower(), _f(e.get("value"))))
+        for e in (g.get("a") or {}, g.get("b") or {}): out.add((_plain(e.get("name", "")), _f(e.get("value"))))
     if g.get("kind") == "timeline":
-        for e in g.get("events") or []: out.add((str(e.get("t", "")).strip().lower(), str(e.get("text", "")).strip().lower()))
+        for e in g.get("events") or []: out.add((_plain(e.get("t", "")), _plain(e.get("text", ""))))
     return out
 
 
 def _pairs(t, s, graphic, sents):
     own = _own(graphic); scene_nums = []
     if t == "ladder":
-        ents = [(r["text"], r["t"], _anchors(r["t"]) + _anchors(r["text"]), _nums(r["t"]) + _nums(r["text"]), (_nums(r["t"]) or [None])[0],
-                (r["t"].strip().lower(), r["text"].strip().lower()) in own) for r in s["rungs"]]
-        for r in s["rungs"]: scene_nums += _nums(r["t"]) + _nums(r["text"])
+        ents = [(r["text"], r["t"], _anchors(r["t"]) + _anchors(r["text"]), _nums(_scaled(r["t"])) + _nums(_scaled(r["text"])), (_nums(_scaled(r["t"])) or [None])[0],
+                (_plain(r["t"]), _plain(r["text"])) in own) for r in s["rungs"]]
+        for r in s["rungs"]: scene_nums += _nums(_scaled(r["t"])) + _nums(_scaled(r["text"]))
     else:
         es = (s["a"], s["b"]) if t == "compare" else (s["part"], s["whole"])
-        ents = [(e["name"], e["value"], _anchors(e["name"]), [float(e["value"])], float(e["value"]), (e["name"].strip().lower(), _f(e["value"])) in own) for e in es]
+        ents = [(e["name"], e["value"], _anchors(e["name"]), [float(e["value"])], float(e["value"]), (_plain(e["name"]), _f(e["value"])) in own) for e in es]
         scene_nums = [float(e["value"]) for e in es]
     places = []
     for name, val, A, D, V, is_own in ents:
@@ -131,7 +146,7 @@ def _pairs(t, s, graphic, sents):
             w = _words(_toks(sent)); nums = [(k, _f(x)) for k, x in enumerate(w) if x[0].isdigit()]
             if not all(a in w for a in A) or not all(any(_eq(v, d) for _, v in nums) for d in D): continue
             if V is not None:
-                present = sorted({n for n in scene_nums if any(_eq(v, n) for _, v in nums)})
+                present = sorted({v for _, v in nums if v is not None})
                 if len(present) > 1:
                     pa = [k for k, x in enumerate(w) if x in A]
                     dist = {n: min(abs(k - j) for k, v in nums if _eq(v, n) for j in pa) for n in present}
@@ -146,6 +161,11 @@ def _pairs(t, s, graphic, sents):
 
 def _causes(links, texts):
     toks = [t for x in texts for t in (_toks(AUD.spoken(x or "")) + ["."])]
+    sid, s_, seen = [], 0, False                              # each token's sentence; the appended "." of an empty line opens no sentence
+    for t in toks:
+        sid.append(s_)
+        if t[0].isalnum(): seen = True
+        elif t in (".", "!", "?") and seen: s_ += 1; seen = False
     marks = []                                                  # (first index, last index, direction) of every cause word
     for k, x in enumerate(toks):
         for ph in FORWARD + BACK:
@@ -158,7 +178,10 @@ def _causes(links, texts):
             if not _anchors(x): return f"a part the script cannot place: {x}"
         ok = False
         for i0, i1, back in marks:
-            before, after = set(toks[:i0]), set(toks[i1 + 1:])
+            S_ = sid[i0]
+            before = {toks[j] for j in range(i0) if sid[j] == S_}; after = {toks[j] for j in range(i1 + 1, len(toks)) if sid[j] == S_}
+            if not back and not any(toks[j][0].isalnum() for j in range(i0) if sid[j] == S_):      # a cause word that opens its sentence ("So ...") reaches back one sentence
+                before |= {toks[j] for j in range(i0) if sid[j] == S_ - 1}
             first, second = (B, A) if back else (A, B)
             if all(a in before for a in first) and all(b in after for b in second): ok = True; break
         if not ok: return f"an arrow the script does not state: {links[k]} -> {links[k + 1]}"
@@ -169,11 +192,13 @@ def verify(scene, graphic, texts):
     """"" when every number, word, name-value pair and arrow of a clean scene is the script's own, else the reason. texts = (the line before, the
     line, the line after). A scene of drawn.from_graphic passes by construction: it shows the Director's own pairs."""
     t, s = scene["template"], scene["slots"]; g = graphic or {}
-    three = [AUD.spoken(x or "") for x in texts]; low = " ".join(three).lower()
+    code_ = DRAWN.from_graphic(g)[0] if g else None
+    if code_ and code_["template"] == t and code_["slots"] == s: return ""      # the code's own scene of this graphic: the Director's own content, as the card shows it (memo 3.3) - recomputed, never the mark
+    three = [_scaled(AUD.spoken(x or "")) for x in texts]; low = " ".join(three).lower()
     gs, gn = [], []; _walk({k: v for k, v in g.items() if k != "kind"}, gs, gn)
-    known = gn + _nums(low) + [v for x in gs for v in _nums(x)]
+    known = gn + _nums(low) + [v for x in gs for v in _nums(_scaled(x))]
     ss, sn = [], []; _walk(s, ss, sn)
-    for x in sn + [v for y in ss for v in _nums(y)]:
+    for x in sn + [v for y in ss for v in _nums(_scaled(y))]:
         if not any(_eq(x, k) for k in known): return f"a number the voice never says: {MD._fmt(x, '')}"
     vocab = set(re.findall(r"[a-z]+", low)) | {w for x in gs for w in re.findall(r"[a-z]+", x.lower())}
     for y in ss:
@@ -197,7 +222,8 @@ def ask(ep, wanted):
     except Exception as e:
         log(f"drawn scenes: the writer's call failed ({type(e).__name__}) - the code draws the moments from the Director's graphics", "WARN", ep); return {}
     out = {}
-    for x in (r.get("scenes") if isinstance(r, dict) else None) or []:
+    sc_ = r.get("scenes") if isinstance(r, dict) else None
+    for x in (sc_ if isinstance(sc_, list) else []):
         if isinstance(x, dict):
             try: out.setdefault(int(x.get("unit")), x)
             except (TypeError, ValueError): pass
@@ -277,6 +303,13 @@ def _put_back(shots, units, ep, d, total):
         except Exception as e: log(f"drawn scene {i}: {type(e).__name__} after a resume - its number card stays", "WARN", ep)
         if ok: shots[i]["scene"] = dict(sc, by=rec["by"])
         else: rec.update(by="", why="no longer fits after a resume")
+    last = d["drawn"].get("last") or {}; first = set()
+    for rec in sorted([r for r in d["drawn"].get("scenes") or [] if r.get("by")], key=lambda r: r.get("unit", 0)):
+        t = rec.get("template")
+        if t in first: continue
+        first.add(t)
+        if last.get(t) == rec.get("variant"):
+            rec.update(by="", why="its composition would repeat the last drawn video's after a resume"); shots[rec["unit"]].pop("scene", None)
     return shots
 
 
@@ -293,7 +326,7 @@ def place(shots, units, ep, d, total, fresh):
     if not d["drawn"]["arm"]: return shots
     try: last = last_used()
     except Exception as e:
-        log(f"drawn scenes: the last drawn video could not be read ({type(e).__name__}) - no variant to avoid", "WARN", ep); last = {}
+        log(f"drawn scenes: the last drawn video could not be read ({type(e).__name__}) - no variant to avoid", "WARN", ep); last = None
     d["drawn"]["last"] = last                                   # C8: the variety rule is judged on what the plan saw
     try:
         idx = slots(shots, units, total)
@@ -305,7 +338,7 @@ def place(shots, units, ep, d, total, fresh):
     used = {}
     for i in idx:
         rec = {"unit": i, "template": "", "variant": 0, "slots": {}, "cues": [], "by": "", "why": ""}
-        try: rec.update(_one(shots, units, ep, i, total, replies.get(i), last, used))
+        try: rec.update(_one(shots, units, ep, i, total, replies.get(i), last or {}, used))
         except Exception as e:
             rec.update(by="", why=f"error: {type(e).__name__}"); log(f"drawn scene {i}: {type(e).__name__} - its number card stays", "WARN", ep)
         if rec["by"]:
@@ -315,11 +348,11 @@ def place(shots, units, ep, d, total, fresh):
     return shots
 
 
-def feature(d):
+def feature(d, shown=None):
     """The arm in the learning core's features: {"drawn": ["count0", ...]} for a video in the arm with the switch on, else {}."""
     dr = (d or {}).get("drawn") or {}
     if not (on() and dr.get("arm")): return {}
-    return {"drawn": [f"{x['template']}{x['variant']}" for x in dr.get("scenes") or [] if x.get("by")]}
+    return {"drawn": [f"{x['template']}{x['variant']}" for x in dr.get("scenes") or [] if x.get("by") and (shown is None or x.get("unit") in shown)]}
 
 
 def m_place(shots):
@@ -350,8 +383,13 @@ def audit(master, job):
     out = []; f_ = float(job.fps)
     for i, r in sorted((getattr(job, "drawn", {}) or {}).items()):
         st_ = [m for m in job.segmeta if m.get("i") == i and m.get("drawn")]
-        if not st_ or not isinstance(r, dict) or not r.get("L"): continue
-        g = RN.frame_at(master, max((m["f0"] + m["nf"]) / f_ for m in st_) - 0.25)
+        if not isinstance(r, dict): continue
+        if not st_:                                             # proved, yet no state shows it drawn (a repair re-drew it, or the render failed): its still, with the reason on record
+            if r.get("ok"): r.update(ok=False, why=r.get("why") or "shown as its still: the render or a repair re-drew it")
+            continue
+        if not r.get("L"): continue
+        if not r.get("ok"): out += [((m["f0"] + m["nf"] / 2) / f_, (m["i"], m["k"])) for m in st_]; continue
+        g = RN.frame_at(master, max((m["f0"] + m["nf"]) / f_ for m in st_) - 0.25, w=int(r["L"]["W"]))
         v = DRAWN.ink(g, r["L"]) if g is not None else 0.0; r["ink"] = v
         if g is None or v < S("DRAWN_INK_MIN", float):
             out += [((m["f0"] + m["nf"] / 2) / f_, (m["i"], m["k"])) for m in st_]
@@ -381,7 +419,8 @@ def shown_report(master, shots, drawn):
     lows = []
     for i, xs in sorted(by_i.items()):
         L = Ls.get(i) or Ls.get(str(i))
-        g = RN.frame_at(master, max(x[1] for x in xs) - 0.25) if (L and master) else None
+        g = RN.frame_at(master, max(x[1] for x in xs) - 0.25, w=int(L["W"])) if (L and master) else None
+        if g is None: return "FAIL", f"shot {i} is recorded drawn but its frame could not be read on the master"
         v = DRAWN.ink(g, L) if g is not None else 0.0
         if v < S("DRAWN_INK_MIN", float): return "FAIL", f"shot {i} is recorded drawn but its text reaches only {v:.1f} to 1 on the master (limit {S('DRAWN_INK_MIN', float):.1f})"
         lows.append(v)
@@ -415,5 +454,6 @@ def plan_report(shots, units, d, total):
     if not m: return "PASS", "the drawn arm held: no explaining moment in this film"
     kept = sorted({str(x.get("why") or "no scene") for x in dr.get("scenes") or [] if not x.get("by")})
     comps = ", ".join(f"{x['template']}{x['variant']}" for _, x in sc_) or "none"
-    return "PASS", (f"the drawn arm held: {n} of {m} explaining moments carry a scene ({comps}; none repeats the last drawn video's), {m - n} keep the number card"
+    rep = "the last drawn video could not be read" if dr.get("last", {}) is None else "none repeats the last drawn video's"      # F-14: never a variety the plan did not check
+    return "PASS", (f"the drawn arm held: {n} of {m} explaining moments carry a scene ({comps}; {rep}), {m - n} keep the number card"
                     + (": " + "; ".join(kept) if m - n and kept else ""))[:380]

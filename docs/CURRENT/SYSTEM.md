@@ -10,7 +10,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `heygen/heygen-video/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 3 standalone Shorts a week, 12 a month at most - every topic starts as a Short and the promote rule picks the long video's topic (`whatifs/ladder.py`); spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 141 code modules, 872 settings, 91 Sheet tabs, 25 GitHub workflows.
+- Size: 141 code modules, 873 settings, 91 Sheet tabs, 25 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -209,7 +209,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | FAL_STILL_MODEL | fal-ai/flux/schnell | cheap stills |
 | ANIM_SHOTS | 4 | animated scenes per long video (~20 s) |
 | PARTICLES_ON | TRUE | world particle layer on every still (dust in court/case, embers in the lab, rain in the office, wind outdoors) - independent motion that reads as alive |
-| LIVING_CHARACTERS_ON | TRUE | reaction cutaways show the LOCKED expression still with blinks, breathing and word-synced mouth movement |
+| LIVING_CHARACTERS_ON | FALSE | reaction cutaways show the LOCKED expression still with blinks, breathing and word-synced mouth movement. v12 DRAWN (P19, the relay's RR-43): OFF by default until DRAWN-b's step B1 shows the 3:4 sheet art at its own shape - today the cutaway stretches it to the 16:9 frame and its mouth most likely never moves; TRUE turns the approved cast's cutaways on |
 | LIFE_LAYER_ON | FALSE | breathing warp of the near part of a still. OFF: measured on 9 Nov it reads like a camera zoom (the still detector cannot tell it apart, and neither can a viewer); the world particle layer replaces it |
 | TTS_ENGINE | gemini | gemini = Gemini TTS (two speakers per request, expression tags, word timings derived by code) with automatic fallback to Kokoro on failure; kokoro = the Kokoro blended voices [kokoro] |
 

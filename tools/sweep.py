@@ -179,7 +179,14 @@ def floor_of(core, ep, climbed=False):
                   + words("one_story")[:140])
 
 # ------------------------------------------------------------------ one id (runs in its own process: module state never leaks between ids)
-def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
+def drawn_moments():
+    """v12 DRAWN (DQ-3 AMENDED): every id in the drawn arm, explaining moments from the first second and from 1.0 s, on the id's OWN Sheet - exactly
+    the three cells tests/test_v12_drawn_film.py's _setup sets; nothing else is ever set by it (the offline film keeps none under the defaults: 0 of 80 ids)."""
+    from whatifs.core import set_setting
+    set_setting("DRAWN_SHARE_PCT", "100"); set_setting("GRAPHICS_FREE_SEC", "0"); set_setting("DRAWN_MIN_S", "1.0")
+
+
+def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10, drawn=False):
     os.environ.update(WI_FAKE="1", WI_SMALL="1", WI_WORK=os.path.join(work, "work"), PYTHONUTF8="1")
     for k in KEYS: os.environ.pop(k, None)
     os.makedirs(os.environ["WI_WORK"], exist_ok=True); sys.path.insert(0, repo)
@@ -257,6 +264,7 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
             V.KokoroBackend = lambda blend: ToneVoice()
             MG.setup(); core.set_setting("VOICE", "C")
             if not org: core.set_setting("ORG_ON", "FALSE")
+            if drawn: drawn_moments()                                             # v12 DRAWN (DQ-3): the flag --drawn-moments - after the setup, before the long video
             slot = (core.now_utc() + dt.timedelta(hours=slot_h)).strftime("%Y-%m-%dT%H:%M:%SZ")
             if climb(core, ep): res["ladder"] = "climbed"                          # v12 V2c-b: every topic starts as a Short - the long video of this id is about its promoted Short
             r = EP.produce(slot, episode_id=ep)
@@ -332,7 +340,7 @@ def evidence(core, ep, org):
 def child(ep, a, base):
     work = os.path.join(base, ep); shutil.rmtree(work, ignore_errors=True); os.makedirs(work, exist_ok=True)
     logp = os.path.join(a.logs, ep + ".log")
-    cmd = [sys.executable, os.path.abspath(__file__), "--one", ep, "--work", work, "--repo", a.repo, "--mode", a.mode, "--slot-h", str(a.slot_h)] + (["--org", "off"] if a.org == "off" else [])
+    cmd = [sys.executable, os.path.abspath(__file__), "--one", ep, "--work", work, "--repo", a.repo, "--mode", a.mode, "--slot-h", str(a.slot_h)] + (["--org", "off"] if a.org == "off" else []) + (["--drawn-moments"] if a.drawn_moments else [])
     env = dict(os.environ, WI_FAKE="1", WI_SMALL="1", PYTHONUTF8="1"); t0 = time.time()
     try:
         with open(logp, "w", encoding="utf-8", errors="replace") as lf:
@@ -445,8 +453,9 @@ def main(argv=None):
     p.add_argument("--org", choices=("on", "off"), default="on"); p.add_argument("--mode", choices=("produce", "rehearsal", "short"), default="produce")
     p.add_argument("--jobs", type=int, default=3); p.add_argument("--out", default=""); p.add_argument("--work", default=""); p.add_argument("--repo", default=ROOT)
     p.add_argument("--slot-h", type=int, default=10); p.add_argument("--timeout", type=int, default=TIMEOUT_S); p.add_argument("--keep", action="store_true"); p.add_argument("--one", default="")
+    p.add_argument("--drawn-moments", action="store_true", help="v12 DRAWN: every id in the drawn arm, explaining moments from the first second and from 1.0 s - the offline film keeps none under the defaults: 0 of 80 ids, DQ-3")
     a = p.parse_args(argv); a.repo = os.path.abspath(a.repo)
-    if a.one: return 0 if one(a.one, os.path.abspath(a.work or tempfile.mkdtemp(prefix="sweep_")), a.repo, a.org == "on", a.mode, a.slot_h)["outcome"] == "ok" else 1
+    if a.one: return 0 if one(a.one, os.path.abspath(a.work or tempfile.mkdtemp(prefix="sweep_")), a.repo, a.org == "on", a.mode, a.slot_h, a.drawn_moments)["outcome"] == "ok" else 1
     base = os.path.abspath(a.work or tempfile.mkdtemp(prefix="sweep_"))
     if inside(base, ROOT) or inside(base, a.repo): sys.exit("the work folder must be OUTSIDE the repo")
     out = os.path.abspath(a.out or os.path.join(base, "sweep_results.txt")); a.logs = os.path.join(base, "_logs"); os.makedirs(a.logs, exist_ok=True)
