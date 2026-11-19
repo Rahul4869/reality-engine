@@ -916,3 +916,17 @@ channels reach 10 million views; any measured reach effect of Meta's AI label; a
   more viewers in its first days than one chosen from three), H35 (a month in which Strategy moved a lever shows the predicted direction more often than
   chance), H36 (the risk line turns "worse" before the long videos' monthly hours fall), H37 (a Short format judged below the others' lower quartile at 8 is
   still below at 16).
+  DRAWN BY CODE (11.5's row L1 and R31; the owner's items 28 and 29; the plan's 12.6). BUILT 19 Nov 2026, its code a54df62 - NOT accepted when this note was
+  written: `handoff_v12/BUILD_STATE.md` says whether its prover's block is green. Built before V5 by the owner's item 115 (`STATE.json`'s order, RR-54).
+  WHAT THE BUILD CHANGED IN THIS SECTION, with reasons (the record is in `BUILD_STATE.md`): (1) 11.5's L1 and R31's two renderers (HyperFrames, Remotion):
+  neither is used - both run a model's JavaScript in a browser and one may not be sold on; the trial measured a drawing LIBRARY (skia-python) against our
+  own drawing code by a rule written first, and the product draws with our own code. (2) "scenes whose animation the model WRITES": the model writes DATA
+  only - one of five templates of a house kit, its slots, its cue words; nothing it writes is executed, and code checks every word, number, name-value
+  pair and arrow against the script before a frame exists. (3) "a strong blind judge": not in this batch - what code cannot verify here is taste, left to
+  his eye and the viewers; the judge comes with the free-written scene after the launch. (4) "a still as the fall-back": at the render and on the finished
+  file, yes; at the PLAN a moment without a scene keeps its number card. (5) The cost line is Rs 38 a VIDEO at the bound of one writer's call, not Rs 10
+  to 20 a scene. (6) The 9:16 layout, the cast as a sheet and the restyle are DRAWN-b's; the talking cast is OFF by default until its art is shown at its
+  own shape. (7) An explaining moment exists only after the first minute on a line of at least 2.4 s, at most three a video, in about one long video in
+  four (a lever). New H38 (our own drawing at twice the size stays within the trial's rule - NOT borne out on the laptop: the candidate won), H39 (a long
+  video's drawn beats keep more viewers than the number-card beats of the other arm; fewer than 8 videos an arm proves nothing), H40 (a step that begins
+  0.15 s before its word holds better than an uncued one). O23 - no real film, font or phone has met a drawn scene.
