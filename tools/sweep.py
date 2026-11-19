@@ -97,6 +97,24 @@ def money_of(core, ids):
         hero = (j.get("paid") or {}).get("hero_clip", 0); said.append(f"{i} ({kind}): {hero:g} of {(j.get('lines') or {}).get('hero_clip', 0):g} estimated seconds of hero clip, Rs {float(r.get('est_inr') or 0):.0f} estimated")
     return (not bad), ("; ".join(bad) if bad else "every paid picture and clip had its line: " + "; ".join(said))
 
+def drawn_of(core, ep):
+    """v12 DRAWN: (ok, words) - THE SWEEP WALKS THE DRAWN SCENES. A long video's two checks must BOTH have PASSED (drawn_plan on the shot list,
+    drawn_shown on the render's record and the master) or BOTH say "not applicable: this video is not in the drawn arm"; a missing row, any other
+    'not applicable' or a FAIL makes the id bad. Both good cases begin "the drawn arm held:"."""
+    led = {}
+    for r in core.store().rows("Feature_Ledger"):
+        if r.get("episode_id") == ep and r.get("feature") in ("drawn_plan", "drawn_shown"): led[r["feature"]] = r
+    p, s = led.get("drawn_plan") or {}, led.get("drawn_shown") or {}; na = "not applicable: this video is not in the drawn arm"
+    if p.get("status") == "N/A" and s.get("status") == "N/A" and str(p.get("evidence")).startswith(na) and str(s.get("evidence")).startswith(na):
+        return True, "the drawn arm held: this video is not in the drawn arm"
+    if p.get("status") == "PASS" and s.get("status") == "PASS":
+        return True, "the drawn arm held: " + str(s.get("evidence") or "").replace("the drawn arm held: ", "", 1)[:240] + " | plan: " + str(p.get("evidence") or "").replace("the drawn arm held: ", "", 1)[:160]
+    return False, f"drawn_plan {p.get('status') or 'missing'}: {str(p.get('evidence') or '')[:140]}; drawn_shown {s.get('status') or 'missing'}: {str(s.get('evidence') or '')[:140]}"
+
+
+def _drew(words): m = re.search(r"the drawn arm held: (\d+) scene\(s\) drawn", str(words or "")); return bool(m and int(m.group(1)) >= 1)
+
+
 def motion_of(core, ep, shorts=()):
     """v12 V2d-b: (ok, words) - THE SWEEP WALKS THE LADDER'S RULES. The long video of this id (None = an id of Shorts only) must have PASSED the checks
     that measure its finished film - moving_share (the share that really moves; the seconds of clip it paid for found again), stock_share (real
@@ -222,6 +240,9 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
             if res["outcome"] == "ok":                                              # v12 V2b: the rehearsal's long video judged by the sweep's own words too (its counter format_inside_held)
                 ok_i, res["inside"] = inside_of(core, ep)
                 if not ok_i: res["outcome"] = "odd"; res["problems"].append("inside the format: " + res["inside"]); res["error"] = res["inside"][:300]
+            if res["outcome"] == "ok":                                              # v12 DRAWN: THE SWEEP WALKS THE DRAWN SCENES - in the arm both checks PASS, outside it both say so
+                ok_d, res["drawn"] = drawn_of(core, ep)
+                if not ok_d: res["outcome"] = "odd"; res["problems"].append("the drawn scenes: " + res["drawn"]); res["error"] = res["drawn"][:300]
             if res["outcome"] == "ok":                                              # v12 V1c: the rehearsal's long video (it climbed) - the floor, his line, one story
                 ok_f, res["floor"] = floor_of(core, ep, climbed=True)
                 if not ok_f: res["outcome"] = "odd"; res["problems"].append("the floor, his line or one story: " + res["floor"]); res["error"] = res["floor"][:300]
@@ -258,6 +279,9 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10):
             if res["outcome"] == "ok":                                              # v12 V2b: THE SWEEP WALKS THE INSIDE OF THE FORMAT - the voice, the ending, the camera path, judged on the script and the render's record
                 ok_i, res["inside"] = inside_of(core, ep)
                 if not ok_i: res["outcome"] = "odd"; res["problems"].append("inside the format: " + res["inside"]); res["error"] = res["inside"][:300]
+            if res["outcome"] == "ok":                                              # v12 DRAWN: THE SWEEP WALKS THE DRAWN SCENES - in the arm both checks PASS, outside it both say so
+                ok_d, res["drawn"] = drawn_of(core, ep)
+                if not ok_d: res["outcome"] = "odd"; res["problems"].append("the drawn scenes: " + res["drawn"]); res["error"] = res["drawn"][:300]
             if res["outcome"] == "ok":                                              # v12 V1c: THE SWEEP WALKS THE FLOOR, HIS LINE AND ONE STORY - judged by first-time viewers, his line kept, the thumbnail the opening
                 ok_f, res["floor"] = floor_of(core, ep, climbed=res.get("ladder") == "climbed")
                 if not ok_f: res["outcome"] = "odd"; res["problems"].append("the floor, his line or one story: " + res["floor"]); res["error"] = res["floor"][:300]
@@ -408,6 +432,8 @@ def summary(results):
             "money_agreed": sum(1 for r in results if str(r.get("money") or "").startswith("every paid picture") and r["outcome"] == "ok"),
             "ladder_rules_held": sum(1 for r in results if str(r.get("motion") or "").startswith("the ladder's rules held") and r["outcome"] == "ok"),
             "format_inside_held": sum(1 for r in results if str(r.get("inside") or "").startswith("inside the format held") and r["outcome"] == "ok"),
+            "drawn_held": sum(1 for r in results if str(r.get("drawn") or "").startswith("the drawn arm held:") and r["outcome"] == "ok"),          # v12 DRAWN: every long-video id
+            "drawn_ids": sum(1 for r in results if _drew(r.get("drawn")) and r["outcome"] == "ok"),                                                  # ... and a FLOOR: ids that drew a scene
             "floor_judged": sum(1 for r in results if str(r.get("floor") or "").startswith("the floor judged") and r["outcome"] == "ok"),
             "strategy_month_held": sum(1 for r in results if str(r.get("strategy") or "").startswith("the month's decision held") and r["outcome"] == "ok"),      # v12 V4
             "bad_ids": sorted(r["id"] for r in results if r["outcome"] != "ok"), "fail_classes": {k: sorted(set(v)) for k, v in sorted(fails.items())},

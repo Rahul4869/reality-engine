@@ -1363,6 +1363,29 @@ TESTS: red first without tools/l1_trial.py ("cannot import name 'l1_trial' from 
 readers (b0b, v83, v891, safety, v89, v94a, exec) 290 passed, 218 s (the first run 4 red on the YAML typo); org, rnd, docs_current green;
 truth GREEN; Plan Guard GREEN; minitest tests/test_v12_drawn.py 23/0, 266 s.
 THE PREVIOUS CHECKS: run 44439138615 on 829135b (step 2) - completed/success; Unit tests: 1892 passed in 5166.14s; Free rehearsal success.
+STEP 4 (memo 3.10, Step 5 ENFORCE; C11, C12) - enforce: tools/sweep.py `drawn_of` (both rows PASS, or both N/A "not in the drawn arm"; else
+the id is bad), called in both sweep modes, summary counters `drawn_held` and `drawn_ids`; tools/rehearsal.py (DRAWN_SHARE_PCT 100 on its own
+Sheet before its long video, both checks asserted, the line `drawn:`); seven rows in docs/CURRENT/ENFORCEMENT_MATRIX.md; three founding items
+for D6 in whatifs/org/seed/build.json (drawn.scene_is_data, drawn.the_kit_is_tokens, drawn.cued_by_the_voice); the recipe sentence on
+CLAUDE.md's line 74 (200 lines kept, C12); docs/CURRENT/SYSTEM.md by gen_docs.
+PLACES MOVED AT ddfd4d5: the matrix - V4's sixteen rows end the table, DRAWN's seven follow; sweep.py's summary - V4's `strategy_month_held`
+between `floor_judged` and `bad_ids` kept, DRAWN's two counters before them; seed/build.json - V4's six items end the list, DRAWN's three
+follow (a comma after V4's last).
+THE FINISHER'S CORRECTION F-0: the summary of drawn.the_kit_is_tokens was 446 characters (over palace.row_issues' 400): replaced word for
+word by the finisher's 397 (the other two DRAWN summaries 393 and 366).
+TESTS (no new test in the step; its rules are walked by the block's sweep): palace, v111_enforce, docs_current, exec, b0b, strategy, cutdowns,
+money, short, ladder, opening, integration, v810, v82, cutmap, seat, layman, formats, org, v89, rnd - 781 passed + 1 red in 950 s: the red was
+the typist's missed pin of step 1 (test_v12_strategy.py 640, levers 95), typed INTO step 1 before its commit; truth GREEN; Plan Guard GREEN.
+Collected at this step: 1893 tests.
+TO VERIFY 1, first half: with DRAWN_SHARE_PCT 25 part A's 20 fixed ids hold 3 arm ids (EP209901220428, EP209901241854, EP209901260207), B's
+and C's 4 none; `tools/sweep.py --one` on each: "the drawn arm held: no explaining moment in this film" (0 slots, 0 scenes). The finisher's
+DQ-3: none of fixed_ids(80)'s 21 arm ids keeps a slot (all 21 run, 78-140 s each) - AMENDED: the block's part "drawn" is the corrections
+typist's (a sweep flag --drawn-moments). THE BLOCK proving/blocks/DRAWN.json: V4's promoted floor + `drawn_held` on parts A, B, C (every
+long-video id, as format_inside_held) + the rehearsal line `drawn:`; NO `drawn_ids` counter - proving/verdict.py 85-86 holds only counters
+that EQUAL n, it has no floor; expect_tests 1893. THE BREAKS proving/breaks/DRAWN.json: 58 typed (step 1: 32; DQ-1: 3; DQ-2: 1; step 5 (c): 1;
+step 2: 18; step 3: 3), each find checked EXACTLY once on this code and each test present; NOT run here (breaks.py runs after the
+corrections typist's commit, by the finisher's order).
+THE PREVIOUS CHECKS: run 44450144665 on 713c412 (step 3) - completed/success; Unit tests: 1893 passed in 6150.69s; Free rehearsal success.
 ### V4 - THE CEO AND THE LADDER (16-18 Nov 2026) - ACCEPTED (final code commit ddfd4d5 GREEN in GitHub Checks run 277: 1865 passed; sweep 58 of 58 ids) - its code 5272fea, BUILT AGAIN AFTER RED ROUND 1 (repairs C23 to C25 by Opus under item 130; the first pass was RED on 7899300, its code 8fa7742: an overrun memo on every long video of the sweep, the rehearsal F3/S1 held by `impact_map`, sweep part B without the watch line; `proving/notes/V4_RED_1.md`) - BUILT before it (final code commit 8fa7742) (the designer's record: steps 1 to 3; the Opus builder writes steps 4 to 6a, the Fable finisher `FINISHED BY FABLE`, the prover 6b and 7)
 THE BATCH'S START: the first check (the batch before on the record, GitHub's run of its final code commit, a clean tree) and the usage
 figures are written by the session that pastes this record at V1c's acceptance. NOT SPLIT (open issue 189: `next.py` has no move for a

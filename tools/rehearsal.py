@@ -98,6 +98,7 @@ def run(ep_id=None):
         OMEM4.write({"type": "decision_memo", "from_dept": "C", "to_depts": ["D6"], "subject": "Rehearsal decision: one knowledge lever for Visual Production",
                      "body": {"decision": "Serve Visual Production the rehearsal technique.", "why": "The rehearsal must prove that a decision becomes a verified change.", "memos_cited": [tk4["id"]],
                               "lever_class": "A", "tickets": [tk4["id"]], "owner_approval": False}})
+        set_setting("DRAWN_SHARE_PCT", "100")                                      # v12 DRAWN: the rehearsal's long video is in the drawn arm (this Sheet only)
         r = EP.produce(slot, episode_id=epid); print("produce ok", json.dumps(r, default=str)[:400])
         assert r.get("ok"), ("the long video was held or not made - what held it:", r.get("problems"), r.get("skipped"), r.get("why"))      # v12 V2d-b red 1: never a KeyError on a held video (open issue 179)
         assert os.path.exists(r["master"]) and "reels" not in r, "missing outputs, or a cut-down reel was made"
@@ -137,6 +138,9 @@ def run(ep_id=None):
         # (F1, F3), one place per act, eye level, one direction, judged on the render's own record (camera_path, camera_shown) - as the sweep judges them.
         from tools.sweep import inside_of as inside12
         ok12, said12 = inside12(core12, epid); assert ok12, ("the inside of the format did not hold", said12)
+        from tools.sweep import drawn_of as drawn12                                # v12 DRAWN: THE DRAWN SCENES - in the arm, both checks PASS, as the sweep judges them
+        ok12, said12 = drawn12(core12, epid); assert ok12 and "not in the drawn arm" not in said12, ("the drawn scenes did not hold", said12)
+        print("drawn:", said12[:300])
         fmt2b = str(json.loads(e12["draw_json"]).get("format") or "")                 # the long video's format: what the older asserts below expect follows it
         own2b = S("ENDINGS_ON", bool) and FMT12.ending(fmt2b) != "tease"               # a format with its own ending carries its own asks (3.3)
         voices2b = set(FMT12.FORMATS[fmt2b]["voices"]) if fmt2b in FMT12.FORMATS and len(FMT12.FORMATS[fmt2b]["voices"]) == 1 else {"DIRECTOR", "SKEPTIC"}      # F3: one voice
