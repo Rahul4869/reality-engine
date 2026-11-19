@@ -563,6 +563,1323 @@ What B6a leaves ready for B6b:
 - Acceptance of B6b includes standing rules 1 and 2 (sweep on a frozen copy, final commit green on GitHub).
 
 ## DONE
+Designed by Fable at the reset (19 Nov 2026; `PREDESIGN_B_OWNER.md` of the dispatcher's notes folder: the pool's designer R4 and the designers of record R17 and R22, each a Fable 5.2 session at Extra high); pre-reviewed by R7 and reviewed by three fresh Fable sessions - R18 (the review of record, two rounds: APPROVED), R19 (the blocks marked "R22 (" on the tick's real cadence: APPROVED) and R24 (the five late blocks: APPROVED) - whose three files are committed under `reviews/` after this paste, by a clerk; typed ahead on patches by Opus typists.
+### B-OWNER - THE OWNER'S TWO SCREENS, WITH B-HDGATE FOLDED IN (19 Nov 2026) - DESIGNED, NOT BUILT, NOT ACCEPTED (the designer's record: steps 1 to 3; the Opus typists write steps 4 to 6a, the Fable finisher `FINISHED BY FABLE`, the prover 6b and 7)
+THE BATCH'S START (written by the paster, R22 `local_8b708096-6d3d-468f-86d2-3bf8818e0101`, 19 Nov 2026, 22:30 UTC): the batch before on the record is DRAWN, ACCEPTED at d64fdcc (GitHub Checks run 292: 1911 passed; sweep 66 of 66 ids; the acceptance commit da68cbf); a clean tree at 69528f8, level with origin; no run alive. Usage at the paste (`get_usage`, 22:28 UTC): Fable 65%, all models 37%, the paster's context 56%. THE MEMO BELOW IS `PREDESIGN_B_OWNER.md` WORD FOR WORD, 158,013 bytes, 1,310 lines, compared byte for byte with the file by the paste script (`tools\paste_b_owner.js` of the dispatcher's notes folder).
+CORRECTED AT THE PASTE, ONE THING OF FORM (the designer of record; the plan's A13 (a)): the four design lines of Step 2 stood as list items ("- A. " to "- D. "); the plan's 5.2 orders them as lines `A. `, `B. `, `C. `, and `next.py` counts them in that form. The list mark before each was taken off (8 bytes: 158,021 -> 158,013); no word of the memo changed. The three reviews were written on the 158,021 bytes.
+THE MEMO'S "TO VERIFY WHEN THE BATCH'S TURN COMES", RUN ON THE ACCEPTED CODE (22:26 UTC; HEAD 69528f8, whose code is d64fdcc - `git diff d64fdcc HEAD` shows no file outside `handoff_v12/`). Point 1: 41 lines call `.email(` in `whatifs/` and 1 in `tools/` (the memo: 41 and 1); 50 lines call `NT.send(` (the memo: 50); 61 lines of `tests/` hold "email" in quotes; "public at once" stands nowhere in `tests/` or `docs/CURRENT/`; all 40 places of PART 2's table hold their mail call at the line named. Point 3: no line moved - the code is the commit the memo was written on. Point 6: `OWNER_ONLY` is read by `tests/test_v12_strategy.py` 464 and `tests/test_v12_exec.py` 439, as the memo says. Point 7: DRAWN was accepted on d64fdcc without a repair - there is no diff to read. Points 2, 4 and 5 hold nothing to run. NOTHING FAILED.
+THE SOURCES' ADDRESSES OF STEP 1 (the designer named each page; each answered HTTP 200 at the paste, 22:26 UTC): S1 https://developers.facebook.com/docs/whatsapp/pricing ; S5 https://developers.google.com/youtube/v3/docs/videos ; S6 https://support.google.com/youtube/answer/71674 , https://support.google.com/youtube/answer/57407 , https://support.google.com/youtube/answer/13861714 and https://support.google.com/youtube/answer/6388789 ; S7 https://sre.google/sre-book/monitoring-distributed-systems/ ; S9 https://www.w3.org/TR/WCAG22/ . S2, S3 and S4 are pages of Meta's developer documentation, S8 a page of PagerDuty and S10 one of Nielsen Norman Group, whose addresses the memo does not name: none is guessed here.
+
+DESIGNED BY FABLE AT THE RESET
+# PREDESIGN_B_OWNER - B-OWNER, THE OWNER'S TWO SCREENS, WITH B-HDGATE FOLDED IN (one batch, one proof)
+R22 (0): THE DESIGNER OF RECORD FROM HERE (R1-31) - THE TICK'S REAL CADENCE, MEASURED, AND WHAT THIS MEMO BECOMES UNDER IT
+Pool role R22, session `local_8b708096-6d3d-468f-86d2-3bf8818e0101` (Fable 5.2, Extra high), Thu 19 Nov 2026, from 20:40 UTC (clock
+read); the end is in my line to R1. R4's and R17's text and R18's blocks stand wherever they are not marked; every sentence I
+changed or added begins "R22 (". Nothing in the repository was changed, and nothing was run but read-only reads of GitHub's public
+run list (`node`; no test, no sweep, no rehearsal).
+THE MEASURE, REPRODUCED BY ME (20:41 UTC: `tools\tick_gaps.js` of the notes folder, then my own check, which pages until a short
+page and counts `schedule` events only): `total_count` 72 = 72 runs read, so paging cuts nothing; by event: schedule 70,
+workflow_dispatch 2, repository_dispatch 0. THE SCHEDULE ALONE: 70 runs from 31 Oct 20:15 to 19 Nov 17:16 UTC = 3.71 a day (2 to 5
+on every day); 69 gaps - shortest 202 minutes, median 409, ninth decile 502, longest 661; all 69 over 3 hours, 45 over 6, 12 over
+8. A run lasts a median of 0 minutes (the longest 139) and starts at any minute of the hour: no long run swallows ticks - GitHub
+starts this repository's half-hourly schedule about every seven hours. From any moment to the next tick: median 197 minutes, ninth
+decile 403, longest 653. `main`'s `pipeline.yml` has NO `repository_dispatch` trigger (read: its lines 2-5), v12's has (lines
+6-7): the Worker's backup clock (`mission_control/worker.js` 108-133) cannot start a run of today's default branch at all.
+THE TWO CLOCKS every sentence is judged against: (i) GITHUB'S SCHEDULE ALONE, as measured - a gap of 7 to 11 hours is an ordinary
+day; (ii) THE WORKER'S BACKUP CLOCK WORKING - every 10 minutes it starts a tick when the newest run is older than 45 minutes, so a
+gap is 46 to about 56 minutes whenever GitHub's own schedule is silent, which is nearly always. The memo's "every 30 minutes" is
+true under NEITHER.
+WHAT STANDS ON A TICK, AND WHAT BECOMES OF IT (the whole list; "the words" = no code changes):
+| Place | The sentence | With the backup clock (ii) | On GitHub's schedule alone (i) | R22 |
+|---|---|---|---|---|
+| Step 1, the experiment | "The tick runs at minutes 7 and 37" | untrue | untrue | (1): the words |
+| PART 7 | the review card's silence 1.5 hours before the slot; `approve` moves a slot under 30 minutes away to the next free one | a window of 60 minutes against a gap of 56: 4 minutes to spare | a tick came in time for 15.0% of the slots tried: the video goes out a WEEK later | (2): the cell `SILENCE_LEAD_H` ("12") - in time for 100% of the slots tried; his window to stop it is not shortened; a moved slot is told |
+| PART 7, `floor.eye_hours` (V1c, accepted) | the same 1.5 | the same | the same | (2 b): the same cell, read behind the switch, typed in step 8 (R1-36, R1-37); it closes F1 of V1c's audit for the shipped state |
+| PART 9, the long video | `HD_GUARD_MIN` 45, `HD_LONG_LEAD_MIN` 60, "ticks are 30 minutes apart" | the guard is shorter than the usual gap: YouTube publishes before the next tick looks, the gate waits one step or none | a tick fell inside the lead for 15.1% of the slots tried; otherwise YouTube publishes at the slot: never held, HD not waited for | (3): 75 and 90; the worked table on both rhythms |
+| PART 9, R18 (5) | a Short "still unread `PRIVATE_ALERT_HOURS` after its cap is BLOCKED" | several reads in that time | ONE failed read, hours later, blocks a Short for good | (4): three empty reads AND the hours |
+| PART 9, SAID PLAINLY | "the next half-hourly tick, at most 60 minutes after its upload" | at most its cap and one gap: about two hours | private until the next tick: hours | (5): the words; the gate armed only on a proven clock; one test |
+| PART 4 | the 09:00 and 18:00 pushes; "144 ticks over three days" | within about an hour | the morning message a median of 5.5 hours late; the 18:00 list on 12 of 17 days | (6): the words; one test on a sparse clock |
+| PART 3 | `alarm_retry` "at every tick"; whatever raises an alarm at a tick | within about an hour | hours; an alarm's first push never waits | (6): the words |
+| PARTS 4 and 7 | `expire_defaults`, `review_sweep`, a list's "<default> at HH:MM" | the first tick after | the first tick after: hours | (6): the words - each acts at the FIRST tick after its time, none only inside a window |
+| PART 5 | "tried at the next two ticks"; "tomorrow's morning message" | true | true, later | none |
+| PART 9, HIS WINDOW | 08:30 on its day; the card "expiring at the slot" | the first tick after 08:30 | the same, later in the day | none |
+| PART 9, the ladder's clock | "at most 60 of 1,440 minutes" | about 120 | hours | (5): the open issue says so |
+NOT BUILT, AND WHY (item 186: the batch does not grow): a road that publishes a video late on its own day when its silence came
+after its slot (it needs `public_at`, the private alert's rule and `_give_up_stuck`'s - a design of its own; with the cell at 12
+no gap measured reaches it); a longer wait for HD inside the Short's own upload job (that job's budget and the other platforms'
+place in `release` were not read by me); a message to him when the clock turns slow. Each is an open issue the builder writes, with
+these figures (R22 (8)).
+A FINDING AGAINST ACCEPTED CODE, TOLD TO R1 BEFORE THIS WAS WRITTEN (R1-31 (3), P32): `whatifs/org/floor.py` 401-405 (`eye_hours`:
+the literal 1.5, "approve's own 0.5 h + two ticks"); `whatifs/contract.py` 1081-1082 (`approve`: a slot under 30 minutes away goes
+to the next free one - a week, with `PUBLISH_DAYS` "Sat"); `whatifs/manage.py` 243 and 249 (`caretaker.expiry_check` and
+`occasions.heads_up` run ONLY when a tick falls in one half hour of the day - by the median gap about one day in fourteen under
+(i), and not every day under (ii); the morning head's `expiry` line stands on the first); `manage.py` 78-79 (`resume_held`: the
+same move, 45 minutes).
+STEPS TOUCHED: 3, 8, 9a, 9b and 10 (R22 (7) says what lands where; step 3 joined with R22 (9) and (10) on R1-36, step 9b with R22 (11) on R1-37). R18's change 7 (g) is inserted word for word from the review's round 2
+by the same script (R1's order).
+THE READING, SAID PLAINLY. Read whole: this memo; `RESET_ROLE_BRIEFS.md` "R22"; R1-31, the ruling after it (its points 2 to 4) and R1-33 (2); the
+review of record's round 2 (its lines 1-36) and 7 (g); in `02` items 150 and 156 and the head of 186. Code: `contract.py`
+1024-1094, `org/floor.py` 396-478, `manage.py` 20-110, 179-262 and 322-362, `notify.py` 135-151, `episode.py` 950-968, `worker.js`
+96-134, the trigger lines of every workflow on `v12-organisation` and of `main`'s `pipeline.yml`, `core.py`'s lines of the cells
+named. NOT READ, because the time to 21:20 went to the measure and the change: the plan's chapters 2 and 5 and its amendments;
+`proving/next.py`'s output; the review of record's round 1 (its seven changes were read as they stand in this memo);
+`PREREVIEW_B_OWNER.md`; `RESET_BATTLE_PLAN.md`; items 149, 169 and 180; R1-5, R1-6, R1-20, R1-25, R1-26 and R1-30 beyond its
+head; `release.py`; `digests.py` beyond `due`. They are read before task (B).
+USAGE (`get_usage`, 20:46 UTC): my context 20%, Fable 48%, all models 25%; the figures at the end are in my line to R1.
+R17: THE DESIGNER OF RECORD'S ANSWER TO `PREREVIEW_B_OWNER.md` (round 1) - ONE COMPLETE ANSWER, WRITTEN INTO THIS FILE
+Pool role R17, session `local_671f197a-c466-4280-a358-57944f581d09` (Fable 5.2, Extra high), Thu 19 Nov 2026, 19:38 to 20:03 UTC (clock read).
+From here the memo is R17's draft (R1-20). R4's text stands wherever it is not marked; every changed or added sentence begins "R17".
+Where a sentence of R4's was untrue it is REPLACED, not answered beside it: the memo says one thing.
+I ran nothing but `proving/next.py` once (its card is DRAWN's prover's, not mine) and read-only searches; nothing in the repository was
+changed. Code read in the checkout at d64fdcc (HEAD 5ca8c99 = d64fdcc and two text commits).
+THE ANSWER: ALL FOURTEEN CHANGES ARE TAKEN, each with R7's words; NONE IS REFUSED. R4's three questions stand as R7 ruled them.
+WHERE EACH IS (search "R17 (n"); the five that would have reached him or a viewer first:
+- 1, a Short public before its checks and thumbnail: PART 9, R17 (1), (1 b). 4, a second inform row swallowed: PART 1, R17 (4).
+  5, an alarm WhatsApp did not take: PART 3, R17 (5), (5 a); PART 2's `mail` (5 c); PART 4 (5 b). 7, the silence road: PART 7,
+  R17 (7 a) to (7 d). 9, Meta's bill: PART 8, R17 (9 a), (9 b); PART 5 (9 c).
+- 2 and 3: PART 9, R17 (2), (3 a), (3 b), (3 c); "WHAT V4b LEANS ON". 6: PART 3, R17 (6). 8: PART 1, R17 (8); Step 1's count.
+  10: PART 5, R17 (10 a) to (10 e). 11: PART 4, R17 (11 a), (11 b), (11 d); PART 9's sweep line (11 c). 12: STEP 0b. 13: TYPING SIZE;
+  PART 6's map (13 d); THE ORDER OF THE BUILD (2a, 2b, 9a, 9b, and where each scan lands). 14: (a) PART 9, HIS WINDOW; (b) PART 9 and
+  FOR THE PILOT; (c) PART 0; (d) PART 7's last line; (e) FOR THE PILOT; (f) the last part, point 2, and rows 32, 34, 35, 38 of PART 2.
+R17 ADDS six sentences the review did not ask for - each makes a line of the batch true, none is new scope (search "R17 ADDS"):
+(A) PART 9: the long video's gate never touches a video YouTube already shows public (his own hand in Studio; V4b's early release).
+(B) PART 7: `unpost` is his Hold, and the way back after a take-down is Studio (YouTube gives no time to a video once published, S5).
+(C) PART 1: "Needs you" has one definition, `notify.needs()`; a hold sent without a button gets "Done".
+(D) PART 5: a bare acknowledgement ("ok thanks") is talk, not an input - a list code recognises; no strong call is paid for it.
+(E) PART 9: the gate's tab keeps what the upload asked for the AI label. (F) PART 3: where WhatsApp is not set up nothing is retried.
+THE READING, SAID PLAINLY. Read whole: the plan; both `CLAUDE.md`; `RESET_ROLE_BRIEFS.md`, `RESET_BATTLE_PLAN.md`, `RESET_ROLES.md`;
+this memo and its review; `RULINGS_BY_R1.md` R1-5, R1-6, R1-11, R1-16 to R1-24; `REAUDIT_R2.md` 28-114; `LAUNCH_MAX_16NOV.md` THE
+TRIM, B-OWNER, B-HDGATE, C0, C0b; `RELAY_OUTBOX.md` R5-0, R5-5, R5-6; in `02` items 149, 150, 156, 180 and 151 to its point 2.
+Code, whole: `notify.py`, `wa.py`, `digests.py`, `org/desk.py`, `dash.py`, `launch.py`, `ypp.py`, `org/finance.py`,
+`tests/conftest.py`, `render_check.mjs`; in part, the lines each R17 sentence names.
+NOT READ, AND WHY (measured, not estimated): the plan's chapter-4 reading does not fit one window beside this memo - `02` alone is
+about 170,000 tokens (its lines 1 to 1254 measure 61,094), and this session stood at 47% after the reading above and at 59% after the
+writing. Not read: the rest of `02` (items 1 to 148, 152 to 155, 157 to 179, 181 to 197, section B); `00`, `01`, `03`, `04`, `06`; the
+redesign; `BUILD_STATE.md`; `docs/CURRENT/`; `FOR_FABLE_AT_THE_RESET.md`; `PLACES_B_OWNER.md`; `release.py` 1-214 and 310-454
+(`want_youtube`, `compare`, `short`: PART 9's receipt sentences are R4's, judged typeable by R7, and the typist of 9a reads the file
+whole); the four tests of 14 (d) and the golden-schema test (named where they stand). R1 is told.
+USAGE (`get_usage`): at my start Fable 25%, all models 13%, my context 13%; at the end (20:02 UTC) Fable 33%, all models 17% (other
+sessions ran beside mine), my context 59%.
+WHERE THIS SESSION STANDS: AT THE 60% LINE - it takes no new step. It can still do ONE mechanical turn: the paste at the batch's turn,
+word for word by a script written with the file tool (about 2% of its window). A second review round, or any correction that needs
+judgment, belongs to a fresh Fable session with this file and `PREREVIEW_B_OWNER.md`.
+SIZE: about 111 KB (R4: 74 KB); the lines R17 added or changed are about 37 KB of it.
+R4's HEAD, AS IT STOOD:
+Pool role R4, session `local_e03a1898-9d92-4fe3-ae45-b0b16ceffde5` (Fable 5.2, Extra high), written Thu 19 Nov 2026, 18:51 to 19:16 UTC.
+A PRE-DESIGN (the plan's amendment 3, B1; A13 (a)): nothing was run but `proving/next.py` once, nothing in the repository was changed,
+nothing was committed. The designer of record pastes steps 1 to 3 when the batch's turn comes and corrects every line of the last
+part, "TO VERIFY WHEN THE BATCH'S TURN COMES".
+THE CODE READ: a plain export of d64fdcc (DRAWN's final commit: BUILT, in PROVING, not accepted). Every file:line below is of that commit.
+THE READING I DID (said plainly; a reviewer may ask for more): the plan `OPUS_BUILD_PLAN.md` whole; the handoff and the repo `CLAUDE.md`;
+`RESET_BATTLE_PLAN.md`, `FOR_FABLE_AT_THE_RESET.md`, `LAUNCH_MAX_16NOV.md`, `RULINGS_BY_R1.md`, `PLACES_B_OWNER.md` whole; `RELAY_OUTBOX.md`
+R5-0, R5-5, R5-6; in `02` items 130 to 197 and section B. Code read whole: `notify.py`, `wa.py`, `digests.py`, `dash.py`, `owner_view.py`,
+`org/desk.py`, `mission_control/worker.js`, the page's script (lines 290 to 810). Read in part: `publish.py` (yt_read, privacy, schedule),
+`release.py` (the sheet, `_youtube`, `_extras_youtube`, `settle`), `contract.py` 1033-1093, `specials.py` 428-478, `org/floor.py` 436-478,
+`manage.py` 179-260 and 322-362, `costguard.py` 100-148, `tests/paid_calls.py` 7-56, each of the 38 mail sites with the two lines before
+it, and the lines of the older tests named below. NOT read: `02` items 1 to 129, `00`, `01`, `03`, `04`, `06`, the redesign,
+`BUILD_STATE.md` (the reading the brief gave this role; the designer of record has the whole reading). A `locator` agent listed the
+places (A12 (e)); I read each place I build on.
+USAGE (read with `get_usage`): at the start Fable 6%, all models 4%; after the reading 11% and 6%; at the end (19:16 UTC) Fable 16%,
+all models 9%. My context: 48% after the reading, 61% at the end.
+WHERE THIS SESSION STANDS: past the 60% line, so it takes no new step. The memo is whole (steps 1 to 3 and the last part). It can give
+ONE answer to a review round, reading the changed lines only; a second round belongs to a fresh Fable session with this file.
+SIZE: 69 KB against the plan's guide of about 60 (A12 (a)). The weight is the table of 39 call sites and the named tests and breaks,
+which a typist needs word for word; no part was thinned to fit.
+
+TYPING SIZE (R17 (13): R7's two splits are made - step 2 into 2a and 2b, step 9 into 9a and 9b - and the table under THE ORDER OF THE BUILD
+says which files, tests and scans each step holds): 15 steps (0, 0b, 1, 2a, 2b, 3 to 8, 9a, 9b, 10, 11), 12 of them code; step 0b is not this memo's design (R1-11: two findings of V4's audit, typed
+from `REAUDIT_R2.md`). Without 0b: about 1,400 lines of code, 900 of tests, 400 changed lines of the page. The largest
+steps (4 and 7) touch 3 files each; every step names its files and tests so that one Opus typist holds it inside 60% of its context
+with the continuation typist's reading (A9). Steps 9 and 10 (the HD gate) are typed last, as the brief allows.
+
+#### Step 1 RESEARCH
+SOURCES (read 19 Nov 2026 through the session's web-fetch tool, verbatim quotes asked for; E = measured or the provider's own page,
+O = opinion or practice):
+- S1 (E) Meta, WhatsApp Business Platform pricing, developers.facebook.com/docs/whatsapp/pricing; banner: "pricing updates that became
+  effective as of October 1, 2026". "Effective July 1, 2025 - Meta charges on a per-message basis". "Businesses are only charged when a
+  message is delivered." From 1 Oct 2026 service messages (free text inside the window) are charged, with "one free tier of 1,000
+  delivered service messages per month" for each business number, and without a payment method Meta "will deliver service messages
+  within the free tier but not deliver them after the free tier has been used". A utility template inside an open window "changed from
+  free_customer_service to regular as of October 1, 2026": it is charged too.
+- S2 (E) Meta, Cloud API, send messages and template guidelines: "a 24-hour timer called a customer service window starts"; "If the user
+  messages or calls you again before the timer expires, the timer resets to 24 hours."; "When the window closes, you can only send
+  pre-approved template messages." Error 131047: "More than 24 hours have passed since the recipient last replied to the sender number."
+- S3 (E) Meta, template components and categorization: body "Maximum of 1024 characters."; "Variables cannot be at the start or end of
+  the template."; quick reply text "25 characters maximum."; a quick reply button "immediately message[s] you with the specified text
+  string when tapped" (so a tap IS a user message, and a user message opens the window); utility "Must be non-promotional" and "specific
+  to or requested by the user"; "Review can take up to 24 hours."
+- S4 (E) Meta, interactive messages: a list has "up to 10 rows for all sections combined", row title "Maximum 24 characters", row
+  description "Maximum 72 characters", button text "Maximum 20 characters"; reply buttons "up to three", title "Maximum 20 characters".
+- S5 (E) YouTube Data API, `videos`: `contentDetails.definition` "Indicates whether the video is available in high definition (HD) or only
+  in standard definition" (values hd, sd); `processingDetails` is "only available to that video's owner"; `status.publishAt` "can only be
+  set if the video's privacy status is private and the video has never been published"; `videos.list` "1 unit", `videos.update` "50
+  units"; "10,000 units per day".
+- S6 (E) YouTube Help: 71674 "While this processing happens, your video may seem to be missing higher qualities for several hours.";
+  57407 "Your video can be published once SD processing is complete."; 13861714 (A/B test titles and thumbnails) "You cannot use this
+  feature on videos that are made for kids, mature audiences, or are private." and "Desktop only"; 6388789 "Your video has to be at least
+  25 seconds long to have an end screen."
+- S7 (O, a named operator's practice) Google SRE book, "Monitoring Distributed Systems" (2017): "Every page should be actionable.";
+  "I can only react with a sense of urgency a few times a day before I become fatigued."; "When pages occur too frequently, employees
+  second-guess, skim, or even ignore incoming alerts".
+- S8 (O, vendor) PagerDuty, Intelligent Alert Grouping (2026): it "consolidates related alerts into a single, actionable incident";
+  grouped when "The most recent alert was created within the specified grouping time window" and "The incident is less than 24 hours
+  old"; the responder can "see how many alerts are grouped into the incident".
+- S9 (E, a standard; the wording reached me as an extract, not verbatim) WCAG 2.2 (W3C Recommendation, 12 Dec 2024): targets at least
+  24 by 24 CSS pixels (2.5.8), 44 by 44 (2.5.5, enhanced); reflow at a width of 320 CSS pixels (1.4.10); text contrast at least 4.5:1.
+- S10 (O) Nielsen Norman Group, P. Laubheimer, 18 Jun 2017: a dashboard is "a single-page view that imparts at-a-glance information on
+  which users can act quickly."
+FOR EVERY INPUT (items 120 and 128): best / how we go beyond / the measure.
+- His items 149 and 150. BEST: "few messages, grouped", "my absence never holds a post". BEYOND: the grouping is one data table that code
+  reads, so a message outside it cannot be sent at all; a default is checked against every hold before it posts. MEASURE: WhatsApp pushes
+  a day (WA_Outbox by kind: at most 1 morning, 1 needs, plus alarms); posts held by silence (must be 0 outside the hold list).
+- His item 180 (the muted alerts). BEST: group into incidents. BEYOND: the alarm list is code, read by no cell, lever or model; a repeat is
+  counted on the incident, never dropped. MEASURE: the planted test (cap used, quiet hours on) and a flood of 50 repeats = 1 push, count 50.
+- His item 156 (HD before public). BEST: his point on quality is YouTube's own (S6). BEYOND: the wait is read, capped and receipted per
+  video; a policy row that reads wrong keeps a Short private, which "public at once" could not. MEASURE: upload-to-public minutes and the
+  HD state on every receipt; share of releases that went public in HD.
+- S1 to S4. BEST: exact limits. BEYOND: the fake platform refuses what the real one refuses (free text outside the window), so the
+  rehearsal fails where the launch would. MEASURE: 0 rows "refused_window" in WA_Outbox on every sweep id.
+- S7, S8. BEST: actionable, grouped. BEYOND: nothing to add; we take the two rules. MEASURE: alarms a month (aim 0 to 2, item 150).
+- S9, S10. BEST: a floor for a phone. BEYOND: nobody can go beyond a standard; it enters as measured floors. MEASURE: the face tests.
+THE FOUR QUESTIONS (item 128). (1) What would a top professional do that was not asked: make the alarm path impossible to mute by
+construction, and make the fake world as strict as Meta's. (2) The rawest material: the 38 call sites themselves, read one by one, and
+Meta's and YouTube's own pages. (3) Methods and tools: an AST scan of every call into the notify layer; contrast arithmetic on the
+page's own colour tokens; a pure step function for the HD gate. (4) What other than a model or us shows the result is right: the scan
+and the wire guard are code; his one tap on each screen at the pack's C0b; Meta's template review; YouTube's read-back.
+NOT FOUND, so nothing is built on it: Meta's rupee rate for a utility or a service message to India (the rate card's file did not
+load; the two price cells start as stated ceilings and are typed from the rate card at C0b); whether a quick-reply tap is documented
+as opening the window (it is a user message by S3, and a user message opens it by S2 - the pilot confirms); when `definition` turns to
+"hd" (not documented: the cap makes the gate safe either way; a pilot line); whether Studio lets an end screen be added to a private
+video (57407 puts it on the upload page; his eye at the pilot); the ratio of variables to words Meta allows in a template.
+AN EXPERIMENT BEFORE THE DESIGN (counted by reading d64fdcc; the run with its commands is in the last part):
+- 41 lines call `.email(` in `whatifs/`: 2 are `notify.py`'s own (97, 187), 1 is `digests.py` 58, so 38 are direct - the reader's 38 and
+  the list's 41 are the same count. TWO MORE senders were in neither: `tools/repair.py` 106 (`from whatifs.publish import email`) and
+  `tools/google_signin.py` 41 (its own Gmail call, a one-time key).
+- R17 (8): 50 lines call `NT.send(` at d64fdcc - 48 with a literal kind (44 kinds) and two with a variable (R4 counted 48 and 45); 24 kinds have an answer handler; only THREE have a default handler (`build_ready`,
+  `floor_eye`, `risk_gone`): on every other card the "default" is a label and nothing runs at expiry.
+- Cards with a button and no default or no expiry today: `maker_line`, `owner_verdict`, `org_stuck`, `org_lever`, `floor_hold`,
+  `risk_lock`, `model_dead`; `desk` and `strategy` never expire by design.
+- WhatsApp today has no bound: every tier-"now" row is a message, and the morning brief is three (text, picture, buttons; `digests.py`
+  52-54). A row of tier "week" or "fyi" reaches no screen but the e-mail digest. A card with no buttons outside the window goes as free
+  text (`wa.py` 90), which Meta refuses (S2).
+- The dashboard's docket already shows the text of every open card, so a special's script (`specials.py` 441, "Script: ...") is in the
+  snapshot today, against `dash.py`'s first line.
+- 34 older test files replace `PUB.email` to catch or silence mail; `tests/test_v94a.py` 123-150 pins today's tier behaviour.
+- R22 (1): the tick is ASKED for at minutes 7 and 37 and does not come then. On `main` GitHub started it 3.71 times a day in the 20
+  days measured (R22 (0)); with the Worker's backup clock a tick comes every 46 to 56 minutes. R4's sentence was "The tick runs at
+  minutes 7 and 37". `PRIVATE_ALERT_HOURS` is 2, the same as the long video's HD cap.
+
+#### Step 2 CREATIVITY
+Scores 1 to 5: what he or the channel gains / enforceable / cost inside the cap / reliability / owner effort.
+A. AS LAUNCH_MAX WROTE IT: rewrite each of the 38 mails as its own `notify.send` with a hand-set tier, and let WhatsApp carry what
+  each row's tier says. 3 / 3 / 5 / 2 / 3. It loses: 38 rewrites change 34 older test files, and tiers cannot express "three kinds only".
+B. A NEW MESSAGE BUS: an outbox tab, channel adapters, a template per kind. 4 / 4 / 4 / 2 / 4. It loses: it rebuilds `notify`, `wa` and
+  `digests` two days before the stop, and several templates multiply Meta's review risk.
+C. (ORIGINAL, CHOSEN) ONE REGISTER, THREE DOORS: one data table in `notify.py` says for every kind what it is (alarm, hold, card,
+  inform) and where it shows (eight groups); one wrapper `notify.mail` carries the 38 mails behind one switch, so the old path stays
+  byte for byte; WhatsApp gets exactly three push doors and a guard at the wire; an alarm is an incident with a count; both screens and
+  the desk read the same rows. 5 / 5 / 5 / 4 / 5.
+D. DASHBOARD FIRST: WhatsApp sends one "open your dashboard" link a day. 2 / 4 / 5 / 4 / 2. It loses: item 149 asks for both screens
+  to carry everything and for inputs from either.
+THE CASE THAT DEFEATS C: the register is one more list, and a list that drifts from the code is worse than none. Answer in the design:
+the scan test fails the build on any kind sent that the register lacks, and at run time an unknown kind is shown under "Needs you"
+with an error logged - it is never lost and never silent.
+
+#### Step 3 DESIGN MEMO
+Each part: what executes it, what measures it, the test that fails without it. All new behaviour of parts 1 to 8 sits behind ONE cell,
+`TWO_SCREENS_ON` (default TRUE: "v12 B-OWNER: TRUE = every owner message reaches WhatsApp and the dashboard through notify, WhatsApp
+sends three kinds of message only, and a card's default runs at its expiry; FALSE = the older e-mail path"). Part 9 sits behind
+`HD_GATE_ON` (R22 (11): default FALSE in code, by R1-37 (b); R4 wrote TRUE). The older tests keep the older path BY DESIGN: `tests/conftest.py` gains
+`OLD_SCREENS = {"TWO_SCREENS_ON": "FALSE", "HD_GATE_ON": "FALSE"}` in the autouse fixture's list (line 44). No older test file changes
+except the two named in part 7. The rehearsal and the sweep run with the defaults - and, R22 (11), with `HD_GATE_ON` set TRUE by themselves from step 9b - so they walk the new path.
+
+**PART 0 (step 0, ruled by R1-5; open issue 246).** `.github/workflows/checks.yml` line 13: `timeout-minutes: 120` becomes
+`timeout-minutes: 240`. Nothing else in the workflow moves. It is no judge and loosens none (L7): the same tests, the same strictness,
+one process, the rehearsal. Tests that read `checks.yml`, each line read: `tests/test_safety.py` 84-85 (the words "pytest tests",
+"plan_guard", "cli rehearsal", the numpy pin); `tests/test_v89.py` 172-173 (the last step's `if` and `prready`); `tests/test_v12_b0b.py`
+11 and 212-215 (the steps and the pip lines); `tests/test_v12_exec.py` 363 and 452 (the file's name only); `tests/skip_policy.py` 3 (a
+docstring); `tests/test_v94a.py` 66 asserts `timeout-minutes < 360` on the pre-production job, not this one. None pins 120. R17 (14 c): a seventh
+place names the file, by its name only - `tests/test_v94a.py` 214 (`gh workflow run checks.yml`); it pins nothing either. New test
+`test_checks_job_has_room`: the job's limit is at least 240 and under 360. Break: 240 back to 120. The record closes open issue 246.
+
+**STEP 0b (ruled by R1-11, 19 Nov 18:59 UTC; the plan's A7 and chapter 14 - NOT designed here).** B-OWNER is the next BUILD, so its
+builder FIRST closes the two OPEN findings of `reviews/V4_audit.md`: R2-F1 (HIGH: on the hook lab's road the winning line need not
+carry the stake, so a paid film can be held at the final gate) and R2-F2 (MEDIUM: nothing compares the narration with "the hook of
+the Short follows, word for word"). They are typed from the exact failing tests, fixes and breaks in `REAUDIT_R2.md` of the notes
+folder (R2-F1 from its line 29, R2-F2 from its line 84; I did not read past the headings and add nothing to them): the failing test
+first, seen to fail, then the fix; each finding's line in the audit file is rewritten to CLOSED with its commit. Its files, by that
+note: `whatifs/hooks.py`, `whatifs/contract.py` (the hook's check), `tests/test_v12_strategy.py`, and its breaks in this batch's break
+list. ONE typist, one step, before step 1. R17 (12): where R2's text says "append to `proving/breaks/V4.json`", read
+`proving/breaks/B-OWNER.json` - a builder writes only its own batch's list and the gate runs that one; the ids F-30, F-31 and F-32 are
+kept. Two tests, three breaks.
+THE SAME FILES IN THIS MEMO: `whatifs/hooks.py` - no step of this memo touches it. `whatifs/contract.py` - step 8 only, and in other
+functions (`run`'s hold expression taken out as `failed`, `register`, `await_approval`, and the new `clear_to_post`,
+`approve_by_silence`, `review_sweep`, `unpost`); the hook's check is not touched. `tests/test_v12_strategy.py` - no step of this memo
+edits it (step 3 adds eight cells to `strategy.OWNER_ONLY`: the last part's point 6). So 0b and step 8 cannot collide on a line, and
+step 8's typist reads `contract.py` as 0b left it.
+
+**PART 1. THE REGISTER** (`whatifs/notify.py`; data, no behaviour by itself).
+`ALARM, HOLD, CARD, INFORM = "alarm", "hold", "card", "inform"`; `GROUPS = ("needs", "posted", "learned", "research", "plan", "inputs",
+"money", "decided")`; `KINDS = {kind: (class, group)}`; `klass(kind)` and `group(kind)` return `KINDS.get(kind, (CARD, "needs"))`.
+`ALARM_KINDS` and `HOLD_KINDS` are computed from `KINDS`. `INFORM_KINDS` is NOT changed: it stays `("strategy", "desk")`. R18 (3): `tests/test_v12_strategy.py` 467 asserts that tuple
+exactly, and with the switch off `notify.digest` (line 166), `digests._risks` (18) and `dash._docket` / `dash._decided` (20,
+62) read it - grown, it would take an `idea` card out of the older lists (`tests/test_v94a.py` 164-165). The new literal
+beside it is `STANDING_KINDS = INFORM_KINDS + ("idea", "decided_post")`: rows that tell him what was done, with an undo or a
+next step, never counted as waiting, never given an expiry by the inform rule. Code behind the switch reads `STANDING_KINDS`;
+the older path reads `INFORM_KINDS`, word for word as today.
+`asks(row)`: True when the row has a button whose verb is not `OK`, `NOTED` or `SEEN`. "NEEDS YOU" = open rows of class HOLD, plus open
+rows of class CARD for which `asks(row)`; a card whose only button is OK shows in its group, not as a decision.
+- ALARM (the fixed list, item 180): `kids_flag`, `policy`, `risk_lock`, `risk_gone`, `uploads_private`, `money_stop`, `pipeline_stop`,
+  `org_watchdog`. Channel safety: the first five. Money stopping: `money_stop`. The pipeline stopping: the last two.
+- HOLD (the named hold list, item 150): (a) a quality or policy hold - `contract_hold`, `floor_hold`, `special_review` (ONLY the Short
+  whose finished file failed a check, `shorts2.py` 528); (b) what only he can lawfully do - `org_lever`, `api_audit` and, R17 (8), `ypp_tier`
+  (`ypp.py` 34, "You may now qualify for YouTube's 500-subscriber tier ... apply": only he can apply in Studio and accept the terms; it
+  holds no post; group "needs"; in the pinned tuple with that reason). (c), the launch
+  un-pause, is his own sitting and has no card.
+R18 (5): HOLD (a) gains `hd_blocked` (PART 9: a video the HD gate keeps private for a policy read; group "needs"; in the
+pinned tuple with that reason).
+- CARD (a decision with a deadline and a default): `bakeoff`, `breakout`, `expiry`, `advisor`, `build_ready`, `clip_price`,
+  `platform_change`, `budget_guard`, `split`, `ladder`, `occasion`, `replan`, `linkpack`, `model_switch`, `model_plan`, `model_new`,
+  `model_upgrade`, `model_dead`, `scout_deprecated`, `scout_price`, `style_pick`, `visual_idea`, `creative_review`, `floor_eye`,
+  `special_ready`, `maker_line`, `owner_verdict`, `org_stuck`, `pin_comment`, `title_pick`, `script_preview`, `sheets_review`,
+  `voice_pick`, `prepublic`. Group "needs", except `budget_guard`, `split`, `clip_price`, `scout_price` (money) and `scout_deprecated`,
+  `model_switch`, `model_plan`, `model_new`, `model_upgrade`, `platform_change`, `advisor` (plan).
+- INFORM: decided - `strategy`, `decided_post`, `pick_ack`, `sheets_locked`; inputs - `desk`, `idea`; posted - `scheduled`, `live`,
+  `audio_drop`, `below_bar`, `slot_skipped`, `api_audit_wait`, `floor_kit`, `hd_late`; research - `comments_digest`, `region`,
+  `similar_script`, `slop`; plan - `monthly_brief`, `preview_none`, `repair_waiting`, `org_cap`, `org_build_held`, `occasion_dates`,
+  `card_rule`; money - `budget_pct`, `cost_overrun`, `cost_check`, `headroom`, `topup`, `mode_ack`, `wa_cap`.
+`DASH_PRIVATE = ("script_preview", "special_ready", "special_review", "ladder", "occasion")`: kinds whose text holds a script or an
+unreleased premise (part 6).
+Two call sites pass the kind as a variable: `contract.py` 1068 (`creative_review` or `floor_eye`) and `org/verdicts.py` 123 (the
+callers' kinds; R17 (8): they are `maker_line` (`maker.py` 91, 92) and `owner_verdict` (`verdicts.py` 160), both registered above - no
+list is left to the typist).
+R17 (8): AN UNKNOWN KIND IS NEVER SILENT: an open row whose kind is not in `KINDS` is in "Needs you" whatever its buttons (Step 2's
+promise; `asks(row)` alone would hide a row that has no button). With `ypp_tier` every kind sent at d64fdcc is in the register.
+R17 ADDS (C): "NEEDS YOU" HAS ONE DEFINITION, `notify.needs(rows=None)` - open HOLD rows, open CARD rows for which `asks(row)`, open rows
+of an unknown kind - and with the switch on its five readers call it: `notify.digest`'s "Waiting for you" (today it would list every
+open inform row), `digests._risks`' count, `dash._docket`, `digests.head` and `wa.push("needs")`. And A HOLD SENT WITHOUT A BUTTON GETS
+("Done", "OK") in `send` (`api_audit`, `ypp_tier`): his tap closes it; without one it would stand under "Needs you" for ever.
+R17 (R7's round 2, its one change, word for word): `ypp_tier` IS TOLD ONCE. `ypp.check` sends it at every check while the numbers hold
+(`ypp.py` 31-36), and today only the row that never closes stops a repeat. With the Done button his tap closes that row, and the next
+check would open a new hold: a "Needs you" list every evening, for ever. So for the kind `ypp_tier`, `send` returns the id of ANY row
+that holds the key `ypp_tier_500`, open or closed, and stores nothing. Test `test_the_tier_is_told_once`: sent, Done tapped,
+`ypp.check` again -> no new row, "Needs you" empty. Break: a closed row no longer counts. (`api_audit` comes back by `audit_nudge`'s
+own clock until the form is sent: that is its purpose.)
+R18 (7 e): in `test_the_tier_is_told_once` `ypp.progress` is replaced by a dict that
+qualifies. The rule sits behind the switch, like every rule of PART 1.
+R17 (4): AN INFORM ROW CLOSES BY ITSELF. Today `send` returns the id of an OPEN row with the same key and stores nothing (`notify.py`
+70-71), and an inform row has no button and no expiry, so it stays OPEN for ever under the key `kind|episode`: the second weekly
+comments digest, December's monthly brief, the next "Budget: N%", the next cost check would never reach either screen. With the switch
+on, a row whose class is INFORM and whose kind is not in `STANDING_KINDS` gets - each only when its caller gave none - `expires_h =
+INFORM_KEEP_H` (a constant in code, 336) and the key `kind|episode|<India date>`; `expire_defaults` closes it as EXPIRED, as it closes
+every row without a default today. `STANDING_KINDS` therefore means "never given an expiry by this rule": `strategy`, `desk` and `idea`
+never expire, as today; `decided_post`'s own caller passes 168 hours (the list on Home must not grow without end).
+MEASURE AND TEST (`tests/test_v12_owner.py`, the batch's file): `test_every_kind_sent_is_registered` parses every `.py` under `whatifs/`
+and `tools/` with `ast`, takes the first argument of every call `NT.send(` and `NT.mail(`, and fails on a literal that is not a key of
+`KINDS`; the two variable sites are a table in the test. `test_the_lists_are_pinned`: `ALARM_KINDS` and `HOLD_KINDS` equal the test's own
+tuples, each hold with its reason (a) or (b) - a kind added to either list without the test changing fails. Breaks: a kind removed
+from `KINDS`; a ninth alarm added only in the code. R17 (4, 8): `test_the_second_inform_is_not_swallowed` (one site on two planted
+days = two rows in its group; twice on one day = one); `test_needs_you_is_one_list` (an open row of an unknown kind with no button is
+in it, an inform row is not; the digest, the docket and the head give the same rows); `test_a_hold_without_a_button_can_be_closed`.
+Breaks: the date taken out of the key; `needs` forgets the unknown kind.
+
+**PART 2. ONE ROAD** (`notify.mail`; 38 + 1 one-line changes in 13 files).
+`notify.mail(kind, subject, html, level="essential", screens=True, buttons=(), episode=None, default=None, expires_h=None,
+dedupe_key=None)`:
+- `TWO_SCREENS_ON` FALSE: `return PUB.email(subject, html, kind=level)` - the call of today, word for word, looked up on the module at
+  call time (the older tests replace `PUB.email`).
+- TRUE: the e-mail goes exactly as today (the copy: his storage); then, when `screens`, `send(kind, _plain(subject + ". " + html), buttons,
+  episode, tier="week", default=default, expires_h=expires_h, dedupe_key=dedupe_key, mailed=True)` (R17 (5 c): `send` and `_alarm` take
+  `mailed=False`; `mail` has mailed already, so an alarm that comes through `mail` - rows 7, 8, 12, 13, 17, 18, 21 and 22 - is not
+  mailed a second time by `_alarm`). `_plain` is `wa._plain` moved to `core` (strips
+  tags; one definition). Returns the row id, or the mail's own result when `screens` is False.
+R22 (10): THE ROW DOES NOT HANG ON ITS COPY (item 149: e-mail is only the copy; the typist's design question 2; typed in STEP 3,
+`notify.py`). As typed in step 2a the order is the memo's - the e-mail, then the row - so in real mode an e-mail that RAISES
+(`PUB.email`'s token refresh or its post) leaves NO row: the screens he reads lose a message because the copy he does not read
+failed. With the switch on, `mail` calls `PUB.email` in a try: an exception is logged as a warning ("the e-mail copy failed:
+<subject>") and the row is sent all the same - with `mailed=False` when the call raised, so that an alarm's own "URGENT" mail is
+still tried by `_alarm`, and `mailed=True` whenever it returned, whatever it returned (R17 (5 c) stands). With `screens=False` and
+a raise, `mail` returns False. With the switch off the call is today's, raising as today (`tests/test_v89.py` 157-165 runs there).
+Test `test_a_failed_copy_still_reaches_the_screens`: `PUB.email` replaced by a function that raises -> `NT.mail("budget_pct", ...)`
+leaves one Owner_Actions row; `NT.mail("kids_flag", ...)` leaves the alarm's row and its WA_Outbox row. Break: the try removed.
+`digests.py` 58 and the two calls inside `notify.py` are the only other mail calls and stay (they are the copy of the morning message
+and of a row). So: outside `whatifs/notify.py`, `whatifs/digests.py` and `whatifs/publish.py` (the definition) nothing may send mail.
+THE TABLE (every direct call named; none dropped). "copy" = `screens=False`: the screens already carry it through the row named.
+| # | Place | Subject | Kind | What the screens get |
+|---|---|---|---|---|
+| 1 | community.py 75 | Pin this comment | pin_comment | card: [("Done", "DONE")], default "the comment stays unpinned", 48 h, key `pin|<yt_id>` |
+| 2 | community.py 112 | Weekly comments digest | comments_digest | inform |
+| 3 | community.py 147 | One region dominates | region | inform, key `region|<ep>` |
+| 4 | costguard.py 167 | Budget: N% of the cap | budget_pct | inform |
+| 5 | costguard.py 207 | AI-side savings (overrun) | cost_overrun | inform, key `overrun|<ep>` |
+| 6 | costguard.py 240 | Weekly cost check | cost_check | inform |
+| 7 | costguard.py 262 | URGENT: made for kids | kids_flag | ALARM, key `kids|<vid>` (the key `publish.py` 143 uses: one incident) |
+| 8 | episode.py 100 | Production paused: a health check failed | pipeline_stop | ALARM, key `pipeline_stop|preflight|<day>` |
+| 9 | episode.py 957 | Video scheduled | scheduled | inform, key `scheduled|<ep>` |
+| 10 | episode.py 1029 | Video held / Fix attempt failed | contract_hold | copy (the card of `contract.py` 999) |
+| 11 | insights.py 227 | First audio drop posted | audio_drop | inform |
+| 12 | launch.py 88 | URGENT: uploads kept private | uploads_private | ALARM, key `uploads_private` |
+| 13 | manage.py 105 | A video is stuck on Private | uploads_private | ALARM, the same key |
+| 14 | manage.py 149 | Send the YouTube API audit form | api_audit | HOLD (b), no button, key `api_audit` |
+| 15 | manage.py 153 | Waiting for the API audit | api_audit_wait | inform |
+| 16 | manage.py 303 | Reminder: your fix click | contract_hold | copy (the open hold is in every list) |
+| 17 | manage.py 313 | Monthly budget reached | money_stop | ALARM, key `money_stop|<month>` |
+| 18 | manage.py 346 | Video not public yet | uploads_private | ALARM, the same key |
+| 19 | manage.py 360 | We're live | live | inform |
+| 20 | manage.py 386 | Change ready to merge: #n | build_ready | card: Merge / Reject verbs of `builds.py` 98, default "it waits; it closes after 7 days", 168 h, key `build|<n>` |
+| 21 | manage.py 476 | Paused for 7 days (policy watch) | policy | R22 (9): a COPY when caretaker's card stands, else the ALARM itself with ("Resume now", "RESUME") - `screens=not aid`, PART 3's R22 (9); key `policy|<UTC date>` (the key `caretaker.py` 29 uses) |
+| 22 | manage.py 1271 | Needs a look (3 failed tries) | pipeline_stop | ALARM, key `pipeline_stop|fails` |
+| 23 | manage.py 1294 | Budget headroom | headroom | inform |
+| 24, 25 | manage.py 1305, 1311 | Top-up reminder | topup | inform, key `topup|<date>`; also a line of the morning head (part 4) |
+| 26 | manage.py 1328 | Monthly brief | monthly_brief | inform (the first 1,500 characters; the whole text is the mail) |
+| 27 | packaging.py 83 | Pick the title + thumbnail | title_pick | card: [("Keep A", "PICK <ep> A"), ("Pick B", "PICK <ep> B"), ("Pick C", "PICK <ep> C")], default "A goes out", expires at `pick_deadline(ep)` |
+| 28 | packaging.py 122 | Your pick | pick_ack | inform |
+| 29 | premise.py 18 | Made below the quality bar | below_bar | inform |
+| 30 | premise.py 290 | A slot was skipped | slot_skipped | inform |
+| 31 | preview.py 64 | Preview: nothing reached the bar | preview_none | inform |
+| 32 | preview.py 107 | Script Preview | script_preview | card, text "A script preview is ready. It is in your e-mail." (the title is an unreleased premise); R17 (14 f; read `preview.py` 13-17, 85, 131-137): buttons [("Approve", "APPROVE <draft>"), ("Reject", "REJECT <draft>")] - the mail's own two links, which `notify.answer` already hands to `preview.decide`; default "the draft is not used: the next slot writes its own script" (what the code does at silence: `take_approved` takes only an APPROVED draft), 72 h, key `preview|<draft>` |
+| 33 | preview.py 128 | Budget mode | mode_ack | inform |
+| 34, 35 | sheets.py 63, 98 | Character masters / sheets | sheets_review | R17 (14 f; read `sheets.py` 45-66 and 71-146): card with one ("Approve <NAME>", "APPROVE SHEET <NAME>") a character of this run - the verb `sheets.decide` reads; line 98's mail lists them, line 63's mail has no link, so its characters are those `masters()` just made; default "they lock by themselves" and `expires_h = SHEETS_DEFAULT_LOCK_H` (72: `auto_lock` does it) - when that cell is 0 the default is "they stay drafts" and 72 h; key `sheets|<India date>` |
+| 36 | sheets.py 122 | Locked by default | sheets_locked | inform |
+| 37 | sheets.py 184 | Pick the look | style_pick | copy (the card two lines above it) |
+| 38 | voice_lab.py 32 | Fallback narrator voice | voice_pick | R17 (14 f; read `voice_lab.py` 15-33 and `manage.py` 259-265): the mail has NO pick verb (he types A, B, C or D in the Sheet's VOICE cell), so the row is a card with [("Noted", "NOTED")] and the text "Voice samples are in your e-mail. To choose one, type A, B, C or D in the Sheet's VOICE cell."; default "voice A is used" and `expires_h = VOICE_WAIT_HOURS` (72) - what the tick does; it is not counted as a decision (`asks`). The call sits inside `if not FAKE`: the row test drives it with the module's `FAKE` replaced by False and `narrate`, `subprocess.run` and `PUB.drive_upload` stubbed |
+| 39 | tools/repair.py 106 | A code repair is waiting | repair_waiting | inform; the import of `email` goes, `NT.mail` replaces it |
+| 40 | tools/google_signin.py 41 | the one-time Google key | - | NAMED EXCEPTION: the key is a secret; it goes to his own mailbox by the setup tool and never to a screen |
+The dashboard's own richer cards stay: `dash._docket` skips Owner_Actions rows of kind `title_pick` and `sheets_review` (it builds
+those two cards from `Packaging_Tests` and `Character_Sheets`, lines 33-54).
+TEST `test_no_mail_outside_notify` (the code-scan test of the brief): for every `.py` under `whatifs/` and `tools/` except the three
+files named, `ast` finds no call whose function is the attribute `email` or `email_mime`, no `from whatifs.publish import email`, and no
+string containing `gmail/v1/users/me/messages/send`; the allow-list is `{"tools/google_signin.py": "a one-time key: never a screen"}`.
+PLANTED: the test writes `PUB.email("x", "y")` into a scratch copy of `whatifs/slop.py` and must fail on it. `test_every_row_of_the_table`:
+with the switch on, each of the 39 sites is driven (the smallest call that reaches it, `PUB.email` replaced by a box) and leaves one
+mail AND one Owner_Actions row of its kind, or one mail and no new row where the table says copy. Breaks: one site back to
+`PUB.email`; `screens` forced False in `mail`. R17 (13): the rows are ONE table in the test file - step 2a types the 17 rows of
+`manage.py` and `episode.py`, step 2b the other 22; the mail scan and the card scan land in 2b, when the last direct call is gone.
+
+**PART 3. ALARMS CAN NEVER BE MUTED** (`notify._alarm`; item 180).
+`send()` with the switch on begins: `if klass(kind) == ALARM: return _alarm(...)`.
+`_alarm(kind, text, buttons, episode, default, expires_h, key)`; `key` = the caller's `dedupe_key`, else `kind + "|" + (episode or "")`:
+1. AN OPEN INCIDENT WITH THIS KEY EXISTS (status OPEN or QUEUED): `count += 1`, `last_at = now`, `last_text = text[:300]` on that row.
+   It is pushed again only when `now - delivered_at >= ALARM_REGROUP_H` hours (a constant in code, 24: S8's window), with the count in
+   its first words ("x12 since Tue 02:10: ..."). Return its id. A repeat is counted and shown; it is never a second alarm and never dropped.
+2. NO OPEN INCIDENT: a row with tier "now", urgent TRUE, count 1, and, when the caller gave no button, the button ("Seen", "SEEN").
+   Then AT ONCE, each in its own try: the mail ("URGENT: " + the first 70 characters); `WA.push("alarm", row)`; `DS.publish()` (the
+   dashboard's snapshot now, not at the tick's end). R17 (5): the mail is sent only when not `mailed`; `push` is asked when
+   `WA.configured() or FAKE` (as `digests.send` asks today, line 50 - without that clause no fake run ever walks WhatsApp);
+   `delivered_at` is stamped by the FIRST push that returned a message id, never before.
+`_alarm` and `wa.push`'s alarm branch read NO quiet hours, NO daily cap, NO WhatsApp money cap, NO lever, NO Palace item and call no
+model. The three columns `count`, `last_at`, `last_text` are appended to tab `Owner_Actions` (append-only).
+R17 (5 a): AN ALARM WHATSAPP DID NOT TAKE IS SENT AGAIN (item 180: nothing may DELAY one; as R4 wrote it, a WhatsApp fault in the minute of
+a made-for-kids flag left the alarm in a mailbox he does not read). An alarm is TOLD on WhatsApp when WA_Outbox holds a row with a
+message id for its action id. `notify.tick` begins with `alarm_retry()`: every open ALARM row not yet told is pushed again at every
+tick - no cap, no quiet hours - and the 24-hour re-push of point 1 counts from the push that was taken. R17 ADDS (F): where WhatsApp is
+not set up (`not WA.configured()` outside fake mode) there is nothing to retry: `delivered_at` is stamped when the mail went, the
+dashboard shows the alarm, and pre-flight's line says WhatsApp is not set up.
+R22 (9): THE POLICY ALARM KEEPS HIS "RESUME NOW" (the typist's design question 1, in step 2a's notes; typed in STEP 3, where
+`manage.py` already stands by R18 (2)). As the table stood, `guardian` (`manage.py` 471-483) MAILS FIRST and calls
+`caretaker.policy_rescue` after it: with the switch on the mail's buttonless row became the incident, the urgent card (Discuss /
+Build fix / Resume now, `caretaker.py` 29) met an open row with its own key, and `_alarm` keeps the first firing's buttons - his
+Resume tap was lost on both screens. `policy` is the only alarm kind that is both mailed and sent WITH buttons (read: every
+`NT.send` of an alarm kind; `kids_flag` is mailed and sent too, `publish.py` 143, without buttons: nothing to lose there).
+THE CHANGE, in `guardian` only - the card goes FIRST and the mail follows as its copy:
+`aid = ""`; `try: aid = CT.policy_rescue(items)` (the try and its log line as today); then
+`NT.mail("policy", "Paused for 7 days (policy watch)", <today's html>, screens=not aid, buttons=[("Resume now", "RESUME")],
+default="stays paused until the date in Settings", expires_h=24 * 7, dedupe_key="policy|" + <the UTC date>)`.
+So: ONE incident, count 1, with the card's three buttons and its "What it means" note; the e-mail goes exactly as today; and when
+the card could not be sent (`policy_rescue` raised, or gave no id) the mail's own row IS the alarm and still carries "Resume now"
+(`caretaker._policy_answer` reads RESUME for the kind, whichever firing made the row). The pause itself is set before either
+(`PAUSED_UNTIL`, line 474). SAID PLAINLY: the card waits for `policy_rescue`'s one model call, as it does today (in a try: when it
+fails the card goes without the note); no model stands inside `_alarm`. With the switch off `mail` is `PUB.email`, word for word;
+only the order of the two messages turns, and `tests/test_v10_future.py` 9-16 (it reads the card's row, not the order) passes
+unchanged. PART 2's row test keeps its driver for row 21: its stub of `policy_rescue` gives no id, so the mail's row is the alarm
+- one mail and one `policy` row, as the table says. Test (step 3) `test_the_policy_alarm_keeps_his_resume_tap`: the switch on,
+`guardian([...])` -> exactly ONE open `policy` row, count 1, its buttons hold `RESUME`, one WA_Outbox row of kind "alarm";
+`NT.answer(<id>, "RESUME")` gives "resumed" and `PAUSED_UNTIL` is empty; with `policy_rescue` replaced by a function that raises ->
+ONE `policy` row, made by the mail, whose buttons hold `RESUME`. Break: `guardian` mails before the card with `screens=True` (the
+row holds "Seen" only).
+NO DEPARTMENT CAN TURN THE CELLS AROUND IT: `TWO_SCREENS_ON`, `WA_ON`, `QUIET_HOURS_IST`, `NOTIFY_NOW_MAX_PER_DAY`,
+`DIGEST_DAILY_HOUR_IST`, `NEEDS_HOUR_IST`, `WA_MONTHLY_CAP_INR` and - R17 (6) - `DASH_ON` (the second screen): EIGHT cells join `strategy.OWNER_ONLY`, and each is
+either no lever or a lever whose every move needs his tap (`owner == "always"`: `WA_ON` and `DASH_ON` today - `org/levers.py` 21 holds
+both and `org/registry.py` 17 gives both to D0; R4's "none is in `levers.LEVERS`" was untrue). No lever is removed. The three cells this
+batch adds (`TWO_SCREENS_ON`, `NEEDS_HOUR_IST`, `WA_MONTHLY_CAP_INR`) enter `core.DEFAULTS` in STEP 1, not step 3: the pin
+`tests/test_v12_strategy.py` 464 walks `OWNER_ONLY` with this same expression and asks for every member in `core.DEFAULTS`; it passes
+with the eight and is not changed.
+TESTS. `test_an_alarm_arrives_on_both_screens_whatever_is_set` (the planted test of the brief): `in_quiet_hours` forced True,
+`NOTIFY_NOW_MAX_PER_DAY` "0", Cost_Log rows of `whatsapp` above the cap, the window closed; `NT.send("kids_flag", ...)` must leave a
+WA_Outbox row of kind "alarm" with a message id, the row in `DS.build_snapshot()["alarms"]`, and one mail. `test_a_flood_is_one_alarm`:
+50 firings of one key = 1 push, count 50; one `risk_lock` among them = its own push. `test_a_day_later_it_is_said_again`: a firing 25
+hours after the push = a second push of the same row. `test_no_lever_reaches_the_alarm`: R17 (6): the eight cells are in `OWNER_ONLY` and each is no lever or an
+`owner == "always"` lever (the pin's own expression, never "absent from `LEVERS`"); `ast` over `_alarm` and the alarm branch of `wa.push` finds no name `in_quiet_hours`, `now_room`, `over_cap`, `ask`. Breaks:
+`_alarm` asks `in_quiet_hours()`; the repeat branch returns without counting; `push("alarm")` asks `over_cap()`. R17 (5):
+`test_an_alarm_whatsapp_did_not_take_is_sent_again` (`_post` gives "" twice, then an id: three attempts at three ticks, one WA_Outbox
+row with an id, `delivered_at` stamped at the third); `test_an_alarm_through_mail_is_mailed_once` (a firing through `NT.mail` leaves
+one mail). Breaks: the retry removed; `delivered_at` stamped whatever `push` returned; `mail` passes `mailed=False`.
+
+**PART 4. WHATSAPP SENDS THREE KINDS OF MESSAGE** (`whatifs/wa.py`, `whatifs/digests.py`; item 150).
+`PUSH_KINDS = ("morning", "needs", "alarm")`. `wa.push(kind, row=None, now=None)` is the ONLY function that starts a message to him:
+- inside the window (`in_window(now)`): morning = ONE list message (`send_list`, button "Open", eight rows: "Needs you", "Posted and
+  next", "What we learned", "Research & observations", "Plan and changes", "Your inputs", "Money", "Decided for you" - ids `MENU|<group>`,
+  each title within 24 characters, S4); needs = ONE list, a row a decision (id `CARD|<aid>`, title the kind's plain name, description
+  "<default> at HH:MM"), at most 10 rows, the earliest expiry first, with "and N more on the dashboard" in the body when there are more;
+  alarm = the text with its buttons (`send_buttons`).
+- outside the window: `send_open(label, line, payload)` - THE ONE TEMPLATE, name in the new cell `WA_OPEN_TEMPLATE` ("re_open_v1"),
+  category UTILITY, as C0b submits it:
+  body `Reality Engine - {{1}}. {{2}} Tap Open to see everything and to answer.`
+  one QUICK_REPLY button "Open" whose payload is set at send: `OPEN|morning`, `OPEN|needs`, `OPEN|alarm|<aid>`.
+  {{1}} = "Morning message" / "Needs you" / "ALARM"; {{2}} = the head in one line (an ALARM's whole text, cut at 700 characters, with
+  what happens if he does nothing), so an alarm is readable without a tap. His tap is a message (S3): it opens the window, and the list
+  then comes as a reply. `ensure_templates()` submits this template when the switch is on.
+- every push writes a WA_Outbox row whose `kind` is the push kind, and its cost (part 8).
+Everything else `wa.py` sends is a REPLY to a message of his, inside `handle_inbound`: new payloads `OPEN|...` (the list or the alarm),
+`MENU|<group>` (`send_group(g)`: the group's text within 1,024 characters and up to three buttons - "Menu", the next group, and the
+group's own action), `CARD|<aid>` (the card's text and its buttons; more than three buttons = a list whose rows are `ACT|<aid>|<i>`).
+R18 (7 f): WITH
+THE SWITCH ON `MENU|<x>` is the new group when `x` is one of `GROUPS` (`MENU|money` is the Money group, not the older Spend
+section), and `MENU|menu` and the typed words `menu`, `hi`, `start`, `options` send the eight-group list of the morning
+message (item 150: the menu IS the eight groups); any other `MENU|<section>` is answered as today. THE GROUP'S OWN ACTION
+exists for two groups only: needs -> ("Open the list", `OPEN|needs`); decided -> ("Undo or take down", `CARD|<aid>`) for the
+newest open row of the group that carries a button. A group without one sends two buttons.
+R18 (7 g): NOTHING THE OLDER MENU SHOWED IS LOST. With the switch on the older sections have no button of their own, so EACH
+GROUP'S TEXT OPENS WITH THE OLDER SECTIONS IT REPLACES, rendered by today's `OV.render(name, OV.build())`, and its own rows
+follow: posted -> `today`, `numbers`; learned -> `experiments` and `digests.learned()`; research -> `hot_topics`,
+`observations`; plan -> `strategy`, `recommendations`; money -> `money` (his money against the cap and the three largest
+providers); needs, inputs, decided -> their rows only. The two charts go with them as `send_section` sends them today
+(`wa.py` 62-63): the numbers chart before the posted group, the money chart before the money group. Where the text passes
+1,024 characters it is cut at a line and ends "more on the dashboard". Test `test_the_groups_carry_the_older_sections`: with
+the switch on, the text `send_group` sends for money holds the first line of `OV.render("money", view)` and an image went
+before it; the same for posted and `numbers`. Break: the money group sends its rows only.
+`send_action(row)` with the switch on: `return push("alarm", row) if NT.klass(row["kind"]) == NT.ALARM else ""`.
+THE 24-HOUR WINDOW AT THE WIRE: `_post(body, kind="reply")` with the switch on - when `body["type"] != "template"` and not
+`in_window()`: nothing is posted, a WA_Outbox row with status "refused_window" is written, "" is returned. The same in fake mode: the
+stand-in refuses what Meta refuses (131047). R17 (11 b): PINS BY SIGNATURE - older tests replace `WA._post` with a ONE-argument
+function (`tests/test_v94b.py` 106 and 120, `tests/test_v103.py` 8) and replace `WA.send_text`, `WA.configured` and `WA.in_window`
+(`tests/test_v12_strategy.py` 367, 379, 382-383); so the older senders keep calling `_post(body)` and only `push` and `send_open` pass
+`kind=`. R17 (5 b): `push` acts when `WA.configured() or FAKE`.
+`digests.py`: today's `send` body becomes `_send_old` word for word; `send()` = `_send_old(...)` when the switch is off, else
+`_send_new(kind, now)`: `head(kind, now)` + `WA.push("morning")` + the mail of the WHOLE message (all eight groups in full: the copy
+cannot open on a tap). R17 (11 a): `_send_new` then stamps what it showed exactly as `_send_old` does (`digests.py` 60-65):
+`STR.briefed(now)` - it stamps the desk too - ONLY when WhatsApp took the push or the mail went (V4's rule), then `DIGEST_DAILY_SENT`
+or `DIGEST_WEEKLY_SENT`; without it every decision is told again every morning. `digests.compose` is NOT changed: `tools/sweep.py`
+417-421 (V4's month scene) reads it. `head`: the first line "Morning message, Thu 19 Nov" (Sunday: "Weekly message", with the week's numbers, as
+`due("weekly")` decides today); the scoreboard line (`scoreboard.line`); "ALARM open: ..." for each open alarm; "Needs you: N" with the
+earliest deadline; a line for each open `topup` or `expiry` row (at most two); "Answers to your inputs: N". At most 8 lines, 700
+characters; no greeting and no filler.
+`needs_tick(now)` (called by `digests.tick`): when the India hour is at or after `NEEDS_HOUR_IST` (new cell, "18"), `NEEDS_SENT` is not
+today, and at least one decision is open: `WA.push("needs")`, its mail, stamp. No decision open = no message.
+R17 (11 d): WHILE PAUSED HE STILL HEARS. Today `manage.tick` returns before `NT.tick`, the desk and `digests.tick` (`manage.py` 183-184):
+through a seven-day policy pause he would get no morning message, no answer to an input and a stale dashboard. With the switch on the
+paused branch runs `desk.tick`, `digests.tick`, `notify.alarm_retry` and `DS.publish` before it returns; `expire_defaults` does NOT run
+(nothing is decided in a pause: the cards' defaults run at the first tick after it). Test `test_a_pause_does_not_silence_him`: two
+paused days = two morning messages, an input answered, no row DEFAULTED. Break: the paused branch returns as today.
+WHY NOTHING IS MISSED: both lists hold EVERY open decision, so one due before the next message is in the earlier one. A card born after
+the last list before its expiry cannot be reached: its default runs (`expire_defaults`) and the next morning's "Decided for you" shows
+every row DEFAULTED since the last morning message. "week" and "fyi" rows are in the groups of the morning message and on the dashboard.
+WHAT STAYS: quiet hours and the daily cap still hold the mail of a non-alarm "now" row (`_deliver_now`, unchanged but for its WhatsApp
+hook); WhatsApp's two pushes need neither (they come at 09:00 and 18:00).
+R22 (6): WHEN THE TWO PUSHES, A RETRY AND A DEFAULT REALLY COME - THE CODE OF PARTS 3 AND 4 DOES NOT CHANGE, THE WORDS DO. Each acts
+at the FIRST TICK at or after its time, none only inside a window of minutes: `due`, `needs_tick`, `alarm_retry`,
+`expire_defaults`, `review_sweep`. WITH THE BACKUP CLOCK that is within about an hour. ON GITHUB'S SCHEDULE ALONE (R22 (0); 17
+whole India days measured): the morning message went out on all 17, a median of 5.5 hours after 09:00 (the latest at 17:09); the
+18:00 list on 12 of the 17, a median of 3.4 hours late (the latest at 23:54), and on 5 days not at all, because no tick fell
+between 18:00 and midnight. Nothing is lost by that: every open decision is in the next morning's list, a default runs at the
+first tick after its expiry and holds nothing, and neither push can fall into the quiet hours (after midnight neither is due
+before 09:00). NOT CHANGED, with the reason: a list sent after midnight would wake him for what the 09:00 message already holds.
+An alarm's FIRST push waits for no tick (it is sent inside the job that raised it, with the dashboard's snapshot); its retry, and
+whatever RAISES an alarm at a tick (the made-for-kids read, the private-video check), are as late as the tick. In a list,
+"<default> at HH:MM" is the time from which the default may run, never the minute it runs.
+TEST, typed in STEP 10 because it walks the real `manage.tick` with every part in it: `test_the_sparse_clock_loses_nothing` -
+three days with four ticks a day at the measured rhythm (India time 02:10, 09:40, 16:50, 23:20; the clock planted as
+`test_three_days_three_kinds` plants it), 5 cards so spread that one is open every evening, one Short that never reads HD,
+uploaded at 10:00, and one reviewed video uploaded 27 hours before its slot, 20:30 on day 3. WA_Outbox holds exactly one "morning"
+and one "needs" row a day and none between 00:30 and 08:00; every card is DEFAULTED at the first tick after its expiry; the Short
+is public at the 16:50 tick (the cap); the video is SCHEDULED for its OWN slot (its silence was taken at the 09:40 tick of day
+3). Break: `SILENCE_LEAD_H` read as 1.5 (the video is found on next week's slot).
+R22 (12): THE TWO DAILY JOBS OF `manage.tick` RUN AT THE FIRST TICK AFTER THEIR HOUR (R1-37 (d), on R19's point B; typed in STEP 10,
+which already types `manage.tick`). Today `manage.py` 243 and 249 run the key-expiry check (with the model switches whose date has
+come) and the occasion's heads-up ONLY when a tick falls in one half hour of the day. WHY IT IS NOT NEW SCOPE (item 186; R1's
+words): B-OWNER's own morning message leans on the expiry check, the check is missed on about two days in five even with the backup clock (R19: a tick falls in its half hour on about three days in five) and on about thirteen in fourteen on GitHub's schedule alone, so a key could expire unannounced, and it closes a place of accepted code named in P32. R19's words, word for word
+(`REVIEW_R22_BLOCKS_B_OWNER.md`, point B):
+the two daily jobs run at the FIRST tick at or after their hour, once a UTC day - line 243 becomes `if now_utc().hour >= 8 and
+S("EXPIRY_CHECK_DAY") != now_utc().strftime("%Y-%m-%d"):` and its block ends with `set_setting("EXPIRY_CHECK_DAY", ...)`; line 249
+the same at 9 with `OCCASION_DAY`; two auto cells; ONE test: a day whose only ticks are at 03:10 and 14:40 UTC runs both jobs once,
+at 14:40; a second tick that day runs neither. Break: the day's cell not written (both run at every tick).
+MINE, AROUND THEM: the two auto cells `EXPIRY_CHECK_DAY` and `OCCASION_DAY` enter `core.DEFAULTS` in step 10, with their first
+reader (R18 (1)); the test is `test_the_daily_jobs_run_once_at_the_first_tick_after_their_hour`, and it walks the real
+`manage.tick` with the two functions replaced by counters. No older test pins the two lines (read: `tests/test_v10_future.py`
+25-28 and `tests/test_v10_growth.py` 197-202 call `expiry_check` and `heads_up` themselves, with their own dates). R24: WHAT ELSE IT REACHES - every run that walks the real `manage.tick` on a fresh Sheet (a test, a sweep id, the rehearsal) now starts both jobs at its first tick whenever the clock it reads stands at or after 08:00 UTC (09:00 for the heads-up), where they started only inside one half hour. They write six rows on tab `Expiry_Calendar`; from 26 Nov to 10 Dec 2026 the seed "Claude Max plan" (10 Dec) also makes one `expiry` card on such a Sheet, and three days before an occasion special one `occasion` card. Neither is a fault, and no judge of today counts them (read: the five test files that call `MG.tick()`, `tools/sweep.py` 327 and 436, `tools/rehearsal.py` 38-79 - each asks for a kind, none for a whole tab). A test of this batch that counts a whole tab or a whole list after a real tick plants its clock outside those days. Both lines came
+with the upload of 8 Nov 2026 (commit 6accea7; their comments name v10 K140, v10.1 K150 and v10 K136): no batch of the plan typed
+them.
+MEASURES AND TESTS. `test_three_days_three_kinds`: 144 ticks over three days in fake mode with 5 cards, 20 inform rows, no alarm; the
+window never open: WA_Outbox holds exactly 3 "morning" and 3 "needs" rows, every one a template; the same with the window open: the
+same six, none a template. `test_no_free_text_outside_the_window` (planted): `send_text("x")` with the window closed posts nothing and
+leaves "refused_window". `test_only_wa_starts_a_message`: `ast` - outside `wa.py` no call of `_post`; outside `wa.py` the names
+`send_text`, `send_buttons`, `send_list`, `send_image`, `send_menu`, `send_section`, `send_group`, `send_template` are called only inside
+`digests._send_old`. `test_the_template_is_what_c0b_submits`: the body's fixed words, one quick reply, within 1,024 characters, no
+variable first or last. `test_week_and_fyi_reach_both_screens`. Breaks: `push` accepts a fourth kind; the wire guard removed;
+`needs_tick` sends with nothing open; the Sunday branch dropped.
+THE SLOP LINE (item 145; his messages are short, plain and varied, never a machine's template): every fixed sentence of `notify.py`,
+`wa.py`, `digests.py` and `org/desk.py` is scanned against the long video's own list `data.AI_TELLS` and a short list of fillers
+(`test_his_messages_do_not_sound_like_a_machine`; planted: "Let's dive in" in the head fails). The head is numbers and facts; a line
+appears only when it has something to say, so two mornings read alike only when the channel did.
+
+**PART 5. HIS INPUT DESK** (`whatifs/org/desk.py`; one store for both screens: tab `Owner_Desk`, three appended columns `channel`,
+`card`, `ref`).
+`take(text, channel, ref="", card="", now=None) -> (n, ack)`: the words are stored at once, up to 4,000 characters, word for word, with
+verdict "" (not yet weighed); a second arrival of the same `ref` (a message id, a dashboard action id) stores nothing; the same words
+with another `ref` are a second input. The ack: "Saved word for word as your input N. The answer comes with tomorrow's morning message."
+R17 (10 b): THAT ACK IS SENT ONLY WHEN THE WEIGHING FAILED. As R4 wrote it every chat line was acknowledged, cost a strong call and came
+back next morning. The job that took the input weighs it AT ONCE with the function the tick uses, `weigh_row(n)` (somebody waits, so the
+call is direct by item 151 (2)'s own rule): on WhatsApp the verdict is the last line of the same reply; a `question` gets no desk line -
+the chat's reply is the answer, the row is ANSWERED and stamped briefed, so it is not counted next morning; on the dashboard the verdict
+is in the snapshot that job publishes. Only a failed call leaves the ack and the tick's two tries.
+R17 (10 e): a row written by `take` is updated by its `ref`, never by `n` alone (the inbound job and the tick can append in the same
+second), and every row, whatever its channel, gets the owner memo and its closing as the Owner_Input rows do today (`_memo`, `_close`).
+CHANNELS: WhatsApp - in `handle_inbound`, a typed line that is not one of the fixed words (`menu`, `hi`, `start`, `options`, `status`,
+`stats`, `how are we doing`, `pause`, `resume`, `demo ...`) is passed to `take(text, "whatsapp", ref=mid)` BEFORE the chat answers, and
+the verdict's line ends the chat's reply. R17 (10 a): `take` is called in ONE place of `handle_inbound`, the last `else` (`wa.py`
+195-197), the only branch that reaches `chat()`: a line he types inside the owner-brief conversation (`OB.handle`, 167-172) or a fixed
+word is never an input. R17 ADDS (D): nor is a bare acknowledgement - `desk.talk(text)`, pure: the whole line, case and punctuation
+aside, is one of `desk.TALK` (ok, okay, k, thanks, thank you, ok thanks, yes, no, got it, noted, fine, good, great, nice, cool, hmm,
+done, hi, hello, bye, good morning, good night); the chat answers it as today, WA_Chat keeps it, and no strong call is paid for it. The
+list RECOGNISES talk; a line it does not know is an input. The dashboard's box has no such filter: what he types there is an input. Dashboard - the page's box posts to the Worker's new route (part 6), and `dash.handle_action` calls
+`take(text, "dashboard", ref=id, card=card)`. The Sheet tab `Owner_Input` stays a third channel (`tick`, as today, by the text's sha).
+`tick()` then weighs every row whose verdict is "":
+1. `recognise(text)` (the three requests of today) -> `verdict()` as today; the word shown to him for ADOPTED is TAKEN.
+2. `never(text)`: a list in code, `NEVER = ((pattern, risk), ...)`, written from LAUNCH_MAX C6 (bought views or followers, sub for sub,
+   pods and bots, re-upload, delete a video, made for kids, hide or remove the AI label, copy another channel's video, a comment-for-a-DM
+   ask). A hit -> PARKED: "it asks for <words>, which this channel never does: <risk>." (CLASHES against the pinned core comes with the
+   core's parts 1 and 5, after the launch - RR-36.)
+3. `weigh(text)`: ONE call of a strong text model, role `owner_desk` (R17 (9 c): the route is `"owner_desk": ("board_c", "judge")` in `models.ROUTES` - the Board's
+   own chain, `models.py` 530: strong, one family, no cheap fall-back - never a
+   cheap model: hard rule 9; a fake reply `owner_desk` in `fakes.py`), asked for JSON only: `{"kind": "preference" | "video_idea" |
+   "change_request" | "question" | "feedback" | "other", "restated": one sentence, "department": "D4" | "D5" | "D6" | "D7" | "D9" | "D14"
+   | "none", "raises_breakout": true | false, "why": one line, "needs_code": true | false, "new_arm": true | false}`. The model labels;
+   CODE decides (`decide(w, row)`, pure) - item 138's three conditions are its first branch:
+   - TAKEN when `kind == "preference"` and `raises_breakout` and not `needs_code` and not `new_arm` and `department != "none"`: his words
+     enter the Palace as `owner_preference` with `owner_input` true through `palace.add(item, actor="owner", status="accepted")` (R17 (10 c)) for that department, and
+     the answer says where and when: "TAKEN - kept word for word as your standing preference for <the department's name>; it is served
+     first in every brief of that department from the next script (Palace item <id>, <date>)."
+     R17 (10 c): THE ITEM, read in `palace.py` 14-23, 219-264 and 425-461 ("proposed", `add`'s default, is not SERVABLE and never
+     reaches a brief; `START["accepted"]` allows the owner): `kind` "owner_preference"; `key` `owner_input|<n>`; `title` "Owner input
+     <n>: " + his first 60 characters (8 to 120); `summary` HIS words cut at a word inside 400 - it must hold 20: a shorter input is
+     PARKED, "too short to keep as a standing rule"; `body` all his words; `departments` [the department]; `stages` ["all"];
+     `owner_input` True; `priority` 2; `review_by` "never"; `evidence` [{"source": "Owner_Desk:<n>", "date": today, "type": "owner
+     decision", "finding": the summary}]; `applied_in` ["whatifs/org/desk.py:take"]. The model's `restated` is never stored in the
+     item. A `PalaceError` (the gate refuses a retired concept, an instruction to a model, a gaming phrase) -> PARKED with the gate's own
+     words. `org/seed/build.json` holds no `owner_preference` to copy: these fields are the whole item.
+     R17 (10 d): UNDO (item 150: an Undo wherever undoing is possible). The TAKEN answer is also a `desk` row (tier "week", no default,
+     no expiry, key `desk|taken|<n>`) with ("Take it back", `DESK UNDO <n>`): `desk._do` gains that verb - `palace.transition(<id>,
+     "retired", "owner", "taken back by the owner <date>")`, the move `MOVES` gives the owner from accepted, testing and proven - and
+     the desk row reads "taken back <date>".
+   - `question` -> ANSWERED: on WhatsApp the chat has answered; from the dashboard `wa.chat(text)` is asked once and its reply (800
+     characters) is the answer.
+   - `video_idea` -> PARKED: "a topic: every topic starts as a Short that viewers choose. To put yours first, send it on WhatsApp as a
+     brief." (the owner-brief flow of today).
+   - `change_request` or `needs_code` -> PARKED: "it needs a code change. Code changes the organisation orders stay off until their cost
+     caps exist (the first batch after the launch); it is kept as input N and decided then. Build it yourself now with one tap." and an
+     `idea` row with ("Build it", "BUILD") and ("Not now", "PARK").
+   - `feedback` -> PARKED: "your verdict on a video counts through its Good / Not good card; these words are kept with input N."
+   - anything else -> PARKED: "read as: <restated>. <why>."
+   A failed call leaves the verdict "" and is tried at the next two ticks; then STORED, "it could not be read; it is kept word for word".
+   Above `DESK_MONTHLY_CAP_INR` (new cell, "40"; measured by `governor.month_spend_of(["owner_desk"])`) the call is not made and the
+   answer says so plainly, with the date it will be read.
+NEVER PARKED BY SILENCE: `wa.py` 199's card (tier "fyi", default "parked", 7 days) becomes, with the switch on, an `idea` row with no
+default and no expiry (kind `idea` is in `STANDING_KINDS`): it stays open under "Your inputs" on both screens until he taps.
+THE ANSWER REACHES BOTH SCREENS: the dashboard at the next snapshot; WhatsApp as a reply when his window is still open at the tick that
+weighed it, and always in the next morning message ("Answers to your inputs: N", group "Your inputs"), through `desk.lines` /
+`desk.briefed` as today.
+TESTS: `test_an_input_is_kept_word_for_word_once` (both channels; a repeated `ref`; the same words twice); `test_code_decides_the_verdict`
+(one case a branch of `decide`, the model's reply faked; TAKEN needs all five conditions - flip each one alone and it is PARKED);
+`test_a_taken_input_is_his_word_in_the_palace` (kind, `owner_input`, the verbatim text, actor "owner"); `test_the_never_list_parks_with_
+its_reason`; `test_an_idea_seven_days_old_is_never_parked_unanswered` (8 days on, `expire_defaults` leaves it OPEN and the morning group
+lists it); `test_every_input_is_answered` (after the tick no row has an empty answer unless the call failed, and then it says so).
+R17 (10): `test_a_question_is_answered_once` (one reply, no ack, nothing in the next morning's count); `test_a_taken_item_is_served`
+(its status is accepted and `palace.playbook` of its department holds his words); `test_a_taken_input_can_be_taken_back` (the item is
+retired, the row says so); `test_talk_is_not_an_input` ("ok thanks" stores nothing and pays no call; "more wonder please" is an input).
+Breaks: the Undo button removed; `add` without `status="accepted"`; `talk` true for every short line. Breaks: `take` dedupes by sha; `decide` returns TAKEN without `raises_breakout`; the idea row given an expiry; the Palace actor
+changed.
+
+**PART 6. BOTH SCREENS SHOW THE SAME, AND HE SEES THE LEARNING** (`whatifs/dash.py`, `mission_control/worker.js`, the page).
+`build_snapshot()` gains, in both switch states (the page reads them; `tests/test_v94b.py` 39-44 checks every field the page reads):
+- `alarms`: open rows of class ALARM (title, text, count, last_at, buttons).
+- `docket` (kept, so the page and the older tests hold): with the switch on, the rows of "Needs you" (part 1) of any tier.
+- `decided`: as today, plus rows DEFAULTED in the last 48 hours ("ran by default"), plus `decided_post` rows (part 7). R17: with the
+  switch on `_decided` lists the open `STANDING_KINDS` rows whose group is "decided"; a `desk` or `idea` row shows under `inputs`.
+- `groups`: for each of the eight groups, its newest 20 open or recent inform rows (id, kind, text, at).
+- `inputs`: the newest 20 desk rows (n, at, the text, verdict, answer, channel).
+- `learning`: `lessons` (today's `learned`), `research` (`owner_view.hot_topics` and `observations`, each item with `src` and `date`),
+  `experiments` (`owner_view.experiments`), `appetite` and `features` and `department_line` as `{"note": "..."}` until their batch lands.
+- `plan`: the lines of `strategy.brief(now)`, `owner_view.strategy()["plan"]`, the next five slots, `department_line` as a note.
+- `money` (kept) gains `whatsapp` (`costguard.owner_messages()`, part 8) and `treasury` as a note.
+THE PLAIN NOTES (R5-5 (4): where a row's batch has not landed the section says so): "The department line comes with the first batch
+after the launch."; "The savings line, the two pockets and the monthly recharge advice come with the treasury batch after the launch.";
+"The feature watch comes after the launch."; "The appetite readings come with batch V4b." V4b's designer wires its own rows in.
+NEVER A NUMBER WITHOUT ITS SOURCE (P13's lesson): `dash.unsourced(snap)` walks `learning`, `plan`, `groups` and the new parts of `money`
+and returns every dict that carries a number under `v`, `value`, `views`, `inr` or `pct` and no non-empty `src`; the snapshot is built
+with those entries removed and an error logged, and `test_no_number_without_its_source` plants one.
+NO SECRET, SCRIPT OR UNRELEASED PREMISE: every string of the snapshot passes `core.scrub`; a row whose kind is in `notify.DASH_PRIVATE`
+shows the line "<the kind's plain name>: the text is in WhatsApp and your e-mail." with its buttons. This closes what the experiment
+found (a special's script in the docket today). `test_a_planted_secret_and_a_planted_script_do_not_show`: a row holding a key-shaped
+string and a `special_ready` row holding "Script: GRIMM: ..." - neither string is in `json.dumps(build_snapshot())`.
+THE WORKER: one new route, `POST /app/<APP_PATH>/api/input` with `{text, card}`: signed in; `text` 1 to 2,000 characters after trim;
+`card` empty or matching `^[A-Za-z0-9_.:\-]{1,64}$`; forwarded encrypted as `dash_action` `{id, verb: "INPUT", text, card, ts, src:
+"dash"}`; nothing logged. The verb rule of `/api/action` does not move. `dash.handle_action`: the verb `INPUT` goes to `desk.take`; the
+row on `Dash_Acks` holds the verb and "Saved as input N" - never his words. New verb `UNPOST|<ep>` in `dash.route` (part 7).
+`mission_control/test_worker.mjs` gains: 401 signed out; 400 for an empty text, 2,001 characters, a bad `card`; 200 = one encrypted
+dispatch whose body does not contain the typed words.
+THE FACE (the page; one design system - the page's own colour tokens, light and dark, lines 21-45, are kept and used by every new part).
+SIX TABS, replacing the five: Home, Learning, Plan, Money, Your inputs, Controls.
+- Home, in this order: open alarms (pinned first); "Needs you" (today's cards with the countdown and the default; under each card a
+  one-line box "Say something about this"); "Decided for you" (with "Undo" or "Take it down" wherever the row has that button); today
+  and next; the health light.
+- Learning: lessons with what changed; research with source and date; observations; experiments; the retention microscope (the old Lab);
+  the notes.
+- Plan: the plan's lines; the calendar; the road to monetisation (the old Progress meters and numbers); the department line's note.
+- Money: as today, plus the money group's rows, WhatsApp's line and the treasury's note.
+- Your inputs: ONE box ("Type anything: an idea, a wish, a worry"), then each input with its verdict as a chip (TAKEN, PARKED, ANSWERED,
+  STORED) and its answer.
+- Controls: as today, with Health.
+R17 (13 d): THE MAP FOR STEP 7 (the page at d64fdcc: `render()`, line 684, picks one of five functions by `tab`; `render_check.mjs` names
+the same five; the classes are the page's own, lines 46-290):
+| Tab (`data-tab`) | Render function | Snapshot fields it reads | Classes reused |
+|---|---|---|---|
+| Home (`home`) | `renderDocket` RENAMED `renderHome`; `caseCard` kept | `alarms`, `docket`, `decided`, `engine`, `health` (the light) | `.sec-head`, `.case`, `.btn`, `.empty`, `.countdown`, `.tag` |
+| Learning (`learning`) | NEW `renderLearning`; `renderLab` kept and called inside it | `learning`, `lab`, `learned` | `.list`, `.row`, `.tag`, `.exp`, `.arm` |
+| Plan (`plan`) | NEW `renderPlan`; `renderProgress` kept and called inside it (the meters and the numbers) | `plan`, `progress`, `engine` | `.meter`, `.kpis`, `.kpi`, `.chart`, `.list`, `.row` |
+| Money (`money`) | `renderMoney` kept, two sections added | `money` (with `whatsapp`, `treasury`), `groups`, `engine` | `.gauge`, `.stack`, `.lines`, `.modes`, `.mode`, `.list`, `.row` |
+| Your inputs (`inputs`) | NEW `renderInputs` | `inputs`, `groups` | `.list`, `.row`, `.tag`, `.btn`, `.actions` |
+| Controls (`controls`) | `renderControls` kept | `engine`, `settings`, `health`, `whatsapp` | `.pause-card`, `.switch-row`, `.toggle`, `.stepper`, `.btn` |
+`render()`'s table, the five `data-tab` buttons (lines 319-335) and the five columns of `nav.tabs .in` (line 246) become six;
+`renderHeader`'s count still reads `docket`. TWO OLDER TESTS THE ONE PAGE MUST KEEP GREEN WITH THE SWITCH OFF: `tests/test_v94b.py` 39-44
+(every `S.<field>` and `S.<field>.<sub>` the page reads is in the snapshot - so every new field exists, empty, in both switch states) and
+93-99 (every tab renders a real snapshot through `render_check.mjs`, whose list of tabs changes with the page, BY DESIGN).
+`API.input(text, card)` posts to `api/input`. The demo data takes the new shape. `render_check.mjs` renders the six tabs and gains
+`--dump` (each tab's HTML as JSON on stdout) - the harness of an older test, changed BY DESIGN with the tabs it names.
+PROVEN IN FAKE MODE BY CODE (`tests/test_v12_owner_face.py`; node is already what `tests/test_v94b.py` 93-99 uses):
+- F1 PHONE WIDTH: in the page's `<style>` no `width` or `min-width` above 320px outside an `@media (min-width` block; `body` has
+  `overflow-wrap: anywhere`; every `svg` the page draws has a `viewBox`; `img` has `max-width: 100%`. Planted: `min-width: 480px` fails.
+- F2 BOTH THEMES: for the light and the dark tokens the contrast of each text token on each surface token it is used on (the pairs are
+  a table in the test) is at least 4.5 by WCAG's formula, computed from the hex values. Planted: a muted grey at 3.9 fails.
+- F3 ONE TAP, AND A FINGER CAN HIT IT: the CSS rules of `.btn`, `nav.tabs button`, `.toggle`, `.thumb`, `.icon-btn` and the input's send
+  button set `min-height` of at least 44px; in the dumped HTML of every tab every element that carries a verb is a `button`, and no card
+  shows more than three.
+- F4 IT RENDERS WHATEVER COMES: "ALL TABS RENDERED" for a full snapshot, an empty one (every list empty) and a hostile one (a 300-letter
+  word and `<script>` inside his input and inside an alarm - the dump holds no `<script`).
+- F5 exactly six tabs; the first thing on Home is an open alarm when one exists, else "Needs you".
+SAID PLAINLY: no layout engine runs on this laptop or in the suite, so "no sideways scroll" is proven as rules of the stylesheet, not on
+a screen. The real screen is the pack's C0b: the setup session opens the deployed page at 375 pixels and reads `scrollWidth <=
+clientWidth` on each tab, and he taps once. PART B, HIS OWN HOURS AFTER THE STOP (D; named, not designed): the look, motion, charts'
+polish, richer WhatsApp layouts.
+
+**PART 7. NEVER HELD BY HIS ABSENCE** (`notify.send`, `contract.py`, `specials.py`, `org/floor.py`; item 150).
+THE CARD RULE, in `send()` with the switch on: a row with buttons, of class CARD, whose kind is not in `STANDING_KINDS`, must carry
+`default` and `expires_h`. One that does not is NOT stored as written: it is stored with `CARD_FALLBACK = "nothing changes; it is
+reported in the morning message"` and 72 hours, an error is logged, and one `card_rule` row a kind a day names it. CHANGED FROM THE
+BRIEF's "refuses", with the reason: a refusal that raises inside a caller's `try` would lose the message, and nothing may be lost; the
+BUILD is what refuses - `test_every_card_has_a_default_and_an_expiry` scans every `NT.send(` and `NT.mail(` call with `ast`: a literal
+kind of class CARD with a non-empty `buttons` argument and no `default=` or no `expires_h=` fails; HOLD and `STANDING_KINDS` are the only
+exemptions, and the hold list is pinned (part 1). Calls completed by this batch, each only when the switch is on (the older path keeps
+its words): `maker_line` - default "no line: the film ends without it"; `owner_verdict` - "no verdict is recorded"; `org_stuck` -
+"nothing changes; the organisation works around it", 72 h; `model_dead` - "videos continue with what still works", 72 h.
+A DEFAULT NEVER SKIPS A CHECK: `contract.clear_to_post(ep) -> (ok, why)`, pure reads: (1) the Episodes row's status is
+AWAITING_APPROVAL; (2) no open Owner_Actions row of class HOLD for the episode; (3) the episode's newest final-gate rows on tab
+`Feature_Ledger` hold no failure - by the SAME expression `contract.run` uses to hold a video, taken out into `contract.failed(rows)`
+and called from both (wrap, never copy) - R17 (7 a, 7 c): (2) IGNORES a row whose `dedupe_key` begins `silence|` (its own report, below:
+counted, it would hold the video for ever); `failed(rows)` returns the `(feature, evidence)` of every row whose status is FAIL; `run`
+asks it about each row it has just built and appends its own `(fid, ev)` as today, so no evidence text changes length; `clear_to_post`
+takes the episode's ledger rows whose stage is "final", the newest row a feature by `ts`, and holds on any; WAIVED and NA are no failure,
+as in `run`; (4) its `kids_check` cell does not say True; (5) `launch.uploads_open()` and not
+`manage.paused()`. `approve_by_silence(ep, row)`: `clear_to_post` first; when it says no, the video STAYS private and a `contract_hold`
+row says why (key `silence|<ep>`); when it says yes, `approve(ep)` (the function his tap calls) and a `decided_post` row: "<title>
+was approved by your silence and goes public at <slot>." with ("Take it down", "UNPOST <ep>").
+R17 (7 a, 7 b): `approve_by_silence` RETURNS `approve`'s own string ("approved: ...") or "held: <why>". THE REPORT ROW of a "no": kind
+`contract_hold`, tier "week", key `silence|<ep>`, text "<title> was not approved by your silence: <why>. It stays private.", buttons
+("Approve", `APPROVE <ep>`) and ("Keep it private", `HOLDREVIEW <ep>`) - the verbs `contract._answer` reads today - no default, no
+expiry. When a later try says yes, `approve_by_silence` itself closes that row (ANSWERED, answer "cleared") before it approves, so the
+two sweeps share one road. The `decided_post` row is sent with `expires_h=168`, and `contract.register` gains
+`NT.register("decided_post", on_answer=_answer)`; `_answer` gains the verb `UNPOST <ep>`.
+TURNED, with the switch on:
+- `creative_review` (`contract.await_approval`, called at `episode.py` 963-964): default "approved by your silence" (R22 (2); R17's words were "goes public on its slot unless you tap Hold");
+  hours = `max(1.0, min(S("CREATIVE_REVIEW_WAIT_H"), hours_to_slot - S("SILENCE_LEAD_H", float)))` - R22 (2): the margin is the new cell `SILENCE_LEAD_H` ("12"), no longer 1.5 - `floor.eye_hours`' arithmetic with the new cell
+  `CREATIVE_REVIEW_WAIT_H` ("72"); `contract.register()` adds `on_default=_review_silence` -> `approve_by_silence`. `review_sweep()`,
+  called in `manage.tick` after `eye_sweep`, tries a failed default again (the pattern of `floor.eye_sweep`). R17 (7 a): at EVERY tick it
+  asks `approve_by_silence` again for a video AWAITING_APPROVAL whose newest `creative_review` card is DEFAULTED: a pause that ended or
+  an upload check that passed lets the video out at the next tick (`approve` takes the next free slot when its own has passed); a
+  failed ledger row never does.
+  R22 (2): SILENCE IS ASKED `SILENCE_LEAD_H` HOURS BEFORE THE SLOT, NEVER 1.5 (the measure: R22 (0)). New cell `SILENCE_LEAD_H`
+  ("12": "v12 B-OWNER: a video that waits for his approval is approved by his silence this many hours before its slot, when its
+  checks pass, so that a late tick cannot miss the slot; he can still stop it until the slot. GitHub's own schedule left up to 11
+  hours between two ticks (measured 19 Nov 2026)"), a plain cell, entered in step 8. WHY 12: on the measured ticks a silence asked
+  1.5 hours before a slot found a tick in time - at least `approve`'s 30 minutes before the slot - for 15.0% of 1,761 slots tried
+  (one every quarter of an hour); 2.5 hours: 30.0%; 9 hours: 98.2%; 12 hours: 100% - the longest gap, 661 minutes, leaves 29
+  minutes. With the backup clock, 1.5 hours left 4 minutes and 12 leaves eleven hours. It is ONE cell for every silence that puts a
+  video on a slot: V4b's pair reads it too (R1-31 (1): "the pair's silence asked 12 hours before the slot, a cell").
+  HIS WINDOW IS NOT SHORTENED, AND THIS IS SAID TO HIM (items 150 and 156). What moves is the hour at which his silence is TAKEN, not
+  the hour until which he can stop the video: from the approval to its slot the video is private on YouTube's schedule, the
+  `decided_post` row stands under "Decided for you" on both screens with ("Take it down", `UNPOST <ep>`), and that tap - like every
+  tap of his it starts its own job and waits for no tick - makes the video private and HELD_BY_OWNER (`unpost` is his Hold: R17
+  ADDS (B)). After the approval the video is SCHEDULED like every video after the first three: a pause, his KILL and the
+  made-for-kids alarm act on it as on any scheduled video, and `clear_to_post` judged it at the approval with every check it has.
+  THE WORDS HE READS:
+  - the card's text ends: "If you do nothing it is approved by your silence from <HH:MM, India time> on - at the pipeline's next run - and goes public on its slot, <weekday HH:MM,
+    India time>. Until the slot you can still stop it: Decided for you, Take it down."
+  - the `decided_post` row (R17's words, with the link added): "<title> was approved by your silence and goes public at <slot,
+    India time>. Watch it (private): https://studio.youtube.com/video/<vid>/edit" with ("Take it down", `UNPOST <ep>`).
+  - A MOVED SLOT IS TOLD, never silent: when the slot `approve` gave is not the episode's own (the tick came when its slot was
+    under 30 minutes away, or a pause or a closed upload check ended late), the row reads "<title> was approved by your silence.
+    Its own slot, <old>, had passed before the pipeline could act, so it goes public at the next free slot, <new>."
+    `approve_by_silence` reads the episode's `slot_et` before it calls `approve` and after.
+  R22 (2 b), THE CLOSE OF FINDING F1 OF `reviews/V1c_audit.md` FOR THE SHIPPED STATE (R1-36 (1), R1-37 (a)): `floor.eye_hours`
+  (V1c's ACCEPTED code, `org/floor.py` 401-405), typed in step 8, which already types `_approve_eye` in that file, with its own
+  test and its own break: `lead = S("SILENCE_LEAD_H", float) if S("TWO_SCREENS_ON", bool) else 1.5`, and the 1.5 of both of its
+  lines becomes `lead`; the docstring's "approve's own 0.5 h + two ticks" becomes "the cell SILENCE_LEAD_H: a tick can be 11
+  hours late". R24: and its words "never past 1.5 hours before its slot" become "never past the lead before its slot (SILENCE_LEAD_H with TWO_SCREENS_ON, else 1.5 hours)". With the switch off the literal stands, and `tests/test_v12_floor.py` 675-678 (it pins 20, 8.5 and 1.0) passes
+  unchanged. RULED BY R1 (its addition to R1-37, on R19's judgment): the cell is read BEHIND the switch - my draft of 21:07, the cell read in
+  both states with three numbers of that test file changed, is turned back and nothing of it stands. R19's words, word for word
+  (`REVIEW_R22_BLOCKS_B_OWNER.md`, condition (i)):
+  WHY BEHIND THE SWITCH, SAID PLAINLY: twelve hours are safe for him only with `clear_to_post` and the `decided_post` row's "Take it
+  down", and both exist only with the switch on; unconditional, the older path would take his silence ten and a half hours earlier
+  with no button to stop the film afterwards. So `TWO_SCREENS_ON` FALSE brings the 1.5 back with the rest of the older path - AND
+  THE FAULT WITH IT: on a slow clock a film the floor could not judge then goes out a week late. The finding is closed for the
+  shipped state only: its line in `reviews/V1c_audit.md` reads "CLOSED with `TWO_SCREENS_ON` TRUE: <commit>; with the switch off the
+  literal stands (B-OWNER's memo, PART 7)", never a plain CLOSED.
+  R22 (2 b), the cell's own words (R1: "yours to word so that both states read true"): `core.py` 1071, `VIEW_FLOOR_EYE_WAIT_H` -
+  "never past 1.5 hours before its slot" becomes "never past SILENCE_LEAD_H hours before its slot (1.5 hours while TWO_SCREENS_ON
+  is off)"; nothing else of that line moves, and step 8 runs `tools/gen_docs.py` as R18 (1) orders. `tests/test_v12_floor.py`
+  249-250 pins the cell's VALUE ("20"), not its words: unchanged.
+  NOT CHANGED: `contract.approve` (his tap's function): its 30 minutes and its next free slot stand; the late road is an open issue
+  (R22 (0), R22 (8)). A video made less than 13 hours before its slot keeps the floor of one hour, as today.
+  R22 (2 c): WHO COMPUTES THE HOURS (R19's question, for V4b). `await_approval(ep, vid, slot_iso, summary, kind="creative_review",
+  default=None, expires_h=None)`: a passed `expires_h` or `default` is honoured as today (the floor's card passes `eye_hours` and
+  its own words). With none passed: the switch on -> the hours above and "approved by your silence"; the switch off -> 72 and
+  "stays private", today's two defaults (`tests/test_v102.py` 70 calls it so and passes unchanged). So `episode.py` 963-964 and
+  V4b's pair call it WITHOUT `expires_h`: one arithmetic, one cell - V4b names no cell and no function of its own for the lead.
+  TESTS (step 8): `test_silence_is_asked_twelve_hours_before` (a slot 26 hours ahead: the `creative_review` card expires 14 hours
+  from now and `floor.eye_hours` gives 14; with the cell "3": 23, and 20 for the floor's card, its own cap; with the switch off
+  `eye_hours` gives 20, and 8.5 for a slot 10 hours ahead - R22 (2 b): this clause and the second break are F1's own);
+  `test_a_tick_eleven_hours_late_keeps_the_slot`, run for both cards (`creative_review` and `floor_eye`: the card expired, no tick
+  for 11 hours, then `expire_defaults` - SCHEDULED for its OWN slot, `yt_schedule` called with it, one `decided_post` row with the
+  Studio link); `test_a_moved_slot_is_told` (the first tick 12 hours after the expiry: SCHEDULED for the next free slot, and the
+  row holds both slots and "had passed"). Breaks: the cell read as 1.5 in `await_approval`; `eye_hours` keeps its literal with
+  the switch on; the moved slot's sentence dropped.
+  CHANGED FROM LAUNCH_MAX's "stays on the schedule", with the reason: the video is taken off YouTube's schedule as today and put back
+  by silence `SILENCE_LEAD_H` hours before its slot (R22 (2): twelve, no longer one and a half). It goes public on its slot either way; if the pipeline is down it stays private
+  instead of going out over a Hold that never arrived.
+- `floor_eye` (V1c): R17 (7 b): `floor._approve_eye` calls `CON.approve_by_silence(ep, msg)` IN PLACE OF `CON.approve(ep)` when the
+  switch is on - one road: a film approved through the floor's card gets its `decided_post` row and "Take it down" too, and
+  `_approve_eye` already reads the first word of the answer (`floor.py` 454); `eye_sweep` is its retry, as today - the same rule
+  for the card that already posts by silence.
+- THE SPECIAL (`specials.py` 441): with the switch on its kind is `special_ready`, default "posted after 72 hours when its checks
+  passed", `on_default=_ready_silence`: `approve(sid)` only when the Specials row still waits, uploads are open, nothing is paused and
+  the special's own check result recorded at making is a pass; A SPECIAL WITH NO RECORDED CHECK RESULT IS NOT POSTED BY SILENCE (the
+  card is NOT renewed - R17, R4's question (b) as R7 ruled it). READ at d64fdcc: a special's row holds no check result (`specials.py`
+  388; `_face_ok` only logs) and `SPECIALS_ON` is FALSE. So: (i) tab `Specials` gains the appended column `checks` ("pass" or empty;
+  nothing writes "pass" today); `_await_review` sends `special_ready` only for a row whose `checks` is "pass", and every other special
+  as `special_review` - HOLD (a), with the second reason "a special has no check on record" in the pinned tuple - with the default
+  text "not posted: it has no check on record, so it waits for your tap", no expiry and no renewal, never "posted after 72 hours";
+  (ii) `special_ready` and `_ready_silence` are proven with a PLANTED row whose `checks` is "pass", and `specials.register` gains
+  `NT.register("special_ready", on_answer=_answer, on_default=_ready_silence)` (R17 (7 d): without it his Approve tap on the turned
+  card records and does nothing); (iii) the builder writes the open issue: the batch that switches specials on records a special's
+  check result at making. The held Short keeps `special_review` and waits for him: its file failed a check.
+R18 (7 c):
+`_await_review` gains the parameter `checks=""` and `make` passes `rec.get("checks", "")` (nothing sets it today): the
+`special_ready` branch runs in the planted test and for the batch that records a special's check.
+- The breakout card is V4b's (RR-22); it already has a default and an expiry.
+UNDO NEVER DELETES: `contract.unpost(ep)` (the verb `UNPOST <ep>` from either screen): `PUB.yt_set_privacy(vid, "private")`, status
+HELD_BY_OWNER. R17 ADDS (B): the status and his verdict are written by `hold_review(ep)`, the function his Hold tap calls (wrap: a
+take-down IS his Hold). It answers "<title> is private again. Nothing was deleted. To publish it later: YouTube Studio, Visibility,
+Public." No card offers Approve after a take-down: YouTube gives a time only to a video that was never published (S5), so
+`contract.approve`'s `yt_schedule` would be refused on a film that had been public. `test_undo_is_private_never_gone`: the function's source holds no call of `yt_delete` or `yt_upload` (`ast`), and after it
+the video's read-back is private and its id unchanged.
+TESTS (each PLANTED case is the brief's): `test_a_planted_failing_check_still_holds_after_the_expiry` (a failed `ai_label` row on the
+ledger: after the expiry the status is AWAITING_APPROVAL, `yt_schedule` was not called, the hold row exists); the same with an open
+`floor_hold`, with the kids cell True, with uploads closed; `test_a_clean_video_goes_public_on_its_slot_by_silence`;
+`test_a_special_is_posted_by_silence_only_with_its_checks`; `test_the_held_short_still_waits`; `test_his_hold_tap_still_holds`. R17 (7):
+`test_silence_tries_again_when_the_reason_is_gone` (uploads closed at the expiry and open two ticks later = scheduled, the `silence|`
+row closed; a failed ledger row = never); `test_the_floors_card_takes_the_same_road` (a `floor_eye` default leaves a `decided_post`
+row with "Take it down"); `test_a_special_without_a_check_waits_for_his_tap`; `test_the_turned_special_answers_his_approve`. Breaks:
+(2) counts the `silence|` row; `_approve_eye` calls `approve`; `special_ready` sent for a row without `checks`. Breaks:
+`clear_to_post` returns True; the fallback default removed from `send`; `unpost` calls `yt_delete`; `_ready_silence` posts without the
+check result. TWO OLDER FILES CHANGE BY DESIGN, named here before they are touched: `tests/conftest.py` (the line `OLD_SCREENS`) and
+`mission_control/render_check.mjs` (the six tabs, `--dump`). R17 (14 d): `special_review` is pinned by `tests/test_v102.py` 92,
+`tests/test_v12_motion.py` 596, `tests/test_v12_release.py` 284 and `tests/test_v12_short.py` 322 (named on R7's reading); all four run
+with the switch off and keep passing.
+
+**PART 8. THE MONEY** (item 151: all of it is overhead, never production money).
+- WhatsApp. Cells: `PRICE_WA_UTILITY_INR` ("1.0") and `PRICE_WA_SERVICE_INR` ("1.0") - STATED CEILINGS, not Meta's rates (NOT FOUND
+  above); the pack's C0b types both from the INR rate card. `WA_SERVICE_FREE_PER_MONTH` ("1000", S1). `WA_MONTHLY_CAP_INR` ("100").
+  Every delivered message is logged: `core.cost("whatsapp", "meta", 1, inr / USD_INR, episode="owner", role=<morning | needs | alarm |
+  reply>)`; a template costs the utility price, a message inside the window costs 0 while the month's replies are under the free tier
+  and the service price after it. `episode="owner"` keeps the rows off every video (`costguard.reconcile` reads rows by episode).
+  `wa.over_cap()`: `governor.month_spend_of(["whatsapp"]) >= WA_MONTHLY_CAP_INR` - then `push("morning")` and `push("needs")` send
+  nothing on WhatsApp, one `wa_cap` row says so, and the dashboard and the mail carry everything. An alarm is sent whatever the cap says.
+  `costguard.owner_messages()` returns spent, cap, templates, replies and free replies left - the Money tab's line.
+  THE MONTH, by the code's own cells, not measured on a bill: at most 62 templates (two a day when he never opens the window) = Rs 62
+  at the ceiling; replies stay inside the free tier (about 450 a month if he opened every group every day). At a real utility rate the
+  month is a small part of that.
+  R17 (9 a): IT COUNTS INSIDE Rs 5,000 WITH NO CHANGE TO `governor.py`: `month_spend()` sums every Cost_Log row. (R4's sentence put the
+  prefix "whatsapp" into the list of `governor.py` 143. That list is what the CLAUDE CREDIT pays, `credit_cover_inr`: it would have
+  booked Meta's bill as paid by Claude's credit and lowered what the dashboard calls his own spend. It is not typed.)
+  R17 (9 b): INSIDE THE ENVELOPE, NOT BESIDE IT (item 151 (1): overhead is today's caps, and every new function fits inside). With the
+  switch on `wa._chat_spend()` = `month_spend_of(["owner_chat", "owner_desk", "whatsapp"])`: WhatsApp and the desk live inside
+  `CHAT_MONTHLY_CAP_INR` (Rs 250); the two new cells are ceilings inside it (62 + 40 = 102 at the worst); above the cap the chat
+  answers with its cheap model, as today, and an alarm is sent whatever it says. Said plainly: the chat's cap is not held back from
+  production by `production_room_inr` today; V4b's ring-fence does that.
+- The desk's weighing: one strong call an input, capped by `DESK_MONTHLY_CAP_INR` (Rs 40; an estimate: 40 to 80 inputs). It is never
+  made inside `episode.produce`, so `tests/paid_calls.py`'s baseline does not move.
+- The HD gate: no money. Quota: 1 unit a read, 50 a change of privacy or time; at most about 300 of 10,000 units a day.
+- Pre-flight (`preflight.py`): a line `whatsapp` - with secrets, the template's status must be APPROVED; without them "WhatsApp is not
+  set up: the dashboard and e-mail carry everything". It never stops production. Fake replies: `_post`'s stand-in and the template's.
+TESTS: `test_whatsapp_is_counted_and_capped` (the rows, the three prices, the cap stops the two pushes and never an alarm);
+`test_whatsapp_is_inside_his_month` (`governor.own_spend_inr()` rises by the rows and - R17 (9 a) - `G.credit_cover_inr()` does not
+rise); R17 (9 b): `test_the_three_share_the_chat_cap` (Rs 250 of chat, desk and WhatsApp together -> the next chat turn is
+`owner_chat_cheap`). Breaks: the cost call removed; the cap ignored.
+
+**PART 9. THE HD GATE AND HIS WINDOW** (item 156; new module `whatifs/hdgate.py`, department D9, on `tools/repair.py` PROTECTED;
+switch `HD_GATE_ON`).
+THE READING: `publish.yt_read` asks for `contentDetails` too and returns `hd` (definition == "hd") beside `processed`. The stand-in
+platform gains the fault `sd` (`FAKE_FAULTS["youtube"]["sd"]`: the video never reads HD), and `yt_set_privacy` in fake mode records the
+new privacy on the stand-in's record (`_fake_put(..., fixed=...)`), so a read-back sees it. R17 (2): THE STAND-IN MUST NOT FORGET A
+REPAIR - `_fake_put` does `rec.update(kw)` (`publish.py` 70), so a second `fixed=` REPLACES the first: `yt_set_label` writes
+`fixed={"ai": True}`, the new fake `yt_set_privacy` would erase it, a repaired AI label would read False again and the release gate
+would show DRIFT on a sweep id for a fault that is not in the code. In fake mode `yt_set_privacy`, `yt_schedule` and `yt_set_label`
+MERGE into the record: `_fake_put("youtube", vid, fixed={**(_fake_get("youtube", vid).get("fixed") or {}), "privacy": privacy})`
+(`yt_schedule`: privacy "private"; `yt_set_label`: `ai`). Test `test_a_repair_survives_the_next_change`: a label repaired, then made
+public -> `yt_read` shows `ai` True and `privacy` public. `ready(got) = processed and hd`.
+R18 (7 d): the fake `yt_set_privacy` honours `refuse` and `ignore` for
+"privacy" exactly as `yt_set_label` does for "label" (`publish.py` 155-156); `test_a_private_read_back_is_the_lock` plants
+`ignore: ("privacy",)`.
+EVERY UPLOAD THAT WOULD GO PUBLIC AT ONCE GOES UP PRIVATE: `publish.yt_upload(..., hd_gate=True)` - with the gate on, no `publish_at`
+and a wanted privacy of public, the body says private; after the upload `hdgate.enter(vid, kind, now)` writes a row on the new tab
+`HD_Wait` (`vid`, `kind`, `uploaded`, `cap_min`, `ai`, `state`, `public_at`, `hd`, `minutes`, `note`). This one place covers the Short's
+door (`release.py` 261), the special reels (`specials.py` 404) and the older doors. `launch.py` 50 (the upload check, deleted within a
+minute) passes `hd_gate=False` - R17 (3 a): it asks for `privacy="unlisted"` and compares the answer with "unlisted" (`launch.py`
+50-51, 62), which the gate never touches (the gate turns only a wanted privacy of public); `hd_gate=False` is kept as a second wall.
+R17 (1): THE UPLOAD NEVER WAITS AND NEVER MAKES PUBLIC. R4 had `hdgate.finish(vid)` wait inside `yt_upload`; that is gone, because
+`release._youtube` reads back, compares, repairs the AI field and sets the thumbnail AFTER `yt_upload` returns (`release.py` 261-268):
+a gate that finished inside the upload made a Short public before its checks and its thumbnail - in fake mode always (the stand-in is
+ready at once, so `test_a_short_marked_for_kids_stays_private` could not pass), in reality whenever YouTube processed inside the wait.
+(a) `yt_upload(..., hd_gate=True)` only makes the body private (`yt_body(..., privacy="private")` when the gate is on, there is no
+`publish_at` and the wanted privacy is public) and calls `hdgate.enter(vid, kind, now, ai=<the upload's ai_label>)` in both modes, as
+soon as the id is known (the fake branch returns early, line 87). R17 ADDS (E): the tab's column `ai` keeps what the upload asked for.
+R18 (7 b): `kind` is "short" when the upload was called with `short=True`, else
+"video"; `cap_min` is `HD_SHORT_CAP_MIN` for both.
+(b) THE SHORT'S DOOR: `release._youtube` calls `hdgate.finish(vid, wait_s)` as its LAST act, after `_extras_youtube` - `wait_s` is
+`HD_SHORT_WAIT_S` ("300", in steps of `release.POLL_S`) on the first pass, 0 on a later pass and in fake mode - and with the gate on it
+no longer calls `launch.lock_detected` for a private read-back (line 265: private is now the expected answer). A `privacy` receipt of
+WAITING keeps the record open as a WAITING thumbnail does, so `release.settle` runs the door again at every tick: the thumbnail first,
+then the gate.
+(c) THE OLDER DOORS (`specials.py` 404, `pilots.py` 67, `spinoff.py` 140) are finished by `hdgate.tick` at the next tick.
+`hdgate.short_step(uploaded, got, now) -> (act, minutes)`, pure: ready -> ("public", m); m >= `HD_SHORT_CAP_MIN` ("60") -> ("cap", m);
+else ("wait", m). `hdgate.tick(now)`, called in `manage.tick` after `release.settle`, finishes every WAITING row: public or cap ->
+`hdgate.go_public(vid, now, why)` (the ONE place where code makes a video public: `PUB.yt_set_privacy(vid, "public")`, the
+read-back), then state PUBLIC or CAP with the minutes and the HD state; a read-back still
+private -> state LOCKED and `launch.lock_detected(vid, [...])` (the detector moves here from `release.py` 265, where "private" is now
+the expected answer). A cap that passed without HD is logged as a miss.
+R17 (1 b): `go_public` ITSELF HOLDS THE TWO POLICY READS, FOR EVERY DOOR. Before it changes the privacy its own `yt_read` is judged: `kids`
+True -> `block(vid, "YouTube marked it made for kids")` and the `kids_flag` alarm (key `kids|<vid>`), never public; `ai` is False on a
+row whose `ai` is TRUE -> `PUB.yt_set_label(vid, True)` once, read again, still False -> `block(vid, "the AI label did not hold")`
+(`ai` None is YouTube leaving the field out - no failure, as `verify_upload` reads it today). It then returns (False, "blocked: <why>").
+A FAILED CHECK STILL HOLDS: `hdgate.block(vid, why)` - state BLOCKED, never public. R17 (1 b): `go_public` calls it, at every door, and
+`release._youtube` no longer does - it is called when the read-back of
+the `kids` or the `ai` row is wrong after its one repair: with the gate the Short is still private at that moment, so a Short YouTube
+marked for kids no longer reaches a viewer. The release gate then judges the receipts as today.
+R18 (5): A READ THAT FAILED IS NOT A PASS, AND A BLOCK IS TOLD. (i) `publish.yt_read` answers `{}` when the call fails (line
+208). On an empty read `go_public` changes nothing and returns (False, "not read"): the row stays WAITING and the next tick
+asks again; `hdgate.tick` treats an empty read of a long video the same way - it writes nothing and moves nothing (an empty
+read is not "already public"). A Short still unread `PRIVATE_ALERT_HOURS` after its cap is BLOCKED, "YouTube could not be
+read". (ii) `block` TELLS HIM, once a video: kind `hd_blocked`, text "<title or id> stays private: <why>. Nothing was
+deleted. Put it right in YouTube Studio and make it public there: https://studio.youtube.com/video/<vid>/edit", key
+`hdblock|<vid>`, tier "now", no button (so `send` gives it "Done"). Without it a Short blocked for its AI label is private
+for ever and only a memo to Publishing says so; a kids flag has its alarm and is told this way as well. Tests:
+`test_an_empty_read_makes_nothing_public` (`yt_read` replaced by `{}`: private, WAITING, no row to him; `PRIVATE_ALERT_HOURS`
+past the cap: BLOCKED and one `hd_blocked` row); `test_a_dropped_label_is_repaired_once_or_blocked` gains "one `hd_blocked`
+row under Needs you". Breaks: an empty read is taken as clean; `block` sends nothing.
+R22 (4): AN UNREAD SHORT IS BLOCKED ON THREE READS, NEVER ON ONE. As R18 (5) stands, the first tick after a long gap (seven hours on
+GitHub's schedule alone: R22 (0)) is already `PRIVATE_ALERT_HOURS` past the cap, and ONE read that fails there blocks the Short for
+good - on a half-hourly tick that sentence had six reads behind it. So the `HD_Wait` row's `note` counts its empty reads
+("unread 2"), a read that answers clears the count, and the Short is BLOCKED, "YouTube could not be read", only when it is
+`PRIVATE_ALERT_HOURS` past its cap AND its third empty read in a row has come. Until then it stays private and WAITING: nothing is
+made public unread, so no guard is loosened. R18's `test_an_empty_read_makes_nothing_public` reads its last clause so: three ticks
+past the cap and the hours, all empty -> BLOCKED and one `hd_blocked` row. New test (step 9a)
+`test_one_late_empty_read_does_not_block`: one tick seven hours after the upload with `yt_read` replaced by `{}` -> WAITING, no
+row to him; the next tick reads HD -> public, the receipt "public after N min; HD yes". Break: the count dropped (the first late
+empty read blocks).
+THE RECEIPT of a Short: the release sheet's row `privacy` is WAITING while it waits, then KEPT with "public after N min; HD yes" or
+"public after 60 min; HD NO (the cap)", or DRIFT when blocked or locked. `release.settle` treats a WAITING `privacy` row as it treats
+a WAITING thumbnail. R17 (1): the thumbnail and the playlist are set before the Short goes public whenever
+YouTube finished processing inside its wait (they are `_extras_youtube`'s, and the gate is `_youtube`'s last act); at the cap a Short
+goes public whatever its thumbnail row says, and that row says so. The sheet's own line becomes: "private until
+YouTube shows it in HD (at most HD_SHORT_CAP_MIN minutes and the wait for the pipeline's next tick), then public: set by us and
+read back" (R22 (5): the eight words after "minutes").
+R18 (4): WHO WRITES THE `privacy` RECEIPT, AND WHAT `finish` IS (read whole: `release.py` 1-507).
+(a) A VIDEO IS GATED WHEN IT HAS A ROW ON `HD_Wait` (`hdgate.row(vid)`; `enter` writes one only when the upload went through
+the gate) - never by what the switch says at a later pass. `HD_GATE_ON` FALSE lets nothing NEW in; `hdgate.tick` and `finish`
+still finish every row that waits, and `_youtube` still treats a gated video as gated: a Short the gate took private is never
+left private, and never read as "the lock", because the switch was turned. (The long video's gate simply stops moving times:
+YouTube's own schedule publishes it.)
+(b) IN `_youtube`, FOR A GATED VIDEO: the body kept on record says private (`body["status"]["privacyStatus"] = "private"`
+before `_save(..., sent=body)`: what was really sent); `privacy` is taken out of `want` before `compare`, which never judges
+that row; line 265's lock call is skipped; and after `_extras_youtube` the row is written from the gate alone - `state, m,
+note = HG.finish(vid, wait_s, now)`: WAITING -> [WAITING, "private until YouTube shows it in HD: m min so far"]; PUBLIC ->
+[KEPT, "public after m min; HD yes"]; CAP -> [KEPT, "public after m min; HD NO (the cap)"]; BLOCKED or LOCKED -> [DRIFT, note].
+(c) `hdgate.finish(vid, wait_s, now) -> (state, minutes, note)`: the video's `HD_Wait` row; a row that no longer waits is
+answered as it stands; else `yt_read` is asked every `release.POLL_S` seconds until `short_step` says public or cap or
+`wait_s` is used up; on public or cap `go_public`; then the row's state. `hdgate.tick` is the same call with `wait_s` 0 for
+every WAITING row.
+(d) `settle` IS NOT CHANGED: a WAITING `privacy` row keeps the record OPEN through `state_of`, and the OPEN branch runs the
+door again at every tick while the thumbnail does not wait (504); when both wait, `hdgate.tick` still makes the Short public
+at its cap and the next pass writes the receipt.
+Tests: `test_a_waiting_short_is_open_not_flawed` (fault `sd`: after the first pass the record is OPEN, `privacy` is WAITING,
+the release gate has not run, `sent` says private; at the cap KEPT "HD NO (the cap)" and DONE);
+`test_the_switch_never_strands_a_short` (fault `sd`, the gate switched off while it waits: public at its cap, no lock,
+`UPLOAD_LOCK` untouched). Breaks: `privacy` left in `want`; `tick` returns when the switch is off.
+A LONG VIDEO keeps its slot in `slot_et` (the calendar's key: it is never moved) and gains three appended Episodes columns:
+`uploaded_at`, `public_at`, `hd_gate`. `hdgate.long_step(slot, public_at, got, now) -> (act, target)`, pure, with the cells
+`HD_LONG_LEAD_MIN` ("90"), `HD_STEP_MIN` ("15"), `HD_GUARD_MIN` ("75"), `HD_LONG_CAP_MIN` ("120") - R22 (3): the lead was 60 and the guard 45:
+- `now < slot - lead` -> none.
+- not ready: `need = now + guard`; `target = slot + step * ceil(max(0, need - slot) / step)`, at most `slot + cap`; `target > public_at`
+  -> ("push", target), done with `PUB.yt_schedule(vid, target)`.
+- ready: `target = max(slot, slot + step * ceil(max(0, now + 5 min - slot) / step))`; `target < public_at` -> ("pull", target).
+R22 (3): THE GUARD MUST OUTLAST THE CLOCK'S GAP, AND THE LEAD MUST HOLD ONE TICK. R17 ruled 45 on "ticks are 30 minutes apart" (R4's
+question (c)); they are not (R22 (0)). With the backup clock a gap is 46 to 56 minutes, so a guard of 45 lets YouTube publish
+before the next tick can look - slot 14:30, lead 60, guard 45, ticks at 13:35 and 14:31: at 13:35 nothing is needed (it needs
+14:20, before the slot), and at 14:31 the video has been public for a minute: the gate never acted. THE RULE: after any tick that
+finds the video not ready, its public time is at least `min(now + HD_GUARD_MIN, slot + HD_LONG_CAP_MIN)`; so with `HD_GUARD_MIN`
+(75) above the longest gap of the working clock (56: `WATCHDOG_STALE_MIN` 45, the Worker's 10-minute cron, the start) the next
+tick always comes before the video is public, until the cap; and with `HD_LONG_LEAD_MIN` (90) one tick always falls inside the
+lead.
+WORKED, slot 14:30, never ready. THE BACKUP CLOCK'S RHYTHM (ticks 56 minutes apart: 12:50, 13:46, 14:42, 15:38, 16:34): 12:50 none
+(before 13:00); 13:46 push to 15:15 (it needs 15:01); 14:42 to 16:00; 15:38 to 16:30 (the cap); at 16:34 YouTube has published at
+16:30: public anyway, the miss logged. Ready at the 14:42 tick with 15:15 set - pull to 15:00. THE HALF-HOURLY RHYTHM (:07 and
+:37): 13:07 none (it needs 14:22, before the slot); 13:37 push to 15:00; 14:07 to 15:30; 14:37 to 16:00; 15:07 to 16:30 (the cap).
+THE COST of 75 against 45: a video that turns ready just after a push waits for the next tick's pull - up to about an hour past
+its slot, where 45 on a half-hourly tick cost about half an hour. ON GITHUB'S SCHEDULE ALONE a tick fell inside the 90 minutes
+before a slot for 22.6% of the slots tried; otherwise nothing moves and YouTube publishes at the slot, or at the last time a push
+set: never held, and HD is not waited for. That is the fall-back, said plainly: the long video's gate needs the working clock.
+TESTS (step 10): `test_long_step_table` holds both rhythms and the pull, a row a tick; `test_the_guard_outlasts_the_clock`
+(`HD_GUARD_MIN` is above 60 and `HD_LONG_LEAD_MIN` at least 60 in `core.DEFAULTS`; with the defaults, a walk of ticks 56 minutes
+apart from every first minute never finds a not-ready video public before its cap). Break: the guard back to 45 (the walk that
+starts at 13:35 finds it public at 14:30).
+YouTube's own schedule is the fall-back at every moment, so a dead pipeline never holds the video.
+The gate acts only on status SCHEDULED: a held or waiting video is never touched. `manage.release` writes `hd_gate` when it sees the
+video public ("public N min after upload; HD yes" or "...; HD NO (the cap)") and its private alert (346) counts from
+`max(slot_et, public_at) + PRIVATE_ALERT_HOURS`, so the gate's own wait is never an alarm.
+R17 (3 c): `public_at` HAS ONE WRITER, THE GATE. An empty `public_at` means the slot: `long_step` is given `public_at or slot`, and
+`contract.approve` and `manage.resume_held` (`manage.py` 83: after a pause every HELD video is put back with `PUB.yt_schedule`) write
+`public_at` empty when they set a time. Test `test_a_video_rescheduled_after_a_pause_is_judged_from_its_new_slot` (not from the time
+the gate set before the pause).
+R17 ADDS (A): THE GATE NEVER TOUCHES A VIDEO THAT IS ALREADY PUBLIC. `hdgate.tick` reads `yt_read` first; a long video whose `privacy` is
+not "private" (YouTube published it, he set it public in Studio, or another batch released it through `go_public`) gets its `hd_gate`
+line and is left alone: `yt_schedule` sets private AND a time, and YouTube refuses a time on a video that was ever published (S5).
+Test `test_a_public_video_is_never_scheduled_again`. Break: the read of `privacy` removed.
+HIS WINDOW: when a long video whose slot is today (India time) is uploaded and ready - R17 (14 a): and its status is SCHEDULED or
+AWAITING_APPROVAL (the first three videos are the launch's, and they wait in review on their release day) - `hdgate.tick` sends ONE
+card `prepublic`:
+"Tonight HH:MM: <title>. Optional before it goes public: the end screen, about 30 seconds in Studio: <link>." with ("Done", "DONE"),
+default "it goes out without an end screen", expiring at the slot. Made before 09:00 it is in the morning list; later, in the 18:00
+list - a late upload moves its clicks by itself. Not ready by 08:30 India time on its day -> one `hd_late` row. CHANGED FROM THE BRIEF,
+with the source: Test & Compare cannot be a pre-public click - YouTube's Help says the test cannot be used on a private video and is
+"Desktop only" (S6); it stays with the after-public clicks of the release card.
+R18 (6): `prepublic` and `pin_comment` carry the verb DONE, not OK: `asks` counts it, so both stand under "Needs you" and in
+the 18:00 list with their deadline and their default (item 156: a late upload moves its clicks to the 18:00 list). With OK
+they were in neither list. No handler is needed: his tap closes the row. `test_his_window_card` asserts the card is a row of
+`needs()` and of the list `wa.push("needs")` sends. Break: the verb back to OK.
+SAID PLAINLY: "the minute both are true" holds inside the upload job's five minutes; after that the Short goes public at the next
+tick that finds it ready, or at the first tick at or after its cap (R22 (5): R4's words were "the next half-hourly tick, at most 60 minutes after its upload"). Instagram and Facebook already wait for FINISHED (`publish.py` 387-389): nothing
+is added.
+R22 (5): HOW LONG A SHORT REALLY WAITS. Inside its job: at most `HD_SHORT_WAIT_S`. After the job only a tick finishes it
+(`release.settle`, `hdgate.tick`). WITH THE BACKUP CLOCK: public at most one gap after YouTube shows it in HD, and never later than
+its cap and one gap - about two hours after its upload, not 60 minutes. ON GITHUB'S SCHEDULE ALONE: it waits for the next tick -
+from any moment a median of 197 minutes, 403 at the ninth decile, 653 at worst (R22 (0)): a Short private for hours, against the
+gate's own purpose (item 156) and against every reading V4b takes in a Short's first hours. No check is skipped by it and nothing
+is lost; it is late. So `HD_GATE_ON` IS ARMED ONLY ON A PROVEN CLOCK - the pack's step (R1-31 (4); R22 (8)) - and until that proof
+it is FALSE at the launch: a Short goes public at its upload, as today.
+R22 (11), R19's words, word for word: In code the default is FALSE - the safe value on a clock nobody has proven: `tests/test_v12_hdgate.py`, the sweep's runs with the
+organisation on and the rehearsal set the cell TRUE themselves, so the block walks the gate as before; the pack's step sets it TRUE
+on the live Sheet when the clock's proof passes.
+A slow clock shows by itself on the first Short: its receipt says "public after N min", and Step 1's
+measure (upload-to-public minutes) is read at the pilot. THE LADDER'S CLOCK (R17 (14 b), below): its "at most 60 of 1,440 minutes"
+is about 120 with the backup clock and hours on GitHub's schedule alone; the open issue the builder writes carries these figures.
+Test (step 9a) `test_a_late_tick_still_finishes_a_short`: fault `sd`, no tick for seven hours, then one - public at that tick, the
+receipt "public after 420 min; HD NO (the cap)", no lock, no block, no `hd_blocked` row. Break: `hdgate.tick` skips a WAITING row
+older than two hours.
+R22 (11): `HD_GATE_ON` IS "FALSE" IN CODE (R1-37 (b), on R19's point A: a missed pack line, or a buyer's first install on GitHub's
+schedule alone - item 70 - must fail to "public at its upload, as today", never to "every Short private for hours"). R19's two
+sentences stand word for word in R22 (5) and in R22 (8). WHO SETS IT TRUE, AND IN WHICH STEP - the typing order ends at step 11,
+there is no step 12: STEP 9a - the cell enters `core.DEFAULTS` as "FALSE", and `tests/test_v12_hdgate.py` gets a fixture `gate_on`
+that sets it TRUE; every test of this memo that walks the gate uses it (step 10's tests of the long video and of the sparse clock,
+and the clause step 9a adds to `test_undo_is_private_never_gone`). STEP 9b - `tools/sweep.py`, in its runs with the organisation
+on, and `tools/rehearsal.py` each set the cell TRUE by a `set_setting` of their own before a run (the sweep after its loop over
+`TEST_SETTINGS`, lines 203 and 262 - that dict is not changed; the rehearsal beside its line 61), so `hd_of` (it judges those
+runs), the counter `hd_gated` and the rehearsal's line "HD gate: k of k uploads" walk the gate as written. Between the commits of
+9a and 9b both run with the gate off, as today, and stay green. The entry `"HD_GATE_ON": "FALSE"` of `OLD_SCREENS` stays: it says
+what the older tests run on, whatever the default. PART 9's sentences "with the gate on" are unchanged; where the memo said
+"default TRUE" it now says FALSE (Step 3's first paragraph). ONE TEST (step 9a) `test_the_gate_is_off_until_it_is_armed`:
+`core.DEFAULTS["HD_GATE_ON"][0]` is "FALSE", and with the default a Short's upload asks for public and writes no `HD_Wait` row.
+Break: the default back to "TRUE".
+R17 (14 b): THE LADDER'S CLOCK IS A SHORT'S UPLOAD, not the minute it went public: `release.py` 392 calls `ladder.went_public` once, when
+the id first exists, and `ladder.py` 78 writes `posted` then. Under the gate the 24-hour and 48-hour marks of the breakout monitor
+therefore include the private wait: at most 60 of 1,440 minutes (4.2% of the first mark), usually the few minutes YouTube needs,
+unequal between Shorts. It is NOT changed in this batch (two more files and the ladder's own tests); the builder writes it as an open
+issue with that size and the fix (`posted` written when `go_public` succeeds).
+TESTS (`tests/test_v12_hdgate.py`): THE PLANTED TEST OF THE BRIEF - `test_a_video_read_as_sd_stays_private_until_its_cap` (fault `sd`:
+private at upload, at +30, at +59; public at the first tick from +60, the receipt says "HD NO (the cap)"); `test_ready_goes_public_in_
+the_job`; `test_a_short_marked_for_kids_stays_private` (planted drift on `kids`); `test_a_private_read_back_is_the_lock`;
+`test_long_step_table` (R22 (3): the two rhythms worked above and the pull, one row a tick; the cap is never passed); `test_a_held_video_is_never_made_
+public`; R17 (3 a): `test_the_upload_check_is_untouched` (its body still says unlisted with the gate on); `test_his_window_card`;
+R17 (1): `test_the_thumbnail_is_set_before_the_short_is_public` (the stand-in's record holds the thumbnail when `fixed.privacy` turns
+public), `test_a_dropped_label_is_repaired_once_or_blocked` (fault `ignore: label` -> BLOCKED, never public); `test_every_public_upload_passes_the_gate` (`ast`: no call of
+`yt_upload` passes `privacy="public"`; only `launch.py` passes `hd_gate=False`; outside `hdgate.py` no call of `yt_set_privacy` passes
+"public" - none does at d64fdcc). R17 (3 b): `spinoff.py` 140 (the monthly Case Files video) passes `privacy="public"` today and would
+fail that scan: step 9a removes the argument (the body's default is public, so the gate takes it like every direct upload; its cap is
+the Short's). Breaks: `ready` ignores `hd`; the cap removed from
+`short_step`; `long_step` passes the cap; `block` no longer stops `tick`; `hd_gate=False` on the Short's door. R17: `go_public` skips the kids read; `_youtube` calls `finish` before `_extras_youtube`; the
+fake `yt_set_privacy` replaces `fixed`.
+THE SWEEP WALKS IT (5.6): `tools/sweep.py` gains `hd_of(core, ids)` - every Short made in the run has its `privacy` receipt KEPT with
+"public after" - and `screens_of(core, ids)` - every Owner_Actions kind of the run is in the register, WA_Outbox holds no
+"refused_window" and no kind outside morning, needs, alarm, reply; R17 (11 c): `screens_of` PLANTS THE CLOCK - `digests.tick(now=09:05
+India time)` and `needs_tick(now=18:05)` with one open card - and an id is BAD when WA_Outbox holds no "morning" row or no "needs" row
+(5.6: a missing row is a failure; as R4 wrote it an empty WA_Outbox passed and the counts hung on the hour of the run); the rehearsal
+prints the counts of its own two planted ticks; counters `hd_gated` and `owner_road_ok` in `summary()`, both in
+`proving/blocks/B-OWNER.json`. R24 (on R22 (11)): `hd_of` IS ASKED ONLY OF A RUN WITH THE ORGANISATION ON - the runs in which the sweep set `HD_GATE_ON` TRUE - AND THE COUNTER `hd_gated` STANDS IN THE BLOCK FILE ONLY ON PARTS WHOSE RUNS HAVE THE ORGANISATION ON, never on a part with `--org off` (part B of every block so far): there the sweep does not set the cell, the gate is off as shipped, a Short's `privacy` receipt holds no "public after", and `proving/verdict.py` reads a counter that does not EQUAL its part's n as RED. The typist of step 11 reads this sentence before the block file is written. The rehearsal asserts both and prints "owner road: N rows, all registered; WhatsApp: m morning, n
+needs, a alarm; HD gate: k of k uploads".
+
+**ENFORCE (the table the builder completes; one matrix row and at least one break a rule).**
+| Rule | Executed by | Fails when broken |
+|---|---|---|
+| Checks has room | checks.yml 13 | test_checks_job_has_room |
+| No mail outside notify | notify.mail | test_no_mail_outside_notify (planted call) |
+| Every kind is registered | notify.KINDS | test_every_kind_sent_is_registered; sweep `owner_road_ok` |
+| WhatsApp starts three kinds only | wa.push | test_three_days_three_kinds; test_only_wa_starts_a_message |
+| No free text outside the window | wa._post | test_no_free_text_outside_the_window; sweep |
+| An alarm cannot be muted | notify._alarm | test_an_alarm_arrives_on_both_screens_whatever_is_set; test_no_lever_reaches_the_alarm |
+| A flood is one alarm | notify._alarm | test_a_flood_is_one_alarm |
+| R17: An alarm WhatsApp did not take is sent again | notify.alarm_retry | test_an_alarm_whatsapp_did_not_take_is_sent_again |
+| R17: A second inform row is not swallowed | notify.send (INFORM_KEEP_H, the dated key) | test_the_second_inform_is_not_swallowed |
+| R17: "Needs you" is one list | notify.needs | test_needs_you_is_one_list |
+| R17: Silence tries again when its reason is gone | contract.approve_by_silence, review_sweep | test_silence_tries_again_when_the_reason_is_gone |
+| R17: A pause does not silence him | manage.tick (the paused branch) | test_a_pause_does_not_silence_him |
+| R17: No policy read is skipped at any door | hdgate.go_public | test_a_short_marked_for_kids_stays_private; test_a_dropped_label_is_repaired_once_or_blocked |
+| R17: A public video is never scheduled again | hdgate.tick | test_a_public_video_is_never_scheduled_again |
+| R17: A taken input can be taken back | desk._do | test_a_taken_input_can_be_taken_back |
+| R18: A waiting Short is open, never flawed; the switch strands none | release._youtube, hdgate.finish | test_a_waiting_short_is_open_not_flawed; test_the_switch_never_strands_a_short |
+| R18: A read that failed is not a pass; a block is told | hdgate.go_public, hdgate.block | test_an_empty_read_makes_nothing_public |
+| R22: Silence is asked a cell's hours before the slot; a moved slot is told | contract.await_approval, floor.eye_hours, contract.approve_by_silence (SILENCE_LEAD_H) | test_silence_is_asked_twelve_hours_before; test_a_tick_eleven_hours_late_keeps_the_slot; test_a_moved_slot_is_told |
+| R22: The long gate's guard outlasts the clock's gap | hdgate.long_step (HD_GUARD_MIN, HD_LONG_LEAD_MIN) | test_long_step_table; test_the_guard_outlasts_the_clock |
+| R22: One late empty read blocks nothing; a late tick still finishes a Short | hdgate.tick | test_one_late_empty_read_does_not_block; test_a_late_tick_still_finishes_a_short |
+| R22: A sparse clock loses nothing | manage.tick | test_the_sparse_clock_loses_nothing |
+| R22: The policy alarm keeps his Resume tap | manage.guardian (`screens=not aid`) | test_the_policy_alarm_keeps_his_resume_tap |
+| R22: A failed e-mail copy still reaches the screens | notify.mail | test_a_failed_copy_still_reaches_the_screens |
+| R22: The HD gate is off until it is armed | core.DEFAULTS (`HD_GATE_ON` "FALSE") | test_the_gate_is_off_until_it_is_armed |
+| R22: A daily job runs once, at the first tick after its hour | manage.tick (EXPIRY_CHECK_DAY, OCCASION_DAY) | test_the_daily_jobs_run_once_at_the_first_tick_after_their_hour |
+| A card has a default and an expiry | notify.send | test_every_card_has_a_default_and_an_expiry; test_the_lists_are_pinned |
+| A default never skips a check | contract.clear_to_post | test_a_planted_failing_check_still_holds_after_the_expiry |
+| Undo is private, never a delete | contract.unpost | test_undo_is_private_never_gone |
+| An input is kept, weighed, answered | desk.take, desk.tick | test_every_input_is_answered; the idea test |
+| No secret or script on the dashboard | dash.build_snapshot | the planted secret and script test |
+| No number without its source | dash.unsourced | test_no_number_without_its_source |
+| The page fits a phone, both themes | the page | test_v12_owner_face F1 to F5 |
+| WhatsApp is counted and capped | wa.push, costguard.owner_messages | test_whatsapp_is_counted_and_capped |
+| Nothing public before HD or its cap | hdgate | the sd test; test_long_step_table; sweep `hd_gated` |
+
+**THE ORDER OF THE BUILD (a checkpoint commit a step; each step's own tests fail first).** Each step is sized for ONE typist. By
+R1-6, once the plan's text carries that ruling, a step's commit does not wait for the Checks run of the step before it; every run is
+still read with `tools/gh_runs.js` and written into the record, a red run is repaired in a new commit, and at most three runs of the
+branch are in flight at once.
+R18 (1): NOTHING IS TYPED AHEAD OF ITS USER - WHERE THIS BLOCK AND THE TABLE BELOW DIFFER, THIS BLOCK IS THE ORDER. Two older
+meta-tests are red on anything added before code uses it: `tests/test_v12_b0b.py` 233-242 (a Settings cell that no code names
+must stand in `truth.UNREAD_SETTINGS`, a list that may only shrink) and 250-259 (the same for a Sheet tab and a function:
+`UNUSED_TABS`, `UNWIRED_FUNCTIONS`). So each cell, tab and column enters with a `core.py` line IN THE STEP THAT FIRST READS IT:
+- step 1: `TWO_SCREENS_ON`; the three columns of `Owner_Actions`; in `tests/conftest.py` `OLD_SCREENS = {"TWO_SCREENS_ON":
+  "FALSE"}`. `notify.mail` is NOT typed in step 1.
+- step 2a: `notify.mail`, with its first callers (`notify.py` joins the step).
+- step 4: `NEEDS_HOUR_IST`, `NEEDS_SENT` (an "auto" cell, as `DIGEST_DAILY_SENT`), `WA_OPEN_TEMPLATE`, `PRICE_WA_UTILITY_INR`,
+  `PRICE_WA_SERVICE_INR`, `WA_SERVICE_FREE_PER_MONTH`, `WA_MONTHLY_CAP_INR`.
+- step 5: `DESK_MONTHLY_CAP_INR`; the three columns of `Owner_Desk`.
+- step 8: `CREATIVE_REVIEW_WAIT_H`; the column `checks` of `Specials`. R22 (2): and `SILENCE_LEAD_H`.
+- step 9a: `HD_GATE_ON`, `HD_SHORT_WAIT_S`, `HD_SHORT_CAP_MIN`; the tab `HD_Wait`; the entry `"HD_GATE_ON": "FALSE"` of
+  `OLD_SCREENS` (the file's own rule, `tests/conftest.py` 16-17: an entry is added in the step that adds its cell).
+- step 10: `HD_LONG_LEAD_MIN`, `HD_STEP_MIN`, `HD_GUARD_MIN`, `HD_LONG_CAP_MIN`; the three columns of `Episodes`. R22 (12): and the two auto cells `EXPIRY_CHECK_DAY` and `OCCASION_DAY`.
+In each of those steps `tools/gen_docs.py` is run and `docs/CURRENT/SYSTEM.md` is committed with the step
+(`tests/test_docs_current.py` 60-72), not only in step 11. Appended columns pass the golden schema - `tests/test_v91_matrix.py`
+89-92 compares a prefix - so the read that the last part's point 2 left to the typist of step 1 is done.
+R18 (2): THE TYPING ORDER IS 0, 0b, 1, 2a, 2b, 4, 3, 5, 6, 7, 8, 9a, 9b, 10, 11 - STEP 4 IS TYPED BEFORE STEP 3; the numbers
+stay. Five of step 3's six tests read a push (`WA.push("alarm", row)` and its WA_Outbox row), and `wa.push` is step 4's; step 4
+needs nothing of step 3 but `notify.alarm_retry` in the paused branch. So THE PAUSED BRANCH (`manage.py`;
+`test_a_pause_does_not_silence_him` and its break) moves from step 4 to step 3, and step 4 does not touch `manage.py`. Step 3
+then finds `NEEDS_HOUR_IST` and `WA_MONTHLY_CAP_INR` in `core.DEFAULTS` when it names them in `OWNER_ONLY`.
+A TEST CLAUSE IS TYPED IN THE STEP THAT HOLDS THE FILE IT READS - typed earlier it is red at its own commit (R1-6):
+- `test_needs_you_is_one_list`: step 1 proves `needs()` and `notify.digest`; step 4 adds `digests._risks`, `digests.head` and
+  `wa.push("needs")`; step 6 adds `dash._docket`.
+- `test_an_alarm_arrives_on_both_screens_whatever_is_set`: step 3 proves the WA_Outbox row and the one mail; step 6 adds the
+  row in `build_snapshot()["alarms"]`.
+- `test_week_and_fyi_reach_both_screens`: step 4 proves the morning message's groups; step 6 adds the snapshot's `groups`.
+- THE VERB `UNPOST|<ep>` of `dash.route` is typed in step 8, with `contract.unpost` (`dash.py` joins step 8 for that one
+  branch); step 6 types INPUT only. `test_undo_is_private_never_gone` taps the verb through `dash.route`.
+- THE READ-BACK of `test_undo_is_private_never_gone` is real only from step 9a (until then the stand-in keeps no privacy and
+  a long video reads private from its own upload): step 9a adds to that test "the stand-in first shows the video public, then
+  `unpost`, then private".
+- THE CALL of `hdgate.tick` in `manage.tick` (after `release.settle`, in a try of its own, as its neighbours) is typed in
+  step 10, with a test that runs the real `manage.tick` and sees a WAITING row finished. Until then step 9a's tests call
+  `hdgate.tick` themselves, and a waiting Short is finished by `release.settle`'s pass through `_youtube`.
+R22 (7): WHERE R22's LINES ARE TYPED - steps 3, 8, 9a, 9b and 10 (the typist searches "R22 (" before each; steps 0 to 2b, 4 to 7
+and 11 hold none). STEP 3: R22 (9) - `guardian`'s order and row 21 (`manage.py`); R22 (10) - the try around the copy in
+`notify.mail`; two tests, two breaks. STEP 8: R22 (2) - `SILENCE_LEAD_H` with its `core.py` line, `await_approval`'s hours,
+defaults and last sentence (2 c), the `decided_post` row's link and the moved slot's words; R22 (2 b) - `floor.eye_hours` behind
+the switch: the close of F1 for the shipped state; three tests, three breaks. STEP 9a: R22 (4) - the count of empty reads on
+`HD_Wait`'s `note`; R22 (5) - the receipt's words and one test; R22 (11) - `HD_GATE_ON` "FALSE" in `core.DEFAULTS`, the fixture
+`gate_on`, one test; three tests, three breaks. STEP 9b: R22 (11) - the sweep and the rehearsal set the gate TRUE themselves.
+STEP 10: R22 (3) - `HD_LONG_LEAD_MIN` "90" and `HD_GUARD_MIN` "75", the table's rows on both rhythms,
+`test_the_guard_outlasts_the_clock`; R22 (6) - `test_the_sparse_clock_loses_nothing`; R22 (12) - the two daily jobs, their two
+auto cells, one test; three tests, three breaks. The table's counts of tests rise by those (3: 8; 8: 15; 9a: 12; 10: 9).
+| Step | What | Files | Tests |
+|---|---|---|---|
+| 0 | Part 0 | checks.yml | 1 |
+| 0b | The two open findings of V4's audit (R1-11), from `REAUDIT_R2.md` | hooks.py, contract.py, tests/test_v12_strategy.py | its own (2 at least) |
+| 1 | The switch, the cells (R17: with the three of change 6), the appended columns and tabs, the register with `ypp_tier`, `needs`, the dated inform key and its expiry, the "Done" of a hold, the card rule's fallback, `notify.mail`; THE KINDS SCAN lands here | core.py, notify.py, tests/conftest.py | 9 |
+| 2a | R17 (13 a): the table's 17 rows of `manage.py` (14) and `episode.py` (3) - the two files A9 (5) makes a typist read whole | manage.py, episode.py | 1 (the row test, its 17 rows) |
+| 2b | R17 (13 a): the table's other 22 rows; the four completed cards (`maker_line`, `owner_verdict`, `org_stuck`, `model_dead`, each at its one `NT.send`); THE MAIL SCAN and THE CARD SCAN land here | community.py, costguard.py, insights.py, launch.py, packaging.py, premise.py, preview.py, sheets.py, voice_lab.py, tools/repair.py, and the four cards' files | 3 (the row test's other 22 rows, the two scans) |
+| 3 | Alarms: the incident, the retry, the eight cells | notify.py, org/strategy.py (OWNER_ONLY) | 6 |
+| 4 | WhatsApp's three doors, the wire, the template, the two lists, the money inside the chat's cap, the paused branch | wa.py, digests.py, costguard.py, preflight.py, manage.py (R17: `governor.py` is NOT touched) | 10 |
+| 5 | The desk: `take`, `talk`, `weigh_row`, `decide`, the item, the Undo | org/desk.py, wa.py, models.py, fakes.py | 10 |
+| 6 | The snapshot, the Worker's route, INPUT and UNPOST | dash.py, worker.js, test_worker.mjs | 5 |
+| 7 | The face | mission_control.html, render_check.mjs | 5 (F1 to F5) |
+| 8 | Never held: `failed`, `clear_to_post`, `approve_by_silence` and its report row, `review_sweep`, the floor's road, the special, `unpost` | contract.py, specials.py, org/floor.py, manage.py, core.py (the column `checks`) | 12 |
+| 9a | R17 (13 b): the HD gate - the reading, the stand-in that merges, every direct upload private, `go_public` with its two policy reads, the Short's door and receipt, `spinoff.py` | hdgate.py, publish.py, release.py, fakes.py, spinoff.py, launch.py (`hd_gate=False`), tools/repair.py (PROTECTED) | 9 |
+| 9b | R17 (13 b): the two sweep judges with the planted clock (11 c), their counters, the rehearsal's line | tools/sweep.py, tools/rehearsal.py | 2 (each judge both ways) |
+| 10 | The long video's gate (`public_at`'s one writer; a public video is left alone) and his window | hdgate.py, manage.py, episode.py, contract.py (R17 (3 c): `approve` writes `public_at` empty), tools/rehearsal.py | 6 |
+| 11 | The matrix rows, `tools/gen_docs.py`, the break list (one a row of the table and a branch at least: about 60), the block file | docs, proving/breaks, proving/blocks | - |
+Tests pin the source text of calls: before step 2 the typist searches `tests/` for each subject of the table and for `"email"`; the
+hits I found run with the switch off and keep passing (`test_v9_cost.py` 51, `test_v101.py` 35, `test_v87.py` 32, `test_v12_strategy.py`
+208-211, `test_v12_cutdowns.py` 101, `test_audit.py` 48-50, `test_v810.py` 270, `test_v12_floor_holds.py` 31-66).
+
+**WHAT COULD THIS BREAK (item 146; one row a guard of the core, with the planted test).**
+| Guard | Touched? How | The planted test that fails if this batch weakens it |
+|---|---|---|
+| The AI label | Yes: a default can post; the HD gate changes privacy | the planted failed `ai_label` row still holds; a wrong `ai` read-back blocks the Short |
+| Not made for kids | Yes: the same two places; the kids alarm is rerouted | the kids cell True holds; `test_a_short_marked_for_kids_stays_private`; the alarm test uses `kids_flag` |
+| No reused or repetitive content | No | - |
+| No re-upload, no delete | Yes: Undo and the gate change privacy | `test_undo_is_private_never_gone`; the gate never uploads twice (the receipt keeps one id) |
+| C6, the never list | Yes: his inputs can become standing preferences | `test_the_never_list_parks_with_its_reason` |
+| The slop guard | Yes: silence can post a video | an open `contract_hold` of the slop check keeps `clear_to_post` False (the failing-check test, run with the slop row) |
+| Accuracy and sources | Yes: the screens show numbers | `test_no_number_without_its_source` |
+| His product and taste | Yes: the first three videos no longer wait for him | his Hold still holds (`test_his_hold_tap_still_holds`); a taken preference is his words, never rewritten |
+| The cast | No (a special waits unless its checks are on record) | `test_a_special_is_posted_by_silence_only_with_its_checks` |
+| The money caps | Yes: WhatsApp and the desk are new paid calls | `test_whatsapp_is_counted_and_capped`; the desk's cap case |
+| The floor | Yes: `floor_eye`'s silence now passes `clear_to_post` | the open `floor_hold` case |
+| The Breakout Test | Yes: the desk applies it | flip each of the five conditions: PARKED |
+
+**THE INVESTMENT CASE (item 158).** THE NUMBER IT MOVES: decisions of his that expire unseen (today every one of 38 mails he does not
+read), and posts held by his silence (today the first three long videos stop for 72 hours and go private; a special is never posted) -
+both to 0 outside the hold list; alarms he can miss - to 0. WHAT IT COSTS: to build, R17: fourteen typed steps of its own (fifteen with step 0b) and two days of the machine;
+to run, at most Rs 100 a month for WhatsApp at the ceiling price and Rs 40 for the desk - R17 (9 b): both INSIDE the chat's cap of Rs 250, which is
+the overhead envelope's line for his screens (item 151); nothing is added beside it. THE GAIN PER
+RUPEE: one held launch video or one missed made-for-kids flag costs more than a year of it. THE CHEAPEST TEST: the fake rehearsal's
+three days of ticks, then his one tap on each screen at C0b. THE KILL RULE: `TWO_SCREENS_ON` FALSE puts the older path back in one cell;
+`HD_GATE_ON` FALSE likewise. ACTS AT THE LAUNCH: yes.
+WHO EACH PART SERVES (item 133): he is the product's first viewer and its only operator; parts 1 to 8 serve the launch itself (a missed
+approval keeps a video private); part 9 serves every first viewer of every upload (no blurry first hour). The measures are in Step 1.
+HYPOTHESES (the designer of record numbers them on from the redesign's): (a) with two pushes a day he opens the morning list on most
+days - WA_Outbox against `WA_LAST_INBOUND_AT`; (b) alarms stay at 0 to 2 a month; (c) more than nine releases in ten go public in HD
+before their cap; (d) fewer than one input in five is PARKED for a reason he calls wrong (his next message says so).
+CHANGED FROM THE BRIEF, in one place: the card rule's refusal (part 7); `special_review` split in two (part 7); the first videos are
+re-scheduled by silence, not left on the schedule (part 7); Test & Compare is not a pre-public click (part 9); "the minute both are
+true" is the next tick after the job's wait (part 9); the two price cells are ceilings (part 8); two senders the count missed (part 2);
+the idea card never expires (part 5).
+NOT IN THIS BATCH, on purpose (RR-36): OWNERS (item 158's registry lines for D0 and D9 - the new cells are plain cells, no department
+turns them); the monthly recharge advice; CLASHES against the pinned core; the department line, the treasury's rows, the feature
+watch's rows and the appetite readings (their notes stand in); the breakout card (V4b); the look and the interactivity (D). R17 (3 b): `herostill.py` 162 schedules
+its Short with `publish_at` - an older door, off by default (`HERO_STILL_SHORTS_ON` FALSE): YouTube publishes it and no HD is read. PARKED with
+the reason in `PARKED_INPUTS.md`: a real browser's layout check inside the suite; alarms that close themselves; a second template.
+FOR THE PILOT (open issues the builder writes): Meta's review of the template and its real rates; his first tap on "Open" opening the
+window; when `definition` reads "hd" on a real Short and a real long video, and the minutes; the end screen on a private video in
+Studio; the page on his own phone. R17 (14 e): Meta may file the Open template as marketing, not utility (its review decides the
+category and the price). R17 (14 b): the ladder's clock under the gate (PART 9). R17 (R4's question b): a special's check result.
+R22 (8): THE CLOCK IS PROVEN IN RUNS BEFORE ANYTHING IS ARMED (R1-31 (4); P32). For the pack, in a layman's words: the pipeline is
+meant to wake every half hour; GitHub alone woke it about every seven hours; what keeps it awake is the backup clock on Cloudflare,
+and that clock has never once started a run of the live repository. THE PROOF, read from GitHub's own run list of `pipeline.yml`
+on the launch's default branch (a count of runs, never a setting): over six hours in a row at least 6 runs, at least 3 of them
+started by `repository_dispatch`, and no gap over 60 minutes. It can only pass once the default branch carries v12's trigger
+(`repository_dispatch: types: [tick]`; `main`'s workflow has none) and the Worker has its cron and `GH_DISPATCH_TOKEN`. While it
+does not pass: `HD_GATE_ON` stays FALSE, its shipped value (R22 (5)), and the launch is not armed. OPEN ISSUES the builder writes, each with R22 (0)'s
+figures: (a) a late road for a video whose silence came after its slot (today: the next free slot, told to him - R22 (2)); (b) a
+longer wait for HD inside the Short's own job, which would free the Short's gate from the tick; (c) no longer open - the two
+daily jobs of `manage.py` 243 and 249 are mended in step 10 (R22 (12), R1-37 (d)); (d) nothing tells him when
+the clock turns slow again - the Worker keeps `wd_status`, no screen shows it; (e) every promise of the accepted batches that
+stands on a tick (P32).
+FOR V4b's AND DRAWN-b's DESIGNERS: a message to him is `NT.send` with a kind added to `notify.KINDS` (the scan fails otherwise); a card
+carries a default and an expiry; a row the screens should show names its group; nothing sends WhatsApp but `wa.push`.
+R17: WHAT MOVED UNDER YOU. No NAME changed (`NT.send`, `notify.KINDS`, `wa.push`, `hdgate.go_public`, `hdgate.ready`,
+`contract.clear_to_post`). These BEHAVIOURS are new since R4's text: (1) `go_public` can REFUSE - it judges the kids flag and the AI
+label itself and returns (False, "blocked: <why>"); a caller reads the answer. (2) the long video's gate leaves a video alone once
+YouTube shows it public, so an early release through `go_public` is never taken private again by a later tick. (3) a time on YouTube
+is set in THREE places (the upload, `contract.approve`, `manage.resume_held`), and after a take-down no code gives a time again:
+YouTube refuses one on a video that was ever published (S5) - an Undo of a film that was public is "private, and his own hand in
+Studio", never a reschedule. (4) an inform row closes after 336 hours unless its caller says otherwise, and its key holds the India
+date; a HOLD sent without a button gets "Done". (5) `NT.send` takes `mailed=False`; `wa.push` acts when `WA.configured() or FAKE`.
+(6) "Needs you" is `notify.needs()`. (7) the chat, the desk and WhatsApp share `CHAT_MONTHLY_CAP_INR`.
+WHAT V4b LEANS ON, SAID PLAINLY (R5's two questions, 19 Nov):
+- THE ONE READER of YouTube's processing and HD state is `publish.yt_read(vid)`: ONE `videos.list` call (1 unit) that returns
+  `processed` (processingStatus == "succeeded") and `hd` (contentDetails.definition == "hd") beside the fields it returns today. The
+  one judgment on it is `hdgate.ready(got)` = `processed and hd`. No other code reads either field.
+- THE ONE DOOR BY WHICH CODE MAKES A VIDEO PUBLIC is `hdgate.go_public(vid, now, why) -> (ok, note)` - the act `hdgate.tick` performs,
+  named so that another batch can call it: it reads `yt_read`, sets the privacy, reads it back, writes the minutes and the HD state on
+  the video's `HD_Wait` row, and reports a read-back that stays private to `launch.lock_detected`. R17 (1 b): it REFUSES -
+  (False, "blocked: <why>") - a video YouTube marked made for kids or whose AI label does not hold after one repair. V4b's early release of a held Part 2
+  calls `hdgate.ready(PUB.yt_read(vid))` and then this function; it never calls `PUB.yt_set_privacy(vid, "public")` itself
+  (`test_every_public_upload_passes_the_gate` also scans for that call outside `hdgate.py`).
+- A LONG VIDEO BECOMES PUBLIC BY YOUTUBE'S OWN SCHEDULE, never by code: it is uploaded private with its time (`publish_at`, as today),
+  and the tick only MOVES that time with `PUB.yt_schedule` (later in 15-minute steps while HD is not read, back toward the slot once
+  it is). `hdgate.long_step` acts only on an Episodes row whose status is SCHEDULED and never creates a schedule.
+- THE TURNED creative_review DOES NOT LEAVE THE VIDEO "SCHEDULED": for its wait the status is AWAITING_APPROVAL and the video is private
+  with NO time on YouTube (as today). It becomes SCHEDULED again only through `contract.approve(ep)` - by his tap, or by
+  `approve_by_silence` `SILENCE_LEAD_H` hours before its slot (R22 (2): 12, a cell, never 1.5), after `contract.clear_to_post(ep)` said yes.
+- R17 (3 c): SO A PAIR GUARD HAS THREE PLACES (R4 wrote two and no third): `manage.resume_held` (`manage.py` 83) puts every HELD video back
+  with `PUB.yt_schedule` after a pause. A video gets a time on YouTube at its upload (`episode.py` 864, `publish_at`), there, and in
+  `contract.approve`. A condition that must hold before a flagship may go out by silence is one more read inside `clear_to_post`,
+  added by V4b in its own build; the HD gate cannot put a held video on the schedule.
+
+#### TO VERIFY WHEN THE BATCH'S TURN COMES (every sentence about code that a batch in between may change; RUN then, not now)
+1. THE EXPERIMENT, on DRAWN's accepted code (from the handoff folder, Git Bash, nothing else running):
+   `grep -rn "\.email(" reality-engine/whatifs reality-engine/tools --include=*.py | grep -v "def email" | wc -l` (41 in whatifs, 1 in
+   tools at d64fdcc); `grep -rn "NT\.send(" reality-engine/whatifs --include=*.py | wc -l` (R17 (8): 50 lines at d64fdcc - 48 with a literal kind, two with a variable); `grep -rn "\"email\"" reality-engine/tests
+   | wc -l`; `grep -rn "public at once" reality-engine/tests reality-engine/docs/CURRENT`. Place-check all 39 rows of the table (E6).
+2. R17 (14 f): READ, AND WRITTEN INTO THE PARTS - nothing of this point waits for the batch's turn. `contract.run` 971-993 (-> `failed`,
+   PART 7); `specials.py` 366-478 (a special's row holds no check result -> R4's question (b), PART 7); `preview.py` 13-17 and 50-137,
+   `voice_lab.py` 1-40, `sheets.py` 36-185 (rows 32, 34, 35 and 38 of PART 2's table); `packaging.py` 67-70 (row 27's verb is
+   `PICK <ep> <key>`: as R4 wrote it); `org/palace.py` 14-60, 219-264, 405-461 and 483-501 (PART 5's item and its Undo; `seed/build.json`
+   was not opened - no example is needed); `governor.py` 104-147 and 189-202 (PART 8); `org/verdicts.py` 103-123 (line 123 sends
+   `maker_line` and `owner_verdict` WITHOUT buttons, tier "week", 72 h; `_ask` at 107 has no default today, and no code reads a row's
+   EXPIRED or DEFAULTED status except `floor.eye_sweep` 471 for `floor_eye` - so a default's text changes nothing V1c reads);
+   `org/finance.py` whole (it sends no message: an `expiry` row is `caretaker.expiry_check`'s, `caretaker.py` 58, so the morning head
+   reads open `expiry` rows as R4 wrote); `publish.py` 60-79 and 81-150 (PART 9); `models.py` 152-157 and 530 (the route).
+   ONE READ IS LEFT TO THE TYPIST OF STEP 1, said plainly: `tests/test_v91_matrix.py` 90 reads `tests/golden/v9_sheet_schema.json`; I
+   did not open that test - the typist reads it before appending a column and names it in the record if it pins the columns.
+   R4's list, kept for the record - Read whole before the memo is pasted (I read them in part): `contract.py` 971-1001 (`run`: the expression that holds a video, the
+   ledger's status words) for `contract.failed`; `specials.py` 380-427 (what check result a special records - if none, the special's
+   silence never posts and that is said to him); `preview.py` 60-128 and `voice_lab.py` 10-32 and `sheets.py` 40-125 (the mails' own
+   verbs, defaults and hours for rows 32, 34, 35, 38); `packaging.py` (`pick_link`'s verb for row 27); `org/palace.py` 240-250 and
+   425-460 and the newest `owner_preference` in `org/seed/build.json` (the item's fields, the status `palace.playbook` serves, a valid
+   `applied_in`); `governor.py` 104-160 (how `owner_chat` sits inside the month, for the prefix "whatsapp"); `org/verdicts.py` 100-125
+   (the kinds line 123 sends; whether a default's text changes a status V1c reads); `org/finance.py` (whether a credit line's expiry
+   makes an `expiry` row - if not, the morning head's expiry line reads the credit lines directly and the memo says where);
+   `publish.py` 60-78 (`_fake_put`) and 81-127 (`yt_upload`, `verify_upload`); `models.py` (the strong judging chain's route name);
+   `tests/golden/v9_sheet_schema.json`'s test (that appended columns pass).
+3. Lines that may have moved: `notify.py` 15 (the handlers' list gains nothing here), `manage.py` 179-260 (where `review_sweep`,
+   `hdgate.tick` and `digests.tick` sit), `release.py` 257-270 and 481-507, `dash.py` 15-66 and 136-161, the page's line numbers.
+4. V4b lands after this batch on the machine but is designed beside it: read its memo for every message to him and every row a screen
+   shows, and add the kinds to the register in ITS build.
+5. R17: DECIDED BY R7's REVIEW - (a) APPROVED (PART 7, the card rule); (b) APPROVED as the safe side, with three additions (PART 7, THE
+   SPECIAL); (c) 45 APPROVED, one row added (PART 9) - R22 (3): RE-RULED on the measure, 75 with a lead of 90. R4's line, kept for the record - Decide with the reviewer, in the memo, before the build: (a) the fallback instead of a raise in the card rule; (b) a special without
+   a recorded check; (c) `HD_GUARD_MIN` 45 against the watchdog's 45 minutes (60 pushes more often, 30 risks a publish without HD).
+6. Step 0b (R1-11) is typed from `REAUDIT_R2.md` and lands before step 1: re-read `contract.py` and `hooks.py` as it left them. And
+   search `tests/` for `OWNER_ONLY` before step 3 (`grep -rn "OWNER_ONLY" reality-engine/tests`): a test that pins that list's exact
+   members changes BY DESIGN and is named in the record first. R17 (6): searched - `tests/test_v12_strategy.py` 464 and
+   `tests/test_v12_exec.py` 439 (`ORG_BUILDS_ON` is in the list); neither pins the list's exact members, both pass with the eight.
+7. R17: AT THE BATCH'S TURN (A13 (a)), before the paste: if DRAWN is accepted on d64fdcc there is no diff to read (this memo's code IS
+   d64fdcc); after a repair of DRAWN, its diff is read whole and every place above is checked again. A line that V4b's designer of
+   record (R15) needs changed here reaches R17 through R1 (R1-21 (5)); none had arrived when this answer was written.
 Designed by the Fable designer of record (16-17 Nov 2026, `DESIGN_DRAWN_RECORD.md`); reviewed by two fresh Opus MAX sessions under item 130 (round 2: APPROVED WITH CORRECTIONS AT THE BUILD, C1 to C15 - `reviews/DRAWN_design.md`); typed ahead by `local_77a7a068` on V1c's code; pasted word for word under plan A13 (a) by DRAWN's finisher `local_9bd024dc` (Opus 5.5, max) on the relay's RR-54, 18 Nov 2026.
 ### DRAWN BY CODE (16-19 Nov 2026) - ACCEPTED (final code commit d64fdcc GREEN in GitHub Checks run 292: 1911 passed; sweep 66 of 66 ids) - its code a54df62, accepted on the prover's first pass, 19 Nov 2026 (`proving/notes/DRAWN_ACCEPTED.md`; open issues 260 and 261 are the prover's) (the designer's record: steps 1 to 3; two Opus typists wrote step 4; an Opus finisher under item 130 wrote the corrections - `FINISHED BY OPUS UNDER ITEM 130 - TO BE RE-AUDITED BY FABLE AT THE RESET`; the Fable finisher of 19 Nov completed the pass and wrote steps 5 and 6a and the takeaway's draft - `FINISHED BY FABLE`; the prover writes 6b and 7)
 THE BATCH'S START (written by the paster, 18 Nov 2026 ~18:40 UTC): the batch before on the record is V4, ACCEPTED at ddfd4d5 (GitHub Checks run 277: 1865 passed; sweep 58 of 58 ids); a clean tree at 1c13358 (the batch order, RR-54); usage at the paste (get_usage 18:16 UTC): weekly all models 91%, Fable 100% (reset Thu 19 Nov 18:00 UTC). Its place-check against V4's final code is part 1 of the typist's apply (`DRAWN_TYPIST_REPORT.md` in the chain's notes folder). NOT SPLIT: built in the four steps of 3.11 (step 5 of the last part after step 1; step 6 is DRAWN-b's - C14), a checkpoint after every step.
