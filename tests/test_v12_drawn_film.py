@@ -50,7 +50,7 @@ def test_a_whole_production_in_the_arm_draws_proves_and_records(monkeypatch, set
         assert all(job.drawn[m["i"]]["ok"] and job.drawn[m["i"]].get("ink", 0) >= core.S("DRAWN_INK_MIN", float) for m in drawn)
         m0 = drawn[0]; before = [(m["i"], m["k"], m.get("drawn")) for m in job.segmeta]; redrawn = []
         real_p = RN.parallax_segment; monkeypatch.setattr(RN, "parallax_segment", lambda img, path, *a, **k: (redrawn.append(_seg_i(path)), real_p(img, path, *a, **k))[1])
-        job.rerender_times([(m0["f0"] + m0["nf"] / 2) / job.fps], only={(m0["i"], m0["k"])})          # exactly the named state is re-drawn, and is no longer drawn
+        job.rerender_times([m0["f0"] / job.fps], only={(m0["i"], m0["k"])})          # exactly the named state is re-drawn, and is no longer drawn - at its FIRST second (F-16, D2-07: the state before lies inside the +-1 s window, so `only` keeps it out)
         assert redrawn == [(m0["i"], m0["k"])] and m0["drawn"] is False
         assert [(m["i"], m["k"], m.get("drawn")) for m in job.segmeta if (m["i"], m["k"]) != (m0["i"], m0["k"])] == [x for x in before if (x[0], x[1]) != (m0["i"], m0["k"])]
     finally: shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True)

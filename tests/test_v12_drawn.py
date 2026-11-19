@@ -125,6 +125,8 @@ def test_verify_refuses_a_number_a_word_a_pair_or_an_arrow_the_script_does_not_s
     assert SCN.verify(flow("The cup falls", "The floor shakes"), gf, ("The cup falls.", "The table tilts, so the floor shakes.", "")).startswith("an arrow the script does not state")      # F-6: a cause word reads its own sentence
     assert SCN.verify(flow("The cup falls", "The floor shakes"), gf, ("The floor shakes because the table tilts.", "The cup falls.", "")).startswith("an arrow the script does not state")
     assert SCN.verify(flow("The table tilts", "The cup falls"), gf, ("The table tilts.", "So the cup falls.", "")) == ""          # F-6: a cause word that opens its sentence reaches back one
+    assert SCN.verify(_cmp("It", 384000, "The Sun", 150000000), G_LABEL, ("", "It is 384,000 km away and the Sun is 150,000,000 km away.", "")).startswith("a part the script cannot place")      # F-16 (D1-14)
+    assert SCN.verify(flow("The table", "The cup falls"), gf, ("", "The table is so heavy the cup falls.", "")).startswith("an arrow the script does not state")      # "so" mid-clause is no cause (F-16, D1-19)
     assert "the" in SCN.STOP and "moon" not in SCN.STOP
 
 
@@ -147,6 +149,8 @@ def test_layout_fits_measures_and_refuses_by_reason():
     with pytest.raises(DRAWN.Refused, match="too many words on screen"): DRAWN.layout(many, W, H, 6.0, None, **OPTS)
     many["items"][0]["id"] = "title"; many["steps"][0]["show"] = ["title"]; DRAWN.layout(many, W, H, 6.0, None, **OPTS)       # the title's words are not counted
     with pytest.raises(DRAWN.Refused, match="no portrait layout yet"): DRAWN.layout(_one_text("Tall", 4), 1080, 1920, 6.0, None, **OPTS)
+    low = {"title": "", "items": [{"id": "x", "kind": "box", "at": [0, 5.5], "span": [2, 1], "colour": "a", "text": "", "value": 1.0, "of": 1.0}], "steps": [{"show": ["x"], "how": "draw", "cue": ""}]}
+    with pytest.raises(DRAWN.Refused, match="outside the safe area"): DRAWN.layout(low, 1920, 1080, 6.0, None, **OPTS)      # F-16 (D1-08): only the BOTTOM edge crossed
 
 
 def test_every_gold_scene_at_its_full_bound_is_laid_out_at_both_work_sizes():
@@ -295,6 +299,10 @@ def test_check_drawn_plan_says_na_pass_and_fails_each_lie(setting):
     setting("DRAWN_TEXT_MIN_PCT", "40"); assert fails(out); setting("DRAWN_TEXT_MIN_PCT", "5.0")          # the layout refuses it NOW
     assert fails([dict(s, scene=dict(out[1]["scene"])) if k == 4 else s for k, s in enumerate(out)])      # two scenes share one composition
     d2 = json.loads(json.dumps(d)); d2["drawn"]["last"] = {"count": out[1]["scene"]["variant"]}; assert fails(out, d2)      # the first use repeats the last drawn video's
+    sc0 = {"v": 1, "template": "count", "variant": 0, "slots": DRAWN.from_graphic(G_COUNT)[0]["slots"], "cues": [], "by": "code"}      # F-16 (D1-26): the FAIL's REASON, since a later rule also fails it
+    _arm_on(setting); shots, units, total = _film(); on0 = [dict(s, scene=sc0) if k == 0 else s for k, s in enumerate(shots)]
+    st, why = CON.p_drawn_plan({"shots": on0, "units": units, "d": {"drawn": {"arm": True, "last": {}, "scenes": []}}, "total": total})
+    assert st == "FAIL" and why.startswith("a scene sits on a shot that is not an explaining moment"), why
 
 
 # ------------------------------------------------------------------ 9. the resume through the real restore (one paid call over both runs)
@@ -461,7 +469,7 @@ def test_check_drawn_shown_says_na_pass_and_fails_each_lie(setting):
     st, why = CON.p_drawn_shown(ctx(withsc, dict(arm, proof={1: {"ok": False, "why": "its text reached only 1.2 to 1 on the finished file"}})))
     assert st == "PASS" and "0 scene(s) drawn, 1 shown as its still: 1: its text reached only" in why                  # a still is never a failure
     assert CON.p_drawn_shown(ctx(withsc, arm))[0] == "FAIL"                                                            # a scene, no drawn state, no reason
-    assert CON.p_drawn_shown(ctx(shots, dict(arm, states=[(4.0, 6.0, 1, 0)])))[0] == "FAIL"                           # a state recorded drawn on a shot without a scene
+    st, why = CON.p_drawn_shown(ctx(shots, dict(arm, states=[(4.0, 6.0, 1, 0)]))); assert st == "FAIL" and why.startswith("a state is recorded drawn on shot 1, which carries no scene"), why      # a state recorded drawn on a shot without a scene - its REASON (F-16, D2-14: F-5's "frame could not be read" also FAILs it)
     assert CON.p_drawn_shown(ctx(withsc, dict(arm, states=[(4.0, 6.0, 1, 0)], L={1: None})))[0] == "FAIL"            # recorded drawn, and its master cannot be read
 
 
@@ -647,6 +655,16 @@ def test_t2_a_refused_scenes_line_is_cut_as_a_still_is():
     from whatifs import episode as EP
     src = inspect.getsource(EP._render)                                                         # T-2 AMENDED: a pin of the one line it guards (the house's way for a call's text)
     assert '_pieces_for(dur, "still" if (sc_ and not dr_["ok"]) else s["type"], opening_, ep)' in src
+    assert 'fxk = s.get("pov_fx") if (k == 0 and not (dr_ and dr_["ok"])) else None' in src      # F-16 (D2-03): the camera effect's guard, a defence beside set_overlay(None) - no frame can tell them apart
+
+
+def test_d2_01_one_clock_across_a_lines_pieces(monkeypatch):
+    from whatifs import render as RN
+    seen = []
+    monkeypatch.setattr(DRAWN, "frame", lambda L, t, bg=None, push=0.0, draw=None: (seen.append(round(t, 4)), np.zeros((8, 8, 3), np.uint8))[1])
+    monkeypatch.setattr(RN, "_pipe", lambda path, frames, n, w, h: [f for f in frames])
+    RN.drawn_segment({"W": 8, "H": 8}, None, "x.mp4", 3, 30, 60)
+    f_ = RN.fps(); assert seen == [round((30 + f) / f_, 4) for f in range(3)], seen
 
 
 def test_t7_the_sweeps_drawn_moments_set_three_cells_and_only_under_its_flag():
