@@ -464,6 +464,15 @@
    "from": "BUILD",
    "to": "BUILT",
    "why": "the gate GREEN on d64fdcc (code a54df62): breaks 77 of 77, the builder's block 1911 passed with four rehearsal pairs green; the pass Opus began under item 130 completed by Fable"
+  },
+  {
+   "at": "2026-11-19T18:36:58Z",
+   "batch": "DRAWN",
+   "by": "",
+   "commit": "d64fdcc",
+   "from": "BUILT",
+   "to": "PROVING",
+   "why": ""
   }
  ],
  "order": [
@@ -480,8 +489,8 @@
   "B10",
   "V3"
  ],
- "phase": "BUILT",
+ "phase": "PROVING",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-19T18:35:42Z"
+ "updated": "2026-11-19T18:36:58Z"
 }
