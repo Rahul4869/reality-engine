@@ -9,7 +9,10 @@ model families beside his rejected video, with a planted ladder, holds a film it
 at all - accepted 17 Nov 2026 on the third pass, after two red rounds and their repairs), V4 (the CEO and the ladder: his brief opens on the Partner
 Program's numbers; Strategy decides one lever one step through range, effect and fit, tells him once with an Undo; the watch book closes the uploads
 on a rejected video; Finance counts the Claude credit; a long video whose Short's hook has no question or "you" opens on the hook lab's line - accepted
-18 Nov 2026 on the second pass, after one red round and its repair, to be re-audited by Fable at the reset); their end notes are the last entries of 11.10. THE ORDER OF THE REMAINING BATCHES IS THE OWNER'S OF 13 NOV 2026 (the last desk note of 11.10): V1c, V4, V5, DRAWN BY CODE, B6b-B10, and going live (V3) LAST.
+18 Nov 2026 on the second pass, after one red round and its repair, to be re-audited by Fable at the reset), DRAWN BY CODE (a long video in the drawn
+arm explains a number with a diagram in the show's two colours that draws itself on the narrator's own words; every word and number on it is the
+script's own; one that cannot be read on a phone is shown as its moving still; the talking cast is off until DRAWN-b - accepted 19 Nov 2026 on the
+first pass, a scene drawn in F1, F2 and F3); their end notes are the last entries of 11.10. THE ORDER OF THE REMAINING BATCHES IS THE OWNER'S OF 13 NOV 2026 (the last desk note of 11.10): V1c, V4, V5, DRAWN BY CODE, B6b-B10, and going live (V3) LAST.
 
 ## 0. THE HONEST FRAME
 - Nobody can make a channel a sure shot. Of 137,355 new long-video channels, 30.8% got even ONE video past 10,000 views in their first ten (R1).
