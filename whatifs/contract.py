@@ -72,6 +72,7 @@ def p_hook(ctx):
     if sec:
         ref = str((ctx.get("d") or {}).get("ladder") or "") if isinstance(ctx.get("d"), dict) else ""
         if not ref or str(sec.get("short") or "") != ref: return FAIL, f"the second line was taken from Short {sec.get('short') or '?'}, but this video is about {ref or 'no Short'}"
+        if rec.get("status") != "applied": return FAIL, f"the hook of Short {ref} is not the second spoken line of the finished narration ({rec.get('status')})"      # the Fable re-audit of C25 (R2-F2): verify_in_narration looked
         return PASS, f"{n} candidates, winner {sc if sc is not None else 'chosen'} by {rec.get('scored_by', '?')}; the hook of Short {ref} follows it, word for word (no question and no 'you' of its own)"
     return PASS, f"{n} candidates, winner {sc if sc is not None else 'chosen'} by {rec.get('scored_by', '?')}"
 

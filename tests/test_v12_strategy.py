@@ -1035,3 +1035,39 @@ def test_a_shorts_hook_without_a_question_or_you_follows_the_hook_labs_line(tmp_
     keep, rec2 = HOOKS.run_hooks(f"## BEAT 1\n[DIRECTOR] [tension] {you}\n{rest}", {}, "EPC25B", str(tmp_path), proven={"line": you, "short": sid})
     assert rec2["source"] == "short" and rec2["applied"] and "second" not in rec2 and spoken(keep)[0].endswith(you)          # a hook with "you" still leads, word for word
     assert HOOKS.stake(you) and HOOKS.stake("Why is the rain falling up?") and not HOOKS.stake(hook) and not HOOKS.stake("The rain is yours now.")
+
+def test_behind_a_shorts_hook_the_labs_own_line_carries_the_stake_or_nothing_is_applied(tmp_path):
+    """The Fable re-audit of C25 (R2-F1): on the road where a Short's hook has no question and no 'you', the line the lab puts before it must carry
+    that stake ITSELF - the line behind it cannot. A higher-scored line without it led, and impact_map would hold the paid film at the final gate."""
+    from whatifs import hooks as HOOKS
+    hook, sid = "Something is wrong with the rain.", "SHC25R"
+    script = ("## BEAT 1\n[DIRECTOR] The rain stops at exactly noon and the whole street goes silent.\n"
+              "[CURIOUS] The strangest part is what the silent street does after the rain stops at noon.")
+    def lab(cands, low):
+        def ask(role, system, user, **kw):
+            if kw.get("fake_key") == "hooks": return {"candidates": [{"line": l, "type": "concrete_stakes", "basis": "script"} for l in cands]}
+            return {"scores": [{"id": f"h{i}", **{k: (8.0 if i in low else 10.0) for k in ("clarity", "relevance", "curiosity", "promise_accuracy")}, "unsupported_claim": False} for i in range(len(cands))]}
+        return ask
+    cands = ["The rain stops at exactly noon.", "Your street goes silent at noon.", "The whole street goes silent."]
+    new, rec = HOOKS.run_hooks(script, {"premise": "What if the rain stopped at noon?"}, "EPC25R", str(tmp_path), ask_fn=lab(cands, {1}), proven={"line": hook, "short": sid})
+    first = next(c["line"] for c in rec["candidates"] if c["id"] == rec["chosen_id"])
+    spoken = [l for l in new.split("\n") if l.strip() and not l.startswith("##")]
+    assert first == cands[1] and HOOKS.stake(first) and rec["applied"] and spoken[0].endswith(first) and spoken[1].endswith(hook), (first, spoken[:2])
+    none, rec0 = HOOKS.run_hooks(script, {"premise": "What if the rain stopped at noon?"}, "EPC25S", str(tmp_path), ask_fn=lab([cands[0], cands[2]], set()), proven={"line": hook, "short": sid})
+    assert rec0["chosen_id"] is None and not rec0["applied"] and rec0["status"] == "needs_human_choice" and rec0.get("second", {}).get("short") == sid, {k: rec0.get(k) for k in ("chosen_id", "applied", "status", "second")}
+
+def test_the_shorts_hook_must_still_be_the_second_spoken_line_after_the_voice(tmp_path):
+    """The Fable re-audit of C25 (R2-F2): check hook_lab said "the hook of Short <id> follows it, word for word" and nothing looked - a later rewrite
+    (ROOM.extend) can remove the line. verify_in_narration compares the narration with it and p_hook reads what it found."""
+    from whatifs import hooks as HOOKS, contract as CON
+    hook, sid = "Something is wrong with the rain.", "SHC25V"
+    script = "## BEAT 1\n[DIRECTOR] You find out what happens to you when the rain stops at exactly noon.\n[CURIOUS] The strangest part is what happens to your street."
+    def made(ep):
+        new, rec = HOOKS.run_hooks(script, {"premise": "What if the rain stopped at noon?"}, ep, str(tmp_path), proven={"line": hook, "short": sid})
+        return rec, next(c["line"] for c in rec["candidates"] if c["id"] == rec["chosen_id"])
+    rec, first = made("EPC25V")
+    assert HOOKS.verify_in_narration(rec, [{"text": first}, {"text": hook}, {"text": "You wake up."}]) and CON.p_hook({"hook_rec": rec, "d": {"ladder": sid}})[0] == CON.PASS
+    rec, first = made("EPC25W")
+    assert not HOOKS.verify_in_narration(rec, [{"text": first}, {"text": "Something else entirely."}, {"text": "You wake up."}])
+    ok, said = CON.p_hook({"hook_rec": rec, "d": {"ladder": sid}})
+    assert ok == CON.FAIL and "second spoken line" in said, said

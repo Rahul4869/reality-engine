@@ -106,8 +106,9 @@ def _judge(script, cands, ask_fn, episode):
         except Exception: pass
     return got
 
-def build_record(script, spine=None, episode="", ask_fn=None):
-    """Generate -> validate -> score -> rank -> choose. Pure of side effects except model calls. Raises only if nothing can be generated."""
+def build_record(script, spine=None, episode="", ask_fn=None, behind=None):
+    """Generate -> validate -> score -> rank -> choose. Pure of side effects except model calls. Raises only if nothing can be generated.
+    behind = the Short's line this lab's line will stand before (V4's repair C25): the lab is told not to repeat it, and only a line with a stake may lead."""
     if ask_fn is None:
         from whatifs.models import ask as ask_fn
     premise = (spine or {}).get("premise", "")
@@ -119,7 +120,7 @@ def build_record(script, spine=None, episode="", ask_fn=None):
             seen.add(key); c["issues"] = validate_line(c["line"], _script_text(script)); c["words"] = count_words(c["line"])
             hard = [i for i in c["issues"] if i.startswith(("too_long", "empty", "greeting", "hype", "ad_unsafe"))]
             (rejected if hard else kept).append(c)
-    take(_generate(script, spine, WANT, [], ask_fn, episode))
+    take(_generate(script, spine, WANT, [behind] if behind else [], ask_fn, episode))      # the Fable re-audit of C25 (R2-F1): never an echo of the line that follows
     if len(kept) < WANT:        # one refill for the shortfall
         try: take(_generate(script, spine, WANT - len(kept) + 3, [c["line"] for c in rejected], ask_fn, episode))
         except Exception as e: log(f"hook refill skipped: {scrub(e)}", "WARN", episode)
@@ -149,11 +150,13 @@ def build_record(script, spine=None, episode="", ask_fn=None):
     if any(v == 0 for v in mix.values()): notes.append("Type mix is uneven: " + json.dumps(mix))
     min_score = S("HOOK_MIN_SCORE", float)
     eligible = [c for c in kept if c["valid"] and c["promise_accuracy"] >= 7 and c["total"] >= min_score] if scored_by == "judge" else []
+    if behind: eligible = [c for c in eligible if stake(c["line"])]      # the Fable re-audit of C25: the line behind this one has no question and no 'you', so this one must
     chosen = eligible[0] if eligible else None
     if chosen and S("COLD_OPEN_YOU_ON", bool):                                 # v9.3: YOU before lore - a passing second-person line leads when it is close in score
         you = next((c for c in eligible if _YOU.search(c["line"])), None)
         if you and you["total"] >= chosen["total"] - YOU_MARGIN: chosen = you
     if not chosen: notes.append("No candidate passed every check; a person should pick one or keep the writer's opening.")
+    if not chosen and behind: notes.append("No candidate that passed every check carries a question or a 'you' for the first three seconds, and the Short's hook behind it has none: a person should pick one.")
     return {"episode_id": episode, "created": iso(), "scored_by": scored_by, "mode": S("HOOK_APPLY_MODE").lower(), "min_score": min_score,
             "candidates": kept, "rejected": rejected, "type_mix": mix, "chosen_id": chosen["id"] if chosen else None,
             "status": "pending", "applied": False, "notes": notes}
@@ -202,6 +205,12 @@ def verify_in_narration(rec, units):
             from whatifs.core import store
             store().update_where("Hook_Candidates", {"episode_id": rec.get("episode_id", ""), "applied": "TRUE"}, {"applied": "FALSE", "issues": "replaced by a later rewrite"})
         except Exception: pass
+    if ok and rec.get("second"):          # the Fable re-audit of C25 (R2-F2): the Short's hook must still follow the lab's line, word for word
+        said = "".join(norm(u.get("text", "")) for u in units[:5])
+        ok2 = bool(want) and said.startswith(want + norm(rec["second"]["line"]))
+        if not ok2:
+            rec["notes"].append("After narration the Short's hook is no longer the second spoken line (a rewrite changed it). Please review."); rec["status"] = "needs_human_choice"
+            return False
     return ok
 
 # ---------------- storage ----------------
@@ -266,7 +275,7 @@ def run_hooks(script, spine, episode, out_dir, ask_fn=None, proven=None):
     except Exception as e: log(f"the Short's hook could not be used ({scrub(e)[:120]}): the hook lab runs", "WARN", episode)
     try:
         if second: script = apply_to_script(script, second["line"])[0]      # V4's repair C25: the Short's own line first (unless the writer opened on it), so the lab's line goes before it
-        rec = build_record(script, spine, episode, ask_fn)
+        rec = build_record(script, spine, episode, ask_fn, behind=second["line"] if second else None)
         script = decide(rec, script)
         if second: rec["second"] = second; rec["notes"].append(f"The hook of Short {second['short']} follows the lab's line word for word: it has no question and no 'you' for the first three seconds (V4's repair C25).")
         save(rec, out_dir)
