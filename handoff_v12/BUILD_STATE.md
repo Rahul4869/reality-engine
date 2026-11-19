@@ -1341,6 +1341,28 @@ test_v12_drawn_film_b.py 27 passed, 752.8 s (after F-1; the first run 26 of 27);
 docs_current, cutdowns, inside, motion, release) 509 passed, 884 s; truth GREEN; Plan Guard GREEN; minitest: drawn 22/0 259 s, drawn_film 3/0
 307 s, drawn_film_b 2/0 211 s, cutdowns 50/0 145 s, exec 89/0 222 s, release 34/0 292 s, inside 99/0 406 s, motion 60/0 374 s.
 THE PREVIOUS CHECKS: run 44427865773 on 85e3958 (step 5) - completed/success; Unit tests: 1883 passed in 3863.12s; Free rehearsal success.
+STEP 3 (memo 3.8; C14) - the L1 trial: NEW tools/l1_trial.py (class Skia behind the seam, BACKENDS, run, winner = the rule written first,
+main printing the table and "L1 TRIAL: winner ..."); .github/workflows/checks.yml - the candidate's pip step right after the first pip line
+(continue-on-error, timeout-minutes 5, `--only-binary :all:`, its run line a block: `run: |` - a plain scalar with ": " is not YAML, the
+typist's typo found red by tests/test_safety.py) and the trial step right after "Unit tests" (if: always(), continue-on-error, into the step
+summary; the mail stays last); test 13 in tests/test_v12_drawn.py. repair.yml unchanged. docs/CURRENT/SYSTEM.md by gen_docs.
+STAY TRUE (run): test_v12_b0b.py 210-216 (only packages requirements.txt pins), test_v83.py 287, test_v891.py 52, test_safety.py 84 (and
+the workflows parse), test_v89.py 172 (the mail last), test_v94a.py, test_v12_exec.py.
+THE TRIAL ON THIS LAPTOP (`python tools/l1_trial.py`, 14 s): "L1 TRIAL: winner own (the candidate is not available (ModuleNotFoundError: No
+module named 'skia'))" - before the install.
+THE OWNER'S ONE LINE (C14 (b)): sent to the owner by the Fable dispatcher on 17 Nov 2026, in its own session; repeated in the launch pack.
+THEN the install, once: `.venv/Scripts/python.exe -m pip install --only-binary :all: "skia-python>=144,<145"` - pip's answer under HOW TO
+RUN (19 Nov 2026: "Successfully installed pybind11-3.1.0 skia-python-144.1"); the trial once more with the candidate present (23 s):
+| backend | available | ms a frame | error (0-255) | same twice |
+| own | True | 1920x1080 273.14, 640x360 31.33 | 0.244 | True |
+| skia | True | 1920x1080 86.45, 640x360 10.74 | 0.101 | True |
+"L1 TRIAL: winner skia (available, the same bytes twice, error 0.101 <= 0.8 x 0.244, at most 1.5 x own's time)". H34 (written first: own
+stays) is NOT borne out on this laptop. What it does to the product: NOTHING in this batch (3.8) - SKIA IN THE PRODUCT is the open issue
+for after the launch that 3.8 names; GitHub's run page gives the runner's table.
+TESTS: red first without tools/l1_trial.py ("cannot import name 'l1_trial' from 'tools'", 0.46 s); test 13 1 passed, 6.6 s; the checks.yml
+readers (b0b, v83, v891, safety, v89, v94a, exec) 290 passed, 218 s (the first run 4 red on the YAML typo); org, rnd, docs_current green;
+truth GREEN; Plan Guard GREEN; minitest tests/test_v12_drawn.py 23/0, 266 s.
+THE PREVIOUS CHECKS: run 44439138615 on 829135b (step 2) - completed/success; Unit tests: 1892 passed in 5166.14s; Free rehearsal success.
 ### V4 - THE CEO AND THE LADDER (16-18 Nov 2026) - ACCEPTED (final code commit ddfd4d5 GREEN in GitHub Checks run 277: 1865 passed; sweep 58 of 58 ids) - its code 5272fea, BUILT AGAIN AFTER RED ROUND 1 (repairs C23 to C25 by Opus under item 130; the first pass was RED on 7899300, its code 8fa7742: an overrun memo on every long video of the sweep, the rehearsal F3/S1 held by `impact_map`, sweep part B without the watch line; `proving/notes/V4_RED_1.md`) - BUILT before it (final code commit 8fa7742) (the designer's record: steps 1 to 3; the Opus builder writes steps 4 to 6a, the Fable finisher `FINISHED BY FABLE`, the prover 6b and 7)
 THE BATCH'S START: the first check (the batch before on the record, GitHub's run of its final code commit, a clean tree) and the usage
 figures are written by the session that pastes this record at V1c's acceptance. NOT SPLIT (open issue 189: `next.py` has no move for a
@@ -12678,6 +12700,15 @@ Rehearsal asserts `docs_current` ran and passed.
   Short's. A rule about UPRIGHT clips (the opening's window) needs test clips made upright by ffmpeg (`tests/test_v12_opening.py`).
 - git: `core.autocrlf=false` (keep LF); write files with LF. Commit identity Rahul4869 (noreply address); push with
   `GIT_TERMINAL_PROMPT=1 GCM_INTERACTIVE=always git push` (credentials are saved).
+- v12 DRAWN step 3 (19 Nov 2026) - the L1 trial's candidate on this laptop, installed once after the owner's line (C14 (b): sent to the owner by
+  the Fable dispatcher on 17 Nov 2026, in its own session; repeated in the launch pack): `.venv/Scripts/python.exe -m pip install
+  --only-binary :all: "skia-python>=144,<145"` - pip's answer, word for word: "Collecting skia-python<145,>=144 / Downloading
+  skia_python-144.1-cp312-cp312-win_amd64.whl.metadata (5.7 kB) / Requirement already satisfied: numpy in
+  c:\users\rrahu\onedrive\desktop\reality_engine_handoff\.venv\lib\site-packages (from skia-python<145,>=144) (2.0.2) / Collecting pybind11>=2.6
+  (from skia-python<145,>=144) / Downloading pybind11-3.1.0-py3-none-any.whl.metadata (10 kB) / Downloading
+  skia_python-144.1-cp312-cp312-win_amd64.whl (11.1 MB) / Downloading pybind11-3.1.0-py3-none-any.whl (319 kB) / Installing collected
+  packages: pybind11, skia-python / Successfully installed pybind11-3.1.0 skia-python-144.1". The trial: `python tools/l1_trial.py`. To remove
+  it: `.venv/Scripts/python.exe -m pip uninstall skia-python`.
 
 ## BATCH LOG
 | Batch | Status | Suite | Rehearsal | Notes |

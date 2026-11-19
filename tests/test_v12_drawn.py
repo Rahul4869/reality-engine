@@ -460,3 +460,21 @@ def test_check_drawn_shown_says_na_pass_and_fails_each_lie(setting):
     assert CON.p_drawn_shown(ctx(withsc, arm))[0] == "FAIL"                                                            # a scene, no drawn state, no reason
     assert CON.p_drawn_shown(ctx(shots, dict(arm, states=[(4.0, 6.0, 1, 0)])))[0] == "FAIL"                           # a state recorded drawn on a shot without a scene
     assert CON.p_drawn_shown(ctx(withsc, dict(arm, states=[(4.0, 6.0, 1, 0)], L={1: None})))[0] == "FAIL"            # recorded drawn, and its master cannot be read
+
+
+# ------------------------------------------------------------------ STEP 3: 13. the L1 renderer trial (a measurement; the product never depends on the candidate)
+def test_the_l1_trial_measures_both_backends_and_its_rule_decides(capsys):
+    from tools import l1_trial as T
+    r = T.run([DRAWN.TEMPLATES["count"]["gold"], DRAWN.TEMPLATES["flow"]["gold"]])
+    own = next(x for x in r["rows"] if x["backend"] == "own"); cand = next(x for x in r["rows"] if x["backend"] == "skia")
+    assert own["available"] and own["same"] and own["err"] is not None and set(own["ms"]) == {"1920x1080", "640x360"}
+    assert cand["available"] or cand["why"], cand                                           # unavailable is a RESULT with its own words, never a skip
+    assert r["winner"] == T.winner(r["rows"])[0]
+    o = {"backend": "own", "available": True, "same": True, "err": 1.0, "ms": {"640x360": 10.0}}
+    c = lambda **k: dict({"backend": "skia", "available": True, "same": True, "err": 0.5, "ms": {"640x360": 12.0}, "why": ""}, **k)
+    assert T.winner([o, c()])[0] == "skia"
+    assert T.winner([o, c(available=False, why="ModuleNotFoundError")])[0] == "own" and T.winner([o, c(same=False)])[0] == "own"
+    assert T.winner([o, c(err=0.81)])[0] == "own" and T.winner([o, c(ms={"640x360": 15.1})])[0] == "own" and T.winner([o, c(ms={"640x360": 15.0})])[0] == "skia"
+    for dp, _, fs in os.walk(os.path.join(ROOT, "whatifs")):
+        for f in fs:
+            if f.endswith(".py"): assert "skia" not in open(os.path.join(dp, f), encoding="utf-8").read().lower(), f

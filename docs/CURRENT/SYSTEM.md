@@ -10,7 +10,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `heygen/heygen-video/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 3 standalone Shorts a week, 12 a month at most - every topic starts as a Short and the promote rule picks the long video's topic (`whatifs/ladder.py`); spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 140 code modules, 872 settings, 91 Sheet tabs, 25 GitHub workflows.
+- Size: 141 code modules, 872 settings, 91 Sheet tabs, 25 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -530,6 +530,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | tools/ci_report.py | CI report: turns the unit-test or rehearsal log of GitHub's Checks into annotations on the run page (readable without a sign-in), so a red run names its cause and a green run shows its totals and the rehearsal's episode id. |
 | tools/gen_docs.py | Generates docs/CURRENT/SYSTEM.md from the live code (run: python tools/gen_docs.py); the test suite fails when the committed file differs. |
 | tools/google_signin.py | One-time Google sign-in helper run on GitHub: prints the sign-in links, swaps the pasted address for a long-life key and emails it to the owner (never printed in the log). |
+| tools/l1_trial.py | The L1 renderer trial: the drawn scenes' shapes drawn by our own drawing code and by one candidate library on the same display list, judged by a rule written before any number. |
 | tools/perf_atmosphere.py | Render-time comparison of one rehearsal-size episode with ATMOSPHERE_ON true vs false (usage: WI_FAKE=1 WI_SMALL=1 python tools/perf_atmosphere.py). |
 | tools/plan_guard.py | Plan Guard: runs on every push; RED when code breaks a locked rule (typed model names, flagged words, duplicate definitions, retired concepts in current docs or prompts). |
 | tools/rehearsal.py | Full offline rehearsal: setup -> voices -> tick -> produce -> release -> trends -> learn -> brief with fake models, images and voice; proves every stage connects at zero cost. |

@@ -34,6 +34,11 @@ jobs:
           fi
           ffmpeg -version | head -1
       - run: pip install -q "numpy>=1.26,<2.1" "opencv-python-headless>=4.9,<5" "pillow>=10,<13" "soundfile>=0.12,<0.14" "requests>=2.31,<3" pytest pyyaml python-docx "cryptography>=42,<46"
+      - name: The L1 trial's candidate renderer (a measurement - the pipeline does not need it)
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          pip install -q --only-binary :all: "skia-python>=144,<145"
       - name: Restore code from Word copies (this job only, nothing is committed)
         run: |
           python - <<'EOF'
@@ -63,6 +68,10 @@ jobs:
           python -m pytest tests -q 2>&1 | tee "$RUNNER_TEMP/unit.log"; rc=${PIPESTATUS[0]}
           python tools/ci_report.py unit "$RUNNER_TEMP/unit.log" "$rc"          # v12 B0b: the cause (or the totals) as an annotation on the run page, readable without a sign-in
           exit "$rc"
+      - name: L1 renderer trial
+        if: always()
+        continue-on-error: true
+        run: python tools/l1_trial.py >> "$GITHUB_STEP_SUMMARY"
       - name: Repeat the unit tests (manual run with repeat_suite > 1 only)
         if: github.event_name == 'workflow_dispatch'
         env:
