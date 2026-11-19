@@ -49,7 +49,7 @@
  "base_commit": "ddfd4d5f1dbd59fe43b57a1065353b1793f6dfc4",
  "batch": "DRAWN",
  "fable_design_gate": true,
- "final_code_commit": "",
+ "final_code_commit": "d64fdccfc04a7aaf179e4cd2d23c32d8a8b6d8f3",
  "history": [
   {
    "at": "2026-11-13T11:25:00Z",
@@ -455,6 +455,15 @@
    "from": "DESIGN_REVIEW",
    "to": "BUILD",
    "why": "the review's verdict 'VERDICT: APPROVED WITH CORRECTIONS AT THE BUILD' is the first line of reviews/DRAWN_design.md (commit after 2a9a2b3); the typist applies the typed-ahead patches 1, 5, 2, 3, 4"
+  },
+  {
+   "at": "2026-11-19T18:35:42Z",
+   "batch": "DRAWN",
+   "by": "the Fable finisher local_864e540d (pool row R14)",
+   "commit": "d64fdcc",
+   "from": "BUILD",
+   "to": "BUILT",
+   "why": "the gate GREEN on d64fdcc (code a54df62): breaks 77 of 77, the builder's block 1911 passed with four rehearsal pairs green; the pass Opus began under item 130 completed by Fable"
   }
  ],
  "order": [
@@ -471,8 +480,8 @@
   "B10",
   "V3"
  ],
- "phase": "BUILD",
+ "phase": "BUILT",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-18T18:23:38Z"
+ "updated": "2026-11-19T18:35:42Z"
 }
