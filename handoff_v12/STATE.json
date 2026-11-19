@@ -508,6 +508,15 @@
    "from": "DESIGN",
    "to": "DESIGN_REVIEW",
    "why": ""
+  },
+  {
+   "at": "2026-11-19T23:12:19Z",
+   "batch": "B-OWNER",
+   "by": "",
+   "commit": "",
+   "from": "DESIGN_REVIEW",
+   "to": "BUILD",
+   "why": ""
   }
  ],
  "order": [
@@ -528,8 +537,8 @@
   "B10",
   "V3"
  ],
- "phase": "DESIGN_REVIEW",
+ "phase": "BUILD",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-19T22:29:12Z"
+ "updated": "2026-11-19T23:12:19Z"
 }
