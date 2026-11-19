@@ -130,6 +130,20 @@ done, never what a batch is built from or judged by. An Opus builder or prover a
   record which reading it did ("the continuation typist's reading, A9"). WHAT DOES NOT CHANGE: the FIRST builder of every batch, every designer,
   reviewer, finisher, repairer and prover read exactly what chapter 4 and their briefs say; a continuation typist that meets a choice the memo
   did not make writes a `DESIGN QUESTION` and never settles it from what it has not read.
+  (A9b) AMENDED 19 Nov 2026 BY THE FABLE DISPATCHER OF THE RESET (R1; rulings R1-25 (4) and R1-28 in `RULINGS_BY_R1.md` of the shared
+      notes folder; the owner's items 45, 115, 127 and 168), FROM BATCH B-OWNER ON, FOR OPUS TYPISTS ONLY - a first builder and a
+      continuation typist alike. MEASURED 19 Nov 2026: the handoff's files run about 2.1 bytes a token; `02_OWNER_VERBATIM.md` whole
+      is about 170,000 tokens and the fixed list (1) to (4) about a third of a window, so that three steps of one approved memo stood
+      at 63 to 82% of a window before the first edit. THE CHANGE: in (1), `02_OWNER_VERBATIM.md` is read by the items the batch's memo
+      names and its last ten items, once a typist. In (5), a file in which the step only ADDS an entry to a table or a list (a cell, a
+      route, a cost line, a matrix row, a registry or lever row, a fake's answer) is read in that table whole with the sixty lines
+      around it, and the file and `tests/` are searched for every name the step adds; a file in which the step changes a function's
+      body, a call or a condition is still read whole, with its callers and their tests. A step that by this arithmetic stands above
+      45% of a window before its first edit is typed by TWO typists on one tree in ONE commit, split by files as the memo writes; each
+      reads the fixed list itself. KEPT: everything else of A9; this plan whole; the memo whole; the typist decides nothing (A4),
+      writes into the record which reading it did, and every line it types is audited by Fable against the memo (A5) and proven by
+      the block. WHY: a reading is not a proof, and a typist that reads past its line types worse; the owner's words bind a batch
+      through the memo's own list of his items, which the reviewer checks and the audit judges.
 - A10. THE DESIGN REVIEWER'S READING, FROM V4 ON (the owner's "yes allow", item 78 of `02`, 15 Nov 2026; it changes chapter 4 for ONE role, as A9
   did for the continuation typist). MEASURED: V1c's design and its review used 15 points of the weekly Fable line in under three hours, because
   four Fable sessions each did the whole handoff reading for one design. THE CASE: the design reviewer of V4 and of every later batch (the
@@ -229,6 +243,17 @@ done, never what a batch is built from or judged by. An Opus builder or prover a
       change, commits, pushes and goes on; the next step is not COMMITTED until the previous step's Checks is green; a red Checks run is a
       red (L: never run again). The break run, the builder's block, the finisher's gate and the WHOLE acceptance block stay on the laptop
       unchanged - `proving/` is not touched.
+  (f2) AMENDED 19 Nov 2026 BY THE FABLE DISPATCHER OF THE RESET (R1; ruling R1-6 in `RULINGS_BY_R1.md` of the shared notes folder; the
+      owner's items 115, 127 and 168), FROM BATCH B-OWNER ON: the sentence of (f) "the next step is not COMMITTED until the previous
+      step's Checks is green" NO LONGER BINDS. A step is committed and pushed when its own test files and every file with a pin or an
+      import of the change are green on the laptop. KEPT, each the builder's duty and checked by the finisher: GitHub's Checks runs on
+      EVERY pushed commit and every run is read (`tools/gh_runs.js`) and written into the record with its run id; a red Checks run is
+      a red - repaired at the cause in a NEW commit, never run again; `<batch>_OPUS_DONE.md` is not written until the builder's last
+      push has a green Checks run and every red run of the batch is explained in the record; at most three Checks runs of the branch
+      at once. UNCHANGED: the break run, the builder's block, the gate, the whole acceptance block and GitHub's run of the final code
+      commit. WHY: the wait was an order of work, not a proof; it cost DRAWN's apply 16 h 40 min for patches already typed and tested
+      (18 Nov 18:23 to 19 Nov 11:04 UTC), and at that pace two of the three batches the owner requires by the stop could not reach a
+      proof.
   (g) THE OPUS CODE READER reads each step as it is pushed (item 91) and uses, beside the `code-review` skill, the user agents
       `test-gap-reader` and `silent-failure-reader` (Opus, read-only); a second reader takes over at 80% of the first one's window.
   (h) EVERY BATCH'S FABLE COST IS MEASURED at its end (`node tools/fable_cost.js` of the shared notes folder) and written into the ledger
@@ -247,6 +272,15 @@ done, never what a batch is built from or judged by. An Opus builder or prover a
       acceptance (which changes no code) the designer moves the state to DESIGN, pastes, commits, moves to DESIGN_REVIEW; the reviewer commits
       its review from its file and moves to BUILD; the first Opus builder, started ahead, is briefed the same minute. ON A RED the designer
       reads the repair's diff and corrects, the reviewer reads the changed lines only.
+  (a2) AMENDED 19 Nov 2026 BY THE FABLE DISPATCHER OF THE RESET (R1; ruling R1-33 in `RULINGS_BY_R1.md` of the shared notes folder; the
+      owner's item 200), FROM BATCH B-OWNER ON: where (a) says "the designer ... pastes, commits" and "the reviewer commits its review
+      from its file", THE COMMIT ITSELF - the file taken word for word by a script, and the state move - may be typed by an Opus
+      session when the Fable session that wrote the file stands past 60% of its window or has been idle for more than an hour. The
+      file's author is unchanged and is named, with the typist, in the commit message; the typist changes no word of the file, and a
+      byte comparison of the committed text with the author's file is written into the record. UNCHANGED: who designs and who
+      reviews, and that the designer of record corrects the memo on the batch before's final code before the paste. WHY: measured
+      19 Nov 2026, waking a Fable session of 600,000 tokens after an hour costs about 0.7 points of the week's line before any work;
+      a word-for-word commit decides nothing.
   (b) THE OPUS BUILDER RUNS ITS BREAK LIST (to 0 missed, 0 void) BUT NOT THE BUILDER'S BLOCK: the finisher's last acts run the block on the
       final code commit as today and `built_gate.py` still asks for it; GitHub's Checks has run the whole suite and a rehearsal on the
       builder's last push (A12 (f)). No proof of the final commit is removed.
