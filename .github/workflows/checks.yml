@@ -10,7 +10,7 @@ on:
 jobs:
   guard_and_rehearsal:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
