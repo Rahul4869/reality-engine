@@ -951,3 +951,16 @@ def test_a_planted_secret_and_a_planted_script_do_not_show(monkeypatch, setting)
     assert key not in text and "GRIMM: the jar opens" not in text, text[:400]
     docket = {c["id"]: c for c in snap["docket"]}
     assert docket[b]["title"] == "Special ready: the text is in WhatsApp and your e-mail." and list(docket[b]["verbs"]) == ["Approve"] and "***" in docket[a]["why"]
+
+# ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (steps 0 to 3)
+def test_a_paused_tick_retries_an_alarm(monkeypatch, setting):
+    """R17 (5 a) with (11 d): through a pause an alarm WhatsApp did not take is pushed again at the paused tick. FOUND AT THE FINISH: `manage.tick` held
+    a local import of notify as NT further down, which made NT a local name of the whole function - the paused branch's `NT.alarm_retry()` raised
+    inside its own try and the retry never ran in a pause (the fault step 2b took out of `preview.decide`)."""
+    from whatifs import manage as MG
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch); got = iter(["", "wamid.P2"])
+    monkeypatch.setattr(WA, "_post", lambda body, kind="reply", now=None: next(got) if kind == "alarm" else "wamid.other")
+    aid = NT.send("policy", "Paused for 7 days (policy watch)", dedupe_key="policy|planted")
+    assert not _row(aid)["delivered_at"] and _alarms_told() == []                                           # the firing's own push was not taken
+    setting("PAUSED", "TRUE"); assert MG.tick() == {"action": "paused"}
+    assert [(x["action_id"], x["wamid"]) for x in _alarms_told()] == [(aid, "wamid.P2")] and _row(aid)["delivered_at"]

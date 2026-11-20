@@ -201,8 +201,7 @@ def tick():
         from whatifs import packaging as PK
         PK.rotate_tick()
     except Exception as x: log(f"packaging rotation skipped: {scrub(x)}", "WARN")
-    try:                                                        # v9.4a (WP4): queued owner messages, silence = default, the digest
-        from whatifs import notify as NT
+    try:                                                        # v9.4a (WP4): queued owner messages, silence = default, the digest (NT: the module's own import - a local one here hides it from the paused branch)
         NT.tick()
         try:                                                    # v12 V1c (D13): one verdict ask a release - his tap is the label the judged floor is scored against
             from whatifs.org import verdicts as VERS; VERS.sync()
