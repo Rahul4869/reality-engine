@@ -90,16 +90,16 @@ def head(kind="daily", now=None):
             if wk: lines.append("This week: " + wk)
         except Exception as e: log(f"the weekly head's numbers were not built: {scrub(e)[:120]}", "WARN")
     for r in [r for r in NT.open_rows() if NT.klass(r.get("kind")) == NT.ALARM]:
-        lines.append("ALARM open: " + str(r.get("text") or "")[:120])
+        lines.append("ALARM open: " + NT.whole(r.get("text") or "", 120))
     need = sorted(NT.needs(), key=lambda r: str(r.get("expires_at") or "9999"))
     first = next((r for r in need if r.get("expires_at")), None)
     lines.append(f"Needs you: {len(need)}" + (f" (the first closes {parse_iso(first['expires_at']).astimezone(IST):%a %H:%M}: {first.get('default_action') or 'it waits'})" if first else ""))
-    lines += [str(r.get("text") or "")[:120] for r in NT.open_rows() if r.get("kind") in ("topup", "expiry")][:2]
+    lines += [NT.whole(r.get("text") or "", 120) for r in NT.open_rows() if r.get("kind") in ("topup", "expiry")][:2]
     try:
         from whatifs.org import desk as DK; ans = len(DK.lines(now))
     except Exception as e: ans = 0; log(f"the morning head's answers were not counted: {scrub(e)[:120]}", "WARN")
     if ans: lines.append(f"Answers to your inputs: {ans}")
-    return "\n".join(lines[:8])[:700]
+    return NT.whole("\n".join(lines[:8]), 700)
 
 def whole(now=None):
     """The eight groups in full - the mail of the morning message (the copy cannot open on a tap)."""

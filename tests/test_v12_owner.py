@@ -1048,6 +1048,27 @@ def test_a_mails_row_keeps_the_address_he_must_open(monkeypatch, setting):
     setting("TWO_SCREENS_ON", "FALSE")
     assert NT.mail("topup", "Top-up reminder", "<a href='https://fal.ai/dashboard/billing'>Top up here</a>") is True and len(core.store().rows("Owner_Actions")) == 6
 
+def test_a_groups_line_never_holds_half_an_address(monkeypatch, setting):
+    """R1-55 (CA-7b; bound (d) of R1-52 (4)): a group's line is a row cut at 300 characters - an address is whole in it or not in it; a row without an
+    address is cut exactly as before, byte for byte."""
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch)
+    two = "<p>" + "a" * 200 + " <a href='https://fal.ai/dashboard/billing'>Top up here</a> and " + "b" * 4 + " <a href='https://platform.claude.com/settings/billing'>Top up here</a> then more</p>"
+    NT.mail("topup", "Top-up reminder", two, dedupe_key="topup|G1"); plain = "c" * 400; NT.send("budget_pct", plain, dedupe_key="budget_pct|G2")
+    lines = WA.group_text("money", cut=None).splitlines()
+    top = next(l for l in lines if "Top-up reminder" in l); flat = next(l for l in lines if l.startswith("- ccc"))
+    assert top.count("https://") == 1 and "https://fal.ai/dashboard/billing" in top and top.endswith("Top up here:") and len(top) <= 302, top
+    assert flat == "- " + plain[:300]
+    assert NT.whole("x" * 10, 4) == "xxxx" and NT.whole("go https://a.b/c now", 16) == "go https://a.b/c"
+    assert NT.whole("go https://a.b/c now", 12) == "go" and NT.whole("go https://a.b/c now", 8) == "go" and NT.whole("short", 300) == "short"
+    import re
+    NT.send("topup", "Top-up reminder. " + "g" * 70 + " Top up here: https://fal.ai/dashboard/billing then add it.", dedupe_key="topup|G3")
+    h = DG.head()                                                                     # the morning head: its top-up lines are cut at 120
+    assert all(u in ("https://fal.ai/dashboard/billing", "https://platform.claude.com/settings/billing") for u in re.findall(r"https://[^\s,]+", h)), h
+    bodies = _wire(monkeypatch); _window(False)
+    WA.send_open("Alarm", "x" * 680 + " https://studio.youtube.com/video/vid9/edit", "OPEN|alarm|G4"); WA.send_open("Alarm", "y" * 800, "OPEN|alarm|G5")
+    said = [b["template"]["components"][0]["parameters"][1]["text"] for b in bodies[-2:]]
+    assert said == ["x" * 680, "y" * 700], [s[-60:] for s in said]                    # an address whole or not there; a text without one cut as before
+
 # ------------------------------------------------------------------ step 8a: NEVER HELD BY HIS ABSENCE (PART 7; R22 (2), (2 b), (2 c)) - the special is step 8b's
 from whatifs import contract as CON, launch as LAU, publish as PUB8
 from whatifs.org import floor as FL8

@@ -131,7 +131,8 @@ def open_template():
 def send_open(label, line, payload, kind="reply", now=None):
     """THE ONE TEMPLATE outside the 24-hour window: {{1}} = the label, {{2}} = one line (an alarm's whole text, cut at 700 characters); the quick reply
     "Open" carries `payload` (OPEN|morning, OPEN|needs, OPEN|alarm|<id>). His tap is a message of his: it opens the window, and the list comes as a reply."""
-    comps = [{"type": "body", "parameters": [{"type": "text", "text": _one_line(label)[:60]}, {"type": "text", "text": _one_line(line)[:700] or "-"}]},
+    from whatifs import notify as NT                                     # FINISHED BY FABLE (CA-7b, R1-55): the template's line never holds half an address
+    comps = [{"type": "body", "parameters": [{"type": "text", "text": _one_line(label)[:60]}, {"type": "text", "text": NT.whole(_one_line(line), 700) or "-"}]},
              {"type": "button", "sub_type": "quick_reply", "index": "0", "parameters": [{"type": "payload", "payload": str(payload)[:256]}]}]
     return _post({"type": "template", "template": {"name": S("WA_OPEN_TEMPLATE"), "language": {"code": S("WA_TEMPLATE_LANG")}, "components": comps}}, kind=kind, now=now)
 
@@ -173,7 +174,8 @@ def _push_alarm(row, now):
         btns = json.loads(row.get("buttons") or "[]")
         pairs = [(str(lbl), f"ACT|{row['id']}|{i}") for i, (lbl, _v) in enumerate(btns)]
         return send_buttons(text, pairs, kind="alarm", now=now) if pairs else send_text(text, kind="alarm", now=now)
-    return send_open(OPEN_LABELS["alarm"], text[:700], f"OPEN|alarm|{row['id']}", kind="alarm", now=now)
+    from whatifs import notify as NT                                     # FINISHED BY FABLE (CA-7b, R1-55): cut whole here, or send_open would get half an address
+    return send_open(OPEN_LABELS["alarm"], NT.whole(text, 700), f"OPEN|alarm|{row['id']}", kind="alarm", now=now)
 
 def _push_list(kind, now, text):
     """The morning message and the "Needs you" list. Over WA_MONTHLY_CAP_INR they stop on WhatsApp, and one `wa_cap` row says so."""
@@ -203,7 +205,7 @@ def group_text(g, view=None, now=None, cut=1024):
         view = view or OV.build()
         parts += [DG.learned() if s == "learned" else OV.render(s, view) for s in secs]
     rows = NT.group_rows(g, now)
-    parts.append("\n".join(f"- {str(r.get('text') or '')[:300]}" + (f" ({r['status'].lower()})" if r.get("status") == "DEFAULTED" else "") for r in rows) if rows else "Nothing here now.")
+    parts.append("\n".join(f"- {NT.whole(r.get('text') or '', 300)}" + (f" ({r['status'].lower()})" if r.get("status") == "DEFAULTED" else "") for r in rows) if rows else "Nothing here now.")
     out = "\n\n".join(p for p in parts if p)
     if cut and len(out) > cut:
         tail = "\n... more on the dashboard"; keep = out[:cut - len(tail)]
