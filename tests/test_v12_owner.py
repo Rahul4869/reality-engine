@@ -1778,3 +1778,13 @@ def test_the_card_names_the_day_and_a_moved_slot_its_true_reason(monkeypatch, se
     core.store().append("Episodes", [{"episode_id": "EPB", "status": "SCHEDULED", "yt_id": "ytB", "slot_et": slot, "title": "B"}])
     NT.expire_defaults(now=_later(73)); d = _decided("EP8")[0]["text"]
     assert _epi("EP8")["slot_et"] != slot and "was given to another video meanwhile" in d and "had passed" not in d and CON._ist(slot) in d, d
+
+def test_with_the_switch_off_silence_approves_nothing(monkeypatch, setting):
+    """R22 (2 c), the older path (a missing test: `contract.register` gives `creative_review` a default handler in BOTH states of the switch). With
+    TWO_SCREENS_ON FALSE the card is today's - 72 hours, "stays private" - and at its expiry nothing is approved, scheduled or told; no sweep acts."""
+    slot, sched = _ep8(monkeypatch, setting); setting("TWO_SCREENS_ON", "FALSE")
+    CON.await_approval("EP8", "ytEP8", slot, "s"); r = _kind("creative_review", "EP8")[0]
+    assert r["default_action"] == "stays private" and abs((core.parse_iso(r["expires_at"]) - core.parse_iso(r["created"])).total_seconds() / 3600 - 72) < 0.05
+    assert "approved by your silence" not in r["text"]
+    NT.expire_defaults(now=_later(73)); assert CON.review_sweep() == 0
+    assert _epi("EP8")["status"] == "AWAITING_APPROVAL" and sched == [] and not _decided("EP8") and _row(r["id"])["status"] == "DEFAULTED"
