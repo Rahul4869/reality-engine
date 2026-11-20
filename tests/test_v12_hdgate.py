@@ -153,7 +153,7 @@ def test_an_empty_read_makes_nothing_public(monkeypatch, setting, gate_on):
     assert h["state"] == HG.BLOCKED and h["note"] == "YouTube could not be read" and len(_blocked()) == 1 and "privacy" not in _fixed(vid)
     b = _blocked()[0]; assert b["dedupe_key"] == f"hdblock|{vid}" and "stays private: YouTube could not be read. Nothing was deleted." in b["text"]
     HG.tick(NOW + (late + 60) * M); assert len(_blocked()) == 1 and HG.row(vid)["state"] == HG.BLOCKED
-    assert HG.go_public(vid, NOW + (late + 61) * M, "cap") == (False, "not read") and "privacy" not in _fixed(vid) and HG.row(vid)["note"] == "YouTube could not be read"
+    assert HG.go_public(vid, NOW + (late + 61) * M, "cap") == (False, "blocked: YouTube could not be read") and "privacy" not in _fixed(vid) and HG.row(vid)["note"] == "YouTube could not be read"
 
 # ------------------------------------------------------------------ the two policy reads at every door, the lock
 def test_a_short_marked_for_kids_stays_private(monkeypatch, setting, gate_on):
@@ -441,3 +441,13 @@ def test_the_sheets_privacy_line_is_true_of_both_states():
     line = next(r[4] for r in REL.SHEET if r[:2] == ("youtube", "privacy"))
     assert "at once while HD_GATE_ON is off" in line, line
     assert "private until YouTube shows it in HD (at most HD_SHORT_CAP_MIN minutes and the wait for the pipeline's next tick), then public" in line, line
+
+def test_a_blocked_video_is_refused_at_the_door(gate_on):
+    """PART 9, A FAILED CHECK STILL HOLDS ("state BLOCKED, never public"). FOUND AT THE FINISH: only `tick` and `finish` passed over a BLOCKED row;
+    `go_public` itself - THE ONE DOOR, which another batch may call - judged the video afresh and made it public once the flag was gone."""
+    vid = PUB.yt_upload("x/SHHD29.mp4", "T", "D", [], short=True, now=NOW); assert HG.row(vid)["state"] == HG.WAITING
+    PUB.FAKE_FAULTS["youtube"] = {"drift": {"kids": True}}
+    assert HG.go_public(vid, NOW + M) == (False, "blocked: YouTube marked it made for kids") and HG.row(vid)["state"] == HG.BLOCKED
+    PUB.FAKE_FAULTS.clear()                                                                            # the flag is gone: the block still holds, at the door itself
+    assert HG.go_public(vid, NOW + 2 * M, "cap") == (False, "blocked: YouTube marked it made for kids")
+    assert _shown(vid) == "private" and HG.row(vid)["state"] == HG.BLOCKED and len(_blocked()) == 1

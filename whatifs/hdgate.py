@@ -67,6 +67,7 @@ def go_public(vid, now=None, why="public"):
     Returns (ok, note) - (False, "blocked: <why>") when it refuses, (False, "not read") when YouTube could not be read."""
     from whatifs import publish as PUB, launch as LA, notify as NT
     now = now or now_utc(); r = row(vid)
+    if r and r.get("state") in (BLOCKED, LOCKED): return False, "blocked: " + str(r.get("note") or r.get("state"))      # a failed check still holds - at THE door, whoever calls it
     got = PUB.yt_read(vid)
     if not got:                                                                     # R18 (5): a read that failed is not a pass
         _unread(vid, now); return False, "not read"
