@@ -1419,3 +1419,13 @@ def test_one_whatsapp_line_is_one_build_card(monkeypatch, setting):
     _labels(monkeypatch, kind="other")
     _inbound(monkeypatch, "wamid.B2", "what about a clock in the corner of cold opens")
     assert len([r for r in core.store().rows("Owner_Actions") if r["kind"] == "idea"]) == 2                 # the chat's card, where the desk made none
+
+def test_the_never_list_knows_a_phrase_never_a_word():
+    """LAUNCH_MAX C6 through PART 5: the never list RECOGNISES what this channel never does. FOUND AT THE FINISH: three patterns caught a word alone
+    ("pod", "bot") or any wish that held "delete ... video" or "copy ... video" - an ordinary wish was parked unweighed, with a reason that was untrue."""
+    for wish in ("Put an escape pod in the next Short.", "The bot's voice is flat; make the robot funnier.", "Delete the long intro from every video.",
+                 "Delete the video's intro, it drags.", "Copy the pacing of our best video for the next script."):
+        assert DESK.never(wish) is None, (wish, DESK.never(wish))
+    for ask in ("Join an engagement pod with other channels.", "Let's use view bots for the first hour.", "Buy some bots.", "Bots for views would help.",
+                "Just delete all old videos.", "Delete that Short.", "Copy that channel's video", "Copy another channel's script."):
+        assert DESK.never(ask) is not None, ask

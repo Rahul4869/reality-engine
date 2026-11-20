@@ -163,13 +163,13 @@ TALK = ("ok", "okay", "k", "thanks", "thank you", "ok thanks", "yes", "no", "got
 NEVER = ((r"\bbuy(?:ing)?\b.{0,30}\b(?:views|followers|subscribers|subs|likes)\b|\b(?:bought|paid|fake)\s+(?:views|followers|subscribers|subs|likes)\b",
           "bought views or followers are fake engagement under YouTube's policy and can end the channel"),
          (r"\bsub\s*(?:4|for)\s*sub\b", "sub for sub is fake engagement under YouTube's policy"),
-         (r"\b(?:engagement\s+)?pods?\b|\bbots?\b", "pods and bots are fake engagement under YouTube's policy"),
+         (r"\b(?:engagement|comment|like|sub|view|follower)\s+pods?\b|\b(?:view|sub|comment|like|follower|engagement)\s*bots?\b|\bbots?\s+(?:for\s+)?(?:views|followers|subscribers|subs|likes|comments|traffic)\b|\b(?:use|buy|run|hire|get)\s+(?:\w+\s+){0,2}bots?\b", "pods and bots are fake engagement under YouTube's policy"),
          (r"\bre-?upload", "a re-upload is reused content and puts the Partner Program at risk"),
-         (r"\bdelete\b.{0,30}\bvideos?\b", "the machine never deletes a video: it takes one down to private, and nothing is lost"),
+         (r"\bdelete\s+(?:(?:the|that|this|my|our|your|all|every|each|any|a|an|old|older|last|latest|first|bad|worst|whole|entire|weak|flopped)\s+){0,3}(?:videos?|shorts?|uploads?)\b(?!\s*'?s?\s*(?:intro|title|thumbnail|description|caption|music|scene|script|idea|opening|ending|hook))", "the machine never deletes a video: it takes one down to private, and nothing is lost"),
          (r"\bmade\s+for\s+kids\b", "made for kids turns off comments and most of the money, and the show is not made for children"),
          (r"\b(?:hide|remove|drop|turn\s+off|skip)\b.{0,20}\bai\b.{0,12}\b(?:label|disclosure|tag)\b", "the AI label is YouTube's rule for realistic made content; hiding it puts the channel at risk"),
-         (r"\bcopy\b.{0,40}\b(?:channel|video|script)s?\b", "copying another channel's video is reused content and a copyright risk"),
-         (r"\bcomment\b.{0,40}\b(?:dm|direct message)\b", "a comment-for-a-DM ask is engagement bait under YouTube's spam policy"))      # LAUNCH_MAX C6, the never list
+         (r"\bcopy\s+(?:(?:another|other|others'|other's|someone|someone's|somebody's|their|his|her|that|a|the|competitor|competitor's|competitors'|rival|rival's|channel|channel's|creator|creator's)\s+){1,4}(?:videos?|scripts?|channels?|shorts?)\b", "copying another channel's video is reused content and a copyright risk"),
+         (r"\bcomment\b.{0,40}\b(?:dm|direct message)\b", "a comment-for-a-DM ask is engagement bait under YouTube's spam policy"))      # LAUNCH_MAX C6, the never list - FINISHED BY FABLE (CB-2): each pattern is a PHRASE; a word alone ("pod", "bot") parks nothing
 ACK = "Saved word for word as your input {n}. The answer comes with tomorrow's morning message."
 WEIGH_SYSTEM = ("You read ONE message the owner of a YouTube channel typed to the machine that runs it. You only LABEL it; code decides what is done. "
                 "Reply with JSON only: {\"kind\": \"preference\" | \"video_idea\" | \"change_request\" | \"question\" | \"feedback\" | \"other\", \"restated\": "
