@@ -962,8 +962,11 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         set_setting("NEXT_PREMISE", json.dumps(dict({k: nt.get(k, "") for k in ("premise", "headline", "family", "ptype")}, set_at=iso()), ensure_ascii=False)[:600])
     log(f"SCHEDULED {vid} for {slot_iso}: {title}", public=f"SCHEDULED {vid} for {slot_iso}")
     if not S("PILOT_DONE", bool): set_setting("PILOT_DONE", "TRUE"); log("pilot episode made")
-    NT.mail("scheduled", "Video scheduled", f"<p>{title}<br>Goes live {slot_iso} (UTC). To stop it, type KILL in the Episodes tab, kill column.</p>"
-            f"<p>{_review_note(hook_rec, cut_map)}</p>", level="info", episode=ep, dedupe_key=f"scheduled|{ep}")
+    try: NT.mail("scheduled", "Video scheduled", f"<p>{title}<br>Goes live {slot_iso} (UTC). To stop it, type KILL in the Episodes tab, kill column.</p>"
+                 f"<p>{_review_note(hook_rec, cut_map)}</p>", level="info", episode=ep, dedupe_key=f"scheduled|{ep}")
+    except Exception as e:                                       # FINISHED BY FABLE (CA2-2, R1-90 (1)): the message never raises past the review gate below (R22 (10)'s form)
+        if not S("TWO_SCREENS_ON", bool): raise                  # the older path: as today
+        log(f"the 'scheduled' message was not sent - the review gate is still asked: {scrub(e)[:120]}", "WARN", ep)
     try:                                                         # v10.2: the first CREATIVE_REVIEW_FIRST_N videos stay private until the owner taps Approve
         cr = cctx.get("critique") or {}
         summ_ = (f"'{title}'. Self-review: " + ", ".join(f"{k} {cr.get(k)}" for k in CON.CRIT_KEYS if k in cr) +

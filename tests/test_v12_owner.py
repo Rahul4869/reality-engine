@@ -1517,3 +1517,21 @@ def test_a_waive_typed_by_hand_on_a_quality_hold_waives_nothing(monkeypatch, set
     out = NT.answer(c["id"], "CONTRACT WAIVE EPQW1 black_frames")
     assert "has no waiver" in out and "Fix" in out and started == [] and "EPQW1" not in json.loads(core.S("CONTRACT_WAIVERS") or "{}"), out
     assert _row(c["id"])["status"] == "OPEN"
+
+def test_the_scheduled_message_never_skips_the_review_gate(monkeypatch, setting):
+    """R1-90 (1) (the code reader's CR-2a-2): the `scheduled` message stood before the try that holds the review gate - a raise in it (with the switch
+    on it also writes a row) let a video uploaded with its slot go public without his approval. It has its own try: the gate is always asked."""
+    from whatifs import episode as EP, manage as MG, contract as CON
+    from tools.rehearsal import ToneVoice
+    import whatifs.voice as V
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch); ep = OWN_IDS[2]; asked = []; real = NT.mail
+    monkeypatch.setattr(V, "KokoroBackend", lambda blend: ToneVoice()); MG.setup(); core.set_setting("VOICE", "C")
+    def mail(kind, *a, **k):
+        if kind == "scheduled": raise RuntimeError("planted: the row's write failed")
+        return real(kind, *a, **k)
+    monkeypatch.setattr(NT, "mail", mail); monkeypatch.setattr(CON, "review_needed", lambda kind="long": True)
+    monkeypatch.setattr(CON, "await_approval", lambda e, vid, slot, summary, **k: asked.append(e))
+    try:
+        r = EP.produce((core.now_utc() + dt.timedelta(hours=10)).strftime("%Y-%m-%dT%H:%M:%SZ"), episode_id=ep); assert r.get("ok"), r
+    finally: shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True)
+    assert asked == [ep]
