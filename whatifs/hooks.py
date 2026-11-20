@@ -277,7 +277,7 @@ def run_hooks(script, spine, episode, out_dir, ask_fn=None, proven=None):
         if rec:
             script = decide(rec, script)
             if not rec["applied"] and rec.get("apply_note") == "writer's opening already says this":      # the writer opened on the Short's own words: that IS the proven line in place
-                rec["applied"] = True; rec["status"] = "applied"
+                script = _replace_first(script, rec["candidates"][0]["line"]); rec["applied"] = True; rec["status"] = "applied"      # FINISHED BY FABLE (CA3-10): in other words is not word for word - the writer's near-copy becomes the Short's own line, its tags kept
             save(rec, out_dir)
             log(f"opening line: the hook of Short {rec['short']}, proven by its viewers (status {rec['status']}; no hook lab)", episode=episode)
             return script, rec

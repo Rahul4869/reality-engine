@@ -1095,3 +1095,16 @@ def test_the_writers_near_copy_of_the_shorts_hook_becomes_the_hook(tmp_path):
     first = next(c["line"] for c in rec["candidates"] if c["id"] == rec["chosen_id"])
     assert rec["applied"] and spoken[0].endswith(first) and spoken[1] == f"[DIRECTOR] [tension] {hook}" and "this rain" not in new, spoken[:3]
     assert HOOKS.verify_in_narration(rec, [{"text": first}, {"text": hook}, {"text": "The strangest part."}]) and rec["status"] == "applied"
+
+def test_the_writers_near_copy_of_a_shorts_hook_that_leads_becomes_the_hook(tmp_path):
+    """CA2-8's other road (the Fable consult suspected it; PART A3's CA3-10): a Short's hook WITH a question or a 'you' leads ALONE (no hook lab), and a
+    writer who opened on it in other words ('this whole street') was accepted in place - then the word-for-word check after the voice failed and
+    `p_hook` held the film at the script gate, the voice already paid. On this road too the near-copy becomes the Short's own line, its tags kept."""
+    from whatifs import hooks as HOOKS, contract as CON
+    hook, sid = "Why does your whole street go silent at noon?", "SHC310"
+    script = "## BEAT 1\n[DIRECTOR] [tension] Why does this whole street go silent at noon?\n[CURIOUS] Nobody on it can say why."
+    def ask(role, *a, **k): raise AssertionError("the hook lab must not be asked")
+    new, rec = HOOKS.run_hooks(script, {"premise": "p"}, "EPC310", str(tmp_path), ask_fn=ask, proven={"line": hook, "short": sid})
+    spoken = [l for l in new.split("\n") if l.strip() and not l.startswith("##")]
+    assert rec.get("source") == "short" and rec["applied"] and spoken[0] == f"[DIRECTOR] [tension] {hook}" and "this whole street" not in new, spoken[:2]
+    assert HOOKS.verify_in_narration(rec, [{"text": hook}, {"text": "Nobody on it can say why."}]) and CON.p_hook({"hook_rec": rec, "d": {"ladder": sid}})[0] == CON.PASS, rec["notes"]
