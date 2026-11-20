@@ -212,6 +212,19 @@ def run(ep_id=None):
             print("contract ledger:", len(led), "checks,", sum(1 for r in led if r["status"] == "PASS"), "pass; review card sent; approving as the owner")
             CON.approve(e["episode_id"]); e = st.rows("Episodes")[-1]
         assert e["status"] == "SCHEDULED", e
+        # v12 B-OWNER (step 10; the designer of record's answer to step 10's QUESTION 1): THE LONG VIDEO'S GATE AND HIS WINDOW, walked once in a whole
+        # production - its upload wrote its time, nothing moved its time, ONE planted tick of the gate thirty minutes before its slot finds it ready and
+        # leaves the slot standing, and his window card is sent on its day. Here, while the row reads SCHEDULED: a later block sets its slot in the past.
+        from whatifs import hdgate as HG10, notify as NT10
+        from whatifs.core import parse_iso as piso10
+        def ep10(): return next(x for x in store().rows("Episodes") if x["episode_id"] == e["episode_id"])
+        e10 = ep10(); slot10 = e10["slot_et"]
+        assert str(e10.get("uploaded_at") or "").strip(), "the long video's upload time is not on record"
+        assert not str(e10.get("public_at") or "").strip(), "the gate moved a video's time before any tick"
+        HG10.tick(now=piso10(slot10) - dt.timedelta(minutes=30))
+        e10 = ep10(); assert e10["slot_et"] == slot10 and not str(e10.get("public_at") or "").strip(), "a ready long video was moved off its slot"
+        assert len([x for x in NT10.open_rows() if x.get("kind") == "prepublic" and x.get("episode_id") == e["episode_id"]]) == 1, "his window card was not sent for a ready long video on its day"
+        print("long gate: ready before its slot - the slot stands; his window card sent")
         from whatifs.org import palace as PAL                    # v12: the Knowledge Palace holds the founding knowledge, mirrors the show records and feeds a bounded playbook
         dly = PAL.daily(st); pal = PAL.rows(st); pb = PAL.playbook("D4", topic=e.get("premise", ""))
         assert len(pal) >= len(PAL.seed_items()[0]) > 50 and not PAL.seed_issues(), "Knowledge Palace not seeded"
