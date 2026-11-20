@@ -4,6 +4,7 @@ import json, re, statistics
 from whatifs.core import S, log, iso, now_utc, set_setting
 from whatifs.core import store as _store
 from whatifs import v91 as V91
+from whatifs import notify as NT
 
 def _rows(tab):
     try: return _store().rows(tab)
@@ -224,6 +225,6 @@ def post_drop(ep, drop_path, still_path, caption):
             _store().update("Episodes", "episode_id", ep, {"drop_posted": iso()})
             if not S("AUDIO_DROP_FIRST_MAIL"):
                 set_setting("AUDIO_DROP_FIRST_MAIL", iso())
-                try: PUB.email("First audio drop posted on Instagram", f"<p>{ep}: the clip-bait audio drop is live as an Instagram Reel (original audio).</p>")
+                try: NT.mail("audio_drop", "First audio drop posted on Instagram", f"<p>{ep}: the clip-bait audio drop is live as an Instagram Reel (original audio).</p>")
                 except Exception: pass
     return res

@@ -256,7 +256,9 @@ def _owner_text(m):
 def _tell_owner(m, st, now):
     from whatifs import notify as NT
     text, buttons = _owner_text(m); p0 = m["urgency"] == "P0"
-    aid = NT.send("org_stuck", text, buttons, episode=m["episode_id"] or None, tier="now" if p0 else "week", urgent=p0, dedupe_key=f"org_stuck|{m['id']}|{m['reminders']}")
+    on = S("TWO_SCREENS_ON", bool)                                                     # v12 B-OWNER (PART 7): a card says what his silence does, and when
+    aid = NT.send("org_stuck", text, buttons, episode=m["episode_id"] or None, tier="now" if p0 else "week", urgent=p0, dedupe_key=f"org_stuck|{m['id']}|{m['reminders']}",
+                  default="nothing changes; the organisation works around it" if on else None, expires_h=72 if on else None)
     st.update(TAB, "id", m["id"], {"owner_notified": f"{iso(now)} {aid}", "reminders": m["reminders"] + 1, "sla_due": iso(now + dt.timedelta(hours=_esc_hours(2, m["urgency"]))), "updated": iso(now)})
     return aid
 

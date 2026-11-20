@@ -3,6 +3,7 @@ import os, subprocess
 from whatifs.voice import Blend, narrate
 from whatifs.episode import BLENDS
 from whatifs.core import set_setting, iso, FAKE, WORK, S
+from whatifs import notify as NT
 
 DEMO = """[calm] Right now, about eight billion people have fingernails. And every week... we cut a little bit off.
 [tension] So picture this. At exactly noon, everyone on Earth drops their clippings into the ocean. At once.
@@ -29,7 +30,9 @@ def main(backend=None):
             try: _, url = PUB.drive_upload(path, os.path.basename(path), public=True); html.append(f"<li><a href='{url}'>Voice {k}</a> ({vp})</li>")
             except Exception as e: html.append(f"<li>Voice {k}: see GitHub artifact ({e})</li>")
         html.append("</ul><p>E is voice C with the human pacing switched off, for comparison. If you don't choose within 72 hours, A is used.</p>")
-        PUB.email("Fallback narrator voice (optional - your designed character voices are used)", "".join(html))      # v10.2 (#9)
+        NT.mail("voice_pick", "Fallback narrator voice (optional - your designed character voices are used)", "".join(html), buttons=[("Noted", "NOTED")],      # v10.2 (#9)
+                default="voice A is used", expires_h=S("VOICE_WAIT_HOURS", float),          # v12 B-OWNER: what the tick does at silence (manage: VOICE_WAIT_HOURS)
+                text="Voice samples are in your e-mail. To choose one, type A, B, C or D in the Sheet's VOICE cell.")
     return links
 
 if __name__ == "__main__":

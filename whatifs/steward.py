@@ -104,7 +104,9 @@ def report_failure(role, mid, err):
         try:
             from whatifs import notify as NT
             NT.send("model_dead", f"The {role} model {mid} stopped working and no approved replacement fits the price rule. Videos continue with what still works; please choose a model (Discuss).",
-                    [("Discuss", f"DISCUSS model {role}")], tier="now", urgent=True, dedupe_key=f"dead|{mid}")
+                    [("Discuss", f"DISCUSS model {role}")], tier="now", urgent=True, dedupe_key=f"dead|{mid}",
+                    default="videos continue with what still works" if S("TWO_SCREENS_ON", bool) else None,      # v12 B-OWNER (PART 7): a card says what his silence does, and when
+                    expires_h=72 if S("TWO_SCREENS_ON", bool) else None)
         except Exception: pass
     return None
 

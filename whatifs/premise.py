@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib, json, random, re
 from whatifs.core import S, store, safe_rows, safe_append, log, iso, set_setting, now_utc, scrub
 from whatifs import prompts as P
+from whatifs import notify as NT
 
 def below_bar_note(kind, best, bar, episode=None):
     """v8.11 (SKIP_IF_BELOW_BAR = FALSE): what was shipped below the bar, kept with the episode and mailed once by the room."""
@@ -15,7 +16,7 @@ def below_bar_mail(episode, notes, title=""):
     try:
         from whatifs import publish as PUB
         li = "".join(f"<li>{n['kind']}: best score {n['best']} (bar {n['bar']})</li>" for n in notes)
-        PUB.email("A video was made below the quality bar (best version used)",
+        NT.mail("below_bar", "A video was made below the quality bar (best version used)", episode=episode, html=
                   f"<p>Episode {episode or ''} {title or ''}: no slot was skipped, so the best-scoring version was made.</p><ul>{li}</ul>"
                   "<p>Every score is in the Premise_Scores and Owners_Cut tabs. To steer the next one, add a note in the Craft_Notebook tab. "
                   "To skip such slots instead, set SKIP_IF_BELOW_BAR to TRUE.</p>")
@@ -287,7 +288,7 @@ def skip_slot(why, episode=None, slot=None):
         try: store().update("Episodes", "episode_id", episode, {"status": "SKIPPED", "notes": str(why)[:380], "updated": iso()})
         except Exception: pass
     log(f"slot skipped: {why}", "WARN", episode)
-    PUB.email("A slot was skipped: nothing reached the quality bar",
+    NT.mail("slot_skipped", "A slot was skipped: nothing reached the quality bar", episode=episode, html=
               f"<p>Slot {slot or ''} ({episode or ''}) was <b>skipped</b>. Nothing was spent on pictures.</p><p>{why}</p>"
               "<p>Quality over quantity: no video was made below the bar. The next slot tries again with fresh ideas. To guide it, add a note in the "
               "Craft_Notebook tab, or lower PREMISE_MIN_SCORE / OWNERS_CUT_MIN in Settings.</p>")

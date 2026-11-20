@@ -2,6 +2,7 @@
 from __future__ import annotations
 import json
 from whatifs.core import S, log, store, iso, now_utc, month_spend, set_setting, JOB
+from whatifs import notify as NT
 
 # ---------------------------------------------------------------- the cost model: ONE table of lines (v12 V2d)
 TEXT = ("text:", "vision", "batch")          # what the writing lines stand for in the paid-call counter: every text call, vision check and batch submission
@@ -164,7 +165,7 @@ def spend_monitor():
     if out:
         set_setting("SPEND_WARN_SENT", ",".join(sent.split(",")[-12:]))
         try:
-            PUB.email(f"Budget: {max(out)}% of this month's cap used",
+            NT.mail("budget_pct", f"Budget: {max(out)}% of this month's cap used",
                       f"<p>Spent about Rs {spent:.0f} of Rs {cap:.0f} this month. New videos still start only while the month can pay for a complete one "
                       "(pictures and clips are never cut to make room). Measured vs estimated AI cost per video: the 'ai_per_video_summary' rows in Cost_Log.</p>")
         except Exception as e: log(f"spend warning not sent: {str(e)[:120]}", "WARN")
@@ -204,7 +205,7 @@ def ladder_mail(episode):
     steps = ["optional reviews (table-read objections, the Director's script read) were dropped", "Owner's Cut rewrites were limited to 1",
              "only cached / already-made assets were reused"][:lvl]
     try:
-        PUB.email("Video finished with AI-side savings (cost overrun)", f"<p>Episode {episode}: the AI writing cost ran above {S('OVERRUN_FACTOR')}x its estimate, so: "
+        NT.mail("cost_overrun", "Video finished with AI-side savings (cost overrun)", dedupe_key=f"overrun|{episode}", html=f"<p>Episode {episode}: the AI writing cost ran above {S('OVERRUN_FACTOR')}x its estimate, so: "
                   + "; ".join(steps) + ". Pictures, living stills and Kling clips were NOT reduced. Details: Cost_Log and Cache_Stats.</p>")
         return True
     except Exception as e:
@@ -237,7 +238,7 @@ def weekly_deviation_mail():
     if not dev: return False
     from whatifs import publish as PUB
     li = "".join(f"<li>{s}: measured Rs {m} per video vs estimated Rs {e} ({p:+d}%)</li>" for s, m, e, p in dev)
-    PUB.email("Weekly cost check: estimate vs measured", f"<ul>{li}</ul><p>Estimates are planning numbers in Settings; nothing was changed automatically.</p>")
+    NT.mail("cost_check", "Weekly cost check: estimate vs measured", f"<ul>{li}</ul><p>Estimates are planning numbers in Settings; nothing was changed automatically.</p>")
     return True
 
 def preview_cost_flags(draft_id):
@@ -259,7 +260,7 @@ def kids_check(vid, episode=None):
     mfk = st_.get("madeForKids")
     if mfk is True:
         try:
-            PUB.email("URGENT: YouTube marked a video as made for kids",
+            NT.mail("kids_flag", "URGENT: YouTube marked a video as made for kids", dedupe_key=f"kids|{vid}", html=
                       f"<p>Video {vid} ({episode or ''}) is now 'made for kids' on YouTube (comments, notifications and personalised ads are off). "
                       "We uploaded it as NOT made for kids. Check it in YouTube Studio; if you disagree, change the audience setting there.</p>")
         except Exception as e: log(f"kids alert not sent: {str(e)[:120]}", "WARN", episode)

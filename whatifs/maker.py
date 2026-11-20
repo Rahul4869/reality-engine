@@ -75,7 +75,8 @@ def ask(ref, title, key=None):
     """The SECOND message at a Short's row (one message takes one answer): the how-to first - the digest shows 160 characters of a queued message."""
     from whatifs import notify as NT
     return NT.send("maker_line", _ask_text(ref, title), [("My line", f"LINE {ref}")], episode=ref, tier="week", expires_h=S("OWNER_VERDICT_EXPIRES_H", float),
-                   dedupe_key=key or f"makerline|{ref}")
+                   dedupe_key=key or f"makerline|{ref}",
+                   default="no line: the film ends without it" if S("TWO_SCREENS_ON", bool) else None)      # v12 B-OWNER (PART 7): a card says what his silence does
 
 def late(topic):
     """Has the long video of this topic been planned already? (a row of tab Ladder with this topic is USED - DESIGN QUESTION 14)"""

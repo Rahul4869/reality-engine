@@ -101,12 +101,16 @@ def main():
         why = ("the fix adds new network/key/shell code: " + ", ".join(risky)) if risky else ("this file guards money, quality or publishing, so it is never merged automatically" if protected else "AUTO_MERGE_REPAIRS is FALSE")
         print("not auto-merged:", why)
         subprocess.run(["gh", "pr", "comment", br, "--body", "Waiting for the owner: " + why + ". Open Files changed, then Merge if it looks right (or ask Claude)."], check=False)
-        try:
-            from whatifs.publish import email
-            email("A code repair is waiting for you", f"<p>The Repair Bot fixed <b>{rel}</b> and all tests passed, but it was not merged automatically because {why}.</p>"
-                  "<p>Open the repo, Pull requests tab, read it (or paste it to Claude), then press Merge. Nothing else is needed.</p>")
-        except Exception as e: print("email failed:", str(e)[:120])
+        _tell_owner(rel, why)
     return 0
+
+def _tell_owner(rel, why):
+    """The owner's one message when a repair waits for his Merge (v12 B-OWNER: the one road - e-mail is the copy, both screens get the row). Never raises."""
+    try:
+        from whatifs import notify as NT
+        NT.mail("repair_waiting", "A code repair is waiting for you", f"<p>The Repair Bot fixed <b>{rel}</b> and all tests passed, but it was not merged automatically because {why}.</p>"
+                "<p>Open the repo, Pull requests tab, read it (or paste it to Claude), then press Merge. Nothing else is needed.</p>")
+    except Exception as e: print("email failed:", str(e)[:120])
 
 if __name__ == "__main__":
     sys.exit(main())

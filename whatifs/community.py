@@ -2,6 +2,7 @@
 from __future__ import annotations
 import json, re, datetime as dt
 from whatifs.core import S, log, store, iso, now_utc, parse_iso, FAKE, set_setting
+from whatifs import notify as NT
 
 BAD = re.compile(r"https?://|www\.|\.com\b|@\w|telegram|whatsapp|crypto|giveaway|sub4sub|f+u+c+k|sh[i1]t|n[i1]gg|kill yourself|kys", re.I)
 
@@ -72,7 +73,7 @@ def post_jury_comment(ep_row, plan):
     st.append("Comment_Queue", [{"ts": iso(), "episode_id": ep_row["episode_id"], "comment_id": "", "author": "channel", "kind": "jury_comment", "text": txt[:500],
                                  "draft": "", "status": "POSTED" if ok else "FAILED", "replied_at": ""}])
     if ok:
-        try: PUB.email("Pin this comment (the API cannot pin)", f"<p>Video {ep_row['yt_id']}: please pin the Nana Rosa comment that starts with “⚖️ Nana Rosa”.</p>", kind="info")
+        try: NT.mail("pin_comment", "Pin this comment (the API cannot pin)", level="info", buttons=[("Done", "DONE")], default="the comment stays unpinned", expires_h=48, dedupe_key=f"pin|{ep_row['yt_id']}", html=f"<p>Video {ep_row['yt_id']}: please pin the Nana Rosa comment that starts with “⚖️ Nana Rosa”.</p>")
         except Exception: pass
     return ok
 
@@ -109,7 +110,7 @@ def weekly_digest():
     from whatifs import publish as PUB
     import html
     li = "".join(f"<li>[{r['kind']}] {html.escape(r.get('author', ''))}: {html.escape(r.get('text', '')[:200])}</li>" for r in q)
-    PUB.email("Weekly comments digest", f"<p>Questions and feedback waiting (comment text is shown as written by viewers):</p><ul>{li}</ul>", kind="essential")
+    NT.mail("comments_digest", "Weekly comments digest", f"<p>Questions and feedback waiting (comment text is shown as written by viewers):</p><ul>{li}</ul>", level="essential")
     return True
 
 # ---------------------------------------------------------------- Season + Experiments
@@ -144,8 +145,8 @@ def experiment_results(ep, vid, release, metrics):
         targets = [x.strip().upper() for x in str(S("TARGET_REGIONS") or "").split(",") if x.strip()]
         if share >= S("REGION_DOMINANCE_SHARE", float):
             from whatifs import publish as PUB
-            try: PUB.email(f"One region dominates ({top} {share:.0%})", f"<p>{ep}: {share:.0%} of views come from {top}" + ("" if top in targets else f", which is not in TARGET_REGIONS ({', '.join(targets)})")
-                           + ". Nothing was changed; consider the publish time and premise relevance.</p>", kind="info")
+            try: NT.mail("region", f"One region dominates ({top} {share:.0%})", level="info", dedupe_key=f"region|{ep}", html=f"<p>{ep}: {share:.0%} of views come from {top}" + ("" if top in targets else f", which is not in TARGET_REGIONS ({', '.join(targets)})")
+                           + ". Nothing was changed; consider the publish time and premise relevance.</p>")
             except Exception: pass
     return col
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json, re
 import datetime as dt
 from whatifs.core import S, log, store, iso, now_utc, parse_iso, env, FAKE, set_setting
+from whatifs import notify as NT
 
 # Hook shapes adapted (ideas only, not installed) from the MIT-licensed open-source YouTube agent skill pack; credited in docs/ARCHIVE/CHANGES.md (history).
 HOOK_SHAPES = {"statistic": "The Statistic (a number with its stated source)", "contrarian": "Contrarian Flip", "reveal": "The Reveal", "clock": "The Clock",
@@ -80,7 +81,9 @@ def record(ep, vid, vs, thumbs):
         from whatifs import publish as PUB
         li = "".join(f"<li><b>{v['key']}</b>: {v['title']} — thumbnail text “{v['thumb_text']}” <a href='{pick_link(ep, v['key'])}'>Pick {v['key']}</a></li>" for v in vs)
         dl = pick_deadline(ep); when = dl.strftime("%a %d %b %H:%M UTC") if dl else f"{S('THUMB_APPROVAL_HOURS')} hours"
-        try: PUB.email(f"Pick the title + thumbnail ({ep})", f"<p>The video is scheduled with A. Pick another before <b>{when}</b> (2 hours before release) and it is "
+        btns = [("Keep A" if v["key"] == "A" else f"Pick {v['key']}", f"PICK {ep} {v['key']}") for v in vs]      # v12 B-OWNER: the mail's own picks, one tap each
+        hrs = max(0.01, (dl - now_utc()).total_seconds() / 3600) if dl else S("THUMB_APPROVAL_HOURS", float)        # the card expires at the pick deadline
+        try: NT.mail("title_pick", f"Pick the title + thumbnail ({ep})", buttons=btns, episode=ep, default="A goes out", expires_h=hrs, html=f"<p>The video is scheduled with A. Pick another before <b>{when}</b> (2 hours before release) and it is "
                        f"switched before release; no pick = A stays.</p><ul>{li}</ul>"
                        f"<p>Optional, after release: YouTube's own A/B test (Studio on a computer, or Chrome on your phone with Desktop site): "
                        f"<a href='https://studio.youtube.com/video/{vid}/edit'>open this video in Studio</a> → Test &amp; Compare.</p>")
@@ -119,7 +122,7 @@ def _remember_pick(rows, key):
 def _pick_reply(ep, text):
     try:
         from whatifs import publish as PUB
-        PUB.email(f"Your pick for {ep}: {text}", f"<p>{text}</p>")
+        NT.mail("pick_ack", f"Your pick for {ep}: {text}", f"<p>{text}</p>", episode=ep)
     except Exception as e: log(f"pick reply not sent: {str(e)[:120]}", "WARN", ep)
 
 def apply_pick(title):

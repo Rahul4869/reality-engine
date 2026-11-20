@@ -153,15 +153,16 @@ def _shape(kind, episode, buttons, default, expires_h, dedupe_key):
     return buttons, default, expires_h, dedupe_key
 
 
-def mail(kind, subject, html, level="essential", screens=True, buttons=(), episode=None, default=None, expires_h=None, dedupe_key=None):
+def mail(kind, subject, html, level="essential", screens=True, buttons=(), episode=None, default=None, expires_h=None, dedupe_key=None, text=None):
     """v12 B-OWNER (ONE ROAD, item 149): every mail to him goes through here - e-mail is only the copy. TWO_SCREENS_ON FALSE = the call of today, word
     for word. TRUE = the e-mail goes exactly as today (his storage); then, when `screens`, the same message is a row of its kind (`send`), so WhatsApp
-    and the dashboard carry it (screens=False: the screens carry it already through another row). Returns the row id, or the mail's own result."""
+    and the dashboard carry it (screens=False: the screens carry it already through another row). `text` = the row's own words where the mail holds
+    what no screen may show (a script, an unreleased premise: rows 32 and 38 of PART 2's table). Returns the row id, or the mail's own result."""
     from whatifs import publish as PUB                     # looked up on the module at call time: the older tests replace PUB.email
     if not _on(): return PUB.email(subject, html, kind=level)
     sent = PUB.email(subject, html, kind=level)
     if not screens: return sent
-    return send(kind, _plain(str(subject) + ". " + str(html)), buttons, episode, tier="week", default=default, expires_h=expires_h, dedupe_key=dedupe_key, mailed=True)
+    return send(kind, text or _plain(str(subject) + ". " + str(html)), buttons, episode, tier="week", default=default, expires_h=expires_h, dedupe_key=dedupe_key, mailed=True)
 
 
 def _email_body(row):

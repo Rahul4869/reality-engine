@@ -2,6 +2,7 @@
 from __future__ import annotations
 import base64, html, json, re, zlib
 from whatifs.core import S, store, log, iso, now_utc, env, JOB, flush_log, set_setting, scrub, safe_rows
+from whatifs import notify as NT
 
 def _pack(obj):
     return "z:" + base64.b64encode(zlib.compress(json.dumps(obj, ensure_ascii=False, default=str).encode(), 9)).decode()
@@ -61,7 +62,7 @@ def run(mode="preview"):
         if sid: room["org_session"] = sid                         # production adopts this draft only with this run's proof (runner.work adopt=)
         d["ladder"] = str(room["spine"].get("ladder") or LAD.claim() or "")      # v12 V2c-b: the draft carries where its topic comes from; production uses the row up when it adopts the draft
     except (PR.SkipSlot, CR.BelowBar) as e:
-        if not pre: PUB.email("Script Preview: nothing reached the bar", f"<p>No draft was saved. {html.escape(str(e))}</p><p>Every pitch and score is in the Premise_Scores tab.</p>")
+        if not pre: NT.mail("preview_none", "Script Preview: nothing reached the bar", f"<p>No draft was saved. {html.escape(str(e))}</p><p>Every pitch and score is in the Premise_Scores tab.</p>")
         log(f"preview: {e}", "WARN"); flush_log(); return {"ok": False, "why": str(e)[:300]}
     clean, _, _b = _strip_beats(room["script"]["script"]); units = approx_units(clean)      # v12 V2b: _strip_beats also returns the beat of every line
     import time as _t9; t_sp = _t9.time()
@@ -104,7 +105,9 @@ def run(mode="preview"):
                  "".join(f"<li>{html.escape(k)}: Rs {v:.1f}</li>" for k, v in sorted(per.items(), key=lambda kv: -kv[1])) + f"</ul><p>Total Rs {sum(per.values()):.0f}</p>"
                  "<h3>Time by stage</h3><ul>" + "".join(f"<li>{html.escape(k)}: {v / 60:.1f} min</li>" for k, v in tt.items()) + f"</ul><p>Total {sum(tt.values()) / 60:.1f} min</p>")
     except Exception as e: log(f"preview breakdown skipped: {scrub(e)[:120]}", "WARN")
-    PUB.email(f"Script Preview: {title[:60]}", body)
+    NT.mail("script_preview", f"Script Preview: {title[:60]}", body, buttons=[("Approve", f"APPROVE {draft}"), ("Reject", f"REJECT {draft}")],      # v12 B-OWNER: the mail's own two links
+            default="the draft is not used: the next slot writes its own script", expires_h=72, dedupe_key=f"preview|{draft}",
+            text="A script preview is ready. It is in your e-mail.")                                                   # the title is an unreleased premise: never on a screen
     log(f"preview {draft} saved as DRAFT (premise not used up)"); flush_log()
     return {"ok": True, "draft": draft, "est_cost_inr": est, "shots": len(shots)}
 
@@ -117,15 +120,14 @@ def decide(title):
         from whatifs import packaging as PK
         return PK.apply_pick(title)
     ma = re.match(r"^ACT (A\d{17,24}) (.+)$", str(title or "").strip())
-    if ma:                                                         # v9.4a (WP4): an owner answer to an Owner_Actions row
-        from whatifs import notify as NT
+    if ma:                                                         # v9.4a (WP4): an owner answer to an Owner_Actions row (NT: the module's own import - a local one here would hide it from the MODE branch)
         return NT.answer(ma.group(1), ma.group(2).strip())
     mm = re.match(r"^MODE (STANDARD|RUNWAY)$", str(title or "").strip().upper())
     if mm:                                                         # v9.4a (decision 8): the owner's one tap switches the budget mode
         set_setting("BUDGET_MODE", mm.group(1).lower())
         try:
             from whatifs import publish as PUB, governor as G
-            PUB.email(f"Budget mode: {mm.group(1).title()}", f"<p>Now {mm.group(1).title()}: cap about Rs {G.cap_inr():.0f} a month, at most {G.max_long_videos()} long videos, publishing {G.publish_days()}.</p>")
+            NT.mail("mode_ack", f"Budget mode: {mm.group(1).title()}", f"<p>Now {mm.group(1).title()}: cap about Rs {G.cap_inr():.0f} a month, at most {G.max_long_videos()} long videos, publishing {G.publish_days()}.</p>")
         except Exception as e: log(f"mode reply not sent: {scrub(e)[:120]}", "WARN")
         log(f"budget mode set to {mm.group(1).lower()} by the owner"); flush_log(); return mm.group(1).lower()
     m = re.match(r"^(APPROVE|REJECT) (DRAFT\d{8,14})$", str(title or "").strip())

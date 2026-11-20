@@ -2,6 +2,7 @@
 from __future__ import annotations
 import os, subprocess, tempfile
 from whatifs.core import S, log, set_setting, iso, now_utc, parse_iso, FAKE
+from whatifs import notify as NT
 
 _FAKE_RESULT = ["unlisted"]          # tests set this to "private" to simulate a locked project
 
@@ -85,7 +86,7 @@ def lock_detected(vid, issues):
     set_setting("UPLOAD_LOCK_ALERT_AT", iso())
     try:
         from whatifs import publish as PUB
-        PUB.email("URGENT: YouTube is keeping uploads private again",
+        NT.mail("uploads_private", "URGENT: YouTube is keeping uploads private again", dedupe_key="uploads_private", html=
                   "<p>An upload came back <b>private</b> even though the pipeline asked for it to be visible. New videos are paused, so no money is spent on videos nobody can see.</p>"
                   f"<p>Video: <a href='https://studio.youtube.com/video/{vid}/edit'>open in Studio</a>.</p>"
                   "<p>What happens next: your build chat files the YouTube API audit form for you (master file Section 4, Answer Bank). Until Google approves it, "

@@ -2,6 +2,13 @@
 from __future__ import annotations
 import hashlib, os, re
 from whatifs.core import S, log, store, iso, WORK, env, set_setting
+from whatifs import notify as NT
+
+def _review_card():
+    """v12 B-OWNER (rows 34 and 35 of PART 2's table): what the sheets' review card does at his silence - `auto_lock` locks them after
+    SHEETS_DEFAULT_LOCK_H hours; when that cell is 0 they stay drafts (the card still closes after 72 hours)."""
+    h = S("SHEETS_DEFAULT_LOCK_H", float)
+    return ("they lock by themselves", h) if h > 0 else ("they stay drafts", 72.0)
 
 EXPRESSIONS = ["neutral", "smug", "outraged", "delighted", "sceptical", "shocked", "thinking", "defeated", "triumphant", "whispering", "laughing", "stern"]
 LOOK = ("stylized 3D puppet look (Toybox Noir): felt and clay materials, one hard noir key light, same person as the reference image; "
@@ -46,7 +53,7 @@ def masters(limit=None):
     """Make the missing master portraits (reference-based, inside the lifetime cap). Nothing is LOCKED by code: the owner approves."""
     from whatifs import anim as ANIM, publish as PUB, specials as SP
     st = store(); have = {r.get("hash"): r for r in st.rows("Character_Sheets")}; cap = S("CHARACTER_SHEET_IMAGE_CAP", int)
-    made = 0; out_dir = os.path.join(WORK, "sheets"); os.makedirs(out_dir, exist_ok=True)
+    made = 0; out_dir = os.path.join(WORK, "sheets"); os.makedirs(out_dir, exist_ok=True); done = []
     for p in masters_plan():
         if p["hash"] in have and have[p["hash"]].get("file"): continue
         if used() >= cap or (limit and made >= limit): break
@@ -57,10 +64,12 @@ def masters(limit=None):
             sc = identity_score(ref, path, p["character"]) if ref else None
             fid = PUB.drive_upload(path, os.path.basename(path))[0]
             st.append("Character_Sheets", [{"ts": iso(), "character": p["character"], "expression": "master", "hash": p["hash"], "prompt": p["prompt"][:400],
-                                            "file": "drive:" + fid, "status": f"DRAFT (identity {sc:.0f}/10)" if sc is not None else "DRAFT", "approved_at": ""}]); made += 1
+                                            "file": "drive:" + fid, "status": f"DRAFT (identity {sc:.0f}/10)" if sc is not None else "DRAFT", "approved_at": ""}]); made += 1; done.append(p["character"])
         except Exception as e: log(f"master portrait {p['character']} failed: {str(e)[:120]}", "WARN")
     if made:
-        try: PUB.email("New Toybox Noir character masters to approve", f"<p>{made} master portrait(s) in Drive (Character_Sheets tab, expression 'master'), made from your approved portraits. "
+        dflt, hrs = _review_card()
+        try: NT.mail("sheets_review", "New Toybox Noir character masters to approve", buttons=[(f"Approve {c}", f"APPROVE SHEET {c}") for c in sorted(set(done))],
+                     default=dflt, expires_h=hrs, dedupe_key=f"sheets|{NT._india_day()}", html=f"<p>{made} master portrait(s) in Drive (Character_Sheets tab, expression 'master'), made from your approved portraits. "
                        f"Approve to LOCK them; animated scenes then use them as the face reference. Lifetime images used: {used()} of {cap}.</p>")
         except Exception: pass
     return {"made": made, "have": used()}
@@ -95,7 +104,9 @@ def run(limit=None):
             from urllib.parse import quote
             repo = env("GH_REPO"); chars = sorted({p["character"] for p in plan()})
             links = "".join(f"<li>{c}: <a href='https://github.com/{repo}/issues/new?title={quote('APPROVE SHEET ' + c)}'>APPROVE</a></li>" for c in chars) if repo else ""
-            PUB.email("Character sheets ready to review", f"<p>{made} new image(s) in Drive (Character_Sheets tab). Approving locks them; CHARACTER_THEATER_ON stays FALSE "
+            dflt, hrs = _review_card()
+            NT.mail("sheets_review", "Character sheets ready to review", buttons=[(f"Approve {c}", f"APPROVE SHEET {c}") for c in chars],
+                    default=dflt, expires_h=hrs, dedupe_key=f"sheets|{NT._india_day()}", html=f"<p>{made} new image(s) in Drive (Character_Sheets tab). Approving locks them; CHARACTER_THEATER_ON stays FALSE "
                       f"until you switch it on.</p><ul>{links}</ul><p>Lifetime images used: {used()} of {cap}.</p>")
         except Exception: pass
     return {"made": made, "skipped_cap": skipped, "have": used()}
@@ -119,7 +130,7 @@ def auto_lock(now=None):
         set_setting("CHARACTER_THEATER_ON", "TRUE"); set_setting("SHEETS_THEATER_AUTO_ON_AT", iso())
         try:
             from whatifs import publish as PUB
-            PUB.email("Character sheets locked by default", f"<p>{n} sheet image(s) were locked after {int(h)} hours without a reply, and the characters now appear on screen "
+            NT.mail("sheets_locked", "Character sheets locked by default", f"<p>{n} sheet image(s) were locked after {int(h)} hours without a reply, and the characters now appear on screen "
                       "(CHARACTER_THEATER_ON = TRUE). To switch them off: Settings -> CHARACTER_THEATER_ON = FALSE (or the toggle in Mission Control once it is live). "
                       "To remake one image: REDO SHEET VALE smug.</p>")
         except Exception: pass
@@ -181,7 +192,7 @@ def style_samples():
             "It applies to every picture, the 4 animated scenes, the masters and the cast intro.",
             [("Photoreal", "STYLE photoreal"), ("Toybox Noir", "STYLE toybox_noir"), ("Illustrated", "STYLE illustrated")],
             tier="now", urgent=True, default="Toybox Noir stays", expires_h=96, dedupe_key="style_pick")
-    try: PUB.email("Pick the look of your show (3 styles, your characters)", f"<p>The comparison board: <a href='{link}'>{link}</a></p><p>Reply on WhatsApp or the dashboard with your pick.</p>")
+    try: NT.mail("style_pick", "Pick the look of your show (3 styles, your characters)", f"<p>The comparison board: <a href='{link}'>{link}</a></p><p>Reply on WhatsApp or the dashboard with your pick.</p>", screens=False)
     except Exception: pass
     set_setting("STYLE_SAMPLES_REQUEST", "DONE " + iso())
     return {"ok": True, "board": board, "drive": fid}

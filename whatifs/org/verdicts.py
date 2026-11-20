@@ -105,7 +105,8 @@ def _ask(ref, kind, title, url, key=None):
     text = (f"Your verdict on the new {'Short' if kind == 'short' else 'video'} '{title}': {url} - one tap. If you want to say why: tab Owner_Verdicts, row {ref}, "
             f"column text - your Sheet is private; the mail link's title is a public page, never type the why there.")
     return NT.send("owner_verdict", text, [("Good", f"VERDICT {ref} UP"), ("Not good", f"VERDICT {ref} DOWN")], episode=ref, tier="now",
-                   expires_h=S("OWNER_VERDICT_EXPIRES_H", float), dedupe_key=key or f"verdict|{ref}")
+                   expires_h=S("OWNER_VERDICT_EXPIRES_H", float), dedupe_key=key or f"verdict|{ref}",
+                   default="no verdict is recorded" if S("TWO_SCREENS_ON", bool) else None)      # v12 B-OWNER (PART 7): a card says what his silence does
 
 def told(ref, key):
     """Was he told this already? Kept on the row (column `told`, written by code only): True when the key is there; else it is added and False."""
