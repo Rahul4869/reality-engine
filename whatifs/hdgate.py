@@ -203,6 +203,7 @@ def long_line(e, got, now):
     slot = parse_iso(e.get("slot_et")); pa = parse_iso(e.get("public_at")); up = parse_iso(e.get("uploaded_at"))
     went = min(pa or slot or now, now)
     head = f"public {_mins(up, went)} min after upload" if up else "public (its upload time is not on record)"
+    if not got: return head + "; HD not read (YouTube could not be read)"          # R18 (5): a read that failed is neither HD nor a miss
     if got.get("hd"): return head + "; HD yes"
     at_cap = bool(pa and slot and pa >= slot + dt.timedelta(minutes=S("HD_LONG_CAP_MIN", float)))
     return head + ("; HD NO (the cap)" if at_cap else "; HD NO")

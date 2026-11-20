@@ -666,3 +666,13 @@ def test_his_window_says_nothing_on_a_failed_read_or_to_a_public_video(monkeypat
     monkeypatch.setattr(PUB, "yt_read", real); PUB.yt_set_privacy(vid, "public")                    # his own hand in Studio, before the slot
     HG.long_tick(_t(4, 0)); assert not _rows("prepublic") and not _rows("hd_late")
     _long("EPL13"); HG.long_tick(_t(4, 30)); assert [r["episode_id"] for r in _rows("prepublic")] == ["EPL13"]      # a private, ready video still gets its one card
+
+def test_a_failed_read_writes_no_miss_on_the_receipt(monkeypatch, setting, gate_on):
+    """PART 9 (the receipt; item 156 BINDS 4) with R18 (5) - FOUND AT THE FINISH (CD-2): `manage.release` writes the long video's `hd_gate` line once,
+    from `long_line(e, yt_read(...) or {}, ...)`; a read that failed there was written for good as "HD NO" - a miss the monthly audit would count for a
+    video nobody read. A failed read says so on the receipt."""
+    from whatifs import manage as MG
+    _quiet(monkeypatch); monkeypatch.setattr(MG, "_fetch_release", lambda ep, assets=None: {"pinned": ""}); monkeypatch.setattr(PUB, "yt_comment", lambda *a, **k: True)
+    vid = _long("EPL14"); PUB.yt_set_privacy(vid, "public"); monkeypatch.setattr(MG, "now_utc", lambda: SLOT + 20 * M)
+    monkeypatch.setattr(PUB, "yt_read", lambda v: {}); MG.release("EPL14")
+    assert _ep("EPL14")["hd_gate"] == "public 1800 min after upload; HD not read (YouTube could not be read)"
