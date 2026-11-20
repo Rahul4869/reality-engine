@@ -1429,3 +1429,19 @@ def test_the_never_list_knows_a_phrase_never_a_word():
     for ask in ("Join an engagement pod with other channels.", "Let's use view bots for the first hour.", "Buy some bots.", "Bots for views would help.",
                 "Just delete all old videos.", "Delete that Short.", "Copy that channel's video", "Copy another channel's script."):
         assert DESK.never(ask) is not None, ask
+
+def test_his_answer_holds_no_bookkeeping_and_one_full_stop(monkeypatch, setting):
+    """PART 5 (item 145: his messages read as a person's). FOUND AT THE FINISH: the tick's own count of tries ("[tries 1]") reached the morning message
+    and the dashboard, and four of `decide`'s answers ended with two full stops. The count stays on the tab; he reads the sentence."""
+    _desk_on(setting)
+    def fail(text): raise RuntimeError("the model did not answer")
+    monkeypatch.setattr(DESK, "weigh", fail)
+    DESK.take("More of the night sky in every Short, please.", "dashboard", ref="act-t")
+    assert "[tries 1]" in _desk_rows()[-1]["how"]                                                         # the tab keeps the count: the next tick reads it
+    told = DESK.lines(); page = DS.build_snapshot()["inputs"]
+    assert len(told) == 1 and "[tries" not in told[0] and "is tried again at the next tick." in told[0], told
+    assert page[0]["answer"].endswith("is tried again at the next tick.") and "[tries" not in page[0]["answer"], page
+    _labels(monkeypatch, kind="video_idea", department="none", raises_breakout=False)
+    _n, line = DESK.take("What if the Moon was a mirror?", "dashboard", ref="act-u")
+    assert line.endswith("send it on WhatsApp as a brief.") and not line.endswith(".."), line
+    assert all(".. " not in l and not l.endswith("..") for l in DESK.lines()), DESK.lines()

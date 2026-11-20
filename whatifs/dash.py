@@ -207,7 +207,7 @@ def _inputs(two):
     from whatifs.org import desk as DESK
     rows = sorted(store().rows(DESK.DESK), key=lambda r: int(_f(r.get("n"))), reverse=True)[:20]
     return [{"n": int(_f(r.get("n"))), "at": r.get("ts") or "", "text": str(r.get("verbatim") or ""), "verdict": DESK.SHOWN.get(r.get("verdict"), r.get("verdict") or ""),
-             "answer": str(r.get("how") or ""), "channel": r.get("channel") or "sheet"} for r in rows]
+             "answer": DESK._said(r) if r.get("how") else "", "channel": r.get("channel") or "sheet"} for r in rows]
 
 def _section(fn, *a):
     """One part of the learning or the plan; a part that fails says so and never stops the snapshot."""

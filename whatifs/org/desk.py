@@ -121,7 +121,8 @@ def lines(now=None, st=None):
         if two and not r.get("verdict") and not r.get("how"): continue                     # v12 B-OWNER: still being read - nothing to answer yet
         txt = str(r.get("verbatim") or "").replace("\n", " ")
         word = SHOWN.get(r.get("verdict"), r.get("verdict")) if two else r.get("verdict")
-        line = f"Your input {r['n']} (\"{txt[:80]}\"): " + (f"{word} - {r.get('how')}." if word else f"{r.get('how')}.")
+        tail = _said(r) if two else f"{r.get('how')}."                                     # the older path keeps its words
+        line = f"Your input {r['n']} (\"{txt[:80]}\"): " + (f"{word} - {tail}" if word else tail)
         a = next((x for x in st.rows("Owner_Actions") if x.get("id") == r.get("action")), None) if r.get("action") else None
         if a and two and a.get("kind") == "idea": line += " Build it: " + NT.link("BUILD", a["id"])
         elif a and two and r.get("verdict") == "TAKEN": line += " Take it back: " + NT.link(f"DESK UNDO {r['n']}", a["id"])
@@ -331,8 +332,12 @@ def weigh_row(ref, now=None, waiting=False):
     except Exception as e: log(f"desk: the owner memo of input {n} was not closed: {scrub(e)[:160]}", "WARN")
     return "" if r.get("verdict") == "ANSWERED" and (waiting or r.get("channel") == "whatsapp") else _line(r)      # a question: the chat's reply is the answer
 
+def _said(r):
+    """FINISHED BY FABLE (CB-3): a row's `how` as he reads it - without the tick's own count of tries, ending in ONE full stop."""
+    return re.sub(r"\s*\[tries \d+\]", "", str(r.get("how") or "")).rstrip(". ") + "."
+
 def _line(r):
-    return f"Your input {r['n']}: {SHOWN.get(r.get('verdict'), r.get('verdict'))} - {r.get('how')}."
+    return f"Your input {r['n']}: {SHOWN.get(r.get('verdict'), r.get('verdict'))} - {_said(r)}"
 
 def _tick_two(now=None):
     """v12 B-OWNER: the tab Owner_Input stays the third channel (a new line by its sha, as today); then every row whose verdict is "" is weighed. An
