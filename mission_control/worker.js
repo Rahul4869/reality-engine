@@ -11,6 +11,8 @@
  *        GET  /app/<APP_PATH>/api/snapshot  the latest snapshot JSON (KV key "snapshot")
  *        GET  /app/<APP_PATH>/api/thumb/<episode>/<A|B|C>   a thumbnail preview (KV key "thumb:<episode>:<key>")
  *        POST /app/<APP_PATH>/api/action    {verb}  encrypted and forwarded to GitHub as repository_dispatch "dash_action"
+ *        POST /app/<APP_PATH>/api/input     {text, card}  v12 B-OWNER: his typed words (1 to 2,000 characters after trim; card empty or a card's id),
+ *                                            encrypted and forwarded as "dash_action" {id, verb: "INPUT", text, card, ts, src: "dash"}; never logged
  *
  * Secrets (Worker → Settings → Variables and Secrets, type Secret):
  *   WA_VERIFY_TOKEN   random string, also typed into Meta's webhook form
@@ -204,6 +206,15 @@ async function app(req, env, url, root) {
     const img = await env.RE_KV.get(`thumb:${thumb[1]}:${thumb[2]}`, { type: "arrayBuffer" });
     return img ? new Response(img, { headers: { ...secHeaders, "content-type": "image/jpeg", "cache-control": "private, max-age=300" } })
                : new Response("", { status: 404 });
+  }
+  if (rel === "/api/input" && req.method === "POST") {             // v12 B-OWNER (PART 6): his words leave the Worker only encrypted; nothing is logged
+    let body; try { body = await req.json(); } catch (e) { return json({ error: "Bad request" }, 400); }
+    const text = String(body?.text ?? "").trim(), card = String(body?.card ?? "");
+    if (text.length < 1 || text.length > 2000) return json({ error: "Type between 1 and 2,000 characters." }, 400);
+    if (card !== "" && !/^[A-Za-z0-9_.:\-]{1,64}$/.test(card)) return json({ error: "That card is not known." }, 400);
+    const id = crypto.randomUUID();
+    const ok = await dispatch(env, "dash_action", { id, verb: "INPUT", text, card, ts: Date.now(), src: "dash" });
+    return ok ? json({ ok: true, id }) : json({ error: "GitHub did not accept your words. Try again in a minute." }, 502);
   }
   if (rel === "/api/action" && req.method === "POST") {
     let body; try { body = await req.json(); } catch (e) { return json({ error: "Bad request" }, 400); }

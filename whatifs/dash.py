@@ -12,12 +12,31 @@ def _f(v, d=0.0):
     try: return float(v)
     except (TypeError, ValueError): return d
 
+def _two():
+    return S("TWO_SCREENS_ON", bool)
+
+PRIVATE_LINE = "{name}: the text is in WhatsApp and your e-mail."      # v12 B-OWNER (PART 6): a row whose text holds a script or an unreleased premise
+NOTES = {"department_line": "The department line comes with the first batch after the launch.",          # R5-5 (4): where a row's batch has not landed the section says so
+         "treasury": "The savings line, the two pockets and the monthly recharge advice come with the treasury batch after the launch.",
+         "features": "The feature watch comes after the launch.",
+         "appetite": "The appetite readings come with batch V4b."}
+SOURCE_KEYS = ("v", "value", "views", "inr", "pct")      # a number under one of these keys needs a non-empty `src` beside it (P13's lesson)
+
+def _text(r, n=400):
+    """v12 B-OWNER (PART 6): what a row of Owner_Actions shows on the dashboard - its text without tags, or, for a kind whose text holds a script or an
+    unreleased premise (`notify.DASH_PRIVATE`), only the kind's plain name; its buttons still show."""
+    from whatifs import notify as NT
+    if r.get("kind") in NT.DASH_PRIVATE: return PRIVATE_LINE.format(name=NT.name(r.get("kind")))
+    return re.sub(r"<[^>]+>", "", str(r.get("text", "")))[:n]
+
 def _docket():
-    from whatifs import packaging as PK
-    st = store(); cards = []
+    from whatifs import packaging as PK, notify as NT
+    st = store(); cards = []; two = _two()
     from whatifs.notify import INFORM_KINDS
-    for r in st.rows("Owner_Actions"):
-        if r.get("status") not in ("OPEN", "QUEUED") or r.get("tier") == "fyi" or r.get("kind") in INFORM_KINDS: continue      # v12 V4: what was done for him is not waiting
+    for r in (NT.needs(st.rows("Owner_Actions")) if two else st.rows("Owner_Actions")):      # v12 B-OWNER: with the switch on the docket IS "Needs you" (PART 1), of any tier
+        if two:
+            if r.get("kind") in ("title_pick", "sheets_review"): continue      # PART 2: the dashboard builds these two cards itself, from Packaging_Tests and Character_Sheets (below)
+        elif r.get("status") not in ("OPEN", "QUEUED") or r.get("tier") == "fyi" or r.get("kind") in INFORM_KINDS: continue      # v12 V4: what was done for him is not waiting
         btns = json.loads(r.get("buttons") or "[]")
         kind = r.get("kind"); verbs = {}
         if kind == "build_ready":
@@ -26,7 +45,8 @@ def _docket():
         else:
             verbs = {str(lbl)[:24]: f"ACT|{r['id']}|{i}" for i, (lbl, _v) in enumerate(btns)}
         exp = parse_iso(r.get("expires_at")); created = parse_iso(r.get("created"))
-        cards.append({"id": r["id"], "kind": kind, "title": re.sub(r"<[^>]+>", "", r.get("text", ""))[:90], "why": re.sub(r"<[^>]+>", "", r.get("text", ""))[:400],
+        txt = _text(r) if two else re.sub(r"<[^>]+>", "", r.get("text", ""))[:400]
+        cards.append({"id": r["id"], "kind": kind, "title": txt[:90], "why": txt[:400],
                       "default_label": r.get("default_action") or "Nothing happens", "default_at": r.get("expires_at") or "",
                       "window_h": round((exp - created).total_seconds() / 3600) if exp and created else 0, "verbs": verbs})
     # title/thumbnail picks still open (before the 2-hour freeze)
@@ -57,12 +77,31 @@ def _docket():
 def _decided():
     """v12 V4: what was decided for him (kinds strategy and desk) - a list of its own ("Decided for you - tap to undo"), never in the count of open decisions."""
     from whatifs.notify import INFORM_KINDS
+    if _two(): return _decided_two()
     out = []
     for r in store().rows("Owner_Actions"):
         if r.get("status") not in ("OPEN", "QUEUED") or r.get("kind") not in INFORM_KINDS: continue
         btns = json.loads(r.get("buttons") or "[]")
         out.append({"id": r["id"], "kind": "decided", "title": re.sub(r"<[^>]+>", "", r.get("text", ""))[:90], "why": re.sub(r"<[^>]+>", "", r.get("text", ""))[:400],
                     "default_label": r.get("default_action") or "It stays", "default_at": "", "window_h": 0, "verbs": {str(lbl)[:24]: f"ACT|{r['id']}|{i}" for i, (lbl, _v) in enumerate(btns)}})
+    return out
+
+def _decided_two(now=None):
+    """v12 B-OWNER (PART 6, R17): "Decided for you" - the open STANDING_KINDS rows whose group is "decided" (strategy, decided_post: each with its Undo or
+    "Take it down") and every row of any kind DEFAULTED in the last 48 hours ("ran by default": his silence decided it; a closed row has no button left).
+    A desk or idea row is under his inputs, never here."""
+    from whatifs import notify as NT
+    since = ((now or now_utc()) - dt.timedelta(hours=48)).strftime("%Y-%m-%dT%H:%M:%SZ"); out = []
+    for r in store().rows("Owner_Actions"):
+        k = r.get("kind")
+        if r.get("status") in ("OPEN", "QUEUED") and k in NT.STANDING_KINDS and NT.group(k) == "decided": ran = False
+        elif r.get("status") == "DEFAULTED" and str(r.get("answered_at") or "") >= since: ran = True
+        else: continue
+        btns = [] if ran else json.loads(r.get("buttons") or "[]"); txt = _text(r)
+        out.append({"id": r["id"], "kind": "decided", "title": txt[:90], "why": txt[:400],
+                    "default_label": ("ran by default: " + str(r.get("default_action") or "nothing changed")) if ran else (r.get("default_action") or "It stays"),
+                    "default_at": (r.get("answered_at") or "") if ran else "", "window_h": 0,
+                    "verbs": {str(lbl)[:24]: f"ACT|{r['id']}|{i}" for i, (lbl, _v) in enumerate(btns)}})
     return out
 
 STAY_MIN = 3      # v12 V4 (P13): a median of his own needs three Shorts read
@@ -133,6 +172,101 @@ def _lab():
     fmt = lambda r: {"text": str(r.get("text"))[:140], "effect": f"{float(r.get('effect') or 0) * 100:+.0f}% vs usual", "videos": int(float(r.get("videos") or 0))}
     return {"experiments": [], "boosters": [fmt(r) for r in rules if r.get("kind") == "booster"][:4], "killers": [fmt(r) for r in rules if r.get("kind") == "killer"][:4]}
 
+# ------------------------------------------------------------------ v12 B-OWNER (PART 6): both screens show the same, and he sees the learning
+# Every field below exists in both switch states (the page reads them: tests/test_v94b.py); with TWO_SCREENS_ON FALSE no row is read for them.
+def _alarms(two):
+    """The open rows of class ALARM, newest first (pinned first on Home): an incident with its count and the time of its newest firing."""
+    from whatifs import notify as NT
+    if not two: return []
+    rows = [r for r in NT.open_rows() if NT.klass(r.get("kind")) == NT.ALARM]
+    return [{"id": r["id"], "kind": r.get("kind"), "title": _text(r, 90), "text": _text(r), "count": int(_f(r.get("count"), 1) or 1), "last_at": r.get("last_at") or r.get("created") or "",
+             "buttons": {str(lbl)[:24]: f"ACT|{r['id']}|{i}" for i, (lbl, _v) in enumerate(json.loads(r.get("buttons") or "[]"))}}
+            for r in sorted(rows, key=lambda x: str(x.get("created") or ""), reverse=True)]
+
+def _groups(two, now=None):
+    """The eight groups of the morning message (`notify.GROUPS`), each its newest 20 rows by `notify.group_rows` - the rows WhatsApp's groups show."""
+    from whatifs import notify as NT
+    if not two: return {g: [] for g in NT.GROUPS}
+    return {g: [{"id": r["id"], "kind": r.get("kind"), "text": _text(r, 300), "at": r.get("created") or ""} for r in NT.group_rows(g, now, limit=20)] for g in NT.GROUPS}
+
+def _inputs(two):
+    """His newest 20 inputs from every channel (tab Owner_Desk), each with its verdict as he reads it (`desk.SHOWN`) and its answer."""
+    if not two: return []
+    from whatifs.org import desk as DESK
+    rows = sorted(store().rows(DESK.DESK), key=lambda r: int(_f(r.get("n"))), reverse=True)[:20]
+    return [{"n": int(_f(r.get("n"))), "at": r.get("ts") or "", "text": str(r.get("verbatim") or ""), "verdict": DESK.SHOWN.get(r.get("verdict"), r.get("verdict") or ""),
+             "answer": str(r.get("how") or ""), "channel": r.get("channel") or "sheet"} for r in rows]
+
+def _section(fn, *a):
+    """One part of the learning or the plan; a part that fails says so and never stops the snapshot."""
+    try: return fn(*a)
+    except Exception as e:
+        log(f"dashboard: a part of the snapshot is not available ({type(e).__name__})", "WARN"); return {"empty": f"Not available right now ({type(e).__name__})."}
+
+def _learning(two, learned):
+    """What the channel learns: lessons (the snapshot's `learned`), research and observations with their source and date, experiments, and the notes of
+    what lands with a later batch."""
+    out = {"lessons": [], "research": {"topics": [], "outliers": [], "observations": []}, "experiments": [],
+           "appetite": {"note": NOTES["appetite"]}, "features": {"note": NOTES["features"]}, "department_line": {"note": NOTES["department_line"]}}
+    if not two: return out
+    from whatifs import owner_view as OV
+    hot = _section(OV.hot_topics); obs = _section(OV.observations); xs = _section(OV.experiments)
+    out["lessons"] = list(learned)
+    out["research"] = {"topics": hot.get("topics") or [], "outliers": hot.get("outliers") or [], "observations": obs.get("items") or [],
+                       "empty": " ".join(x for x in (hot.get("empty"), obs.get("empty")) if x)}
+    out["experiments"] = xs.get("running") or []
+    return out
+
+def _plan(two, now=None):
+    """The plan: the CEO's lines of today (`strategy.brief`) and the rule-based plan (`owner_view.strategy`), the next five slots (times only: a title
+    not yet released is a premise), and the department line's note."""
+    out = {"lines": [], "slots": [], "department_line": {"note": NOTES["department_line"]}}
+    if not two: return out
+    from whatifs import owner_view as OV
+    from whatifs.org import strategy as STR
+    from whatifs.manage import next_slots
+    brief = _section(lambda: {"lines": [x for x in str(STR.brief(now) or "").splitlines() if x.strip()]})
+    rule = _section(OV.strategy)
+    out["lines"] = (brief.get("lines") or []) + (rule.get("plan") or [])
+    try: out["slots"] = [{"at": s.strftime("%Y-%m-%dT%H:%M:%SZ")} for s in next_slots(5)]
+    except Exception as e: log(f"dashboard: the next slots are not available ({type(e).__name__})", "WARN")
+    return out
+
+def _owner_money(two):
+    """The Money tab's two new lines: his WhatsApp month (`costguard.owner_messages`, PART 8) and the treasury's note."""
+    out = {"whatsapp": {}, "treasury": {"note": NOTES["treasury"]}}
+    if two:
+        from whatifs import costguard as CG
+        out["whatsapp"] = {**_section(CG.owner_messages), "src": "Cost_Log (item whatsapp)"}
+    return out
+
+def unsourced(snap):
+    """NEVER A NUMBER WITHOUT ITS SOURCE (P13's lesson): every dict in `learning`, `plan`, `groups` and the new parts of `money` that carries a number
+    under v, value, views, inr or pct and no non-empty `src`."""
+    bad = []
+    def walk(x):
+        if isinstance(x, dict):
+            if any(isinstance(x.get(k), (int, float)) and not isinstance(x.get(k), bool) for k in SOURCE_KEYS) and not str(x.get("src") or "").strip(): bad.append(x)
+            for v in x.values(): walk(v)
+        elif isinstance(x, list):
+            for v in x: walk(v)
+    for k in ("learning", "plan", "groups"): walk(snap.get(k))
+    for k in ("whatsapp", "treasury"): walk((snap.get("money") or {}).get(k))
+    return bad
+
+def _without(x, bad):
+    """`x` with every dict of `bad` (by identity) taken out of the list or the dict that held it."""
+    ids = {id(b) for b in bad}
+    if isinstance(x, dict): return {k: _without(v, bad) for k, v in x.items() if id(v) not in ids}
+    if isinstance(x, list): return [_without(v, bad) for v in x if id(v) not in ids]
+    return x
+
+def _scrubbed(x):
+    """Every string of the snapshot through `core.scrub`: no key reaches the page."""
+    if isinstance(x, dict): return {k: _scrubbed(v) for k, v in x.items()}
+    if isinstance(x, list): return [_scrubbed(v) for v in x]
+    return scrub(x) if isinstance(x, str) else x
+
 def build_snapshot():
     from whatifs import governor as G, launch as LA
     from whatifs.manage import paused, next_slots
@@ -147,18 +281,25 @@ def build_snapshot():
     rules = [{"text": str(r.get("rule"))[:200], "confidence": "high" if r.get("status") == "active" else "medium", "loop": "fast"} for r in st.rows("Playbook") if r.get("status") in ("active",)][-3:]
     two = (now_utc() - dt.timedelta(hours=48)).strftime("%Y-%m-%dT%H:%M:%SZ")
     acks = [{"verb": r.get("verb"), "at": r.get("ts"), "ok": str(r.get("ok")) == "TRUE", "note": str(r.get("note") or "")[:120]} for r in st.rows("Dash_Acks") if str(r.get("ts", "")) >= two]
-    return {"generated_at": iso(),
+    on = _two(); learned = (rules + lessons)[-6:]
+    snap = {"generated_at": iso(),
             "engine": {"status": "paused" if paused() else "running", "mode": "lean" if mode == "runway" else mode, "owner_mode": "minimal",
                        "upload_lock": LA.lock_state() == "on",
                        "next_release": {"episode": nr.get("episode_id", ""), "title": str(nr.get("title") or "")[:90], "case_no": len([e for e in eps if e.get("yt_id")]) + 1,
                                         "slot_iso": nr.get("slot_et")} if nr else None},
-            "docket": _docket(), "decided": _decided(), "progress": _progress(), "learned": (rules + lessons)[-6:],
-            "lab": _lab(), "money": _money(),
+            "docket": _docket(), "decided": _decided(), "progress": _progress(), "learned": learned,
+            "lab": _lab(), "money": {**_money(), **_owner_money(on)},
             "health": _health(),
             "settings": {"shorts_per_week": S("SHORTS_PER_WEEK", int),
                          "localizations": bool(S("LOCALIZATIONS_ON", bool)) if "LOCALIZATIONS_ON" in __import__("whatifs.core", fromlist=["DEFAULTS"]).DEFAULTS else False,
                          "visual_lab": bool(S("VISUAL_LAB_ON", bool)), "facts_watch": bool(S("FACTS_WATCH_ON", bool))},
-            "acks": acks, "whatsapp": str(S("WA_BOT_NUMBER") or "")}
+            "acks": acks, "whatsapp": str(S("WA_BOT_NUMBER") or ""),
+            "alarms": _alarms(on), "groups": _groups(on), "inputs": _inputs(on), "learning": _learning(on, learned), "plan": _plan(on)}      # v12 B-OWNER (PART 6)
+    if not on: return snap
+    bad = unsourced(snap)
+    if bad:                                                                                  # a number without its source never reaches the page
+        log(f"dashboard: {len(bad)} number(s) without a source were left out of the snapshot", "ERROR"); snap = _without(snap, bad)
+    return _scrubbed(snap)
 
 def publish():
     """Write the snapshot to Cloudflare KV. Quiet no-op until the dashboard is set up (no CF secrets) or DASH_ON is off."""
@@ -250,13 +391,23 @@ def route(verb):
         return True, f"{key} = {val}"
     return False, "That action is not allowed."
 
+CARD_RX = re.compile(r"[A-Za-z0-9_.:\-]{1,64}")      # the Worker's rule for the card a word was typed under (mission_control/worker.js, api/input)
+
+def _input(msg, aid):
+    """v12 B-OWNER (PART 6): the page's box ("Type anything") and the line under a card - his words go to his desk, word for word (`desk.take`, channel
+    "dashboard", ref = this action's id, the card it was typed under); the Dash_Acks row holds the verb and "Saved as input N", never his words."""
+    from whatifs.org import desk as DESK
+    card = str(msg.get("card") or "")
+    n, _line = DESK.take(str(msg.get("text") or ""), "dashboard", ref=aid, card=card if CARD_RX.fullmatch(card) else "")
+    return (True, f"Saved as input {n}") if n else (False, "nothing to save")
+
 def handle_action(payload_json):
     """repository_dispatch 'dash_action' entry point. Never prints the verb or any text (public logs, K32)."""
     try: msg = decrypt(json.loads(payload_json) if isinstance(payload_json, str) else payload_json)
     except Exception as e: log(f"dashboard action not readable ({type(e).__name__})", "WARN"); return False
     aid, verb = str(msg.get("id") or ""), str(msg.get("verb") or "")
     if any(r.get("id") == aid for r in store().rows("Dash_Acks")): log("dashboard action already handled"); return True
-    try: ok, note = route(verb)
+    try: ok, note = _input(msg, aid) if verb == "INPUT" and _two() else route(verb)
     except Exception as e: ok, note = False, f"failed: {scrub(e)[:120]}"
     _ack(aid, verb, ok, note); log(f"dashboard action handled ({'ok' if ok else 'not done'})")
     try: publish()

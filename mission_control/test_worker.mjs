@@ -88,6 +88,26 @@ test("action: verb regex, session required, encrypted dispatch", async () => {
   assert.equal(p.verb, "PICK|EP202611140|B"); assert.equal(p.src, "dash"); assert.ok(p.id);
 });
 
+test("input (v12 B-OWNER): session required, 1 to 2,000 characters, a card's id or none, his words leave only encrypted", async () => {
+  const e = env(); sent = [];
+  let r = await worker.fetch(post(root(e) + "/api/input", { text: "more wonder please", card: "" }), e);
+  assert.equal(r.status, 401); assert.equal(sent.length, 0);                                       // signed out
+  const c = "re_s=" + await signSession(e.SESSION_KEY, 1);
+  for (const bad of [{ text: "   " }, { text: "x".repeat(2001) }, { text: "ok", card: "two words" }, { text: "ok", card: "c".repeat(65) }]) {
+    r = await worker.fetch(post(root(e) + "/api/input", bad, { cookie: c }), e);
+    assert.equal(r.status, 400, JSON.stringify(bad).slice(0, 60));
+  }
+  assert.equal(sent.length, 0);
+  const words = "Make the first second of every Short louder, please";
+  r = await worker.fetch(post(root(e) + "/api/input", { text: "  " + words + "  ", card: "A2026111912000000000001" }, { cookie: c }), e);
+  assert.equal(r.status, 200); assert.equal(sent.length, 1); assert.equal(sent[0].body.event_type, "dash_action");
+  assert.ok(!JSON.stringify(sent[0].body).includes("first second of every Short"), "his words must not leave the Worker in plain text");
+  const p = await decrypt(KEY, sent[0].body.client_payload);
+  assert.equal(p.verb, "INPUT"); assert.equal(p.text, words); assert.equal(p.card, "A2026111912000000000001"); assert.equal(p.src, "dash"); assert.ok(p.id);
+  r = await worker.fetch(post(root(e) + "/api/input", { text: "y".repeat(2000) }, { cookie: c }), e);
+  assert.equal(r.status, 200); assert.equal(sent.length, 2); assert.equal((await decrypt(KEY, sent[1].body.client_payload)).card, "");
+});
+
 test("thumb route and wrong path", async () => {
   const e = env(); const c = "re_s=" + await signSession(e.SESSION_KEY, 1);
   await e.RE_KV.put("thumb:EP202611140:A", new Uint8Array([255, 216, 255]).buffer);

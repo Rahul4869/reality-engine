@@ -90,6 +90,9 @@ def test_needs_you_is_one_list(monkeypatch, setting):
     assert any(l.startswith("Needs you: 3") for l in DG.head("daily").splitlines()), DG.head("daily")
     bodies = _wire(monkeypatch); _window(True); assert WA.push("needs")
     assert {x["id"] for x in bodies[-1]["interactive"]["action"]["sections"][0]["rows"]} == {f"CARD|{a}" for a in (unk, hold, card)}
+    # step 6: the dashboard's docket is the same list
+    from whatifs import dash as DS
+    assert {c["id"] for c in DS.build_snapshot()["docket"]} == {unk, hold, card}
 
 def test_a_hold_without_a_button_can_be_closed(setting):
     """R17 ADDS (C): a hold sent without a button gets ("Done", "OK") - without it his tap could never close it and it stood under "Needs you" for ever."""
@@ -522,6 +525,10 @@ def test_week_and_fyi_reach_both_screens(monkeypatch, setting):
     assert DG.send("daily", now=now)["via"] == "whatsapp" and bodies[-1]["interactive"]["type"] == "list"
     assert [x["id"] for x in bodies[-1]["interactive"]["action"]["sections"][0]["rows"]] == [f"MENU|{g}" for g in NT.GROUPS]
     assert len(box) == 1 and all(t in box[0][1] for t in ("Budget: 80% of the cap", "One region dominates", "*Decided for you*")), box[0][1][:600]
+    # step 6: the dashboard's groups carry the same rows
+    from whatifs import dash as DS
+    g = DS.build_snapshot()["groups"]
+    assert any("Budget: 80% of the cap" in x["text"] for x in g["money"]) and any("One region dominates" in x["text"] for x in g["research"]), g
 
 FILLERS = ("let's dive in", "hope this helps", "great question", "happy to help", "feel free to", "don't hesitate", "exciting news", "as an ai",
            "i hope you", "just wanted to")      # a short list beside the long video's own `data.AI_TELLS`
@@ -617,6 +624,10 @@ def test_an_alarm_arrives_on_both_screens_whatever_is_set(monkeypatch, setting):
     assert [(x["action_id"], x["wamid"]) for x in told] == [(aid, "wamid.T1")] and bodies[-1]["type"] == "template", told
     assert box == ["URGENT: YouTube marked a video as made for kids"], box
     assert r["tier"] == "now" and r["urgent"] == "TRUE" and int(r["count"]) == 1 and r["delivered_at"] and json.loads(r["buttons"]) == [["Seen", "SEEN"]], r
+    # step 6: and on the dashboard, pinned first on Home
+    from whatifs import dash as DS
+    al = DS.build_snapshot()["alarms"]
+    assert [(a["id"], a["count"]) for a in al] == [(aid, 1)] and "made for kids" in al[0]["text"] and list(al[0]["buttons"].values()) == [f"ACT|{aid}|0"], al
 
 def test_a_flood_is_one_alarm(monkeypatch, setting):
     """S8 and item 180 (the alert that mattered was #4,000-something): fifty firings of one key are ONE push with a count of 50 - a repeat is counted and
@@ -861,3 +872,82 @@ def test_talk_is_not_an_input(monkeypatch, setting):
     assert DESK.talk("Ok, thanks!") and DESK.talk("good night") and not DESK.talk("ok thanks but slower") and not DESK.talk("")
     _inbound(monkeypatch, "wamid.T1", "Ok, thanks!"); assert _desk_rows() == [] and calls == []
     _inbound(monkeypatch, "wamid.T2", "more wonder please"); assert [r["verbatim"] for r in _desk_rows()] == ["more wonder please"] and calls == ["more wonder please"]
+
+# ------------------------------------------------------------------ step 6: both screens show the same, and he sees the learning (PART 6)
+from whatifs import dash as DS
+
+def _dash_action(monkeypatch, obj):
+    """One tap of the page as the Worker forwards it (the relay's encryption, as tests/test_v94b.py does it)."""
+    import base64
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    key = base64.b64encode(bytes(range(32))).decode(); monkeypatch.setenv("WA_RELAY_KEY", key); n = os.urandom(12)
+    c = AESGCM(base64.b64decode(key)).encrypt(n, json.dumps(obj).encode(), None)
+    return json.dumps({"c": base64.b64encode(c).decode(), "n": base64.b64encode(n).decode()})
+
+def test_a_dashboard_input_reaches_his_desk_and_the_ack_never_holds_his_words(monkeypatch, setting):
+    """PART 6 (item 149: "my inputs taken from either"): the page's box posts to the Worker's route api/input, which forwards the verb INPUT;
+    `dash.handle_action` gives his words to `desk.take` (channel "dashboard", ref = the action's id, the card it was typed under) and the job weighs them
+    at once; the Dash_Acks row holds the verb and "Saved as input N" - never his words; the same delivery twice is stored once; the snapshot shows the
+    input with its verdict and its answer. With the switch off INPUT is no verb of today's dashboard."""
+    _desk_on(setting); calls = _labels(monkeypatch, kind="feedback")
+    words = "The thumbnails feel too dark on my phone"
+    tap = _dash_action(monkeypatch, {"id": "d-1", "verb": "INPUT", "text": words, "card": "A20261120", "ts": 1, "src": "dash"})
+    assert DS.handle_action(tap) and DS.handle_action(tap)                                              # the second delivery is handled once
+    rows = _desk_rows()
+    assert [(r["verbatim"], r["channel"], r["ref"], r["card"]) for r in rows] == [(words, "dashboard", "d-1", "A20261120")] and calls == [words], rows
+    acks = core.store().rows("Dash_Acks")
+    assert [(a["verb"], a["ok"], a["note"]) for a in acks] == [("INPUT", "TRUE", f"Saved as input {rows[0]['n']}")] and words not in json.dumps(acks), acks
+    inp = DS.build_snapshot()["inputs"]
+    assert [(x["text"], x["channel"], x["verdict"]) for x in inp] == [(words, "dashboard", "PARKED")] and inp[0]["answer"], inp
+    setting("TWO_SCREENS_ON", "FALSE")
+    assert DS.handle_action(_dash_action(monkeypatch, {"id": "d-2", "verb": "INPUT", "text": "x", "card": "", "ts": 2, "src": "dash"})) is False
+    assert len(_desk_rows()) == 1
+
+def test_both_screens_show_the_same_and_what_ran_by_default(monkeypatch, setting):
+    """PART 6: with the switch off every new field of the snapshot exists and is empty (the older page reads them: tests/test_v94b.py 39-44); with it
+    on, "Decided for you" holds the open decided rows with their Undo or "Take it down" and every row his silence decided in the last 48 hours ("ran by
+    default", no button left), a desk or idea row is under his inputs and never there, the eight groups are WhatsApp's groups, and the money, the
+    learning and the plan carry what lands with a later batch as a plain note."""
+    setting("TWO_SCREENS_ON", "FALSE"); off = DS.build_snapshot()
+    assert off["alarms"] == [] and off["inputs"] == [] and off["groups"] == {g: [] for g in NT.GROUPS}, off["groups"]
+    assert off["plan"]["lines"] == [] and off["learning"]["lessons"] == [] and off["money"]["whatsapp"] == {} and off["money"]["treasury"]["note"]
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch)
+    post = NT.send("decided_post", "EP3 was approved by your silence and goes public at 20:30", [("Take it down", "UNPOST EP3")], expires_h=168)
+    strat = NT.send("strategy", "Strategy moved one lever")
+    idea = NT.send("idea", "Build this? a slower first second", [("Build it", "BUILD"), ("Not now", "PARK")])
+    card = NT.send("bakeoff", "Pick the clip model", [("Pick A", "PICK A")], default="A is used", expires_h=1)
+    assert NT.expire_defaults(core.now_utc() + dt.timedelta(hours=2)) == 1 and _row(card)["status"] == "DEFAULTED"
+    snap = DS.build_snapshot(); dec = {c["id"]: c for c in snap["decided"]}
+    assert set(dec) == {post, strat, card}, dec
+    assert dec[post]["verbs"] == {"Take it down": f"ACT|{post}|0"} and dec[card]["verbs"] == {} and dec[card]["default_label"] == "ran by default: A is used", dec
+    assert [x["id"] for x in snap["groups"]["inputs"]] == [idea] and card not in {c["id"] for c in snap["docket"]}
+    from whatifs import manage as MG                                                                    # the next five slots inside next_slots' 21 days (3 at one a week)
+    assert snap["plan"]["slots"] and [s["at"] for s in snap["plan"]["slots"]] == [s.strftime("%Y-%m-%dT%H:%M:%SZ") for s in MG.next_slots(5)]
+    assert snap["money"]["whatsapp"]["src"] and "cap" in snap["money"]["whatsapp"]
+    assert snap["learning"]["appetite"]["note"].endswith("batch V4b.") and snap["plan"]["department_line"]["note"]
+
+def test_no_number_without_its_source(monkeypatch, setting):
+    """PART 6 (P13's lesson: never a number without its source). PLANTED: a research item with views and no `src` is left out of the snapshot and an
+    error is logged; the same kind of item with its source stays."""
+    from whatifs import owner_view as OV
+    setting("TWO_SCREENS_ON", "TRUE"); logged = []
+    monkeypatch.setattr(DS, "log", lambda msg, level="INFO": logged.append((level, msg)))
+    monkeypatch.setattr(OV, "hot_topics", lambda n=5: {"topics": [{"topic": "Glass that bends", "views": 120000},
+                                                                  {"topic": "Rain that falls up", "views": 90000, "src": "Trend_Brief", "date": "2026-11-19"}], "outliers": []})
+    snap = DS.build_snapshot(); topics = snap["learning"]["research"]["topics"]
+    assert [t["topic"] for t in topics] == ["Rain that falls up"] and "Glass that bends" not in json.dumps(snap), topics
+    assert any(lv == "ERROR" and "without a source" in m for lv, m in logged), logged
+    assert DS.unsourced({"plan": {"x": {"inr": 5}}, "money": {"whatsapp": {"spent": 3, "src": "Cost_Log"}}}) == [{"inr": 5}]
+
+def test_a_planted_secret_and_a_planted_script_do_not_show(monkeypatch, setting):
+    """PART 6 (dash.py's own rule: no secrets, scripts or unreleased premises; the experiment found a special's script in the docket). PLANTED: a row
+    holding a key and a `special_ready` row holding its script - neither string is in the snapshot; the special shows as its plain name with its button."""
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch); key = "fal-PLANTED-0123456789abcdef"; monkeypatch.setenv("FAL_KEY", key)
+    a = NT.send("bakeoff", f"The clip test failed with {key} in the reply", [("Pick A", "PICK A")], default="A is used", expires_h=48)
+    b = NT.send("special_ready", "Script: GRIMM: the jar opens at midnight and the moon falls in", [("Approve", "APPROVE S1")],
+                default="posted after 72 hours when its checks passed", expires_h=72)
+    assert key in _row(a)["text"] and "GRIMM: the jar opens" in _row(b)["text"]                          # the rows hold them: the dashboard must not show them
+    snap = DS.build_snapshot(); text = json.dumps(snap)
+    assert key not in text and "GRIMM: the jar opens" not in text, text[:400]
+    docket = {c["id"]: c for c in snap["docket"]}
+    assert docket[b]["title"] == "Special ready: the text is in WhatsApp and your e-mail." and list(docket[b]["verbs"]) == ["Approve"] and "***" in docket[a]["why"]
