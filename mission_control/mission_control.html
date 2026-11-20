@@ -458,9 +458,9 @@ const DEMO = {
   alarms: [],
   decided: [ { id: "dp-ep4", kind: "decided", title: "Case #04 was approved by your silence and goes public at Sat 19:30.", why: "Case #04 was approved by your silence and goes public at Sat 19:30. Watch it (private) in Studio.",
                default_label: "It stays", default_at: "", window_h: 0, verbs: { "Take it down": "ACT|dp-ep4|0" } } ],
-  groups: { needs: [], posted: [ { id: "g1", kind: "scheduled", text: "Video scheduled: Case #04 goes public on its slot.", at: new Date(now - 3 * H).toISOString() } ],
+  groups: { needs: [], posted: [ { id: "g1", kind: "scheduled", text: "Video scheduled: Case #04 goes public on its slot.", at: new Date(now - 3 * H).toISOString(), verbs: {} } ],
             learned: [], research: [], plan: [], inputs: [],
-            money: [ { id: "g2", kind: "budget_pct", text: "Budget: 43% of the cap is used.", at: new Date(now - 20 * H).toISOString() } ], decided: [] },
+            money: [ { id: "g2", kind: "budget_pct", text: "Budget: 43% of the cap is used.", at: new Date(now - 20 * H).toISOString(), verbs: {} } ], decided: [] },
   inputs: [ { n: 3, at: new Date(now - 2 * H).toISOString(), text: "More wonder, less lecture please, especially in the first minute.", verdict: "TAKEN",
               answer: "TAKEN - kept word for word as your standing preference for the writers' room; it is served first in every brief from the next script.", channel: "whatsapp" } ],
   learning: { lessons: [], research: { topics: [ { topic: "Phones that survive a fall", why: "Rising searches this week.", kind: "search", src: "Trend_Brief", date: "2026-11-16" } ], outliers: [],
@@ -753,6 +753,12 @@ function renderPlan() {
     ${renderProgress()}
     ${noteLines(P)}`;
 }
+function openRow(r) {         // FINISHED BY FABLE (CB-7): an open row of his inputs with its taps ("Build it", "Take it back"), as on WhatsApp
+  const done = ruled[r.id], c = { id: r.id, kind: r.kind, verbs: r.verbs || {} };
+  return `<article class="case ${done ? "done" : ""}" id="case-${esc(r.id)}"><p class="why">${esc(r.text)}</p>
+    ${!done && Object.keys(c.verbs).length ? `<div class="actions">${verbButtons(c)}</div>` : ""}
+    ${done ? `<p class="done-note">${esc(done.note)}</p>` : ""}</article>`;
+}
 function renderInputs() {
   const ins = S.inputs || [], open = (S.groups || {}).inputs || [];
   const chip = v => ({ TAKEN: "high", ANSWERED: "high", PARKED: "med", STORED: "low" }[v] || "low");
@@ -762,7 +768,7 @@ function renderInputs() {
     <section class="box exp"><textarea id="inputBox" maxlength="2000" placeholder="Type anything: an idea, a wish, a worry" aria-label="Type anything: an idea, a wish, a worry">${esc(said._box || "")}</textarea>
       <div class="actions"><button class="btn primary wide" data-input="1">Send</button></div></section>
     ${listOr(rows, "Nothing typed yet. What you write here, on WhatsApp or in the Sheet is kept word for word and answered.")}
-    ${open.length ? `<div class="sec-head"><h2 class="serif">Open from your inputs</h2><p>${open.length}</p></div>${listOr(open.map(r => `<div class="row"><p>${esc(r.text)}</p><span class="tag low">${esc(r.kind)}</span></div>`), "")}` : ""}`;
+    ${open.length ? `<div class="sec-head"><h2 class="serif">Open from your inputs</h2><p>${open.length}</p></div>${open.map(openRow).join("")}` : ""}`;
 }
 
 /* ------------------------------------------------------------------ money */
@@ -866,7 +872,7 @@ async function rule(caseId, label, verb, note) {
   render();
 }
 async function tapVerb(caseId, verb, label) {
-  const c = (S.docket || []).concat(S.decided || [], S.alarms || []).find(x => x.id === caseId);
+  const c = (S.docket || []).concat(S.decided || [], S.alarms || [], ((S.groups || {}).inputs || []).map(r => ({ ...r, title: r.text }))).find(x => x.id === caseId);
   if (!c) return;
   if (/^DISCUSS\|/.test(verb)) {
     if (S.whatsapp) window.open("https://wa.me/" + encodeURIComponent(S.whatsapp) + "?text=" + encodeURIComponent("Discuss: " + c.title), "_blank", "noopener");

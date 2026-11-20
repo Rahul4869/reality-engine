@@ -29,6 +29,13 @@ def _text(r, n=400):
     if r.get("kind") in NT.DASH_PRIVATE: return PRIVATE_LINE.format(name=NT.name(r.get("kind")))
     return re.sub(r"<[^>]+>", "", str(r.get("text", "")))[:n]
 
+def _verbs(r):
+    """FINISHED BY FABLE (CB-7): the taps an OPEN row still offers, in the docket's shape {label: "ACT|<id>|<i>"} (`route` answers them); a closed row offers none."""
+    if r.get("status") not in ("OPEN", "QUEUED"): return {}
+    try: btns = json.loads(r.get("buttons") or "[]")
+    except Exception: btns = []
+    return {str(lbl)[:24]: f"ACT|{r['id']}|{i}" for i, (lbl, _v) in enumerate(btns)}
+
 def _docket():
     from whatifs import packaging as PK, notify as NT
     st = store(); cards = []; two = _two()
@@ -199,7 +206,7 @@ def _groups(two, now=None):
     """The eight groups of the morning message (`notify.GROUPS`), each its newest 20 rows by `notify.group_rows` - the rows WhatsApp's groups show."""
     from whatifs import notify as NT
     if not two: return {g: [] for g in NT.GROUPS}
-    return {g: [{"id": r["id"], "kind": r.get("kind"), "text": _text(r, 300), "at": r.get("created") or ""} for r in NT.group_rows(g, now, limit=20)] for g in NT.GROUPS}
+    return {g: [{"id": r["id"], "kind": r.get("kind"), "text": _text(r, 300), "at": r.get("created") or "", "verbs": _verbs(r)} for r in NT.group_rows(g, now, limit=20)] for g in NT.GROUPS}
 
 def _inputs(two):
     """His newest 20 inputs from every channel (tab Owner_Desk), each with its verdict as he reads it (`desk.SHOWN`) and its answer."""

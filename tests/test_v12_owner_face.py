@@ -361,3 +361,19 @@ def test_a_card_never_reads_nan_or_a_deadline_it_does_not_have(monkeypatch, sett
     assert "ran by default: A is used" in part(card) and "If you don" not in part(card)
     assert "If you don" not in part(post) and "Take it down" in part(post)
     assert "If you don" in home                                                                            # a card with a deadline keeps its countdown (`_full`'s visual idea)
+
+def test_an_open_row_of_his_inputs_can_be_tapped(monkeypatch, setting, tmp_path):
+    """PART 5 with PART 6 (item 149: every step of his reaches both screens). FOUND AT THE FINISH: a group's rows carried no buttons, so "Build it" and
+    "Take it back" could be tapped on WhatsApp only. A row of a group carries its taps in the docket's own shape and the page shows them as buttons."""
+    _full(monkeypatch, setting)
+    idea = NT.send("idea", "Build this? a slower first second", [("Build it", "BUILD"), ("Not now", "PARK")])
+    taken = NT.send("desk", "Your input 1: TAKEN - kept word for word as your standing preference.", [("Take it back", "DESK UNDO 1")], tier="week",
+                    dedupe_key="desk|taken|1")      # a TAKEN input's row as desk.weigh_row sends it (desk.py:317); `_full`'s input stays unweighed (STRATEGY_ON off) - R1-209
+    snap = json.loads(json.dumps(DS.build_snapshot()))
+    row = next(x for x in snap["groups"]["inputs"] if x["id"] == idea)
+    assert row["verbs"] == {"Build it": f"ACT|{idea}|0", "Not now": f"ACT|{idea}|1"}, row
+    assert next(x for x in snap["groups"]["inputs"] if x["id"] == taken)["verbs"] == {"Take it back": f"ACT|{taken}|0"}, snap["groups"]["inputs"]
+    part = _render(snap, tmp_path, "tap")["inputs"].split(f'id="case-{idea}"')[1].split("</article>")[0]
+    assert part.count("<button") == 2 and f'data-verb="ACT|{idea}|0"' in part and f'data-verb="ACT|{idea}|1"' in part, part
+    ok, _note = DS.route(f"ACT|{idea}|1")                                                                   # the tap is one `dash.route` already answers
+    assert ok and all(x["id"] != idea for x in DS.build_snapshot()["groups"]["inputs"])
