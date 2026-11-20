@@ -1378,6 +1378,7 @@ def test_the_sparse_clock_loses_nothing(monkeypatch, setting):
              for i, h in enumerate((12, 20, 29, 47.5, 72))]      # closing day 1 12:00 and 20:00, day 2 05:00 and 23:30, day 4 00:00 (India time)
     ticks = [ist(d, h, m) for d in (16, 17, 18) for h, m in ((2, 10), (9, 40), (16, 50), (23, 20))]
     out, seen, svid, vid, review, short_at_cap = [], {}, "", "", "", None
+    states = []                                                                                                  # each card's status after every tick (R22's DQ4)
     slot = core.iso(ist(18, 20, 30))
     try:
         for k, t in enumerate(ticks):
@@ -1398,10 +1399,12 @@ def test_the_sparse_clock_loses_nothing(monkeypatch, setting):
             for i in cards + ([review] if review else []):
                 if i not in seen and _row(i)["status"] == "DEFAULTED": seen[i] = k
             if k == 2: short_at_cap = (HG.row(svid)["state"], HG.row(svid)["note"], PUB8.yt_read(svid).get("privacy"))
+            states.append([_row(i)["status"] for i in cards])
     finally: shutil.rmtree(os.path.join(core.WORK, SPARSE_SHORT), ignore_errors=True)                           # GitHub runs every test file in one process with one work folder
     assert out == [(1, "morning"), (3, "needs"), (5, "morning"), (7, "needs"), (9, "morning"), (11, "needs")], out      # nothing at 02:10, nothing at 16:50
     assert len(core.store().rows("WA_Outbox")) == 6 and len(bodies) == 6                                        # nothing else started a message
     assert [seen.get(i) for i in cards] == [2, 3, 5, 8, None] and _row(cards[4])["status"] == "OPEN"             # each at the first tick after its expiry
+    assert all(states[k][j] == "OPEN" for j, first in enumerate((2, 3, 5, 8, len(ticks))) for k in range(first)), states      # OPEN at every tick before its expiry: a card closed a tick EARLY is the fault too (R22's DQ4)
     assert short_at_cap == (HG.CAP, "public after 410 min; HD NO (the cap)", "public")                          # 10:00 -> the 16:50 tick: its cap
     assert seen.get(review) == 9 and sched[0] == (vid, slot, 9)                                                  # his silence at the 09:40 tick of day 3, on its OWN slot
     e = _epi("EPSPARSE"); assert e["status"] == "SCHEDULED" and e["slot_et"] == slot
