@@ -181,6 +181,15 @@ def apply_to_script(script, line):
     lines.insert(idx, f"{label}[tension] {line}")
     return "\n".join(lines), True, "inserted as first line"
 
+def _replace_first(script, line):
+    """FINISHED BY FABLE (CA2-8; R2-F2 through CR-0b-1): the writer's first spoken line said the Short's hook in other words - it becomes the hook,
+    word for word, its speaker's tags kept, so the line behind the lab's is the Short's own (verify_in_narration asks for it word for word)."""
+    lines = script.split("\n")
+    for i, raw in enumerate(lines):
+        if raw.strip() and not raw.strip().startswith("##"):
+            lines[i] = re.match(r"^\s*((?:\[[^\]]+\]\s*)*)", raw).group(1) + line; break
+    return "\n".join(lines)
+
 def decide(rec, script):
     """Fill rec['status'] and return the (possibly changed) script."""
     ch = next((c for c in rec["candidates"] if c["id"] == rec.get("chosen_id")), None)
@@ -274,7 +283,9 @@ def run_hooks(script, spine, episode, out_dir, ask_fn=None, proven=None):
             return script, rec
     except Exception as e: log(f"the Short's hook could not be used ({scrub(e)[:120]}): the hook lab runs", "WARN", episode)
     try:
-        if second: script = apply_to_script(script, second["line"])[0]      # V4's repair C25: the Short's own line first (unless the writer opened on it), so the lab's line goes before it
+        if second:                                              # V4's repair C25: the Short's own line first, so the lab's line goes before it
+            script, _done, why = apply_to_script(script, second["line"])
+            if why == "writer's opening already says this": script = _replace_first(script, second["line"])      # FINISHED BY FABLE (CA2-8): in other words is not word for word
         rec = build_record(script, spine, episode, ask_fn, behind=second["line"] if second else None)
         script = decide(rec, script)
         if second: rec["second"] = second; rec["notes"].append(f"The hook of Short {second['short']} follows the lab's line word for word: it has no question and no 'you' for the first three seconds (V4's repair C25).")

@@ -1075,3 +1075,23 @@ def test_the_shorts_hook_must_still_be_the_second_spoken_line_after_the_voice(tm
     assert not HOOKS.verify_in_narration(rec, [{"text": first}, {"text": "Something else entirely."}, {"text": "You wake up."}])
     ok, said = CON.p_hook({"hook_rec": rec, "d": {"ladder": sid}})
     assert ok == CON.FAIL and "second spoken line" in said, said
+
+def test_the_writers_near_copy_of_the_shorts_hook_becomes_the_hook(tmp_path):
+    """R2-F2 (step 0b) through the code reader's CR-0b-1: the writer, told to open on the Short's line, said it with one word changed ("this rain"); the
+    Short's line was not inserted (the opening 'already says this') and the word-for-word check after the voice held the film at the script gate. On
+    that road the writer's near-copy becomes the Short's own line, its tags kept."""
+    from whatifs import hooks as HOOKS
+    hook, sid = "Something is wrong with the rain.", "SHC25N"
+    script = ("## BEAT 1\n[DIRECTOR] [tension] Something is wrong with this rain.\n[DIRECTOR] The rain stops at exactly noon and the whole street goes silent.\n"
+              "[CURIOUS] The strangest part is what the silent street does after the rain stops at noon.")      # lines 2 and 3: step 0b's own script, which supports the lab's lines
+    def lab(cands, low):
+        def ask(role, system, user, **kw):
+            if kw.get("fake_key") == "hooks": return {"candidates": [{"line": l, "type": "concrete_stakes", "basis": "script"} for l in cands]}
+            return {"scores": [{"id": f"h{i}", **{k: (8.0 if i in low else 10.0) for k in ("clarity", "relevance", "curiosity", "promise_accuracy")}, "unsupported_claim": False} for i in range(len(cands))]}
+        return ask
+    cands = ["The rain stops at exactly noon.", "Your street goes silent at noon.", "The whole street goes silent."]
+    new, rec = HOOKS.run_hooks(script, {"premise": "What if the rain stopped at noon?"}, "EPC25N", str(tmp_path), ask_fn=lab(cands, {1}), proven={"line": hook, "short": sid})
+    spoken = [l for l in new.split("\n") if l.strip() and not l.startswith("##")]
+    first = next(c["line"] for c in rec["candidates"] if c["id"] == rec["chosen_id"])
+    assert rec["applied"] and spoken[0].endswith(first) and spoken[1] == f"[DIRECTOR] [tension] {hook}" and "this rain" not in new, spoken[:3]
+    assert HOOKS.verify_in_narration(rec, [{"text": first}, {"text": hook}, {"text": "The strangest part."}]) and rec["status"] == "applied"
