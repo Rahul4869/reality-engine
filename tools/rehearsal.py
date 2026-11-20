@@ -19,6 +19,14 @@ from whatifs.core import S, TABS
 
 STRATEGY_SAID = []        # v12 V4: the CEO's month as the rehearsal walked it - the sweep's rehearsal branch takes these words
 
+def gate_tick(slot):
+    """v12 B-OWNER (step 10d, CD-11): the clock of the ONE planted tick of the long video's gate - thirty minutes before its slot, never before the
+    slot's India midnight: his window speaks on the slot's India day only, and the rehearsal's slot is its start + 10 hours (00:00 to 00:29 India
+    time for a start at 08:30 to 08:59 UTC). Always UTC."""
+    from whatifs import notify as NT
+    day = slot.astimezone(NT.IST).replace(hour=0, minute=0, second=0, microsecond=0)
+    return max(slot - dt.timedelta(minutes=30), day).astimezone(dt.timezone.utc)
+
 def run(ep_id=None):
     """ep_id = a fixed id for the long episode (the sweep); else the id is the minute. The Shorts' ids are derived from it, so one id reproduces the whole run."""
     assert os.environ.get("WI_FAKE") == "1", "rehearsal needs WI_FAKE=1"
@@ -221,7 +229,7 @@ def run(ep_id=None):
         e10 = ep10(); slot10 = e10["slot_et"]
         assert str(e10.get("uploaded_at") or "").strip(), "the long video's upload time is not on record"
         assert not str(e10.get("public_at") or "").strip(), "the gate moved a video's time before any tick"
-        HG10.tick(now=piso10(slot10) - dt.timedelta(minutes=30))
+        HG10.tick(now=gate_tick(piso10(slot10)))                 # CD-11: thirty minutes before the slot, never before its India midnight
         e10 = ep10(); assert e10["slot_et"] == slot10 and not str(e10.get("public_at") or "").strip(), "a ready long video was moved off its slot"
         assert len([x for x in NT10.open_rows() if x.get("kind") == "prepublic" and x.get("episode_id") == e["episode_id"]]) == 1, "his window card was not sent for a ready long video on its day"
         print("long gate: ready before its slot - the slot stands; his window card sent")

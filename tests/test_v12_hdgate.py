@@ -708,3 +708,18 @@ def test_his_window_runs_with_the_gate_off(monkeypatch, setting):
     assert not _ep("EPL18").get("public_at") and not _ep("EPL19").get("public_at")
     PUB.yt_set_privacy(vid, "public"); monkeypatch.setattr(MG, "now_utc", lambda: SLOT + 20 * M); MG.release("EPL18")
     assert _ep("EPL18")["hd_gate"] == "public 1800 min after upload; HD yes"
+
+# ------------------------------------------------------------------ step 10d, CD-11: the rehearsal's planted tick of the long video's gate falls on the slot's India day
+def test_the_rehearsals_planted_tick_finds_his_window(monkeypatch, setting, gate_on):
+    """CD-11 (step 10d's DESIGN QUESTION 6): the rehearsal plants ONE tick of the long video's gate thirty minutes before its slot - never before the
+    slot's India midnight, where his window does not speak (a rehearsal begun 08:30 to 08:59 UTC has its slot at 00:00 to 00:29 India time). For a slot
+    at 20:00 India time the tick is thirty minutes before it; for a slot at 00:10 it is on the slot's India day and before it, and the card is sent."""
+    from tools import rehearsal as RH
+    assert RH.gate_tick(SLOT) == SLOT - 30 * M                                                                    # 20:00 India time: thirty minutes before
+    late = dt.datetime(2026, 12, 16, 18, 40, tzinfo=UTC)                                                          # 00:10 India time, Thu 17 Dec
+    t = RH.gate_tick(late)
+    assert t < late and t.astimezone(NT.IST).date() == late.astimezone(NT.IST).date() and t.utcoffset() == dt.timedelta(0), t
+    setting("TWO_SCREENS_ON", "TRUE"); _quiet(monkeypatch); _long("EPL20", slot=late)
+    HG.tick(now=t); e = _ep("EPL20")
+    assert e["slot_et"] == core.iso(late) and not str(e.get("public_at") or "").strip()                         # the gate read it and moved nothing
+    assert [r["episode_id"] for r in _rows("prepublic")] == ["EPL20"]                                             # his window card, on its day
