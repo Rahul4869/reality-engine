@@ -239,7 +239,8 @@ def _alarm(kind, text, buttons, episode, default, expires_h, key, mailed=False, 
     if not mailed:                                                     # R17 (5 c): an alarm that came through notify.mail is mailed once
         try:
             from whatifs import publish as PUB
-            went = bool(PUB.email("URGENT: " + str(row["text"])[:70], _email_body(row)))
+            head = str(row["text"])[:70]
+            went = bool(PUB.email(head if head.upper().startswith("URGENT") else "URGENT: " + head, _email_body(row)))      # never "URGENT: URGENT: ..."
         except Exception as e: log(f"the alarm's e-mail failed: {scrub(e)[:120]}", "WARN")
     if WA.configured() or FAKE: _tell(row, now)
     elif went: st.update("Owner_Actions", "id", aid, {"delivered_at": iso(now)})      # R17 ADDS (F): WhatsApp is not set up - the mail went, the dashboard shows it

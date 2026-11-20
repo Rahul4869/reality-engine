@@ -740,7 +740,7 @@ def test_a_failed_copy_still_reaches_the_screens(monkeypatch, setting):
     assert [r["kind"] for r in core.store().rows("Owner_Actions")] == ["budget_pct"] and _row(a)["kind"] == "budget_pct"
     k = NT.mail("kids_flag", "URGENT: YouTube marked a video as made for kids", "<p>planted</p>", dedupe_key="kids|V3")
     assert _row(k)["kind"] == "kids_flag" and [x["action_id"] for x in _alarms_told()] == [k]
-    assert len(tried) == 3 and tried[-1].startswith("URGENT: URGENT: YouTube"), tried                     # the alarm's own mail was still tried
+    assert len(tried) == 3 and tried[-1].startswith("URGENT: YouTube"), tried                     # the alarm's own mail was still tried
     assert NT.mail("cost_check", "Weekly cost check", "<p>planted</p>", screens=False) is False
     setting("TWO_SCREENS_ON", "FALSE")
     with pytest.raises(RuntimeError): NT.mail("budget_pct", "Budget: 95%", "<p>planted</p>")              # the older path raises as today
