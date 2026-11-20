@@ -950,7 +950,7 @@ def test_a_planted_secret_and_a_planted_script_do_not_show(monkeypatch, setting)
     snap = DS.build_snapshot(); text = json.dumps(snap)
     assert key not in text and "GRIMM: the jar opens" not in text, text[:400]
     docket = {c["id"]: c for c in snap["docket"]}
-    assert docket[b]["title"] == "Special ready: the text is in WhatsApp and your e-mail." and list(docket[b]["verbs"]) == ["Approve"] and "***" in docket[a]["why"]
+    assert docket[b]["title"] == "A special is ready: the text is in WhatsApp and your e-mail." and list(docket[b]["verbs"]) == ["Approve"] and "***" in docket[a]["why"]
 
 # ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (steps 0 to 3)
 def test_a_paused_tick_retries_an_alarm(monkeypatch, setting):
@@ -976,6 +976,17 @@ def test_two_budget_thresholds_on_one_day_are_two_rows(monkeypatch, setting):
     rows = [r for r in core.store().rows("Owner_Actions") if r["kind"] == "budget_pct"]; mk = core.now_utc().strftime("%Y-%m")
     assert [r["dedupe_key"] for r in rows] == [f"budget_pct|70|{mk}", f"budget_pct|90|{mk}"] and "90%" in rows[1]["text"], [(r["dedupe_key"], r["text"][:40]) for r in rows]
     assert all(r["expires_at"] and r["status"] == "OPEN" for r in rows)
+
+def test_every_decision_has_a_plain_name():
+    """PART 4 ("title the kind's plain name"; item 149: simple for a layman): every kind that can stand under "Needs you" or as an alarm has a plain
+    name of its own within WhatsApp's 24 characters - never the code's word ("Floor eye", "Hd blocked", "Ypp tier"); a kind outside the table keeps
+    its own word with spaces."""
+    asked = [k for k, (c, _g) in NT.KINDS.items() if c in (NT.ALARM, NT.HOLD, NT.CARD)]
+    assert len(asked) == 49 and set(NT.NAMES) == set(asked), sorted(set(asked) ^ set(NT.NAMES))
+    for k in asked:
+        n = NT.name(k); assert n == NT.NAMES[k] and 3 < len(n) <= 24 and "_" not in n and n[0].isupper(), (k, n)
+    assert NT.name("floor_eye") == "Watch before it posts" and NT.name("hd_blocked") == "Video kept private" and NT.name("ypp_tier") == "Apply for monetisation"
+    assert NT.name("pick_ack") == "Pick ack" and NT.name("zz_never_registered") == "Zz never registered" and len(NT.name("x" * 40)) == 24
 
 # ------------------------------------------------------------------ step 8a: NEVER HELD BY HIS ABSENCE (PART 7; R22 (2), (2 b), (2 c)) - the special is step 8b's
 from whatifs import contract as CON, launch as LAU, publish as PUB8

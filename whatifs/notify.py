@@ -63,9 +63,26 @@ def group(kind):
     """The kind's group on both screens (one of GROUPS). An unknown kind is under "Needs you"."""
     return KINDS.get(kind, (CARD, "needs"))[1]
 
+NAMES = {      # v12 B-OWNER: the plain name of every kind that can ask him or alarm him - what a list row and the dashboard call it (within 24 characters, WhatsApp's limit for a row's title); a layman reads these, never the code's word
+    "kids_flag": "Marked made for kids", "policy": "Policy watch: paused", "risk_lock": "Uploads locked", "risk_gone": "A video is gone",
+    "uploads_private": "Uploads kept private", "money_stop": "Monthly budget reached", "pipeline_stop": "Production stopped", "org_watchdog": "The watchdog stopped",
+    "contract_hold": "Video held: a check", "floor_hold": "Video held: first view", "special_review": "Waits for your review", "hd_blocked": "Video kept private",
+    "org_lever": "A setting needs your OK", "api_audit": "YouTube audit form", "ypp_tier": "Apply for monetisation",
+    "bakeoff": "Pick the better model", "breakout": "A video is taking off", "expiry": "Something expires soon", "build_ready": "A change is ready",
+    "ladder": "The next long video", "occasion": "An occasion special", "replan": "The week's plan", "linkpack": "Link the winning Shorts",
+    "model_dead": "A model stopped working", "style_pick": "Pick the show's look", "visual_idea": "A visual idea", "creative_review": "Review the new video",
+    "floor_eye": "Watch before it posts", "special_ready": "A special is ready", "maker_line": "Your line for the film", "owner_verdict": "Your verdict",
+    "org_stuck": "A department is stuck", "pin_comment": "Pin a comment", "title_pick": "Pick title + thumbnail", "script_preview": "A script preview",
+    "sheets_review": "Character pictures", "voice_pick": "Voice samples", "prepublic": "Before it goes public",
+    "budget_guard": "Budget guard", "split": "Shorts this month", "clip_price": "A clip price changed", "scout_price": "A price changed",
+    "scout_deprecated": "A model is retiring", "model_switch": "A model was switched", "model_plan": "A planned model switch", "model_new": "A newer model appeared",
+    "model_upgrade": "A model test result", "platform_change": "A platform page changed", "advisor": "The advisor's note",
+}
+
 def name(kind):
-    """The kind's plain name, as a list row shows it (24 characters, WhatsApp's limit): "title_pick" -> "Title pick"."""
-    return str(kind or "message").replace("_", " ").strip().capitalize()[:24]
+    """The kind's plain name, as a list row and the dashboard show it (within 24 characters, WhatsApp's limit): `NAMES`; a kind outside it keeps its own
+    word with spaces ("pick_ack" -> "Pick ack")."""
+    return NAMES.get(kind) or str(kind or "message").replace("_", " ").strip().capitalize()[:24]
 
 def group_rows(g, now=None, limit=20):
     """The rows a group shows on both screens, newest first: "needs" = `needs()`; every other group = its open rows, and "decided" also every row
