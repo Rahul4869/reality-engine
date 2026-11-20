@@ -69,7 +69,7 @@ def masters(limit=None):
     if made:
         dflt, hrs = _review_card()
         try: NT.mail("sheets_review", "New Toybox Noir character masters to approve", buttons=[(f"Approve {c}", f"APPROVE SHEET {c}") for c in sorted(set(done))],
-                     default=dflt, expires_h=hrs, dedupe_key=f"sheets|{NT._india_day()}", html=f"<p>{made} master portrait(s) in Drive (Character_Sheets tab, expression 'master'), made from your approved portraits. "
+                     default=dflt, expires_h=hrs, dedupe_key=f"sheets|masters|{','.join(sorted(set(done)))}|{NT._india_day()}", html=f"<p>{made} master portrait(s) in Drive (Character_Sheets tab, expression 'master'), made from your approved portraits. "
                        f"Approve to LOCK them; animated scenes then use them as the face reference. Lifetime images used: {used()} of {cap}.</p>")
         except Exception: pass
     return {"made": made, "have": used()}
@@ -106,7 +106,7 @@ def run(limit=None):
             links = "".join(f"<li>{c}: <a href='https://github.com/{repo}/issues/new?title={quote('APPROVE SHEET ' + c)}'>APPROVE</a></li>" for c in chars) if repo else ""
             dflt, hrs = _review_card()
             NT.mail("sheets_review", "Character sheets ready to review", buttons=[(f"Approve {c}", f"APPROVE SHEET {c}") for c in chars],
-                    default=dflt, expires_h=hrs, dedupe_key=f"sheets|{NT._india_day()}", html=f"<p>{made} new image(s) in Drive (Character_Sheets tab). Approving locks them; CHARACTER_THEATER_ON stays FALSE "
+                    default=dflt, expires_h=hrs, dedupe_key=f"sheets|expressions|{NT._india_day()}", html=f"<p>{made} new image(s) in Drive (Character_Sheets tab). Approving locks them; CHARACTER_THEATER_ON stays FALSE "
                       f"until you switch it on.</p><ul>{links}</ul><p>Lifetime images used: {used()} of {cap}.</p>")
         except Exception: pass
     return {"made": made, "skipped_cap": skipped, "have": used()}

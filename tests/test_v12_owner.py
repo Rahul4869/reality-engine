@@ -342,9 +342,9 @@ ROAD = [
      {"text": "A script preview is ready. It is in your e-mail.", "buttons": [["Approve", "APPROVE DRAFT209911270900"], ["Reject", "REJECT DRAFT209911270900"]],
       "default_action": "the draft is not used: the next slot writes its own script"}, _r32),
     (33, "preview.py decide (MODE)", "mode_ack", "Budget mode: Standard", "row", None, {}, _r33),
-    (34, "sheets.py masters", "sheets_review", "New Toybox Noir character masters to approve", "row", "sheets|{india_day}",
+    (34, "sheets.py masters", "sheets_review", "New Toybox Noir character masters to approve", "row", "sheets|masters|VALE|{india_day}",
      {"buttons": [["Approve VALE", "APPROVE SHEET VALE"]], "default_action": "they lock by themselves"}, _r34),
-    (35, "sheets.py run", "sheets_review", "Character sheets ready to review", "row", "sheets|{india_day}",
+    (35, "sheets.py run", "sheets_review", "Character sheets ready to review", "row", "sheets|expressions|{india_day}",
      {"buttons": [["Approve SET", "APPROVE SHEET SET"]], "default_action": "they lock by themselves"}, _r35),
     (36, "sheets.py auto_lock", "sheets_locked", "Character sheets locked by default", "row", None, {}, _r36),
     (37, "sheets.py style_samples", "style_pick", "Pick the look of your show", "copy", None, {"others": ["style_pick"]}, _r37),      # the card two lines above it
@@ -1068,6 +1068,18 @@ def test_a_groups_line_never_holds_half_an_address(monkeypatch, setting):
     WA.send_open("Alarm", "x" * 680 + " https://studio.youtube.com/video/vid9/edit", "OPEN|alarm|G4"); WA.send_open("Alarm", "y" * 800, "OPEN|alarm|G5")
     said = [b["template"]["components"][0]["parameters"][1]["text"] for b in bodies[-2:]]
     assert said == ["x" * 680, "y" * 700], [s[-60:] for s in said]                    # an address whole or not there; a text without one cut as before
+
+def test_two_sheets_offers_on_one_day_are_two_cards(monkeypatch, setting):
+    """R1-52 (5) (rows 34 and 35 of PART 2's table): masters and expression sheets are two offers, and `masters` makes at most `limit` portraits a call,
+    so two masters offers can fall on ONE India day. With one key the later card returned the first and he never saw its buttons; the key says what
+    is offered - the masters with the characters made."""
+    from whatifs import sheets as SH
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch)
+    _r34(monkeypatch, setting); _r35(monkeypatch, setting)
+    monkeypatch.setattr(SH, "masters_plan", lambda: [{"character": "GRIMM", "expression": "master", "prompt": "p", "hash": "hCA8g"}]); assert SH.masters()["made"] == 1
+    rows = [r for r in core.store().rows("Owner_Actions") if r["kind"] == "sheets_review"]; day = NT._india_day()
+    assert [r["dedupe_key"] for r in rows] == [f"sheets|masters|VALE|{day}", f"sheets|expressions|{day}", f"sheets|masters|GRIMM|{day}"], [(r["dedupe_key"], r["buttons"]) for r in rows]
+    assert [json.loads(r["buttons"]) for r in rows] == [[["Approve VALE", "APPROVE SHEET VALE"]], [["Approve SET", "APPROVE SHEET SET"]], [["Approve GRIMM", "APPROVE SHEET GRIMM"]]]
 
 # ------------------------------------------------------------------ step 8a: NEVER HELD BY HIS ABSENCE (PART 7; R22 (2), (2 b), (2 c)) - the special is step 8b's
 from whatifs import contract as CON, launch as LAU, publish as PUB8
