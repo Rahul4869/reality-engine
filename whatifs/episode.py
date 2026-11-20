@@ -798,7 +798,14 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         cap = S("FIX_MAX_PAID_INR", float) if fix else S("AUTO_FIX_PAID_INR", float)
         chk, notes, spent = FIX.auto_fix(job, chk, cap, lambda: QC.full_check(job.qc_ctx()))
         master = job.master; log(f"QC after fixes: {'PASS' if chk['ok'] else 'still failing: ' + '; '.join(p['code'] for p in chk['problems'])} (fixes: {', '.join(notes) or 'none'}; paid Rs {spent:.0f})")
-    if not chk["ok"] and S("HOLD_ON_QC_FAIL", bool): return _hold(st, ep, out, chk, notes, fix)
+    if not chk["ok"] and S("HOLD_ON_QC_FAIL", bool):
+        held = _hold(st, ep, out, chk, notes, fix)              # FINISHED BY FABLE (CA3-1, R1-104): the hold first - its state and its e-mail never wait on the card
+        if S("TWO_SCREENS_ON", bool):                           # FINISHED BY FABLE (CA2-1, R1-89 (2)): the QC hold opens the gate's own card on both screens; the e-mail is its copy (item 149)
+            try:
+                from whatifs import contract as CONQ            # CONQ, not CON: `_finish` imports contract as CON further down - a local name used above its own import is unbound (CA-1's family)
+                CONQ.owner_card(ep, "quality", [(p.get("code", "check"), p.get("detail", "")) for p in chk.get("problems") or []], "Nothing was uploaded.")
+            except Exception as e: log(f"the quality hold's card was not opened (the e-mail went): {scrub(e)[:120]}", "WARN", ep)
+        return held
     if not chk["ok"]: log("QC failed but HOLD_ON_QC_FAIL is FALSE - uploading anyway (not recommended)", "ERROR")
     from whatifs import scenes as SCN                           # v12 DRAWN: the finished file is measured; a scene that cannot be read there becomes its still BEFORE the gate
     bad_ = SCN.audit(master, job) if SCN.on() else []

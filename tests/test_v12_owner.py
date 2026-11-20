@@ -127,7 +127,7 @@ def test_a_card_without_a_default_gets_the_fallback_and_is_named(setting):
     setting("TWO_SCREENS_ON", "FALSE"); assert _row(NT.send("org_stuck", "A department is stuck", [("Look", "LOOK X")]))["default_action"] == ""      # the older path
 
 # ------------------------------------------------------------------ step 2a: ONE ROAD (PART 2) - every mail to him goes through notify.mail
-OWN_IDS = ("EP209911260900", "SHSPARSE10")          # the whole productions of this file (step 10b: the sparse clock's Short): ids no other test file uses (a test proves it)
+OWN_IDS = ("EP209911260900", "EP209911260930", "EP209911260945", "SHSPARSE10")          # the whole productions of this file (step 10b: the sparse clock's Short): ids no other test file uses (a test proves it)
 
 def test_the_whole_productions_of_this_file_use_ids_no_other_test_file_uses():
     root = os.path.dirname(os.path.abspath(__file__)); here = os.path.basename(__file__)
@@ -1482,3 +1482,26 @@ def test_an_after_launch_note_says_what_it_asks_of_him(setting):
     assert s["learning"]["features"]["note"] == "The feature watch comes after the launch. It needs nothing from you."
     assert s["money"]["treasury"]["note"].endswith("Building it needs nothing from you; until then the top-up reminders reach you as they do today.")
     assert all("after the launch" not in n or "nothing from you" in n for n in DS.NOTES.values()), DS.NOTES
+
+# ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (steps 0 to 4, PART A2 - the third finisher)
+def test_a_video_held_by_the_final_qc_is_on_both_screens(monkeypatch, setting):
+    """R1-89 (2) (the code reader's CR-2a-1; item 149): a video the final QC still fails is HELD with the gate's own card - Fix and Discuss, on both
+    screens - and the e-mail is its copy. FOUND AT THE FINISH: the QC path sent the e-mail alone. 'Approve anyway' is not on it: the QC reads no waiver.
+    RE-CUT (PART A3's CA3-1, R1-104): the hold comes first and the card has its own try - a card that raises never stops the hold."""
+    from whatifs import episode as EP, manage as MG, contract as CON
+    from tools.rehearsal import ToneVoice
+    import whatifs.voice as V
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch); ep = OWN_IDS[1]; real = CON.owner_card
+    def card(*a, **k): real(*a, **k); raise RuntimeError("planted: the card's row was written, then its delivery raised")
+    monkeypatch.setattr(V, "KokoroBackend", lambda blend: ToneVoice()); MG.setup(); core.set_setting("VOICE", "C")
+    held = {"ok": False, "problems": [{"code": "black_frames", "detail": "planted"}], "info": "planted"}
+    monkeypatch.setattr(EP.QC, "full_check", lambda ctx: dict(held)); monkeypatch.setattr(EP.FIX, "auto_fix", lambda job, chk, cap, again: (chk, [], 0.0))
+    monkeypatch.setattr(CON, "owner_card", card)                                                        # the card raises AFTER its row is written: the hold must stand
+    try:
+        r = EP.produce((core.now_utc() + dt.timedelta(hours=10)).strftime("%Y-%m-%dT%H:%M:%SZ"), episode_id=ep); assert r.get("held"), r
+    finally: shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True)
+    assert next(e for e in core.store().rows("Episodes") if e["episode_id"] == ep)["status"] == "HOLD_QC"           # the hold's own state never waits on the card
+    cards = [r for r in NT.needs() if r["kind"] == "contract_hold" and r["episode_id"] == ep]
+    assert len(cards) == 1 and cards[0]["dedupe_key"] == f"contract|{ep}|quality" and "black_frames" in cards[0]["text"], cards
+    assert [v for _l, v in json.loads(cards[0]["buttons"])] == [f"CONTRACT FIX {ep} quality", f"DISCUSS contract {ep}"]
+    assert "Approve anyway" not in [l for l, _v in json.loads(cards[0]["buttons"])]                       # R1-102: no waiver tap on a quality hold
