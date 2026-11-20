@@ -576,8 +576,8 @@ def test_whatsapp_is_counted_and_capped(monkeypatch, setting):
     setting("WA_MONTHLY_CAP_INR", "3"); n = len(bodies)
     assert WA.push("morning", text="Morning message") == "" and WA.push("needs") == "" and len(bodies) == n
     assert [r["kind"] for r in core.store().rows("Owner_Actions") if r["kind"] == "wa_cap"] == ["wa_cap"]
-    alarm = NT.send("kids_flag", "YouTube marked a video as made for kids", dedupe_key="kids|V1")
-    assert WA.push("alarm", _row(alarm)) and len(bodies) == n + 1                                                   # an alarm reads no cap
+    alarm = NT.send("kids_flag", "YouTube marked a video as made for kids", dedupe_key="kids|V1"); assert len(bodies) == n + 1      # step 3: the alarm pushes itself
+    assert WA.push("alarm", _row(alarm)) and len(bodies) == n + 2                                                   # an alarm reads no cap
 
 def test_whatsapp_is_inside_his_month(monkeypatch, setting):
     """PART 8, R17 (9 a): WhatsApp counts inside his Rs 5,000 - his own spend rises by it - and is never booked as paid by the Claude credit."""
@@ -596,3 +596,140 @@ def test_the_three_share_the_chat_cap(monkeypatch, setting):
     setting("TWO_SCREENS_ON", "FALSE"); WA.chat("how are the shorts doing?")
     setting("TWO_SCREENS_ON", "TRUE"); WA.chat("how are the shorts doing?")
     assert roles == ["owner_chat", "owner_chat_cheap"], roles
+
+# ------------------------------------------------------------------ step 3: ALARMS CAN NEVER BE MUTED (PART 3, item 180); the paused branch (R18 (2)); R22 (9), R22 (10)
+def _alarms_told(): return [r for r in core.store().rows("WA_Outbox") if r.get("kind") == "alarm" and r.get("wamid")]
+
+def _mailbox(monkeypatch):
+    from whatifs import publish as PUB
+    box = []; monkeypatch.setattr(PUB, "email", lambda subj, html, kind="essential": box.append(str(subj)) or True); return box
+
+def test_an_alarm_arrives_on_both_screens_whatever_is_set(monkeypatch, setting):
+    """THE PLANTED TEST OF THE BRIEF (item 180: "my AI had muted all of them at 2 a.m."): quiet hours on, the day's cap of "now" messages at 0, WhatsApp's
+    money cap passed, the 24-hour window closed - a made-for-kids alarm is still pushed on WhatsApp (the one template, with a message id) and mailed
+    once. (Its row in the dashboard's snapshot joins in step 6.)"""
+    setting("TWO_SCREENS_ON", "TRUE"); setting("NOTIFY_NOW_MAX_PER_DAY", "0"); bodies = _wire(monkeypatch); box = _mailbox(monkeypatch); _window(False)
+    monkeypatch.setattr(NT, "in_quiet_hours", lambda now=None: True)
+    core.store().append("Cost_Log", [{"ts": core.iso(), "episode_id": "owner", "item": "whatsapp", "provider": "meta", "units": 1, "inr": 500, "role": "morning"}])
+    assert NT.in_quiet_hours() and NT.now_room() <= 0 and WA.over_cap()
+    aid = NT.send("kids_flag", "YouTube marked a video as made for kids", dedupe_key="kids|V9")
+    told = _alarms_told(); r = _row(aid)
+    assert [(x["action_id"], x["wamid"]) for x in told] == [(aid, "wamid.T1")] and bodies[-1]["type"] == "template", told
+    assert box == ["URGENT: YouTube marked a video as made for kids"], box
+    assert r["tier"] == "now" and r["urgent"] == "TRUE" and int(r["count"]) == 1 and r["delivered_at"] and json.loads(r["buttons"]) == [["Seen", "SEEN"]], r
+
+def test_a_flood_is_one_alarm(monkeypatch, setting):
+    """S8 and item 180 (the alert that mattered was #4,000-something): fifty firings of one key are ONE push with a count of 50 - a repeat is counted and
+    shown, never a second alarm and never dropped; another alarm in the middle of the flood is its own push."""
+    setting("TWO_SCREENS_ON", "TRUE"); _wire(monkeypatch); box = _mailbox(monkeypatch); _window(True)
+    first = [NT.send("uploads_private", f"A video is stuck on Private ({i})", dedupe_key="uploads_private") for i in range(25)]
+    lock = NT.send("risk_lock", "Uploads locked: a strike was found", dedupe_key="risk|strike")
+    first += [NT.send("uploads_private", f"A video is stuck on Private ({i})", dedupe_key="uploads_private") for i in range(25, 50)]
+    assert len(set(first)) == 1 and lock != first[0] and [x["action_id"] for x in _alarms_told()] == [first[0], lock]
+    r = _row(first[0]); assert int(r["count"]) == 50 and r["last_text"] == "A video is stuck on Private (49)" and r["text"] == "A video is stuck on Private (0)", r
+    assert len([x for x in core.store().rows("Owner_Actions") if x["kind"] in ("uploads_private", "risk_lock")]) == 2 and len(box) == 2
+
+def test_a_day_later_it_is_said_again(monkeypatch, setting):
+    """A repeat is pushed again only ALARM_REGROUP_H (24) hours after the push he was given, the count in its first words; the next 24 hours count from
+    that push."""
+    T = dt.datetime(2026, 11, 20, 5, 0, tzinfo=dt.timezone.utc)                                          # Fri 20 Nov, 10:30 India time
+    setting("TWO_SCREENS_ON", "TRUE"); bodies = _wire(monkeypatch); _mailbox(monkeypatch); _window(False)
+    def at(h): monkeypatch.setattr(NT, "now_utc", lambda: T + dt.timedelta(hours=h))
+    at(0); a = NT.send("money_stop", "Monthly budget reached", dedupe_key="money_stop|2026-11")
+    at(1); NT.send("money_stop", "Monthly budget reached (again)", dedupe_key="money_stop|2026-11"); assert len(bodies) == 1
+    at(25); assert NT.send("money_stop", "Still at the month's cap", dedupe_key="money_stop|2026-11") == a and len(bodies) == 2
+    assert bodies[-1]["template"]["components"][0]["parameters"][1]["text"].startswith("x3 since Fri 10:30: Still at the month's cap"), bodies[-1]
+    assert [x["action_id"] for x in _alarms_told()] == [a, a] and _row(a)["delivered_at"] == core.iso(T + dt.timedelta(hours=25))
+    at(26); NT.send("money_stop", "Still at the cap", dedupe_key="money_stop|2026-11"); assert len(bodies) == 2 and int(_row(a)["count"]) == 4
+
+EIGHT = ("TWO_SCREENS_ON", "WA_ON", "QUIET_HOURS_IST", "NOTIFY_NOW_MAX_PER_DAY", "DIGEST_DAILY_HOUR_IST", "NEEDS_HOUR_IST", "WA_MONTHLY_CAP_INR", "DASH_ON")
+MUTERS = {"in_quiet_hours", "now_room", "over_cap", "ask"}
+
+def _names(src):
+    import textwrap
+    t = ast.parse(textwrap.dedent(src))
+    return {n.id for n in ast.walk(t) if isinstance(n, ast.Name)} | {n.attr for n in ast.walk(t) if isinstance(n, ast.Attribute)}
+
+def test_no_lever_reaches_the_alarm():
+    """Item 180: no department, lever, learned rule, cap or model can mute an alarm - the eight cells around it are his (`strategy.OWNER_ONLY`; each is
+    no lever, or a lever whose every move needs his tap: the pin's own expression, tests/test_v12_strategy.py 464), and the alarm's code - `_alarm`,
+    its push, its retry and the alarm branch of `wa.push` - names no quiet hours, no daily cap, no money cap and no model (`ast`). PLANTED: a function
+    that asks the quiet hours is found."""
+    import inspect
+    from whatifs.org import strategy as STR, levers as LV
+    for k in EIGHT: assert k in STR.OWNER_ONLY and k in core.DEFAULTS and (LV.owner_of(k) == "" or LV.LEVERS[k]["owner"] == "always"), k
+    for fn in (NT._alarm, NT._tell, NT.alarm_retry, WA.push, WA._push_alarm):
+        assert not _names(inspect.getsource(fn)) & MUTERS, (fn.__name__, _names(inspect.getsource(fn)) & MUTERS)
+    assert _names("def f(row):\n    if in_quiet_hours(): return ''\n") & MUTERS == {"in_quiet_hours"}
+
+def test_an_alarm_whatsapp_did_not_take_is_sent_again(monkeypatch, setting):
+    """R17 (5 a): a WhatsApp fault in the minute of an alarm must not leave it in a mailbox he does not read - every tick pushes again each open alarm
+    WhatsApp has not taken (`notify.tick` begins with `alarm_retry`), and `delivered_at` is stamped only by the push that went."""
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch); got = iter(["", "", "wamid.R3"]); kinds = []
+    monkeypatch.setattr(WA, "_post", lambda body, kind="reply", now=None: kinds.append(kind) or next(got))
+    aid = NT.send("pipeline_stop", "Production paused: a health check failed", dedupe_key="pipeline_stop|preflight|planted")
+    assert kinds == ["alarm"] and not _row(aid)["delivered_at"] and _alarms_told() == []                     # attempt 1, at the firing: not taken
+    assert NT.tick()["alarms"] == 0 and not _row(aid)["delivered_at"]                                       # attempt 2, the next tick: not taken
+    assert NT.tick()["alarms"] == 1 and _row(aid)["delivered_at"]                                           # attempt 3: taken
+    assert [(x["action_id"], x["wamid"]) for x in _alarms_told()] == [(aid, "wamid.R3")]
+    assert NT.tick()["alarms"] == 0 and kinds == ["alarm"] * 3                                              # told: the retry never pushes it again
+
+def test_an_alarm_through_mail_is_mailed_once(monkeypatch, setting):
+    """R17 (5 c): an alarm that comes through `notify.mail` (rows 7, 8, 12, 13, 17, 18, 21 and 22 of PART 2's table) is mailed by `mail` and never a
+    second time by the alarm; one sent straight through `send` is mailed by the alarm itself."""
+    setting("TWO_SCREENS_ON", "TRUE"); _wire(monkeypatch); box = _mailbox(monkeypatch); _window(True)
+    aid = NT.mail("money_stop", "Monthly budget reached", "<p>planted</p>", dedupe_key="money_stop|2099-01")
+    assert box == ["Monthly budget reached"] and _row(aid)["kind"] == "money_stop" and [x["action_id"] for x in _alarms_told()] == [aid], box
+    NT.send("kids_flag", "YouTube marked a video as made for kids", dedupe_key="kids|V2")
+    assert box == ["Monthly budget reached", "URGENT: YouTube marked a video as made for kids"], box
+
+def test_a_pause_does_not_silence_him(monkeypatch, setting):
+    """R17 (11 d), typed in step 3 by R18 (2): through a seven-day policy pause he still gets the morning message, an answer to his input and the
+    dashboard - the paused branch of `manage.tick` runs the desk, the briefs, the alarm retry and the snapshot before it returns. No default runs (the
+    cards' defaults run at the first tick after the pause)."""
+    from whatifs import manage as MG
+    setting("TWO_SCREENS_ON", "TRUE"); setting("STRATEGY_ON", "TRUE"); setting("PAUSED", "TRUE"); _wire(monkeypatch); _mailbox(monkeypatch)
+    D1 = dt.datetime(2026, 11, 20, 4, 0, tzinfo=dt.timezone.utc)                                         # Fri 20 Nov, 09:30 India time
+    monkeypatch.setattr(NT, "now_utc", lambda: D1 - dt.timedelta(hours=2))
+    card = NT.send("bakeoff", "Pick the clip model", [("Pick A", "PICK A")], default="A is used", expires_h=1, dedupe_key="bake|pause")      # expired before the first tick
+    core.store().append("Owner_Input", [{"input": "more wonder please"}])
+    for day in (D1, D1 + dt.timedelta(days=1)):
+        monkeypatch.setattr(DG, "now_utc", lambda d=day: d); monkeypatch.setattr(NT, "now_utc", lambda d=day: d); _window(False, day)
+        assert MG.tick() == {"action": "paused"}
+    assert [r["kind"] for r in core.store().rows("WA_Outbox")] == ["morning", "morning"], core.store().rows("WA_Outbox")
+    assert [r["verbatim"] for r in core.store().rows("Owner_Desk") if r.get("verdict")] == ["more wonder please"]
+    assert _row(card)["status"] == "OPEN" and not [r for r in core.store().rows("Owner_Actions") if r["status"] == "DEFAULTED"]
+
+def test_the_policy_alarm_keeps_his_resume_tap(monkeypatch, setting):
+    """R22 (9) (step 2a's design question 1): `guardian` sends caretaker's card FIRST and the mail follows as its copy - ONE incident with the card's
+    three buttons, so his "Resume now" is never lost on either screen; when the card could not be sent, the mail's own row IS the alarm and still
+    carries "Resume now"."""
+    from whatifs import manage as MG, caretaker as CT
+    setting("TWO_SCREENS_ON", "TRUE"); _wire(monkeypatch); box = _mailbox(monkeypatch); _window(False)
+    items = [{"change": "AI content is no longer monetised", "source": "https://support.google.com/youtube"}]
+    MG.guardian(items)
+    pol = [r for r in core.store().rows("Owner_Actions") if r["kind"] == "policy"]
+    assert len(pol) == 1 and pol[0]["status"] == "OPEN" and int(pol[0]["count"]) == 1, [(r["status"], r["count"]) for r in pol]
+    assert "RESUME" in [v for _l, v in json.loads(pol[0]["buttons"])] and [x["action_id"] for x in _alarms_told()] == [pol[0]["id"]]
+    assert "Paused for 7 days (policy watch)" in box and core.S("PAUSED_UNTIL")                             # the e-mail goes exactly as today
+    assert NT.answer(pol[0]["id"], "RESUME") == "resumed" and not core.S("PAUSED_UNTIL")
+    def boom(items): raise RuntimeError("the model did not answer")
+    monkeypatch.setattr(CT, "policy_rescue", boom); MG.guardian(items)
+    pol = [r for r in core.store().rows("Owner_Actions") if r["kind"] == "policy" and r["status"] == "OPEN"]
+    assert len(pol) == 1 and json.loads(pol[0]["buttons"]) == [["Resume now", "RESUME"]] and pol[0]["text"].startswith("Paused for 7 days (policy watch)"), pol
+
+def test_a_failed_copy_still_reaches_the_screens(monkeypatch, setting):
+    """R22 (10) (item 149: e-mail is only the copy; step 2a's design question 2): an e-mail that RAISES (a token refresh, a post) never takes the row with
+    it - the screens he reads keep the message; an alarm whose copy raised still tries its own URGENT mail and is still pushed."""
+    from whatifs import publish as PUB
+    setting("TWO_SCREENS_ON", "TRUE"); _wire(monkeypatch); _window(True); tried = []
+    def boom(subj, html, kind="essential"): tried.append(str(subj)); raise RuntimeError("the token refresh failed")
+    monkeypatch.setattr(PUB, "email", boom)
+    a = NT.mail("budget_pct", "Budget: 90% of this month's cap used", "<p>planted</p>")
+    assert [r["kind"] for r in core.store().rows("Owner_Actions")] == ["budget_pct"] and _row(a)["kind"] == "budget_pct"
+    k = NT.mail("kids_flag", "URGENT: YouTube marked a video as made for kids", "<p>planted</p>", dedupe_key="kids|V3")
+    assert _row(k)["kind"] == "kids_flag" and [x["action_id"] for x in _alarms_told()] == [k]
+    assert len(tried) == 3 and tried[-1].startswith("URGENT: URGENT: YouTube"), tried                     # the alarm's own mail was still tried
+    assert NT.mail("cost_check", "Weekly cost check", "<p>planted</p>", screens=False) is False
+    setting("TWO_SCREENS_ON", "FALSE")
+    with pytest.raises(RuntimeError): NT.mail("budget_pct", "Budget: 95%", "<p>planted</p>")              # the older path raises as today

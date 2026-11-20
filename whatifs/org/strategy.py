@@ -11,7 +11,9 @@ TAKEN_BACK = ("rolled_back", "refused", "no_effect", "void")
 DECIDED_MAX_H = 26                                        # a row "decided" this long whose ticket is not on tab Memos: its memo is sent once more, then it is void
 OWNER_ONLY = ("BUDGET_CEILING_INR", "BUDGET_FLOOR_INR", "MONTH_CAP_OVERRIDES", "BUDGET_MODE", "PAUSED", "PUBLISH_DAYS",
               "CREDIT_COVER_MONTH_MAX_INR", "CLAUDE_CREDIT_USD_MONTH", "CLAUDE_CREDIT_FROM", "CLAUDE_CREDIT_UNTIL",     # item 53: the cap and deleting stay his
-              "ORG_BUILDS_ON")     # RR-36: only B-ORG turns the organisation's builds on
+              "ORG_BUILDS_ON",     # RR-36: only B-ORG turns the organisation's builds on
+              "TWO_SCREENS_ON", "WA_ON", "QUIET_HOURS_IST", "NOTIFY_NOW_MAX_PER_DAY", "DIGEST_DAILY_HOUR_IST", "NEEDS_HOUR_IST", "WA_MONTHLY_CAP_INR",
+              "DASH_ON")           # v12 B-OWNER (item 180): no department turns the cells around an alarm - each is no lever or one whose every move needs his tap
 
 def on():
     """Strategy is part of the CEO (STRATEGY_ON); FALSE = exactly the code V4 is built on (the Monday re-planner card, no review)."""

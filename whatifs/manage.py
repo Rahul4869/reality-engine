@@ -182,7 +182,20 @@ def tick():
     JOB["name"] = "tick"
     kill_check()
     if paused():
-        n = hold_scheduled("paused"); log(f"paused - nothing to do ({n} scheduled video(s) held)"); return {"action": "paused"}
+        n = hold_scheduled("paused")
+        if S("TWO_SCREENS_ON", bool):                                  # v12 B-OWNER (R17 (11 d)): while paused he still hears - his desk, the morning message
+            try:                                                       # and the "Needs you" list, an alarm WhatsApp did not take, the dashboard; no default runs
+                from whatifs.org import desk as DESK; DESK.tick()      # (nothing is decided in a pause: the cards' defaults run at the first tick after it)
+            except Exception as x: log(f"owner's desk skipped: {scrub(x)}", "WARN")
+            try:
+                from whatifs import digests as DGS; DGS.tick()
+            except Exception as x: log(f"WhatsApp briefs skipped: {scrub(x)}", "WARN")
+            try: NT.alarm_retry()
+            except Exception as x: log(f"alarm retry skipped: {scrub(x)}", "WARN")
+            try:
+                from whatifs import dash as DS; DS.publish()
+            except Exception as x: log(f"dashboard snapshot skipped: {scrub(x)}", "WARN")
+        log(f"paused - nothing to do ({n} scheduled video(s) held)"); return {"action": "paused"}
     resume_held()
     try:                                                        # v9: packaging rotation windows (title + thumbnail through the API)
         from whatifs import packaging as PK
@@ -470,18 +483,22 @@ def _outliers():
     return out
 
 def guardian(items):
-    """Option B: pause only on a serious AI-monetisation rule change; auto-resume after 7 days."""
+    """Option B: pause only on a serious AI-monetisation rule change; auto-resume after 7 days.
+    v12 B-OWNER (R22 (9)): caretaker's card goes FIRST and the mail follows as its COPY - one incident that keeps his "Resume now"; when the card could
+    not be sent, the mail's own row IS the alarm and still carries "Resume now"."""
     until = (now_utc() + dt.timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
     set_setting("PAUSED_UNTIL", until)
     held = hold_scheduled("policy watch")
-    NT.mail("policy", "Paused for 7 days (policy watch)", dedupe_key="policy|" + now_utc().strftime("%Y-%m-%d"), html="<p>A possible change to AI-content monetisation rules was found:</p><ul>" +
+    log(f"guardian pause until {until}", "WARN")
+    aid = ""
+    try:                                                         # v10 (K140): Policy Rescue: one urgent card with the impact and the choices
+        from whatifs import caretaker as CT; aid = CT.policy_rescue(items)
+    except Exception as x: log(f"policy rescue card skipped: {scrub(x)}", "WARN")
+    NT.mail("policy", "Paused for 7 days (policy watch)", screens=not aid, buttons=[("Resume now", "RESUME")], default="stays paused until the date in Settings",
+            expires_h=24 * 7, dedupe_key="policy|" + now_utc().strftime("%Y-%m-%d"), html="<p>A possible change to AI-content monetisation rules was found:</p><ul>" +
               "".join(f"<li>{i.get('change')} ({i.get('source')})</li>" for i in items) +
               f"</ul><p>{held} already-scheduled video(s) were switched to private so they do not go out. "
               f"Publishing resumes automatically on {until[:10]} and held videos are re-scheduled. To resume now, set PAUSED_UNTIL to blank in Settings.</p>")
-    log(f"guardian pause until {until}", "WARN")
-    try:                                                         # v10 (K140): Policy Rescue: one urgent card with the impact and the choices
-        from whatifs import caretaker as CT; CT.policy_rescue(items)
-    except Exception as x: log(f"policy rescue card skipped: {scrub(x)}", "WARN")
 
 # ---------------- learning loop (daily) ----------------
 def learn():

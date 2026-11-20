@@ -2,7 +2,7 @@
 from __future__ import annotations
 import datetime as dt, itertools, json, re
 from zoneinfo import ZoneInfo
-from whatifs.core import S, log, store, iso, now_utc, parse_iso, env, set_setting, scrub, _plain
+from whatifs.core import S, log, store, iso, now_utc, parse_iso, env, set_setting, scrub, _plain, FAKE
 
 IST = ZoneInfo("Asia/Kolkata")
 TIERS = ("now", "week", "fyi")
@@ -53,6 +53,7 @@ DASH_PRIVATE = ("script_preview", "special_ready", "special_review", "ladder", "
 INFORM_KEEP_H = 336          # an inform row of a kind outside STANDING_KINDS closes by itself after this many hours (its key holds the India date)
 CARD_FALLBACK = "nothing changes; it is reported in the morning message"      # the default of a card sent without one (the build refuses such a call: the card scan)
 _SEEN_VERBS = ("OK", "NOTED", "SEEN")
+ALARM_REGROUP_H = 24         # an open alarm fired again is pushed again only this many hours after the push he was given (S8's grouping window); a repeat is counted, never dropped
 
 def klass(kind):
     """The kind's class: alarm, hold, card or inform. An unknown kind is a card under "Needs you" - never lost, never silent."""
@@ -135,8 +136,10 @@ def open_rows(tier=None):
 
 def send(kind, text, buttons=(), episode=None, tier="week", default=None, expires_h=None, urgent=False, dedupe_key=None, mailed=False):
     """Create the owner action (and deliver it if its tier says so). Returns the row id, or the id of an identical open row.
-    v12 B-OWNER: mailed=True = the caller has mailed it already (notify.mail): an alarm is then not mailed a second time."""
+    v12 B-OWNER: mailed=True = the caller has mailed it already (notify.mail): an alarm is then not mailed a second time. With TWO_SCREENS_ON a kind of
+    the ALARM list is an incident (`_alarm`): it can never be muted, and a repeat is counted on it."""
     tier = tier if tier in TIERS else "week"
+    if _on() and klass(kind) == ALARM: return _alarm(kind, text, buttons, episode, default, expires_h, dedupe_key, mailed=mailed)
     if _on(): buttons, default, expires_h, dedupe_key = _shape(kind, episode, buttons, default, expires_h, dedupe_key)
     st = store(); key = dedupe_key or f"{kind}|{episode or ''}"
     if _on() and kind == "ypp_tier":                              # v12 B-OWNER (R7's round 2): the tier is told ONCE - any row with its key, open or closed, stands
@@ -176,12 +179,81 @@ def mail(kind, subject, html, level="essential", screens=True, buttons=(), episo
     """v12 B-OWNER (ONE ROAD, item 149): every mail to him goes through here - e-mail is only the copy. TWO_SCREENS_ON FALSE = the call of today, word
     for word. TRUE = the e-mail goes exactly as today (his storage); then, when `screens`, the same message is a row of its kind (`send`), so WhatsApp
     and the dashboard carry it (screens=False: the screens carry it already through another row). `text` = the row's own words where the mail holds
-    what no screen may show (a script, an unreleased premise: rows 32 and 38 of PART 2's table). Returns the row id, or the mail's own result."""
+    what no screen may show (a script, an unreleased premise: rows 32 and 38 of PART 2's table). Returns the row id, or the mail's own result.
+    R22 (10): THE ROW DOES NOT HANG ON ITS COPY - with the switch on an e-mail that raises is logged and the row is sent all the same (mailed=False, so an
+    alarm's own "URGENT" mail is still tried); with screens=False a raise returns False. With the switch off the call is today's, raising as today."""
     from whatifs import publish as PUB                     # looked up on the module at call time: the older tests replace PUB.email
     if not _on(): return PUB.email(subject, html, kind=level)
-    sent = PUB.email(subject, html, kind=level)
+    went = True                                            # mailed=True whenever PUB.email returned, whatever it returned (R17 (5 c))
+    try: sent = PUB.email(subject, html, kind=level)
+    except Exception as e:                                 # R22 (10): the copy failed; the row is sent all the same
+        log(f"the e-mail copy failed: {subject}", "WARN"); sent, went = False, False
     if not screens: return sent
-    return send(kind, text or _plain(str(subject) + ". " + str(html)), buttons, episode, tier="week", default=default, expires_h=expires_h, dedupe_key=dedupe_key, mailed=True)
+    return send(kind, text or _plain(str(subject) + ". " + str(html)), buttons, episode, tier="week", default=default, expires_h=expires_h, dedupe_key=dedupe_key, mailed=went)
+
+
+# ------------------------------------------------------------------ v12 B-OWNER (PART 3, item 180): ALARMS CAN NEVER BE MUTED
+def _alarm(kind, text, buttons, episode, default, expires_h, key, mailed=False, now=None):
+    """An alarm is an INCIDENT (the switch TWO_SCREENS_ON). An OPEN incident with this key: the firing is COUNTED on it (count, last_at, last_text) and
+    pushed again only ALARM_REGROUP_H hours after the push he was given, the count in its first words - never a second alarm, never dropped. No open
+    incident: a row of tier "now", urgent, count 1 (a "Seen" button when the caller gave none), then AT ONCE, each in its own try: the mail (unless
+    `mailed`), the WhatsApp push, the dashboard's snapshot. It reads NO quiet hours, NO daily cap, NO WhatsApp money cap, NO lever, NO Palace item
+    and calls no model. `delivered_at` is stamped by the first push that returned a message id; where WhatsApp is not set up (outside fake mode)
+    nothing is retried and it is stamped when the mail went (R17 ADDS (F)). Returns the incident's id."""
+    from whatifs import wa as WA
+    now = now or now_utc(); st = store(); key = key or f"{kind}|{episode or ''}"
+    for r in open_rows():
+        if r.get("dedupe_key") != key: continue
+        n = int(r.get("count") or 1) + 1
+        st.update("Owner_Actions", "id", r["id"], {"count": n, "last_at": iso(now), "last_text": str(text)[:300]})      # a repeat is counted, never dropped
+        t = parse_iso(r.get("delivered_at"))
+        if t and (now - t).total_seconds() >= ALARM_REGROUP_H * 3600:
+            since = (parse_iso(r.get("created")) or now).astimezone(IST)
+            _tell(r, now, f"x{n} since {since:%a %H:%M}: {str(text)[:1400]}")
+        return r["id"]
+    aid = _new_id(); exp = (now + dt.timedelta(hours=float(expires_h))).strftime("%Y-%m-%dT%H:%M:%SZ") if expires_h else ""
+    btns = list(buttons or ()) or [("Seen", "SEEN")]
+    row = {"id": aid, "created": iso(now), "tier": "now", "kind": str(kind)[:40], "episode_id": episode or "", "text": str(text)[:1500],
+           "buttons": json.dumps([[str(l)[:30], str(v)[:120]] for l, v in btns]), "default_action": default or "", "expires_at": exp,
+           "status": "OPEN", "answered_at": "", "answer": "", "channel": "", "delivered_at": "", "dedupe_key": key, "urgent": "TRUE",
+           "count": 1, "last_at": iso(now), "last_text": str(text)[:300]}
+    st.append("Owner_Actions", [row])
+    went = bool(mailed)
+    if not mailed:                                                     # R17 (5 c): an alarm that came through notify.mail is mailed once
+        try:
+            from whatifs import publish as PUB
+            went = bool(PUB.email("URGENT: " + str(row["text"])[:70], _email_body(row)))
+        except Exception as e: log(f"the alarm's e-mail failed: {scrub(e)[:120]}", "WARN")
+    if WA.configured() or FAKE: _tell(row, now)
+    elif went: st.update("Owner_Actions", "id", aid, {"delivered_at": iso(now)})      # R17 ADDS (F): WhatsApp is not set up - the mail went, the dashboard shows it
+    try:
+        from whatifs import dash as DS; DS.publish()                   # the dashboard's snapshot now, not at the tick's end
+    except Exception as e: log(f"the alarm's dashboard snapshot failed: {scrub(e)[:120]}", "WARN")
+    return aid
+
+
+def _tell(row, now=None, text=None):
+    """One WhatsApp push of an alarm (`wa.push("alarm")`: its own text, or `text` for a repeat). `delivered_at` is stamped only when the push returned a
+    message id - the push he was given. Never raises; returns the message id or ''."""
+    from whatifs import wa as WA
+    now = now or now_utc(); wamid = ""
+    try: wamid = WA.push("alarm", dict(row, text=text) if text else row, now=now)
+    except Exception as e: log(f"the alarm was not pushed on WhatsApp ({type(e).__name__})", "WARN")
+    if wamid: store().update("Owner_Actions", "id", row["id"], {"delivered_at": iso(now)})
+    return wamid
+
+
+def alarm_retry(now=None):
+    """R17 (5 a): AN ALARM WHATSAPP DID NOT TAKE IS SENT AGAIN. An alarm is TOLD when WA_Outbox holds a row with a message id for its action id; every
+    open alarm not yet told is pushed again at every tick - no cap, no quiet hours. Where WhatsApp is not set up there is nothing to retry (R17 ADDS (F)).
+    The switch TWO_SCREENS_ON FALSE: nothing (the older path). Returns how many were told now."""
+    if not _on(): return 0
+    from whatifs import wa as WA
+    if not (WA.configured() or FAKE): return 0
+    now = now or now_utc(); told = {r.get("action_id") for r in store().rows("WA_Outbox") if r.get("wamid")}; n = 0
+    for r in open_rows():
+        if klass(r.get("kind")) == ALARM and r.get("id") not in told and _tell(r, now): n += 1
+    return n
 
 
 def _email_body(row):
@@ -297,13 +369,14 @@ def digest(now=None, force=False):
 
 
 def tick():
-    """Called from the half-hourly tick: flush queued messages, run defaults, send the digest when due. Never raises."""
+    """Called from the half-hourly tick: flush queued messages, run defaults, send the digest when due. Never raises.
+    v12 B-OWNER: it begins with `alarm_retry` (an alarm WhatsApp did not take is pushed again; nothing with the switch off)."""
     try:
         from whatifs import builds as BD; BD.ensure_registered()      # v9.4a (WP3): Merge / Reject / auto-merge handlers
         from whatifs import visual_lab as VL; VL.register()            # v9.4a: Visual Lab answers
     except Exception: pass
     out = {}
-    for name, fn in (("flushed", flush), ("defaulted", expire_defaults), ("digest", digest)):
+    for name, fn in (("alarms", alarm_retry), ("flushed", flush), ("defaulted", expire_defaults), ("digest", digest)):
         try: out[name] = fn()
         except Exception as e: log(f"notify {name} failed: {scrub(e)[:120]}", "WARN")
     return out
