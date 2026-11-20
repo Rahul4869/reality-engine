@@ -462,3 +462,13 @@ def test_a_job_that_polls_counts_one_empty_read(monkeypatch, gate_on):
     assert HG.finish(vid, 45, NOW)[0] == HG.WAITING and len(reads) == 4 and HG.row(vid)["note"] == "unread 1", (len(reads), HG.row(vid)["note"])
     late = 60 + core.S("PRIVATE_ALERT_HOURS", float) * 60
     assert HG.finish(vid, 0, NOW + (late + 1) * M)[0] == HG.WAITING and HG.row(vid)["note"] == "unread 2" and not _blocked()      # one late empty read blocks nothing
+
+def test_compare_never_judges_a_gated_shorts_privacy(monkeypatch, setting, gate_on):
+    """R18 (4 b) (a missing test: the memo's break "`privacy` left in `want`" had none - the gate's receipt replaces the row afterwards). For a gated
+    Short `compare` is never asked about `privacy`; the row is the gate's alone."""
+    seen = []; real = REL.compare
+    monkeypatch.setattr(REL, "compare", lambda p, want, got: seen.append((p, sorted(want))) or real(p, want, got))
+    PUB.FAKE_FAULTS["youtube"] = {"sd": True}
+    _short(monkeypatch, setting, "SHHD14")
+    yt = [w for p, w in seen if p == "youtube"]; assert yt and all("privacy" not in w for w in yt), yt
+    assert _rc("SHHD14")[0] == REL.WAITING

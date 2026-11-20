@@ -1235,7 +1235,7 @@ DEFAULTS = {
  "EXPIRY_CHECK_DAY": ("", "auto - the UTC date of the last key-expiry check (R22 (12): it runs at the first tick at or after 08:00 UTC, once a UTC day)"),
  "OCCASION_DAY": ("", "auto - the UTC date of the last occasion heads-up (R22 (12): the first tick at or after 09:00 UTC, once a UTC day)"),
  "HD_LONG_CAP_MIN": ("120","v12 B-OWNER (PART 9): minutes past its slot after which a long video goes public whatever YouTube shows (YouTube's own schedule publishes it; the miss is logged)"),
- "DESK_MONTHLY_CAP_INR": ("40","v12 B-OWNER: rupees a month for weighing his inputs (one strong call an input, role owner_desk; an estimate: 40 to 80 inputs); above it the input is kept word for word and read on the 1st of next month. Inside the chat's cap"),
+ "DESK_MONTHLY_CAP_INR": ("40", "v12 B-OWNER: rupees a month for weighing his inputs (one strong call an input, role owner_desk; an estimate: 40 to 80 inputs); above it the input is kept word for word and read on the 1st of next month. Inside the chat's cap"),
 }
 _settings_cache = None
 def settings(refresh=False) -> dict:
