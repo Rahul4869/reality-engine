@@ -95,6 +95,16 @@ def group_rows(g, now=None, limit=20):
                 or (g == "decided" and r.get("status") == "DEFAULTED" and str(r.get("answered_at") or "") >= since)]
     return sorted(rows, key=lambda r: str(r.get("created") or ""), reverse=True)[:limit]
 
+def outcome(row, text):
+    """v12 B-OWNER (PART 6 with PART 7): what his silence really did, written on the card that defaulted - `expire_defaults` writes the default's
+    label BEFORE the handler runs, and a default that could not run must not read as one that did."""
+    if row and row.get("id"): store().update("Owner_Actions", "id", row["id"], {"answer": str(text)[:120]})
+
+def ran_label(row):
+    """How both screens name a row his silence decided: "ran by default: " and what really happened (the row's answer; the default's label when no
+    handler wrote one)."""
+    return "ran by default: " + str(row.get("answer") or row.get("default_action") or "nothing changed")
+
 def asks(row):
     """Does the row ask him to decide - a button whose verb is not OK, NOTED or SEEN?"""
     try: btns = json.loads(row.get("buttons") or "[]")

@@ -1035,11 +1035,13 @@ def approve_by_silence(ep, row=None):
     if not ok:
         NT.send("contract_hold", f"{title} was not approved by your silence: {why}. It stays private.", [("Approve", f"APPROVE {ep}"), ("Keep it private", f"HOLDREVIEW {ep}")],
                 tier="week", episode=ep, dedupe_key=f"silence|{ep}")
+        NT.outcome(row, f"it stays private: {why}")                  # "Decided for you" reads the card's answer: never "approved by your silence" of a film that was held
         log(f"not approved by silence: {why}", "WARN", ep); return f"held: {why}"
     for r in NT.open_rows():                                         # one road: the report of an earlier "no" is closed by the "yes"
         if r.get("dedupe_key") == f"silence|{ep}": st.update("Owner_Actions", "id", r["id"], {"status": "ANSWERED", "answered_at": iso(), "answer": "cleared"})
     old = e.get("slot_et"); ans = str(approve(ep))
-    if not ans.startswith("approved"): return ans
+    if not ans.startswith("approved"): NT.outcome(row, f"it stays private: {ans}"); return ans
+    NT.outcome(row, (row or {}).get("default_action") or "approved by your silence")
     new = next((r.get("slot_et") for r in store().rows("Episodes") if r.get("episode_id") == ep), old)
     watch = f" Watch it (private): https://studio.youtube.com/video/{e.get('yt_id')}/edit"
     text = (f"{title} was approved by your silence and goes public at {_ist(new)}." if new == old else

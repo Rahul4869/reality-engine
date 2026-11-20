@@ -1676,3 +1676,30 @@ def test_a_hold_raised_again_says_what_failed_now(setting):
     assert "EPDQ5" not in json.loads(core.S("CONTRACT_WAIVERS") or "{}")                               # it waived nothing
     CON.owner_card("EPDQ5", "final", [("exhibits", "second")])                                         # held again with the SAME failures: still that one card
     assert [r["status"] for r in holds()] == ["ANSWERED", "OPEN"], [(r["status"], r["text"][:50]) for r in holds()]
+
+# ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (step 8) - PART C
+def _short8(monkeypatch, setting, on="TRUE", sid="SH209911200900"):
+    """A standalone Short that is made and on record (tab Specials), the switch as given; Drive and the upload check stubbed; `approve` recorded."""
+    from whatifs import shorts2 as SH, specials as SP, launch as LA, publish as PUB
+    setting("TWO_SCREENS_ON", on); _mailbox(monkeypatch); monkeypatch.setattr(NT, "in_quiet_hours", lambda now=None: False)
+    monkeypatch.setattr(PUB, "drive_upload", lambda path, name, public=False: ("f8c", "u8c")); monkeypatch.setattr(LA, "uploads_open", lambda: True)
+    core.store().append("Specials", [{"ts": core.iso(), "id": sid, "kind": "short", "title": "You wake up at noon", "status": "MADE", "made": core.iso()}])
+    SP.register(); posted = []; monkeypatch.setattr(SP, "approve", lambda s, replace=False: posted.append(s) or f"posted {s}")
+    return SH, SP, sid, posted
+
+def _sp_row(sid): return next(r for r in core.store().rows("Specials") if r.get("id") == sid)
+def _cards8(sid): return [r for r in core.store().rows("Owner_Actions") if r.get("episode_id") == sid]
+_SC8 = {"title": "You wake up at noon", "beats": [{"line": "You wake up at noon."}]}
+
+def test_what_ran_by_default_says_what_his_silence_really_did(monkeypatch, setting):
+    """PART 6 ("Decided for you": "ran by default") with PART 7 (FN2-6-2, the second finisher's). FOUND AT THE FINISH: `expire_defaults` writes the
+    default's label on the row before the handler runs, so a film his silence could NOT approve read "ran by default: approved by your silence" on Home
+    and "(defaulted)" on WhatsApp while it stayed private. The outcome is written on the card, and both lists read it."""
+    slot, sched = _ep8(monkeypatch, setting); monkeypatch.setattr(LAU, "uploads_open", lambda: False)
+    CON.await_approval("EP8", "ytEP8", slot, "s"); card = _kind("creative_review", "EP8")[0]["id"]
+    NT.expire_defaults(now=_later(15)); lab = lambda: {c["id"]: c for c in DS._decided_two(now=_later(15))}[card]["default_label"]
+    assert _row(card)["answer"] == "it stays private: uploads are not confirmed open yet", _row(card)["answer"]
+    assert lab() == "ran by default: it stays private: uploads are not confirmed open yet"
+    assert "(ran by default: it stays private: uploads are not confirmed open yet)" in WA.group_text("decided", now=_later(15), cut=None)
+    monkeypatch.setattr(LAU, "uploads_open", lambda: True); assert CON.review_sweep() == 1 and sched == [("ytEP8", slot)]
+    assert _row(card)["answer"] == "approved by your silence" and lab() == "ran by default: approved by your silence"

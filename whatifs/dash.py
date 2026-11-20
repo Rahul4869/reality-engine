@@ -118,7 +118,7 @@ def _decided_two(now=None):
         else: continue
         btns = [] if ran else json.loads(r.get("buttons") or "[]"); txt = _text(r)
         out.append({"id": r["id"], "kind": "decided", "title": txt[:90], "why": txt[:400],
-                    "default_label": ("ran by default: " + str(r.get("default_action") or "nothing changed")) if ran else (r.get("default_action") or "It stays"),
+                    "default_label": NT.ran_label(r) if ran else (r.get("default_action") or "It stays"),
                     "default_at": (r.get("answered_at") or "") if ran else "", "window_h": 0, "links": _links(r),
                     "verbs": {str(lbl)[:24]: f"ACT|{r['id']}|{i}" for i, (lbl, _v) in enumerate(btns)}})
     return out

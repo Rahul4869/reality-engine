@@ -205,7 +205,7 @@ def group_text(g, view=None, now=None, cut=1024):
         view = view or OV.build()
         parts += [DG.learned() if s == "learned" else OV.render(s, view) for s in secs]
     rows = NT.group_rows(g, now)
-    parts.append("\n".join(f"- {NT.whole(r.get('text') or '', 300)}" + (f" ({r['status'].lower()})" if r.get("status") == "DEFAULTED" else "") for r in rows) if rows else "Nothing here now.")
+    parts.append("\n".join(f"- {NT.whole(r.get('text') or '', 300)}" + (f" ({NT.ran_label(r)})" if r.get("status") == "DEFAULTED" else "") for r in rows) if rows else "Nothing here now.")
     out = "\n\n".join(p for p in parts if p)
     if cut and len(out) > cut:
         tail = "\n... more on the dashboard"; keep = out[:cut - len(tail)]

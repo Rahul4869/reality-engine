@@ -455,16 +455,18 @@ def _ready_silence(row):
     """v12 B-OWNER (PART 7): the default of a `special_ready` card that expired unanswered. The special is posted (`approve`, the function his tap
     calls) only when its Specials row still waits, uploads are open, nothing is paused and its own check result recorded at making is a pass;
     otherwise nothing is posted and the card is not renewed."""
-    from whatifs import launch as LA
+    from whatifs import launch as LA, notify as NT
     from whatifs.manage import paused
     sid = str(row.get("episode_id") or "")
     rec = next((r for r in store().rows("Specials") if r.get("id") == sid), None)
-    if not rec: return f"not posted: {sid} not found"
-    if rec.get("status") != "AWAITING_APPROVAL": return f"not posted: {sid} no longer waits ({rec.get('status')})"
-    if str(rec.get("checks") or "").lower() != "pass": return f"not posted: {sid} has no check on record"
-    if not LA.uploads_open(): return "not posted: uploads are not open"
-    if paused(): return "not posted: the engine is paused"
-    return approve(sid)
+    if not rec: out = f"not posted: {sid} not found"
+    elif rec.get("status") != "AWAITING_APPROVAL": out = f"not posted: {sid} no longer waits ({rec.get('status')})"
+    elif str(rec.get("checks") or "").lower() != "pass": out = f"not posted: {sid} has no check on record"
+    elif not LA.uploads_open(): out = "not posted: uploads are not open"
+    elif paused(): out = "not posted: the engine is paused"
+    else: out = str(approve(sid))
+    NT.outcome(row, (row.get("default_action") or out) if out.startswith("posted") else out)      # "Decided for you" says what his silence really did
+    return out
 
 def _answer(row, choice):
     p = str(choice).split()
