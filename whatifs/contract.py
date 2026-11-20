@@ -1083,10 +1083,15 @@ def unpost(ep):
         NT.send("decided_post", f"{title} could NOT be taken down: YouTube did not accept the change, so it is still scheduled or public there. Tap again, or set it to "
                 f"Private yourself: https://studio.youtube.com/video/{e['yt_id']}/edit", [("Take it down", f"UNPOST {ep}")], tier="week", episode=ep, expires_h=168,
                 dedupe_key=f"decided|{ep}|retry")
+        NT.send("uploads_private", f"{title}: your Take it down did NOT work - YouTube did not accept the change, so the video is still scheduled or public. Set it to "      # v12 B-OWNER (PART F, CF-1): an alarm - at once, both screens
+                f"Private in YouTube Studio: https://studio.youtube.com/video/{e['yt_id']}/edit", episode=ep, dedupe_key=f"uploads_private|takedown|{ep}")
+        try:                                                         # R1-153: his word is kept as his verdict "down" (as `hold_review` keeps it), never as a status YouTube does not have
+            from whatifs.org import verdicts as VER; VER.record(ep, "down", "", via="hold")
+        except Exception as x: log(f"his take-down was not kept as a verdict: {scrub(x)[:120]}", "WARN", ep)
         return f"{title} could NOT be made private: YouTube did not accept the change, and nothing else was changed. Tap again, or set it to Private in YouTube Studio."
     hold_review(ep)
     for r in NT.open_rows():                                         # no open row may still say it goes public, or offer a take-down that is done
-        if r.get("kind") == "decided_post" and r.get("episode_id") == ep: st.update("Owner_Actions", "id", r["id"], {"status": "ANSWERED", "answered_at": iso(), "answer": "taken down"})
+        if (r.get("kind") == "decided_post" and r.get("episode_id") == ep) or r.get("dedupe_key") == f"uploads_private|takedown|{ep}": st.update("Owner_Actions", "id", r["id"], {"status": "ANSWERED", "answered_at": iso(), "answer": "taken down"})
     return f"{title} is private again. Nothing was deleted. To publish it later: YouTube Studio, Visibility, Public."
 
 def owner_card(ep, stage, failed, extra=""):

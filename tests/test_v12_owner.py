@@ -1800,3 +1800,31 @@ def test_the_newest_row_is_the_last_written_even_inside_one_clock_tick(monkeypat
     c = itertools.count(10 ** 22 - 1, -1); monkeypatch.setattr(NT, "_new_id", lambda: "A" + str(next(c)).zfill(22))
     test_two_different_messages_of_one_kind_on_one_day_both_stand(monkeypatch, setting)
     test_a_second_brief_on_one_day_is_its_own_row(monkeypatch, setting)
+
+# ------------------------------------------------------------------ FINISHED BY OPUS (PART F, R1-150): the corrections of step 8a after the third code reader (CR-8a)
+def test_a_refused_take_down_from_a_screen_raises_an_alarm_and_keeps_the_button(monkeypatch, setting):
+    """CR-8a-1 (PART F, CF-1, on PART C's CC-4): "Take it down" on the road the screens use - the dashboard's ACT|<id>|0 -> notify.answer ->
+    contract._answer UNPOST. When YouTube refuses the change or does not answer, an ALARM tells him at once with the Studio link (CC-4's answer and
+    its new row with the button stand); his word is kept as his verdict "down" (R1-153), the status untouched; the take-down that works closes that
+    alarm and every decided_post row of the video."""
+    from whatifs.org import verdicts as VER
+    got = []; monkeypatch.setattr(VER, "record", lambda ref, v, text="", via="": got.append((ref, v, via)))
+    slot, _s = _ep8(monkeypatch, setting, status="SCHEDULED")
+    post = NT.send("decided_post", "Title EP8 was approved by your silence and goes public at Sat 21 Nov 20:30.", [("Take it down", "UNPOST EP8")], tier="week",
+                   episode="EP8", expires_h=168, dedupe_key=f"decided|EP8|{slot}")
+    alarm = lambda: [r for r in core.store().rows("Owner_Actions") if r.get("dedupe_key") == "uploads_private|takedown|EP8"]
+    monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: False)
+    _ok, said = DS.route(f"ACT|{post}|0")
+    assert "could NOT be made private" in said and _epi("EP8")["status"] == "SCHEDULED", said
+    a = alarm(); assert len(a) == 1 and a[0]["kind"] == "uploads_private" and a[0]["status"] == "OPEN" and "studio.youtube.com/video/ytEP8/edit" in a[0]["text"], a
+    assert got == [("EP8", "down", "hold")], got
+    again = [r for r in _decided("EP8") if r["status"] == "OPEN"]; assert len(again) == 1 and json.loads(again[0]["buttons"]) == [["Take it down", "UNPOST EP8"]], again
+    monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: (_ for _ in ()).throw(RuntimeError("YouTube does not answer")))
+    _ok, said = DS.route(f"ACT|{again[0]['id']}|0")
+    assert "could NOT be made private" in said and len(alarm()) == 1 and int(alarm()[0]["count"]) == 2, alarm()
+    monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: True)
+    retry = [r for r in _decided("EP8") if r["status"] == "OPEN"]; assert len(retry) == 1, retry
+    _ok, said = DS.route(f"ACT|{retry[0]['id']}|0")
+    assert "is private again" in said and _epi("EP8")["status"] == "HELD_BY_OWNER" and alarm()[0]["status"] == "ANSWERED", (said, alarm())
+    assert not [r for r in _decided("EP8") if r["status"] == "OPEN"]
+
