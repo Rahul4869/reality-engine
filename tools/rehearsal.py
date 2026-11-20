@@ -59,6 +59,7 @@ def run(ep_id=None):
                                                                    ("What if every mirror showed tomorrow?", "The Mirror Shows Tomorrow", "F01_body"),
                                                                    ("What if the wind kept every word you said?", "The Wind Remembers", "F09_space")))])
         set_setting("SHORTS_REVIEW_FIRST_N", "0")                                   # the owner's Approve of the first Shorts has its own test; here they are posted at once
+        set_setting("HD_GATE_ON", "TRUE")                                           # v12 B-OWNER (R22 (11)): the gate is FALSE as shipped; the rehearsal walks it - its Shorts go up private and out through the gate
         t12 = now_utc() - dt.timedelta(days=7)
         rs12 = SH12.run(force=True, publish=True, now=t12, episode_id="SH" + epid[2:]); rs12b = SH12.run(force=True, publish=True, now=t12 + dt.timedelta(hours=48), episode_id="SHB" + epid[2:])
         assert rs12.get("ok") and os.path.exists(str(rs12.get("path") or "")) and rs12b.get("ok"), ("the rehearsal's Shorts were not made", {k: v for k, v in rs12.items() if k != "script"}, {k: v for k, v in rs12b.items() if k != "script"})
@@ -463,6 +464,13 @@ def run(ep_id=None):
         assert row("EPSTUCK")["status"] == "LIVE", "stuck release not closed"
         MG.release(e["episode_id"], "release1"); assert row(e["episode_id"])["status"] == "LIVE", "release1 ran twice"
         print("v7.3 checks ok")
+        # v12 B-OWNER (PART 9, R17 (11 c), R22 (11)): HIS TWO SCREENS AND THE HD GATE, as the sweep judges them - every message of the run is of a kind the
+        # register knows, WhatsApp started its three kinds only and nothing was refused at the wire, the planted morning (09:05) and evening (18:05) of the
+        # next India day each sent their one message; both Shorts went up private and out through the gate. Last, so that the planted clock moves nothing above.
+        from tools.sweep import screens_of as screens9b, hd_of as hd9b
+        okw9b, saidw9b = screens9b(core12, [epid]); assert okw9b, ("his two screens did not hold", saidw9b)
+        sh9b = [rs12["id"], rs12b["id"]]; okh9b, saidh9b = hd9b(core12, sh9b); assert okh9b, ("the HD gate did not hold", saidh9b)
+        print("owner road:", saidw9b.replace("the owner's road held: ", "", 1) + f"; HD gate: {len(sh9b)} of {len(sh9b)} uploads")
         print("REHEARSAL: GREEN")
     finally:
         V.KokoroBackend = real

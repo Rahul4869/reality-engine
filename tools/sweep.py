@@ -178,6 +178,50 @@ def floor_of(core, ep, climbed=False):
     return True, (("the floor was void by its canary: " if void else "the floor judged: ") + words("viewer_floor")[:220] + " | " + words("makers_line")[:110] + " | "
                   + words("one_story")[:140])
 
+def hd_of(core, ids):
+    """v12 B-OWNER (PART 9, R24): (ok, words) - THE SWEEP WALKS THE HD GATE. Asked only of a run with the organisation on (the runs in which the sweep
+    set HD_GATE_ON TRUE; the rehearsal sets it itself): every Short made in the run (`ids`) went up private and was made public by the gate - the
+    `privacy` receipt of its YouTube record is KEPT with "public after ...". A Short without a record, with any other receipt (still WAITING, DRIFT,
+    or a receipt the gate did not write) or no Short at all is a failure here: it would mean the new path was not walked."""
+    from whatifs import release as REL
+    if not ids: return False, "no Short was made in this run: the HD gate was not walked"
+    bad = []; said = []
+    for i in ids:
+        y = next((x for x in REL.records(i) if x.get("platform") == "youtube"), None)
+        if not y: bad.append(f"{i}: no YouTube record"); continue
+        rc = list((y.get("receipts") or {}).get("privacy") or [])
+        if len(rc) < 2 or rc[0] != REL.KEPT or not str(rc[1]).startswith("public after"):
+            bad.append(f"{i}: privacy {rc[0] if rc else 'missing'}: {str(rc[1] if len(rc) > 1 else '')[:140]}"); continue
+        said.append(f"{i}: {rc[1]}")
+    if bad: return False, "; ".join(bad)
+    return True, f"the HD gate held: {len(ids)} of {len(ids)} upload(s) went up private and public after their wait: " + "; ".join(said)
+
+def screens_of(core, ids=()):
+    """v12 B-OWNER (PART 9, R17 (11 c)): (ok, words) - THE SWEEP WALKS HIS TWO SCREENS on the id's own Sheet, after its run. THE CLOCK IS PLANTED, so the
+    counts never hang on the hour of the run: one open card (a decision for the evening list), then `digests.tick` at 09:05 and `digests.needs_tick` at
+    18:05 India time of the next India day. The id is BAD when an Owner_Actions kind is not in the register (`notify.KINDS`), when WA_Outbox holds a
+    "refused_window" row or a kind outside morning, needs, alarm, reply, or when it holds no "morning" row or no "needs" row (5.6: a missing row is a
+    failure). Walked twice (the rehearsal, then the sweep's rehearsal branch) it sends nothing twice: both clocks are stamped, the card is one row."""
+    from whatifs import notify as NT, digests as DG, wa as WA
+    ep = str((list(ids) or [""])[0] or "")
+    NT.send("bakeoff", "A decision planted by the sweep: the evening list must carry it.", [("Pick A", "PICK A")], episode=ep or None,
+            default="A is used", expires_h=72, dedupe_key=f"sweep|planted|{ep}")
+    day = (core.now_utc().astimezone(NT.IST) + dt.timedelta(days=1)).date()
+    DG.tick(now=dt.datetime(day.year, day.month, day.day, 9, 5, tzinfo=NT.IST))
+    DG.needs_tick(now=dt.datetime(day.year, day.month, day.day, 18, 5, tzinfo=NT.IST))
+    st = core.store(); rows = st.rows("Owner_Actions"); out = st.rows("WA_Outbox"); bad = []
+    unknown = sorted({str(r.get("kind")) for r in rows if r.get("kind") not in NT.KINDS})
+    if unknown: bad.append("a message of a kind the register does not know: " + ", ".join(unknown))
+    refused = [str(r.get("kind") or "") for r in out if r.get("status") == "refused_window"]
+    if refused: bad.append(f"{len(refused)} WhatsApp message(s) refused outside the 24-hour window: " + ", ".join(sorted(set(refused))))
+    odd = sorted({str(r.get("kind") or "") for r in out if r.get("kind") not in WA.PUSH_KINDS + ("reply",)})
+    if odd: bad.append("WhatsApp started a message of another kind: " + ", ".join(odd))
+    n = {k: sum(1 for r in out if r.get("kind") == k and r.get("wamid")) for k in WA.PUSH_KINDS}
+    if not n["morning"]: bad.append("no morning message went out at the planted 09:05")
+    if not n["needs"]: bad.append("no \"Needs you\" list went out at the planted 18:05 with a decision open")
+    if bad: return False, "; ".join(bad)
+    return True, f"the owner's road held: {len(rows)} rows, all registered; WhatsApp: {n['morning']} morning, {n['needs']} needs, {n['alarm']} alarm"
+
 # ------------------------------------------------------------------ one id (runs in its own process: module state never leaks between ids)
 def drawn_moments():
     """v12 DRAWN (DQ-3 AMENDED): every id in the drawn arm, explaining moments from the first second and from 1.0 s, on the id's OWN Sheet - exactly
@@ -201,6 +245,7 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10, drawn=False):
             from whatifs import shorts2 as SH
             core._store = core.LocalStore(os.path.join(work, "sheet.json")); core._store.ensure_tabs(); core._settings_cache = None
             for k, v in TEST_SETTINGS.items(): core.set_setting(k, v)
+            if org: core.set_setting("HD_GATE_ON", "TRUE")                          # v12 B-OWNER (R22 (11)): the gate is FALSE as shipped; the sweep's runs with the organisation on walk it (R24)
             if not org: core.set_setting("ORG_ON", "FALSE")
             MG.setup()
             if not org: core.set_setting("ORG_ON", "FALSE")
@@ -235,6 +280,11 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10, drawn=False):
                 if not ok_m: late.append("the cost model: " + res["money"][:240])
                 ok_x, res["motion"] = motion_of(core, None, [r0["id"], ep])          # v12 V2d-b: THE SWEEP WALKS THE LADDER'S RULES - both Shorts' finished files were measured
                 if not ok_x: late.append("the ladder's rules: " + res["motion"][:240])
+                if org:                                                              # v12 B-OWNER (R24): THE SWEEP WALKS THE HD GATE - only where it set HD_GATE_ON: both Shorts went up private and out through the gate
+                    ok_h, res["hd"] = hd_of(core, [r0["id"], ep])
+                    if not ok_h: late.append("the HD gate: " + res["hd"][:240])
+            ok_w, res["screens"] = screens_of(core, [ep])                              # v12 B-OWNER: THE SWEEP WALKS HIS TWO SCREENS - the register, the window at the wire, the planted morning and evening
+            if not ok_w: late.append("his two screens: " + res["screens"][:240])
             res["problems"] = [f"the first Short: {x}" for x in (r0.get("failed") or ([r0.get("why")] if not r0.get("ok") else []))] + [str(x) for x in (r.get("failed") or [])] + late + ([] if okr or not r.get("ok") else [f"release sheet: {whyr[:200]}"])
             if r0.get("ok") and r.get("ok") and os.path.exists(str(r.get("path") or "")) and okr and not late and r.get("status") == "POSTED":
                 res["outcome"] = "ok"; res["short"] = f"{r0.get('format')}>{r.get('format')}"; res["release"] = ("approved:" if approve else "") + "+".join(x["state"] for x in REL.records(ep))
@@ -257,9 +307,16 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10, drawn=False):
                 from tools import rehearsal as REH4                               # the rehearsal walked the month itself (its words): a second walk would plant twice
                 ok_s, res["strategy"] = (True, REH4.STRATEGY_SAID[-1]) if REH4.STRATEGY_SAID else strategy_of(core, ep, org)
                 if not ok_s: res["outcome"] = "odd"; res["problems"].append("the CEO's month: " + res["strategy"]); res["error"] = res["strategy"][:300]
+            if res["outcome"] == "ok" and org:                                      # v12 B-OWNER (R24): THE SWEEP WALKS THE HD GATE - the rehearsal's Shorts went up private and out through the gate
+                ok_h, res["hd"] = hd_of(core, [x["id"] for x in core.store().rows("Ladder") if str(x.get("id", "")).startswith("SH")])
+                if not ok_h: res["outcome"] = "odd"; res["problems"].append("the HD gate: " + res["hd"]); res["error"] = res["hd"][:300]
+            if res["outcome"] == "ok":                                              # v12 B-OWNER: THE SWEEP WALKS HIS TWO SCREENS - judged again on the rehearsal's Sheet (nothing is sent twice)
+                ok_w, res["screens"] = screens_of(core, [ep])
+                if not ok_w: res["outcome"] = "odd"; res["problems"].append("his two screens: " + res["screens"]); res["error"] = res["screens"][:300]
         else:                                                                      # the recipe of the end-to-end test in tests/test_v12_org.py
             core._store = core.LocalStore(os.path.join(work, "sheet.json")); core._store.ensure_tabs(); core._settings_cache = None
             for k, v in TEST_SETTINGS.items(): core.set_setting(k, v)
+            if org: core.set_setting("HD_GATE_ON", "TRUE")                          # v12 B-OWNER (R22 (11)): the gate is FALSE as shipped; the sweep's runs with the organisation on walk it (R24)
             if not org: core.set_setting("ORG_ON", "FALSE")
             V.KokoroBackend = lambda blend: ToneVoice()
             MG.setup(); core.set_setting("VOICE", "C")
@@ -296,6 +353,12 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10, drawn=False):
             if res["outcome"] == "ok":                                              # v12 V4: THE SWEEP WALKS THE CEO - a month of Strategy on the id's own Sheet
                 ok_s, res["strategy"] = strategy_of(core, ep, org)
                 if not ok_s: res["outcome"] = "odd"; res["problems"].append("the CEO's month: " + res["strategy"]); res["error"] = res["strategy"][:300]
+            if res["outcome"] == "ok" and org:                                      # v12 B-OWNER (R24): THE SWEEP WALKS THE HD GATE - the climbed Short went up private and out through the gate
+                ok_h, res["hd"] = hd_of(core, ["SH" + ep[2:]] if res.get("ladder") == "climbed" else [])
+                if not ok_h: res["outcome"] = "odd"; res["problems"].append("the HD gate: " + res["hd"]); res["error"] = res["hd"][:300]
+            if res["outcome"] == "ok":                                              # v12 B-OWNER: THE SWEEP WALKS HIS TWO SCREENS - the register, the window at the wire, the planted morning and evening
+                ok_w, res["screens"] = screens_of(core, [ep])
+                if not ok_w: res["outcome"] = "odd"; res["problems"].append("his two screens: " + res["screens"]); res["error"] = res["screens"][:300]
         res.update(evidence(core, ep, org))
     except BaseException as e:                                                      # a crash is a result too: the last line of the traceback names it
         if isinstance(e, KeyboardInterrupt): raise
@@ -444,6 +507,8 @@ def summary(results):
             "drawn_ids": sum(1 for r in results if _drew(r.get("drawn")) and r["outcome"] == "ok"),                                                  # ... and a FLOOR: ids that drew a scene
             "floor_judged": sum(1 for r in results if str(r.get("floor") or "").startswith("the floor judged") and r["outcome"] == "ok"),
             "strategy_month_held": sum(1 for r in results if str(r.get("strategy") or "").startswith("the month's decision held") and r["outcome"] == "ok"),      # v12 V4
+            "hd_gated": sum(1 for r in results if str(r.get("hd") or "").startswith("the HD gate held") and r["outcome"] == "ok"),          # v12 B-OWNER: asked only of runs with the organisation on (R24)
+            "owner_road_ok": sum(1 for r in results if str(r.get("screens") or "").startswith("the owner's road held") and r["outcome"] == "ok"),      # v12 B-OWNER: every id
             "bad_ids": sorted(r["id"] for r in results if r["outcome"] != "ok"), "fail_classes": {k: sorted(set(v)) for k, v in sorted(fails.items())},
             "warn_classes": {k: len(v) for k, v in sorted(warn.items())}, "degraded_classes": {k: len(v) for k, v in sorted(deg.items())}, "owner_message_kinds": {k: len(v) for k, v in sorted(own.items())}}
 

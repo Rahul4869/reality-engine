@@ -1172,3 +1172,44 @@ def test_the_turned_special_answers_his_approve(monkeypatch, setting):
     SP, sid, row = _sp_card(monkeypatch, setting, "pass")
     monkeypatch.setattr(SP, "approve", lambda s, replace=False: posted.append(s) or f"posted {s}")
     assert "posted" in NT.answer(row["id"], f"SPECIAL APPROVE {sid}") and posted == [sid]          # R17 (7 d): without the register line it records and does nothing
+
+# ------------------------------------------------------------------ step 9b: THE SWEEP WALKS HIS TWO SCREENS (PART 9, R17 (11 c); the plan's 5.6) - on a planted clock
+SCREENS_FAULTS = {"unknown_kind": "a message of a kind the register does not know: made_up_kind",
+                  "refused": "1 WhatsApp message(s) refused outside the 24-hour window: reply",
+                  "other_kind": "WhatsApp started a message of another kind: fyi",
+                  "no_morning": "no morning message went out at the planted 09:05",
+                  "no_needs": "no \"Needs you\" list went out at the planted 18:05 with a decision open"}
+
+@pytest.mark.parametrize("fault", [None] + list(SCREENS_FAULTS))
+def test_the_sweep_judges_his_two_screens_on_a_planted_clock(fault, monkeypatch, setting):
+    """R17 (11 c), the plan's 5.6: `tools/sweep.py:screens_of` plants one open card and the clock - `digests.tick` at 09:05 and `digests.needs_tick` at
+    18:05 India time of the next India day - so its counts never hang on the hour of the run. An id is BAD, each fault alone: a message of a kind the
+    register does not know; a WhatsApp message refused at the wire outside the window; a WA_Outbox kind outside morning, needs, alarm, reply; no
+    morning row (the morning message switched off); no "Needs you" row (its push dropped). Walked twice it sends nothing twice. The counter
+    `owner_road_ok` counts a good id only; every mode of the sweep's `one()` judges it and the rehearsal asserts it last and prints its line."""
+    import inspect
+    from tools import sweep as SW, rehearsal as RH
+    from whatifs import publish as PUB
+    setting("TWO_SCREENS_ON", "TRUE"); bodies = _wire(monkeypatch); monkeypatch.setattr(PUB, "email", lambda *a, **k: True); _window(False)
+    if fault == "unknown_kind": NT.send("made_up_kind", "A message nobody registered.")
+    if fault == "refused": WA.send_text("free text with the window closed")
+    if fault == "other_kind": core.store().append("WA_Outbox", [{"ts": core.iso(), "wamid": "wamid.X9B", "action_id": "", "kind": "fyi", "status": "sent"}])
+    if fault == "no_morning": setting("DIGEST_WA_ON", "FALSE")
+    if fault == "no_needs":
+        real = WA.push; monkeypatch.setattr(WA, "push", lambda kind, *a, **k: "" if kind == "needs" else real(kind, *a, **k))
+    ok, words = SW.screens_of(core, ["EPS9B"])
+    if fault:
+        assert not ok and words == SCREENS_FAULTS[fault], words
+        return
+    assert ok and words == "the owner's road held: 1 rows, all registered; WhatsApp: 1 morning, 1 needs, 0 alarm", words
+    out = core.store().rows("WA_Outbox"); card = core.store().rows("Owner_Actions")[0]
+    assert sorted(r["kind"] for r in out) == ["morning", "needs"] and len(bodies) == 2 and all(b["type"] == "template" for b in bodies)      # outside the window: the one template
+    assert card["kind"] == "bakeoff" and card["status"] == "OPEN" and card["episode_id"] == "EPS9B" and card["id"] in {r["id"] for r in NT.needs()}
+    assert SW.screens_of(core, ["EPS9B"]) == (True, words) and len(bodies) == 2 and len(core.store().rows("Owner_Actions")) == 1      # walked twice: nothing sent twice
+    s = SW.summary([{"id": "a", "outcome": "ok", "screens": words}, {"id": "b", "outcome": "odd", "screens": words}, {"id": "c", "outcome": "ok"}])
+    assert s["owner_road_ok"] == 1 and s["bad_ids"] == ["b"]
+    src = inspect.getsource(SW.one)
+    assert src.count("ok_w, res[\"screens\"] = screens_of(core, [ep])") == 3 and src.count('if not ok_w: res["outcome"] = "odd"; res["problems"].append("his two screens: "') == 2
+    assert 'if not ok_w: late.append("his two screens: "' in src                                    # the Short mode: a bad verdict makes the id bad
+    r = inspect.getsource(RH.run)
+    assert "okw9b, saidw9b = screens9b(core12, [epid]); assert okw9b" in r and 'print("owner road:"' in r and r.index("screens9b(core12") > r.index('print("v7.3 checks ok")')

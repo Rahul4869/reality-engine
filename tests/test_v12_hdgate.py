@@ -232,3 +232,27 @@ def test_every_public_upload_passes_the_gate():
     assert found == [("gate off", "whatifs/launch.py")], found
     assert _scan("whatifs/spinoff.py", 'PUB.yt_upload(path, title, desc, [], publish_at=None, privacy="public", ai_label=True)') == [("public upload", "whatifs/spinoff.py")]
     assert _scan("whatifs/x.py", 'PUB.yt_set_privacy(vid, "public")') == [("made public", "whatifs/x.py")] and _scan("whatifs/hdgate.py", 'PUB.yt_set_privacy(vid, "public")') == []
+
+# ------------------------------------------------------------------ step 9b: THE SWEEP WALKS THE GATE (R22 (11), R24; the plan's 5.6)
+def test_the_sweep_judges_the_gate_on_every_short_of_a_run_with_the_organisation_on(monkeypatch, setting, gate_on):
+    """R24 with the plan's 5.6: `tools/sweep.py:hd_of` - every Short of the run went up private and out through the gate (its `privacy` receipt KEPT
+    "public after ..."). An id is BAD, each case alone: a Short still WAITING (YouTube has not shown it in HD), a receipt the gate did not write (an
+    upload the gate never took: public at once, as `compare` reads it), a Short without a record, no Short at all. The sweep sets HD_GATE_ON TRUE only
+    in its runs with the organisation on and asks `hd_of` only there (a part with --org off keeps the gate off, as shipped); the rehearsal sets it
+    itself before its Shorts are made and asserts it last; the counter `hd_gated` counts a good id only."""
+    import inspect
+    from tools import sweep as SW, rehearsal as RH
+    _short(monkeypatch, setting, "SHHD20")
+    good = "the HD gate held: 1 of 1 upload(s) went up private and public after their wait: SHHD20: public after 0 min; HD yes"
+    assert SW.hd_of(core, ["SHHD20"]) == (True, good)
+    PUB.FAKE_FAULTS["youtube"] = {"sd": True}; _short(monkeypatch, setting, "SHHD21", now=NOW + 48 * 60 * M, premise="What if rain fell upward?")
+    assert SW.hd_of(core, ["SHHD20", "SHHD21"]) == (False, "SHHD21: privacy WAITING: private until YouTube shows it in HD: 0 min so far")
+    REL._save("SHHD22", "youtube", NOW, native_id="v22", state=REL.DONE, receipts=REL.compare("youtube", {"privacy": "public"}, {"privacy": "public"}))      # planted: an upload the gate never took
+    assert SW.hd_of(core, ["SHHD22"]) == (False, "SHHD22: privacy KEPT: public")
+    assert SW.hd_of(core, ["SHHD99"]) == (False, "SHHD99: no YouTube record") and SW.hd_of(core, []) == (False, "no Short was made in this run: the HD gate was not walked")
+    s = SW.summary([{"id": "a", "outcome": "ok", "hd": good}, {"id": "b", "outcome": "odd", "hd": good}, {"id": "c", "outcome": "ok"}]); assert s["hd_gated"] == 1
+    src = inspect.getsource(SW.one); armed = [l.strip() for l in src.splitlines() if 'set_setting("HD_GATE_ON", "TRUE")' in l]
+    assert len(armed) == 2 and all(l.startswith('if org: core.set_setting("HD_GATE_ON", "TRUE")') for l in armed), armed      # the Short mode and the produce mode, organisation on only
+    assert src.count("hd_of(core, ") == 3 and src.count('if res["outcome"] == "ok" and org:') == 2 and "                if org:" in src and 'if not ok_h: late.append("the HD gate: "' in src
+    r = inspect.getsource(RH.run)
+    assert r.index('set_setting("HD_GATE_ON", "TRUE")') < r.index("rs12 = SH12.run(") and "okh9b, saidh9b = hd9b(core12, sh9b); assert okh9b" in r and 'f"; HD gate: {len(sh9b)} of {len(sh9b)} uploads"' in r
