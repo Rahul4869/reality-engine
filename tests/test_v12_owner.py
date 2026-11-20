@@ -1505,3 +1505,15 @@ def test_a_video_held_by_the_final_qc_is_on_both_screens(monkeypatch, setting):
     assert len(cards) == 1 and cards[0]["dedupe_key"] == f"contract|{ep}|quality" and "black_frames" in cards[0]["text"], cards
     assert [v for _l, v in json.loads(cards[0]["buttons"])] == [f"CONTRACT FIX {ep} quality", f"DISCUSS contract {ep}"]
     assert "Approve anyway" not in [l for l, _v in json.loads(cards[0]["buttons"])]                       # R1-102: no waiver tap on a quality hold
+
+def test_a_waive_typed_by_hand_on_a_quality_hold_waives_nothing(monkeypatch, setting):
+    """R1-102: the final QC reads no waiver. A 'CONTRACT WAIVE' typed by hand on its card wrote one, started the paid fix run and answered
+    'it continues'. It waives nothing, starts nothing, and names Fix; the card is open again."""
+    from whatifs import contract as CON
+    setting("TWO_SCREENS_ON", "TRUE"); started = []
+    monkeypatch.setattr(CON, "_open_fix_issue", lambda ep: started.append(ep) or True)
+    CON.owner_card("EPQW1", "quality", [("black_frames", "planted")], "Nothing was uploaded.")
+    c = next(r for r in NT.open_rows() if r["kind"] == "contract_hold" and r["episode_id"] == "EPQW1")
+    out = NT.answer(c["id"], "CONTRACT WAIVE EPQW1 black_frames")
+    assert "has no waiver" in out and "Fix" in out and started == [] and "EPQW1" not in json.loads(core.S("CONTRACT_WAIVERS") or "{}"), out
+    assert _row(c["id"])["status"] == "OPEN"

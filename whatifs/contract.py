@@ -1084,6 +1084,9 @@ def owner_card(ep, stage, failed, extra=""):
 def _answer(row, choice):
     parts = str(choice).split()
     if len(parts) >= 3 and parts[0].upper() == "CONTRACT" and parts[1].upper() == "WAIVE":
+        if str(row.get("dedupe_key") or "").endswith("|quality"):                    # FINISHED BY FABLE (CA2-1b, R1-102): the final QC reads no waiver - nothing is waived or started
+            store().update("Owner_Actions", "id", row["id"], {"status": "OPEN", "answered_at": "", "answer": ""})
+            return f"{parts[2]}: a quality hold has no waiver - nothing was started; tap Fix to repair it (the card is open again)"
         ep, feats = parts[2], (parts[3].split(",") if len(parts) > 3 else [])
         w = json.loads(S("CONTRACT_WAIVERS") or "{}"); w[ep] = sorted(set(w.get(ep, [])) | set(feats)); set_setting("CONTRACT_WAIVERS", json.dumps(w))
         _open_fix_issue(ep); return f"waived {', '.join(feats)} for {ep}; it continues"
