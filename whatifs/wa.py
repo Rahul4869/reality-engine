@@ -1,7 +1,7 @@
 """The WhatsApp control room: interactive buttons inside the 24-hour window, the approved template outside it, and inbound owner messages. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import datetime as dt, json, os, re
-from whatifs.core import S, log, store, iso, now_utc, parse_iso, env, set_setting, scrub, FAKE
+from whatifs.core import S, log, store, iso, now_utc, parse_iso, env, set_setting, scrub, FAKE, _plain      # v12 B-OWNER: _plain lives in core (one definition)
 
 def configured():
     return bool(S("WA_ON", bool) and env("WA_TOKEN") and env("WA_PHONE_ID") and env("OWNER_WA"))
@@ -19,8 +19,6 @@ def _post(body):
     if r.status_code >= 300: log(f"WhatsApp send failed {r.status_code}", "WARN"); return ""
     try: return r.json()["messages"][0]["id"]
     except Exception: return ""
-
-def _plain(t): return re.sub(r"\s{4,}", "   ", re.sub(r"[\r\n\t]+", " ", re.sub(r"<[^>]+>", "", str(t or "")))).strip()
 
 def send_text(text):
     return _post({"type": "text", "text": {"body": _plain(text)[:4000]}})

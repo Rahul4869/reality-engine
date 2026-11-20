@@ -1,8 +1,8 @@
 """v12 B-OWNER - the owner's two screens: one register of every message to him, one road for every mail, alarms that can never be muted, WhatsApp
 that starts three kinds of message only, his input desk, both screens showing the same, never held by his absence, the money of his messages.
 Every rule is proven both ways; the real code path is run, so an unwired call is seen. The HD gate has its own file (tests/test_v12_hdgate.py)."""
-import ast, datetime as dt, json, os
-import yaml
+import ast, datetime as dt, json, os, shutil
+import pytest, yaml
 from whatifs import core, notify as NT
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -116,3 +116,128 @@ def test_a_card_without_a_default_gets_the_fallback_and_is_named(setting):
     assert len(told) == 1 and "model_dead" in told[0]["text"], told                                             # one row a kind a day
     b = NT.send("bakeoff", "Pick the clip model", [("Pick A", "PICK A")], default="A is used", expires_h=24); assert _row(b)["default_action"] == "A is used"
     setting("TWO_SCREENS_ON", "FALSE"); assert _row(NT.send("org_stuck", "A department is stuck", [("Look", "LOOK X")]))["default_action"] == ""      # the older path
+
+# ------------------------------------------------------------------ step 2a: ONE ROAD (PART 2) - every mail to him goes through notify.mail
+OWN_IDS = ("EP209911260900",)          # the whole production of this file: an id no other test file uses (a test proves it)
+
+def test_the_whole_productions_of_this_file_use_ids_no_other_test_file_uses():
+    root = os.path.dirname(os.path.abspath(__file__)); here = os.path.basename(__file__)
+    for f in os.listdir(root):
+        if f.endswith(".py") and f != here:
+            t = open(os.path.join(root, f), encoding="utf-8").read()
+            for i in OWN_IDS: assert i not in t, (f, i)
+
+def _ago(**k): return (core.now_utc() - dt.timedelta(**k)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+# the smallest call that reaches each mail site of the table (PUB.email is replaced by a box in the test)
+def _r8(mp, setting):
+    from whatifs import episode as EP; EP._preflight_mail("the image key is missing")
+def _r9(mp, setting):                                                          # the site is inside _finish: one whole production reaches it
+    from whatifs import episode as EP, manage as MG
+    from tools.rehearsal import ToneVoice
+    import whatifs.voice as V
+    mp.setattr(V, "KokoroBackend", lambda blend: ToneVoice()); MG.setup(); core.set_setting("VOICE", "C")
+    try:
+        r = EP.produce((core.now_utc() + dt.timedelta(hours=10)).strftime("%Y-%m-%dT%H:%M:%SZ"), episode_id=OWN_IDS[0]); assert r.get("ok"), r
+    finally: shutil.rmtree(os.path.join(core.WORK, OWN_IDS[0]), ignore_errors=True)
+def _r10(mp, setting):
+    from whatifs import episode as EP
+    out = os.path.join(core.WORK, "EPROW10"); os.makedirs(out, exist_ok=True)
+    try: EP._hold(core.store(), "EPROW10", out, {"problems": [{"code": "aliveness", "detail": "planted"}]}, [], False)
+    finally: shutil.rmtree(out, ignore_errors=True)
+def _r13(mp, setting):
+    from whatifs import manage as MG, launch as LA
+    mp.setattr(MG.PUB, "yt_status", lambda vid: "private"); mp.setattr(LA, "lock_detected", lambda vid, issues: None)
+    MG._give_up_stuck([{"episode_id": "EPROW13", "slot_et": _ago(days=10), "status": "SCHEDULED", "yt_id": "vidROW13"}])
+def _r14(mp, setting):
+    from whatifs import manage as MG
+    setting("UPLOAD_LOCK", "on"); MG.audit_nudge([{"episode_id": "EPROW14", "yt_id": "vidROW14"}])
+def _r15(mp, setting):
+    from whatifs import manage as MG
+    setting("UPLOAD_LOCK", "on"); setting("API_AUDIT_STATUS", "sent"); MG.audit_nudge([{"episode_id": "EPROW15", "yt_id": "vidROW15"}])
+def _r16(mp, setting):
+    from whatifs import manage as MG
+    held = [{"episode_id": f"EPROW16{i}", "status": "HOLD_QC", "updated": core.iso()} for i in range(max(1, core.S("HOLD_BLOCK_AFTER", int)))]
+    assert MG._produce_slot(held) is None
+def _r17(mp, setting):
+    from whatifs import manage as MG
+    mp.setattr(MG.G, "can_start_episode", lambda: (False, "the month's cap is reached")); assert MG._produce_slot([]) is None
+def _r18(mp, setting):
+    from whatifs import manage as MG
+    core.store().append("Episodes", [{"episode_id": "EPROW18", "slot_et": _ago(hours=core.S("PRIVATE_ALERT_HOURS", float) + 1), "status": "SCHEDULED", "yt_id": "vidROW18", "notes": ""}])
+    mp.setattr(MG.PUB, "yt_status", lambda vid: "private"); MG.release("EPROW18")
+def _r19(mp, setting):
+    from whatifs import manage as MG
+    core.store().append("Episodes", [{"episode_id": "EPROW19", "slot_et": _ago(hours=1), "status": "SCHEDULED", "yt_id": "vidROW19", "notes": ""}])
+    mp.setattr(MG.PUB, "yt_status", lambda vid: "public"); mp.setattr(MG.PUB, "yt_comment", lambda *a, **k: None)
+    mp.setattr(MG, "_fetch_release", lambda ep, assets=None: {"pinned": ""}); MG.release("EPROW19")
+def _r20(mp, setting):
+    from whatifs import manage as MG
+    for k, v in (("GH_REPO", "me/re"), ("PR_NUMBER", "7"), ("PR_TITLE", "Better hooks"), ("PR_URL", "https://github.com/me/re/pull/7")): mp.setenv(k, v)
+    assert MG.pr_ready()
+def _r21(mp, setting):
+    from whatifs import manage as MG, caretaker as CT
+    mp.setattr(CT, "policy_rescue", lambda items: None)                      # the urgent card beside the mail is caretaker's own call, not a row of this table
+    MG.guardian([{"change": "AI content is no longer monetised", "source": "https://support.google.com/youtube"}])
+def _r22(mp, setting):
+    from whatifs import manage as MG
+    core.store().append("Episodes", [{"episode_id": f"EPROW22{i}", "status": "FAILED", "notes": "planted"} for i in range(3)]); MG.failure_watch()
+def _money(mp, left=None, prop=None, days=999.0):
+    from whatifs import manage as MG, costguard as CG
+    mp.setattr(CG, "spend_monitor", lambda *a, **k: None); mp.setattr(CG, "weekly_deviation_mail", lambda *a, **k: None)      # costguard's own mails are rows of step 2b
+    mp.setattr(MG.G, "gemini_left_usd", lambda: left); mp.setattr(MG.G, "kling4_proposal", lambda: prop); mp.setattr(MG.G, "runway_days", lambda provider: days)
+    mp.setattr(MG.G, "headroom", lambda: {"spent_inr": 1200.0, "cap_inr": 5000.0, "per_video_inr": 600.0}); MG.money_check()
+def _r23(mp, setting): _money(mp, prop="Room for a 4th clip: about Rs 120 a video.")
+def _r24(mp, setting): setting("AUTO_RELOAD_ON", "TRUE"); _money(mp, left=0.5)
+def _r25(mp, setting): _money(mp, days=3.0)
+def _r26(mp, setting):
+    from whatifs import manage as MG, models as M
+    mp.setattr(M, "ask_batch", lambda *a, **k: "The month in one page."); MG.monthly_brief()
+
+# THE TABLE OF PART 2 (one table: step 2a types the 17 rows of manage.py and episode.py, step 2b the other 22):
+# (#, place, kind, subject, "row" = one row of its kind / "copy" = no new row (the screens carry it through another row), its key, what else the row holds, the call)
+ROAD = [
+    (8, "episode.py _preflight_mail", "pipeline_stop", "Production paused: a health check failed", "row", "pipeline_stop|preflight|{utc_day}", {}, _r8),
+    (9, "episode.py _finish", "scheduled", "Video scheduled", "row", "scheduled|{ep}", {"level": "info"}, _r9),
+    (10, "episode.py _hold", "contract_hold", "Video held: the final check failed", "copy", None, {}, _r10),
+    (13, "manage.py _give_up_stuck", "uploads_private", "A video is stuck on Private", "row", "uploads_private", {}, _r13),
+    (14, "manage.py audit_nudge", "api_audit", "Reminder: send the YouTube API audit form", "row", "api_audit", {"buttons": [["Done", "OK"]]}, _r14),
+    (15, "manage.py audit_nudge", "api_audit_wait", "Waiting for the YouTube API audit", "row", None, {}, _r15),
+    (16, "manage.py _produce_slot", "contract_hold", "Reminder: a video is waiting for your fix click", "copy", None, {}, _r16),
+    (17, "manage.py _produce_slot", "money_stop", "Monthly budget reached", "row", "money_stop|{month}", {}, _r17),
+    (18, "manage.py release", "uploads_private", "Video not public yet", "row", "uploads_private", {}, _r18),
+    (19, "manage.py release", "live", "We're live", "row", None, {}, _r19),
+    (20, "manage.py pr_ready", "build_ready", "Change ready to merge: #7", "row", "build|7",
+     {"buttons": [["Merge", "MERGE #7"], ["Reject", "REJECT #7"]], "default_action": "it waits; it closes after 7 days"}, _r20),
+    (21, "manage.py guardian", "policy", "Paused for 7 days (policy watch)", "row", "policy|{utc_day}", {}, _r21),
+    (22, "manage.py failure_watch", "pipeline_stop", "Needs a look (3 failed tries)", "row", "pipeline_stop|fails", {}, _r22),
+    (23, "manage.py money_check", "headroom", "Budget headroom: room for a 4th Kling clip", "row", None, {}, _r23),
+    (24, "manage.py money_check (auto-reload)", "topup", "Top-up reminder", "row", "topup|{india_day}", {}, _r24),
+    (25, "manage.py money_check", "topup", "Top-up reminder", "row", "topup|{india_day}", {}, _r25),
+    (26, "manage.py monthly_brief", "monthly_brief", "Monthly brief", "row", None, {}, _r26),
+]
+
+@pytest.mark.parametrize("site", ROAD, ids=[f"row{r[0]}" for r in ROAD])
+def test_every_row_of_the_table(site, monkeypatch, setting):
+    """PART 2, ONE ROAD (item 149: e-mail is only the copy): with the switch on, each mail site of the table, driven by the smallest call that reaches
+    it, leaves ONE mail (the copy, his storage) AND one Owner_Actions row of its kind with the mail's words - or, where the table says copy, one mail
+    and no new row. A site put back to PUB.email leaves no row; `screens` forced False in notify.mail leaves none either."""
+    from whatifs import publish as PUB
+    n, place, kind, subject, how, key, want, drive = site
+    setting("TWO_SCREENS_ON", "TRUE"); box = []
+    monkeypatch.setattr(PUB, "email", lambda subj, html, kind="essential": box.append((str(subj), str(html), kind)) or True)
+    before = _ids(core.store().rows("Owner_Actions"))
+    drive(monkeypatch, setting)
+    mails = [m for m in box if m[0].startswith(subject)]
+    assert len(mails) == 1 and mails[0][2] == want.get("level", "essential"), (place, [m[0] for m in box])
+    new = [r for r in core.store().rows("Owner_Actions") if r["id"] not in before]
+    if how == "copy":
+        assert new == [], (place, [(r["kind"], r["text"][:60]) for r in new]); return
+    mine = [r for r in new if r["kind"] == kind]
+    assert len(mine) == 1 and kind in NT.KINDS and mine[0]["text"].startswith(subject), (place, [(r["kind"], r["text"][:60]) for r in new])
+    if key:
+        k = key.format(utc_day=core.now_utc().strftime("%Y-%m-%d"), month=core.now_utc().strftime("%Y-%m"), india_day=NT._india_day(), ep=OWN_IDS[0])
+        assert mine[0]["dedupe_key"] == k, (place, mine[0]["dedupe_key"], k)
+    for f, v in want.items():
+        if f == "buttons": assert json.loads(mine[0]["buttons"]) == v, (place, mine[0]["buttons"])
+        elif f != "level": assert mine[0][f] == v, (place, f, mine[0][f])

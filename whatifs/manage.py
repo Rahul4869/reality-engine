@@ -8,6 +8,7 @@ from whatifs.core import S, store, log, iso, parse_iso, now_utc, set_setting, st
 from whatifs import prompts as P
 from whatifs.models import ask, discover_models
 from whatifs import publish as PUB
+from whatifs import notify as NT          # v12 B-OWNER: every mail to him goes through notify.mail (one road: e-mail is the copy, both screens carry it)
 from whatifs import governor as G
 from whatifs import growth as GR
 from whatifs import playbook as PB
@@ -102,7 +103,7 @@ def _give_up_stuck(eps):
                 try:
                     from whatifs import launch as LA; LA.lock_detected(e["yt_id"], ["a scheduled video never became public"])      # v9.3.1 (L3): hold new spend
                 except Exception as x: log(f"lock detector skipped: {scrub(x)}", "WARN")
-                PUB.email("A video is stuck on Private", f"<p>Episode {e['episode_id']} (<a href='https://studio.youtube.com/video/{e['yt_id']}/edit'>open in Studio</a>) "
+                NT.mail("uploads_private", "A video is stuck on Private", dedupe_key="uploads_private", html=f"<p>Episode {e['episode_id']} (<a href='https://studio.youtube.com/video/{e['yt_id']}/edit'>open in Studio</a>) "
                           "did not become public at its slot. The lock detector has paused new videos so nothing is wasted; a separate urgent email explains the next step. "
                           "You can publish this one yourself in the YouTube Studio app (set it to Public).</p>")
             e["status"] = "closed"
@@ -146,11 +147,11 @@ def audit_nudge(eps):
     last = parse_iso(S("AUDIT_NUDGE_AT"))
     if last and now_utc() - last < dt.timedelta(days=6): return
     if st_ == "not_sent":
-        PUB.email("Reminder: send the YouTube API audit form", "<p>Your first video is uploaded but stays <b>private</b>, and new videos are paused, until Google approves this project (the YouTube API audit).</p>"
+        NT.mail("api_audit", "Reminder: send the YouTube API audit form", dedupe_key="api_audit", html="<p>Your first video is uploaded but stays <b>private</b>, and new videos are paused, until Google approves this project (the YouTube API audit).</p>"
                   "<p>The form is not sent yet. Open <b>SETUP_CHECKLIST.md, Step 4b, Part B</b> (or tell your Claude setup chat: \"do Step 4b Part B\"); it takes about 20 minutes and every answer is written out. "
                   "After sending it, set <b>Settings -> API_AUDIT_STATUS = sent</b>.</p>")
     else:
-        PUB.email("Waiting for the YouTube API audit", "<p>The audit form was sent. New videos are paused until Google approves it, so no money is spent on videos that would stay private.</p>"
+        NT.mail("api_audit_wait", "Waiting for the YouTube API audit", html="<p>The audit form was sent. New videos are paused until Google approves it, so no money is spent on videos that would stay private.</p>"
                   "<p>When Google's approval email arrives, set <b>Settings -> API_AUDIT_STATUS = approved</b>; production restarts by itself within 30 minutes. "
                   "If three weeks pass with no reply, check the inbox and spam of the account that sent the form and answer anything Google asked.</p>")
     set_setting("AUDIT_NUDGE_AT", iso())
@@ -300,7 +301,7 @@ def _produce_slot(eps):
         last = parse_iso(S("HOLD_MAIL_AT"))
         if not last or now_utc() - last > dt.timedelta(days=1):
             from whatifs.episode import _fix_link
-            PUB.email("Reminder: a video is waiting for your fix click", "".join(f"<p>{e['episode_id']}: <a href='{_fix_link(e['episode_id'])}'>click to fix</a> (or type KILL in its kill cell). New videos are paused until then.</p>" for e in held))
+            NT.mail("contract_hold", "Reminder: a video is waiting for your fix click", screens=False, html="".join(f"<p>{e['episode_id']}: <a href='{_fix_link(e['episode_id'])}'>click to fix</a> (or type KILL in its kill cell). New videos are paused until then.</p>" for e in held))
             set_setting("HOLD_MAIL_AT", iso())
         log(f"{len(held)} video(s) held by final QC - not starting a new episode", "WARN"); return None
     ok_a, why_a = audit_gate(eps)
@@ -310,7 +311,7 @@ def _produce_slot(eps):
         log(f"budget gate: not starting a new episode - {why}", "WARN")
         mk = now_utc().strftime("%Y-%m")
         if S("BUDGET_MAIL_MONTH") != mk:
-            PUB.email("Monthly budget reached", f"<p>{why}.</p><p>Videos that are already scheduled still publish. New videos resume on the 1st of next month, "
+            NT.mail("money_stop", "Monthly budget reached", dedupe_key=f"money_stop|{mk}", html=f"<p>{why}.</p><p>Videos that are already scheduled still publish. New videos resume on the 1st of next month, "
                       "or raise BUDGET_FLOOR_INR / BUDGET_CEILING_INR in Settings if you want to spend more. Nothing else is needed.</p>")
             set_setting("BUDGET_MAIL_MONTH", mk)
         return None
@@ -343,7 +344,7 @@ def release(ep_id, which="release1"):
     if PUB.yt_status(e["yt_id"]) != "public":
         t = parse_iso(e.get("slot_et"))
         if t and now_utc() > t + dt.timedelta(hours=S("PRIVATE_ALERT_HOURS", float)) and "private alert sent" not in str(e.get("notes", "")):
-            PUB.email("Video not public yet", f"<p>Episode {ep_id} should be public by now but YouTube still shows it as private. "
+            NT.mail("uploads_private", "Video not public yet", dedupe_key="uploads_private", html=f"<p>Episode {ep_id} should be public by now but YouTube still shows it as private. "
                       "For the first videos this usually means the Google Cloud project still needs the YouTube API audit (SETUP_CHECKLIST Step 4b). "
                       f"The release step waits; after {S('RELEASE_GIVEUP_HOURS')} h it is closed so new videos are never blocked.</p>")
             st.update("Episodes", "episode_id", ep_id, {"notes": _note(e, "private alert sent")})
@@ -357,7 +358,7 @@ def release(ep_id, which="release1"):
     long_url = f"https://youtu.be/{e['yt_id']}"
     st.update("Episodes", "episode_id", ep_id, {"status": "LIVE", "updated": iso()})
     if not S("LAUNCH_DONE", bool):
-        PUB.email("We're live", f"<p>Your first video is live: <a href='{long_url}'>{long_url}</a></p><p>Nothing to do. The channel now runs on its own.</p>")
+        NT.mail("live", "We're live", f"<p>Your first video is live: <a href='{long_url}'>{long_url}</a></p><p>Nothing to do. The channel now runs on its own.</p>")
         set_setting("LAUNCH_DONE", "TRUE")
     flush_log()
 
@@ -383,7 +384,7 @@ def pr_ready():
     html = (f"<p><b>A code change passed every check</b> (Plan Guard, all unit tests, the full offline rehearsal):<br>#{n} {title}</p>"
             f"<p><a href='{merge}'>Merge it: click, then press the green <b>Submit new issue</b></a></p><p><a href='{url}'>Review it on GitHub first</a> "
             "(the green Merge button there works too).</p><p>After the merge the next half-hourly run uses the new pipeline by itself. To drop the change, close the pull request.</p>")
-    try: PUB.email(f"Change ready to merge: #{n}", html); return merge
+    try: NT.mail("build_ready", f"Change ready to merge: #{n}", html, buttons=[("Merge", f"MERGE #{n}"), ("Reject", f"REJECT #{n}")], default="it waits; it closes after 7 days", expires_h=168, dedupe_key=f"build|{n}"); return merge
     except Exception as x: log(f"change-ready email failed: {scrub(x)}", "WARN"); return None
 
 # ---------------- trend scout (weekly) ----------------
@@ -473,7 +474,7 @@ def guardian(items):
     until = (now_utc() + dt.timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
     set_setting("PAUSED_UNTIL", until)
     held = hold_scheduled("policy watch")
-    PUB.email("Paused for 7 days (policy watch)", "<p>A possible change to AI-content monetisation rules was found:</p><ul>" +
+    NT.mail("policy", "Paused for 7 days (policy watch)", dedupe_key="policy|" + now_utc().strftime("%Y-%m-%d"), html="<p>A possible change to AI-content monetisation rules was found:</p><ul>" +
               "".join(f"<li>{i.get('change')} ({i.get('source')})</li>" for i in items) +
               f"</ul><p>{held} already-scheduled video(s) were switched to private so they do not go out. "
               f"Publishing resumes automatically on {until[:10]} and held videos are re-scheduled. To resume now, set PAUSED_UNTIL to blank in Settings.</p>")
@@ -1268,7 +1269,7 @@ def failure_watch():
     if len(eps) == 3 and all(e.get("status") == "FAILED" for e in eps):
         last = parse_iso(S("FAIL_MAIL_AT")) if "FAIL_MAIL_AT" in settings_keys() else None
         if not last or now_utc() - last > dt.timedelta(days=3):
-            PUB.email("Needs a look (3 failed tries)", "<p>The last 3 episode attempts failed. Reasons:</p><ul>" +
+            NT.mail("pipeline_stop", "Needs a look (3 failed tries)", dedupe_key="pipeline_stop|fails", html="<p>The last 3 episode attempts failed. Reasons:</p><ul>" +
                       "".join(f"<li>{e.get('notes','')[:200]}</li>" for e in eps) +
                       "</ul><p>Paste the Run_Log tab into your Claude setup chat: it will tell you whether it is an account/key issue (fix by clicking) or a code issue (a separate Claude code chat). Publishing retries hourly.</p>")
             set_setting("FAIL_MAIL_AT", iso())
@@ -1291,7 +1292,7 @@ def money_check():
         prop = G.kling4_proposal(); mk = now_utc().strftime("%Y-%m")
         if prop and S("KLING4_MAIL_MONTH") != mk:
             h = G.headroom(); set_setting("KLING4_MAIL_MONTH", mk)
-            PUB.email("Budget headroom: room for a 4th Kling clip", f"<p>Spent Rs {h['spent_inr']:.0f} of Rs {h['cap_inr']:.0f}; a full video costs about Rs {h['per_video_inr']:.0f} "
+            NT.mail("headroom", "Budget headroom: room for a 4th Kling clip", f"<p>Spent Rs {h['spent_inr']:.0f} of Rs {h['cap_inr']:.0f}; a full video costs about Rs {h['per_video_inr']:.0f} "
                       f"(TTS and thinking included).</p><p>{prop}</p>")
     except Exception as x: log(f"headroom / Gemini credit check skipped: {scrub(x)}", "WARN")
     if S("GREENLIGHT_TIERS_ON", bool):                           # v9: report only - measured savings vs the estimate over the last videos
@@ -1302,13 +1303,13 @@ def money_check():
             if sav > 0: msgs.append(f"<li><b>Greenlight</b>: the last {len(sm)} videos came in Rs {sav:.0f} under their AI estimate; that measured saving could fund an upgraded tier (nothing changes by itself).</li>")
         except Exception as x: log(f"greenlight report skipped: {scrub(x)}", "WARN")
     if S("AUTO_RELOAD_ON", bool):
-        if msgs: PUB.email("Top-up reminder", "<ul>" + "".join(msgs) + "</ul>")
+        if msgs: NT.mail("topup", "Top-up reminder", "<ul>" + "".join(msgs) + "</ul>", dedupe_key="topup|" + NT._india_day())
         return
     for prov, url, name in (("fal", "https://fal.ai/dashboard/billing", "fal.ai"), ("anthropic", "https://platform.claude.com/settings/billing", "Anthropic")):
         days = G.runway_days(prov)
         if days <= S("REFILL_WARN_DAYS", int):
             msgs.append(f"<li><b>{name}</b>: about {days:.0f} days left. <a href='{url}'>Top up here</a>, then add the amount to the {prov.upper() if prov=='fal' else 'ANTHROPIC'}_FUNDED_USD cell (or switch on auto-reload and set AUTO_RELOAD_ON to TRUE).</li>")
-    if msgs: PUB.email("Top-up reminder", "<ul>" + "".join(msgs) + "</ul><p>If you do nothing: videos already scheduled still publish, but NO new video can be made once fal.ai credit or Anthropic credit runs out (pictures have no free fallback; writing falls back to Gemini).</p>")
+    if msgs: NT.mail("topup", "Top-up reminder", dedupe_key="topup|" + NT._india_day(), html="<ul>" + "".join(msgs) + "</ul><p>If you do nothing: videos already scheduled still publish, but NO new video can be made once fal.ai credit or Anthropic credit runs out (pictures have no free fallback; writing falls back to Gemini).</p>")
 
 def monthly_brief():
     JOB["name"] = "brief"; st = store()
@@ -1325,7 +1326,7 @@ def monthly_brief():
     txt = ask_batch("brief", P.fill(P.BRIEF, data=json.dumps(data, default=str)[:20000]) + ("\nEnd with ONE priority fix for next month (the single change most "
               "likely to raise click-through or retention, with the evidence), then a short list of other ideas. Recommend only: budget and visuals are never changed automatically."),
               "Write it.", want_json=False, fake_key="brief")
-    PUB.email("Monthly brief", "<pre style='font-family:sans-serif;white-space:pre-wrap'>" + txt + "</pre>")
+    NT.mail("monthly_brief", "Monthly brief", "<pre style='font-family:sans-serif;white-space:pre-wrap'>" + txt + "</pre>")
 
 # ---------------- setup ----------------
 def setup():

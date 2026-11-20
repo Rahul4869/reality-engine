@@ -1246,6 +1246,8 @@ def scrub(text):
     s = re.sub(r"(key=|access_to" + r"ken=|Bearer\s+|Key\s+)[A-Za-z0-9_\-\.:]{12,}", r"\1***", s)
     return s
 
+def _plain(t): return re.sub(r"\s{4,}", "   ", re.sub(r"[\r\n\t]+", " ", re.sub(r"<[^>]+>", "", str(t or "")))).strip()      # v12 B-OWNER: an html text as one plain line (tags gone) - the ONE definition: WhatsApp's messages and the rows notify.mail writes (moved from wa.py)
+
 def log(msg, level="INFO", episode=None, public=None):
     """public = a short, content-free text for the (public) Actions log. The full message still goes to the private Run_Log tab."""
     msg = scrub(msg)

@@ -13,6 +13,7 @@ from whatifs import growth as GR
 from whatifs.org import runner as ORG, wraps as WR, canon as CANON          # v12: every step below that names a department runs under the department contract
 from whatifs import format_engine as FE, cta as CTA, formats as FMT
 from whatifs import sound as SD
+from whatifs import notify as NT          # v12 B-OWNER: every mail to him goes through notify.mail (one road: e-mail is the copy, both screens carry it)
 
 BLENDS = {        # v8.9 clarity: two voices at most, one dominant, only Kokoro's best-graded voices (am_onyx, graded D, and bm_george removed: they made the mix dense)
     "A": {"am_michael": 0.70, "am_fenrir": 0.30},
@@ -97,7 +98,7 @@ def _preflight_mail(why):
     day = now_utc().strftime("%Y-%m-%d")
     if S("PREFLIGHT_MAIL_DAY") != day:
         set_setting("PREFLIGHT_MAIL_DAY", day)
-        PUB.email("Production paused: a health check failed", f"<p>Nothing was spent. A free pre-flight check found: {why}.</p><p>It is checked again every half hour and production starts by itself once it is green. "
+        NT.mail("pipeline_stop", "Production paused: a health check failed", dedupe_key=f"pipeline_stop|preflight|{day}", html=f"<p>Nothing was spent. A free pre-flight check found: {why}.</p><p>It is checked again every half hour and production starts by itself once it is green. "
                   "If it says a key is missing, add it under Settings > Secrets and variables > Actions on GitHub.</p>")
 
 def _resumable(slot_iso):
@@ -954,8 +955,8 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         set_setting("NEXT_PREMISE", json.dumps(dict({k: nt.get(k, "") for k in ("premise", "headline", "family", "ptype")}, set_at=iso()), ensure_ascii=False)[:600])
     log(f"SCHEDULED {vid} for {slot_iso}: {title}", public=f"SCHEDULED {vid} for {slot_iso}")
     if not S("PILOT_DONE", bool): set_setting("PILOT_DONE", "TRUE"); log("pilot episode made")
-    PUB.email("Video scheduled", f"<p>{title}<br>Goes live {slot_iso} (UTC). To stop it, type KILL in the Episodes tab, kill column.</p>"
-              f"<p>{_review_note(hook_rec, cut_map)}</p>", kind="info")
+    NT.mail("scheduled", "Video scheduled", f"<p>{title}<br>Goes live {slot_iso} (UTC). To stop it, type KILL in the Episodes tab, kill column.</p>"
+            f"<p>{_review_note(hook_rec, cut_map)}</p>", level="info", episode=ep, dedupe_key=f"scheduled|{ep}")
     try:                                                         # v10.2: the first CREATIVE_REVIEW_FIRST_N videos stay private until the owner taps Approve
         cr = cctx.get("critique") or {}
         summ_ = (f"'{title}'. Self-review: " + ", ".join(f"{k} {cr.get(k)}" for k in CON.CRIT_KEYS if k in cr) +
@@ -1026,7 +1027,7 @@ def _hold(st, ep, out, chk, notes, fix, mail=True):
     act = (f"<p><a href='{link}'>Click here, then press the green <b>Submit new issue</b> button</a>. A robot repairs the video "
            "(re-makes failed pictures within a Rs " + str(int(S('FIX_MAX_PAID_INR', float))) + " limit), checks it again, and schedules it only if it passes.</p>") if link else \
           "<p>Open GitHub, Actions, 'Fix held video', and run it with this episode id.</p>"
-    PUB.email("Video held: the final check failed (one click to fix)" if not fix else "Fix attempt failed: video still held",
+    NT.mail("contract_hold", "Video held: the final check failed (one click to fix)" if not fix else "Fix attempt failed: video still held", screens=False, html=
               f"<p>Episode <b>{ep}</b> was NOT uploaded.</p><ul>{items}</ul><p>Already tried automatically: {', '.join(notes) or 'nothing applied'}.</p>{act}"
               "<p>To drop this video instead, type KILL in its kill cell in the Episodes tab. New videos wait until you decide.</p>")
     return {"ok": False, "held": True, "episode": ep, "problems": [p["code"] for p in chk["problems"]]}

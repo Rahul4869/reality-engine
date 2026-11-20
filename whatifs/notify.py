@@ -2,7 +2,7 @@
 from __future__ import annotations
 import datetime as dt, itertools, json, re
 from zoneinfo import ZoneInfo
-from whatifs.core import S, log, store, iso, now_utc, parse_iso, env, set_setting, scrub
+from whatifs.core import S, log, store, iso, now_utc, parse_iso, env, set_setting, scrub, _plain
 
 IST = ZoneInfo("Asia/Kolkata")
 TIERS = ("now", "week", "fyi")
@@ -114,8 +114,9 @@ def open_rows(tier=None):
     return [r for r in store().rows("Owner_Actions") if r.get("status") in ("OPEN", "QUEUED") and (tier is None or r.get("tier") == tier)]
 
 
-def send(kind, text, buttons=(), episode=None, tier="week", default=None, expires_h=None, urgent=False, dedupe_key=None):
-    """Create the owner action (and deliver it if its tier says so). Returns the row id, or the id of an identical open row."""
+def send(kind, text, buttons=(), episode=None, tier="week", default=None, expires_h=None, urgent=False, dedupe_key=None, mailed=False):
+    """Create the owner action (and deliver it if its tier says so). Returns the row id, or the id of an identical open row.
+    v12 B-OWNER: mailed=True = the caller has mailed it already (notify.mail): an alarm is then not mailed a second time."""
     tier = tier if tier in TIERS else "week"
     if _on(): buttons, default, expires_h, dedupe_key = _shape(kind, episode, buttons, default, expires_h, dedupe_key)
     st = store(); key = dedupe_key or f"{kind}|{episode or ''}"
@@ -150,6 +151,17 @@ def _shape(kind, episode, buttons, default, expires_h, dedupe_key):
                   tier="week", dedupe_key=f"card_rule|{kind}|{_india_day()}")
         except Exception as e: log(f"the card rule's report was not written: {scrub(e)[:120]}", "WARN")
     return buttons, default, expires_h, dedupe_key
+
+
+def mail(kind, subject, html, level="essential", screens=True, buttons=(), episode=None, default=None, expires_h=None, dedupe_key=None):
+    """v12 B-OWNER (ONE ROAD, item 149): every mail to him goes through here - e-mail is only the copy. TWO_SCREENS_ON FALSE = the call of today, word
+    for word. TRUE = the e-mail goes exactly as today (his storage); then, when `screens`, the same message is a row of its kind (`send`), so WhatsApp
+    and the dashboard carry it (screens=False: the screens carry it already through another row). Returns the row id, or the mail's own result."""
+    from whatifs import publish as PUB                     # looked up on the module at call time: the older tests replace PUB.email
+    if not _on(): return PUB.email(subject, html, kind=level)
+    sent = PUB.email(subject, html, kind=level)
+    if not screens: return sent
+    return send(kind, _plain(str(subject) + ". " + str(html)), buttons, episode, tier="week", default=default, expires_h=expires_h, dedupe_key=dedupe_key, mailed=True)
 
 
 def _email_body(row):
