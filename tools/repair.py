@@ -91,7 +91,8 @@ def main():
     if g or t or u: print("repair did not pass tests; discarded"); return 1
     subprocess.run(["git", "-c", "user.name=repair-bot", "-c", "user.email=bot@users.noreply.github.com", "commit", "-am", f"repair: {rel}"], check=True)
     subprocess.run(["git", "push", "origin", br], check=True)
-    subprocess.run(["gh", "pr", "create", "--title", f"Repair {rel}", "--body", "Automatic repair. Plan Guard + unit tests + rehearsal passed. " + sig + "\n\nLast error line: `" + (err.strip().splitlines() or [""])[-1][:160].replace("`", "'") + "`", "--head", br], check=True)
+    pr = subprocess.run(["gh", "pr", "create", "--title", f"Repair {rel}", "--body", "Automatic repair. Plan Guard + unit tests + rehearsal passed. " + sig + "\n\nLast error line: `" + (err.strip().splitlines() or [""])[-1][:160].replace("`", "'") + "`", "--head", br], check=True, stdout=subprocess.PIPE, text=True)
+    url = ((pr.stdout or "").strip().splitlines() or [""])[-1]; print("pull request:", url)      # FINISHED BY FABLE (CA2-5, CA3-2): its own page, for his two screens (only stdout is taken: gh's errors stay in the job's log)
     risky = _new_risky(src, fixed)
     auto = _setting("AUTO_MERGE_REPAIRS", os.environ.get("AUTO_MERGE", "TRUE")).upper() in ("TRUE", "YES", "1", "ON")
     protected = rel.replace("\\", "/") in PROTECTED
@@ -101,15 +102,15 @@ def main():
         why = ("the fix adds new network/key/shell code: " + ", ".join(risky)) if risky else ("this file guards money, quality or publishing, so it is never merged automatically" if protected else "AUTO_MERGE_REPAIRS is FALSE")
         print("not auto-merged:", why)
         subprocess.run(["gh", "pr", "comment", br, "--body", "Waiting for the owner: " + why + ". Open Files changed, then Merge if it looks right (or ask Claude)."], check=False)
-        _tell_owner(rel, why)
+        _tell_owner(rel, why, url if url.startswith("https://") else "")
     return 0
 
-def _tell_owner(rel, why):
+def _tell_owner(rel, why, url=""):
     """The owner's one message when a repair waits for his Merge (v12 B-OWNER: the one road - e-mail is the copy, both screens get the row). Never raises."""
     try:
         from whatifs import notify as NT
         NT.mail("repair_waiting", "A code repair is waiting for you", f"<p>The Repair Bot fixed <b>{rel}</b> and all tests passed, but it was not merged automatically because {why}.</p>"
-                "<p>Open the repo, Pull requests tab, read it (or paste it to Claude), then press Merge. Nothing else is needed.</p>", dedupe_key=NT.said_key("repair_waiting", f"{rel}|{NT._india_day()}", why))
+                + (f"<p><a href='{url}'>Open the change</a>, read it (or paste it to Claude), then press Merge. Nothing else is needed.</p>" if url else "<p>Open the repo, Pull requests tab, read it (or paste it to Claude), then press Merge. Nothing else is needed.</p>"), dedupe_key=NT.said_key("repair_waiting", f"{rel}|{NT._india_day()}", f"{why} {url}".strip()))
     except Exception as e: print("email failed:", str(e)[:120])
 
 if __name__ == "__main__":

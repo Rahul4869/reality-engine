@@ -1608,3 +1608,17 @@ def test_the_masters_card_says_each_identity_score(monkeypatch, setting):
     assert SH.masters()["made"] == 1
     rosa = next(r for r in core.store().rows("Owner_Actions") if r["kind"] == "sheets_review" and "ROSA" in r["buttons"])
     assert "Identity against" not in rosa["text"], rosa["text"]
+
+def test_a_repair_that_waits_for_him_is_one_tap_away(monkeypatch, setting):
+    """R1-99 (4) (the code reader's CR-2b-5; item 149): a repair waiting for his Merge told him to open GitHub's Pull requests tab, with no address on
+    either screen. The row holds the change's own page - one tap - as CA-7 keeps a link he must open. RE-CUT (PART A3's CA3-2): a second change of the
+    same file for the same reason on one day is its own row, with its own address."""
+    import tools.repair as RP
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch); why = "this file guards money, quality or publishing"
+    rows = lambda: sorted((r for r in core.store().rows("Owner_Actions") if r["kind"] == "repair_waiting"), key=lambda r: r["id"])
+    RP._tell_owner("whatifs/premise.py", why, "https://github.com/me/re/pull/7")
+    assert "Open the change: https://github.com/me/re/pull/7" in rows()[0]["text"], rows()[0]["text"]
+    RP._tell_owner("whatifs/preview.py", why)                                                            # no address known: today's words
+    assert "Pull requests tab" in rows()[-1]["text"]
+    RP._tell_owner("whatifs/premise.py", why, "https://github.com/me/re/pull/8")                        # a second change of the same file, the same day, the same reason
+    assert len(rows()) == 3 and "Open the change: https://github.com/me/re/pull/8" in rows()[-1]["text"], [r["text"][-60:] for r in rows()]
