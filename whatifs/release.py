@@ -33,7 +33,7 @@ SHEET = (
     ("youtube", "language", "code", "read", "English, title and audio"),
     ("youtube", "kids", "code", "read", "not made for kids"),
     ("youtube", "ai", "code", "read", "the altered-content field, true to what the video is (AI_LABEL_DEFAULT)"),
-    ("youtube", "privacy", "code", "read", "public at once, set by us and never left to YouTube's default"),
+    ("youtube", "privacy", "code", "read", "private until YouTube shows it in HD (at most HD_SHORT_CAP_MIN minutes and the wait for the pipeline's next tick), then public: set by us and read back"),      # v12 B-OWNER (PART 9, R22 (5))
     ("youtube", "thumbnail", "code", "sent", "the Short's own cover, set only after YouTube has processed the video (SHORT_THUMB_ON)"),
     ("youtube", "playlist", "code", "sent", "the playlist of its Short format"),
     ("youtube", "link", "hand", "", "the link from the Short to its long video (YouTube Studio; the one-minute release card, batch V3)"),
@@ -254,18 +254,31 @@ def _extras_youtube(vid, rc, row, cov, got, first, now):
         rc["playlist"] = [SENT, f"'{name}'"] if PUB.yt_playlist(vid, name) else [REFUSED, f"the Short could not be added to the playlist '{name}'"]
     return rc
 
+def _gate_receipt(state, m, note):
+    """v12 B-OWNER (R18 (4 b)): the `privacy` receipt of a gated Short, written from the HD gate alone."""
+    from whatifs import hdgate as HG
+    if state == HG.WAITING: return [WAITING, f"private until YouTube shows it in HD: {m} min so far"]
+    if state in (HG.PUBLIC, HG.CAP): return [KEPT, note]
+    return [DRIFT, note or f"the HD gate's row reads {state or 'nothing'}"]
+
 def _youtube(row, path, digest, cov, tx, rec, now):
-    from whatifs import publish as PUB
+    from whatifs import publish as PUB, hdgate as HG
     body, want = want_youtube(tx); vid = str((rec or {}).get("native_id") or ""); first = not vid
     if first:
-        vid = PUB.yt_upload(path, tx["youtube"]["title"], tx["youtube"]["description"], tx["youtube"]["tags"], short=True, ai_label=S("AI_LABEL_DEFAULT", bool))
+        vid = PUB.yt_upload(path, tx["youtube"]["title"], tx["youtube"]["description"], tx["youtube"]["tags"], short=True, ai_label=S("AI_LABEL_DEFAULT", bool), now=now)
+        if HG.row(vid): body["status"]["privacyStatus"] = "private"                 # v12 B-OWNER (R18 (4 b)): what was really sent - the gate took it up private
         _save(row["id"], "youtube", now, native_id=vid, state=OPEN, sha=digest, sent=body)      # on record AT ONCE: a job cut off after this line must never upload the Short a second time
+    gated = bool(HG.row(vid))                                                       # R18 (4 a): gated = it has a row on HD_Wait, never what the switch says at this pass
+    if gated: body["status"]["privacyStatus"] = "private"; want.pop("privacy", None)      # the gate's own receipt judges that row, never compare
     got = PUB.yt_read(vid); rc = dict((rec or {}).get("receipts") or {})
     rc.update(compare("youtube", want, got) if got else {k: [SENT, "the upload could not be read back"] for k in want})
-    if got.get("privacy") == "private":                                             # asked public, came back private: the lock - the detector alerts and production pauses
+    if not gated and got.get("privacy") == "private":                               # asked public, came back private: the lock - the detector alerts and production pauses (a gated Short: hdgate.go_public reads it)
         from whatifs import launch as LA; LA.lock_detected(vid, ["a Short came back private (asked public)"])
     rc["file"] = [KEPT, f"sha256 {digest[:12]}: the master"]; rc["short"] = [KEPT, "upright, at most 180 s"]
     rc = _extras_youtube(vid, rc, row, cov, got, first, now)
+    if gated:                                                                       # R17 (1): the gate is the door's LAST act - the thumbnail and the playlist go first
+        state, m, note = HG.finish(vid, S("HD_SHORT_WAIT_S", float) if first and not FAKE else 0, now)
+        rc["privacy"] = _gate_receipt(state, m, note)
     return vid, body, got, rc
 
 def _linker(opened):

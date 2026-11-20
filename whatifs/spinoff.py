@@ -137,5 +137,5 @@ def run(force=False, publish=True):
 def _publish_long(path, title, desc, ep):
     from whatifs import publish as PUB
     if FAKE: return {"status": "POSTED", "yt_id": "fake" + ep}
-    vid = PUB.yt_upload(path, title, desc, ["Reality on Trial", "science", "what if", "countdown"], publish_at=None, privacy="public", ai_label=True)
+    vid = PUB.yt_upload(path, title, desc, ["Reality on Trial", "science", "what if", "countdown"], publish_at=None, ai_label=True)      # v12 B-OWNER (R17 (3 b)): no privacy argument - the body's default is public, so the HD gate takes it like every direct upload
     return {"status": "POSTED", "yt_id": vid}

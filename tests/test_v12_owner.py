@@ -1082,11 +1082,16 @@ def test_undo_is_private_never_gone(monkeypatch, setting):
     import inspect
     tree = ast.parse(inspect.getsource(CON.unpost))
     assert not {n.func.attr for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)} & {"yt_delete", "yt_upload"}
-    slot, _s = _ep8(monkeypatch, setting, status="SCHEDULED"); priv = []
+    slot, _s = _ep8(monkeypatch, setting, status="SCHEDULED"); priv = []; real = PUB8.yt_set_privacy
     monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: priv.append((vid, p)) or True)
     ok, note = DS.route("UNPOST|EP8")
     assert ok and "is private again. Nothing was deleted." in note and priv == [("ytEP8", "private")]
     assert _epi("EP8")["status"] == "HELD_BY_OWNER" and _epi("EP8")["yt_id"] == "ytEP8"
+    monkeypatch.setattr(PUB8, "yt_set_privacy", real)                       # step 9a (R18 (2)): the stand-in keeps the privacy now - its read-back is real
+    vid = PUB8.yt_upload("x/EP10.mp4", "Title EP10", "d", [], now=core.now_utc())
+    core.store().append("Episodes", [{"episode_id": "EP10", "status": "SCHEDULED", "yt_id": vid, "slot_et": slot, "title": "Title EP10"}])
+    assert PUB8.yt_read(vid)["privacy"] == "public" and DS.route("UNPOST|EP10")[0]
+    assert PUB8.yt_read(vid)["privacy"] == "private" and _epi("EP10")["yt_id"] == vid and _epi("EP10")["status"] == "HELD_BY_OWNER"
     setting("TWO_SCREENS_ON", "FALSE"); assert DS.route("UNPOST|EP8") == (False, "That action is not allowed.")
 
 def _rehearse_to_line_56(monkeypatch, setting, tmp_path):

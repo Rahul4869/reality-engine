@@ -49,7 +49,7 @@ def upload_check(force=False):
             with tempfile.TemporaryDirectory() as td:
                 clip = _test_clip(td)
                 vid = PUB.yt_upload(clip, "Reality Engine - upload check", "Automatic upload check. This test video is deleted within a minute.",
-                                    ["test"], privacy="unlisted", ai_label=True, verify=False)
+                                    ["test"], privacy="unlisted", ai_label=True, verify=False, hd_gate=False)      # v12 B-OWNER (R17 (3 a)): the gate turns only a wanted privacy of public; this is its second wall
             got = str((PUB.yt_status_full(vid) or {}).get("privacyStatus") or "")
     except Exception as e:
         set_setting("UPLOAD_CHECK_AT", iso())

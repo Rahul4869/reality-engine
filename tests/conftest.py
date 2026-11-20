@@ -26,7 +26,7 @@ OLD_DRAWN = {"DRAWN_ON": "FALSE"}
 # v12 DRAWN (P19): the older tests run with the talking cast on, as they were written
 OLD_LIVING = {"LIVING_CHARACTERS_ON": "TRUE", "V12DRAWN_FLIPS_DONE": "test"}
 # v12 B-OWNER: ... and with the owner's messages as they were (the e-mail path; every entry is added in the step of the batch that adds its cell). The batch's own tests are tests/test_v12_owner.py.
-OLD_SCREENS = {"TWO_SCREENS_ON": "FALSE"}
+OLD_SCREENS = {"TWO_SCREENS_ON": "FALSE", "HD_GATE_ON": "FALSE"}
 
 @pytest.fixture(autouse=True)
 def fresh_store(tmp_path):

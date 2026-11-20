@@ -191,6 +191,9 @@ TABS = {
  "Owner_Input":     ["input"],
  "Owner_Desk":      ["n", "ts", "sha", "verbatim", "verdict", "how", "memo", "ticket", "action", "briefed",
                      "channel", "card", "ref"],      # v12 B-OWNER (PART 5): ONE store for both screens - where it came from, the card he typed under, the message / action id
+ # v12 B-OWNER (PART 9, the HD gate, whatifs/hdgate.py): one row per upload the gate took up private - when, its cap, what it asked for the AI label, where it
+ # stands (WAITING, PUBLIC, CAP, BLOCKED, LOCKED), when it went public, whether YouTube showed HD, the minutes, and a note (the receipt's words, or "unread n")
+ "HD_Wait":         ["vid", "kind", "uploaded", "cap_min", "ai", "state", "public_at", "hd", "minutes", "note"],
 }
 
 class LocalStore:
@@ -1222,7 +1225,10 @@ DEFAULTS = {
  "WA_MONTHLY_CAP_INR": ("100", "v12 B-OWNER: at this month's WhatsApp spend the morning message and the \"Needs you\" list stop on WhatsApp (the dashboard and the e-mail carry them); an alarm is sent whatever it says. Inside the chat's cap"),
  "CREATIVE_REVIEW_WAIT_H": ("72", "v12 B-OWNER: hours a reviewed long video waits for his tap before it is approved by his silence (when its checks pass); never past SILENCE_LEAD_H hours before its slot, never under 1 hour"),
  "SILENCE_LEAD_H": ("12", "v12 B-OWNER: a video that waits for his approval is approved by his silence this many hours before its slot, when its checks pass, so that a late tick cannot miss the slot; he can still stop it until the slot. GitHub's own schedule left up to 11 hours between two ticks (measured 19 Nov 2026)"),
- "DESK_MONTHLY_CAP_INR": ("40", "v12 B-OWNER: rupees a month for weighing his inputs (one strong call an input, role owner_desk; an estimate: 40 to 80 inputs); above it the input is kept word for word and read on the 1st of next month. Inside the chat's cap"),
+ "HD_GATE_ON": ("FALSE", "v12 B-OWNER (PART 9, R22 (11)): TRUE = a YouTube upload that would go public at once goes up private and is made public when YouTube shows it in HD, or at HD_SHORT_CAP_MIN; FALSE (the shipped value until the pack proves the pipeline's clock) = public at its upload, as before. A video the gate already took is finished either way"),
+ "HD_SHORT_WAIT_S": ("300", "v12 B-OWNER (PART 9): seconds a Short's own upload job waits for YouTube to show it in HD before the pipeline's next tick takes over (in steps of 15)"),
+ "HD_SHORT_CAP_MIN": ("60", "v12 B-OWNER (PART 9): minutes after its upload at which a video the HD gate holds goes public whatever YouTube shows (the miss is logged); a failed policy read still holds it"),
+ "DESK_MONTHLY_CAP_INR": ("40","v12 B-OWNER: rupees a month for weighing his inputs (one strong call an input, role owner_desk; an estimate: 40 to 80 inputs); above it the input is kept word for word and read on the 1st of next month. Inside the chat's cap"),
 }
 _settings_cache = None
 def settings(refresh=False) -> dict:

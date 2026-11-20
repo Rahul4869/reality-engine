@@ -78,13 +78,19 @@ def _fake_get(platform, nid):
 
 def _fault(platform, key, default=None): return (FAKE_FAULTS.get(platform) or {}).get(key, default)
 
-def yt_upload(path, title, description, tags, publish_at=None, made_for_kids=False, ai_label=True, short=False, privacy=None, verify=True):
+def yt_upload(path, title, description, tags, publish_at=None, made_for_kids=False, ai_label=True, short=False, privacy=None, verify=True, hd_gate=True, now=None):
     """privacy: v9.3.1 explicit privacy (e.g. 'unlisted' for the upload check); default = private when scheduled, else public.
-    verify: v9.3.1 (L2) read the upload back (lock detector + AI-label read-back)."""
-    body = yt_body(title, description, tags, publish_at, made_for_kids, ai_label, privacy)
+    verify: v9.3.1 (L2) read the upload back (lock detector + AI-label read-back).
+    hd_gate: v12 B-OWNER (PART 9) - with HD_GATE_ON, an upload that would go public at once (no publish_at, a wanted privacy of public) goes up PRIVATE
+    and gets its row on tab HD_Wait; `hdgate` makes it public when YouTube shows it in HD, or at its cap. now = the job's clock (the row's upload time)."""
+    gate = bool(hd_gate) and not publish_at and (privacy or "public") == "public" and S("HD_GATE_ON", bool)
+    body = yt_body(title, description, tags, publish_at, made_for_kids, ai_label, "private" if gate else privacy)
     if FAKE:
         if _fault("youtube", "fail"): raise RuntimeError("YouTube start 503: offline fault")
-        vid = "FAKE_" + os.path.basename(path); _fake_put("youtube", vid, sent=body); return vid
+        vid = "FAKE_" + os.path.basename(path); _fake_put("youtube", vid, sent=body)
+        if gate:
+            from whatifs import hdgate as HG; HG.enter(vid, "short" if short else "video", now, ai=bool(ai_label))      # as soon as the id is known
+        return vid
     session = {}                                   # v8.3: the upload session survives a retry, so a lost final answer can never create a second video
     def go():
         size = os.path.getsize(path); chunk = 64 * 1024 * 1024; sent = 0
@@ -120,6 +126,8 @@ def yt_upload(path, title, description, tags, publish_at=None, made_for_kids=Fal
                 rng = rr.headers.get("Range"); sent = int(rng.split("-")[1]) + 1 if rng else 0; f.seek(sent)
         raise RuntimeError("upload ended without id")
     vid = retry(go, tries=3, wait=30, what="youtube upload")
+    if gate:
+        from whatifs import hdgate as HG; HG.enter(vid, "short" if short else "video", now, ai=bool(ai_label))          # v12 B-OWNER: as soon as the id is known
     if verify:
         try: verify_upload(vid, body["status"]["privacyStatus"], publish_at, bool(ai_label))
         except Exception as e: log(f"upload read-back skipped: {e}", "WARN")
@@ -153,7 +161,7 @@ def yt_set_label(vid, on=True):
     """v9.3.1: set status.containsSyntheticMedia on an uploaded video (videos.update, about 50 quota units). True when set."""
     if FAKE:
         ok = "label" not in (_fault("youtube", "refuse") or ())
-        if ok and "label" not in (_fault("youtube", "ignore") or ()): _fake_put("youtube", vid, fixed={"ai": bool(on)})      # 'ignore' = the call is accepted and nothing changes
+        if ok and "label" not in (_fault("youtube", "ignore") or ()): _fake_put("youtube", vid, fixed={**(_fake_get("youtube", vid).get("fixed") or {}), "ai": bool(on)})      # 'ignore' = the call is accepted and nothing changes; v12 B-OWNER (R17 (2)): MERGED - a later change never forgets a repair
         return ok
     try:
         r = requests.get(YT + f"videos?part=status&id={vid}", headers=gheaders(), timeout=30).json()
@@ -185,7 +193,8 @@ def yt_engaged_views(vid, start_date):
 def yt_read(vid):
     """v12 V2c-b2: what YouTube itself says about an upload, flattened to the rows of the release sheet ({} when it cannot be read). ONE videos.list
     call (1 quota unit). 'ai' is None when YouTube leaves the field out (it often does); 'processed' = processing has succeeded - only then may a
-    Short's thumbnail be set (thumbnails.set reference, 3 Nov 2026)."""
+    Short's thumbnail be set (thumbnails.set reference, 3 Nov 2026). v12 B-OWNER (PART 9): 'hd' = contentDetails.definition is "hd" - THE ONE reader of
+    the processing and HD state (`hdgate.ready` judges the two). Offline the fault `sd` makes the stand-in never read HD."""
     if not vid: return {}
     if FAKE:
         rec = _fake_get("youtube", vid); body = rec.get("sent") or {}
@@ -193,18 +202,20 @@ def yt_read(vid):
         sn, stt = body.get("snippet") or {}, body.get("status") or {}
         out = {"title": sn.get("title"), "description": sn.get("description"), "tags": list(sn.get("tags") or []), "category": sn.get("categoryId"),
                "language": sn.get("defaultLanguage"), "audio_language": sn.get("defaultAudioLanguage"), "privacy": stt.get("privacyStatus"),
-               "kids": bool(stt.get("selfDeclaredMadeForKids")), "ai": stt.get("containsSyntheticMedia"), "processed": not _fault("youtube", "processing")}
+               "kids": bool(stt.get("selfDeclaredMadeForKids")), "ai": stt.get("containsSyntheticMedia"), "processed": not _fault("youtube", "processing"),
+               "hd": not _fault("youtube", "sd")}
         out.update(_fault("youtube", "drift") or {}); out.update(rec.get("fixed") or {})      # a repair made after the upload wins over what the platform dropped
         return out
     try:
-        r = requests.get(YT + f"videos?part=snippet,status,processingDetails&id={vid}", headers=gheaders(), timeout=30).json()
+        r = requests.get(YT + f"videos?part=snippet,status,processingDetails,contentDetails&id={vid}", headers=gheaders(), timeout=30).json()
         it = (r.get("items") or [None])[0]
         if not it: return {}
         sn, stt = it.get("snippet") or {}, it.get("status") or {}
         return {"title": sn.get("title"), "description": sn.get("description"), "tags": list(sn.get("tags") or []), "category": sn.get("categoryId"),
                 "language": sn.get("defaultLanguage"), "audio_language": sn.get("defaultAudioLanguage"), "privacy": stt.get("privacyStatus"),
                 "kids": bool(stt.get("selfDeclaredMadeForKids") or stt.get("madeForKids")), "ai": stt.get("containsSyntheticMedia"),
-                "processed": (it.get("processingDetails") or {}).get("processingStatus") == "succeeded"}
+                "processed": (it.get("processingDetails") or {}).get("processingStatus") == "succeeded",
+                "hd": (it.get("contentDetails") or {}).get("definition") == "hd"}
     except Exception as e: log(f"read-back of {vid} failed: {e}", "WARN"); return {}
 
 def yt_thumbnail(vid, path):
@@ -263,7 +274,10 @@ def yt_reply(parent_id, text):
     except Exception as e: log(f"reply failed: {e}", "WARN"); return False
 
 def yt_set_privacy(vid, privacy):
-    if FAKE: return True
+    if FAKE:                                                                        # v12 B-OWNER (PART 9): the stand-in records it, MERGED, and honours refuse / ignore as the label does
+        ok = "privacy" not in (_fault("youtube", "refuse") or ())
+        if ok and "privacy" not in (_fault("youtube", "ignore") or ()): _fake_put("youtube", vid, fixed={**(_fake_get("youtube", vid).get("fixed") or {}), "privacy": privacy})
+        return ok
     r = requests.get(YT + f"videos?part=status&id={vid}", headers=gheaders(), timeout=30).json()
     if not r.get("items"): return False
     stt = r["items"][0]["status"]; stt["privacyStatus"] = privacy; stt.pop("publishAt", None)
@@ -273,7 +287,7 @@ def yt_set_privacy(vid, privacy):
 
 def yt_schedule(vid, publish_at):
     """Put a held (private) video back on the schedule at a new time."""
-    if FAKE: return True
+    if FAKE: _fake_put("youtube", vid, fixed={**(_fake_get("youtube", vid).get("fixed") or {}), "privacy": "private"}); return True      # v12 B-OWNER: merged (R17 (2))
     r = requests.get(YT + f"videos?part=status&id={vid}", headers=gheaders(), timeout=30).json()
     if not r.get("items"): raise RuntimeError(f"video {vid} not found")
     stt = r["items"][0]["status"]; stt["privacyStatus"] = "private"; stt["publishAt"] = publish_at
