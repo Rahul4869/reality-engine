@@ -50,10 +50,10 @@ def identity_score(ref, new, who):
     except Exception: return None
 
 def masters(limit=None):
-    """Make the missing master portraits (reference-based, inside the lifetime cap). Nothing is LOCKED by code: the owner approves."""
+    """Make the missing master portraits (reference-based, inside the lifetime cap). Each is a DRAFT for him: his Approve locks it, and one he leaves alone is LOCKED by auto_lock after SHEETS_DEFAULT_LOCK_H hours (silence = yes, the memo's row 34) - so the card says each identity score against his portrait (CA3-5)."""
     from whatifs import anim as ANIM, publish as PUB, specials as SP
     st = store(); have = {r.get("hash"): r for r in st.rows("Character_Sheets")}; cap = S("CHARACTER_SHEET_IMAGE_CAP", int)
-    made = 0; out_dir = os.path.join(WORK, "sheets"); os.makedirs(out_dir, exist_ok=True); done = []
+    made = 0; out_dir = os.path.join(WORK, "sheets"); os.makedirs(out_dir, exist_ok=True); done = []; scored = []
     for p in masters_plan():
         if p["hash"] in have and have[p["hash"]].get("file"): continue
         if used() >= cap or (limit and made >= limit): break
@@ -65,12 +65,14 @@ def masters(limit=None):
             fid = PUB.drive_upload(path, os.path.basename(path))[0]
             st.append("Character_Sheets", [{"ts": iso(), "character": p["character"], "expression": "master", "hash": p["hash"], "prompt": p["prompt"][:400],
                                             "file": "drive:" + fid, "status": f"DRAFT (identity {sc:.0f}/10)" if sc is not None else "DRAFT", "approved_at": ""}]); made += 1; done.append(p["character"])
+            if sc is not None: scored.append((p["character"], sc))      # FINISHED BY FABLE (CA3-5; B3 ruled (C) by R1-104): the card says each score
         except Exception as e: log(f"master portrait {p['character']} failed: {str(e)[:120]}", "WARN")
     if made:
         dflt, hrs = _review_card()
         try: NT.mail("sheets_review", "New Toybox Noir character masters to approve", buttons=[(f"Approve {c}", f"APPROVE SHEET {c}") for c in sorted(set(done))],
                      default=dflt, expires_h=hrs, dedupe_key=f"sheets|masters|{','.join(sorted(set(done)))}|{NT._india_day()}", html=f"<p>{made} master portrait(s) in Drive (Character_Sheets tab, expression 'master'), made from your approved portraits. "
-                       f"Approve to LOCK them; animated scenes then use them as the face reference. Lifetime images used: {used()} of {cap}.</p>")
+                       f"Approve to LOCK them; animated scenes then use them as the face reference. Lifetime images used: {used()} of {cap}.</p>"
+                       + (f"<p>Identity against your portrait: {', '.join(f'{c} {s:.0f}/10' for c, s in scored)}. A low score means the face moved - look before it locks.</p>" if scored else ""))      # FINISHED BY FABLE (CA3-5): silence locks a scored master - the card says each score first
         except Exception: pass
     return {"made": made, "have": used()}
 

@@ -1591,3 +1591,20 @@ def test_a_scored_master_is_a_draft_he_can_lock(monkeypatch, setting):
     assert {"sheets-VALE", "sheets-GRIMM", "sheets-ROSA"} <= {c["id"] for c in DS._docket()}
     assert SH.decide("APPROVE SHEET VALE") == "1 image(s) locked" and SH.auto_lock() == 1 and DS.route("LOCKSHEETS|ROSA")[0]
     assert {r["hash"]: r["status"] for r in st.rows("Character_Sheets")} == {"hA4v": "LOCKED", "hA4g": "LOCKED", "hA4r": "LOCKED"}
+
+def test_the_masters_card_says_each_identity_score(monkeypatch, setting):
+    """B3, ruled (C) by R1-104 (the Fable consult on CA2-4): silence locks a scored master (the memo's row 34), so the masters' card says each identity
+    score against his approved portrait - a face that moved is seen before it locks. Nothing scored, no sentence."""
+    from whatifs import sheets as SH, specials as SP
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch); _sheet_stubs(monkeypatch)
+    monkeypatch.setattr(SP, "_portrait", lambda *a, **k: "his-portrait.png")                           # a portrait to compare with: the judge scores
+    monkeypatch.setattr(SH, "identity_score", lambda ref, new, who: {"VALE": 8.0, "GRIMM": 3.0}[who])
+    monkeypatch.setattr(SH, "masters_plan", lambda: [{"character": c, "expression": "master", "prompt": "p", "hash": f"hCA35{c}"} for c in ("VALE", "GRIMM")])
+    assert SH.masters()["made"] == 2
+    card = next(r for r in core.store().rows("Owner_Actions") if r["kind"] == "sheets_review")
+    assert "Identity against your portrait: VALE 8/10, GRIMM 3/10. A low score means the face moved - look before it locks." in card["text"], card["text"]
+    monkeypatch.setattr(SP, "_portrait", lambda *a, **k: None)                                         # no portrait: no score, no sentence
+    monkeypatch.setattr(SH, "masters_plan", lambda: [{"character": "ROSA", "expression": "master", "prompt": "p", "hash": "hCA35R"}])
+    assert SH.masters()["made"] == 1
+    rosa = next(r for r in core.store().rows("Owner_Actions") if r["kind"] == "sheets_review" and "ROSA" in r["buttons"])
+    assert "Identity against" not in rosa["text"], rosa["text"]
