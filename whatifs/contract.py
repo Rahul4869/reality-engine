@@ -1025,6 +1025,17 @@ def _ist(slot_iso):
     t = parse_iso(slot_iso)
     return t.astimezone(ZoneInfo("Asia/Kolkata")).strftime("%a %d %b %H:%M") if t else str(slot_iso or "")
 
+def _silence_no(ep, why, row=None):
+    """v12 B-OWNER (PART F, CF-3 (c), CF-5 (a)): every "no" of his silence - the check's, or `approve`'s own - is told on ONE open `silence|<ep>` row
+    that names the reason of the LAST try (a reason that changed rewrites it), and on the card's answer. Returns "held: <why>"."""
+    from whatifs import notify as NT
+    e = next((r for r in store().rows("Episodes") if r.get("episode_id") == ep), None) or {}
+    text = f"{e.get('title') or ep} was not approved by your silence: {why}. " + ("It is STILL ON YOUTUBE'S SCHEDULE - set it to Private in YouTube Studio." if any(r.get("dedupe_key") == f"unscheduled|{ep}" for r in NT.open_rows()) else f"YouTube MAY ALREADY HAVE IT ON ITS SCHEDULE - look in YouTube Studio: https://studio.youtube.com/video/{e.get('yt_id')}/edit" if str(why).startswith("approve failed") else "It stays private.")      # J13: CF-1b's hold open = YouTube kept it; R1-233: a raise of `approve` (in or after `yt_schedule`) cannot tell what YouTube kept - never "stays private" then
+    aid = NT.send("contract_hold", text, [("Approve", f"APPROVE {ep}"), ("Keep it private", f"HOLDREVIEW {ep}")], tier="week", episode=ep, dedupe_key=f"silence|{ep}")
+    if any(r.get("id") == aid and r.get("text") != text for r in NT.open_rows()): store().update("Owner_Actions", "id", aid, {"text": text[:1500]})      # an older reason is never left standing
+    NT.outcome(row, ("it stays private: " if text.endswith("It stays private.") else "not approved - it is still on YouTube's schedule: " if text.endswith("set it to Private in YouTube Studio.") else "not approved - YouTube may already have it on its schedule: ") + str(why))                      # "Decided for you" reads the card's answer: never "approved by your silence" of a film that was held
+    log(f"not approved by silence: {why}", "WARN", ep); return f"held: {why}"
+
 def approve_by_silence(ep, row=None):
     """v12 B-OWNER (PART 7, item 150): his silence approves a video only through `clear_to_post`. A "no" keeps it private and one `contract_hold` row
     (key silence|<ep>) says why, with Approve / Keep it private; a "yes" closes that row ("cleared"), approves by the function his tap calls and sends
@@ -1034,15 +1045,13 @@ def approve_by_silence(ep, row=None):
     import datetime as dt
     st = store(); e = next((r for r in st.rows("Episodes") if r.get("episode_id") == ep), None) or {}; title = str(e.get("title") or ep)
     ok, why = clear_to_post(ep)
-    if not ok:
-        NT.send("contract_hold", f"{title} was not approved by your silence: {why}. It stays private.", [("Approve", f"APPROVE {ep}"), ("Keep it private", f"HOLDREVIEW {ep}")],
-                tier="week", episode=ep, dedupe_key=f"silence|{ep}")
-        NT.outcome(row, f"it stays private: {why}")                  # "Decided for you" reads the card's answer: never "approved by your silence" of a film that was held
-        log(f"not approved by silence: {why}", "WARN", ep); return f"held: {why}"
-    for r in NT.open_rows():                                         # one road: the report of an earlier "no" is closed by the "yes"
+    if not ok: return _silence_no(ep, why, row)
+    old = e.get("slot_et")
+    try: ans = str(approve(ep))                                      # v12 B-OWNER (PART F, CF-3 (b)): a raise of YouTube's schedule call is a "no" with its reason, never a lost one
+    except Exception as x: ans = f"approve failed: {type(x).__name__}: {scrub(x)[:120]}"
+    if not ans.startswith("approved"): return _silence_no(ep, ans, row)      # (c): the row says why; the earlier "no" stays open until a "yes" is DONE
+    for r in NT.open_rows():                                         # one road: the report of an earlier "no" is closed by the "yes" - only once it is approved
         if r.get("dedupe_key") == f"silence|{ep}": st.update("Owner_Actions", "id", r["id"], {"status": "ANSWERED", "answered_at": iso(), "answer": "cleared"})
-    old = e.get("slot_et"); ans = str(approve(ep))
-    if not ans.startswith("approved"): NT.outcome(row, f"it stays private: {ans}"); return ans
     NT.outcome(row, (row or {}).get("default_action") or "approved by your silence")
     new = next((r.get("slot_et") for r in store().rows("Episodes") if r.get("episode_id") == ep), old)
     watch = f" Watch it (private): https://studio.youtube.com/video/{e.get('yt_id')}/edit"

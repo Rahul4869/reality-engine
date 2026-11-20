@@ -1856,3 +1856,24 @@ def test_a_card_that_said_stays_private_is_never_approved_by_silence(monkeypatch
     slot10, sched10 = _ep8(monkeypatch, setting, ep="EP10"); CON.await_approval("EP10", "ytEP10", slot10, "s")
     setting("TWO_SCREENS_ON", "FALSE"); NT.expire_defaults(now=_later(73))
     assert _epi("EP10")["status"] == "AWAITING_APPROVAL" and sched10 == [] and not _decided("EP10")
+
+def test_one_failing_video_never_stops_the_others_and_every_no_is_told(monkeypatch, setting):
+    """CR-8a-3 (PART F, CF-3): `review_sweep` had no try a video - one video whose scheduling raised stopped the sweep at every tick for every video after
+    it; `approve_by_silence` closed his "not approved" row BEFORE `approve` ran, so a raise or "no free slot found" left Needs you empty while nothing was
+    approved, and such an answer was returned with no row. Now the others go out, and the one `silence|` row says the reason of the last try."""
+    slot, sched = _ep8(monkeypatch, setting); slot9, sched9 = _ep8(monkeypatch, setting, ep="EP9")
+    monkeypatch.setattr(LAU, "uploads_open", lambda: False)
+    CON.await_approval("EP8", "ytEP8", slot, "s"); CON.await_approval("EP9", "ytEP9", slot9, "s"); NT.expire_defaults(now=_later(15))
+    monkeypatch.setattr(LAU, "uploads_open", lambda: True)
+    def sched_(vid, at):
+        if vid == "ytEP8": raise RuntimeError("video ytEP8 not found")
+        sched9.append((vid, at)); return True
+    monkeypatch.setattr(PUB8, "yt_schedule", sched_)
+    assert CON.review_sweep() == 1 and _epi("EP9")["status"] == "SCHEDULED" and _epi("EP8")["status"] == "AWAITING_APPROVAL"
+    sil = lambda: [r for r in _kind("contract_hold", "EP8") if r["dedupe_key"] == "silence|EP8" and r["status"] == "OPEN"]
+    assert len(sil()) == 1 and "approve failed" in sil()[0]["text"] and "video ytEP8 not found" in sil()[0]["text"], sil()
+    assert "stays private" not in sil()[0]["text"] and "MAY ALREADY HAVE IT ON ITS SCHEDULE" in sil()[0]["text"] and "studio.youtube.com/video/ytEP8/edit" in sil()[0]["text"] and _kind("creative_review", "EP8")[-1]["answer"].startswith("not approved - YouTube may already have it on its schedule: approve failed"), (sil(), _kind("creative_review", "EP8")[-1]["answer"])      # R1-233: a raise in or after `yt_schedule` cannot tell what YouTube kept
+    monkeypatch.setattr(CON, "approve", lambda ep: "no free slot found")
+    assert CON.review_sweep() == 0 and len(sil()) == 1 and "no free slot found" in sil()[0]["text"], sil()
+    NT.send("contract_hold", "Title EP8 is still on YouTube's schedule.", [("Done", "OK")], tier="now", urgent=True, episode="EP8", dedupe_key="unscheduled|EP8")      # CF-1b's hold, open
+    assert CON.review_sweep() == 0 and len(sil()) == 1 and "STILL ON YOUTUBE'S SCHEDULE" in sil()[0]["text"] and "stays private" not in sil()[0]["text"], sil()
