@@ -261,24 +261,35 @@ def _gate_receipt(state, m, note):
     if state in (HG.PUBLIC, HG.CAP): return [KEPT, note]
     return [DRIFT, note or f"the HD gate's row reads {state or 'nothing'}"]
 
+def _gated(vid):
+    """v12 B-OWNER CG-1 (J1's FR-9a-3; R18 (5)): True or False as the video's row on tab HD_Wait answers; None when the tab could not be read - the Short's
+    privacy is NOT JUDGED this pass (no lock, no DRIFT, nothing sent for it), never taken as "not gated"."""
+    from whatifs import hdgate as HG
+    try: return bool(HG.row(vid))
+    except HG.Unread as e: log(f"release: {vid}: {e} - its privacy is not judged this pass", "WARN"); return None
+
 def _youtube(row, path, digest, cov, tx, rec, now):
     from whatifs import publish as PUB, hdgate as HG
     body, want = want_youtube(tx); vid = str((rec or {}).get("native_id") or ""); first = not vid
     if first:
         vid = PUB.yt_upload(path, tx["youtube"]["title"], tx["youtube"]["description"], tx["youtube"]["tags"], short=True, ai_label=S("AI_LABEL_DEFAULT", bool), now=now)
-        if HG.row(vid): body["status"]["privacyStatus"] = "private"                 # v12 B-OWNER (R18 (4 b)): what was really sent - the gate took it up private
+        took = _gated(vid)                                                          # CG-1: one read serves this line and the next (None = HD_Wait unread)
+        if took or (took is None and S("HD_GATE_ON", bool)): body["status"]["privacyStatus"] = "private"      # v12 B-OWNER (R18 (4 b)): what was really sent - the gate took it up private (unread: this pass's switch decided the upload, publish.py 86)
         _save(row["id"], "youtube", now, native_id=vid, state=OPEN, sha=digest, sent=body)      # on record AT ONCE: a job cut off after this line must never upload the Short a second time
-    gated = bool(HG.row(vid))                                                       # R18 (4 a): gated = it has a row on HD_Wait, never what the switch says at this pass
+    gated = took if first else _gated(vid)                                          # R18 (4 a): gated = it has a row on HD_Wait, never what the switch says at this pass; None = not judged (CG-1)
     if gated: body["status"]["privacyStatus"] = "private"; want.pop("privacy", None)      # the gate's own receipt judges that row, never compare
+    elif gated is None: want.pop("privacy", None)                                   # CG-1: HD_Wait unread - `compare` is not asked about the privacy this pass
     got = PUB.yt_read(vid); rc = dict((rec or {}).get("receipts") or {})
     rc.update(compare("youtube", want, got) if got else {k: [SENT, "the upload could not be read back"] for k in want})
-    if not gated and got.get("privacy") == "private":                               # asked public, came back private: the lock - the detector alerts and production pauses (a gated Short: hdgate.go_public reads it)
+    if gated is False and got.get("privacy") == "private":                          # asked public, came back private: the lock - the detector alerts and production pauses (a gated Short: hdgate.go_public reads it; unread: not judged)
         from whatifs import launch as LA; LA.lock_detected(vid, ["a Short came back private (asked public)"])
     rc["file"] = [KEPT, f"sha256 {digest[:12]}: the master"]; rc["short"] = [KEPT, "upright, at most 180 s"]
     rc = _extras_youtube(vid, rc, row, cov, got, first, now)
     if gated:                                                                       # R17 (1): the gate is the door's LAST act - the thumbnail and the playlist go first
-        state, m, note = HG.finish(vid, S("HD_SHORT_WAIT_S", float) if first and not FAKE else 0, now)
-        rc["privacy"] = _gate_receipt(state, m, note)
+        try: state, m, note = HG.finish(vid, S("HD_SHORT_WAIT_S", float) if first and not FAKE else 0, now)
+        except HG.Unread as e: gated = None; log(f"release: {vid}: {e} - the HD gate could not finish it: its privacy is not judged this pass", "WARN")
+        else: rc["privacy"] = _gate_receipt(state, m, note)
+    if gated is None: rc["privacy"] = [WAITING, "not judged this pass: tab HD_Wait could not be read"]      # CG-1 (R1-167 DQ2): the record stays OPEN, a later pass judges it - a lock is found late, never lost
     return vid, body, got, rc
 
 def _linker(opened):

@@ -11,16 +11,28 @@ def ready(got):
     """YouTube's own answer says the video is processed AND in HD (`publish.yt_read`: `processed`, `hd`) - the one judgment on those two fields."""
     return bool(got) and bool(got.get("processed")) and bool(got.get("hd"))
 
+class Unread(RuntimeError):
+    """v12 B-OWNER CG-1 (J1's FR-9a-3; R18 (5): a read that failed is not a pass): tab HD_Wait could not be read. Never an answer - None reads as "not gated"."""
+
 def row(vid):
-    """The video's row on tab HD_Wait, or None. A video is GATED when it has one (R18 (4 a)) - never by what the switch says at a later pass."""
+    """The video's row on tab HD_Wait, or None. A video is GATED when it has one (R18 (4 a)) - never by what the switch says at a later pass.
+    CG-1 (R1-167): a failed read runs `ensure_tabs` ONCE and reads again (the house pattern of `org/execute.py` `_rows`: a tab an older Sheet has not got
+    is made, and reads empty); a read that still fails, or a failed `ensure_tabs`, rises as `Unread`."""
     if not vid: return None
-    try: return next((r for r in store().rows(TAB) if r.get("vid") == vid), None)
-    except Exception: return None
+    st = store()
+    try: rs = st.rows(TAB)
+    except Exception:
+        try: st.ensure_tabs(); rs = st.rows(TAB)
+        except Exception as e: raise Unread(f"tab {TAB} could not be read: {scrub(e)[:160]}") from e
+    return next((r for r in rs if r.get("vid") == vid), None)
 
 def enter(vid, kind, now=None, ai=True):
     """The upload went up private through the gate: its row (once a video). kind = "short" or "video"; cap_min = HD_SHORT_CAP_MIN for both (R18 (7 b));
     ai = what the upload asked for the AI label (R17 ADDS (E))."""
-    if not vid or row(vid): return
+    if not vid: return
+    try:
+        if row(vid): return
+    except Unread as e: log(f"HD gate: {vid}: {e} - its row is written all the same (an id the upload has just returned has none yet)", "WARN")      # CG-1 (R1-167 DQ3): never a raise between the upload and its id on record
     store().append(TAB, [{"vid": vid, "kind": kind, "uploaded": iso(now or now_utc()), "cap_min": S("HD_SHORT_CAP_MIN", int), "ai": "TRUE" if ai else "FALSE",
                           "state": WAITING, "public_at": "", "hd": "", "minutes": "", "note": ""}])
 

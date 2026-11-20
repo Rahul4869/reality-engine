@@ -193,6 +193,63 @@ def test_a_private_read_back_is_the_lock(monkeypatch, setting, gate_on):
     assert h["state"] == HG.LOCKED and _shown(vid) == "private" and LA.lock_state() == "on" and _rc("SHHD07")[0] == REL.DRIFT and "the lock" in _rc("SHHD07")[1]
     assert len(seen) == 1 and "the HD gate made public" in seen[0][0]
 
+def test_an_hd_wait_that_cannot_be_read_is_never_taken_as_ungated(monkeypatch, setting, gate_on):
+    """v12 B-OWNER CG-1 (J1's FR-9a-3, R1-163 (2)(a); R18 (5): a read that failed is not a pass): while tab HD_Wait cannot be read, a gated Short that
+    waits for HD is never read as the lock - UPLOAD_LOCK untouched, no DRIFT receipt for its privacy, nothing sent to YouTube for it. A later pass that
+    reads the tab judges it as before."""
+    PUB.FAKE_FAULTS["youtube"] = {"sd": True}
+    r = _short(monkeypatch, setting, "SHHD30"); vid = r["yt_id"]; assert HG.row(vid)["state"] == HG.WAITING and _shown(vid) == "private"
+    st = core.store(); real = st.rows; down = [True]
+    def rows(tab):
+        if down[0] and tab == HG.TAB: raise RuntimeError("Sheets 503: planted - tab HD_Wait could not be read")
+        return real(tab)
+    monkeypatch.setattr(st, "rows", rows)
+    REL.settle(NOW + 10 * M)
+    assert LA.lock_state() != "on" and _rc("SHHD30")[0] != REL.DRIFT and _shown(vid) == "private" and "privacy" not in _fixed(vid)
+    assert _rc("SHHD30")[0] == REL.WAITING and _rc("SHHD30")[1].startswith("not judged this pass") and _yt("SHHD30")["state"] == REL.OPEN      # R1-167 DQ2 (a)
+    down[0] = False
+    HG.tick(NOW + 60 * M); assert _shown(vid) == "public" and HG.row(vid)["state"] == HG.CAP
+    REL.settle(NOW + 61 * M); assert _rc("SHHD30") == [REL.KEPT, "public after 60 min; HD NO (the cap)"] and LA.lock_state() != "on"
+
+def test_a_missing_hd_wait_tab_is_made_once_and_a_read_that_still_fails_rises(monkeypatch):
+    """v12 B-OWNER CG-1 (R1-167 DQ1 (a), CHECK A): a failed read of tab HD_Wait runs `ensure_tabs` ONCE and reads again - the house pattern of
+    `org/execute.py` `_rows`: a tab an older Sheet has not got is made and reads empty (None: not gated). A read that still fails, or an `ensure_tabs` that
+    fails, rises as `HG.Unread` - never None, which reads as "not gated"."""
+    st = core.store(); real = st.rows; made = []
+    def missing(tab):
+        if tab == HG.TAB and not made: raise RuntimeError("Sheets 400: Unable to parse range: HD_Wait (planted: an older Sheet without the tab)")
+        return real(tab)
+    monkeypatch.setattr(st, "rows", missing); monkeypatch.setattr(st, "ensure_tabs", lambda: made.append(1))
+    assert HG.row("vidCG1") is None and made == [1]
+    def down(tab):
+        if tab == HG.TAB: raise RuntimeError("Sheets 503: planted - tab HD_Wait could not be read")
+        return real(tab)
+    monkeypatch.setattr(st, "rows", down)
+    with pytest.raises(HG.Unread): HG.row("vidCG1")
+    assert made == [1, 1]                                                                              # once a call: no flag, no cache
+    def broken():
+        raise RuntimeError("Sheets 503: planted - the tabs could not be made")
+    monkeypatch.setattr(st, "rows", missing); made.clear(); monkeypatch.setattr(st, "ensure_tabs", broken)
+    with pytest.raises(HG.Unread): HG.row("vidCG1")
+
+def test_a_first_release_with_hd_wait_unread_uploads_once_and_concludes_no_lock(monkeypatch, setting, gate_on):
+    """v12 B-OWNER CG-1 (R1-167 DQ3 (a), the line at 269): with HD_GATE_ON TRUE and tab HD_Wait unreadable from BEFORE the Short's first release, the
+    release raises nothing; the Short is uploaded ONCE (its id on record, never RETRY - a raise between the upload and its id would upload it a second
+    time); `enter` writes its row all the same; no lock is concluded; its privacy is "not judged this pass"; and the record's `sent` says private - the
+    same pass's switch decided the upload (publish.py 86)."""
+    PUB.FAKE_FAULTS["youtube"] = {"sd": True}
+    st = core.store(); real = st.rows; down = [True]
+    def rows(tab):
+        if down[0] and tab == HG.TAB: raise RuntimeError("Sheets 503: planted - tab HD_Wait could not be read")
+        return real(tab)
+    monkeypatch.setattr(st, "rows", rows)
+    r = _short(monkeypatch, setting, "SHHD31"); vid = r["yt_id"]; y = _yt("SHHD31")
+    assert vid and y["native_id"] == vid and y["state"] != REL.RETRY and int(float(y["tries"] or 0)) == 1 and LA.lock_state() != "on"
+    assert _rc("SHHD31")[0] == REL.WAITING and _rc("SHHD31")[1].startswith("not judged this pass") and y["state"] == REL.OPEN
+    assert json.loads(y["sent"])["status"]["privacyStatus"] == "private" and _shown(vid) == "private"
+    down[0] = False
+    assert HG.row(vid)["state"] == HG.WAITING
+
 def test_the_upload_check_is_untouched(gate_on):
     """R17 (3 a): the upload check asks for unlisted and compares the answer with unlisted - the gate turns only a wanted privacy of public, and
     `launch.py` passes `hd_gate=False` as a second wall."""
