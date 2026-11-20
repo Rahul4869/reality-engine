@@ -1212,6 +1212,13 @@ DEFAULTS = {
  "DRAWN_INK_MIN": ("3.0", "v12 DRAWN: the lowest contrast of a drawn scene's text, read on the FINISHED FILE (ratio to 1, WCAG's form on the encoder's luma); under it the scene is shown as its still. A limit set only from measured pairs (test 8: every good at least 4.5; a frame without our text at most 1.5; a text at 30% opacity at most 2.6; this value strictly between them) - never moved to make a video pass"),
  "DRAWN_RENDER_MAX_S": ("90", "v12 DRAWN: seconds the proof of one drawn scene may take before it is refused (its still is shown)"),
  "TWO_SCREENS_ON": ("TRUE", "v12 B-OWNER: TRUE = every owner message reaches WhatsApp and the dashboard through notify, WhatsApp sends three kinds of message only, and a card's default runs at its expiry; FALSE = the older e-mail path"),
+ "NEEDS_HOUR_IST": ("18", "v12 B-OWNER: WhatsApp's \"Needs you\" list goes out at the first tick at or after this hour (India time), once a day and only when a decision is open"),
+ "NEEDS_SENT": ("", "auto - the India date of the last \"Needs you\" list"),
+ "WA_OPEN_TEMPLATE": ("re_open_v1", "v12 B-OWNER: the ONE WhatsApp template outside the 24-hour window (category UTILITY, one quick reply \"Open\"): the morning message, the \"Needs you\" list and an alarm; submitted by the pack's setup"),
+ "PRICE_WA_UTILITY_INR": ("1.0", "v12 B-OWNER: rupees a delivered WhatsApp template - a STATED CEILING, not Meta's rate (its INR rate card is typed in at the pack's setup)"),
+ "PRICE_WA_SERVICE_INR": ("1.0", "v12 B-OWNER: rupees a delivered WhatsApp message inside the 24-hour window once the month's free tier is used - a STATED CEILING, not Meta's rate"),
+ "WA_SERVICE_FREE_PER_MONTH": ("1000", "v12 B-OWNER: delivered service messages a month that Meta does not charge for (its pricing page, from 1 Oct 2026)"),
+ "WA_MONTHLY_CAP_INR": ("100", "v12 B-OWNER: at this month's WhatsApp spend the morning message and the \"Needs you\" list stop on WhatsApp (the dashboard and the e-mail carry them); an alarm is sent whatever it says. Inside the chat's cap"),
 }
 _settings_cache = None
 def settings(refresh=False) -> dict:

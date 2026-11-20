@@ -58,6 +58,25 @@ def klass(kind):
     """The kind's class: alarm, hold, card or inform. An unknown kind is a card under "Needs you" - never lost, never silent."""
     return KINDS.get(kind, (CARD, "needs"))[0]
 
+def group(kind):
+    """The kind's group on both screens (one of GROUPS). An unknown kind is under "Needs you"."""
+    return KINDS.get(kind, (CARD, "needs"))[1]
+
+def name(kind):
+    """The kind's plain name, as a list row shows it (24 characters, WhatsApp's limit): "title_pick" -> "Title pick"."""
+    return str(kind or "message").replace("_", " ").strip().capitalize()[:24]
+
+def group_rows(g, now=None, limit=20):
+    """The rows a group shows on both screens, newest first: "needs" = `needs()`; every other group = its open rows, and "decided" also every row
+    of any kind DEFAULTED in the last 48 hours ("ran by default": his silence decided it)."""
+    if g == "needs": rows = needs()
+    else:
+        now = now or now_utc(); since = (now - dt.timedelta(hours=48)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        rows = [r for r in store().rows("Owner_Actions")
+                if (group(r.get("kind")) == g and klass(r.get("kind")) not in (ALARM, HOLD) and r.get("status") in ("OPEN", "QUEUED"))
+                or (g == "decided" and r.get("status") == "DEFAULTED" and str(r.get("answered_at") or "") >= since)]
+    return sorted(rows, key=lambda r: str(r.get("created") or ""), reverse=True)[:limit]
+
 def asks(row):
     """Does the row ask him to decide - a button whose verb is not OK, NOTED or SEEN?"""
     try: btns = json.loads(row.get("buttons") or "[]")

@@ -13,6 +13,16 @@ def _line(key, what, n, unit_inr, stage, unit="", item=None, calls=None):
 
 def total(L): return round(sum(l["inr"] for l in L), 2)
 
+def owner_messages(now=None):
+    """v12 B-OWNER (PART 8; item 151: overhead, never a video's money): this month's WhatsApp to him - Rs spent, the cap, templates, replies (service
+    messages) and the free replies left; the Money tab's line. Every delivered message is a Cost_Log row of item "whatsapp", episode "owner"."""
+    from whatifs.governor import month_spend_of
+    mk = (now or now_utc()).strftime("%Y-%m")
+    rows = [r for r in store().rows("Cost_Log") if r.get("item") == "whatsapp" and str(r.get("ts", "")).startswith(mk)]
+    tpl = sum(1 for r in rows if r.get("basis") == "template"); rep = len(rows) - tpl
+    return {"spent": round(month_spend_of(["whatsapp"]), 2), "cap": S("WA_MONTHLY_CAP_INR", float), "templates": tpl, "replies": rep,
+            "free_left": max(0, S("WA_SERVICE_FREE_PER_MONTH", int) - rep)}
+
 def table_read_runs(arm_on=None):
     """Does the table read (the objections round and the Director's read) really RUN? Only in the older writers' room: under ROOM_MODE v2 the room
     switches it off for every episode, so its allowance is money for calls that are never made."""

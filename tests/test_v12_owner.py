@@ -84,6 +84,12 @@ def test_needs_you_is_one_list(monkeypatch, setting):
     assert NT.digest(force=True) and len(box) == 1
     assert all(t in box[0][1] for t in ("A message of a kind nobody registered", "Video held", "Pick the clip model")), box[0][1]
     assert not any(t in box[0][1] for t in ("Budget: 80%", "Strategy moved", "Voice samples")), box[0][1]
+    # step 4: the risks' count, the morning head and WhatsApp's list read the same rows
+    from whatifs import wa as WA, digests as DG
+    assert any(x.startswith("3 open decisions") for x in DG._risks({})), DG._risks({})
+    assert any(l.startswith("Needs you: 3") for l in DG.head("daily").splitlines()), DG.head("daily")
+    bodies = _wire(monkeypatch); _window(True); assert WA.push("needs")
+    assert {x["id"] for x in bodies[-1]["interactive"]["action"]["sections"][0]["rows"]} == {f"CARD|{a}" for a in (unk, hold, card)}
 
 def test_a_hold_without_a_button_can_be_closed(setting):
     """R17 ADDS (C): a hold sent without a button gets ("Done", "OK") - without it his tap could never close it and it stood under "Needs you" for ever."""
@@ -425,3 +431,168 @@ def test_every_card_has_a_default_and_an_expiry():
     planted = 'NT.send("bakeoff", "Pick", [("A", "PICK A")], expires_h=48)\nNT.send("contract_hold", "Held", [("Fix", "FIX")])\nNT.send("budget_pct", "80%")\n' \
               'NT.mail("title_pick", "Pick", "<p>x</p>", buttons=[("A", "PICK A")], default="A goes out")\n'
     assert _cards_without_a_default([("whatifs/x.py", planted)]) == ["whatifs/x.py:1: bakeoff", "whatifs/x.py:4: title_pick"]
+
+# ------------------------------------------------------------------ step 4: WHATSAPP SENDS THREE KINDS OF MESSAGE (PART 4) and its money (PART 8)
+from whatifs import wa as WA, digests as DG
+
+def _wire(monkeypatch):
+    """The stand-in wire, recorded: every body that reached Meta (the 24-hour guard and the bill in `wa._post` still run)."""
+    bodies = []; monkeypatch.setattr(WA, "_wire", lambda body: bodies.append(body) or f"wamid.T{len(bodies)}"); return bodies
+
+def _window(open_, now=None):
+    core.set_setting("WA_LAST_INBOUND_AT", core.iso((now or core.now_utc()) - dt.timedelta(hours=1)) if open_ else "")
+
+@pytest.mark.parametrize("open_", [False, True], ids=["window_closed", "window_open"])
+def test_three_days_three_kinds(open_, monkeypatch, setting):
+    """PART 4 (item 150): over three days (Saturday, the Sunday, Monday) of half-hourly ticks, with five decisions and twenty inform rows open and no
+    alarm, WhatsApp starts exactly ONE morning message and ONE "Needs you" list a day - Sunday's morning message is the weekly one, never a second -
+    and nothing else: outside the window every one is the template, inside it none is. With nothing open the evening list is not sent at all."""
+    from whatifs import publish as PUB
+    setting("TWO_SCREENS_ON", "TRUE"); bodies = _wire(monkeypatch); monkeypatch.setattr(PUB, "email", lambda *a, **k: True)
+    start = dt.datetime(2026, 11, 20, 18, 30, tzinfo=dt.timezone.utc)                                   # Sat 21 Nov 2026, 00:00 India time
+    assert DG.needs_tick(start + dt.timedelta(hours=19)) is False and not core.S("NEEDS_SENT") and bodies == []      # 19:00 India time, no decision open
+    for i in range(5): NT.send("bakeoff", f"Decision {i}", [("Pick A", f"PICK A{i}")], default="A is used", expires_h=200 + i, dedupe_key=f"bake|{i}")
+    for i in range(20): NT.send(("budget_pct", "region", "comments_digest", "scheduled")[i % 4], f"Inform row {i}", episode=f"EPI{i}")
+    for k in range(144):
+        now = start + dt.timedelta(minutes=30 * k); _window(open_, now); DG.tick(now)
+    rows = core.store().rows("WA_Outbox")
+    assert sorted(r["kind"] for r in rows) == ["morning"] * 3 + ["needs"] * 3, [(r["kind"], r["status"]) for r in rows]
+    assert len(bodies) == 6 and all((b["type"] == "template") != open_ for b in bodies), [b["type"] for b in bodies]
+
+def test_no_free_text_outside_the_window(monkeypatch, setting):
+    """PART 4 (S2: outside the 24-hour window Meta takes only a template - error 131047). PLANTED: free text with the window closed is not posted and
+    a WA_Outbox row says "refused_window" - the stand-in refuses what Meta refuses, so a rehearsal fails where the launch would."""
+    setting("TWO_SCREENS_ON", "TRUE"); bodies = _wire(monkeypatch); _window(False)
+    assert WA.send_text("x") == "" and bodies == [] and [r["status"] for r in core.store().rows("WA_Outbox")] == ["refused_window"]
+    assert WA.send_open("Needs you", "1 decision.", "OPEN|needs") and bodies[0]["type"] == "template"                 # the template goes
+    _window(True); assert WA.send_text("y") and bodies[-1]["type"] == "text"                                         # inside the window a reply goes
+    setting("TWO_SCREENS_ON", "FALSE"); _window(False); assert WA.send_text("z") and bodies[-1]["type"] == "text"     # the older path, word for word
+
+SENDERS = ("send_text", "send_buttons", "send_list", "send_image", "send_menu", "send_section", "send_group", "send_template")
+
+def _starts_outside_wa(files):
+    """Every place outside wa.py that starts a WhatsApp message: a call of `WA._post(`, a call of a sender (allowed only inside `digests._send_old`,
+    the older brief), or an import of either from whatifs.wa."""
+    bad = []
+    for rel, src in files:
+        if rel == "whatifs/wa.py": continue
+        tree = ast.parse(src); allowed = set()
+        if rel == "whatifs/digests.py":
+            for f in tree.body:
+                if isinstance(f, ast.FunctionDef) and f.name == "_send_old": allowed = {id(n) for n in ast.walk(f)}
+        for n in ast.walk(tree):
+            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute):
+                if n.func.attr == "_post" and isinstance(n.func.value, ast.Name) and n.func.value.id in ("WA", "wa"): bad.append(f"{rel}:{n.lineno}: _post")
+                elif n.func.attr in SENDERS and id(n) not in allowed: bad.append(f"{rel}:{n.lineno}: {n.func.attr}")
+            elif isinstance(n, ast.ImportFrom) and n.module == "whatifs.wa" and {a.name for a in n.names} & set(SENDERS + ("_post",)): bad.append(f"{rel}:{n.lineno}: import")
+    return bad
+
+def test_only_wa_starts_a_message(setting):
+    """PART 4 (item 150): `wa.push` is the ONLY function that starts a message to him, of three kinds only; outside wa.py nothing calls the wire or a
+    sender (the older brief `digests._send_old` keeps its words with the switch off). PLANTED: a sender and a wire call outside wa.py are found."""
+    files = list(_py_files()); assert _starts_outside_wa(files) == [], _starts_outside_wa(files)
+    assert _starts_outside_wa([("whatifs/x.py", "from whatifs import wa as WA\nWA.send_text('hi')\n")]) == ["whatifs/x.py:2: send_text"]
+    assert _starts_outside_wa([("whatifs/x.py", "WA._post({'type': 'text'})\n")]) == ["whatifs/x.py:1: _post"]
+    assert WA.PUSH_KINDS == ("morning", "needs", "alarm"); setting("TWO_SCREENS_ON", "TRUE")
+    with pytest.raises(ValueError): WA.push("digest")
+
+def test_the_template_is_what_c0b_submits(monkeypatch, setting):
+    """PART 4 and S3: THE ONE TEMPLATE - its fixed words, UTILITY, one quick reply "Open", a body within 1,024 characters that neither starts nor
+    ends on a variable; what is sent fills exactly its two variables (one line, at most 700 characters) and the button's payload."""
+    t = WA.open_template(); body = next(c for c in t["components"] if c["type"] == "BODY")["text"]
+    assert body == "Reality Engine - {{1}}. {{2}} Tap Open to see everything and to answer." == WA.OPEN_BODY and t["category"] == "UTILITY"
+    assert t["name"] == core.DEFAULTS["WA_OPEN_TEMPLATE"][0] == "re_open_v1" and len(body) <= 1024 and body.count("{{") == 2
+    assert not body.strip().startswith("{{") and not body.strip().endswith("}}")
+    assert [c["buttons"] for c in t["components"] if c["type"] == "BUTTONS"] == [[{"type": "QUICK_REPLY", "text": "Open"}]]
+    setting("TWO_SCREENS_ON", "TRUE"); bodies = _wire(monkeypatch); _window(False)
+    assert WA.send_open("ALARM", "YouTube marked a video\nas made for kids.  " + "x" * 900, "OPEN|alarm|A1", kind="alarm")
+    sent = bodies[0]["template"]; p = sent["components"][0]["parameters"]
+    assert sent["name"] == "re_open_v1" and p[0]["text"] == "ALARM" and "\n" not in p[1]["text"] and "  " not in p[1]["text"] and len(p[1]["text"]) <= 700
+    assert sent["components"][1]["parameters"][0]["payload"] == "OPEN|alarm|A1"
+
+def test_week_and_fyi_reach_both_screens(monkeypatch, setting):
+    """PART 4 (item 149, GAP 2: "week" and "fyi" rows reached only the e-mail digest): they are in the groups of the morning message on WhatsApp - the
+    morning list IS the eight groups - and in its mail, which holds all eight groups in full (the dashboard's groups join in step 6)."""
+    from whatifs import publish as PUB
+    setting("TWO_SCREENS_ON", "TRUE"); bodies = _wire(monkeypatch); box = []
+    monkeypatch.setattr(PUB, "email", lambda subj, html, kind="essential": box.append((subj, html)) or True)
+    NT.send("budget_pct", "Budget: 80% of the cap", tier="week"); NT.send("region", "One region dominates the views", tier="fyi", episode="EP7")
+    assert "Budget: 80% of the cap" in WA.group_text("money") and "One region dominates" in WA.group_text("research")
+    now = dt.datetime(2026, 11, 21, 4, 0, tzinfo=dt.timezone.utc); _window(True, now)
+    assert DG.send("daily", now=now)["via"] == "whatsapp" and bodies[-1]["interactive"]["type"] == "list"
+    assert [x["id"] for x in bodies[-1]["interactive"]["action"]["sections"][0]["rows"]] == [f"MENU|{g}" for g in NT.GROUPS]
+    assert len(box) == 1 and all(t in box[0][1] for t in ("Budget: 80% of the cap", "One region dominates", "*Decided for you*")), box[0][1][:600]
+
+FILLERS = ("let's dive in", "hope this helps", "great question", "happy to help", "feel free to", "don't hesitate", "exciting news", "as an ai",
+           "i hope you", "just wanted to")      # a short list beside the long video's own `data.AI_TELLS`
+
+def _sounds_like_a_machine(files):
+    from whatifs import data as D
+    bad = []
+    for rel, src in files:
+        for n in ast.walk(ast.parse(src)):
+            if isinstance(n, ast.Constant) and isinstance(n.value, str):
+                bad += [f"{rel}:{n.lineno}: {t}" for t in list(D.AI_TELLS) + list(FILLERS) if t in n.value.lower()]
+    return bad
+
+def test_his_messages_do_not_sound_like_a_machine():
+    """THE SLOP LINE (item 145): his messages are short, plain and varied - every fixed sentence of notify, wa, digests and the desk is scanned against
+    the long video's own list of AI phrases and a short list of fillers. PLANTED: "Let's dive in" in the morning head fails."""
+    files = [(rel, src) for rel, src in _py_files() if rel in ("whatifs/notify.py", "whatifs/wa.py", "whatifs/digests.py", "whatifs/org/desk.py")]
+    assert len(files) == 4 and _sounds_like_a_machine(files) == [], _sounds_like_a_machine(files)
+    src = dict(files)["whatifs/digests.py"]; planted = src.replace('message, {loc:%a %d %b}"', 'message, {loc:%a %d %b}. Let\'s dive in"')
+    assert planted != src and _sounds_like_a_machine([("whatifs/digests.py", planted)])
+
+def test_the_groups_carry_the_older_sections(monkeypatch, setting):
+    """R18 (7 g): nothing the older menu showed is lost - each group's text opens with the older sections it replaces (`owner_view.render`), and the
+    two charts go as before: numbers before Posted, money before Money; a group without a chart sends none."""
+    from whatifs import owner_view as OV, charts as CH
+    setting("TWO_SCREENS_ON", "TRUE"); bodies = _wire(monkeypatch); _window(True)
+    png = os.path.join(core.WORK, "owner_chart_t4.png"); open(png, "wb").write(b"\x89PNG\r\n\x1a\n")
+    monkeypatch.setattr(CH, "money_chart", lambda view, path=None: png); monkeypatch.setattr(CH, "numbers_chart", lambda view, path=None: png)
+    try:
+        for g, sec in (("money", "money"), ("posted", "numbers")):
+            n = len(bodies); WA.send_group(g); txt = bodies[-1]["interactive"]["body"]["text"]
+            assert [b["type"] for b in bodies[n:]] == ["image", "interactive"], [b["type"] for b in bodies[n:]]
+            assert all(l in txt for l in OV.render(sec, OV.build()).splitlines()[:2]), (g, txt[:400])
+        n = len(bodies); WA.send_group("needs"); assert [b["type"] for b in bodies[n:]] == ["interactive"]
+    finally: os.remove(png)
+
+def _wa_costs(): return [r for r in core.store().rows("Cost_Log") if r.get("item") == "whatsapp"]
+
+def test_whatsapp_is_counted_and_capped(monkeypatch, setting):
+    """PART 8 (item 151): every delivered message is a Cost_Log row of its own, off every video - a template at the utility price, a reply free under
+    the month's free tier and at the service price after it; at WA_MONTHLY_CAP_INR the morning message and the list stop on WhatsApp (one `wa_cap` row
+    says so) and an alarm still goes."""
+    from whatifs import costguard as CG
+    setting("TWO_SCREENS_ON", "TRUE"); setting("PRICE_WA_UTILITY_INR", "2.5"); setting("PRICE_WA_SERVICE_INR", "0.75"); bodies = _wire(monkeypatch)
+    _window(False); assert WA.push("morning", text="Morning message, Sat 21 Nov")
+    _window(True); assert WA.send_text("a reply")
+    setting("WA_SERVICE_FREE_PER_MONTH", "1"); assert WA.send_text("a second reply")
+    got = [(r["role"], r["basis"], round(float(r["inr"]), 2), r["episode_id"]) for r in _wa_costs()]
+    assert got == [("morning", "template", 2.5, "owner"), ("reply", "service", 0.0, "owner"), ("reply", "service", 0.75, "owner")], got
+    m = CG.owner_messages(); assert (m["templates"], m["replies"], m["spent"], m["free_left"]) == (1, 2, 3.25, 0), m
+    NT.send("bakeoff", "Pick the clip model", [("Pick A", "PICK A")], default="A is used", expires_h=48)
+    setting("WA_MONTHLY_CAP_INR", "3"); n = len(bodies)
+    assert WA.push("morning", text="Morning message") == "" and WA.push("needs") == "" and len(bodies) == n
+    assert [r["kind"] for r in core.store().rows("Owner_Actions") if r["kind"] == "wa_cap"] == ["wa_cap"]
+    alarm = NT.send("kids_flag", "YouTube marked a video as made for kids", dedupe_key="kids|V1")
+    assert WA.push("alarm", _row(alarm)) and len(bodies) == n + 1                                                   # an alarm reads no cap
+
+def test_whatsapp_is_inside_his_month(monkeypatch, setting):
+    """PART 8, R17 (9 a): WhatsApp counts inside his Rs 5,000 - his own spend rises by it - and is never booked as paid by the Claude credit."""
+    from whatifs import governor as G
+    setting("TWO_SCREENS_ON", "TRUE"); setting("PRICE_WA_UTILITY_INR", "4.0"); _wire(monkeypatch); _window(False)
+    own, cover = G.own_spend_inr(), G.credit_cover_inr()
+    assert WA.push("morning", text="Morning message")
+    assert round(G.own_spend_inr() - own, 2) == 4.0 and G.credit_cover_inr() == cover
+
+def test_the_three_share_the_chat_cap(monkeypatch, setting):
+    """PART 8, R17 (9 b): the chat, the desk and WhatsApp share CHAT_MONTHLY_CAP_INR (Rs 250) - at it the next chat turn is the cheap model's."""
+    from whatifs import models as M
+    roles = []; monkeypatch.setattr(M, "ask", lambda role, *a, **k: roles.append(role) or "ok")
+    core.store().append("Cost_Log", [{"ts": core.iso(), "episode_id": "owner", "item": i, "provider": "x", "units": 1, "inr": v, "role": i}
+                                     for i, v in (("owner_chat", 100), ("owner_desk", 50), ("whatsapp", 100))])
+    setting("TWO_SCREENS_ON", "FALSE"); WA.chat("how are the shorts doing?")
+    setting("TWO_SCREENS_ON", "TRUE"); WA.chat("how are the shorts doing?")
+    assert roles == ["owner_chat", "owner_chat_cheap"], roles

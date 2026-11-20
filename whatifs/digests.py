@@ -1,7 +1,7 @@
 """The daily and weekly WhatsApp briefs, built only from the owner view. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import datetime as dt
-from whatifs.core import S, log, store, iso, now_utc, set_setting, FAKE, scrub
+from whatifs.core import S, log, store, iso, now_utc, parse_iso, set_setting, FAKE, scrub
 
 IST = dt.timezone(dt.timedelta(hours=5, minutes=30))
 
@@ -16,6 +16,8 @@ def _risks(view):
     if held: out.append(f"Waiting for you: {', '.join(held[-3:])} [Episodes]")
     from whatifs.notify import INFORM_KINDS
     opn = [r for r in store().rows("Owner_Actions") if str(r.get("status", "")).upper() in ("", "QUEUED", "PENDING", "SENT", "OPEN") and r.get("kind") not in INFORM_KINDS]      # v12 V4
+    if S("TWO_SCREENS_ON", bool):                                                     # v12 B-OWNER: the count is "Needs you" - one definition (notify.needs)
+        from whatifs import notify as NT; opn = NT.needs()
     if len(opn) > 2: out.append(f"{len(opn)} open decisions on the dashboard [Owner_Actions]")
     return out or ["No risks flagged [rule-based check of spend, holds and open decisions]"]
 
@@ -44,6 +46,12 @@ def due(kind, now=None):
     return now.strftime("%a") == str(S("DIGEST_WEEKLY_DAY") or "Sun")[:3] and str(S("DIGEST_WEEKLY_SENT") or "") != wk
 
 def send(kind="daily", demo=False, now=None):
+    """The brief of the day or the week. v12 B-OWNER: with TWO_SCREENS_ON it is the morning message (`_send_new`); FALSE = the older brief."""
+    if S("TWO_SCREENS_ON", bool): return _send_new(kind, now)
+    return _send_old(kind, demo, now)
+
+def _send_old(kind="daily", demo=False, now=None):
+    """The older brief, word for word (the switch off)."""
     from whatifs import wa as WA, publish as PUB
     now = now or now_utc(); text, chart = compose(kind, demo, now)
     sent = "email"
@@ -65,12 +73,84 @@ def send(kind="daily", demo=False, now=None):
     else: set_setting("DIGEST_WEEKLY_SENT", f"{now.astimezone(IST).isocalendar()[0]}-W{now.astimezone(IST).isocalendar()[1]:02d}")
     log(f"{kind} brief sent ({sent})"); return {"kind": kind, "via": sent, "chars": len(text), "chart": bool(chart)}
 
+# ------------------------------------------------------------------ v12 B-OWNER (PART 4, item 150): the morning message and the "Needs you" list
+def head(kind="daily", now=None):
+    """The morning message's head: numbers and facts, at most 8 lines and 700 characters, no greeting and no filler - a line appears only when it
+    has something to say. Sunday's is the weekly message, with the week's numbers."""
+    from whatifs import notify as NT, scoreboard as SB
+    now = now or now_utc(); loc = now.astimezone(IST)
+    lines = [f"{'Weekly' if kind == 'weekly' else 'Morning'} message, {loc:%a %d %b}"]
+    try: sb = SB.line(now)
+    except Exception as e: sb = ""; log(f"the morning head's scoreboard line was not built: {scrub(e)[:120]}", "WARN")
+    if sb: lines.append(sb)
+    if kind == "weekly":
+        try:
+            from whatifs import owner_view as OV
+            wk = next((l[2:] for l in OV.render("numbers", OV.build()).splitlines() if l.startswith("- ")), "")
+            if wk: lines.append("This week: " + wk)
+        except Exception as e: log(f"the weekly head's numbers were not built: {scrub(e)[:120]}", "WARN")
+    for r in [r for r in NT.open_rows() if NT.klass(r.get("kind")) == NT.ALARM]:
+        lines.append("ALARM open: " + str(r.get("text") or "")[:120])
+    need = sorted(NT.needs(), key=lambda r: str(r.get("expires_at") or "9999"))
+    first = next((r for r in need if r.get("expires_at")), None)
+    lines.append(f"Needs you: {len(need)}" + (f" (the first closes {parse_iso(first['expires_at']).astimezone(IST):%a %H:%M}: {first.get('default_action') or 'it waits'})" if first else ""))
+    lines += [str(r.get("text") or "")[:120] for r in NT.open_rows() if r.get("kind") in ("topup", "expiry")][:2]
+    try:
+        from whatifs.org import desk as DK; ans = len(DK.lines(now))
+    except Exception as e: ans = 0; log(f"the morning head's answers were not counted: {scrub(e)[:120]}", "WARN")
+    if ans: lines.append(f"Answers to your inputs: {ans}")
+    return "\n".join(lines[:8])[:700]
+
+def whole(now=None):
+    """The eight groups in full - the mail of the morning message (the copy cannot open on a tap)."""
+    from whatifs import wa as WA, owner_view as OV
+    view = OV.build(); return "\n\n".join(WA.group_text(g, view, now, cut=None) for g, _t in WA.MENU_GROUPS)
+
+def _send_new(kind="daily", now=None):
+    """The morning message: ONE WhatsApp push (`wa.push("morning")`: the head and the eight groups' list, or the one template outside the window) and
+    the mail of the WHOLE message. What it showed is stamped only when WhatsApp took the push or the mail went (V4's rule). The weekly message
+    replaces the morning message of its day (Sunday): both clocks are stamped."""
+    from whatifs import wa as WA, publish as PUB
+    now = now or now_utc(); top = head(kind, now); took = ""
+    try: took = WA.push("morning", now=now, text=top)
+    except Exception as e: log(f"the {kind} message was not pushed: {scrub(e)[:120]}", "WARN")
+    mailed = False; text = top + "\n\n" + whole(now)
+    try: mailed = bool(PUB.email(f"Reality Engine {kind} brief", "<pre style='font-family:inherit;white-space:pre-wrap'>" + text.replace("<", "&lt;") + "</pre>"))
+    except Exception as e: log(f"{kind} message e-mail failed: {scrub(e)[:120]}", "WARN")
+    if took or mailed:
+        try:
+            from whatifs.org import strategy as STR; STR.briefed(now)
+        except Exception as e: log(f"the message's rows were not stamped: {scrub(e)[:120]}", "WARN")
+    loc = now.astimezone(IST); set_setting("DIGEST_DAILY_SENT", loc.date().isoformat())
+    if kind == "weekly": set_setting("DIGEST_WEEKLY_SENT", f"{loc.isocalendar()[0]}-W{loc.isocalendar()[1]:02d}")
+    sent = "whatsapp" if took else ("email" if mailed else "none")
+    log(f"{kind} message sent ({sent})"); return {"kind": kind, "via": sent, "chars": len(text), "chart": False}
+
+def needs_tick(now=None):
+    """The "Needs you" list: at the first tick at or after NEEDS_HOUR_IST (India time), once a day, only when a decision is open - ONE WhatsApp push
+    and its mail. No decision open = no message."""
+    from whatifs import wa as WA, notify as NT, publish as PUB
+    now = now or now_utc(); loc = now.astimezone(IST)
+    if loc.hour < S("NEEDS_HOUR_IST", int) or str(S("NEEDS_SENT") or "")[:10] == loc.date().isoformat(): return False
+    rows = NT.needs()
+    if not rows: return False
+    try: WA.push("needs", now=now)
+    except Exception as e: log(f"the needs list was not pushed: {scrub(e)[:120]}", "WARN")
+    try: PUB.email(f"Reality Engine: {len(rows)} decision{'s' if len(rows) != 1 else ''} need you", "<ul>" + "".join(f"<li>{str(r.get('text') or '')[:200].replace('<', '&lt;')}"
+                   + (f" - if you do nothing: {r['default_action']}" if r.get("default_action") else "") + "</li>" for r in rows) + "</ul>")
+    except Exception as e: log(f"the needs list e-mail failed: {scrub(e)[:120]}", "WARN")
+    set_setting("NEEDS_SENT", loc.date().isoformat()); return True
+
 def tick(now=None):
     out = []
     for kind in ("weekly", "daily"):
         try:
             if due(kind, now): out.append(send(kind, now=now))
         except Exception as e: log(f"{kind} brief failed: {scrub(e)[:120]}", "WARN")
+    if S("TWO_SCREENS_ON", bool):                                                  # v12 B-OWNER: the evening list
+        try:
+            if needs_tick(now): out.append({"kind": "needs"})
+        except Exception as e: log(f"the needs list failed: {scrub(e)[:120]}", "WARN")
     return out
 
 def learned(demo=False):
