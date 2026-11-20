@@ -173,6 +173,39 @@ def test_the_owner_runs_keep_githubs_default_queue():
     for f, job in ((".github/workflows/dash.yml", "act"), (".github/workflows/whatsapp.yml", "inbound")):
         assert "queue" not in yaml.safe_load(open(f))["jobs"][job]["concurrency"], f
 
+def _jobs():
+    import yaml
+    return {n: yaml.safe_load(open(f".github/workflows/{f}.yml"))["jobs"][j] for n, f, j in (("dash", "dash", "act"), ("wa", "whatsapp", "inbound"), ("inbox", "pipeline", "owner_inbox"))
+            if j in yaml.safe_load(open(f".github/workflows/{f}.yml"))["jobs"]}
+
+def test_the_tick_drains_the_kept_inputs_in_the_owner_group():
+    """CH-4 (OE2-2): a kept input whose dispatch GitHub refused waited for his NEXT dash or WhatsApp run - no bound at all. The pipeline's
+    `owner_inbox` job runs after every tick, whatever the tick's result, in the owner runs' own group (never beside a dash or WhatsApp run, so an id
+    is never handled twice) and does the drain only. The bound is the next tick (GitHub's measured tick gaps: 80 to 661 minutes)."""
+    job = _jobs().get("inbox"); assert job, "no owner_inbox job in pipeline.yml: a kept input whose dispatch was refused waits for his next tap"
+    assert job["needs"] == "tick" and job["if"] == "always()" and job["concurrency"] == {"group": "owner-actions", "cancel-in-progress": False}
+    assert [s["run"] for s in job["steps"] if "whatifs.cli" in str(s.get("run", ""))] == ["python -m whatifs.cli dash_drain"]
+    assert job["permissions"] == {"contents": "read", "actions": "write"} and "GH_ACTIONS_TOKEN" in job["env"] and "GH_TOKEN" not in job["env"]
+
+def test_every_run_that_drains_can_answer_his_whatsapp_words():
+    """CH-5: every run that drains also handles a kept WhatsApp message (`inbox:wa:`) - and the chat answers it with ANTHROPIC_KEY, which dash.yml
+    did not pass: his question, drained by a dashboard run, was answered "Something failed on my side". Each job that drains carries every key the
+    WhatsApp run and the dashboard run carry (its own payload aside; GH_TOKEN is the tick job's GH_ACTIONS_TOKEN, the same token, in pipeline.yml)."""
+    jobs = _jobs(); need = (set(jobs["dash"]["env"]) | set(jobs["wa"]["env"])) - {"DASH_PAYLOAD", "WA_PAYLOAD"}
+    for n, job in jobs.items():
+        have = set(job["env"]) | ({"GH_TOKEN"} if "GH_ACTIONS_TOKEN" in job["env"] else set())
+        assert not need - have, f"{n} drains without {sorted(need - have)}"
+
+def test_cli_dash_drain_does_the_drain_and_nothing_else(monkeypatch, capsys):
+    """CH-4: `cli dash_drain` (the owner_inbox job's one command) calls `drain()` - and nothing else: no payload of its own, no snapshot printed."""
+    import sys
+    from whatifs import cli
+    calls = []
+    monkeypatch.setattr(DS, "drain", lambda kv=None: calls.append(("drain", kv)) or 3)
+    for name in ("handle_action", "build_snapshot", "publish"): monkeypatch.setattr(DS, name, lambda *a, _n=name, **k: calls.append(_n))
+    monkeypatch.setattr(sys, "argv", ["whatifs.cli", "dash_drain"]); cli.main()
+    assert calls == [("drain", None)] and capsys.readouterr().out.strip().splitlines()[-1] == "3"
+
 def test_each_ack_names_its_action_id_and_an_unhandled_one_is_absent(setting):
     """CR-6-1 (CE-1): the page matched acks by VERB and every input is INPUT - the first ack confirmed every pending input. Each ack now carries the
     Worker's id: of two inputs only the handled one is in `acks`, by its id."""

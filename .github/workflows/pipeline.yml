@@ -53,6 +53,44 @@ jobs:
       - run: pip install -q "requests>=2.31,<3" "numpy>=1.26,<2.1" "pillow>=10,<13"        # v10.3: chart images for the WhatsApp briefs
       - id: t
         run: python -m whatifs.cli tick
+  owner_inbox:                          # CH-4 (OE2-2): a kept input whose dispatch GitHub refused is handled at the next tick, not only at his next tap
+    needs: tick
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    concurrency:
+      group: owner-actions              # the dash and WhatsApp runs' own group: never beside them, so no id is handled twice
+      cancel-in-progress: false
+    timeout-minutes: 10
+    env:
+      SHEET_ID: ${{ secrets.SHEET_ID }}
+      G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
+      G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
+      G_REFRESH: ${{ secrets.G_REFRESH }}
+      G_REFRESH_DRIVE: ${{ secrets.G_REFRESH_DRIVE }}
+      OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+      ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_KEY }}
+      WA_RELAY_KEY: ${{ secrets.WA_RELAY_KEY }}
+      WA_TOKEN: ${{ secrets.WA_TOKEN }}
+      WA_PHONE_ID: ${{ secrets.WA_PHONE_ID }}
+      WA_WABA_ID: ${{ secrets.WA_WABA_ID }}
+      OWNER_WA: ${{ secrets.OWNER_WA }}
+      GH_MERGE_TOKEN: ${{ secrets.GH_MERGE_TOKEN }}
+      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+      CF_KV_NAMESPACE_ID: ${{ secrets.CF_KV_NAMESPACE_ID }}
+      CF_KV_TOKEN: ${{ secrets.CF_KV_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      GH_ACTIONS_TOKEN: ${{ github.token }}
+      AA_API_KEY: ${{ secrets.AA_API_KEY }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: pip install -q "requests>=2.31,<3" "numpy>=1.26,<2.1" "cryptography>=42,<46" "pillow>=10,<13"
+      - run: python -m whatifs.cli dash_drain
   produce:
     needs: tick
     if: needs.tick.outputs.slot != ''

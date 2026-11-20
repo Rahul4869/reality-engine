@@ -282,7 +282,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | keepalive.yml | Keep Alive | 0 3 1,15 * * | workflow_dispatch | - |
 | learn.yml | Learning Loop | 41 9 * * * | workflow_dispatch | learn |
 | merge.yml | Merge change | - | issues | - |
-| pipeline.yml | Pipeline | 7,37 * * * * | workflow_dispatch, repository_dispatch | produce, tick |
+| pipeline.yml | Pipeline | 7,37 * * * * | workflow_dispatch, repository_dispatch | dash_drain, produce, tick |
 | preprod.yml | Pre-production | 17 * * * * | workflow_dispatch | preprod |
 | preview.yml | Script Preview | - | workflow_dispatch, issues | preview, previewdecide |
 | repair.yml | Repair Bot | - | workflow_run | - |

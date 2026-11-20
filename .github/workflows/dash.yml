@@ -21,6 +21,8 @@ jobs:
       G_REFRESH: ${{ secrets.G_REFRESH }}
       G_REFRESH_DRIVE: ${{ secrets.G_REFRESH_DRIVE }}
       OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+      # CH-5: this run's drain also answers a kept WhatsApp message of his - the chat needs the key the WhatsApp run has
+      ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_KEY }}
       WA_RELAY_KEY: ${{ secrets.WA_RELAY_KEY }}
       GH_MERGE_TOKEN: ${{ secrets.GH_MERGE_TOKEN }}
       CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}

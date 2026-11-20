@@ -167,6 +167,8 @@ def main():
         elif cmd == "dash_action":                                       # v9.4b: one encrypted dashboard tap (from repository_dispatch)
             import os as _os
             from whatifs.dash import handle_action, drain; drain(); print("ok" if handle_action(_os.environ.get("DASH_PAYLOAD", "{}")) else "not done")   # CH-1: his own payload is kept too - the drain does it in its order, the call finds its ack
+        elif cmd == "dash_drain":                                        # CH-4 (OE2-2): the tick's owner_inbox job - his kept inputs, oldest first, and nothing else
+            from whatifs.dash import drain; print(drain())
         elif cmd == "dash_snapshot":
             import json as _json
             from whatifs.dash import build_snapshot; print(_json.dumps(build_snapshot())[:2000])
