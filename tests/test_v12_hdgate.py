@@ -653,3 +653,16 @@ def test_a_change_youtube_did_not_take_is_not_the_lock(monkeypatch, gate_on):
     v2 = PUB.yt_upload("x/SHHD23.mp4", "T", "D", [], short=True, now=NOW); PUB.FAKE_FAULTS["youtube"] = {"refuse": ("privacy",)}
     for k in (1, 2, 3): HG.tick(NOW + (late + k) * M)
     h = HG.row(v2); assert h["state"] == HG.LOCKED and "3 times in a row" in h["note"] and "the lock" in h["note"] and len(seen) == 1 and _shown(v2) == "private", h
+
+# ------------------------------------------------------------------ FINISHED AT THE FINISH (PART D, the fifth finisher): HIS WINDOW AND THE LONG VIDEO'S RECEIPT (CD-1 TO CD-3)
+def test_his_window_says_nothing_on_a_failed_read_or_to_a_public_video(monkeypatch, setting, gate_on):
+    """PART 9, HIS WINDOW, with R18 (5) - FOUND AT THE FINISH (CD-1): `window` ran before the read was looked at, so an empty read (a failed call) at
+    the first tick after 08:30 India time on its day sent `hd_late` - "YouTube does not show it in HD yet" - once and for good, a sentence nobody
+    read off YouTube; and a video he had already made public in Studio got a card "optional before it goes public". An empty read tells him nothing
+    (the next read that answers decides), and his window is the private time before a video goes public (item 156)."""
+    vid = _long("EPL12"); real = PUB.yt_read
+    monkeypatch.setattr(PUB, "yt_read", lambda v: {})
+    HG.long_tick(_t(3, 35)); assert not _rows("hd_late") and not _rows("prepublic")                  # 09:05 India time: the read failed - nothing said
+    monkeypatch.setattr(PUB, "yt_read", real); PUB.yt_set_privacy(vid, "public")                    # his own hand in Studio, before the slot
+    HG.long_tick(_t(4, 0)); assert not _rows("prepublic") and not _rows("hd_late")
+    _long("EPL13"); HG.long_tick(_t(4, 30)); assert [r["episode_id"] for r in _rows("prepublic")] == ["EPL13"]      # a private, ready video still gets its one card

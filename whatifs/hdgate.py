@@ -214,6 +214,7 @@ def window(e, slot, got, now):
     from whatifs import notify as NT
     ep, vid = e["episode_id"], e["yt_id"]; title = e.get("title") or ep; at = slot.astimezone(NT.IST).strftime("%H:%M")
     if now >= slot or _told(f"prepublic|{ep}"): return
+    if not got or (got.get("privacy") or "") != "private": return                  # R18 (5): a failed read tells him nothing; his window is the private time before it goes public (item 156)
     if ready(got):
         NT.send("prepublic", f"Tonight {at}: {title}. Optional before it goes public: the end screen, about 30 seconds in Studio: "
                              f"https://studio.youtube.com/video/{vid}/edit", [("Done", "DONE")], episode=ep,
