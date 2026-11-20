@@ -308,7 +308,7 @@ ROAD = [
      {"level": "info", "buttons": [["Done", "DONE"]], "default_action": "the comment stays unpinned"}, _r1),
     (2, "community.py weekly_digest", "comments_digest", "Weekly comments digest", "row", "comments_digest||{india_day}", {}, _r2),
     (3, "community.py experiment_results", "region", "One region dominates (IN 90%)", "row", "region|EPROW3", {"level": "info"}, _r3),
-    (4, "costguard.py spend_monitor", "budget_pct", "Budget: 90% of this month's cap used", "row", None, {}, _r4),
+    (4, "costguard.py spend_monitor", "budget_pct", "Budget: 90% of this month's cap used", "row", "budget_pct|90|{month}", {}, _r4),
     (5, "costguard.py ladder_mail", "cost_overrun", "Video finished with AI-side savings", "row", "overrun|EPROW5", {}, _r5),
     (6, "costguard.py weekly_deviation_mail", "cost_check", "Weekly cost check", "row", None, {}, _r6),
     (7, "costguard.py kids_check", "kids_flag", "URGENT: YouTube marked a video as made for kids", "row", "kids|vidROW7", {}, _r7),
@@ -964,6 +964,18 @@ def test_a_paused_tick_retries_an_alarm(monkeypatch, setting):
     assert not _row(aid)["delivered_at"] and _alarms_told() == []                                           # the firing's own push was not taken
     setting("PAUSED", "TRUE"); assert MG.tick() == {"action": "paused"}
     assert [(x["action_id"], x["wamid"]) for x in _alarms_told()] == [(aid, "wamid.P2")] and _row(aid)["delivered_at"]
+
+def test_two_budget_thresholds_on_one_day_are_two_rows(monkeypatch, setting):
+    """R17 (4) for row 4 of PART 2's table (step 2b's design question; R1-41 (2)): "Budget: 70%" and "Budget: 90%" crossed by two calls on ONE India
+    day are two rows - the inform rule's dated key swallowed the second. The key is the threshold and the month; the rule's expiry still closes each."""
+    from whatifs import costguard as CG, governor as G
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch); share = [0.75]
+    monkeypatch.setattr(CG, "month_spend", lambda: G.cap_inr() * share[0])
+    assert CG.spend_monitor() == [70]
+    share[0] = 0.95; assert CG.spend_monitor() == [90]
+    rows = [r for r in core.store().rows("Owner_Actions") if r["kind"] == "budget_pct"]; mk = core.now_utc().strftime("%Y-%m")
+    assert [r["dedupe_key"] for r in rows] == [f"budget_pct|70|{mk}", f"budget_pct|90|{mk}"] and "90%" in rows[1]["text"], [(r["dedupe_key"], r["text"][:40]) for r in rows]
+    assert all(r["expires_at"] and r["status"] == "OPEN" for r in rows)
 
 # ------------------------------------------------------------------ step 8a: NEVER HELD BY HIS ABSENCE (PART 7; R22 (2), (2 b), (2 c)) - the special is step 8b's
 from whatifs import contract as CON, launch as LAU, publish as PUB8

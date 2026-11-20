@@ -177,7 +177,7 @@ def spend_monitor():
         try:
             NT.mail("budget_pct", f"Budget: {max(out)}% of this month's cap used",
                       f"<p>Spent about Rs {spent:.0f} of Rs {cap:.0f} this month. New videos still start only while the month can pay for a complete one "
-                      "(pictures and clips are never cut to make room). Measured vs estimated AI cost per video: the 'ai_per_video_summary' rows in Cost_Log.</p>")
+                      "(pictures and clips are never cut to make room). Measured vs estimated AI cost per video: the 'ai_per_video_summary' rows in Cost_Log.</p>", dedupe_key=f"budget_pct|{max(out)}|{mk}")
         except Exception as e: log(f"spend warning not sent: {str(e)[:120]}", "WARN")
     return out
 
