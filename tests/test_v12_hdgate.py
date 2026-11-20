@@ -590,9 +590,12 @@ def test_the_upload_time_is_written_with_the_id():
 def test_a_video_still_in_production_gets_nothing_from_the_gate(monkeypatch, setting, gate_on):
     """DESIGN QUESTION 3, settled: HIS WINDOW speaks of an UPLOADED video only (SCHEDULED or AWAITING_APPROVAL, with its id). A long video still in
     production at 08:30 India time on its day - no `yt_id`, its status neither - gets no `hd_late` and no `prepublic` row, YouTube is not read for it,
-    and the tick raises nothing: its lateness already has its own voices (`slot_skipped`, and after three failed tries `pipeline_stop`)."""
+    and the tick raises nothing: its lateness already has its own voices (`slot_skipped`, and after three failed tries `pipeline_stop`). R22's DQ5: each
+    clause of the gate's filter is proven alone - row U (an id, status UPLOADED) passes the id clause, row N (SCHEDULED, no id) passes the status clause."""
     setting("TWO_SCREENS_ON", "TRUE"); _quiet(monkeypatch)
-    core.store().append("Episodes", [{"episode_id": "EPL13", "slot_et": core.iso(SLOT), "status": "VISUALS", "title": "Title EPL13"}])
+    core.store().append("Episodes", [{"episode_id": "EPL13", "slot_et": core.iso(SLOT), "status": "VISUALS", "title": "Title EPL13"},       # P: still in production - no id, a status outside the two
+                                     {"episode_id": "EPL13U", "slot_et": core.iso(SLOT), "status": "UPLOADED", "yt_id": "FAKE_EPL13U.mp4", "title": "Title EPL13U"},      # U: only the STATUS clause leaves it out (R22's DQ5)
+                                     {"episode_id": "EPL13N", "slot_et": core.iso(SLOT), "status": "SCHEDULED", "yt_id": "", "title": "Title EPL13N"}])      # N: only the ID clause leaves it out
     reads = []; real = PUB.yt_read; monkeypatch.setattr(PUB, "yt_read", lambda v: reads.append(v) or real(v))
     assert HG.tick(_t(3, 35)) == [] and HG.long_tick(_t(4, 0)) == []                                             # 09:05 and 09:30 India time, its own day
     assert not _rows("hd_late") and not _rows("prepublic") and reads == []
