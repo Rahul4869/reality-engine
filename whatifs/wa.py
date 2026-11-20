@@ -219,6 +219,10 @@ def _group_action(g):
         if r: return ("Undo or take down", f"CARD|{r['id']}")
     return None
 
+def _button(title):
+    """A group's title as a reply button (20 characters, S4): whole, or its first part ("Research & observations" -> "Research") - never cut mid-word."""
+    return title if len(title) <= 20 else title.split(" & ")[0][:20]
+
 def send_group(g, demo=False):
     """A reply: one group - its chart first where the older section had one (numbers before Posted, money before Money), its text, and up to three
     buttons: Menu, the next group, the group's own action."""
@@ -228,7 +232,7 @@ def send_group(g, demo=False):
     if chart: send_image(chart, dict(MENU_GROUPS)[g])
     txt = group_text(g, view)
     names = [x for x, _t in MENU_GROUPS]; nxt = names[(names.index(g) + 1) % len(names)]
-    btns = [("Menu", "MENU|menu"), (dict(MENU_GROUPS)[nxt][:20], f"MENU|{nxt}")] + ([_group_action(g)] if _group_action(g) else [])
+    btns = [("Menu", "MENU|menu"), (_button(dict(MENU_GROUPS)[nxt]), f"MENU|{nxt}")] + ([_group_action(g)] if _group_action(g) else [])
     send_buttons(txt, btns)
     return txt + (f"\n[chart: {os.path.basename(chart)}]" if chart else "")
 

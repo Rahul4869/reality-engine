@@ -988,6 +988,18 @@ def test_every_decision_has_a_plain_name():
     assert NT.name("floor_eye") == "Watch before it posts" and NT.name("hd_blocked") == "Video kept private" and NT.name("ypp_tier") == "Apply for monetisation"
     assert NT.name("pick_ack") == "Pick ack" and NT.name("zz_never_registered") == "Zz never registered" and len(NT.name("x" * 40)) == 24
 
+def test_a_groups_buttons_are_whole_words(monkeypatch, setting):
+    """S4 (a reply button holds 20 characters): the three buttons under a group are whole labels - "Research & observations" (23) is "Research" on a
+    button, never "Research & observatio"."""
+    from whatifs import charts as CH
+    setting("TWO_SCREENS_ON", "TRUE"); bodies = _wire(monkeypatch); _window(True)
+    monkeypatch.setattr(CH, "money_chart", lambda view, path=None: None); monkeypatch.setattr(CH, "numbers_chart", lambda view, path=None: None)
+    titles = {}
+    for g in NT.GROUPS:
+        WA.send_group(g); titles[g] = [b["reply"]["title"] for b in bodies[-1]["interactive"]["action"]["buttons"]]
+    whole = {t for _g, t in WA.MENU_GROUPS} | {"Menu", "Research", "Open the list", "Undo or take down"}
+    assert titles["learned"][:2] == ["Menu", "Research"] and all(t in whole for ts in titles.values() for t in ts), titles
+
 # ------------------------------------------------------------------ step 8a: NEVER HELD BY HIS ABSENCE (PART 7; R22 (2), (2 b), (2 c)) - the special is step 8b's
 from whatifs import contract as CON, launch as LAU, publish as PUB8
 from whatifs.org import floor as FL8
