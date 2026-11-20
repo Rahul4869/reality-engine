@@ -192,6 +192,26 @@ def _shape(kind, episode, buttons, default, expires_h, dedupe_key):
     return buttons, default, expires_h, dedupe_key
 
 
+_LINK = re.compile(r"<a\s[^>]*href=['\"](https://[^'\"\s<>?#]+)['\"][^>]*>(.*?)</a>", re.I | re.S)      # an https address with no query and no fragment: a one-tap, signed or keyed link never reaches a row
+
+def whole(text, n):
+    """R1-55: `text` cut at `n` characters - exactly `text[:n]`, unless the cut would fall inside an https address: then the text ends before that
+    address (an address is whole or it is not there; never half of one)."""
+    text = str(text); s = text.rfind("https://", 0, n + 7)
+    if len(text) > n and s >= 0 and s + len(re.match(r"\S+", text[s:]).group(0)) > n: return text[:s].rstrip()
+    return text[:n]
+
+def _screen_text(subject, html, buttons=()):
+    """R1-52 (4), inside PART 2 (item 149: the screens are the road, the mail the copy): a mail's words as its row shows them. A link he must follow is
+    written out as the memo writes one in a row - "<the link's words>: <address>" - before the tags go: only https, never an address with a query or a
+    fragment, and never in a row that carries a button that asks (there the button is the road). The cut at 1,500 characters never leaves half an
+    address. `core._plain` stays the one definition of a plain line."""
+    body = str(html)
+    if not asks({"buttons": json.dumps([[str(l), str(v)] for l, v in (buttons or ())])}):
+        body = _LINK.sub(lambda m: m.group(2) if _plain(m.group(2)) == m.group(1) else f"{m.group(2)}: {m.group(1)}", body)
+    return whole(_plain(str(subject) + ". " + body), 1500)
+
+
 def mail(kind, subject, html, level="essential", screens=True, buttons=(), episode=None, default=None, expires_h=None, dedupe_key=None, text=None):
     """v12 B-OWNER (ONE ROAD, item 149): every mail to him goes through here - e-mail is only the copy. TWO_SCREENS_ON FALSE = the call of today, word
     for word. TRUE = the e-mail goes exactly as today (his storage); then, when `screens`, the same message is a row of its kind (`send`), so WhatsApp
@@ -206,7 +226,7 @@ def mail(kind, subject, html, level="essential", screens=True, buttons=(), episo
     except Exception as e:                                 # R22 (10): the copy failed; the row is sent all the same
         log(f"the e-mail copy failed: {subject}", "WARN"); sent, went = False, False
     if not screens: return sent
-    return send(kind, text or _plain(str(subject) + ". " + str(html)), buttons, episode, tier="week", default=default, expires_h=expires_h, dedupe_key=dedupe_key, mailed=went)
+    return send(kind, text or _screen_text(subject, html, buttons), buttons, episode, tier="week", default=default, expires_h=expires_h, dedupe_key=dedupe_key, mailed=went)
 
 
 # ------------------------------------------------------------------ v12 B-OWNER (PART 3, item 180): ALARMS CAN NEVER BE MUTED

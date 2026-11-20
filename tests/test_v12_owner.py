@@ -1025,6 +1025,29 @@ def test_a_tap_on_a_mails_button_reaches_what_its_link_reached(monkeypatch, sett
         assert verb in [v for _l, v in json.loads(_row(aid)["buttons"])] and NT.answer(aid, verb) == "done" and _row(aid)["status"] == "ANSWERED", kind
     assert seen == [c[2] for c in cases], seen
 
+def test_a_mails_row_keeps_the_address_he_must_open(monkeypatch, setting):
+    """R1-52 (4), inside PART 2 (item 149: the screens are the road, the mail only the copy): a row made from a mail writes out the address of a link he
+    must follow, as the memo writes one in a row ("<words>: <address>") - only https, never an address with a query or a fragment (a one-tap or signed
+    link), never in a row whose button already is the road, never doubled when the link's words are the address, and the cut at 1,500 characters
+    never leaves half of one. With the switch off nothing changes."""
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch)
+    a = NT.mail("topup", "Top-up reminder", "<ul><li><b>fal.ai</b>: about 3 days left. <a href='https://fal.ai/dashboard/billing'>Top up here</a>, then add the amount.</li></ul>", dedupe_key="topup|L1")
+    assert "Top up here: https://fal.ai/dashboard/billing, then add the amount." in _row(a)["text"], _row(a)["text"]
+    b = NT.mail("live", "We're live", "<p>Your first video is live: <a href='https://youtu.be/abc123'>https://youtu.be/abc123</a></p>", dedupe_key="live|L2")
+    assert _row(b)["text"].count("https://youtu.be/abc123") == 1
+    c = NT.mail("headroom", "Planted", "<p><a href='https://github.com/me/re/issues/new?title=MERGE%20%237'>Merge it</a> or <a href='http://example.com/x'>read</a> or <a href='https://example.com/p#frag'>jump</a></p>", dedupe_key="headroom|L3")
+    assert "http" not in _row(c)["text"] and "Merge it or read or jump" in _row(c)["text"], _row(c)["text"]
+    d = NT.mail("build_ready", "Change ready to merge: #7", "<p><a href='https://github.com/me/re/pull/7'>Review it on GitHub first</a></p>", buttons=[("Merge", "MERGE #7"), ("Reject", "REJECT #7")],
+                default="it waits", expires_h=168, dedupe_key="build|L4")
+    assert "https://" not in _row(d)["text"]                                                              # the buttons are the road
+    long = "<p>" + "x" * 1440 + " <a href='https://studio.youtube.com/video/vidLINK0001/edit'>open in Studio</a> and more words after it</p>"
+    e = NT.mail("cost_check", "Planted", long, dedupe_key="cost_check|L5")
+    assert "http" not in _row(e)["text"] and _row(e)["text"].endswith("open in Studio:") and len(_row(e)["text"]) <= 1500, _row(e)["text"][-80:]
+    k = NT.mail("uploads_private", "A video is stuck on Private", "<p>Episode EP1 (<a href='https://studio.youtube.com/video/vid1/edit'>open in Studio</a>) did not become public.</p>", dedupe_key="uploads_private|L6")
+    assert "(open in Studio: https://studio.youtube.com/video/vid1/edit) did not become public." in _row(k)["text"]      # an alarm's row: its only button is "Seen"
+    setting("TWO_SCREENS_ON", "FALSE")
+    assert NT.mail("topup", "Top-up reminder", "<a href='https://fal.ai/dashboard/billing'>Top up here</a>") is True and len(core.store().rows("Owner_Actions")) == 6
+
 # ------------------------------------------------------------------ step 8a: NEVER HELD BY HIS ABSENCE (PART 7; R22 (2), (2 b), (2 c)) - the special is step 8b's
 from whatifs import contract as CON, launch as LAU, publish as PUB8
 from whatifs.org import floor as FL8
