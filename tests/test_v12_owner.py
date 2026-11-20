@@ -1578,3 +1578,16 @@ def test_a_second_brief_on_one_day_is_its_own_row(monkeypatch, setting):
         monkeypatch.setattr(M, "ask_batch", lambda *a, _w=words, **k: _w); MG.monthly_brief()
     rows = sorted((r for r in core.store().rows("Owner_Actions") if r["kind"] == "monthly_brief"), key=lambda r: r["id"])
     assert len(rows) == 2 and "before the fix" in rows[0]["text"] and "after the fix" in rows[-1]["text"], [r["text"][:60] for r in rows]
+
+def test_a_scored_master_is_a_draft_he_can_lock(monkeypatch, setting):
+    """R1-99 (4) (the code reader's CR-2b-3; it reaches him): a master the judge scored is 'DRAFT (identity 8/10)' - his 'Approve VALE' locked nothing,
+    the default lock never ran and the dashboard never offered it. A status that begins 'DRAFT' is a draft everywhere it is read."""
+    from whatifs import sheets as SH, dash as DS
+    setting("SHEETS_DEFAULT_LOCK_H", "72"); st = core.store()      # the switch as conftest leaves it: the portraits cards are the dashboard's own, in both states
+    old = (core.now_utc() - dt.timedelta(hours=100)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    st.append("Character_Sheets", [{"ts": core.iso(), "character": "VALE", "expression": "master", "hash": "hA4v", "prompt": "p", "file": "drive:v", "status": "DRAFT (identity 8/10)", "approved_at": ""},
+                                   {"ts": old, "character": "GRIMM", "expression": "master", "hash": "hA4g", "prompt": "p", "file": "drive:g", "status": "DRAFT (identity 7/10)", "approved_at": ""},
+                                   {"ts": core.iso(), "character": "ROSA", "expression": "master", "hash": "hA4r", "prompt": "p", "file": "drive:r", "status": "DRAFT (identity 9/10)", "approved_at": ""}])
+    assert {"sheets-VALE", "sheets-GRIMM", "sheets-ROSA"} <= {c["id"] for c in DS._docket()}
+    assert SH.decide("APPROVE SHEET VALE") == "1 image(s) locked" and SH.auto_lock() == 1 and DS.route("LOCKSHEETS|ROSA")[0]
+    assert {r["hash"]: r["status"] for r in st.rows("Character_Sheets")} == {"hA4v": "LOCKED", "hA4g": "LOCKED", "hA4r": "LOCKED"}

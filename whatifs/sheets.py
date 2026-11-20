@@ -121,7 +121,7 @@ def auto_lock(now=None):
     st = store(); now = now or now_utc(); n = 0
     for r in st.rows("Character_Sheets"):
         t0 = parse_iso(r.get("ts"))
-        if r.get("status") == "DRAFT" and r.get("file") and t0 and (now - t0).total_seconds() > h * 3600:
+        if str(r.get("status") or "").startswith("DRAFT") and r.get("file") and t0 and (now - t0).total_seconds() > h * 3600:
             st.update_where("Character_Sheets", {"hash": r["hash"]}, {"status": "LOCKED", "approved_at": iso() + " (default)"}); n += 1
     rows = st.rows("Character_Sheets")
     chars = {r.get("character") for r in rows if r.get("character")}
@@ -144,7 +144,7 @@ def decide(title):
     if m:
         n = 0
         for r in st.rows("Character_Sheets"):
-            if r.get("character") == m.group(1) and r.get("status") == "DRAFT":
+            if r.get("character") == m.group(1) and str(r.get("status") or "").startswith("DRAFT"):      # FINISHED BY FABLE (CA2-4): a scored master is "DRAFT (identity N/10)"
                 st.update_where("Character_Sheets", {"hash": r["hash"]}, {"status": "LOCKED", "approved_at": iso()}); n += 1
         return f"{n} image(s) locked"
     m = re.match(r"^REDO SHEET ([A-Z]+) ([a-z]+)$", t)

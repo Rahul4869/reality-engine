@@ -84,7 +84,7 @@ def _docket():
                                    "hue": [20 + 60 * i, 200 + 20 * i]} for i, r in enumerate(sorted(rows, key=lambda x: x.get("variant", "")))],
                       "verbs": {"pick": f"PICK|{ep}|{{key}}"}})
     for r in st.rows("Character_Sheets"):
-        if r.get("status") == "DRAFT":
+        if str(r.get("status") or "").startswith("DRAFT"):
             ch = r.get("character")
             if not any(c["id"] == f"sheets-{ch}" for c in cards):
                 cards.append({"id": f"sheets-{ch}", "kind": "sheets", "title": f"Lock {str(ch).title()}'s portraits",
@@ -398,7 +398,7 @@ def route(verb):
     if head == "LOCKSHEETS" and len(parts) == 2:
         n = 0
         for r in store().rows("Character_Sheets"):
-            if r.get("character") == parts[1] and r.get("status") == "DRAFT":
+            if r.get("character") == parts[1] and str(r.get("status") or "").startswith("DRAFT"):
                 store().update_where("Character_Sheets", {"hash": r["hash"]}, {"status": "LOCKED", "approved_at": iso() + " (dashboard)"}); n += 1
         return n > 0, f"{n} portrait(s) locked"
     if head == "REDOSHEETS" and len(parts) == 2:
