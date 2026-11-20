@@ -472,3 +472,21 @@ def test_compare_never_judges_a_gated_shorts_privacy(monkeypatch, setting, gate_
     _short(monkeypatch, setting, "SHHD14")
     yt = [w for p, w in seen if p == "youtube"]; assert yt and all("privacy" not in w for w in yt), yt
     assert _rc("SHHD14")[0] == REL.WAITING
+
+def test_a_change_youtube_did_not_take_is_not_the_lock(monkeypatch, gate_on):
+    """PART 9, the lock ("a read-back still private -> LOCKED" speaks of a change that was MADE and did not hold: R18 (7 d) plants it with `ignore`).
+    FOUND AT THE FINISH (ruled a correction, R1-73): `go_public` did not read `yt_set_privacy`'s answer, so a change YouTube REFUSED or that FAILED - a
+    used-up quota, one 5xx - made the Short final and private, set UPLOAD_LOCK, paused production and sent him the alarm, for a call that could not
+    act. A refused change waits and is counted ("refused n"); a later call that is taken makes it public; only the third refusal in a row AND
+    PRIVATE_ALERT_HOURS past the cap is the lock (R22 (4)'s own two numbers)."""
+    seen = []; monkeypatch.setattr(LA, "lock_detected", lambda vid, issues: seen.append(issues))
+    vid = PUB.yt_upload("x/SHHD22.mp4", "T", "D", [], short=True, now=NOW)
+    PUB.FAKE_FAULTS["youtube"] = {"refuse": ("privacy",)}
+    assert HG.go_public(vid, NOW + M) == (False, "not set") and HG.row(vid)["state"] == HG.WAITING and HG.row(vid)["note"] == "refused 1" and seen == []
+    late = 60 + core.S("PRIVATE_ALERT_HOURS", float) * 60
+    assert HG.tick(NOW + (late + 1) * M) == [vid] and HG.row(vid)["state"] == HG.WAITING and HG.row(vid)["note"] == "refused 2" and seen == []      # past the cap and the hours: a second refusal is not yet the lock
+    PUB.FAKE_FAULTS.clear(); HG.tick(NOW + (late + 2) * M)                                             # the next call is taken: public, and nothing was concluded
+    assert _shown(vid) == "public" and HG.row(vid)["state"] == HG.PUBLIC and seen == []
+    v2 = PUB.yt_upload("x/SHHD23.mp4", "T", "D", [], short=True, now=NOW); PUB.FAKE_FAULTS["youtube"] = {"refuse": ("privacy",)}
+    for k in (1, 2, 3): HG.tick(NOW + (late + k) * M)
+    h = HG.row(v2); assert h["state"] == HG.LOCKED and "3 times in a row" in h["note"] and "the lock" in h["note"] and len(seen) == 1 and _shown(v2) == "private", h

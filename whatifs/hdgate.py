@@ -35,12 +35,13 @@ def short_step(uploaded, got, now, cap=None):
     if m >= (S("HD_SHORT_CAP_MIN", float) if cap is None else float(cap)): return "cap", m
     return "wait", m
 
-def _unread(vid, now):
-    """R22 (4): one more empty read in a row, counted on the row's note ("unread 2"); returns the count."""
+def _unread(vid, now, word="unread"):
+    """R22 (4): one more empty read in a row, counted on the row's note ("unread 2"); returns the count. A change to public that YouTube did not take
+    is counted the same way under its own word ("refused 2"): a call that could not act is no more a finding than a read that failed."""
     r = row(vid)
     if not r or r.get("state") != WAITING: return 0                                # a row that no longer waits keeps its own words
-    m = re.match(r"unread (\d+)$", str(r.get("note") or "")); n = (int(m.group(1)) if m else 0) + 1
-    _set(vid, note=f"unread {n}"); return n
+    m = re.match(rf"{word} (\d+)$", str(r.get("note") or "")); n = (int(m.group(1)) if m else 0) + 1
+    _set(vid, note=f"{word} {n}"); return n
 
 def _read_ok(vid):
     """A read that answers clears the count of empty reads."""
@@ -82,13 +83,23 @@ def go_public(vid, now=None, why="public"):
         PUB.yt_set_label(vid, True); again = PUB.yt_read(vid)
         if not again: _unread(vid, now); return False, "not read"
         if again.get("ai") is False: return False, "blocked: " + block(vid, "the AI label did not hold", got, now)
-    PUB.yt_set_privacy(vid, "public"); back = PUB.yt_read(vid)
+    took = False
+    try: took = bool(PUB.yt_set_privacy(vid, "public"))                            # it answers False when YouTube refuses the change or the call fails (a used-up quota, a 5xx)
+    except Exception as e: log(f"HD gate: the change of {vid} to public failed: {scrub(e)[:120]}", "WARN")
+    back = PUB.yt_read(vid)
     if not back: _unread(vid, now); return False, "not read"
     up = parse_iso((r or {}).get("uploaded")); m = _mins(up, now) if up else 0; hd = bool(back.get("hd"))
     if (back.get("privacy") or "") != "public":                                     # asked public, it still reads otherwise: the lock (the detector moved here from release.py)
         note = f"made public, but YouTube still shows it {back.get('privacy') or 'unread'}: the lock"
+        issue = f"a video the HD gate made public came back {back.get('privacy') or 'unread'}"
+        if not took:                                                                # the change was never MADE: no lock is concluded from a call that could not act - it waits and is counted,
+            n = _unread(vid, now, "refused")                                        # and only the third refusal in a row, PRIVATE_ALERT_HOURS past the cap, is the lock (R22 (4)'s two numbers)
+            late = bool(r) and m >= float(r.get("cap_min") or S("HD_SHORT_CAP_MIN", float)) + S("PRIVATE_ALERT_HOURS", float) * 60
+            if not (late and n >= UNREAD_MAX): return False, "not set"
+            note = f"YouTube did not take the change to public {n} times in a row and still shows it {back.get('privacy') or 'unread'}: the lock"
+            issue = f"YouTube did not take the HD gate's change to public {n} times in a row"
         if r: _set(vid, state=LOCKED, minutes=m, hd="yes" if hd else "no", note=note)
-        LA.lock_detected(vid, [f"a video the HD gate made public came back {back.get('privacy') or 'unread'}"])
+        LA.lock_detected(vid, [issue])
         return False, note
     state = CAP if why == "cap" else PUBLIC
     note = f"public after {m} min; HD yes" if state == PUBLIC else f"public after {m} min; HD NO (the cap)"
