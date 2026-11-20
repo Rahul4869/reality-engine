@@ -146,6 +146,8 @@ def apply_pick(title):
     _remember_pick(rows, key)
     for r in rows: st.update_where("Packaging_Tests", {"episode_id": ep, "variant": r["variant"]}, {"status": "LIVE" if r["variant"] == key else "READY",
                                                                                                       "picked_by": "owner" if r["variant"] == key else r.get("picked_by", "")})
+    for r in NT.open_rows():                                      # FINISHED BY FABLE (CA2-6): a pick made on any road (the dashboard, the e-mail's link) closes its card - no stale "Keep A" on WhatsApp
+        if r.get("kind") == "title_pick" and r.get("episode_id") == ep: st.update("Owner_Actions", "id", r["id"], {"status": "ANSWERED", "answered_at": iso(), "answer": f"PICK {ep} {key}"})
     _pick_reply(ep, f"applied: {key}")
     return f"{ep}: variant {key} applied"
 

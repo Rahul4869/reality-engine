@@ -1622,3 +1622,14 @@ def test_a_repair_that_waits_for_him_is_one_tap_away(monkeypatch, setting):
     assert "Pull requests tab" in rows()[-1]["text"]
     RP._tell_owner("whatifs/premise.py", why, "https://github.com/me/re/pull/8")                        # a second change of the same file, the same day, the same reason
     assert len(rows()) == 3 and "Open the change: https://github.com/me/re/pull/8" in rows()[-1]["text"], [r["text"][-60:] for r in rows()]
+
+def test_a_pick_on_the_dashboard_closes_its_card(monkeypatch, setting):
+    """R1-99 (4) (the code reader's CR-2b-7; item 149: both screens show the same): a pick made on the dashboard's own card left the `title_pick` row
+    open - WhatsApp still offered "Keep A" (a tap there switched his pick back) and at the deadline it read "ran by default: A goes out"."""
+    from whatifs import packaging as PK, dash as DS
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch); ep = "EP209911261200"
+    core.store().append("Episodes", [{"episode_id": ep, "slot_et": (core.now_utc() + dt.timedelta(hours=10)).strftime("%Y-%m-%dT%H:%M:%SZ"), "status": "SCHEDULED", "notes": ""}])
+    PK.record(ep, "vidPICK1", [{"key": k, "title": f"Title {k}", "thumb_text": f"Thumb {k}"} for k in "ABC"], {})
+    card = next(r for r in NT.open_rows() if r["kind"] == "title_pick" and r["episode_id"] == ep)
+    assert DS.route(f"PICK|{ep}|B")[0]
+    assert _row(card["id"])["status"] == "ANSWERED" and _row(card["id"])["answer"] == f"PICK {ep} B" and not any(r["kind"] == "title_pick" for r in NT.needs())
