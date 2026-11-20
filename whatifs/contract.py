@@ -1197,10 +1197,16 @@ def await_approval(ep, vid, slot_iso, summary, kind="creative_review", default=N
                           f" - at the pipeline's next run - and goes public on its slot, {_ist(slot_iso)}. Until the slot you can still stop it: Decided for you, Take it down.")
         else: hours, dflt = 72, "stays private"
         default = dflt if default is None else default; expires_h = hours if expires_h is None else expires_h
-    try: PUB.yt_set_privacy(vid, "private")
-    except Exception as e: log(f"could not unschedule {vid}: {scrub(e)}", "WARN", ep)
+    try: off = PUB.yt_set_privacy(vid, "private") is not False     # v12 B-OWNER (PART F, CF-1b): it answers False when YouTube refuses - read, never assumed
+    except Exception as e: off = False; log(f"could not unschedule {vid}: {scrub(e)}", "WARN", ep)
     store().update("Episodes", "episode_id", ep, {"status": "AWAITING_APPROVAL", "updated": iso()})
-    NT.send(kind, f"Review before it goes public: {summary} Watch it (private): https://studio.youtube.com/video/{vid}/edit" + tail,
+    if not off:                                                      # YouTube kept it on its schedule: he is told at once, and the card never says he can still stop it
+        tail = ""; title = next((str(r.get("title") or ep) for r in store().rows("Episodes") if r.get("episode_id") == ep), ep)
+        NT.send("contract_hold", f"{title} is still on YouTube's schedule: YouTube did not accept the change to private, so it can go public on its slot before you "
+                f"review it. Set it to Private in YouTube Studio, then tap Done: https://studio.youtube.com/video/{vid}/edit", [("Done", "OK")], tier="now", urgent=True,
+                episode=ep, dedupe_key=f"unscheduled|{ep}")
+    head, foot = "Review before it goes public: ", f" Watch it ({'private' if off else 'STILL ON YOUTUBE SCHEDULE'}): https://studio.youtube.com/video/{vid}/edit" + tail
+    NT.send(kind, head + str(summary)[:max(0, 1500 - len(head) - len(foot))] + foot,      # PART F (CF-6 (g)): the self-review is cut, never the last sentence
             [("Approve", f"APPROVE {ep}"), ("Hold", f"HOLDREVIEW {ep}"), ("Discuss", f"DISCUSS review {ep}")], tier="now", urgent=True,
             episode=ep, default=default, expires_h=expires_h, dedupe_key=f"review|{ep}")
 

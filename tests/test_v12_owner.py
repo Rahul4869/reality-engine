@@ -1828,3 +1828,17 @@ def test_a_refused_take_down_from_a_screen_raises_an_alarm_and_keeps_the_button(
     assert "is private again" in said and _epi("EP8")["status"] == "HELD_BY_OWNER" and alarm()[0]["status"] == "ANSWERED", (said, alarm())
     assert not [r for r in _decided("EP8") if r["status"] == "OPEN"]
 
+def test_a_video_youtube_kept_on_its_schedule_is_never_told_it_can_be_stopped(monkeypatch, setting):
+    """CR-8a-1b (PART F, CF-1b; P33 / OC-2): `await_approval` did not read `yt_set_privacy`'s answer - a video YouTube kept on its schedule was marked
+    AWAITING_APPROVAL, went public on its slot unreviewed, and the card told him "Until the slot you can still stop it". Now a hold row tells him at once
+    (the Studio link; his silence waits for its Done) and the card never says he can stop it - for a refusal and for a raise."""
+    slot, _s = _ep8(monkeypatch, setting, status="UPLOADED")
+    monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: False)
+    CON.await_approval("EP8", "ytEP8", slot, "'Title EP8'.")
+    card = _kind("creative_review", "EP8")[0]; assert "you can still stop it" not in card["text"] and "(private)" not in card["text"], card["text"]
+    h = [r for r in _kind("contract_hold", "EP8") if r["dedupe_key"] == "unscheduled|EP8"]
+    assert len(h) == 1 and "still on YouTube's schedule" in h[0]["text"] and "studio.youtube.com/video/ytEP8/edit" in h[0]["text"] and h[0]["tier"] == "now", h
+    assert CON.clear_to_post("EP8")[0] is False                                                       # his silence waits for his Done
+    monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: (_ for _ in ()).throw(RuntimeError("YouTube does not answer")))
+    slot9, _s9 = _ep8(monkeypatch, setting, ep="EP9", status="UPLOADED"); CON.await_approval("EP9", "ytEP9", slot9, "s")
+    assert [r for r in _kind("contract_hold", "EP9") if r["dedupe_key"] == "unscheduled|EP9"] and "you can still stop it" not in _kind("creative_review", "EP9")[0]["text"]
