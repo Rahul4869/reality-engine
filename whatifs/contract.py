@@ -1069,11 +1069,21 @@ def review_sweep():
 def unpost(ep):
     """v12 B-OWNER (PART 7, UNDO NEVER DELETES; R17 ADDS (B)): his "Take it down" - the video is made private and his Hold is written by the function
     his Hold tap calls. Nothing is deleted or uploaded; no Approve is offered after it (YouTube gives no time to a video that was public)."""
-    from whatifs import publish as PUB
-    e = next((r for r in store().rows("Episodes") if r.get("episode_id") == ep), None)
+    from whatifs import publish as PUB, notify as NT
+    st = store(); e = next((r for r in st.rows("Episodes") if r.get("episode_id") == ep), None)
     if not e or not e.get("yt_id"): return f"{ep} not found"
-    PUB.yt_set_privacy(e["yt_id"], "private"); hold_review(ep)
-    return f"{e.get('title') or ep} is private again. Nothing was deleted. To publish it later: YouTube Studio, Visibility, Public."
+    title = e.get("title") or ep
+    try: ok = PUB.yt_set_privacy(e["yt_id"], "private")              # it answers False when YouTube refuses the change: a take-down that did not happen is never said as done
+    except Exception as x: ok = False; log(f"take-down failed: {scrub(x)[:160]}", "WARN", ep)
+    if not ok:
+        NT.send("decided_post", f"{title} could NOT be taken down: YouTube did not accept the change, so it is still scheduled or public there. Tap again, or set it to "
+                f"Private yourself: https://studio.youtube.com/video/{e['yt_id']}/edit", [("Take it down", f"UNPOST {ep}")], tier="week", episode=ep, expires_h=168,
+                dedupe_key=f"decided|{ep}|retry")
+        return f"{title} could NOT be made private: YouTube did not accept the change, and nothing else was changed. Tap again, or set it to Private in YouTube Studio."
+    hold_review(ep)
+    for r in NT.open_rows():                                         # no open row may still say it goes public, or offer a take-down that is done
+        if r.get("kind") == "decided_post" and r.get("episode_id") == ep: st.update("Owner_Actions", "id", r["id"], {"status": "ANSWERED", "answered_at": iso(), "answer": "taken down"})
+    return f"{title} is private again. Nothing was deleted. To publish it later: YouTube Studio, Visibility, Public."
 
 def owner_card(ep, stage, failed, extra=""):
     from whatifs import notify as NT

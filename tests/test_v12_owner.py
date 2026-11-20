@@ -1748,3 +1748,22 @@ def test_the_held_short_still_waits(monkeypatch, setting):
     assert "posted" in NT.answer(c[0]["id"], f"SPECIAL APPROVE {sid}") and posted == [sid]          # his one tap still sends it out, as it is
     SH2, _SP2, sid2, _p2 = _short8(monkeypatch, setting, on="FALSE", sid="SH209911200901")         # the switch off: today's card, word for word
     SH2._file_hold({"id": sid2}, gf, True); o = _cards8(sid2)[0]; assert o["default_action"] == "not posted" and o["expires_at"]
+
+def test_a_take_down_that_youtube_refused_is_never_reported_as_done(monkeypatch, setting):
+    """PART 7, UNDO (item 150). FOUND AT THE FINISH: `publish.yt_set_privacy` answers False when YouTube refuses the change (it does not raise), and
+    `unpost` did not read the answer - it told him "is private again", wrote his Hold, and the video went public on its slot all the same. A take-down
+    that did not happen is said so, the video's record is not touched, and he keeps a button to try again and the Studio link."""
+    slot, _s = _ep8(monkeypatch, setting, status="SCHEDULED")
+    post = NT.send("decided_post", "Title EP8 was approved by your silence and goes public at Sat 21 Nov 20:30.", [("Take it down", "UNPOST EP8")], tier="week",
+                   episode="EP8", expires_h=168, dedupe_key=f"decided|EP8|{slot}")
+    monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: False)
+    said = NT.answer(post, "UNPOST EP8")
+    assert "could NOT be made private" in said and "private again" not in said and _epi("EP8")["status"] == "SCHEDULED", said
+    again = [r for r in _decided("EP8") if r["status"] == "OPEN"]
+    assert len(again) == 1 and "could NOT be taken down" in again[0]["text"] and "studio.youtube.com/video/ytEP8/edit" in again[0]["text"], again
+    assert json.loads(again[0]["buttons"]) == [["Take it down", "UNPOST EP8"]]
+    monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: (_ for _ in ()).throw(RuntimeError("YouTube does not answer")))
+    ok, note = DS.route("UNPOST|EP8"); assert not ok and "could NOT be made private" in note and _epi("EP8")["status"] == "SCHEDULED"
+    monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: True)
+    ok, note = DS.route("UNPOST|EP8"); assert ok and "is private again. Nothing was deleted." in note and _epi("EP8")["status"] == "HELD_BY_OWNER"
+    assert not [r for r in _decided("EP8") if r["status"] == "OPEN"]                              # no open row still says it goes public or offers a take-down that is done
