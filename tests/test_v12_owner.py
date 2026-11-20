@@ -421,7 +421,7 @@ def _cards_without_a_default(files):
                     and n.func.value.id == "NT" and n.args and isinstance(n.args[0], ast.Constant)): continue
             kind = n.args[0].value; kw = {k.arg: k.value for k in n.keywords}
             if NT.klass(kind) != NT.CARD or kind in NT.STANDING_KINDS: continue
-            btn = kw.get("buttons", n.args[2] if n.func.attr == "send" and len(n.args) > 2 else None)
+            btn = kw.get("buttons", n.args[2] if n.func.attr == "send" and len(n.args) > 2 else (n.args[5] if n.func.attr == "mail" and len(n.args) > 5 else None))
             if btn is None or (isinstance(btn, (ast.List, ast.Tuple)) and not btn.elts): continue
             if "default" not in kw or "expires_h" not in kw: bad.append(f"{rel}:{n.lineno}: {kind}")
     return bad
@@ -432,8 +432,9 @@ def test_every_card_has_a_default_and_an_expiry():
     is pinned (test_the_lists_are_pinned). PLANTED: a card with buttons and no default is found; a hold and an inform are not."""
     files = list(_py_files()); assert _cards_without_a_default(files) == [], _cards_without_a_default(files)
     planted = 'NT.send("bakeoff", "Pick", [("A", "PICK A")], expires_h=48)\nNT.send("contract_hold", "Held", [("Fix", "FIX")])\nNT.send("budget_pct", "80%")\n' \
-              'NT.mail("title_pick", "Pick", "<p>x</p>", buttons=[("A", "PICK A")], default="A goes out")\n'
-    assert _cards_without_a_default([("whatifs/x.py", planted)]) == ["whatifs/x.py:1: bakeoff", "whatifs/x.py:4: title_pick"]
+              'NT.mail("title_pick", "Pick", "<p>x</p>", buttons=[("A", "PICK A")], default="A goes out")\n' \
+              'NT.mail("voice_pick", "Pick", "<p>x</p>", "essential", True, [("A", "PICK A")])\n'
+    assert _cards_without_a_default([("whatifs/x.py", planted)]) == ["whatifs/x.py:1: bakeoff", "whatifs/x.py:4: title_pick", "whatifs/x.py:5: voice_pick"]
 
 # ------------------------------------------------------------------ step 4: WHATSAPP SENDS THREE KINDS OF MESSAGE (PART 4) and its money (PART 8)
 from whatifs import wa as WA, digests as DG
@@ -999,6 +1000,30 @@ def test_a_groups_buttons_are_whole_words(monkeypatch, setting):
         WA.send_group(g); titles[g] = [b["reply"]["title"] for b in bodies[-1]["interactive"]["action"]["buttons"]]
     whole = {t for _g, t in WA.MENU_GROUPS} | {"Menu", "Research", "Open the list", "Undo or take down"}
     assert titles["learned"][:2] == ["Menu", "Research"] and all(t in whole for ts in titles.values() for t in ts), titles
+
+def test_with_the_switch_off_mail_is_the_call_of_today(monkeypatch, setting):
+    """PART 2: TWO_SCREENS_ON FALSE = `PUB.email(subject, html, kind=level)`, word for word - the level reaches the mail, the mail's own answer comes
+    back and no row is written."""
+    from whatifs import publish as PUB
+    setting("TWO_SCREENS_ON", "FALSE"); got = []
+    monkeypatch.setattr(PUB, "email", lambda subj, html, kind="essential": got.append((subj, html, kind)) or "the mail's own answer")
+    assert NT.mail("scheduled", "Video scheduled", "<p>x</p>", level="info", episode="EP1", dedupe_key="scheduled|EP1") == "the mail's own answer"
+    assert got == [("Video scheduled", "<p>x</p>", "info")] and core.store().rows("Owner_Actions") == []
+
+def test_a_tap_on_a_mails_button_reaches_what_its_link_reached(monkeypatch, setting):
+    """PART 2: a row made from a mail carries the mail's own links as buttons (rows 27, 32, 34 and 35 of the table). His tap on one must reach the
+    function the link reaches - `notify.answer` hands PICK, APPROVE DRAFT, REJECT DRAFT and APPROVE SHEET to `preview.decide`; a verb it does not
+    know would be recorded and change nothing."""
+    from whatifs import preview as PV
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch); seen = []
+    monkeypatch.setattr(PV, "decide", lambda title: seen.append(title) or "done")
+    cases = (("title_pick", [("Keep A", "PICK EPT1 A"), ("Pick B", "PICK EPT1 B")], "PICK EPT1 B"),
+             ("script_preview", [("Approve", "APPROVE DRAFT209911270900"), ("Reject", "REJECT DRAFT209911270900")], "REJECT DRAFT209911270900"),
+             ("sheets_review", [("Approve VALE", "APPROVE SHEET VALE")], "APPROVE SHEET VALE"))
+    for kind, btns, verb in cases:
+        aid = NT.mail(kind, "Planted", "<p>x</p>", buttons=btns, default="planted", expires_h=24, dedupe_key=f"tap|{kind}")
+        assert verb in [v for _l, v in json.loads(_row(aid)["buttons"])] and NT.answer(aid, verb) == "done" and _row(aid)["status"] == "ANSWERED", kind
+    assert seen == [c[2] for c in cases], seen
 
 # ------------------------------------------------------------------ step 8a: NEVER HELD BY HIS ABSENCE (PART 7; R22 (2), (2 b), (2 c)) - the special is step 8b's
 from whatifs import contract as CON, launch as LAU, publish as PUB8
