@@ -530,6 +530,7 @@ def test_the_real_tick_finishes_a_waiting_short(monkeypatch, setting, gate_on):
     from whatifs import manage as MG
     PUB.FAKE_FAULTS["youtube"] = {"sd": True}
     r = _short(monkeypatch, setting, "SHHD14"); vid = r["yt_id"]; assert HG.row(vid)["state"] == HG.WAITING
+    monkeypatch.setattr(REL, "now_utc", lambda: NOW + 30 * M)                                                     # the tick's `release.settle()` reads its own clock: planted inside the Short's cap, so only the gate's own tick can finish it, on whatever day the suite runs
     monkeypatch.setattr(HG, "now_utc", lambda: NOW + 61 * M); MG.tick()
     h = HG.row(vid); assert h["state"] == HG.CAP and h["note"] == "public after 61 min; HD NO (the cap)" and _shown(vid) == "public"
     src = inspect.getsource(MG.tick); assert src.index("RELW.settle()") < src.index("HGT.tick()")
@@ -542,6 +543,7 @@ def test_a_video_rescheduled_after_a_pause_is_judged_from_its_new_slot(monkeypat
     from whatifs import manage as MG, contract as CON
     PUB.FAKE_FAULTS["youtube"] = {"sd": True}
     _long("EPL09", public_at=core.iso(SLOT + 120 * M))
+    monkeypatch.setattr(MG, "now_utc", lambda: NOW)                                                               # `hold_scheduled` and `resume_held` read their own clock: planted, so the slot is ahead on whatever day the suite runs
     assert MG.hold_scheduled("paused") == 1 and _ep("EPL09")["status"] == "HELD"
     MG.resume_held(); e = _ep("EPL09")
     assert e["status"] == "SCHEDULED" and e["slot_et"] == core.iso(SLOT) and e["public_at"] == ""
