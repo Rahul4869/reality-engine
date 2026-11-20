@@ -115,7 +115,8 @@ TABS = {
  "Specials":        ["ts", "id", "kind", "title", "format", "ask", "yt_id", "ig", "fb", "status", "views_7d", "file", "premise", "hook", "script", "sec", "made", "sha", "cover"],      # v12 V2c-b2: + made (when the Short's file was finished: what counts as MADE, apart from where its upload stands), sha (of the master file), cover (Drive id)      # v11: + file (Drive id for approval; was dropped), premise     # v10 (K134): cast intro + twice-monthly special reels (format learning)           # v10 G4: localized titles/descriptions set
  "WA_Outbox":       ["ts", "wamid", "action_id", "kind", "status"],          # v9.4b: WhatsApp messages sent and their delivery status
  "WA_Chat":         ["ts", "msg_id", "who", "text"],                         # v9.4b: the owner chat (private Sheet; never in logs)                      # v9.4b: dashboard taps handled (the page clears "Queued" from these)
- "Owner_Actions":   ["id", "created", "tier", "kind", "episode_id", "text", "buttons", "default_action", "expires_at", "status", "answered_at", "answer", "channel", "delivered_at", "dedupe_key", "urgent"],      # v9.4a (WP4): every owner message, button, default and answer
+ "Owner_Actions":   ["id", "created", "tier", "kind", "episode_id", "text", "buttons", "default_action", "expires_at", "status", "answered_at", "answer", "channel", "delivered_at", "dedupe_key", "urgent",
+                     "count", "last_at", "last_text"],      # v9.4a (WP4): every owner message, button, default and answer; v12 B-OWNER: an alarm is an incident - its repeats are counted on its row (count, last_at, last_text), never a second alarm
  # v8.11 (created by Setup and by the daily learning job on older Sheets)
  "Premise_Bench":   ["bench_id", "added", "status", "premise", "headline", "family", "ptype", "claude_score", "gemini_score", "combined", "criteria_json",
                      "source", "episode_id", "used_at", "note", "src", "demand_json"],      # v9: src = outlier | original | comment                                              # pre-scored approved premises; the scout draws from here first
@@ -1210,6 +1211,7 @@ DEFAULTS = {
  "DRAWN_EST_INR": ("38", "v12 DRAWN: the estimate of the drawn scenes' one writer's call a long video, at the bound that cannot be exceeded - the sonnet chain falls back to Opus, its input at the 1-hour cache-write price: 2,300 x USD 4 x 2 + 18,000 x USD 20 a million = USD 0.378 = Rs 37.5 at 99 (NOT measured on a bill); a line of its own in the estimate"),
  "DRAWN_INK_MIN": ("3.0", "v12 DRAWN: the lowest contrast of a drawn scene's text, read on the FINISHED FILE (ratio to 1, WCAG's form on the encoder's luma); under it the scene is shown as its still. A limit set only from measured pairs (test 8: every good at least 4.5; a frame without our text at most 1.5; a text at 30% opacity at most 2.6; this value strictly between them) - never moved to make a video pass"),
  "DRAWN_RENDER_MAX_S": ("90", "v12 DRAWN: seconds the proof of one drawn scene may take before it is refused (its still is shown)"),
+ "TWO_SCREENS_ON": ("TRUE", "v12 B-OWNER: TRUE = every owner message reaches WhatsApp and the dashboard through notify, WhatsApp sends three kinds of message only, and a card's default runs at its expiry; FALSE = the older e-mail path"),
 }
 _settings_cache = None
 def settings(refresh=False) -> dict:

@@ -25,6 +25,8 @@ OLD_STRATEGY = {"STRATEGY_ON": "FALSE", "ORG_BUILDS_ON": "TRUE"}      # v12 V4: 
 OLD_DRAWN = {"DRAWN_ON": "FALSE"}
 # v12 DRAWN (P19): the older tests run with the talking cast on, as they were written
 OLD_LIVING = {"LIVING_CHARACTERS_ON": "TRUE", "V12DRAWN_FLIPS_DONE": "test"}
+# v12 B-OWNER: ... and with the owner's messages as they were (the e-mail path; every entry is added in the step of the batch that adds its cell). The batch's own tests are tests/test_v12_owner.py.
+OLD_SCREENS = {"TWO_SCREENS_ON": "FALSE"}
 
 @pytest.fixture(autouse=True)
 def fresh_store(tmp_path):
@@ -41,7 +43,7 @@ def fresh_store(tmp_path):
     core.set_setting("V11_FLIPS_DONE", "test")
     core.set_setting("FORMAT_FORCE", "F2")                      # v12 V2a: the older tests are the trial's tests; formats are tested on their own (test_v12_formats)
     core.set_setting("LADDER_ON", "FALSE")                      # v12 V2c-b: the older tests make long videos straight from the premise bench; the ladder has its own tests (test_v12_ladder), the rehearsal and the sweep walk it
-    for _k, _v in list(OLD_CLIPS.items()) + list(OLD_MOTION.items()) + list(OLD_INSIDE.items()) + list(OLD_VIEW.items()) + list(OLD_STRATEGY.items()) + list(OLD_DRAWN.items()) + list(OLD_LIVING.items()): core.set_setting(_k, _v)      # v12 V2d: the older tests buy 5-second clips of the model they were written for; the clip market and the month's split have their own tests (test_v12_money), the rehearsal and the sweep run them
+    for _k, _v in list(OLD_CLIPS.items()) + list(OLD_MOTION.items()) + list(OLD_INSIDE.items()) + list(OLD_VIEW.items()) + list(OLD_STRATEGY.items()) + list(OLD_DRAWN.items()) + list(OLD_LIVING.items()) + list(OLD_SCREENS.items()): core.set_setting(_k, _v)      # v12 V2d: the older tests buy 5-second clips of the model they were written for; the clip market and the month's split have their own tests (test_v12_money), the rehearsal and the sweep run them
     from whatifs import formats as _fm; _fm.use("")
     core.set_setting("DEEP_TRIAL_ON", "FALSE")                  # v11: the monthly Deep Trial is tested on its own (test_v11_deeptrial)                  # v11: the November allowance flip is tested on its own (test_v11_stage_a)            # v10.2: older tests expect direct scheduling; the owner review gate is tested in test_v102 + the rehearsal
     yield

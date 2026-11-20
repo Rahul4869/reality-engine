@@ -10,7 +10,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `heygen/heygen-video/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 3 standalone Shorts a week, 12 a month at most - every topic starts as a Short and the promote rule picks the long video's topic (`whatifs/ladder.py`); spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 141 code modules, 873 settings, 91 Sheet tabs, 25 GitHub workflows.
+- Size: 141 code modules, 874 settings, 91 Sheet tabs, 25 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -358,7 +358,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Specials | 19 | ts, id, kind, title, format, ask ... |  |
 | WA_Outbox | 5 | ts, wamid, action_id, kind, status |  |
 | WA_Chat | 4 | ts, msg_id, who, text |  |
-| Owner_Actions | 16 | id, created, tier, kind, episode_id, text ... |  |
+| Owner_Actions | 19 | id, created, tier, kind, episode_id, text ... |  |
 | Premise_Bench | 17 | bench_id, added, status, premise, headline, family ... |  |
 | Demand_Signals | 9 | ts, video_id, title, channel, views, channel_median ... |  |
 | Packaging_Tests | 15 | episode_id, yt_id, variant, title, thumb_text, thumb_file ... |  |
