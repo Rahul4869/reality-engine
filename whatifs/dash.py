@@ -16,9 +16,9 @@ def _two():
     return S("TWO_SCREENS_ON", bool)
 
 PRIVATE_LINE = "{name}: the text is in WhatsApp and your e-mail."      # v12 B-OWNER (PART 6): a row whose text holds a script or an unreleased premise
-NOTES = {"department_line": "The department line comes with the first batch after the launch.",          # R5-5 (4): where a row's batch has not landed the section says so
-         "treasury": "The savings line, the two pockets and the monthly recharge advice come with the treasury batch after the launch.",
-         "features": "The feature watch comes after the launch.",
+NOTES = {"department_line": "The department line comes with the first batch after the launch. It needs nothing from you.",          # R5-5 (4): where a row's batch has not landed the section says so
+         "treasury": "The savings line, the two pockets and the monthly recharge advice come with the treasury batch after the launch. Building it needs nothing from you; until then the top-up reminders reach you as they do today.",
+         "features": "The feature watch comes after the launch. It needs nothing from you.",
          "appetite": "The appetite readings come with batch V4b."}
 SOURCE_KEYS = ("v", "value", "views", "inr", "pct")      # a number under one of these keys needs a non-empty `src` beside it (P13's lesson)
 

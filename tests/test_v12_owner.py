@@ -1472,3 +1472,13 @@ def test_the_workers_input_route_holds_its_rule():
                        capture_output=True, text=True, timeout=120, cwd=ROOT)
     out = r.stdout + r.stderr
     assert r.returncode == 0 and re.search(r"(?m)^# pass 1$", out) and re.search(r"(?m)^# fail 0$", out), out[-800:]
+
+def test_an_after_launch_note_says_what_it_asks_of_him(setting):
+    """Item 199 (R1-55 (2)): a part that comes after the launch says on his dashboard that it needs nothing from him - where that is true; the
+    treasury's note, which names his own recharge, says what holds until then."""
+    setting("TWO_SCREENS_ON", "TRUE"); s = DS.build_snapshot()
+    assert s["learning"]["department_line"]["note"] == "The department line comes with the first batch after the launch. It needs nothing from you."
+    assert s["plan"]["department_line"]["note"] == s["learning"]["department_line"]["note"]
+    assert s["learning"]["features"]["note"] == "The feature watch comes after the launch. It needs nothing from you."
+    assert s["money"]["treasury"]["note"].endswith("Building it needs nothing from you; until then the top-up reminders reach you as they do today.")
+    assert all("after the launch" not in n or "nothing from you" in n for n in DS.NOTES.values()), DS.NOTES
