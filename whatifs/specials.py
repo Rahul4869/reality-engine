@@ -387,7 +387,7 @@ def run(kind="special", force=False, publish=True):
         out = _assemble(clips, [b["sec"] for b in beats], cards, end, snd, os.path.join(wd, f"{episode}.mp4"), W, H)
         rec = {"ts": iso(), "id": episode, "kind": kind, "title": c["title"], "format": c.get("format", ""), "ask": c.get("ask", ""), "yt_id": "", "ig": "", "fb": "", "status": "MADE", "views_7d": ""}
         if publish and S("SPECIALS_REVIEW_ON", bool):            # v10.2: the owner sees it first; nothing is posted before Approve
-            rec.update(_await_review(out, c, kind, episode, beats))
+            rec.update(_await_review(out, c, kind, episode, beats, checks=rec.get("checks", "")))      # v12 B-OWNER (R18 (7 c), R1-59 (3)): nothing records it yet
         elif publish: rec.update(_publish(out, c["title"], episode))
         store().append("Specials", [rec]); log(f"special reel {episode} ({kind}) {rec['status']}", episode=episode)
         return {"ok": True, **rec, "path": out}
@@ -431,16 +431,40 @@ def due(now=None):
     return not any(str(r.get("ts", "")).startswith(now.strftime("%Y-%m-%d")) and r.get("kind") == "special" for r in store().rows("Specials"))
 
 # ---------------------------------------------------------------- v10.2: owner review before any special goes public
-def _await_review(path, c, kind, episode, beats):
+def _await_review(path, c, kind, episode, beats, checks=""):
+    """v12 B-OWNER (PART 7, R18 (7 c)): with TWO_SCREENS_ON a special whose check result recorded at making is "pass" is a `special_ready` card that
+    is posted by his silence after 72 hours (`_ready_silence`); every other one is `special_review` - a hold with no expiry that waits for his tap."""
     from whatifs import publish as PUB, notify as NT
     fid, _ = PUB.drive_upload(path, f"{episode}.mp4", public=False)
     script = " | ".join(f"{b.get('who')}: {b.get('line', '')}" for b in beats if b.get("line"))
     btn = [("Approve", f"SPECIAL APPROVE {episode}"), ("Remake", f"SPECIAL REMAKE {kind}")]
     if kind == "cast_intro" and any(r.get("kind") == "cast_intro" and r.get("yt_id") for r in store().rows("Specials")):
         btn.insert(1, ("Approve + hide old", f"SPECIAL APPROVE {episode} REPLACE"))
-    NT.send("special_review", f"New {kind.replace('_', ' ')} ready for your review (nothing is posted yet). Watch: https://drive.google.com/file/d/{fid}/view  Script: {script[:600]}",
-            btn, tier="now", urgent=True, episode=episode, default="not posted", expires_h=72, dedupe_key=f"special|{episode}")
+    text = f"New {kind.replace('_', ' ')} ready for your review (nothing is posted yet). Watch: https://drive.google.com/file/d/{fid}/view  Script: {script[:600]}"
+    if not S("TWO_SCREENS_ON", bool):
+        NT.send("special_review", text, btn, tier="now", urgent=True, episode=episode, default="not posted", expires_h=72, dedupe_key=f"special|{episode}")
+    elif str(checks or "").lower() == "pass":
+        NT.send("special_ready", text, btn, tier="now", urgent=True, episode=episode, default="posted after 72 hours when its checks passed", expires_h=72,
+                dedupe_key=f"special|{episode}")
+    else:                                                          # A SPECIAL WITH NO RECORDED CHECK RESULT IS NOT POSTED BY SILENCE (no expiry, no renewal)
+        NT.send("special_review", text, btn, tier="now", urgent=True, episode=episode, default="not posted: it has no check on record, so it waits for your tap",
+                dedupe_key=f"special|{episode}")
     return {"status": "AWAITING_APPROVAL", "file": f"drive:{fid}"}
+
+def _ready_silence(row):
+    """v12 B-OWNER (PART 7): the default of a `special_ready` card that expired unanswered. The special is posted (`approve`, the function his tap
+    calls) only when its Specials row still waits, uploads are open, nothing is paused and its own check result recorded at making is a pass;
+    otherwise nothing is posted and the card is not renewed."""
+    from whatifs import launch as LA
+    from whatifs.manage import paused
+    sid = str(row.get("episode_id") or "")
+    rec = next((r for r in store().rows("Specials") if r.get("id") == sid), None)
+    if not rec: return f"not posted: {sid} not found"
+    if rec.get("status") != "AWAITING_APPROVAL": return f"not posted: {sid} no longer waits ({rec.get('status')})"
+    if str(rec.get("checks") or "").lower() != "pass": return f"not posted: {sid} has no check on record"
+    if not LA.uploads_open(): return "not posted: uploads are not open"
+    if paused(): return "not posted: the engine is paused"
+    return approve(sid)
 
 def _answer(row, choice):
     p = str(choice).split()
@@ -475,4 +499,5 @@ def approve(sid, replace=False):
 def register():
     from whatifs import notify as NT
     NT.register("special_review", on_answer=_answer)
+    NT.register("special_ready", on_answer=_answer, on_default=_ready_silence)      # v12 B-OWNER (R17 (7 d)): his Approve on the turned card posts it
 

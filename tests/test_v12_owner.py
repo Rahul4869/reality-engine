@@ -1125,3 +1125,45 @@ def test_the_ladder_skip_is_red_on_an_alarm_of_the_opening_ticks(monkeypatch, se
     tb = e.value.__traceback__
     while tb.tb_next: tb = tb.tb_next
     assert told and tb.tb_frame.f_code.co_filename.endswith("rehearsal.py") and "a long video started without a promoted Short" in str(e.value) and "'alarm'" in str(e.value), str(e.value)[:600]
+
+
+# ---------------- step 8b (PART 7, THE SPECIAL; R18 (7 c)): a special is posted by his silence only with its check on record
+def _sp_card(monkeypatch, setting, checks):
+    """A special made and waiting (tab Specials, `checks` as given) and its card, with the switch on."""
+    from whatifs import specials as SP, launch as LA, publish as PUB
+    setting("TWO_SCREENS_ON", "TRUE"); monkeypatch.setattr(PUB, "email", lambda *a, **k: True); monkeypatch.setattr(NT, "in_quiet_hours", lambda now=None: False)
+    monkeypatch.setattr(PUB, "drive_upload", lambda path, name, public=False: ("f8b", "u8b")); monkeypatch.setattr(LA, "uploads_open", lambda: True)
+    sid = "SP209911200900"
+    core.store().append("Specials", [{"ts": core.iso(), "id": sid, "kind": "special", "title": "Grimm vs Monday", "status": "AWAITING_APPROVAL", "checks": checks}])
+    SP.register(); SP._await_review("x.mp4", {"title": "Grimm vs Monday"}, "special", sid, [{"who": "GRIMM", "line": "Monday is on trial"}], checks=checks)
+    return SP, sid, next(r for r in core.store().rows("Owner_Actions") if r.get("episode_id") == sid)
+
+def test_a_special_is_posted_by_silence_only_with_its_checks(monkeypatch, setting):
+    from whatifs import launch as LA
+    posted = []
+    SP, sid, row = _sp_card(monkeypatch, setting, "pass")
+    monkeypatch.setattr(SP, "approve", lambda s, replace=False: posted.append(s) or f"posted {s}")
+    assert row["kind"] == "special_ready" and row["expires_at"] and "posted after 72 hours" in row["default_action"]
+    assert NT.DEFAULTS["special_ready"] is SP._ready_silence
+    core.store().update("Specials", "id", sid, {"checks": ""})
+    assert "no check on record" in SP._ready_silence(row) and posted == []                     # planted: no check result on record - nothing is posted
+    core.store().update("Specials", "id", sid, {"checks": "pass"})
+    monkeypatch.setattr(LA, "uploads_open", lambda: False); assert "uploads" in SP._ready_silence(row) and posted == []
+    monkeypatch.setattr(LA, "uploads_open", lambda: True); setting("PAUSED", "TRUE")
+    assert "paused" in SP._ready_silence(row) and posted == []
+    setting("PAUSED", "FALSE"); assert SP._ready_silence(row) == f"posted {sid}" and posted == [sid]
+
+def test_a_special_without_a_check_waits_for_his_tap(monkeypatch, setting):
+    import datetime as dt
+    SP, sid, row = _sp_card(monkeypatch, setting, "")
+    assert row["kind"] == "special_review" and not row["expires_at"] and "no check on record, so it waits for your tap" in row["default_action"]
+    assert NT.klass("special_review") == NT.HOLD and any(r["id"] == row["id"] for r in NT.needs())
+    NT.expire_defaults(now=core.now_utc() + dt.timedelta(days=30))                                # never posted by silence, never renewed
+    assert next(r for r in core.store().rows("Owner_Actions") if r["id"] == row["id"])["status"] == "OPEN"
+    assert not [r for r in core.store().rows("Owner_Actions") if r.get("kind") == "special_ready"]
+
+def test_the_turned_special_answers_his_approve(monkeypatch, setting):
+    posted = []
+    SP, sid, row = _sp_card(monkeypatch, setting, "pass")
+    monkeypatch.setattr(SP, "approve", lambda s, replace=False: posted.append(s) or f"posted {s}")
+    assert "posted" in NT.answer(row["id"], f"SPECIAL APPROVE {sid}") and posted == [sid]          # R17 (7 d): without the register line it records and does nothing

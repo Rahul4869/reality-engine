@@ -438,7 +438,7 @@ def test_the_release_is_wired_into_the_contract_the_registry_the_levers_and_the_
     assert REG.EPISODE_RUNS["release"] == (("D9", "short_publish"),) and REG.GATE_RUNS["release"] == ("D8", "release_gate") and "whatifs/release.py" in REG.DEPTS["D9"]["wraps"]
     for k in ("IG_TRIAL_REELS_ON", "SHORT_THUMB_ON"):
         assert REG.may_change("D9", k) and LV.LEVERS[k]["kind"] == "bool" and LV.LEVERS[k]["checks"] == ("release_sheet",) and not LV.LEVERS[k]["owner"]
-    assert "whatifs/release.py" in REP.PROTECTED and core.TABS["Release_Sheet"][:6] == ["ts", "id", "platform", "kind", "native_id", "state"] and core.TABS["Specials"][-3:] == ["made", "sha", "cover"]
+    assert "whatifs/release.py" in REP.PROTECTED and core.TABS["Release_Sheet"][:6] == ["ts", "id", "platform", "kind", "native_id", "state"] and core.TABS["Specials"][-4:] == ["made", "sha", "cover", "checks"]
     for k in ("RELEASE_SHEET_ON", "IG_TRIAL_REELS_ON", "IG_AUDIO_NAME", "SHORT_THUMB_ON", "SHORT_THUMB_WAIT_S", "SHORT_HASHTAGS", "RELEASE_TRIES_MAX", "RELEASE_SETTLE_H"): assert k in core.DEFAULTS, k
     src = open(MG.__file__, encoding="utf-8").read(); assert "RELW.settle()" in src                     # the tick finishes what waits
     sh = open(SH.__file__, encoding="utf-8").read(); assert "SP._publish(out, sc[\"title\"], ep, desc=description(sc))" in sh and sh.count("SP._publish(") == 1      # the old path only behind the switch

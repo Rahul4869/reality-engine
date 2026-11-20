@@ -355,7 +355,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Model_Changes | 5 | ts, role, from, to, why |  |
 | Viewer_Questions | 6 | ts, video_id, comment_id, author, text, used |  |
 | Carousels | 6 | ts, episode_id, files, caption, status, ig_id |  |
-| Specials | 19 | ts, id, kind, title, format, ask ... |  |
+| Specials | 20 | ts, id, kind, title, format, ask ... |  |
 | WA_Outbox | 5 | ts, wamid, action_id, kind, status |  |
 | WA_Chat | 4 | ts, msg_id, who, text |  |
 | Owner_Actions | 19 | id, created, tier, kind, episode_id, text ... |  |
