@@ -972,8 +972,8 @@ def enabled(fid):
 def run(stage, ctx, ep, write=True):
     """Evaluate every feature of a stage. Returns {'ok', 'failed': [(id, evidence)], 'rows'}. Writes Feature_Ledger. Never raises."""
     from whatifs import formats as FMT
-    rows, failed = [], []
-    fmt = str((ctx.get("d") or {}).get("format") or "") if isinstance(ctx.get("d"), dict) else ""      # v12 V2a: the three-tier contract - a DEVICE is judged by the episode's format
+    rows, held = [], []                                              # v12 B-OWNER (PART 7): `held`, so that the module's `failed` is the one expression that holds a video
+    fmt =str((ctx.get("d") or {}).get("format") or "") if isinstance(ctx.get("d"), dict) else ""      # v12 V2a: the three-tier contract - a DEVICE is judged by the episode's format
     for fid, stg, probe, what in FEATURES:
         if stg != stage or not enabled(fid): continue
         rule = FMT.rule(fid, fmt)
@@ -984,14 +984,94 @@ def run(stage, ctx, ep, write=True):
             if rule == "advisory" and status == FAIL: status, ev = NA, f"optional in format {fmt}, not held: {ev}"
         if status == FAIL and _waived(ep, fid): status, ev = WAIVED, f"waived by the owner ({ev})"
         rows.append({"ts": iso(), "episode_id": ep, "stage": stage, "feature": fid, "status": status, "evidence": str(ev)[:300], "promise": what})
-        if status == FAIL: failed.append((fid, ev))
+        if failed(rows[-1:]): held.append((fid, ev))                 # v12 B-OWNER (PART 7): the one expression (wrap, never copy); the evidence keeps its length
     if write:
         try: store().append("Feature_Ledger", rows)
         except Exception as e: log(f"ledger not written: {scrub(e)}", "WARN", ep)
-    ok = not failed or not S("CONTRACT_ON", bool)
-    log(f"contract {stage}: {len(rows) - len(failed)}/{len(rows)} pass" + (f"; FAILED: {', '.join(f for f, _ in failed)}" if failed else ""), "INFO" if not failed else "WARN", ep)
-    for f_, ev_ in failed: log(f"contract {stage} {f_}: {str(ev_)[:240]}", "WARN", ep)          # v11.1: the reason, not just the name
-    return {"ok": ok, "failed": failed, "rows": rows}
+    ok = not held or not S("CONTRACT_ON", bool)
+    log(f"contract {stage}: {len(rows) - len(held)}/{len(rows)} pass" + (f"; FAILED: {', '.join(f for f, _ in held)}" if held else ""), "INFO" if not held else "WARN", ep)
+    for f_, ev_ in held: log(f"contract {stage} {f_}: {str(ev_)[:240]}", "WARN", ep)          # v11.1: the reason, not just the name
+    return {"ok": ok, "failed": held, "rows": rows}
+
+def failed(rows):
+    """v12 B-OWNER (PART 7): the (feature, evidence) of every ledger row whose status is FAIL - the ONE expression that holds a video, asked by `run`
+    and by `clear_to_post` (WAIVED and N/A are no failure)."""
+    return [(r.get("feature"), r.get("evidence")) for r in rows or [] if r.get("status") == FAIL]
+
+def clear_to_post(ep):
+    """v12 B-OWNER (PART 7, A DEFAULT NEVER SKIPS A CHECK): (ok, why) - pure reads. The video waits for approval; no open HOLD row of it (its own
+    `silence|` report aside); the newest final-gate row of each feature holds no failure (`failed`); YouTube did not mark it made for kids; uploads are
+    open and nothing is paused."""
+    from whatifs import notify as NT, launch as LA
+    from whatifs.manage import paused
+    st = store(); e = next((r for r in st.rows("Episodes") if r.get("episode_id") == ep), None)
+    if not e or e.get("status") != "AWAITING_APPROVAL": return False, f"its status is {(e or {}).get('status') or 'not on record'}, not waiting for approval"
+    hold = [r for r in NT.open_rows() if r.get("episode_id") == ep and NT.klass(r.get("kind")) == NT.HOLD and not str(r.get("dedupe_key") or "").startswith("silence|")]
+    if hold: return False, f"an open hold waits for you ({NT.name(hold[0].get('kind'))})"
+    newest = {}
+    for r in st.rows("Feature_Ledger"):
+        if r.get("episode_id") == ep and r.get("stage") == "final" and str(r.get("ts") or "") >= str((newest.get(r.get("feature")) or {}).get("ts") or ""): newest[r.get("feature")] = r
+    bad = failed(list(newest.values()))
+    if bad: return False, f"a check of the finished video failed ({bad[0][0]})"
+    if "True" in str(e.get("kids_check") or ""): return False, "YouTube marked it made for kids"
+    if not LA.uploads_open(): return False, "uploads are not confirmed open yet"
+    if paused(): return False, "the pipeline is paused"
+    return True, "every check passed"
+
+def _ist(slot_iso):
+    """A slot as he reads it: India time, "Sat 21 Nov 20:30"."""
+    from whatifs.core import parse_iso
+    from zoneinfo import ZoneInfo
+    t = parse_iso(slot_iso)
+    return t.astimezone(ZoneInfo("Asia/Kolkata")).strftime("%a %d %b %H:%M") if t else str(slot_iso or "")
+
+def approve_by_silence(ep, row=None):
+    """v12 B-OWNER (PART 7, item 150): his silence approves a video only through `clear_to_post`. A "no" keeps it private and one `contract_hold` row
+    (key silence|<ep>) says why, with Approve / Keep it private; a "yes" closes that row ("cleared"), approves by the function his tap calls and sends
+    a `decided_post` row with "Take it down" (a moved slot is told). Returns `approve`'s own string or "held: <why>"."""
+    from whatifs import notify as NT
+    st = store(); e = next((r for r in st.rows("Episodes") if r.get("episode_id") == ep), None) or {}; title = str(e.get("title") or ep)
+    ok, why = clear_to_post(ep)
+    if not ok:
+        NT.send("contract_hold", f"{title} was not approved by your silence: {why}. It stays private.", [("Approve", f"APPROVE {ep}"), ("Keep it private", f"HOLDREVIEW {ep}")],
+                tier="week", episode=ep, dedupe_key=f"silence|{ep}")
+        log(f"not approved by silence: {why}", "WARN", ep); return f"held: {why}"
+    for r in NT.open_rows():                                         # one road: the report of an earlier "no" is closed by the "yes"
+        if r.get("dedupe_key") == f"silence|{ep}": st.update("Owner_Actions", "id", r["id"], {"status": "ANSWERED", "answered_at": iso(), "answer": "cleared"})
+    old = e.get("slot_et"); ans = str(approve(ep))
+    if not ans.startswith("approved"): return ans
+    new = next((r.get("slot_et") for r in store().rows("Episodes") if r.get("episode_id") == ep), old)
+    watch = f" Watch it (private): https://studio.youtube.com/video/{e.get('yt_id')}/edit"
+    text = (f"{title} was approved by your silence and goes public at {_ist(new)}." if new == old else
+            f"{title} was approved by your silence. Its own slot, {_ist(old)}, had passed before the pipeline could act, so it goes public at the next free slot, {_ist(new)}.")
+    NT.send("decided_post", text + watch, [("Take it down", f"UNPOST {ep}")], tier="week", episode=ep, expires_h=168, dedupe_key=f"decided|{ep}|{new}")
+    return ans
+
+def _review_silence(row):
+    """The default of a creative_review card that expired unanswered (notify.expire_defaults): with TWO_SCREENS_ON his silence is asked; off, nothing
+    runs (today's "stays private")."""
+    if not S("TWO_SCREENS_ON", bool): return None
+    return approve_by_silence(str(row.get("episode_id") or ""), row)
+
+def review_sweep():
+    """v12 B-OWNER (R17 (7 a)): every tick, a video still waiting for approval whose newest creative_review card has DEFAULTED is asked again - a pause
+    that ended or an upload check that passed lets it out; a failed check never does (the pattern of floor.eye_sweep). Returns the videos approved."""
+    if not S("TWO_SCREENS_ON", bool): return 0
+    st = store(); msgs = st.rows("Owner_Actions"); n = 0
+    for e in st.rows("Episodes"):
+        if e.get("status") != "AWAITING_APPROVAL": continue
+        mine = [m for m in msgs if m.get("kind") == "creative_review" and m.get("episode_id") == e.get("episode_id")]
+        if mine and mine[-1].get("status") == "DEFAULTED" and approve_by_silence(e["episode_id"], mine[-1]).startswith("approved"): n += 1
+    return n
+
+def unpost(ep):
+    """v12 B-OWNER (PART 7, UNDO NEVER DELETES; R17 ADDS (B)): his "Take it down" - the video is made private and his Hold is written by the function
+    his Hold tap calls. Nothing is deleted or uploaded; no Approve is offered after it (YouTube gives no time to a video that was public)."""
+    from whatifs import publish as PUB
+    e = next((r for r in store().rows("Episodes") if r.get("episode_id") == ep), None)
+    if not e or not e.get("yt_id"): return f"{ep} not found"
+    PUB.yt_set_privacy(e["yt_id"], "private"); hold_review(ep)
+    return f"{e.get('title') or ep} is private again. Nothing was deleted. To publish it later: YouTube Studio, Visibility, Public."
 
 def owner_card(ep, stage, failed, extra=""):
     from whatifs import notify as NT
@@ -1011,6 +1091,7 @@ def _answer(row, choice):
         _open_fix_issue(parts[2]); return f"{parts[2]}: the one-click fix is running"
     if len(parts) >= 2 and parts[0].upper() in ("APPROVE", "HOLDREVIEW"):
         return approve(parts[1]) if parts[0].upper() == "APPROVE" else hold_review(parts[1])
+    if len(parts) >= 2 and parts[0].upper() == "UNPOST": return unpost(parts[1])      # v12 B-OWNER (PART 7): "Take it down" on a decided_post row
     return "recorded"
 
 def _open_fix_issue(ep):
@@ -1034,6 +1115,8 @@ def _drop_for_rewrite(ep):
 def register():
     from whatifs import notify as NT
     for k in ("contract_hold", "creative_review"): NT.register(k, on_answer=_answer)
+    NT.register("creative_review", on_answer=_answer, on_default=_review_silence)      # v12 B-OWNER (PART 7): his silence (nothing runs with TWO_SCREENS_ON FALSE)
+    NT.register("decided_post", on_answer=_answer)                                     # ... and its "Take it down" (UNPOST <ep>)
 
 # ------------------------------------------------------------------ creative self-review (6 points) + owner approval gate
 def critique(ctx, ep):
@@ -1059,14 +1142,28 @@ def review_needed(kind="long"):
         if t0: done = [e for e in done if VER.made_at(e.get("episode_id")) >= t0]
     return len(done) <= S("CREATIVE_REVIEW_FIRST_N", int)
 
-def await_approval(ep, vid, slot_iso, summary, kind="creative_review", default="stays private", expires_h=72):
+def await_approval(ep, vid, slot_iso, summary, kind="creative_review", default=None, expires_h=None):
     """The uploaded video is taken OFF YouTube's schedule (private) until the owner approves. v12 V1c: a film the judged floor could not judge comes here
-    too (kind floor_eye: its default is that it goes public by itself when his silence lasts its hours)."""
+    too (kind floor_eye: its default is that it goes public by itself when his silence lasts its hours). v12 B-OWNER (R22 (2 c)): a passed `default` or
+    `expires_h` is honoured; with none, TWO_SCREENS_ON computes ONE arithmetic - CREATIVE_REVIEW_WAIT_H hours, never past SILENCE_LEAD_H hours before
+    the slot, at least one hour, "approved by your silence" - and the switch off keeps 72 hours and "stays private"."""
     from whatifs import publish as PUB, notify as NT
+    from whatifs.core import parse_iso
+    import datetime as dt
+    tail = ""
+    if default is None or expires_h is None:
+        if S("TWO_SCREENS_ON", bool):
+            t = parse_iso(slot_iso); lead = S("SILENCE_LEAD_H", float)
+            left = (t - now_utc()).total_seconds() / 3600.0 if t else S("CREATIVE_REVIEW_WAIT_H", float) + lead
+            hours, dflt = max(1.0, min(S("CREATIVE_REVIEW_WAIT_H", float), left - lead)), "approved by your silence"
+            if t: tail = (f" If you do nothing it is approved by your silence from {_ist((now_utc() + dt.timedelta(hours=hours)).strftime('%Y-%m-%dT%H:%M:%SZ'))[-5:]} on"
+                          f" - at the pipeline's next run - and goes public on its slot, {_ist(slot_iso)}. Until the slot you can still stop it: Decided for you, Take it down.")
+        else: hours, dflt = 72, "stays private"
+        default = dflt if default is None else default; expires_h = hours if expires_h is None else expires_h
     try: PUB.yt_set_privacy(vid, "private")
     except Exception as e: log(f"could not unschedule {vid}: {scrub(e)}", "WARN", ep)
     store().update("Episodes", "episode_id", ep, {"status": "AWAITING_APPROVAL", "updated": iso()})
-    NT.send(kind, f"Review before it goes public: {summary} Watch it (private): https://studio.youtube.com/video/{vid}/edit",
+    NT.send(kind, f"Review before it goes public: {summary} Watch it (private): https://studio.youtube.com/video/{vid}/edit" + tail,
             [("Approve", f"APPROVE {ep}"), ("Hold", f"HOLDREVIEW {ep}"), ("Discuss", f"DISCUSS review {ep}")], tier="now", urgent=True,
             episode=ep, default=default, expires_h=expires_h, dedupe_key=f"review|{ep}")
 

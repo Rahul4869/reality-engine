@@ -399,10 +399,11 @@ def run(brief, ep, master, out, refs=(), downs=()):
 
 # ------------------------------------------------------------------ the owner: his eye on a film the floor could not judge, the hold he can watch and act on
 def eye_hours(slot_iso):
-    """How long a film the floor could not judge waits for his eye: the cell, never past 1.5 hours before its slot (approve's own 0.5 h + two ticks), at
-    least one hour."""
-    t = parse_iso(slot_iso); left = ((t - now_utc()).total_seconds() / 3600.0) if t else S("VIEW_FLOOR_EYE_WAIT_H", float) + 1.5
-    return max(1.0, min(S("VIEW_FLOOR_EYE_WAIT_H", float), left - 1.5))
+    """How long a film the floor could not judge waits for his eye: the cell, never past the lead before its slot (SILENCE_LEAD_H with TWO_SCREENS_ON,
+    else 1.5 hours) (the cell SILENCE_LEAD_H: a tick can be 11 hours late), at least one hour."""
+    lead = S("SILENCE_LEAD_H", float) if S("TWO_SCREENS_ON", bool) else 1.5      # v12 B-OWNER (R22 (2 b)): behind the switch - the close of F1 of V1c's audit for the shipped state
+    t = parse_iso(slot_iso); left = ((t - now_utc()).total_seconds() / 3600.0) if t else S("VIEW_FLOOR_EYE_WAIT_H", float) + lead
+    return max(1.0, min(S("VIEW_FLOOR_EYE_WAIT_H", float), left - lead))
 
 def hold_card(ep, title, res):
     """The floor's own hold card: what the viewers said, the minute to watch, Publish anyway / Drop it / Discuss. It never closes by itself."""
@@ -449,7 +450,7 @@ def _approve_eye(ep, msg=None):
     from whatifs import contract as CON
     row = next((e for e in store().rows("Episodes") if e.get("episode_id") == ep), None)
     if not row or row.get("status") != "AWAITING_APPROVAL": return None
-    try: ans = str(CON.approve(ep))
+    try: ans = str(CON.approve_by_silence(ep, msg) if S("TWO_SCREENS_ON", bool) else CON.approve(ep))      # v12 B-OWNER (R17 (7 b)): one road - clear_to_post, decided_post, "Take it down"
     except Exception as e: ans = f"approve failed: {type(e).__name__}: {scrub(e)[:120]}"
     if not ans.startswith("approved"):
         log(f"judged floor: {ep} could not be approved by silence ({ans[:160]}) - tried again at the next tick", "WARN", ep); _note_eye(ep, ans, False); return False

@@ -372,6 +372,9 @@ def route(verb):
         return n > 0, f"{n} portrait(s) locked"
     if head == "REDOSHEETS" and len(parts) == 2:
         return False, "Redo one expression with the email link 'REDO SHEET <NAME> <expression>' (lifetime image cap applies)"
+    if head == "UNPOST" and len(parts) == 2 and _two():                      # v12 B-OWNER (PART 7): "Take it down" - private and his Hold, never a delete
+        from whatifs import contract as CON
+        return True, CON.unpost(parts[1])
     if head in ("PAUSE", "RESUME") and len(parts) == 1:
         set_setting("PAUSED", "TRUE" if head == "PAUSE" else "FALSE"); return True, "paused" if head == "PAUSE" else "resumed"
     if head == "SET" and len(parts) == 3 and parts[1] in SETTINGS_MAP:

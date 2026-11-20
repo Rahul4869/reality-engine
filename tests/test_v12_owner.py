@@ -964,3 +964,127 @@ def test_a_paused_tick_retries_an_alarm(monkeypatch, setting):
     assert not _row(aid)["delivered_at"] and _alarms_told() == []                                           # the firing's own push was not taken
     setting("PAUSED", "TRUE"); assert MG.tick() == {"action": "paused"}
     assert [(x["action_id"], x["wamid"]) for x in _alarms_told()] == [(aid, "wamid.P2")] and _row(aid)["delivered_at"]
+
+# ------------------------------------------------------------------ step 8a: NEVER HELD BY HIS ABSENCE (PART 7; R22 (2), (2 b), (2 c)) - the special is step 8b's
+from whatifs import contract as CON, launch as LAU, publish as PUB8
+from whatifs.org import floor as FL8
+
+def _ep8(monkeypatch, setting, ep="EP8", hours=26.0, status="AWAITING_APPROVAL", **cols):
+    """A long video waiting for his approval, its slot `hours` ahead; uploads open; every yt_schedule recorded."""
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch); monkeypatch.setattr(LAU, "uploads_open", lambda: True)
+    sched = []; monkeypatch.setattr(PUB8, "yt_schedule", lambda vid, at: sched.append((vid, at)) or True)
+    slot = (core.now_utc() + dt.timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:00Z")
+    core.store().append("Episodes", [dict({"episode_id": ep, "status": status, "yt_id": "yt" + ep, "slot_et": slot, "title": "Title " + ep}, **cols)])
+    return slot, sched
+
+def _epi(ep): return next(e for e in core.store().rows("Episodes") if e["episode_id"] == ep)
+def _kind(k, ep=None): return [r for r in core.store().rows("Owner_Actions") if r.get("kind") == k and (ep is None or r.get("episode_id") == ep)]
+def _later(h): return core.now_utc() + dt.timedelta(hours=h)
+
+def test_silence_is_asked_twelve_hours_before(monkeypatch, setting):
+    """R22 (2), (2 b): his silence is taken SILENCE_LEAD_H (12) hours before the slot, never 1.5 - a tick can be 11 hours late (measured 19 Nov 2026).
+    With the switch off `floor.eye_hours` keeps its literal (V1c's own test pins 20, 8.5, 1.0): the close of F1 of V1c's audit for the shipped state."""
+    slot, _s = _ep8(monkeypatch, setting)
+    CON.await_approval("EP8", "ytEP8", slot, "'Title EP8'.")
+    r = _kind("creative_review")[0]; h = (core.parse_iso(r["expires_at"]) - core.parse_iso(r["created"])).total_seconds() / 3600
+    assert abs(h - 14) < 0.05 and r["default_action"] == "approved by your silence" and "approved by your silence from" in r["text"] and "Take it down" in r["text"]
+    assert abs(FL8.eye_hours(slot) - 14) < 0.05
+    setting("SILENCE_LEAD_H", "3"); slot9, _s9 = _ep8(monkeypatch, setting, ep="EP9"); CON.await_approval("EP9", "ytEP9", slot9, "s")
+    assert abs(FL8.eye_hours(slot9) - 20) < 0.05                                                     # the floor's card: its own cap (VIEW_FLOOR_EYE_WAIT_H 20)
+    x = _kind("creative_review", "EP9")[0]
+    assert abs((core.parse_iso(x["expires_at"]) - core.parse_iso(x["created"])).total_seconds() / 3600 - 23) < 0.05
+    setting("TWO_SCREENS_ON", "FALSE"); s10 = (core.now_utc() + dt.timedelta(hours=10)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    assert abs(FL8.eye_hours(slot) - 20) < 0.05 and abs(FL8.eye_hours(s10) - 8.5) < 0.05             # R22 (2 b): F1's own clause - the literal stands with the switch off
+
+def _decided(ep): return _kind("decided_post", ep)
+
+@pytest.mark.parametrize("card", ["creative_review", "floor_eye"])
+def test_a_tick_eleven_hours_late_keeps_the_slot(card, monkeypatch, setting):
+    """R22 (2): the card expired and no tick came for 11 hours - the video is still SCHEDULED for its OWN slot (yt_schedule called with it), and one
+    `decided_post` row says so with the Studio link and "Take it down" - for the review card and for the floor's card alike (one road, R17 (7 b))."""
+    slot, sched = _ep8(monkeypatch, setting)
+    if card == "creative_review": CON.await_approval("EP8", "ytEP8", slot, "s")
+    else: CON.await_approval("EP8", "ytEP8", slot, "s", kind="floor_eye", default="goes public by itself", expires_h=FL8.eye_hours(slot))
+    NT.expire_defaults(now=_later(14 + 11))
+    assert _epi("EP8")["status"] == "SCHEDULED" and _epi("EP8")["slot_et"] == slot and sched == [("ytEP8", slot)]
+    d = _decided("EP8"); assert len(d) == 1 and "approved by your silence and goes public at" in d[0]["text"] and "studio.youtube.com/video/ytEP8/edit" in d[0]["text"]
+    assert json.loads(d[0]["buttons"]) == [["Take it down", "UNPOST EP8"]] and d[0]["expires_at"]
+
+def test_a_moved_slot_is_told(monkeypatch, setting):
+    """R22 (2): the first tick came 12 hours after the expiry, when its own slot had passed: SCHEDULED for the next free slot, and the row holds both slots."""
+    slot, sched = _ep8(monkeypatch, setting)
+    CON.await_approval("EP8", "ytEP8", slot, "s")
+    late = _later(14 + 12); monkeypatch.setattr(CON, "now_utc", lambda: late)
+    NT.expire_defaults(now=late)
+    e = _epi("EP8"); assert e["status"] == "SCHEDULED" and e["slot_et"] != slot and sched == [("ytEP8", e["slot_et"])]
+    t = _decided("EP8")[0]["text"]; assert "had passed" in t and CON._ist(slot) in t and CON._ist(e["slot_et"]) in t, t
+
+def _ledger(ep, feature, status):
+    core.store().append("Feature_Ledger", [{"ts": core.iso(), "episode_id": ep, "stage": "final", "feature": feature, "status": status, "evidence": "planted", "promise": "p"}])
+
+@pytest.mark.parametrize("case", ["ai_label", "floor_hold", "kids", "uploads_closed", "slop"])
+def test_a_planted_failing_check_still_holds_after_the_expiry(case, monkeypatch, setting):
+    """PART 7, A DEFAULT NEVER SKIPS A CHECK (the planted test of the brief): a failed final-gate row, an open floor hold, the made-for-kids cell, closed
+    uploads, an open hold of the slop check - after the expiry the video is still AWAITING_APPROVAL, nothing was scheduled and the `silence|` row says why."""
+    slot, sched = _ep8(monkeypatch, setting, kids_check=(core.iso() + " True") if case == "kids" else "")
+    if case == "ai_label": _ledger("EP8", "ai_label", "FAIL")
+    if case == "floor_hold": NT.send("floor_hold", "held by the floor", [("Publish anyway", "CONTRACT WAIVE EP8 viewer_floor")], episode="EP8", dedupe_key="floor|EP8|hold")
+    if case == "slop": NT.send("contract_hold", "EP8 is HELD at the final check: slop_guard", [("Fix", "CONTRACT FIX EP8 final")], episode="EP8", dedupe_key="contract|EP8|final")
+    if case == "uploads_closed": monkeypatch.setattr(LAU, "uploads_open", lambda: False)
+    CON.await_approval("EP8", "ytEP8", slot, "s"); NT.expire_defaults(now=_later(25))
+    assert _epi("EP8")["status"] == "AWAITING_APPROVAL" and sched == [] and not _decided("EP8")
+    h = [r for r in _kind("contract_hold", "EP8") if r["dedupe_key"] == "silence|EP8"]
+    assert len(h) == 1 and "was not approved by your silence" in h[0]["text"] and "It stays private." in h[0]["text"]
+    assert [b[1] for b in json.loads(h[0]["buttons"])] == ["APPROVE EP8", "HOLDREVIEW EP8"] and not h[0]["expires_at"]
+
+def test_a_clean_video_goes_public_on_its_slot_by_silence(monkeypatch, setting):
+    """PART 7: a clean video he never answered is approved by his silence (the function his tap calls) and goes public on its own slot; a ledger with a
+    PASS, a WAIVED and an older FAIL whose newest row passes is clean (the newest row a feature, as `run` judged it)."""
+    slot, sched = _ep8(monkeypatch, setting)
+    _ledger("EP8", "titles", "PASS"); _ledger("EP8", "aliveness", "WAIVED"); _ledger("EP8", "chapters", "FAIL"); _ledger("EP8", "chapters", "PASS")
+    assert CON.clear_to_post("EP8") == (True, "every check passed")
+    CON.await_approval("EP8", "ytEP8", slot, "s"); NT.expire_defaults(now=_later(15))
+    assert _epi("EP8")["status"] == "SCHEDULED" and sched == [("ytEP8", slot)] and len(_decided("EP8")) == 1
+
+def test_his_hold_tap_still_holds(monkeypatch, setting):
+    """PART 7: his Hold before the expiry - the video stays HELD_BY_OWNER, no default runs on the answered card, the sweep never approves it."""
+    slot, sched = _ep8(monkeypatch, setting)
+    CON.await_approval("EP8", "ytEP8", slot, "s"); r = _kind("creative_review")[0]
+    NT.answer(r["id"], "HOLDREVIEW EP8"); NT.expire_defaults(now=_later(25)); assert CON.review_sweep() == 0
+    assert _epi("EP8")["status"] == "HELD_BY_OWNER" and sched == [] and not _decided("EP8")
+
+def test_silence_tries_again_when_the_reason_is_gone(monkeypatch, setting):
+    """R17 (7 a): uploads closed at the expiry and open two ticks later = scheduled at the next sweep, and the `silence|` row is closed "cleared" (one
+    road); a failed ledger row = never, at any sweep."""
+    slot, sched = _ep8(monkeypatch, setting); monkeypatch.setattr(LAU, "uploads_open", lambda: False)
+    CON.await_approval("EP8", "ytEP8", slot, "s"); NT.expire_defaults(now=_later(15))
+    assert _epi("EP8")["status"] == "AWAITING_APPROVAL" and CON.review_sweep() == 0
+    monkeypatch.setattr(LAU, "uploads_open", lambda: True); assert CON.review_sweep() == 1
+    assert _epi("EP8")["status"] == "SCHEDULED" and sched == [("ytEP8", slot)]
+    h = [r for r in _kind("contract_hold", "EP8") if r["dedupe_key"] == "silence|EP8"][0]; assert h["status"] == "ANSWERED" and h["answer"] == "cleared"
+    slot2, _s2 = _ep8(monkeypatch, setting, ep="EP9"); _ledger("EP9", "ai_label", "FAIL")
+    CON.await_approval("EP9", "ytEP9", slot2, "s"); NT.expire_defaults(now=_later(15))
+    for _ in range(3): CON.review_sweep()
+    assert _epi("EP9")["status"] == "AWAITING_APPROVAL"
+
+def test_the_floors_card_takes_the_same_road(monkeypatch, setting):
+    """R17 (7 b): a `floor_eye` default goes through `approve_by_silence` - a film the floor could not judge also leaves a `decided_post` row with
+    "Take it down"; and a held reason keeps it private (the floor's `eye_sweep` is its retry, as before)."""
+    slot, sched = _ep8(monkeypatch, setting); _ledger("EP8", "ai_label", "FAIL")
+    CON.await_approval("EP8", "ytEP8", slot, "s", kind="floor_eye", default="goes public by itself", expires_h=FL8.eye_hours(slot))
+    NT.expire_defaults(now=_later(15)); assert _epi("EP8")["status"] == "AWAITING_APPROVAL" and FL8.eye_sweep() == 0
+    core.store().update("Feature_Ledger", "episode_id", "EP8", {"status": "PASS"}); assert FL8.eye_sweep() == 1
+    assert _epi("EP8")["status"] == "SCHEDULED" and [b[1] for b in json.loads(_decided("EP8")[0]["buttons"])] == ["UNPOST EP8"]
+
+def test_undo_is_private_never_gone(monkeypatch, setting):
+    """PART 7, UNDO NEVER DELETES (R17 ADDS (B)): his "Take it down" from the dashboard (verb UNPOST|<ep>) makes the video private and HELD_BY_OWNER
+    through his Hold's own function; the function never deletes or uploads, and the video keeps its id. (Step 9a adds the stand-in's read-back.)"""
+    import inspect
+    tree = ast.parse(inspect.getsource(CON.unpost))
+    assert not {n.func.attr for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)} & {"yt_delete", "yt_upload"}
+    slot, _s = _ep8(monkeypatch, setting, status="SCHEDULED"); priv = []
+    monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: priv.append((vid, p)) or True)
+    ok, note = DS.route("UNPOST|EP8")
+    assert ok and "is private again. Nothing was deleted." in note and priv == [("ytEP8", "private")]
+    assert _epi("EP8")["status"] == "HELD_BY_OWNER" and _epi("EP8")["yt_id"] == "ytEP8"
+    setting("TWO_SCREENS_ON", "FALSE"); assert DS.route("UNPOST|EP8") == (False, "That action is not allowed.")
