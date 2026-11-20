@@ -555,7 +555,9 @@ def _hand_over(rec, sc, out, cov, reviewed, now):
     ep = rec["id"]; st = store()
     try:
         if reviewed < S("SHORTS_REVIEW_FIRST_N", int):
-            upd = SP._await_review(out, {"title": sc["title"]}, "short", ep, [{"who": "GUIDE", "line": l} for l in FMT.short_lines(sc)])
+            ck = "pass" if S("TWO_SCREENS_ON", bool) else ""      # v12 B-OWNER (G8-1): only a Short whose script gate and whose finished file held nothing is handed over (`run`: a held one is not made, a failed file goes to `_file_hold`) - it carries that pass, so his silence posts it
+            upd = SP._await_review(out, {"title": sc["title"]}, "short", ep, [{"who": "GUIDE", "line": l} for l in FMT.short_lines(sc)], checks=ck)
+            if ck: upd["checks"] = ck
         elif REL.on():
             REL.queue(ep, now); REL.short(ep, path=out, cover_path=cov, now=now)
             row = next((r for r in _rows() if r.get("id") == ep), {}); return {k: row.get(k, "") for k in ("yt_id", "ig", "fb", "status")}

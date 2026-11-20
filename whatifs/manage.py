@@ -215,6 +215,9 @@ def tick():
         try:                                                    # v12 B-OWNER (PART 7): a reviewed video whose card defaulted - his silence is asked again (a reason that is gone lets it out)
             from whatifs import contract as CONR; CONR.review_sweep()
         except Exception as x: log(f"review sweep skipped: {scrub(x)}", "WARN")
+        try:                                                    # v12 B-OWNER (G8-1): a passed special or Short whose card defaulted while uploads were closed or the engine paused - asked again
+            from whatifs import specials as SPCR; SPCR.ready_sweep()
+        except Exception as x: log(f"ready sweep skipped: {scrub(x)}", "WARN")
         try:                                                    # v11 (K159): start a standalone Short when one is due (one dispatch per 50 min at most)
             from whatifs import shorts2 as SH2
             last = parse_iso(S("SHORTS_LAST_DISPATCH"))

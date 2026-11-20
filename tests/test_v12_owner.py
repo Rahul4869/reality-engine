@@ -1703,3 +1703,33 @@ def test_what_ran_by_default_says_what_his_silence_really_did(monkeypatch, setti
     assert "(ran by default: it stays private: uploads are not confirmed open yet)" in WA.group_text("decided", now=_later(15), cut=None)
     monkeypatch.setattr(LAU, "uploads_open", lambda: True); assert CON.review_sweep() == 1 and sched == [("ytEP8", slot)]
     assert _row(card)["answer"] == "approved by your silence" and lab() == "ran by default: approved by your silence"
+
+def test_a_passed_short_of_the_first_three_is_posted_by_his_silence(monkeypatch, setting):
+    """G8-1 (item 150: "nothing is held or not posted until quality issue"). FOUND AT THE FINISH: the first SHORTS_REVIEW_FIRST_N standalone Shorts reach
+    `specials._await_review` from `shorts2._hand_over` - only a Short whose script gate and whose finished file held nothing gets there - and step 8
+    made each a hold with no expiry and the words "it has no check on record": untrue of them, and with "Shorts first" his absence held the launch's
+    first three posts. A passed Short carries its pass: the card is `special_ready`, his silence posts it after 72 hours, and a silence that came
+    while uploads were closed is asked again at every tick (the pattern of `contract.review_sweep`). The card says what it cannot take back."""
+    from whatifs import launch as LA
+    SH, SP, sid, posted = _short8(monkeypatch, setting)
+    upd = SH._hand_over({"id": sid}, _SC8, "x.mp4", None, 0, core.now_utc())
+    c = _cards8(sid); assert len(c) == 1 and c[0]["kind"] == "special_ready" and c[0]["expires_at"] and c[0]["default_action"] == "posted after 72 hours when its checks passed", c
+    assert "it is posted by your silence" in c[0]["text"] and "only your own hand in each app takes it down" in c[0]["text"] and "no check on record" not in str(c[0])
+    assert upd["checks"] == "pass" and _sp_row(sid)["checks"] == "pass" and _sp_row(sid)["status"] == "AWAITING_APPROVAL"
+    monkeypatch.setattr(LA, "uploads_open", lambda: False)                                       # his silence comes while uploads are not open: nothing is posted, and the card says so
+    NT.expire_defaults(now=_later(73)); assert posted == [] and _row(c[0]["id"])["status"] == "DEFAULTED" and SP.ready_sweep() == 0
+    assert _row(c[0]["id"])["answer"] == "not posted: uploads are not open"
+    monkeypatch.setattr(LA, "uploads_open", lambda: True); assert SP.ready_sweep() == 1 and posted == [sid]      # the next tick's sweep sends it out
+    assert _row(c[0]["id"])["answer"] == "posted after 72 hours when its checks passed"
+    setting("TWO_SCREENS_ON", "FALSE"); assert SP.ready_sweep() == 0
+    SH2, _SP2, sid2, _p2 = _short8(monkeypatch, setting, on="FALSE", sid="SH209911200901")         # the switch off: today's card and record, word for word
+    upd2 = SH2._hand_over({"id": sid2}, _SC8, "x.mp4", None, 0, core.now_utc()); o = _cards8(sid2)
+    assert [(x["kind"], x["default_action"]) for x in o] == [("special_review", "not posted")] and o[0]["expires_at"] and "checks" not in upd2 and not _sp_row(sid2).get("checks")
+
+def test_the_tick_asks_both_silences_again(monkeypatch, setting):
+    """R17 (7 a) and G8-1 (the family of CA-1: a call inside a try whose test never asked whether it RAN). The real `manage.tick` calls
+    `contract.review_sweep` and `specials.ready_sweep`, each once, in that order."""
+    from whatifs import manage as MG, specials as SP
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch); ran = []
+    monkeypatch.setattr(CON, "review_sweep", lambda: ran.append("review") or 0); monkeypatch.setattr(SP, "ready_sweep", lambda: ran.append("ready") or 0)
+    MG.tick(); assert ran == ["review", "ready"], ran

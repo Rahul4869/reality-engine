@@ -440,12 +440,13 @@ def _await_review(path, c, kind, episode, beats, checks=""):
     btn = [("Approve", f"SPECIAL APPROVE {episode}"), ("Remake", f"SPECIAL REMAKE {kind}")]
     if kind == "cast_intro" and any(r.get("kind") == "cast_intro" and r.get("yt_id") for r in store().rows("Specials")):
         btn.insert(1, ("Approve + hide old", f"SPECIAL APPROVE {episode} REPLACE"))
-    text = f"New {kind.replace('_', ' ')} ready for your review (nothing is posted yet). Watch: https://drive.google.com/file/d/{fid}/view  Script: {script[:600]}"
+    head = f"New {kind.replace('_', ' ')} ready for your review (nothing is posted yet)."
+    tail = f" Watch: https://drive.google.com/file/d/{fid}/view  Script: {script[:600]}"; text = head + tail
     if not S("TWO_SCREENS_ON", bool):
         NT.send("special_review", text, btn, tier="now", urgent=True, episode=episode, default="not posted", expires_h=72, dedupe_key=f"special|{episode}")
-    elif str(checks or "").lower() == "pass":
-        NT.send("special_ready", text, btn, tier="now", urgent=True, episode=episode, default="posted after 72 hours when its checks passed", expires_h=72,
-                dedupe_key=f"special|{episode}")
+    elif str(checks or "").lower() == "pass":                      # he is told what his silence does, and what no button can take back afterwards (item 150: an Undo wherever undoing is possible)
+        NT.send("special_ready", head + " If you do nothing for 72 hours it is posted by your silence; once it is public, only your own hand in each app takes it down." + tail,
+                btn, tier="now", urgent=True, episode=episode, default="posted after 72 hours when its checks passed", expires_h=72, dedupe_key=f"special|{episode}")
     else:                                                          # A SPECIAL WITH NO RECORDED CHECK RESULT IS NOT POSTED BY SILENCE (no expiry, no renewal)
         NT.send("special_review", text, btn, tier="now", urgent=True, episode=episode, default="not posted: it has no check on record, so it waits for your tap",
                 dedupe_key=f"special|{episode}")
@@ -467,6 +468,21 @@ def _ready_silence(row):
     else: out = str(approve(sid))
     NT.outcome(row, (row.get("default_action") or out) if out.startswith("posted") else out)      # "Decided for you" says what his silence really did
     return out
+
+def ready_sweep():
+    """v12 B-OWNER (G8-1; the pattern of contract.review_sweep): every tick, a special or a Short that still waits and whose newest card is a
+    `special_ready` that DEFAULTED is asked again - uploads that opened or a pause that ended lets it out; one without its check on record never.
+    Returns how many were posted."""
+    if not S("TWO_SCREENS_ON", bool): return 0
+    st = store(); msgs = st.rows("Owner_Actions"); n = 0
+    for r in st.rows("Specials"):
+        if r.get("status") != "AWAITING_APPROVAL": continue
+        mine = [m for m in msgs if m.get("kind") in ("special_ready", "special_review") and m.get("episode_id") == r.get("id")]
+        if not mine or mine[-1].get("kind") != "special_ready" or mine[-1].get("status") != "DEFAULTED": continue
+        try:
+            if str(_ready_silence(mine[-1])).startswith("posted"): n += 1
+        except Exception as e: log(f"a special his silence should post was not posted, tried again at the next tick: {scrub(e)[:160]}", "WARN", r.get("id"))
+    return n
 
 def _answer(row, choice):
     p = str(choice).split()
