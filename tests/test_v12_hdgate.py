@@ -548,6 +548,7 @@ def test_a_video_rescheduled_after_a_pause_is_judged_from_its_new_slot(monkeypat
     assert HG.long_tick(_t(13, 44)) == ["EPL09"] and _ep("EPL09")["public_at"] == "2026-12-16T15:00:00Z"
     s2 = SLOT + 24 * 60 * M                                                                                       # Thursday 20:00 India time: a slot of its own (approve moves a taken one)
     _long("EPL12", status="AWAITING_APPROVAL", slot=s2, public_at=core.iso(s2 + 120 * M))                         # the gate had pushed it to its cap; then it waited for his approval
+    monkeypatch.setattr(CON, "now_utc", lambda: NOW)                                                              # `approve` reads its own clock: planted, so its slot stands on whatever day the suite runs
     assert CON.approve("EPL12").startswith("approved: EPL12") and _ep("EPL12")["status"] == "SCHEDULED" and _ep("EPL12")["slot_et"] == core.iso(s2)
     assert _ep("EPL12")["public_at"] == ""                                                                        # the time approve set empties the gate's
     assert "EPL12" in HG.long_tick(s2 - 46 * M) and _ep("EPL12")["public_at"] == "2026-12-17T15:00:00Z"            # judged from its slot (14:30 + 30), never from 16:30
