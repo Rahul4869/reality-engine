@@ -554,6 +554,7 @@ function confirmSheet(title, body, okLabel) {
 /* ------------------------------------------------------------------ state */
 let S = null, tab = "home";
 const pending = {};         // verb -> sent time (ms); cleared when the pipeline acknowledges it in snapshot.acks
+const sentIds = {};        // CE-1 (CR-6-1): the Worker's id of each action or input sent -> sent time; its ack is matched by that id
 const picked = {};          // case id -> option key (before ruling)
 const ruled = {};           // case id -> { label, note }
 const said = {};            // v12 B-OWNER: what he is typing (card id or "_box" -> text), so a re-render never wipes it
@@ -825,7 +826,7 @@ async function send(verb, okMsg) {
   const r = await API.act(verb);
   if (r.ok) {
     toast(okMsg + (API.demo ? " (demo)" : ". The engine confirms in about a minute."));
-    if (!API.demo) { pending[verb] = Date.now(); setTimeout(load, 75e3); setTimeout(load, 150e3); }
+    if (!API.demo) { if (r.id) sentIds[r.id] = Date.now(); else pending[verb] = Date.now(); setTimeout(load, 75e3); setTimeout(load, 150e3); }
   } else toast(r.error || "That did not go through.", 4000);
   return r.ok;
 }
@@ -836,6 +837,10 @@ function checkAcks() {
       delete pending[a.verb];
       toast((a.ok ? "Done: " : "Not done: ") + (a.note || a.verb), 4000);
     }
+  }
+  for (const a of (S && S.acks) || []) if (a.id && sentIds[a.id]) { delete sentIds[a.id]; toast((a.ok ? "Done: " : "Not done: ") + (a.note || a.verb), 4000); }
+  for (const id of Object.keys(sentIds)) if (Date.now() - sentIds[id] > 600e3) {      // CE-1: no ack for this id in 10 minutes (runs wait in line now)
+    sentIds[id] = 8.64e15; toast("Still waiting for its run - it is kept; nothing to send again.", 8000);      // CE-1b: the drain handles it; "Done" comes with its ack
   }
 }
 async function rule(caseId, label, verb, note) {
@@ -863,7 +868,7 @@ async function tapVerb(caseId, verb, label) {
 async function sendWords(text, card, clear) {      // v12 B-OWNER (PART 5, 6): his words reach the desk; the answer comes on both screens
   if (!text) { toast("Type something first."); return; }
   const r = await API.input(text, card);
-  if (r.ok) { clear(); toast("Saved word for word. The answer comes on both screens" + (API.demo ? " (demo)." : ".")); if (!API.demo) setTimeout(load, 75e3); }
+  if (r.ok && (API.demo || (r.stored && r.id))) { clear(); toast("Saved word for word. The answer comes on both screens" + (API.demo ? " (demo)." : ".")); if (!API.demo) { sentIds[r.id] = Date.now(); setTimeout(load, 75e3); } }
   else toast(r.error || "That did not go through.", 4000);
 }
 document.addEventListener("input", ev => {          // keep what he types through the 30-second refresh

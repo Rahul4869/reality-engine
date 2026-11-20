@@ -166,3 +166,18 @@ def test_f5_six_tabs_and_the_alarm_comes_first(monkeypatch, setting, tmp_path):
     quiet = dict(full, alarms=[])
     home = _render(quiet, tmp_path, "quiet")["home"]
     assert re.findall(r"<h2[^>]*>([^<]*)</h2>", home)[0] == "Needs you"                                    # else "Needs you"
+
+def test_the_owner_runs_keep_githubs_default_queue():
+    """R1-144 (a): no `queue: max` (groups using it stalled 139-194 minutes); a replaced run loses nothing - the Worker kept the input (CE-1b)."""
+    import yaml
+    for f, job in ((".github/workflows/dash.yml", "act"), (".github/workflows/whatsapp.yml", "inbound")):
+        assert "queue" not in yaml.safe_load(open(f))["jobs"][job]["concurrency"], f
+
+def test_each_ack_names_its_action_id_and_an_unhandled_one_is_absent(setting):
+    """CR-6-1 (CE-1): the page matched acks by VERB and every input is INPUT - the first ack confirmed every pending input. Each ack now carries the
+    Worker's id: of two inputs only the handled one is in `acks`, by its id."""
+    from whatifs import dash as DS
+    setting("TWO_SCREENS_ON", "TRUE")
+    DS._ack("WID2", "INPUT", True, "Saved as input 2")                          # WID1 was sent too; its run never ran
+    acks = DS.build_snapshot()["acks"]
+    assert [a.get("id") for a in acks] == ["WID2"] and acks[0]["verb"] == "INPUT", acks

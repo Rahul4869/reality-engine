@@ -280,7 +280,7 @@ def build_snapshot():
     lessons = [{"text": str(r.get("lesson"))[:200], "confidence": "medium", "loop": "medium"} for r in st.rows("Lessons")[-5:]]
     rules = [{"text": str(r.get("rule"))[:200], "confidence": "high" if r.get("status") == "active" else "medium", "loop": "fast"} for r in st.rows("Playbook") if r.get("status") in ("active",)][-3:]
     two = (now_utc() - dt.timedelta(hours=48)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    acks = [{"verb": r.get("verb"), "at": r.get("ts"), "ok": str(r.get("ok")) == "TRUE", "note": str(r.get("note") or "")[:120]} for r in st.rows("Dash_Acks") if str(r.get("ts", "")) >= two]
+    acks = [{"id": str(r.get("id") or ""), "verb": r.get("verb"), "at": r.get("ts"), "ok": str(r.get("ok")) == "TRUE", "note": str(r.get("note") or "")[:120]} for r in st.rows("Dash_Acks") if str(r.get("ts", "")) >= two]
     on = _two(); learned = (rules + lessons)[-6:]
     snap = {"generated_at": iso(),
             "engine": {"status": "paused" if paused() else "running", "mode": "lean" if mode == "runway" else mode, "owner_mode": "minimal",
