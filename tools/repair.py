@@ -109,7 +109,7 @@ def _tell_owner(rel, why):
     try:
         from whatifs import notify as NT
         NT.mail("repair_waiting", "A code repair is waiting for you", f"<p>The Repair Bot fixed <b>{rel}</b> and all tests passed, but it was not merged automatically because {why}.</p>"
-                "<p>Open the repo, Pull requests tab, read it (or paste it to Claude), then press Merge. Nothing else is needed.</p>")
+                "<p>Open the repo, Pull requests tab, read it (or paste it to Claude), then press Merge. Nothing else is needed.</p>", dedupe_key=NT.said_key("repair_waiting", f"{rel}|{NT._india_day()}", why))
     except Exception as e: print("email failed:", str(e)[:120])
 
 if __name__ == "__main__":

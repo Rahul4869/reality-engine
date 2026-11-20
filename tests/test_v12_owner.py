@@ -334,10 +334,10 @@ ROAD = [
     (26, "manage.py monthly_brief", "monthly_brief", "Monthly brief", "row", None, {}, _r26),
     (27, "packaging.py record", "title_pick", "Pick the title + thumbnail (EPROW27)", "row", "title_pick|EPROW27",
      {"buttons": [["Keep A", "PICK EPROW27 A"], ["Pick B", "PICK EPROW27 B"], ["Pick C", "PICK EPROW27 C"]], "default_action": "A goes out"}, _r27),
-    (28, "packaging.py _pick_reply", "pick_ack", "Your pick for EPROW28: applied: B", "row", "pick_ack|EPROW28|{india_day}", {}, _r28),
+    (28, "packaging.py _pick_reply", "pick_ack", "Your pick for EPROW28: applied: B", "row", "pick_ack|EPROW28|applied: B|1", {}, _r28),
     (29, "premise.py below_bar_mail", "below_bar", "A video was made below the quality bar", "row", "below_bar|EPROW29|{india_day}", {}, _r29),
     (30, "premise.py skip_slot", "slot_skipped", "A slot was skipped", "row", "slot_skipped|EPROW30|{india_day}", {}, _r30),
-    (31, "preview.py run (nothing reached the bar)", "preview_none", "Script Preview: nothing reached the bar", "row", "preview_none||{india_day}", {}, _r31),
+    (31, "preview.py run (nothing reached the bar)", "preview_none", "Script Preview: nothing reached the bar", "row", None, {}, _r31),
     (32, "preview.py run", "script_preview", "Script Preview: ", "row", "preview|DRAFT209911270900",
      {"text": "A script preview is ready. It is in your e-mail.", "buttons": [["Approve", "APPROVE DRAFT209911270900"], ["Reject", "REJECT DRAFT209911270900"]],
       "default_action": "the draft is not used: the next slot writes its own script"}, _r32),
@@ -1535,3 +1535,35 @@ def test_the_scheduled_message_never_skips_the_review_gate(monkeypatch, setting)
         r = EP.produce((core.now_utc() + dt.timedelta(hours=10)).strftime("%Y-%m-%dT%H:%M:%SZ"), episode_id=ep); assert r.get("ok"), r
     finally: shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True)
     assert asked == [ep]
+
+def test_two_different_messages_of_one_kind_on_one_day_both_stand(monkeypatch, setting):
+    """R1-99 (2) (the code reader's CR-2b-1, its rest): `mode_ack`, `pick_ack` and `repair_waiting` fell on the inform rule's dated key - a second,
+    DIFFERENT message of one India day returned the first row, so after Runway his screens said 'Budget mode: Standard'. The key names the thing
+    (`NT.said_key`): the same words as that thing's newest row are one row; other words are a new row, the newest. A, B, A on one day = three rows."""
+    from whatifs import preview as PV, packaging as PK
+    import tools.repair as RP
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch)
+    of = lambda k: sorted((r for r in core.store().rows("Owner_Actions") if r["kind"] == k), key=lambda r: r["id"])
+    for m in ("MODE RUNWAY", "MODE STANDARD", "MODE RUNWAY", "MODE RUNWAY"): PV.decide(m)
+    assert [r["text"].split(".")[0] for r in of("mode_ack")] == ["Budget mode: Runway", "Budget mode: Standard", "Budget mode: Runway"], [r["text"][:40] for r in of("mode_ack")]
+    assert all(r["status"] == "OPEN" for r in of("mode_ack"))
+    for t in ("applied: B", "applied: C", "applied: C"): PK._pick_reply("EP209911261100", t)
+    assert [r["text"].split(". ")[0] for r in of("pick_ack")] == ["Your pick for EP209911261100: applied: B", "Your pick for EP209911261100: applied: C"]
+    RP._tell_owner("whatifs/premise.py", "this file guards money, quality or publishing"); RP._tell_owner("whatifs/preview.py", "this file guards money, quality or publishing")
+    assert ["premise.py" in of("repair_waiting")[0]["text"], "preview.py" in of("repair_waiting")[1]["text"]] == [True, True]
+    setting("TWO_SCREENS_ON", "FALSE"); assert NT.said_key("mode_ack", "budget", "RUNWAY") is None
+
+def test_two_previews_that_reach_nothing_are_two_rows(monkeypatch, setting):
+    """R1-99 (2)'s search: `preview_none` fell on the dated key - his second Script Preview of a day that reached nothing kept the first run's reason
+    on both screens. Each run is its own row: the key names the run's draft."""
+    from whatifs import preview as PV, premise as PR, ladder as LAD
+    from whatifs.org import runner as ORG
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch)
+    for k in ("name", "episode"): monkeypatch.setitem(core.JOB, k, core.JOB.get(k))      # run() names the job: put it back after the test
+    monkeypatch.setattr(LAD, "gate", lambda *a, **k: (True, "", None))
+    for i, why in enumerate(("planted: no pitch reached the bar", "planted: every pitch scored under the bar")):
+        def skip(*a, _w=why, **k): raise PR.SkipSlot(_w)
+        monkeypatch.setattr(ORG, "work", skip); monkeypatch.setattr(PV, "now_utc", lambda _i=i: core.now_utc() + dt.timedelta(minutes=_i))
+        assert PV.run()["ok"] is False
+    rows = sorted((r for r in core.store().rows("Owner_Actions") if r["kind"] == "preview_none"), key=lambda r: r["id"])
+    assert len(rows) == 2 and "every pitch scored under the bar" in rows[1]["text"] and all(r["dedupe_key"].startswith("preview_none|DRAFT") for r in rows), [(r["dedupe_key"], r["text"][:70]) for r in rows]

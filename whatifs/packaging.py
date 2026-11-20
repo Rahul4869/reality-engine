@@ -122,7 +122,7 @@ def _remember_pick(rows, key):
 def _pick_reply(ep, text):
     try:
         from whatifs import publish as PUB
-        NT.mail("pick_ack", f"Your pick for {ep}: {text}", f"<p>{text}</p>", episode=ep)
+        NT.mail("pick_ack", f"Your pick for {ep}: {text}", f"<p>{text}</p>", episode=ep, dedupe_key=NT.said_key("pick_ack", ep, text))
     except Exception as e: log(f"pick reply not sent: {str(e)[:120]}", "WARN", ep)
 
 def apply_pick(title):

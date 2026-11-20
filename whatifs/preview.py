@@ -62,7 +62,7 @@ def run(mode="preview"):
         if sid: room["org_session"] = sid                         # production adopts this draft only with this run's proof (runner.work adopt=)
         d["ladder"] = str(room["spine"].get("ladder") or LAD.claim() or "")      # v12 V2c-b: the draft carries where its topic comes from; production uses the row up when it adopts the draft
     except (PR.SkipSlot, CR.BelowBar) as e:
-        if not pre: NT.mail("preview_none", "Script Preview: nothing reached the bar", f"<p>No draft was saved. {html.escape(str(e))}</p><p>Every pitch and score is in the Premise_Scores tab.</p>")
+        if not pre: NT.mail("preview_none", "Script Preview: nothing reached the bar", f"<p>No draft was saved. {html.escape(str(e))}</p><p>Every pitch and score is in the Premise_Scores tab.</p>", dedupe_key=f"preview_none|{draft}")
         log(f"preview: {e}", "WARN"); flush_log(); return {"ok": False, "why": str(e)[:300]}
     clean, _, _b = _strip_beats(room["script"]["script"]); units = approx_units(clean)      # v12 V2b: _strip_beats also returns the beat of every line
     import time as _t9; t_sp = _t9.time()
@@ -127,7 +127,7 @@ def decide(title):
         set_setting("BUDGET_MODE", mm.group(1).lower())
         try:
             from whatifs import publish as PUB, governor as G
-            NT.mail("mode_ack", f"Budget mode: {mm.group(1).title()}", f"<p>Now {mm.group(1).title()}: cap about Rs {G.cap_inr():.0f} a month, at most {G.max_long_videos()} long videos, publishing {G.publish_days()}.</p>")
+            NT.mail("mode_ack", f"Budget mode: {mm.group(1).title()}", f"<p>Now {mm.group(1).title()}: cap about Rs {G.cap_inr():.0f} a month, at most {G.max_long_videos()} long videos, publishing {G.publish_days()}.</p>", dedupe_key=NT.said_key("mode_ack", "budget", mm.group(1)))
         except Exception as e: log(f"mode reply not sent: {scrub(e)[:120]}", "WARN")
         log(f"budget mode set to {mm.group(1).lower()} by the owner"); flush_log(); return mm.group(1).lower()
     m = re.match(r"^(APPROVE|REJECT) (DRAFT\d{8,14})$", str(title or "").strip())

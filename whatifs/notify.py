@@ -173,6 +173,18 @@ def send(kind, text, buttons=(), episode=None, tier="week", default=None, expire
     return aid
 
 
+def said_key(kind, thing, value):
+    """FINISHED BY FABLE (CA2-3; R1-99 (2)): the key of a message that says what was just done to ONE thing (a mode, a pick, a repaired file). The same
+    words as the NEWEST open row of this kind and thing reuse its key (one row: `send` returns it); other words get a new key - a new row, now the
+    newest. So A, B, A on one day are three rows and the newest says A; A, A is one. With the switch off: None (the call of today)."""
+    if not _on(): return None
+    pre = f"{kind}|{thing}|"; mine = [r for r in open_rows() if str(r.get("dedupe_key") or "").startswith(pre)]
+    last = max(mine, key=lambda r: str(r.get("id") or ""), default=None)
+    if last and str(last["dedupe_key"]).startswith(f"{pre}{value}|"): return last["dedupe_key"]
+    n = 1 + sum(1 for r in store().rows("Owner_Actions") if str(r.get("dedupe_key") or "").startswith(f"{pre}{value}|"))
+    return f"{pre}{value}|{n}"
+
+
 def _shape(kind, episode, buttons, default, expires_h, dedupe_key):
     """v12 B-OWNER (switch TWO_SCREENS_ON): what the register says a row of this kind must carry, each only where its caller gave none.
     A HOLD without a button gets ("Done", "OK") - his tap closes it; an inform row outside STANDING_KINDS closes by itself after INFORM_KEEP_H hours
