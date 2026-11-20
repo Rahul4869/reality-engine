@@ -28,13 +28,30 @@ def row(vid):
 
 def enter(vid, kind, now=None, ai=True):
     """The upload went up private through the gate: its row (once a video). kind = "short" or "video"; cap_min = HD_SHORT_CAP_MIN for both (R18 (7 b));
-    ai = what the upload asked for the AI label (R17 ADDS (E))."""
-    if not vid: return
+    ai = what the upload asked for the AI label (R17 ADDS (E)). CI-1 (R1-185): NEVER RAISES - it runs after the real upload and the new id must reach its
+    door (a raise made release upload the Short a second time): a failed append runs `ensure_tabs` once and appends again; a second failure is one WARN
+    line and the `hd_blocked` alarm keyed `hdrow|<vid>`, and False. True when the row stands."""
+    if not vid: return False
     try:
-        if row(vid): return
+        if row(vid): return True
     except Unread as e: log(f"HD gate: {vid}: {e} - its row is written all the same (an id the upload has just returned has none yet)", "WARN")      # CG-1 (R1-167 DQ3): never a raise between the upload and its id on record
-    store().append(TAB, [{"vid": vid, "kind": kind, "uploaded": iso(now or now_utc()), "cap_min": S("HD_SHORT_CAP_MIN", int), "ai": "TRUE" if ai else "FALSE",
-                          "state": WAITING, "public_at": "", "hd": "", "minutes": "", "note": ""}])
+    new = [{"vid": vid, "kind": kind, "uploaded": iso(now or now_utc()), "cap_min": S("HD_SHORT_CAP_MIN", int), "ai": "TRUE" if ai else "FALSE",
+            "state": WAITING, "public_at": "", "hd": "", "minutes": "", "note": ""}]
+    st = store()
+    try: st.append(TAB, new); return True
+    except Exception:
+        try:
+            st.ensure_tabs()
+            if not row(vid): st.append(TAB, new)
+            return True
+        except Exception as e:                                                      # CI-1: the video is up and private, with no row - he is told, never a raise
+            log(f"HD gate: {vid} went up private and its row could not be written: {scrub(e)[:160]}", "WARN")
+            try:
+                from whatifs import notify as NT
+                NT.send("hd_blocked", f"{vid} went up private and the HD gate could not write its row, so code will not make it public. When YouTube shows it "
+                                      f"in HD, make it public in YouTube Studio: https://studio.youtube.com/video/{vid}/edit", tier="now", dedupe_key=f"hdrow|{vid}")
+            except Exception as x: log(f"the HD gate could not tell the owner about {vid}: {scrub(x)[:120]}", "WARN")
+            return False
 
 def _set(vid, **kw): store().update(TAB, "vid", vid, kw)
 
@@ -148,7 +165,7 @@ def tick(now=None):
     private because the switch was turned (R18 (4 a)); then the long video's gate and his window (`long_tick`). Returns the ids of the rows it looked at."""
     now = now or now_utc(); done = []
     try: rows = [r for r in store().rows(TAB) if r.get("state") == WAITING]
-    except Exception: rows = []
+    except Exception as e: rows = []; log(f"HD gate: tab {TAB} could not be read this tick - no Short waiting for HD was looked at: {scrub(e)[:160]}", "WARN")      # CI-2: never in silence
     for r in rows:
         try: finish(r["vid"], 0, now); done.append(r["vid"])
         except Exception as e: log(f"HD gate: {r.get('vid')} not finished this tick: {scrub(e)[:160]}", "WARN")

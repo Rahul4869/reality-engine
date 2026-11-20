@@ -268,15 +268,30 @@ def _gated(vid):
     try: return bool(HG.row(vid))
     except HG.Unread as e: log(f"release: {vid}: {e} - its privacy is not judged this pass", "WARN"); return None
 
+def _rebuild(vid, now):
+    """v12 B-OWNER CI-1 (OI-G1, R1-185): the gate took this Short private but tab HD_Wait has no row for it (its append after the upload failed): the row is
+    written now - its cap counts from now: late, never early. True when it stands (his `hdrow|<vid>` alarm is answered); None when it still cannot be written
+    (not judged this pass: never compared as public, never the lock, never uploaded again)."""
+    from whatifs import hdgate as HG, notify as NT
+    log(f"release: {vid}: the HD gate took it private but its row is missing - written now", "WARN")
+    if not HG.enter(vid, "short", now, ai=S("AI_LABEL_DEFAULT", bool)): return None
+    try:
+        for r in NT.open_rows():
+            if r.get("dedupe_key") == f"hdrow|{vid}": store().update("Owner_Actions", "id", r["id"], {"status": "ANSWERED", "answered_at": iso(), "answer": "done: the HD gate wrote its row"})
+    except Exception as e: log(f"release: {vid}: its alarm was not closed: {scrub(e)[:120]}", "WARN")
+    return True
+
 def _youtube(row, path, digest, cov, tx, rec, now):
     from whatifs import publish as PUB, hdgate as HG
     body, want = want_youtube(tx); vid = str((rec or {}).get("native_id") or ""); first = not vid
     if first:
         vid = PUB.yt_upload(path, tx["youtube"]["title"], tx["youtube"]["description"], tx["youtube"]["tags"], short=True, ai_label=S("AI_LABEL_DEFAULT", bool), now=now)
         took = _gated(vid)                                                          # CG-1: one read serves this line and the next (None = HD_Wait unread)
+        if took is False and S("HD_GATE_ON", bool): took = _rebuild(vid, now)      # CI-1: this pass's switch took it private (publish.py 86) but its row is missing
         if took or (took is None and S("HD_GATE_ON", bool)): body["status"]["privacyStatus"] = "private"      # v12 B-OWNER (R18 (4 b)): what was really sent - the gate took it up private (unread: this pass's switch decided the upload, publish.py 86)
         _save(row["id"], "youtube", now, native_id=vid, state=OPEN, sha=digest, sent=body)      # on record AT ONCE: a job cut off after this line must never upload the Short a second time
     gated = took if first else _gated(vid)                                          # R18 (4 a): gated = it has a row on HD_Wait, never what the switch says at this pass; None = not judged (CG-1)
+    if gated is False and not first and (_js((rec or {}).get("sent"), {}).get("status") or {}).get("privacyStatus") == "private": gated = _rebuild(vid, now)      # CI-1: its record says the gate took it, its row is missing
     if gated: body["status"]["privacyStatus"] = "private"; want.pop("privacy", None)      # the gate's own receipt judges that row, never compare
     elif gated is None: want.pop("privacy", None)                                   # CG-1: HD_Wait unread - `compare` is not asked about the privacy this pass
     got = PUB.yt_read(vid); rc = dict((rec or {}).get("receipts") or {})

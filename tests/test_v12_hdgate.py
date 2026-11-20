@@ -250,6 +250,112 @@ def test_a_first_release_with_hd_wait_unread_uploads_once_and_concludes_no_lock(
     down[0] = False
     assert HG.row(vid)["state"] == HG.WAITING
 
+def test_a_row_that_cannot_be_written_after_the_upload_never_uploads_the_short_twice(monkeypatch, setting, gate_on):
+    """v12 B-OWNER CI-1 (OI-G1 of CG-1's block): the HD gate's row is written AFTER the real upload (publish.py 92, 130). An append that fails there no
+    longer raises out of `yt_upload`: the new id reaches the release record (never RETRY, never a second upload), `sent` says private, no lock is
+    concluded and the privacy is "not judged this pass"; the next pass writes the missing row from the record and the gate finishes it as any other."""
+    PUB.FAKE_FAULTS["youtube"] = {"sd": True}
+    _quiet(monkeypatch); _bench("What if the Moon left tonight?"); setting("SHORTS_REVIEW_FIRST_N", "0")
+    st = core.store(); real = st.append; down = [True]
+    def append(tab, rows):
+        if down[0] and tab == HG.TAB: raise RuntimeError("Sheets 503: planted - the HD gate's row could not be written")
+        return real(tab, rows)
+    monkeypatch.setattr(st, "append", append)
+    SH.run(force=True, now=NOW, episode_id="SHHD32"); y = _yt("SHHD32"); vid = y["native_id"]
+    assert vid and y["state"] != REL.RETRY and int(float(y["tries"] or 0)) == 1, y                    # the id on record: a later pass never uploads it again
+    assert json.loads(y["sent"])["status"]["privacyStatus"] == "private" and _shown(vid) == "private" and HG.row(vid) is None and LA.lock_state() != "on"
+    assert _rc("SHHD32")[0] == REL.WAITING and _rc("SHHD32")[1].startswith("not judged this pass") and y["state"] == REL.OPEN
+    told = lambda: [r for r in core.store().rows("Owner_Actions") if r.get("dedupe_key") == f"hdrow|{vid}"]
+    assert len(told()) == 1 and told()[0]["id"] in {x["id"] for x in NT.open_rows()}                  # R1-185: he is told at once - one row, however often it failed
+    down[0] = False
+    REL.settle(NOW + 10 * M); y = _yt("SHHD32")
+    h = HG.row(vid); assert h and h["state"] == HG.WAITING and h["kind"] == "short" and h["uploaded"] == core.iso(NOW + 10 * M)      # the cap counts from the row: late, never early
+    assert y["native_id"] == vid and int(float(y["tries"] or 0)) == 1 and _rc("SHHD32")[0] == REL.WAITING and "private until YouTube shows it in HD" in _rc("SHHD32")[1]
+    assert LA.lock_state() != "on" and _shown(vid) == "private" and len(told()) == 1 and told()[0]["status"] == "ANSWERED"      # the row stands: his alarm is answered
+    HG.tick(NOW + 70 * M); assert _shown(vid) == "public" and HG.row(vid)["state"] == HG.CAP
+
+def test_a_row_the_gate_cannot_write_is_told_and_never_raises(monkeypatch, gate_on):
+    """v12 B-OWNER CI-1 (R1-185): `enter`'s append failing twice (the second after `ensure_tabs`) raises nothing: ONE WARN line, the `hd_blocked` alarm
+    keyed `hdrow|<vid>` with the Studio link, False. So `yt_upload` - the call of every gated door (release 268, specials 404, spinoff 140, pilots 67) -
+    returns the new id and the door keeps it: never a second upload."""
+    _quiet(monkeypatch); seen = []; monkeypatch.setattr(HG, "log", lambda msg, level="INFO", *a, **k: seen.append((level, str(msg))))
+    st = core.store(); real = st.append
+    def append(tab, rows):
+        if tab == HG.TAB: raise RuntimeError("Sheets 503: planted - the HD gate's row could not be written")
+        return real(tab, rows)
+    monkeypatch.setattr(st, "append", append)
+    assert HG.enter("vidCI1", "short", NOW) is False
+    assert len([m for lv, m in seen if lv == "WARN" and "vidCI1" in m]) == 1, seen
+    a = [r for r in core.store().rows("Owner_Actions") if r.get("dedupe_key") == "hdrow|vidCI1"]
+    assert len(a) == 1 and a[0]["kind"] == "hd_blocked" and "https://studio.youtube.com/video/vidCI1/edit" in a[0]["text"], a
+    vid = PUB.yt_upload("x/SHHD33.mp4", "T", "D", [], short=True, now=NOW)
+    assert vid == "FAKE_SHHD33.mp4" and HG.row(vid) is None and _sent_privacy(vid) == "private"
+
+def test_a_tick_that_cannot_read_hd_wait_says_so(monkeypatch, gate_on):
+    """v12 B-OWNER CI-2 (OI-G2 of CG-1's block): a tick whose read of tab HD_Wait fails says so in ONE WARN line (it looked at no waiting Short) - never
+    silence; a tick that reads the tab says nothing of it."""
+    seen = []; monkeypatch.setattr(HG, "log", lambda msg, level="INFO", *a, **k: seen.append((level, str(msg))))
+    st = core.store(); real = st.rows; down = [True]
+    def rows(tab):
+        if down[0] and tab == HG.TAB: raise RuntimeError("Sheets 503: planted - tab HD_Wait could not be read")
+        return real(tab)
+    monkeypatch.setattr(st, "rows", rows)
+    assert HG.tick(NOW) == []
+    said = [m for lv, m in seen if "HD_Wait" in m]; assert len(said) == 1 and [lv for lv, m in seen if "HD_Wait" in m] == ["WARN"], seen
+    assert "could not be read" in said[0] and "Sheets 503" in said[0]
+    down[0] = False; seen.clear()
+    assert HG.tick(NOW) == [] and not [m for lv, m in seen if "HD_Wait" in m], seen
+
+def _row_fails_twice(monkeypatch):
+    """CI-1's three other doors (R1-185, R1-192): the HD_Wait append fails twice - the write after the upload and `enter`'s one retry after
+    `ensure_tabs` - then works again. The uploads are counted where the REAL offline `publish.yt_upload` records one (`_fake_put` with the body sent)."""
+    st = core.store(); real = st.append; failed, sent = [], []
+    def append(tab, rows):
+        if tab == HG.TAB and len(failed) < 2: failed.append(tab); raise RuntimeError("Sheets 503: planted - the HD gate's row could not be written")
+        return real(tab, rows)
+    monkeypatch.setattr(st, "append", append)
+    put = PUB._fake_put
+    def counted(platform, nid, **kw):
+        if platform == "youtube" and "sent" in kw: sent.append(nid)
+        return put(platform, nid, **kw)
+    monkeypatch.setattr(PUB, "_fake_put", counted)
+    return failed, sent
+
+def _told(vid): return [r["kind"] for r in core.store().rows("Owner_Actions") if r.get("dedupe_key") == f"hdrow|{vid}"]
+
+def test_a_special_whose_hd_row_cannot_be_written_keeps_its_id(monkeypatch, setting, gate_on):
+    """CI-1, the door at specials.py 404 (`_publish`): the row failing after the upload raised out of `yt_upload` into 404's `except` - the special
+    kept NO id ("MADE (not posted)") and the next post uploaded it again; the first copy stayed private with no row. Now the id is kept: POSTED,
+    exactly one upload, private, and he is told (`hdrow|<id>`)."""
+    from whatifs import specials as SP
+    _quiet(monkeypatch); setting("UPLOAD_LOCK", "off"); setting("META_ON", "FALSE"); failed, sent = _row_fails_twice(monkeypatch)
+    res = SP._publish("x/SPHD40.mp4", "What if the Moon left tonight?", "SPHD40")
+    assert res.get("yt_id") == "FAKE_SPHD40.mp4" and res["status"] == "POSTED", f"the special lost its YouTube id: {res}"
+    assert sent == ["FAKE_SPHD40.mp4"] and len(failed) == 2 and HG.row(res["yt_id"]) is None and _sent_privacy(res["yt_id"]) == "private"
+    assert _told(res["yt_id"]) == ["hd_blocked"]
+
+def test_a_pilot_whose_hd_row_cannot_be_written_records_its_id(monkeypatch, setting, gate_on):
+    """CI-1, the door at pilots.py 67 (`run(publish=True)`): the raise was caught there and the Pilots row recorded yt "" - a video private for ever,
+    with no row and no word, and its views never measured. Now the Pilots row keeps the id: exactly one upload, private, and he is told."""
+    from whatifs import pilots as PL
+    monkeypatch.setenv("WI_SMALL", "1"); _quiet(monkeypatch); setting("UPLOAD_LOCK", "off"); setting("PILOTS_ON", "TRUE")
+    core.store().append("Premise_Bench", [{"bench_id": "B0", "added": core.iso(), "status": "READY", "premise": "What if your bed floated", "headline": "Bed", "combined": "8"}])
+    failed, sent = _row_fails_twice(monkeypatch)
+    r = PL.run(publish=True); assert r["ok"], r
+    row = next(x for x in core.store().rows("Pilots") if x["id"] == r["id"])
+    assert row["yt_id"] and row["yt_id"] == r["yt_id"] == f"FAKE_{r['id']}.mp4", f"the pilot's row lost its YouTube id: {row}"
+    assert sent == [row["yt_id"]] and len(failed) == 2 and HG.row(row["yt_id"]) is None and _told(row["yt_id"]) == ["hd_blocked"]
+
+def test_a_case_files_upload_whose_hd_row_cannot_be_written_returns_its_id(monkeypatch, gate_on):
+    """CI-1, the door at spinoff.py 140 (`_publish_long`): the raise went up to `run`, which recorded FAILED with no id - the video private, no row,
+    no word. Now the id is returned, nothing raises, exactly one upload. Only spinoff's OWN fake early return (139) is switched off: `yt_upload`
+    runs its real offline path."""
+    from whatifs import spinoff as SPO
+    _quiet(monkeypatch); failed, sent = _row_fails_twice(monkeypatch); monkeypatch.setattr(SPO, "FAKE", False)
+    got = SPO._publish_long("x/CFHD41.mp4", "Case Files", "desc", "CFHD41")
+    assert got == {"status": "POSTED", "yt_id": "FAKE_CFHD41.mp4"} and sent == ["FAKE_CFHD41.mp4"] and len(failed) == 2
+    assert HG.row("FAKE_CFHD41.mp4") is None and _sent_privacy("FAKE_CFHD41.mp4") == "private" and _told("FAKE_CFHD41.mp4") == ["hd_blocked"]
+
 def test_the_upload_check_is_untouched(gate_on):
     """R17 (3 a): the upload check asks for unlisted and compares the answer with unlisted - the gate turns only a wanted privacy of public, and
     `launch.py` passes `hd_gate=False` as a second wall."""
