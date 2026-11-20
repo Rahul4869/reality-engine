@@ -973,7 +973,7 @@ def run(stage, ctx, ep, write=True):
     """Evaluate every feature of a stage. Returns {'ok', 'failed': [(id, evidence)], 'rows'}. Writes Feature_Ledger. Never raises."""
     from whatifs import formats as FMT
     rows, held = [], []                                              # v12 B-OWNER (PART 7): `held`, so that the module's `failed` is the one expression that holds a video
-    fmt =str((ctx.get("d") or {}).get("format") or "") if isinstance(ctx.get("d"), dict) else ""      # v12 V2a: the three-tier contract - a DEVICE is judged by the episode's format
+    fmt = str((ctx.get("d") or {}).get("format") or "") if isinstance(ctx.get("d"), dict) else ""      # v12 V2a: the three-tier contract - a DEVICE is judged by the episode's format
     for fid, stg, probe, what in FEATURES:
         if stg != stage or not enabled(fid): continue
         rule = FMT.rule(fid, fmt)
@@ -1030,6 +1030,8 @@ def approve_by_silence(ep, row=None):
     (key silence|<ep>) says why, with Approve / Keep it private; a "yes" closes that row ("cleared"), approves by the function his tap calls and sends
     a `decided_post` row with "Take it down" (a moved slot is told). Returns `approve`'s own string or "held: <why>"."""
     from whatifs import notify as NT
+    from whatifs.core import parse_iso
+    import datetime as dt
     st = store(); e = next((r for r in st.rows("Episodes") if r.get("episode_id") == ep), None) or {}; title = str(e.get("title") or ep)
     ok, why = clear_to_post(ep)
     if not ok:
@@ -1044,8 +1046,10 @@ def approve_by_silence(ep, row=None):
     NT.outcome(row, (row or {}).get("default_action") or "approved by your silence")
     new = next((r.get("slot_et") for r in store().rows("Episodes") if r.get("episode_id") == ep), old)
     watch = f" Watch it (private): https://studio.youtube.com/video/{e.get('yt_id')}/edit"
+    t_old = parse_iso(old); gone = not t_old or t_old < now_utc() + dt.timedelta(minutes=30)      # `approve` moves a slot for two reasons: it is under 30 minutes away, or another video stands on it
+    moved = "had passed before the pipeline could act" if gone else "was given to another video meanwhile"
     text = (f"{title} was approved by your silence and goes public at {_ist(new)}." if new == old else
-            f"{title} was approved by your silence. Its own slot, {_ist(old)}, had passed before the pipeline could act, so it goes public at the next free slot, {_ist(new)}.")
+            f"{title} was approved by your silence. Its own slot, {_ist(old)}, {moved}, so it goes public at the next free slot, {_ist(new)}.")
     NT.send("decided_post", text + watch, [("Take it down", f"UNPOST {ep}")], tier="week", episode=ep, expires_h=168, dedupe_key=f"decided|{ep}|{new}")
     return ans
 
@@ -1184,7 +1188,7 @@ def await_approval(ep, vid, slot_iso, summary, kind="creative_review", default=N
             t = parse_iso(slot_iso); lead = S("SILENCE_LEAD_H", float)
             left = (t - now_utc()).total_seconds() / 3600.0 if t else S("CREATIVE_REVIEW_WAIT_H", float) + lead
             hours, dflt = max(1.0, min(S("CREATIVE_REVIEW_WAIT_H", float), left - lead)), "approved by your silence"
-            if t: tail = (f" If you do nothing it is approved by your silence from {_ist((now_utc() + dt.timedelta(hours=hours)).strftime('%Y-%m-%dT%H:%M:%SZ'))[-5:]} on"
+            if t: tail = (f" If you do nothing it is approved by your silence from {_ist((now_utc() + dt.timedelta(hours=hours)).strftime('%Y-%m-%dT%H:%M:%SZ'))} on"
                           f" - at the pipeline's next run - and goes public on its slot, {_ist(slot_iso)}. Until the slot you can still stop it: Decided for you, Take it down.")
         else: hours, dflt = 72, "stays private"
         default = dflt if default is None else default; expires_h = hours if expires_h is None else expires_h

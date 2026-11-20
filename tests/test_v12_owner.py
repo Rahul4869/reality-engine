@@ -1767,3 +1767,14 @@ def test_a_take_down_that_youtube_refused_is_never_reported_as_done(monkeypatch,
     monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: True)
     ok, note = DS.route("UNPOST|EP8"); assert ok and "is private again. Nothing was deleted." in note and _epi("EP8")["status"] == "HELD_BY_OWNER"
     assert not [r for r in _decided("EP8") if r["status"] == "OPEN"]                              # no open row still says it goes public or offers a take-down that is done
+
+def test_the_card_names_the_day_and_a_moved_slot_its_true_reason(monkeypatch, setting):
+    """R22 (2), THE WORDS HE READS (two sentences made true at the finish). The card said "from <HH:MM> on" with no day, though his silence can be taken
+    72 hours later; and a slot that moved because ANOTHER video stood on it was told as "had passed before the pipeline could act"."""
+    import re
+    slot, sched = _ep8(monkeypatch, setting, hours=120.0)
+    CON.await_approval("EP8", "ytEP8", slot, "s"); t = _kind("creative_review", "EP8")[0]["text"]
+    assert re.search(r"approved by your silence from [A-Z][a-z]{2} \d{2} [A-Z][a-z]{2} \d{2}:\d{2} on - at the pipeline's next run", t), t
+    core.store().append("Episodes", [{"episode_id": "EPB", "status": "SCHEDULED", "yt_id": "ytB", "slot_et": slot, "title": "B"}])
+    NT.expire_defaults(now=_later(73)); d = _decided("EP8")[0]["text"]
+    assert _epi("EP8")["slot_et"] != slot and "was given to another video meanwhile" in d and "had passed" not in d and CON._ist(slot) in d, d
