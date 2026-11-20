@@ -33,7 +33,7 @@ SHEET = (
     ("youtube", "language", "code", "read", "English, title and audio"),
     ("youtube", "kids", "code", "read", "not made for kids"),
     ("youtube", "ai", "code", "read", "the altered-content field, true to what the video is (AI_LABEL_DEFAULT)"),
-    ("youtube", "privacy", "code", "read", "private until YouTube shows it in HD (at most HD_SHORT_CAP_MIN minutes and the wait for the pipeline's next tick), then public: set by us and read back"),      # v12 B-OWNER (PART 9, R22 (5))
+    ("youtube", "privacy", "code", "read", "public, set by us and read back: at once while HD_GATE_ON is off (the shipped value); with it on, private until YouTube shows it in HD (at most HD_SHORT_CAP_MIN minutes and the wait for the pipeline's next tick), then public"),      # v12 B-OWNER (PART 9, R22 (5), R22 (11): true of both states)
     ("youtube", "thumbnail", "code", "sent", "the Short's own cover, set only after YouTube has processed the video (SHORT_THUMB_ON)"),
     ("youtube", "playlist", "code", "sent", "the playlist of its Short format"),
     ("youtube", "link", "hand", "", "the link from the Short to its long video (YouTube Studio; the one-minute release card, batch V3)"),

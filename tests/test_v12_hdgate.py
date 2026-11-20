@@ -432,3 +432,12 @@ def test_a_video_still_in_production_gets_nothing_from_the_gate(monkeypatch, set
     reads = []; real = PUB.yt_read; monkeypatch.setattr(PUB, "yt_read", lambda v: reads.append(v) or real(v))
     assert HG.tick(_t(3, 35)) == [] and HG.long_tick(_t(4, 0)) == []                                             # 09:05 and 09:30 India time, its own day
     assert not _rows("hd_late") and not _rows("prepublic") and reads == []
+
+# ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (step 9a) - PART C
+def test_the_sheets_privacy_line_is_true_of_both_states():
+    """R22 (5) with R22 (11). FOUND AT THE FINISH (the typist's design question 1): the release sheet's `privacy` line said only "private until YouTube
+    shows it in HD ... then public" - untrue of the shipped state, where HD_GATE_ON is FALSE and a Short is public at its upload. The line is data
+    (SYSTEM.md is generated from it): it names both states, R22 (5)'s words kept for the gate."""
+    line = next(r[4] for r in REL.SHEET if r[:2] == ("youtube", "privacy"))
+    assert "at once while HD_GATE_ON is off" in line, line
+    assert "private until YouTube shows it in HD (at most HD_SHORT_CAP_MIN minutes and the wait for the pipeline's next tick), then public" in line, line
