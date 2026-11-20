@@ -1733,3 +1733,18 @@ def test_the_tick_asks_both_silences_again(monkeypatch, setting):
     setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch); ran = []
     monkeypatch.setattr(CON, "review_sweep", lambda: ran.append("review") or 0); monkeypatch.setattr(SP, "ready_sweep", lambda: ran.append("ready") or 0)
     MG.tick(); assert ran == ["review", "ready"], ran
+
+def test_the_held_short_still_waits(monkeypatch, setting):
+    """PART 7 ("The held Short keeps `special_review` and waits for him: its file failed a check"; left untyped by step 8b). A Short whose FINISHED FILE
+    failed a check is a hold with its reason; no silence posts it, no sweep takes it, it carries no pass - and with the switch on its card has NO
+    expiry (FOUND AT THE FINISH: after 72 hours the card closed, and a Short that was paid for could no longer be approved from either screen)."""
+    SH, SP, sid, posted = _short8(monkeypatch, setting)
+    gf = {"ok": False, "failed": [("short_sound", "the first sound comes at 0.4 s")]}
+    upd = SH._file_hold({"id": sid, "file": "drive:f8c"}, gf, True)
+    c = _cards8(sid); assert len(c) == 1 and c[0]["kind"] == "special_review" and NT.klass(c[0]["kind"]) == NT.HOLD and "short_sound" in c[0]["text"], c
+    assert not c[0]["expires_at"] and c[0]["default_action"] == "not posted: its finished file failed a check, so it waits for your tap"
+    assert upd == {"status": "AWAITING_APPROVAL"} and not _sp_row(sid).get("checks") and any(r["id"] == c[0]["id"] for r in NT.needs())
+    NT.expire_defaults(now=core.now_utc() + dt.timedelta(days=30)); assert _row(c[0]["id"])["status"] == "OPEN" and SP.ready_sweep() == 0 and posted == []
+    assert "posted" in NT.answer(c[0]["id"], f"SPECIAL APPROVE {sid}") and posted == [sid]          # his one tap still sends it out, as it is
+    SH2, _SP2, sid2, _p2 = _short8(monkeypatch, setting, on="FALSE", sid="SH209911200901")         # the switch off: today's card, word for word
+    SH2._file_hold({"id": sid2}, gf, True); o = _cards8(sid2)[0]; assert o["default_action"] == "not posted" and o["expires_at"]

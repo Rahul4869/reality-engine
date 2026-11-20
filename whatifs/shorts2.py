@@ -524,10 +524,11 @@ def _file_hold(rec, gf, publish):
     if publish:
         try:
             from whatifs import notify as NT
-            fid = str(rec.get("file") or "").replace("drive:", "")
+            fid = str(rec.get("file") or "").replace("drive:", ""); two = S("TWO_SCREENS_ON", bool)      # v12 B-OWNER (PART 7): the held Short WAITS for him - no expiry closes its card
             NT.send("special_review", f"A Short was made and is HELD - nothing is posted. Its finished file failed a check: {why}. "
                     + (f"Watch: https://drive.google.com/file/d/{fid}/view  " if fid else "") + "Approve posts it as it is; without your tap it stays unposted.",
-                    [("Approve", f"SPECIAL APPROVE {ep}"), ("Leave it", "OK")], tier="now", urgent=True, episode=ep, default="not posted", expires_h=72, dedupe_key=f"special|{ep}")
+                    [("Approve", f"SPECIAL APPROVE {ep}"), ("Leave it", "OK")], tier="now", urgent=True, episode=ep,
+                    default="not posted: its finished file failed a check, so it waits for your tap" if two else "not posted", expires_h=None if two else 72, dedupe_key=f"special|{ep}")
             upd["status"] = "AWAITING_APPROVAL"
         except Exception as e: log(f"the owner was not told about the held Short {ep}: {scrub(e)[:120]}", "WARN", ep)
     try: store().update("Specials", "id", ep, upd)
