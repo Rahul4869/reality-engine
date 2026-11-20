@@ -343,3 +343,21 @@ def test_a_failed_health_read_is_never_the_green_light(monkeypatch, setting, tmp
     assert "could not be read this time" in page("failed2", failed)[1]                                   # Controls carries the snapshot's own words
     home, ctl = page("bad", {"expiring": [], "last_runs": [run(True), run(False)], "read": "failed", "note": DS.HEALTH_NOTE["failed"]})
     assert 'class="light bad"' in home and "a run failed" in home and not [g for g in GREEN if g in home]
+
+# ---------------- FINISHED BY FABLE: the corrections of the finishing pass (step 7 with step 6's snapshot)
+def test_a_card_never_reads_nan_or_a_deadline_it_does_not_have(monkeypatch, setting, tmp_path):
+    """PART 6 (Home: "the countdown and the default"; "Decided for you"). FOUND AT THE FINISH: a card without a deadline read "in NaN m", and a row
+    his silence had already decided read "If you don't rule: ran by default: ... in now". A card says what is true of it."""
+    import datetime as dt
+    _full(monkeypatch, setting)
+    hold = NT.send("api_audit", "Send the YouTube API audit form.", dedupe_key="api_audit|face2")           # a hold has no deadline
+    card = NT.send("bakeoff", "Pick the clip model", [("Pick A", "PICK A")], default="A is used", expires_h=1)
+    NT.expire_defaults(core.now_utc() + dt.timedelta(hours=2))                                              # this one ran by default
+    post = NT.send("decided_post", "EP3 was approved by your silence and goes public at Sat 20:30.", [("Take it down", "UNPOST EP3")], expires_h=168)
+    home = _render(json.loads(json.dumps(DS.build_snapshot())), tmp_path, "fuse")["home"]
+    part = lambda i: home.split(f'id="case-{i}"')[1].split("</article>")[0]
+    assert "NaN" not in home, [x[:200] for x in home.split("<article") if "NaN" in x]
+    assert "No deadline: it waits for your tap." in part(hold) and "If you don" not in part(hold)
+    assert "ran by default: A is used" in part(card) and "If you don" not in part(card)
+    assert "If you don" not in part(post) and "Take it down" in part(post)
+    assert "If you don" in home                                                                            # a card with a deadline keeps its countdown (`_full`'s visual idea)

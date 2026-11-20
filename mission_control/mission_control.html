@@ -619,13 +619,17 @@ function caseCard(c, say) {
     const links = (c.links || []).map(u => `<a class="btn ghost" href="${esc(u)}" target="_blank" rel="noopener">Open Studio</a>`).join("");
     body = `<div class="actions">${links}${verbButtons(c)}</div>`;
   }
+  const ran = /^ran by default/.test(c.default_label || "");      // FINISHED BY FABLE (CB-9): a card says what is true of it
+  const fuse = c.kind === "decided" ? (ran ? `<div class="fuse"><p><b>${esc(c.default_label)}</b>${c.default_at ? ", " + esc(ago(c.default_at)) : ""}.</p></div>` : "")
+    : c.default_at ? `<div class="fuse"><div class="fuse-line"><i style="width:${pct.toFixed(1)}%"></i></div>
+      <p>If you don’t rule: <b>${esc(c.default_label)}</b> in ${esc(left(c.default_at))}.</p></div>`
+    : `<div class="fuse"><p>No deadline: it waits for your tap.</p></div>`;
   return `<article class="case ${urgent ? "urgent" : ""} ${r ? "done" : ""}" id="case-${esc(c.id)}">
     <div class="case-top"><span class="kind ${esc(c.kind)}">${esc(kindLabel)}</span>${c.case_no ? `<span class="case-id">Case #${String(c.case_no).padStart(2, "0")}</span>` : ""}</div>
     <h3 class="serif">${esc(c.title)}</h3>
     <p class="why">${esc(c.why)}</p>
     ${body}
-    <div class="fuse"><div class="fuse-line"><i style="width:${pct.toFixed(1)}%"></i></div>
-      <p>If you don’t rule: <b>${esc(c.default_label)}</b> in ${esc(left(c.default_at))}.</p></div>
+    ${fuse}
     ${r ? `<p class="done-note">${esc(r.note)}</p><div class="ruled"><div class="seal"><div><b>${esc(r.label)}</b><span>Ruled</span></div></div></div>` : ""}
     ${say && !r ? sayBox(c) : ""}
   </article>`;
