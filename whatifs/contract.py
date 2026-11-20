@@ -1008,6 +1008,7 @@ def clear_to_post(ep):
     if not e or e.get("status") != "AWAITING_APPROVAL": return False, f"its status is {(e or {}).get('status') or 'not on record'}, not waiting for approval"
     hold = [r for r in NT.open_rows() if r.get("episode_id") == ep and NT.klass(r.get("kind")) == NT.HOLD and not str(r.get("dedupe_key") or "").startswith("silence|")]
     if hold: return False, f"an open hold waits for you ({NT.name(hold[0].get('kind'))})"
+    if str(e.get("kill") or "").strip().upper().startswith("KILL"): return False, "you typed KILL for it in the Episodes tab"      # v12 B-OWNER (PART F, CF-5 (c)): `kill_check` never reads a video waiting for approval
     newest = {}
     for r in st.rows("Feature_Ledger"):
         if r.get("episode_id") == ep and r.get("stage") == "final" and str(r.get("ts") or "") >= str((newest.get(r.get("feature")) or {}).get("ts") or ""): newest[r.get("feature")] = r
@@ -1044,6 +1045,9 @@ def approve_by_silence(ep, row=None):
     from whatifs.core import parse_iso
     import datetime as dt
     st = store(); e = next((r for r in st.rows("Episodes") if r.get("episode_id") == ep), None) or {}; title = str(e.get("title") or ep)
+    if e.get("status") != "AWAITING_APPROVAL":                       # v12 B-OWNER (PART F, CF-5 (b); V1c's C12 on this road): it left the review by another road - no row, no approve
+        NT.outcome(row, f"nothing was done: it is {e.get('status') or 'not on record'}"); log(f"silence asked of a video that is {e.get('status') or 'not on record'}: nothing done", "WARN", ep)
+        return f"held: it is {e.get('status') or 'not on record'}, not waiting for approval"
     ok, why = clear_to_post(ep)
     if not ok: return _silence_no(ep, why, row)
     old = e.get("slot_et")
@@ -1131,6 +1135,10 @@ def _answer(row, choice):
     if len(parts) >= 3 and parts[0].upper() == "CONTRACT" and parts[1].upper() == "FIX":
         if len(parts) > 3 and parts[3] == "script": _drop_for_rewrite(parts[2]); return f"{parts[2]} dropped: a fresh episode is written for its slot"
         return _ran(row, parts[2], f"{parts[2]}: the one-click fix is running")
+    if len(parts) >= 2 and parts[0].upper() == "APPROVE" and str((row or {}).get("dedupe_key") or "").startswith("silence|"):      # v12 B-OWNER (PART F, CF-5 (a)): his Approve on the
+        ok, why = clear_to_post(parts[1])                                                                                          # "not approved by your silence" row asks the checks again
+        if not ok: _silence_no(parts[1], why); return f"Not approved: {why}. Needs you says why."
+        return approve(parts[1])
     if len(parts) >= 2 and parts[0].upper() in ("APPROVE", "HOLDREVIEW"):
         return approve(parts[1]) if parts[0].upper() == "APPROVE" else hold_review(parts[1])
     if len(parts) >= 2 and parts[0].upper() == "UNPOST": return unpost(parts[1])      # v12 B-OWNER (PART 7): "Take it down" on a decided_post row

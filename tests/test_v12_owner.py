@@ -1877,3 +1877,28 @@ def test_one_failing_video_never_stops_the_others_and_every_no_is_told(monkeypat
     assert CON.review_sweep() == 0 and len(sil()) == 1 and "no free slot found" in sil()[0]["text"], sil()
     NT.send("contract_hold", "Title EP8 is still on YouTube's schedule.", [("Done", "OK")], tier="now", urgent=True, episode="EP8", dedupe_key="unscheduled|EP8")      # CF-1b's hold, open
     assert CON.review_sweep() == 0 and len(sil()) == 1 and "STILL ON YOUTUBE'S SCHEDULE" in sil()[0]["text"] and "stays private" not in sil()[0]["text"], sil()
+
+def test_the_no_row_tells_the_reason_of_now_and_his_approve_asks_again(monkeypatch, setting):
+    """CR-8a-5 (PART F, CF-5): (a) the `silence|` row kept its FIRST reason while it was open (a later reason was swallowed by its key) and his Approve on
+    it skipped every check - now a changed reason rewrites it, and his Approve asks the checks again (a "no" is told, never approved over); (b) a card
+    whose video left the review by another road sent a "Needs you" row with Approve - now nothing (V1c's C12 on this road); (c) KILL typed on a video
+    waiting for approval was never read (`kill_check` skips it) - now it holds."""
+    slot, sched = _ep8(monkeypatch, setting); monkeypatch.setattr(LAU, "uploads_open", lambda: False)
+    CON.await_approval("EP8", "ytEP8", slot, "s"); NT.expire_defaults(now=_later(15))
+    sil = lambda ep="EP8": [r for r in _kind("contract_hold", ep) if r["dedupe_key"] == f"silence|{ep}" and r["status"] == "OPEN"]
+    assert len(sil()) == 1 and "uploads are not confirmed open yet" in sil()[0]["text"]
+    monkeypatch.setattr(LAU, "uploads_open", lambda: True); core.store().update("Episodes", "episode_id", "EP8", {"kids_check": core.iso() + " True"})
+    CON.review_sweep(); s = sil()
+    assert len(s) == 1 and "made for kids" in s[0]["text"] and "uploads" not in s[0]["text"], s
+    said = NT.answer(s[0]["id"], "APPROVE EP8")
+    assert said.startswith("Not approved: YouTube marked it made for kids") and _epi("EP8")["status"] == "AWAITING_APPROVAL" and sched == [], said
+    assert len(sil()) == 1 and "made for kids" in sil()[0]["text"]
+    core.store().update("Episodes", "episode_id", "EP8", {"kids_check": core.iso() + " False"})
+    said = NT.answer(sil()[0]["id"], "APPROVE EP8"); assert said.startswith("approved") and _epi("EP8")["status"] == "SCHEDULED", said
+    slot9, sched9 = _ep8(monkeypatch, setting, ep="EP9"); CON.await_approval("EP9", "ytEP9", slot9, "s")
+    core.store().update("Episodes", "episode_id", "EP9", {"status": "SCHEDULED"})                         # it left the review by another road
+    NT.expire_defaults(now=_later(15))
+    assert not _kind("contract_hold", "EP9") and sched9 == [] and not _decided("EP9")
+    slot10, sched10 = _ep8(monkeypatch, setting, ep="EP10", kill="KILL"); CON.await_approval("EP10", "ytEP10", slot10, "s")
+    NT.expire_defaults(now=_later(15))
+    assert _epi("EP10")["status"] == "AWAITING_APPROVAL" and sched10 == [] and len(sil("EP10")) == 1 and "KILL" in sil("EP10")[0]["text"]
