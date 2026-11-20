@@ -1089,14 +1089,23 @@ def _answer(row, choice):
             return f"{parts[2]}: a quality hold has no waiver - nothing was started; tap Fix to repair it (the card is open again)"
         ep, feats = parts[2], (parts[3].split(",") if len(parts) > 3 else [])
         w = json.loads(S("CONTRACT_WAIVERS") or "{}"); w[ep] = sorted(set(w.get(ep, [])) | set(feats)); set_setting("CONTRACT_WAIVERS", json.dumps(w))
-        _open_fix_issue(ep); return f"waived {', '.join(feats)} for {ep}; it continues"
+        return _ran(row, ep, f"waived {', '.join(feats)} for {ep}; it continues")
     if len(parts) >= 3 and parts[0].upper() == "CONTRACT" and parts[1].upper() == "FIX":
         if len(parts) > 3 and parts[3] == "script": _drop_for_rewrite(parts[2]); return f"{parts[2]} dropped: a fresh episode is written for its slot"
-        _open_fix_issue(parts[2]); return f"{parts[2]}: the one-click fix is running"
+        return _ran(row, parts[2], f"{parts[2]}: the one-click fix is running")
     if len(parts) >= 2 and parts[0].upper() in ("APPROVE", "HOLDREVIEW"):
         return approve(parts[1]) if parts[0].upper() == "APPROVE" else hold_review(parts[1])
     if len(parts) >= 2 and parts[0].upper() == "UNPOST": return unpost(parts[1])      # v12 B-OWNER (PART 7): "Take it down" on a decided_post row
     return "recorded"
+
+def _ran(row, ep, said):
+    """FINISHED BY FABLE (CA2-10; R1-94 (3)): his tap is done only when the fix run STARTED - when GitHub refused it, the card is open again on both
+    screens and he is told (the e-mail's link is the other road)."""
+    try: ok = _open_fix_issue(ep)
+    except Exception as e: log(f"the fix run was not started: {scrub(e)[:120]}", "WARN", ep); ok = False
+    if ok: return said
+    store().update("Owner_Actions", "id", row["id"], {"status": "OPEN", "answered_at": "", "answer": ""})
+    return f"{ep}: the fix could not start (GitHub refused it) - the card is open again; tap it again, or use the link in the e-mail"
 
 def _open_fix_issue(ep):
     """The existing one-click fix (fix.yml runs on an issue titled 'FIX <ep>' opened by the repository owner). Opened with the owner's token."""

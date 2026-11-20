@@ -1641,3 +1641,15 @@ def test_a_tap_with_a_verb_no_handler_reads_never_stops_the_process(setting):
     aid = NT.send("title_pick", "Pick the title", [("Pick B", "PICK EPROW27 B")], default="A goes out", expires_h=24, dedupe_key="title_pick|CA27")
     out = NT.answer(aid, "PICK EPROW27 B")
     assert out.startswith("recorded (handler failed") and _row(aid)["status"] == "ANSWERED", out
+
+def test_a_fix_that_could_not_start_leaves_his_card_open(monkeypatch, setting):
+    """R1-94 (3) (the first older behaviour): his Fix tap answered 'the one-click fix is running' and closed the card even when GitHub refused to open
+    the fix - the video stayed HOLD_QC with nothing on his list. The fix must START for the tap to be done; else the card is open again and he is told."""
+    from whatifs import contract as CON
+    setting("TWO_SCREENS_ON", "TRUE"); CON.owner_card("EPDQ6", "final", [("x", "y")])
+    c = next(r for r in NT.open_rows() if r["kind"] == "contract_hold" and r["episode_id"] == "EPDQ6")
+    monkeypatch.setattr(CON, "_open_fix_issue", lambda ep: False)
+    out = NT.answer(c["id"], "CONTRACT FIX EPDQ6 final")
+    assert "could not start" in out and _row(c["id"])["status"] == "OPEN" and c["id"] in {r["id"] for r in NT.needs()}, out
+    monkeypatch.setattr(CON, "_open_fix_issue", lambda ep: True)
+    assert NT.answer(c["id"], "CONTRACT FIX EPDQ6 final") == "EPDQ6: the one-click fix is running" and _row(c["id"])["status"] == "ANSWERED"
