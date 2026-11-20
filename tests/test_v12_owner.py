@@ -1461,3 +1461,14 @@ def test_the_desks_answer_never_wakes_him(monkeypatch, setting):
     _window(False); assert WA.reply_answer("x", day) == "" and len(bodies) == 1
     assert _starts_outside_wa([("whatifs/x.py", "from whatifs import wa as WA\nWA.reply_answer('hi')\n")]) == ["whatifs/x.py:2: reply_answer"]
     assert _starts_outside_wa(list(_py_files())) == []
+
+def test_the_workers_input_route_holds_its_rule():
+    """PART 6: the Worker's rule for his typed words - signed in, 1 to 2,000 characters after trim, a card's id or none, forwarded only encrypted -
+    proven by the node test of mission_control/test_worker.mjs. FOUND AT THE FINISH: only GitHub's Checks ran that file, so the break run could not
+    see a break of worker.js. ONE node test by its name: another test of that file rewrites a tracked file and is not run here."""
+    import re, subprocess
+    if not shutil.which("node"): pytest.skip("node not installed")
+    r = subprocess.run(["node", "--test", "--test-reporter=tap", "--test-name-pattern", r"input \(v12 B-OWNER\)", "mission_control/test_worker.mjs"],
+                       capture_output=True, text=True, timeout=120, cwd=ROOT)
+    out = r.stdout + r.stderr
+    assert r.returncode == 0 and re.search(r"(?m)^# pass 1$", out) and re.search(r"(?m)^# fail 0$", out), out[-800:]
