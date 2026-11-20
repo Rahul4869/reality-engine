@@ -676,3 +676,12 @@ def test_a_failed_read_writes_no_miss_on_the_receipt(monkeypatch, setting, gate_
     vid = _long("EPL14"); PUB.yt_set_privacy(vid, "public"); monkeypatch.setattr(MG, "now_utc", lambda: SLOT + 20 * M)
     monkeypatch.setattr(PUB, "yt_read", lambda v: {}); MG.release("EPL14")
     assert _ep("EPL14")["hd_gate"] == "public 1800 min after upload; HD not read (YouTube could not be read)"
+
+def test_hd_late_promises_nothing_to_a_video_awaiting_his_approval(monkeypatch, setting, gate_on):
+    """PART 9, HIS WINDOW - FOUND AT THE FINISH (CD-3): the `hd_late` row told every long video not in HD by 08:30 India time "It still goes out
+    tonight" - also one still AWAITING_APPROVAL, which goes out only when he or his silence approves it (PART 7). Its words now follow the status."""
+    PUB.FAKE_FAULTS["youtube"] = {"sd": True}
+    _long("EPL15", "AWAITING_APPROVAL"); _long("EPL16")
+    HG.long_tick(_t(3, 5)); said = {r["episode_id"]: r["text"] for r in _rows("hd_late")}                # 08:35 India time
+    assert "If it is approved it goes out tonight" in said["EPL15"] and "It still goes out tonight" not in said["EPL15"]
+    assert "It still goes out tonight" in said["EPL16"]

@@ -221,8 +221,9 @@ def window(e, slot, got, now):
                              f"https://studio.youtube.com/video/{vid}/edit", [("Done", "DONE")], episode=ep,
                 default="it goes out without an end screen", expires_h=max(0.25, (slot - now).total_seconds() / 3600), dedupe_key=f"prepublic|{ep}")
     elif now.astimezone(NT.IST).time() >= dt.time(8, 30) and not _told(f"hd_late|{ep}"):
-        NT.send("hd_late", f"{title}: YouTube does not show it in HD yet ({now.astimezone(NT.IST).strftime('%H:%M')} India time). It still goes out tonight; "
-                           f"while it waits for HD its time moves by up to {S('HD_LONG_CAP_MIN', int)} minutes past {at}.", episode=ep, dedupe_key=f"hd_late|{ep}")
+        NT.send("hd_late", f"{title}: YouTube does not show it in HD yet ({now.astimezone(NT.IST).strftime('%H:%M')} India time). "
+                           + ("It still goes out tonight; " if e.get("status") == "SCHEDULED" else "If it is approved it goes out tonight; ")      # a video still awaiting his approval is promised nothing (PART 7)
+                           + f"while it waits for HD its time moves by up to {S('HD_LONG_CAP_MIN', int)} minutes past {at}.", episode=ep, dedupe_key=f"hd_late|{ep}")
 
 def long_tick(now=None):
     """The long video's gate and his window, at every tick, with HD_GATE_ON (switched off, the gate stops moving times and YouTube's own schedule
