@@ -1078,6 +1078,9 @@ def owner_card(ep, stage, failed, extra=""):
     lines = "; ".join(f"{f}: {str(ev)[:90]}" for f, ev in failed[:5])
     btn = [("Rewrite" if stage == "script" else "Fix", f"CONTRACT FIX {ep} {stage}"), ("Approve anyway", f"CONTRACT WAIVE {ep} {','.join(f for f, _ in failed)}"), ("Discuss", f"DISCUSS contract {ep}")]
     if stage == "quality": btn = [b for b in btn if not b[1].startswith("CONTRACT WAIVE")]      # FINISHED BY FABLE (CA2-1): the final QC reads no waiver - "Approve anyway" would only start the fix and hold it again
+    text = f"{ep} is HELD at the {stage} check (nothing goes public). Failed: {lines}. {extra}".strip()
+    old = next((r for r in NT.open_rows() if r.get("dedupe_key") == f"contract|{ep}|{stage}"), None)      # FINISHED BY FABLE (CA2-11 re-cut as CA3-6; R1-94 (3), R1-104 (2)): held again with other failures - a NEW card says what failed now
+    if old and old.get("text") != text[:1500]: store().update("Owner_Actions", "id", old["id"], {"status": "ANSWERED", "answered_at": iso(), "answer": "held again - a newer card took its place"})
     NT.send("contract_hold", f"{ep} is HELD at the {stage} check (nothing goes public). Failed: {lines}. {extra}".strip(), btn, tier="now", urgent=True,
             episode=ep, default="stays held", expires_h=48, dedupe_key=f"contract|{ep}|{stage}")
 

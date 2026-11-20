@@ -1657,3 +1657,22 @@ def test_a_fix_that_could_not_start_leaves_his_card_open(monkeypatch, setting):
     assert NT.answer(c["id"], "CONTRACT FIX EPDQ6 final") == said and _row(c["id"])["status"] == "OPEN", _row(c["id"])
     monkeypatch.setattr(CON, "_open_fix_issue", lambda ep: True)
     assert NT.answer(c["id"], "CONTRACT FIX EPDQ6 final") == "EPDQ6: the one-click fix is running" and _row(c["id"])["status"] == "ANSWERED"
+
+def test_a_hold_raised_again_says_what_failed_now(setting):
+    """R1-94 (3) (the second older behaviour): a video held again under the same key while its card was open kept the FIRST list of failed checks, and
+    its 'Approve anyway' waived what failed before. RE-CUT (PART A3's CA3-6, R1-104 (2)): a WhatsApp message cannot be edited and a tapped button finds
+    its verb by its place on its own row - so a changed hold is a NEW card, the old one is closed, and an old button waives nothing. The same list
+    raised again stays one card."""
+    from whatifs import contract as CON, dash as DS
+    setting("TWO_SCREENS_ON", "TRUE")
+    holds = lambda: sorted((r for r in core.store().rows("Owner_Actions") if r["kind"] == "contract_hold" and r["episode_id"] == "EPDQ5"), key=lambda r: r["id"])
+    CON.owner_card("EPDQ5", "final", [("aliveness", "first")]); CON.owner_card("EPDQ5", "final", [("exhibits", "second")])
+    assert len(holds()) == 2, [(r["status"], r["text"][:60]) for r in holds()]
+    first, new = holds()
+    assert first["status"] == "ANSWERED" and first["answer"] == "held again - a newer card took its place" and new["status"] == "OPEN", (first, new)
+    assert "exhibits: second" in new["text"] and "aliveness" not in new["text"] and "CONTRACT WAIVE EPDQ5 exhibits" in [v for _l, v in json.loads(new["buttons"])]
+    gone = f"{first['id']} already ANSWERED"                                                          # "Approve anyway" on the FIRST message, still on his phone
+    assert NT.answer(first["id"], "CONTRACT WAIVE EPDQ5 aliveness") == gone and DS.route(f"ACT|{first['id']}|1") == (True, gone)
+    assert "EPDQ5" not in json.loads(core.S("CONTRACT_WAIVERS") or "{}")                               # it waived nothing
+    CON.owner_card("EPDQ5", "final", [("exhibits", "second")])                                         # held again with the SAME failures: still that one card
+    assert [r["status"] for r in holds()] == ["ANSWERED", "OPEN"], [(r["status"], r["text"][:50]) for r in holds()]
