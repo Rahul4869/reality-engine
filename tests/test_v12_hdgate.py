@@ -451,3 +451,14 @@ def test_a_blocked_video_is_refused_at_the_door(gate_on):
     PUB.FAKE_FAULTS.clear()                                                                            # the flag is gone: the block still holds, at the door itself
     assert HG.go_public(vid, NOW + 2 * M, "cap") == (False, "blocked: YouTube marked it made for kids")
     assert _shown(vid) == "private" and HG.row(vid)["state"] == HG.BLOCKED and len(_blocked()) == 1
+
+def test_a_job_that_polls_counts_one_empty_read(monkeypatch, gate_on):
+    """R22 (4) ("blocked on three reads, never on one"). FOUND AT THE FINISH: `finish` counted an empty read at EVERY poll of the upload job's wait
+    (every 15 seconds, up to HD_SHORT_WAIT_S), so a job whose reads failed for a minute stood at "unread 4" - and ONE late empty read, hours on, then
+    blocked the Short for good. A pass counts one empty read, however often it polls. (Offline the job never polls: the fault lived in real mode only.)"""
+    vid = PUB.yt_upload("x/SHHD21.mp4", "T", "D", [], short=True, now=NOW)
+    monkeypatch.setattr(HG, "FAKE", False); monkeypatch.setattr(HG.time, "sleep", lambda s: None); reads = []
+    monkeypatch.setattr(PUB, "yt_read", lambda v: reads.append(v) or {})
+    assert HG.finish(vid, 45, NOW)[0] == HG.WAITING and len(reads) == 4 and HG.row(vid)["note"] == "unread 1", (len(reads), HG.row(vid)["note"])
+    late = 60 + core.S("PRIVATE_ALERT_HOURS", float) * 60
+    assert HG.finish(vid, 0, NOW + (late + 1) * M)[0] == HG.WAITING and HG.row(vid)["note"] == "unread 2" and not _blocked()      # one late empty read blocks nothing

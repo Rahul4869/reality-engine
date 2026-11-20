@@ -105,14 +105,14 @@ def finish(vid, wait_s=0, now=None):
     if not r: return "", 0, ""
     if r.get("state") != WAITING: return r.get("state"), int(float(r.get("minutes") or 0)), str(r.get("note") or "")
     up = parse_iso(r.get("uploaded")) or now; cap = float(r.get("cap_min") or S("HD_SHORT_CAP_MIN", float))
-    left = 0 if FAKE else max(0.0, float(wait_s or 0)); t = now
+    left = 0 if FAKE else max(0.0, float(wait_s or 0)); t = now; n = None
     while True:
         got = PUB.yt_read(vid)
         if not got:
-            n = _unread(vid, t)
+            if n is None: n = _unread(vid, t)                                       # R22 (4): ONE empty read a pass, however often the job polls
             if _mins(up, t) >= cap + S("PRIVATE_ALERT_HOURS", float) * 60 and n >= UNREAD_MAX: block(vid, "YouTube could not be read", None, t); break
         else:
-            _read_ok(vid); act, _m = short_step(up, got, t, cap)
+            n = None; _read_ok(vid); act, _m = short_step(up, got, t, cap)
             if act in ("public", "cap"): go_public(vid, t, act); break
         if left <= 0: break
         time.sleep(REL.POLL_S); left -= REL.POLL_S; t = t + dt.timedelta(seconds=REL.POLL_S)
