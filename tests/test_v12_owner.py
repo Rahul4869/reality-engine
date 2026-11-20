@@ -1567,3 +1567,14 @@ def test_two_previews_that_reach_nothing_are_two_rows(monkeypatch, setting):
         assert PV.run()["ok"] is False
     rows = sorted((r for r in core.store().rows("Owner_Actions") if r["kind"] == "preview_none"), key=lambda r: r["id"])
     assert len(rows) == 2 and "every pitch scored under the bar" in rows[1]["text"] and all(r["dedupe_key"].startswith("preview_none|DRAFT") for r in rows), [(r["dedupe_key"], r["text"][:70]) for r in rows]
+
+def test_a_second_brief_on_one_day_is_its_own_row(monkeypatch, setting):
+    """B4 (ii) (the Fable consult on CA2-3; R1-104): `monthly_brief` has no guard of its own - a run by hand on the cron's day (a brief corrected after a
+    fix) wrote other words that the dated key swallowed, and his screens kept the first brief. Its key names its words (`NT.said_key`): the same brief
+    twice is one row; another brief is a new row, the newest."""
+    from whatifs import manage as MG, models as M
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch); monkeypatch.setitem(core.JOB, "name", core.JOB.get("name"))      # the brief names the job: put it back after the test
+    for words in ("The month in one page: before the fix.", "The month in one page: after the fix.", "The month in one page: after the fix."):
+        monkeypatch.setattr(M, "ask_batch", lambda *a, _w=words, **k: _w); MG.monthly_brief()
+    rows = sorted((r for r in core.store().rows("Owner_Actions") if r["kind"] == "monthly_brief"), key=lambda r: r["id"])
+    assert len(rows) == 2 and "before the fix" in rows[0]["text"] and "after the fix" in rows[-1]["text"], [r["text"][:60] for r in rows]

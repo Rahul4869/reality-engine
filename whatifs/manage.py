@@ -1355,7 +1355,8 @@ def monthly_brief():
     txt = ask_batch("brief", P.fill(P.BRIEF, data=json.dumps(data, default=str)[:20000]) + ("\nEnd with ONE priority fix for next month (the single change most "
               "likely to raise click-through or retention, with the evidence), then a short list of other ideas. Recommend only: budget and visuals are never changed automatically."),
               "Write it.", want_json=False, fake_key="brief")
-    NT.mail("monthly_brief", "Monthly brief", "<pre style='font-family:sans-serif;white-space:pre-wrap'>" + txt + "</pre>")
+    NT.mail("monthly_brief", "Monthly brief", "<pre style='font-family:sans-serif;white-space:pre-wrap'>" + txt + "</pre>",
+            dedupe_key=NT.said_key("monthly_brief", NT._india_day(), hashlib.sha1(str(txt).encode("utf-8")).hexdigest()[:12]))      # FINISHED BY FABLE (CA3-11; B4 (ii)): a second brief of one India day is its own row, the newest; the same brief twice is one
 
 # ---------------- setup ----------------
 def setup():
