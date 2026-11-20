@@ -159,14 +159,14 @@ def main():
             else: print(SP.run(kind=kind, force=kind == "cast_intro"))
         elif cmd == "wa_inbound":                                        # v9.4b: WhatsApp messages / button taps / delivery statuses (encrypted)
             import os as _os
-            from whatifs.wa import handle_inbound; from whatifs.dash import drain; print(handle_inbound(_os.environ.get("WA_PAYLOAD", "{}"))); drain()
+            from whatifs.wa import handle_inbound; from whatifs.dash import drain; drain(); print(handle_inbound(_os.environ.get("WA_PAYLOAD", "{}")))   # CH-1: the kept ones first, oldest first
         elif cmd == "wa_templates":                                      # v10.2 (#10/#11): subscribe the app, create the template; a failure fails the job (red, not green)
             from whatifs.wa import ensure_templates, ensure_subscribed
             sub = ensure_subscribed(); tpl = ensure_templates(); print({"subscribed": sub, "template": tpl})
             if not (sub and tpl) and not FAKE: sys.exit(1)
         elif cmd == "dash_action":                                       # v9.4b: one encrypted dashboard tap (from repository_dispatch)
             import os as _os
-            from whatifs.dash import handle_action, drain; print("ok" if handle_action(_os.environ.get("DASH_PAYLOAD", "{}")) else "not done"); drain()
+            from whatifs.dash import handle_action, drain; drain(); print("ok" if handle_action(_os.environ.get("DASH_PAYLOAD", "{}")) else "not done")   # CH-1: his own payload is kept too - the drain does it in its order, the call finds its ack
         elif cmd == "dash_snapshot":
             import json as _json
             from whatifs.dash import build_snapshot; print(_json.dumps(build_snapshot())[:2000])

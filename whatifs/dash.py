@@ -444,23 +444,40 @@ def _kv():
     acc, ns, tok = env("CF_ACCOUNT_ID"), env("CF_KV_NAMESPACE_ID"), env("CF_KV_TOKEN")
     return None if (FAKE or not (acc and ns and tok)) else _CFKV(acc, ns, tok)
 
+def _when(key, item):
+    """CH-1 (FR-CE1b-1): the moment he gave a kept input, in milliseconds - a dash item's `ts` (the Worker's Date.now()), a WhatsApp message's `ts`
+    (Meta's timestamp, in SECONDS); none or unreadable -> 0 (first, in KV's order)."""
+    try:
+        if key.startswith("inbox:wa:"): return float(((item.get("messages") or [{}])[0] or {}).get("ts") or 0) * 1000
+        return float(item.get("ts") or 0)
+    except (TypeError, ValueError, AttributeError): return 0.0
+
 def drain(kv=None):
     """CE-1b (R1-144 (b)): every input and message of his the Worker kept (`inbox:<id>`) before its dispatch is handled exactly once - a WhatsApp
     message through `wa.handle_inbound` (deduped by its id), the rest through `handle_action` (an acked id is skipped) - and its key deleted. A run
-    that was cancelled, replaced, failed or stalled loses nothing. Never logs a word of his. Returns the number of keys handled."""
+    that was cancelled, replaced, failed or stalled loses nothing. Never logs a word of his. Returns the number of keys handled.
+    CH-1 (FR-CE1b-1): KV lists the keys by their random names, so the kept inputs are handled OLDEST FIRST by the moment he gave them (`_when`) -
+    his last word stands; one whose handling raised stops the drain, and the later ones stay for the next run, which does them in order. The run
+    drains BEFORE its own payload, so KV not answering never stops it: nothing is handled from KV, everything stays, the run does its own tap."""
     kv = kv or _kv()
     if kv is None: return 0
-    n = 0
-    for key in kv.keys("inbox:"):
-        val = kv.get(key)
+    kept = []
+    try: listed = [(key, kv.get(key)) for key in kv.keys("inbox:")]
+    except Exception as e: log(f"the kept inputs were not read ({type(e).__name__}); they stay for the next run", "WARN"); return 0
+    for key, val in listed:
         if val is None: continue
-        try: decrypt(json.loads(val))                               # unreadable in this run (a wrong or missing key): the key STAYS - never deleted unhandled
+        try: item = decrypt(json.loads(val))                        # unreadable in this run (a wrong or missing key): the key STAYS - never deleted unhandled
         except Exception as e: log(f"a kept input was not readable ({type(e).__name__}); it stays for the next run", "WARN"); continue
+        kept.append((_when(key, item), len(kept), key, val))
+    n = 0
+    for _t, _i, key, val in sorted(kept):
         try:
             if key.startswith("inbox:wa:"):
                 from whatifs.wa import handle_inbound; handle_inbound(val)
             else: handle_action(val)
-        except Exception as e: log(f"a kept input was not handled ({type(e).__name__}); it stays for the next run", "WARN"); continue
-        kv.delete(key); n += 1
+        except Exception as e: log(f"a kept input was not handled ({type(e).__name__}); it and the later ones stay for the next run", "WARN"); break
+        try: kv.delete(key)
+        except Exception as e: log(f"a handled input's key was not deleted ({type(e).__name__}); the next run finds it handled", "WARN")
+        n += 1
     if n: log(f"dashboard inbox: {n} kept input(s) handled")
     return n

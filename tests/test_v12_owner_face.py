@@ -204,6 +204,70 @@ def test_a_kept_input_is_handled_once_by_the_next_run_and_its_key_deleted(monkey
     kv.d["inbox:W1"] = kept(w1)                                                      # the same id kept again (a dispatch AND a drain): handled once
     assert DS.drain(kv) == 1 and [r["id"] for r in core.store().rows("Dash_Acks")] == ["W1"] and "inbox:W1" not in kv.d
 
+def _inbox(monkeypatch):
+    """CH-1: the Worker's KV inbox in fake - `kept(item)` encrypts as worker.js `keep` does; the fake KV lists its keys in the order they were put,
+    as Cloudflare lists them by NAME - and the names are random ids, so the listing order is not the order he acted in."""
+    import base64, json as _j, os
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    key = os.urandom(32); monkeypatch.setenv("WA_RELAY_KEY", base64.b64encode(key).decode())
+    def kept(item):
+        n = os.urandom(12); return _j.dumps({"n": base64.b64encode(n).decode(), "c": base64.b64encode(AESGCM(key).encrypt(n, _j.dumps(item).encode(), None)).decode()})
+    class KV:
+        def __init__(s, d): s.d = d
+        def keys(s, p): return [k for k in s.d if k.startswith(p)]
+        def get(s, k): return s.d.get(k)
+        def delete(s, k): s.d.pop(k, None)
+    return kept, KV
+
+def test_kept_inputs_are_handled_in_the_order_he_gave_them(monkeypatch, setting):
+    """CH-1 (FR-CE1b-1): the drain handles his kept inputs oldest first by the moment he gave them - a dash item's `ts` (milliseconds), a WhatsApp
+    message's `ts` (Meta's timestamp, SECONDS) - never by the order KV lists their random names; his last word stands. A kept input whose handling
+    raised stops the drain: the later ones stay and the next run does them all, in order."""
+    kept, KV = _inbox(monkeypatch); setting("TWO_SCREENS_ON", "TRUE")
+    resume, pause = {"id": "R1", "verb": "RESUME", "ts": 1_000_000, "src": "dash"}, {"id": "P1", "verb": "PAUSE", "ts": 2_000_000, "src": "dash"}
+    kv = KV({"inbox:a-pause": kept(pause), "inbox:b-resume": kept(resume)})           # listed newest first
+    assert DS.drain(kv) == 2 and kv.d == {}
+    assert core.S("PAUSED", bool) is True, "his later Pause was overridden by his earlier Resume: the drain walked KV's listing order"
+    tap = {"id": "wamid.R2", "ts": "2500", "type": "button", "payload": "RESUME", "text": "Resume"}     # 2,500 s = 2,500,000 ms: AFTER the Pause below
+    kv = KV({"inbox:wa:wamid.R2": kept({"messages": [tap], "statuses": []}), "inbox:c-pause": kept({**pause, "id": "P2", "ts": 2_400_000})})
+    assert DS.drain(kv) == 2 and kv.d == {}
+    assert core.S("PAUSED", bool) is False, "his WhatsApp Resume (2,500 s) came after the dash Pause (2,400,000 ms): seconds and milliseconds were compared raw"
+    real, calls = DS.handle_action, []
+    def once_down(val):                                                               # the Sheet fails on the first kept input of this run
+        calls.append(val)
+        if len(calls) == 1: raise TimeoutError("the sheet did not answer")
+        return real(val)
+    monkeypatch.setattr(DS, "handle_action", once_down)
+    kv = KV({"inbox:d-pause": kept({**pause, "id": "P3", "ts": 4_000_000}), "inbox:e-resume": kept({**resume, "id": "R3", "ts": 3_000_000})})
+    assert DS.drain(kv) == 0 and set(kv.d) == {"inbox:d-pause", "inbox:e-resume"}, "a later input was handled while an earlier one failed"
+    assert DS.drain(kv) == 2 and kv.d == {} and core.S("PAUSED", bool) is True                  # the next run: Resume, then Pause - his last word
+    assert [r["id"] for r in core.store().rows("Dash_Acks")] == ["R1", "P1", "P2", "R3", "P3"]                    # each id once, oldest first
+
+def test_a_run_does_the_kept_inputs_before_its_own_payload(monkeypatch, setting, capsys):
+    """CH-1 (FR-CE1b-1): three taps while one run works - A runs, B waits, C replaces B (GitHub keeps ONE pending run of a group). C's run must do B
+    before C: with B = Resume and C = Pause the engine ends PAUSED. C's own payload is kept too, so the drain does it in its place and the payload
+    call finds its ack: each id is acked once and the run prints "ok". The same for a WhatsApp run and a kept dash input it finds waiting."""
+    import sys
+    from whatifs import cli
+    kept, KV = _inbox(monkeypatch); setting("TWO_SCREENS_ON", "TRUE")
+    b, c = {"id": "B1", "verb": "RESUME", "ts": 1_000_000, "src": "dash"}, {"id": "C1", "verb": "PAUSE", "ts": 2_000_000, "src": "dash"}
+    kv = KV({"inbox:B1": kept(b), "inbox:C1": kept(c)})
+    monkeypatch.setattr(DS, "_kv", lambda: kv); monkeypatch.setenv("DASH_PAYLOAD", kept(c)); monkeypatch.setattr(sys, "argv", ["whatifs.cli", "dash_action"])
+    cli.main()
+    assert core.S("PAUSED", bool) is True, "the run did its own Pause first and the drain then did the earlier Resume: his last word was overridden"
+    assert [r["id"] for r in core.store().rows("Dash_Acks")] == ["B1", "C1"] and kv.d == {} and capsys.readouterr().out.strip().endswith("ok")
+    msg = {"id": "wamid.P9", "ts": "3000", "type": "button", "payload": "PAUSE", "text": "Pause"}          # 3,000 s: after the kept Resume below
+    kv.d.update({"inbox:wa:wamid.P9": kept({"messages": [msg], "statuses": []}), "inbox:B2": kept({**b, "id": "B2", "ts": 2_500_000})})
+    monkeypatch.setenv("WA_PAYLOAD", kept({"messages": [msg], "statuses": []})); monkeypatch.setattr(sys, "argv", ["whatifs.cli", "wa_inbound"])
+    cli.main()
+    assert core.S("PAUSED", bool) is True and kv.d == {}, "the WhatsApp run did its own Pause before the kept Resume it found waiting"
+    class Down(KV):                                                                   # KV does not answer: the run still does his own tap
+        def keys(s, p): raise ConnectionError("cloudflare did not answer")
+    down = Down({"inbox:C3": kept({**b, "id": "C3", "ts": 4_000_000})})
+    monkeypatch.setattr(DS, "_kv", lambda: down); monkeypatch.setenv("DASH_PAYLOAD", kept({**b, "id": "C3", "ts": 4_000_000})); monkeypatch.setattr(sys, "argv", ["whatifs.cli", "dash_action"])
+    cli.main()
+    assert core.S("PAUSED", bool) is False and "C3" in [r["id"] for r in core.store().rows("Dash_Acks")] and "inbox:C3" in down.d, "a KV that did not answer stopped his own tap"
+
 def test_the_snapshot_says_when_the_health_reading_failed(monkeypatch, setting):
     """CE-2 (CR-7-2): an error or a timeout while the runs are read is said in the snapshot (`read`, `note`) - never an empty list that looks healthy."""
     from whatifs import caretaker as CT
