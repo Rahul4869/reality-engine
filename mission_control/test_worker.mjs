@@ -165,3 +165,37 @@ test("watchdog dispatches a tick only when the last pipeline run is stale", asyn
     const st = JSON.parse(await e.RE_KV.get("wd_status")); assert.equal(st.seen, "http 403");
   } finally { globalThis.fetch = realFetch; }
 });
+
+test("CE-1b: his words are kept in KV before the dispatch; a refused dispatch still answers stored", async () => {
+  const e = env(), c = "re_s=" + await signSession(e.SESSION_KEY, 30), real = globalThis.fetch;
+  globalThis.fetch = async () => new Response(null, { status: 500 });                 // GitHub refuses the dispatch
+  try {
+    const r = await worker.fetch(post(root(e) + "/api/input", { text: "more wonder please", card: "" }, { cookie: c }), e), j = await r.json();
+    assert.equal(r.status, 200); assert.equal(j.stored, true); assert.equal(j.sent, false);
+    const kept = await decrypt(e.WA_RELAY_KEY, JSON.parse(e.RE_KV.m.get("inbox:" + j.id)));
+    assert.deepEqual([kept.id, kept.verb, kept.text], [j.id, "INPUT", "more wonder please"]);
+  } finally { globalThis.fetch = real; }
+});
+test("CE-1b: a status-only webhook starts no run; his message is kept under its id", async () => {
+  const e = env(); sent.length = 0;
+  const hook = async (value) => { const raw = JSON.stringify({ entry: [{ changes: [{ value }] }] });
+    return worker.fetch(new Request("https://re.test/webhook", { method: "POST", headers: { "x-hub-signature-256": "sha256=" + await hmacHex(e.WA_APP_SECRET, raw) }, body: raw }), e); };
+  await hook({ statuses: [{ id: "wamid.S1", status: "delivered", timestamp: "1", recipient_id: e.OWNER_WA }] });
+  assert.equal(sent.length, 0);
+  await hook({ messages: [{ id: "wamid.M1", from: e.OWNER_WA, type: "text", text: { body: "hi" }, timestamp: "1" }] });
+  assert.equal(sent.length, 1); assert.ok(e.RE_KV.m.get("inbox:wa:wamid.M1"));
+  e.RE_KV.put = async () => { throw new Error("kv down"); };
+  const r = await hook({ messages: [{ id: "wamid.M2", from: e.OWNER_WA, type: "text", text: { body: "hi" }, timestamp: "1" }] });
+  assert.equal(r.status, 503);                                                        // not kept: Meta delivers it again
+});
+test("CE-1b: the key is in KV when the dispatch leaves; a failed put answers 503 and starts no run", async () => {
+  const e = env(), c = "re_s=" + await signSession(e.SESSION_KEY, 30), real = globalThis.fetch; let before = null, calls = 0;
+  globalThis.fetch = async () => { calls++; before = [...e.RE_KV.m.keys()].filter(k => k.startsWith("inbox:")).length; return new Response(null, { status: 204 }); };
+  try {
+    let r = await worker.fetch(post(root(e) + "/api/action", { verb: "PICK|EP202611140|B" }, { cookie: c }), e); const j = await r.json();
+    assert.equal(r.status, 200); assert.equal(before, 1); assert.equal(j.stored, true); assert.equal(j.sent, true);
+    e.RE_KV.put = async () => { throw new Error("kv down"); }; calls = 0;
+    r = await worker.fetch(post(root(e) + "/api/input", { text: "more wonder please", card: "" }, { cookie: c }), e);
+    assert.equal(r.status, 503); assert.equal(calls, 0);
+  } finally { globalThis.fetch = real; }
+});

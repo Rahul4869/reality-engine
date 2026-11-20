@@ -106,6 +106,9 @@ export async function dispatch(env, eventType, payload) {
     body: JSON.stringify({ event_type: eventType, client_payload }) });
   return r.status === 204;
 }
+export async function keep(env, key, item) {     // CE-1b (R1-144 (b)): his input or message is in KV under its id BEFORE any dispatch; the pipeline's drain handles it once and deletes the key
+  await env.RE_KV.put("inbox:" + key, JSON.stringify(await encrypt(env.WA_RELAY_KEY, item)), { expirationTtl: 2592000 });
+}
 
 /* ---------------------------------------------------------------- v11: watchdog clock (GitHub cron can run hours late or be dropped)
    Cloudflare Cron Trigger (every 10 min) -> look at the newest run of pipeline.yml; if it is older than WATCHDOG_STALE_MIN (default 45), dispatch a
@@ -165,8 +168,11 @@ async function waInbound(req, env) {
     for (const m of v.messages || []) if (String(m.from) === String(env.OWNER_WA)) messages.push(normaliseMessage(m));
     for (const s of v.statuses || []) if (String(s.recipient_id) === String(env.OWNER_WA)) statuses.push({ id: s.id, status: s.status, ts: s.timestamp });
   }
-  if (messages.length || statuses.length) {
-    try { await dispatch(env, "wa_inbound", { messages, statuses }); } catch (e) { /* Meta retries; the pipeline dedupes by message id */ }
+  if (messages.length) {                                        // CE-1b (R1-144 (b)): a status-only webhook starts no run; each message of his is kept first
+    let lost = false;                                           // a message that is not kept is answered 503: Meta delivers it again; the pipeline dedupes by its id
+    for (const m of messages) { try { await keep(env, "wa:" + m.id, { messages: [m], statuses: [] }); } catch (e) { lost = true; } }
+    try { await dispatch(env, "wa_inbound", { messages, statuses }); } catch (e) { /* the next run's drain handles the kept messages; the pipeline dedupes by message id */ }
+    if (lost) return new Response("", { status: 503 });
   }
   return new Response("", { status: 200 });                     // always 200: anything else makes Meta retry and disable the webhook
 }
@@ -213,16 +219,20 @@ async function app(req, env, url, root) {
     if (text.length < 1 || text.length > 2000) return json({ error: "Type between 1 and 2,000 characters." }, 400);
     if (card !== "" && !/^[A-Za-z0-9_.:\-]{1,64}$/.test(card)) return json({ error: "That card is not known." }, 400);
     const id = crypto.randomUUID();
-    const ok = await dispatch(env, "dash_action", { id, verb: "INPUT", text, card, ts: Date.now(), src: "dash" });
-    return ok ? json({ ok: true, id }) : json({ error: "GitHub did not accept your words. Try again in a minute." }, 502);
+    const item = { id, verb: "INPUT", text, card, ts: Date.now(), src: "dash" };
+    try { await keep(env, id, item); } catch (e) { return json({ error: "Not saved - nothing was kept. Try again in a minute." }, 503); }
+    const sent = await dispatch(env, "dash_action", item).catch(() => false);
+    return json({ ok: true, id, stored: true, sent });          // CE-1b: a 2xx means KEPT (CR-7-1); a refused dispatch is handled by the next run's drain
   }
   if (rel === "/api/action" && req.method === "POST") {
     let body; try { body = await req.json(); } catch (e) { return json({ error: "Bad request" }, 400); }
     const verb = String(body?.verb || "");
     if (!/^[A-Z]{2,12}(\|[A-Za-z0-9_.:+\-]{0,80}){0,3}$/.test(verb)) return json({ error: "That action is not allowed." }, 400);
     const id = crypto.randomUUID();
-    const ok = await dispatch(env, "dash_action", { id, verb, ts: Date.now(), src: "dash" });
-    return ok ? json({ ok: true, id }) : json({ error: "GitHub did not accept the action. Try again in a minute." }, 502);
+    const item = { id, verb, ts: Date.now(), src: "dash" };
+    try { await keep(env, id, item); } catch (e) { return json({ error: "Not saved - nothing was kept. Try again in a minute." }, 503); }
+    const sent = await dispatch(env, "dash_action", item).catch(() => false);
+    return json({ ok: true, id, stored: true, sent });          // CE-1b: a 2xx means KEPT (CR-7-1); a refused dispatch is handled by the next run's drain
   }
   return json({ error: "Not found" }, 404);
 }

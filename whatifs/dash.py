@@ -416,3 +416,39 @@ def handle_action(payload_json):
     try: publish()
     except Exception: pass
     return ok
+
+class _CFKV:
+    """CE-1b: the inbox keys of Cloudflare KV, listed, read and deleted with the token `publish` writes with (CF_KV_TOKEN)."""
+    def __init__(s, acc, ns, tok): s.base, s.h = f"https://api.cloudflare.com/client/v4/accounts/{acc}/storage/kv/namespaces/{ns}", {"Authorization": f"Bearer {tok}"}
+    def keys(s, prefix):
+        import requests; r = requests.get(s.base + "/keys", params={"prefix": prefix, "limit": 1000}, headers=s.h, timeout=30); r.raise_for_status()
+        return [k["name"] for k in r.json().get("result", [])]
+    def get(s, key):
+        import requests; from urllib.parse import quote; r = requests.get(s.base + "/values/" + quote(key, safe=""), headers=s.h, timeout=30); return r.text if r.status_code == 200 else None
+    def delete(s, key):
+        import requests; from urllib.parse import quote; requests.delete(s.base + "/values/" + quote(key, safe=""), headers=s.h, timeout=30)
+
+def _kv():
+    acc, ns, tok = env("CF_ACCOUNT_ID"), env("CF_KV_NAMESPACE_ID"), env("CF_KV_TOKEN")
+    return None if (FAKE or not (acc and ns and tok)) else _CFKV(acc, ns, tok)
+
+def drain(kv=None):
+    """CE-1b (R1-144 (b)): every input and message of his the Worker kept (`inbox:<id>`) before its dispatch is handled exactly once - a WhatsApp
+    message through `wa.handle_inbound` (deduped by its id), the rest through `handle_action` (an acked id is skipped) - and its key deleted. A run
+    that was cancelled, replaced, failed or stalled loses nothing. Never logs a word of his. Returns the number of keys handled."""
+    kv = kv or _kv()
+    if kv is None: return 0
+    n = 0
+    for key in kv.keys("inbox:"):
+        val = kv.get(key)
+        if val is None: continue
+        try: decrypt(json.loads(val))                               # unreadable in this run (a wrong or missing key): the key STAYS - never deleted unhandled
+        except Exception as e: log(f"a kept input was not readable ({type(e).__name__}); it stays for the next run", "WARN"); continue
+        try:
+            if key.startswith("inbox:wa:"):
+                from whatifs.wa import handle_inbound; handle_inbound(val)
+            else: handle_action(val)
+        except Exception as e: log(f"a kept input was not handled ({type(e).__name__}); it stays for the next run", "WARN"); continue
+        kv.delete(key); n += 1
+    if n: log(f"dashboard inbox: {n} kept input(s) handled")
+    return n

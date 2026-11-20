@@ -181,3 +181,25 @@ def test_each_ack_names_its_action_id_and_an_unhandled_one_is_absent(setting):
     DS._ack("WID2", "INPUT", True, "Saved as input 2")                          # WID1 was sent too; its run never ran
     acks = DS.build_snapshot()["acks"]
     assert [a.get("id") for a in acks] == ["WID2"] and acks[0]["verb"] == "INPUT", acks
+
+def test_a_kept_input_is_handled_once_by_the_next_run_and_its_key_deleted(monkeypatch, setting):
+    """CE-1b (R1-144 (b)): the Worker keeps each input in KV before its dispatch; a run that never ran loses nothing - the next run's drain handles
+    every kept id once (an acked id is skipped) and deletes its key."""
+    import base64, json as _j, os
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    from whatifs import dash as DS
+    key = os.urandom(32); monkeypatch.setenv("WA_RELAY_KEY", base64.b64encode(key).decode()); setting("TWO_SCREENS_ON", "TRUE")
+    def kept(item):
+        n = os.urandom(12); return _j.dumps({"n": base64.b64encode(n).decode(), "c": base64.b64encode(AESGCM(key).encrypt(n, _j.dumps(item).encode(), None)).decode()})
+    class KV:
+        def __init__(s, d): s.d = d
+        def keys(s, p): return [k for k in s.d if k.startswith(p)]
+        def get(s, k): return s.d.get(k)
+        def delete(s, k): s.d.pop(k, None)
+    w1 = {"id": "W1", "verb": "INPUT", "text": "more wonder please", "card": "", "src": "dash"}
+    kv = KV({"inbox:W1": kept(w1), "snapshot": "{}"})
+    assert DS.drain(kv) == 1 and list(kv.d) == ["snapshot"]
+    kv.d["inbox:BAD"] = "not readable with this key"                                 # a value this run cannot read is NOT deleted
+    assert DS.drain(kv) == 0 and "inbox:BAD" in kv.d; kv.d.pop("inbox:BAD")
+    kv.d["inbox:W1"] = kept(w1)                                                      # the same id kept again (a dispatch AND a drain): handled once
+    assert DS.drain(kv) == 1 and [r["id"] for r in core.store().rows("Dash_Acks")] == ["W1"] and "inbox:W1" not in kv.d
