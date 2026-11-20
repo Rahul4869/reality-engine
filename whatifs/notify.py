@@ -189,7 +189,7 @@ def said_key(kind, thing, value):
     newest. So A, B, A on one day are three rows and the newest says A; A, A is one. With the switch off: None (the call of today)."""
     if not _on(): return None
     pre = f"{kind}|{thing}|"; mine = [r for r in open_rows() if str(r.get("dedupe_key") or "").startswith(pre)]
-    last = max(mine, key=lambda r: str(r.get("id") or ""), default=None)
+    last = mine[-1] if mine else None      # v12 B-OWNER (R1-224): the newest is the last row written - two ids of one clock tick are ordered only by a counter that wraps 99 -> 00
     if last and str(last["dedupe_key"]).startswith(f"{pre}{value}|"): return last["dedupe_key"]
     n = 1 + sum(1 for r in store().rows("Owner_Actions") if str(r.get("dedupe_key") or "").startswith(f"{pre}{value}|"))
     return f"{pre}{value}|{n}"

@@ -1543,7 +1543,7 @@ def test_two_different_messages_of_one_kind_on_one_day_both_stand(monkeypatch, s
     from whatifs import preview as PV, packaging as PK
     import tools.repair as RP
     setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch)
-    of = lambda k: sorted((r for r in core.store().rows("Owner_Actions") if r["kind"] == k), key=lambda r: r["id"])
+    of = lambda k: [r for r in core.store().rows("Owner_Actions") if r["kind"] == k]
     for m in ("MODE RUNWAY", "MODE STANDARD", "MODE RUNWAY", "MODE RUNWAY"): PV.decide(m)
     assert [r["text"].split(".")[0] for r in of("mode_ack")] == ["Budget mode: Runway", "Budget mode: Standard", "Budget mode: Runway"], [r["text"][:40] for r in of("mode_ack")]
     assert all(r["status"] == "OPEN" for r in of("mode_ack"))
@@ -1565,7 +1565,7 @@ def test_two_previews_that_reach_nothing_are_two_rows(monkeypatch, setting):
         def skip(*a, _w=why, **k): raise PR.SkipSlot(_w)
         monkeypatch.setattr(ORG, "work", skip); monkeypatch.setattr(PV, "now_utc", lambda _i=i: core.now_utc() + dt.timedelta(minutes=_i))
         assert PV.run()["ok"] is False
-    rows = sorted((r for r in core.store().rows("Owner_Actions") if r["kind"] == "preview_none"), key=lambda r: r["id"])
+    rows = [r for r in core.store().rows("Owner_Actions") if r["kind"] == "preview_none"]
     assert len(rows) == 2 and "every pitch scored under the bar" in rows[1]["text"] and all(r["dedupe_key"].startswith("preview_none|DRAFT") for r in rows), [(r["dedupe_key"], r["text"][:70]) for r in rows]
 
 def test_a_second_brief_on_one_day_is_its_own_row(monkeypatch, setting):
@@ -1576,7 +1576,7 @@ def test_a_second_brief_on_one_day_is_its_own_row(monkeypatch, setting):
     setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch); monkeypatch.setitem(core.JOB, "name", core.JOB.get("name"))      # the brief names the job: put it back after the test
     for words in ("The month in one page: before the fix.", "The month in one page: after the fix.", "The month in one page: after the fix."):
         monkeypatch.setattr(M, "ask_batch", lambda *a, _w=words, **k: _w); MG.monthly_brief()
-    rows = sorted((r for r in core.store().rows("Owner_Actions") if r["kind"] == "monthly_brief"), key=lambda r: r["id"])
+    rows = [r for r in core.store().rows("Owner_Actions") if r["kind"] == "monthly_brief"]
     assert len(rows) == 2 and "before the fix" in rows[0]["text"] and "after the fix" in rows[-1]["text"], [r["text"][:60] for r in rows]
 
 def test_a_scored_master_is_a_draft_he_can_lock(monkeypatch, setting):
@@ -1615,7 +1615,7 @@ def test_a_repair_that_waits_for_him_is_one_tap_away(monkeypatch, setting):
     same file for the same reason on one day is its own row, with its own address."""
     import tools.repair as RP
     setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch); why = "this file guards money, quality or publishing"
-    rows = lambda: sorted((r for r in core.store().rows("Owner_Actions") if r["kind"] == "repair_waiting"), key=lambda r: r["id"])
+    rows = lambda: [r for r in core.store().rows("Owner_Actions") if r["kind"] == "repair_waiting"]
     RP._tell_owner("whatifs/premise.py", why, "https://github.com/me/re/pull/7")
     assert "Open the change: https://github.com/me/re/pull/7" in rows()[0]["text"], rows()[0]["text"]
     RP._tell_owner("whatifs/preview.py", why)                                                            # no address known: today's words
@@ -1665,7 +1665,7 @@ def test_a_hold_raised_again_says_what_failed_now(setting):
     raised again stays one card."""
     from whatifs import contract as CON, dash as DS
     setting("TWO_SCREENS_ON", "TRUE")
-    holds = lambda: sorted((r for r in core.store().rows("Owner_Actions") if r["kind"] == "contract_hold" and r["episode_id"] == "EPDQ5"), key=lambda r: r["id"])
+    holds = lambda: [r for r in core.store().rows("Owner_Actions") if r["kind"] == "contract_hold" and r["episode_id"] == "EPDQ5"]
     CON.owner_card("EPDQ5", "final", [("aliveness", "first")]); CON.owner_card("EPDQ5", "final", [("exhibits", "second")])
     assert len(holds()) == 2, [(r["status"], r["text"][:60]) for r in holds()]
     first, new = holds()
@@ -1788,3 +1788,12 @@ def test_with_the_switch_off_silence_approves_nothing(monkeypatch, setting):
     assert "approved by your silence" not in r["text"]
     NT.expire_defaults(now=_later(73)); assert CON.review_sweep() == 0
     assert _epi("EP8")["status"] == "AWAITING_APPROVAL" and sched == [] and not _decided("EP8") and _row(r["id"])["status"] == "DEFAULTED"
+
+def test_the_newest_row_is_the_last_written_even_inside_one_clock_tick(monkeypatch, setting):
+    """R1-224 (G4a's pins, 20 Nov 2026): on a clock that ticks in milliseconds (Windows) two ids of one tick are ordered only by `_new_id`'s counter,
+    and it wraps 99 -> 00 - the larger id is then the OLDER row. `said_key`'s newest open row is the last one written, never the largest id: with every
+    new id smaller than the one before, A, B, A and a corrected brief still come out right."""
+    import itertools
+    c = itertools.count(10 ** 22 - 1, -1); monkeypatch.setattr(NT, "_new_id", lambda: "A" + str(next(c)).zfill(22))
+    test_two_different_messages_of_one_kind_on_one_day_both_stand(monkeypatch, setting)
+    test_a_second_brief_on_one_day_is_its_own_row(monkeypatch, setting)
