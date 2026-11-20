@@ -1402,3 +1402,20 @@ def test_the_sparse_clock_loses_nothing(monkeypatch, setting):
     assert seen.get(review) == 9 and sched[0] == (vid, slot, 9)                                                  # his silence at the 09:40 tick of day 3, on its OWN slot
     e = _epi("EPSPARSE"); assert e["status"] == "SCHEDULED" and e["slot_et"] == slot
     d = _decided("EPSPARSE"); assert len(d) == 1 and "approved by your silence and goes public at" in d[0]["text"] and "had passed" not in d[0]["text"]
+
+# ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (steps 5 and 6)
+def test_one_whatsapp_line_is_one_build_card(monkeypatch, setting):
+    """PART 5: one input is one row. FOUND AT THE FINISH: a line the weigher reads as a change request got the desk's `idea` row AND, when the chat
+    answered with a SPEC, a second `idea` row from `handle_inbound` - two cards that never expire for one line. The desk's row is the card; the chat's
+    own card still comes for a line the desk made no card for."""
+    _desk_on(setting); bodies = _wire(monkeypatch); _labels(monkeypatch, kind="change_request", department="none", raises_breakout=False)
+    monkeypatch.setattr(WA, "chat", lambda text, deep=False: ("Good idea.", "show a countdown clock in cold opens, switch COLD_OPEN_CLOCK_ON", "tweak"))
+    _inbound(monkeypatch, "wamid.B1", "add a countdown clock to cold opens")
+    ideas = [r for r in core.store().rows("Owner_Actions") if r["kind"] == "idea"]
+    assert len(ideas) == 1 and ideas[0]["id"] == _desk_rows()[-1]["action"], ideas
+    taps = [b for b in bodies if b.get("type") == "interactive" and b["interactive"]["type"] == "button"][-1]
+    assert [x["reply"]["id"] for x in taps["interactive"]["action"]["buttons"]] == [f"ACT|{ideas[0]['id']}|0", f"ACT|{ideas[0]['id']}|1"], taps
+    assert "(feature, on your Claude plan" in taps["interactive"]["body"]["text"]                          # the card's own kind, not the chat's
+    _labels(monkeypatch, kind="other")
+    _inbound(monkeypatch, "wamid.B2", "what about a clock in the corner of cold opens")
+    assert len([r for r in core.store().rows("Owner_Actions") if r["kind"] == "idea"]) == 2                 # the chat's card, where the desk made none

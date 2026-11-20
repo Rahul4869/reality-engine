@@ -402,9 +402,14 @@ def handle_inbound(payload_json):
                     out, spec, kind = chat(re.sub(r"^think hard:?\s*", "", text, flags=re.I) if deep else text, deep=deep)
                     if line: out = f"{out}\n\n{line}"                # the desk's verdict ends the chat's reply
                     if spec:
-                        never_parked = _on()                     # v12 B-OWNER: his idea is never parked by silence - no default, no expiry, open until he taps
-                        aid = NT.send("idea", f"Build this? {spec}", [("Build it", "BUILD"), ("Park", "PARK")], tier="fyi", default=None if never_parked else "parked",
-                                      expires_h=None if never_parked else 24 * 7, dedupe_key="idea|" + mid + "|" + json.dumps({"spec": spec, "kind": kind}))
+                        never_parked = _on(); aid = ""           # v12 B-OWNER: his idea is never parked by silence - no default, no expiry, open until he taps
+                        if never_parked:                         # FINISHED BY FABLE (CB-1): ONE card a line - where the desk made its own `idea` row for this message, that row is the card
+                            d = next((x for x in st.rows("Owner_Desk") if str(x.get("ref") or "") == mid), None)
+                            a = next((x for x in st.rows("Owner_Actions") if x.get("id") == d.get("action")), None) if d and d.get("action") else None
+                            if a and a.get("kind") == "idea" and a.get("status") in ("OPEN", "QUEUED"): aid, kind = a["id"], "feature"
+                        if not aid:
+                            aid = NT.send("idea", f"Build this? {spec}", [("Build it", "BUILD"), ("Park", "PARK")], tier="fyi", default=None if never_parked else "parked",
+                                          expires_h=None if never_parked else 24 * 7, dedupe_key="idea|" + mid + "|" + json.dumps({"spec": spec, "kind": kind}))
                         send_buttons(out[-900:] + f"\n\nBuild it ({kind}, on your Claude plan, ₹0 API)?", [("Build it", f"ACT|{aid}|0"), ("Park", f"ACT|{aid}|1")])
                         st.append("WA_Chat", [{"ts": iso(), "msg_id": mid + ".r", "who": "assistant", "text": out[:1500]}]); continue
         except Exception as e:
