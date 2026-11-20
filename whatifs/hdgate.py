@@ -221,9 +221,10 @@ def window(e, slot, got, now):
                              f"https://studio.youtube.com/video/{vid}/edit", [("Done", "DONE")], episode=ep,
                 default="it goes out without an end screen", expires_h=max(0.25, (slot - now).total_seconds() / 3600), dedupe_key=f"prepublic|{ep}")
     elif now.astimezone(NT.IST).time() >= dt.time(8, 30) and not _told(f"hd_late|{ep}"):
-        NT.send("hd_late", f"{title}: YouTube does not show it in HD yet ({now.astimezone(NT.IST).strftime('%H:%M')} India time). "
-                           + ("It still goes out tonight; " if e.get("status") == "SCHEDULED" else "If it is approved it goes out tonight; ")      # a video still awaiting his approval is promised nothing (PART 7)
-                           + f"while it waits for HD its time moves by up to {S('HD_LONG_CAP_MIN', int)} minutes past {at}.", episode=ep, dedupe_key=f"hd_late|{ep}")
+        says = "It still goes out tonight" if e.get("status") == "SCHEDULED" else "If it is approved it goes out tonight"      # a video still awaiting his approval is promised nothing (PART 7)
+        tail = (f"; while it waits for HD its time moves by up to {S('HD_LONG_CAP_MIN', int)} minutes past {at}." if S("HD_GATE_ON", bool)
+                else f" at {at}: the wait for HD is switched off, so its time does not move.")                       # DQ-D1: R22's words with the gate off
+        NT.send("hd_late", f"{title}: YouTube does not show it in HD yet ({now.astimezone(NT.IST).strftime('%H:%M')} India time). " + says + tail, episode=ep, dedupe_key=f"hd_late|{ep}")
 
 def long_tick(now=None):
     """The long video's gate and his window, at every tick, with HD_GATE_ON (switched off, the gate stops moving times and YouTube's own schedule
@@ -233,14 +234,15 @@ def long_tick(now=None):
     `public_at` - the gate is its one writer (R17 (3 c)). Returns the ids of the episodes whose time moved."""
     from whatifs import publish as PUB, notify as NT
     now = now or now_utc(); moved = []
-    if not S("HD_GATE_ON", bool): return moved
+    on = S("HD_GATE_ON", bool)                                                     # DQ-D1: what touches a video's privacy or its time stands behind HD_GATE_ON
+    if not on and not S("TWO_SCREENS_ON", bool): return moved                      # DQ-D1: his window and the receipt run when either cell is TRUE
     lead = dt.timedelta(minutes=S("HD_LONG_LEAD_MIN", float)); today = now.astimezone(NT.IST).date()
     try: eps = [e for e in store().rows("Episodes") if e.get("status") in LONG_STATUSES and e.get("yt_id") and parse_iso(e.get("slot_et"))]
     except Exception: return moved
     for e in eps:
         try:
             slot = parse_iso(e["slot_et"]); his_day = slot.astimezone(NT.IST).date() == today
-            gate = e.get("status") == "SCHEDULED" and now >= slot - lead
+            gate = on and e.get("status") == "SCHEDULED" and now >= slot - lead          # DQ-D1: with the gate off no push, no pull, no time is set
             if not (his_day or gate): continue                                       # nothing to read yet: 1 quota unit a read
             got = PUB.yt_read(e["yt_id"])
             if his_day: window(e, slot, got, now)

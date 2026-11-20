@@ -374,7 +374,7 @@ def release(ep_id, which="release1"):
             st.update("Episodes", "episode_id", ep_id, {"notes": _note(e, "private alert sent")})
         log("long video not public yet - waiting", "WARN"); return
     audit_seen_public()
-    if S("HD_GATE_ON", bool) and not e.get("hd_gate"):          # v12 B-OWNER (PART 9): the gate's receipt - "public N min after upload; HD yes" or "...; HD NO (the cap)"
+    if (S("HD_GATE_ON", bool) or S("TWO_SCREENS_ON", bool)) and not e.get("hd_gate"):          # v12 B-OWNER (PART 9): the gate's receipt - "public N min after upload; HD yes" or "...; HD NO (the cap)"
         try:
             from whatifs import hdgate as HGR; st.update("Episodes", "episode_id", ep_id, {"hd_gate": HGR.long_line(e, PUB.yt_read(e["yt_id"]) or {}, now_utc())})
         except Exception as x: log(f"HD gate line skipped: {scrub(x)}", "WARN")

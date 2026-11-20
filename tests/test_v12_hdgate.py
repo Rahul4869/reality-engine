@@ -685,3 +685,22 @@ def test_hd_late_promises_nothing_to_a_video_awaiting_his_approval(monkeypatch, 
     HG.long_tick(_t(3, 5)); said = {r["episode_id"]: r["text"] for r in _rows("hd_late")}                # 08:35 India time
     assert "If it is approved it goes out tonight" in said["EPL15"] and "It still goes out tonight" not in said["EPL15"]
     assert "It still goes out tonight" in said["EPL16"]
+
+def test_his_window_runs_with_the_gate_off(monkeypatch, setting):
+    """DQ-D1 (R22's ruling; CD-7): what touches a video's privacy or its time stands behind HD_GATE_ON; HIS WINDOW and the long video's `hd_gate` line
+    run when HD_GATE_ON or TWO_SCREENS_ON is TRUE. The shipped state at the launch - screens TRUE, gate FALSE - gives the launch's first long videos
+    their card (R17 (14 a), item 156) and moves no time; with BOTH cells FALSE (the older path) the gate reads nothing and says nothing."""
+    from whatifs import manage as MG
+    _quiet(monkeypatch); monkeypatch.setattr(MG, "_fetch_release", lambda ep, assets=None: {"pinned": ""}); monkeypatch.setattr(PUB, "yt_comment", lambda *a, **k: True)
+    calls = []; monkeypatch.setattr(PUB, "yt_schedule", lambda vid, at: calls.append((vid, at)) or True)
+    vid = _long("EPL18"); sd = _long("EPL19"); reads = []; real = PUB.yt_read
+    monkeypatch.setattr(PUB, "yt_read", lambda v: reads.append(v) or dict(real(v), hd=v != sd))                    # EPL18 ready; EPL19 never in HD
+    setting("HD_GATE_ON", "FALSE"); setting("TWO_SCREENS_ON", "FALSE")
+    assert HG.long_tick(_t(13, 46)) == [] and reads == [] and not _rows("prepublic") and not _rows("hd_late")        # both off: the older path
+    setting("TWO_SCREENS_ON", "TRUE")
+    assert HG.long_tick(_t(13, 46)) == [] and calls == []                                                          # inside the lead: no push, no pull
+    assert [r["episode_id"] for r in _rows("prepublic")] == ["EPL18"] and [r["episode_id"] for r in _rows("hd_late")] == ["EPL19"]
+    assert "at 20:00: the wait for HD is switched off, so its time does not move" in _rows("hd_late")[0]["text"]
+    assert not _ep("EPL18").get("public_at") and not _ep("EPL19").get("public_at")
+    PUB.yt_set_privacy(vid, "public"); monkeypatch.setattr(MG, "now_utc", lambda: SLOT + 20 * M); MG.release("EPL18")
+    assert _ep("EPL18")["hd_gate"] == "public 1800 min after upload; HD yes"
