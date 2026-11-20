@@ -1651,5 +1651,9 @@ def test_a_fix_that_could_not_start_leaves_his_card_open(monkeypatch, setting):
     monkeypatch.setattr(CON, "_open_fix_issue", lambda ep: False)
     out = NT.answer(c["id"], "CONTRACT FIX EPDQ6 final")
     assert "could not start" in out and _row(c["id"])["status"] == "OPEN" and c["id"] in {r["id"] for r in NT.needs()}, out
+    def boom(ep): raise RuntimeError("planted: GitHub timed out")
+    monkeypatch.setattr(CON, "_open_fix_issue", boom)                                                   # CA3-7: the likelier real failure - it raises
+    said = "EPDQ6: the fix could not start from here - the card is open again; use the link in the e-mail, or tap again later"
+    assert NT.answer(c["id"], "CONTRACT FIX EPDQ6 final") == said and _row(c["id"])["status"] == "OPEN", _row(c["id"])
     monkeypatch.setattr(CON, "_open_fix_issue", lambda ep: True)
     assert NT.answer(c["id"], "CONTRACT FIX EPDQ6 final") == "EPDQ6: the one-click fix is running" and _row(c["id"])["status"] == "ANSWERED"

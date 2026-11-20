@@ -1105,7 +1105,7 @@ def _ran(row, ep, said):
     except Exception as e: log(f"the fix run was not started: {scrub(e)[:120]}", "WARN", ep); ok = False
     if ok: return said
     store().update("Owner_Actions", "id", row["id"], {"status": "OPEN", "answered_at": "", "answer": ""})
-    return f"{ep}: the fix could not start (GitHub refused it) - the card is open again; tap it again, or use the link in the e-mail"
+    return f"{ep}: the fix could not start from here - the card is open again; use the link in the e-mail, or tap again later"      # FINISHED BY FABLE (CA3-7): with no token here nothing was refused, and a tap again then fails every time
 
 def _open_fix_issue(ep):
     """The existing one-click fix (fix.yml runs on an issue titled 'FIX <ep>' opened by the repository owner). Opened with the owner's token."""
