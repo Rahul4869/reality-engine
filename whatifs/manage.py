@@ -82,7 +82,7 @@ def resume_held():
         if not new: continue
         try:
             PUB.yt_schedule(e["yt_id"], new); taken.add(new)
-            st.update("Episodes", "episode_id", e["episode_id"], {"status": "SCHEDULED", "slot_et": new, "notes": _note(e, f"re-scheduled {new}"), "updated": iso()})
+            st.update("Episodes", "episode_id", e["episode_id"], {"status": "SCHEDULED", "slot_et": new, "public_at": "", "notes": _note(e, f"re-scheduled {new}"), "updated": iso()})      # v12 B-OWNER (R17 (3 c)): a time set here empties public_at - the HD gate judges from the new slot
             log(f"{e['episode_id']} re-scheduled for {new}")
         except Exception as x: log(f"re-schedule of {e['episode_id']} failed: {x}", "WARN")
 
@@ -240,6 +240,9 @@ def tick():
         try:                                                    # v12 V2c-b2: Publishing finishes what waits - a Short made while uploads were closed, a platform that failed, a thumbnail that waited for processing
             from whatifs import release as RELW; RELW.settle()
         except Exception as x: log(f"release settle skipped: {scrub(x)}", "WARN")
+        try:                                                    # v12 B-OWNER (PART 9, R18 (2)): the HD gate - a Short it took private goes public when YouTube shows it in HD or at its cap; a long video's time moves while it waits for HD; his window
+            from whatifs import hdgate as HGT; HGT.tick()
+        except Exception as x: log(f"HD gate skipped: {scrub(x)}", "WARN")
         try:                                                    # v11 (K164/K165): Monday money re-plan, weekly tool scout, month restore
             from whatifs import replan as RPL, scout as SCT; RPL.month_restore(); RPL.weekly(); SCT.weekly()
         except Exception as x: log(f"re-plan / tool scout skipped: {scrub(x)}", "WARN")
@@ -256,13 +259,15 @@ def tick():
     except Exception as x: log(f"organisation watchdog skipped: {scrub(x)}", "WARN")
     try:                                                        # v10 (K140): key/plan expiry reminders (14 and 3 days before), once a day
         from whatifs import caretaker as CT
-        if now_utc().hour == 8 and now_utc().minute < 30:
+        if now_utc().hour >= 8 and S("EXPIRY_CHECK_DAY") != now_utc().strftime("%Y-%m-%d"):      # v12 B-OWNER (R22 (12)): at the FIRST tick at or after 08:00 UTC, once a UTC day
             CT.ensure_expiry_seed(); CT.expiry_check()
             from whatifs import steward as STWD; STWD.apply_planned()               # v10.1 (K150): announced model switches whose date has come
+            set_setting("EXPIRY_CHECK_DAY", now_utc().strftime("%Y-%m-%d"))
     except Exception as x: log(f"expiry check skipped: {scrub(x)}", "WARN")
     try:                                                        # v10 (K136): the heads-up card 3 days before an occasion special (once)
         from whatifs import occasions as OC
-        if now_utc().hour == 9 and now_utc().minute < 30: OC.heads_up()
+        if now_utc().hour >= 9 and S("OCCASION_DAY") != now_utc().strftime("%Y-%m-%d"):         # v12 B-OWNER (R22 (12)): at the FIRST tick at or after 09:00 UTC, once a UTC day
+            OC.heads_up(); set_setting("OCCASION_DAY", now_utc().strftime("%Y-%m-%d"))
     except Exception as x: log(f"occasion heads-up skipped: {scrub(x)}", "WARN")
     try:                                                        # v10 G4: one video's localizations per tick (never near a release)
         from whatifs import hours as HR, orchestra as OR
@@ -357,7 +362,8 @@ def release(ep_id, which="release1"):
     if S("KILL_CHECK", bool) and str(e.get("kill", "")).upper().startswith("KILL"):
         PUB.yt_set_privacy(e["yt_id"], "private"); st.update("Episodes", "episode_id", ep_id, {"status": "KILLED", "updated": iso()}); log("killed by owner"); return
     if PUB.yt_status(e["yt_id"]) != "public":
-        t = parse_iso(e.get("slot_et"))
+        t = parse_iso(e.get("slot_et")); pa = parse_iso(e.get("public_at"))
+        if t and pa and pa > t: t = pa                           # v12 B-OWNER (PART 9): counted from max(slot, public_at) - the HD gate's own wait is never an alarm
         if t and now_utc() > t + dt.timedelta(hours=S("PRIVATE_ALERT_HOURS", float)) and "private alert sent" not in str(e.get("notes", "")):
             NT.mail("uploads_private", "Video not public yet", dedupe_key="uploads_private", html=f"<p>Episode {ep_id} should be public by now but YouTube still shows it as private. "
                       "For the first videos this usually means the Google Cloud project still needs the YouTube API audit (SETUP_CHECKLIST Step 4b). "
@@ -365,6 +371,10 @@ def release(ep_id, which="release1"):
             st.update("Episodes", "episode_id", ep_id, {"notes": _note(e, "private alert sent")})
         log("long video not public yet - waiting", "WARN"); return
     audit_seen_public()
+    if S("HD_GATE_ON", bool) and not e.get("hd_gate"):          # v12 B-OWNER (PART 9): the gate's receipt - "public N min after upload; HD yes" or "...; HD NO (the cap)"
+        try:
+            from whatifs import hdgate as HGR; st.update("Episodes", "episode_id", ep_id, {"hd_gate": HGR.long_line(e, PUB.yt_read(e["yt_id"]) or {}, now_utc())})
+        except Exception as x: log(f"HD gate line skipped: {scrub(x)}", "WARN")
     rel = _fetch_release(ep_id, e.get("assets"))
     PUB.yt_comment(e["yt_id"], rel.get("pinned", ""))
     try:                                                    # v10.1 (K149): the Instagram 'Case Files' carousel goes out with the episode

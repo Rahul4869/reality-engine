@@ -256,3 +256,142 @@ def test_the_sweep_judges_the_gate_on_every_short_of_a_run_with_the_organisation
     assert src.count("hd_of(core, ") == 3 and src.count('if res["outcome"] == "ok" and org:') == 2 and "                if org:" in src and 'if not ok_h: late.append("the HD gate: "' in src
     r = inspect.getsource(RH.run)
     assert r.index('set_setting("HD_GATE_ON", "TRUE")') < r.index("rs12 = SH12.run(") and "okh9b, saidh9b = hd9b(core12, sh9b); assert okh9b" in r and 'f"; HD gate: {len(sh9b)} of {len(sh9b)} uploads"' in r
+
+# ------------------------------------------------------------------ step 10: THE LONG VIDEO'S GATE AND HIS WINDOW (PART 9; R17 (3 c), ADDS (A); R18 (6); R22 (3))
+SLOT = dt.datetime(2026, 12, 16, 14, 30, tzinfo=UTC)       # 20:00 India time, a Wednesday
+SD, HD = {"processed": True, "hd": False}, {"processed": True, "hd": True}
+
+def _t(h, m): return dt.datetime(2026, 12, 16, h, m, tzinfo=UTC)
+
+def _long(ep, status="SCHEDULED", slot=SLOT, **kw):
+    """A long video as the pipeline leaves it: uploaded PRIVATE with its time (publish_at: never gated at the upload), its Episodes row on its slot."""
+    vid = PUB.yt_upload(f"x/{ep}.mp4", f"Title {ep}", "D", [], publish_at=core.iso(slot), now=slot - 30 * 60 * M)
+    core.store().append("Episodes", [dict({"episode_id": ep, "slot_et": core.iso(slot), "status": status, "yt_id": vid, "title": f"Title {ep}",
+                                           "uploaded_at": core.iso(slot - 30 * 60 * M)}, **kw)])
+    return vid
+
+def _ep(ep): return next(e for e in core.store().rows("Episodes") if e.get("episode_id") == ep)
+def _rows(kind): return [r for r in core.store().rows("Owner_Actions") if r.get("kind") == kind]
+
+def test_long_step_table(setting):
+    """R22 (3): the memo's worked table, a row a tick - slot 14:30, never ready: THE BACKUP CLOCK'S RHYTHM (56 minutes apart), THE HALF-HOURLY RHYTHM
+    (:07 and :37), and the pull when it turns ready at 14:42 with 15:15 set. Nothing before the lead; the cap (16:30) is never passed."""
+    def walk(ticks, ready_at=None):
+        pa, out = SLOT, []
+        for t in ticks:
+            act, tgt = HG.long_step(SLOT, pa, HD if ready_at and t >= ready_at else SD, t)
+            out.append((t.strftime("%H:%M"), act, tgt.strftime("%H:%M") if tgt else None))
+            if tgt: pa = tgt
+        return out
+    backup = [_t(12, 50), _t(13, 46), _t(14, 42), _t(15, 38), _t(16, 34)]
+    assert walk(backup) == [("12:50", "none", None), ("13:46", "push", "15:15"), ("14:42", "push", "16:00"), ("15:38", "push", "16:30"), ("16:34", "none", None)]
+    assert walk(backup, ready_at=_t(14, 42)) == [("12:50", "none", None), ("13:46", "push", "15:15"), ("14:42", "pull", "15:00"), ("15:38", "none", None), ("16:34", "none", None)]
+    half = [_t(13, 7), _t(13, 37), _t(14, 7), _t(14, 37), _t(15, 7), _t(15, 37)]
+    assert walk(half) == [("13:07", "none", None), ("13:37", "push", "15:00"), ("14:07", "push", "15:30"), ("14:37", "push", "16:00"), ("15:07", "push", "16:30"),
+                          ("15:37", "none", None)]
+    assert HG.long_step(SLOT, SLOT, SD, _t(12, 59)) == ("none", None) and HG.long_step(SLOT, None, SD, _t(13, 37)) == ("push", _t(15, 0))      # empty public_at = the slot
+    assert HG.long_step(SLOT, SLOT, HD, _t(14, 0)) == ("none", None)                                               # ready on its slot: nothing moves
+    tg = [HG.long_step(SLOT, SLOT, SD, _t(12, 0) + k * M)[1] for k in range(400)]
+    assert max(t for t in tg if t) == SLOT + 120 * M                                                              # the cap is never passed
+
+def test_the_guard_outlasts_the_clock(setting):
+    """R22 (3): with the defaults the guard (75) is above the working clock's longest gap (56 minutes: WATCHDOG_STALE_MIN 45, the Worker's 10-minute cron,
+    the start) and the lead (90) holds one tick - a walk of ticks 56 minutes apart, from every first minute of that rhythm, never finds a video YouTube
+    does not show in HD public before its cap. With the guard at 45, the walk that starts at 13:35 finds it public at 14:30, the gate never acted."""
+    assert float(core.DEFAULTS["HD_GUARD_MIN"][0]) > 60 and float(core.DEFAULTS["HD_LONG_LEAD_MIN"][0]) >= 60
+    cap = SLOT + float(core.DEFAULTS["HD_LONG_CAP_MIN"][0]) * M
+    def early(first, gap=56):
+        pa, t = SLOT, first
+        while t <= cap + 60 * M:
+            if t >= pa: return pa if pa < cap else None          # YouTube has published it at pa: before its cap is the gate's miss
+            _act, tgt = HG.long_step(SLOT, pa, SD, t)
+            if tgt: pa = tgt
+            t += gap * M
+        return None
+    assert [early(SLOT - 180 * M + k * M) for k in range(56)] == [None] * 56
+    setting("HD_GUARD_MIN", "45"); assert early(_t(13, 35)) == SLOT
+
+def test_a_held_video_is_never_made_public(monkeypatch, setting, gate_on):
+    """PART 9: the gate acts only on status SCHEDULED - a held, waiting or taken-down video is never touched (no time set, still private); code never
+    makes a long video public (YouTube's own schedule does); an empty read moves nothing either (R18 (5))."""
+    PUB.FAKE_FAULTS["youtube"] = {"sd": True}
+    calls = []; real = PUB.yt_schedule
+    monkeypatch.setattr(PUB, "yt_schedule", lambda vid, at: calls.append((vid, at)) or real(vid, at))
+    held = {ep: _long(ep, st) for ep, st in (("EPL01", "HELD"), ("EPL02", "AWAITING_APPROVAL"), ("EPL03", "HELD_BY_OWNER"))}
+    vid = _long("EPL06")
+    assert HG.long_tick(_t(13, 46)) == ["EPL06"] and calls == [(vid, "2026-12-16T15:15:00Z")] and _ep("EPL06")["public_at"] == "2026-12-16T15:15:00Z"
+    assert all(_shown(v) == "private" and not _ep(ep).get("public_at") for ep, v in held.items()) and _shown(vid) == "private"
+    real_read = PUB.yt_read; monkeypatch.setattr(PUB, "yt_read", lambda v: {})
+    assert HG.long_tick(_t(14, 42)) == [] and len(calls) == 1 and _ep("EPL06")["public_at"] == "2026-12-16T15:15:00Z" and not _ep("EPL06").get("hd_gate")      # not read is not "already public"
+    monkeypatch.setattr(PUB, "yt_read", real_read); setting("HD_GATE_ON", "FALSE")
+    assert HG.long_tick(_t(14, 42)) == [] and len(calls) == 1                                                     # switched off: the gate stops moving times
+
+def test_a_public_video_is_never_scheduled_again(monkeypatch, setting, gate_on):
+    """R17 ADDS (A): a long video YouTube shows public (his own hand in Studio, YouTube's schedule, an early release) is never given a time again -
+    YouTube refuses one on a video that was ever published (S5); it gets its `hd_gate` line and is left alone."""
+    PUB.FAKE_FAULTS["youtube"] = {"sd": True}
+    calls = []; monkeypatch.setattr(PUB, "yt_schedule", lambda vid, at: calls.append((vid, at)) or True)
+    vid = _long("EPL07"); PUB.yt_set_privacy(vid, "public")                                                       # his hand in Studio
+    assert HG.long_tick(_t(13, 46)) == [] and calls == [] and _shown(vid) == "public"
+    assert _ep("EPL07")["hd_gate"] == "public 1756 min after upload; HD NO" and not _ep("EPL07").get("public_at")    # uploaded 08:30 the day before, public by 13:46
+    PUB.FAKE_FAULTS.clear(); vid2 = _long("EPL08", public_at=core.iso(SLOT + 120 * M)); PUB.yt_set_privacy(vid2, "public")      # the gate had pushed it to its cap
+    HG.long_tick(_t(16, 34)); assert calls == [] and _ep("EPL08")["hd_gate"] == "public 1920 min after upload; HD yes"
+    core.store().update("Episodes", "episode_id", "EPL08", {"hd_gate": ""}); PUB.FAKE_FAULTS["youtube"] = {"sd": True}
+    HG.long_tick(_t(16, 34)); assert calls == [] and _ep("EPL08")["hd_gate"] == "public 1920 min after upload; HD NO (the cap)"
+
+def test_his_window_card(monkeypatch, setting, gate_on):
+    """PART 9, HIS WINDOW, R18 (6): on its day a long video that is uploaded and ready gets ONE card `prepublic` with DONE - a row of "Needs you" and of
+    the list `wa.push("needs")` sends - its default and its expiry at the slot; not ready by 08:30 India time, one `hd_late` row; a late upload gets its
+    card when it turns ready; a tapped card is never sent again."""
+    from whatifs import wa as WA
+    setting("TWO_SCREENS_ON", "TRUE"); _quiet(monkeypatch)
+    vid = _long("EPL04")
+    assert HG.tick(_t(2, 0)) == []; c = _rows("prepublic")                                                       # 07:30 India time - through the tick (no Short waits)
+    assert len(c) == 1 and c[0]["episode_id"] == "EPL04" and json.loads(c[0]["buttons"]) == [["Done", "DONE"]] and c[0]["default_action"] == "it goes out without an end screen"
+    assert c[0]["text"] == f"Tonight 20:00: Title EPL04. Optional before it goes public: the end screen, about 30 seconds in Studio: https://studio.youtube.com/video/{vid}/edit"
+    assert c[0]["id"] in {r["id"] for r in NT.needs()} and c[0]["expires_at"]
+    bodies = []; monkeypatch.setattr(WA, "in_window", lambda now=None: True); monkeypatch.setattr(WA, "_wire", lambda body: bodies.append(body) or "wamid.N")
+    assert WA.push("needs", now=_t(12, 35)) and f"CARD|{c[0]['id']}" in json.dumps(bodies[-1])
+    PUB.FAKE_FAULTS["youtube"] = {"sd": True}; _long("EPL05")
+    HG.long_tick(_t(2, 10)); assert not _rows("hd_late") and len(_rows("prepublic")) == 1                       # 07:40: not ready, not yet late
+    HG.long_tick(_t(3, 5)); HG.long_tick(_t(3, 35)); late = _rows("hd_late")                                      # 08:35 and 09:05 India time
+    assert len(late) == 1 and late[0]["episode_id"] == "EPL05" and "does not show it in HD yet" in late[0]["text"]
+    PUB.FAKE_FAULTS.clear(); HG.long_tick(_t(10, 0)); c = _rows("prepublic")
+    assert sorted(r["episode_id"] for r in c) == ["EPL04", "EPL05"]                                              # the late upload's card comes by itself
+    NT.answer(c[0]["id"], "DONE"); HG.long_tick(_t(11, 0)); assert len(_rows("prepublic")) == 2
+
+def test_the_real_tick_finishes_a_waiting_short(monkeypatch, setting, gate_on):
+    """R18 (2): `hdgate.tick` is called by the REAL `manage.tick`, after `release.settle`, in a try of its own - a Short WAITING for HD is finished by
+    the pipeline's own tick at its cap (until step 10 only the tests and the door's pass called it; the name scan cannot see a common name unwired)."""
+    import inspect
+    from whatifs import manage as MG
+    PUB.FAKE_FAULTS["youtube"] = {"sd": True}
+    r = _short(monkeypatch, setting, "SHHD14"); vid = r["yt_id"]; assert HG.row(vid)["state"] == HG.WAITING
+    monkeypatch.setattr(HG, "now_utc", lambda: NOW + 61 * M); MG.tick()
+    h = HG.row(vid); assert h["state"] == HG.CAP and h["note"] == "public after 61 min; HD NO (the cap)" and _shown(vid) == "public"
+    src = inspect.getsource(MG.tick); assert src.index("RELW.settle()") < src.index("HGT.tick()")
+
+def test_a_video_rescheduled_after_a_pause_is_judged_from_its_new_slot(monkeypatch, setting, gate_on):
+    """R17 (3 c): `public_at` has ONE writer, the gate - a time set elsewhere empties it. A video the gate had pushed to its cap, held by a pause and put
+    back on its own slot by `manage.resume_held`, is judged from that slot, never from the time the gate set before the pause (else YouTube publishes it
+    on its slot without HD while the gate believes it is two hours later)."""
+    from whatifs import manage as MG
+    PUB.FAKE_FAULTS["youtube"] = {"sd": True}
+    _long("EPL09", public_at=core.iso(SLOT + 120 * M))
+    assert MG.hold_scheduled("paused") == 1 and _ep("EPL09")["status"] == "HELD"
+    MG.resume_held(); e = _ep("EPL09")
+    assert e["status"] == "SCHEDULED" and e["slot_et"] == core.iso(SLOT) and e["public_at"] == ""
+    assert HG.long_tick(_t(13, 44)) == ["EPL09"] and _ep("EPL09")["public_at"] == "2026-12-16T15:00:00Z"
+
+def test_the_release_step_writes_the_gates_line_and_waits_for_its_time(monkeypatch, setting, gate_on):
+    """PART 9: `manage.release` writes the long video's `hd_gate` line when it sees it public, and its private alert counts from max(slot, public_at) -
+    the gate's own wait is never an alarm."""
+    from whatifs import manage as MG
+    _quiet(monkeypatch); monkeypatch.setattr(MG, "_fetch_release", lambda ep, assets=None: {"pinned": ""}); monkeypatch.setattr(PUB, "yt_comment", lambda *a, **k: True)
+    vid = _long("EPL10"); PUB.yt_set_privacy(vid, "public"); monkeypatch.setattr(MG, "now_utc", lambda: SLOT + 20 * M)
+    MG.release("EPL10"); e = _ep("EPL10")
+    assert e["status"] == "LIVE" and e["hd_gate"] == "public 1800 min after upload; HD yes"
+    _long("EPL11", public_at=core.iso(SLOT + 120 * M)); monkeypatch.setattr(PUB, "yt_status", lambda v: "private")
+    monkeypatch.setattr(MG, "now_utc", lambda: SLOT + 180 * M); MG.release("EPL11")
+    assert "private alert sent" not in str(_ep("EPL11").get("notes")) and _ep("EPL11")["status"] == "SCHEDULED"      # 2 h past its slot, under 2 h past the gate's time
+    monkeypatch.setattr(MG, "now_utc", lambda: SLOT + 271 * M); MG.release("EPL11"); assert "private alert sent" in str(_ep("EPL11").get("notes"))

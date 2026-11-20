@@ -1213,3 +1213,20 @@ def test_the_sweep_judges_his_two_screens_on_a_planted_clock(fault, monkeypatch,
     assert 'if not ok_w: late.append("his two screens: "' in src                                    # the Short mode: a bad verdict makes the id bad
     r = inspect.getsource(RH.run)
     assert "okw9b, saidw9b = screens9b(core12, [epid]); assert okw9b" in r and 'print("owner road:"' in r and r.index("screens9b(core12") > r.index('print("v7.3 checks ok")')
+
+# ------------------------------------------------------------------ step 10: R22 (12) - the two daily jobs at the first tick after their hour
+def test_the_daily_jobs_run_once_at_the_first_tick_after_their_hour(monkeypatch, setting):
+    """R22 (12): the key-expiry check (with the model switches whose date has come) and the occasion's heads-up run at the FIRST tick at or after 08:00
+    and 09:00 UTC, once a UTC day - no longer only when a tick falls inside one half hour of the day (GitHub's own schedule left 7 to 11 hours between
+    ticks). A day whose only ticks are at 03:10 and 14:40 UTC runs both once, at 14:40; a second tick that day runs neither; the next day runs them again."""
+    from whatifs import manage as MG, caretaker as CT, steward as STWD, occasions as OC
+    ran = []
+    monkeypatch.setattr(CT, "ensure_expiry_seed", lambda *a, **k: None); monkeypatch.setattr(CT, "expiry_check", lambda *a, **k: ran.append("expiry"))
+    monkeypatch.setattr(STWD, "apply_planned", lambda *a, **k: ran.append("switches")); monkeypatch.setattr(OC, "heads_up", lambda *a, **k: ran.append("heads_up"))
+    def tick(h, m, day=16):
+        t = dt.datetime(2026, 12, day, h, m, tzinfo=dt.timezone.utc); monkeypatch.setattr(MG, "now_utc", lambda: t); MG.tick(); return list(ran)
+    assert tick(3, 10) == []
+    assert tick(14, 40) == ["expiry", "switches", "heads_up"]
+    assert tick(16, 20) == ["expiry", "switches", "heads_up"] and core.S("EXPIRY_CHECK_DAY") == "2026-12-16" and core.S("OCCASION_DAY") == "2026-12-16"
+    assert tick(8, 5, day=17) == ["expiry", "switches", "heads_up", "expiry", "switches"]                        # 08:05: the check; the heads-up waits for 09:00
+    assert tick(9, 0, day=17)[-1] == "heads_up" and len(ran) == 6

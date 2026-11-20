@@ -53,7 +53,8 @@ TABS = {
  "Strategies":   ["dimension", "name", "definition", "status", "plays", "score_sum", "score_n", "created", "source"],
  "Episodes":     ["episode_id", "slot_et", "premise", "ptype", "presentation_format", "title", "status", "yt_id", "reel1_yt", "reel2_yt",
                   "ig1", "ig2", "fb1", "fb2", "kill", "draw_json", "cost_inr", "release_tag", "assets", "notes", "updated",
-                  "reel3_yt", "reel4_yt", "ig3", "ig4", "fb3", "fb4", "pkg_check", "teacup_json", "kids_check", "render_min", "atmos_json", "shots_json", "drop_posted"],     # v9: teacup placements (t, x, y, scale)     # v8.5 (new columns go at the END so older Sheets keep their order)
+                  "reel3_yt", "reel4_yt", "ig3", "ig4", "fb3", "fb4", "pkg_check", "teacup_json", "kids_check", "render_min", "atmos_json", "shots_json", "drop_posted",
+                  "uploaded_at", "public_at", "hd_gate"],     # v12 B-OWNER (PART 9, step 10): when the long video went up, the time YouTube publishes it now (the HD gate is its one writer; empty = the slot), the gate's line     # v9: teacup placements (t, x, y, scale)     # v8.5 (new columns go at the END so older Sheets keep their order)
  "Cost_Log":     ["ts", "episode_id", "item", "provider", "units", "inr",
                   "model", "in_tok", "cache_read_tok", "cache_write_tok", "out_tok", "basis", "measured_inr", "est_inr", "role", "ms"],      # v11: + ms (call latency)      # v8.11 (appended): measured token detail per AI call
                                                                                                        # (basis = measured); one 'summary' row per video: measured vs estimated AI ₹ (inr = 0)
@@ -1228,6 +1229,12 @@ DEFAULTS = {
  "HD_GATE_ON": ("FALSE", "v12 B-OWNER (PART 9, R22 (11)): TRUE = a YouTube upload that would go public at once goes up private and is made public when YouTube shows it in HD, or at HD_SHORT_CAP_MIN; FALSE (the shipped value until the pack proves the pipeline's clock) = public at its upload, as before. A video the gate already took is finished either way"),
  "HD_SHORT_WAIT_S": ("300", "v12 B-OWNER (PART 9): seconds a Short's own upload job waits for YouTube to show it in HD before the pipeline's next tick takes over (in steps of 15)"),
  "HD_SHORT_CAP_MIN": ("60", "v12 B-OWNER (PART 9): minutes after its upload at which a video the HD gate holds goes public whatever YouTube shows (the miss is logged); a failed policy read still holds it"),
+ "HD_LONG_LEAD_MIN": ("90", "v12 B-OWNER (PART 9, R22 (3)): minutes before a long video's slot from which the HD gate reads YouTube at every tick and moves its public time (one tick of the working clock always falls inside it)"),
+ "HD_STEP_MIN": ("15", "v12 B-OWNER (PART 9): the steps, in minutes after the slot, on which the HD gate sets a long video's public time"),
+ "HD_GUARD_MIN": ("75", "v12 B-OWNER (PART 9, R22 (3)): a long video YouTube does not show in HD is set to go public at least this many minutes after the tick that saw it, until its cap - above the working clock's longest gap (56 minutes), so the next tick looks before YouTube publishes it"),
+ "EXPIRY_CHECK_DAY": ("", "auto - the UTC date of the last key-expiry check (R22 (12): it runs at the first tick at or after 08:00 UTC, once a UTC day)"),
+ "OCCASION_DAY": ("", "auto - the UTC date of the last occasion heads-up (R22 (12): the first tick at or after 09:00 UTC, once a UTC day)"),
+ "HD_LONG_CAP_MIN": ("120","v12 B-OWNER (PART 9): minutes past its slot after which a long video goes public whatever YouTube shows (YouTube's own schedule publishes it; the miss is logged)"),
  "DESK_MONTHLY_CAP_INR": ("40","v12 B-OWNER: rupees a month for weighing his inputs (one strong call an input, role owner_desk; an estimate: 40 to 80 inputs); above it the input is kept word for word and read on the 1st of next month. Inside the chat's cap"),
 }
 _settings_cache = None

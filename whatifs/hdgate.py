@@ -1,6 +1,6 @@
-"""The HD gate (Publishing, D9): an upload that would go public at once goes up private, and code makes it public when YouTube shows it processed and in HD, or at its cap - never past a policy read that failed. See docs/CURRENT/SYSTEM.md."""
+"""The HD gate (Publishing, D9): an upload that would go public at once goes up private, and code makes it public when YouTube shows it processed and in HD, or at its cap - never past a policy read that failed; a long video's public time is moved in steps while YouTube does not show it in HD, and his window is one card on its day. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
-import datetime as dt, re, time
+import datetime as dt, math, re, time
 from whatifs.core import S, log, store, iso, now_utc, parse_iso, FAKE, scrub
 
 TAB = "HD_Wait"
@@ -121,11 +121,94 @@ def finish(vid, wait_s=0, now=None):
 
 def tick(now=None):
     """Every tick: finish every WAITING row (`finish` with wait_s 0) - whatever HD_GATE_ON says now: a Short the gate took private is never left
-    private because the switch was turned (R18 (4 a)). Returns the ids it looked at."""
+    private because the switch was turned (R18 (4 a)); then the long video's gate and his window (`long_tick`). Returns the ids of the rows it looked at."""
     now = now or now_utc(); done = []
     try: rows = [r for r in store().rows(TAB) if r.get("state") == WAITING]
-    except Exception: return done
+    except Exception: rows = []
     for r in rows:
         try: finish(r["vid"], 0, now); done.append(r["vid"])
         except Exception as e: log(f"HD gate: {r.get('vid')} not finished this tick: {scrub(e)[:160]}", "WARN")
+    try: long_tick(now)
+    except Exception as e: log(f"HD gate: the long videos were not looked at this tick: {scrub(e)[:160]}", "WARN")
     return done
+
+# ------------------------------------------------------------------ the long video (step 10): its public time moves, it is never made public by code
+LONG_STATUSES = ("SCHEDULED", "AWAITING_APPROVAL")       # a video uploaded with its time; only a SCHEDULED one's time is ever moved
+
+def long_step(slot, public_at, got, now):
+    """Pure: what the gate does to a long video's public time at this tick - ("none", None), ("push", target) or ("pull", target). `public_at` = the
+    time YouTube publishes it now (empty = the slot: `public_at or slot`, R17 (3 c)). Before slot - HD_LONG_LEAD_MIN: nothing. Not ready: the target is
+    at least HD_GUARD_MIN after this tick, on HD_STEP_MIN steps after the slot, never past slot + HD_LONG_CAP_MIN, and only ever later. Ready: back to
+    the first step at or after the slot that is 5 minutes away, and only ever earlier. R22 (3): the guard outlasts the working clock's gap, so the next
+    tick always comes before a video not in HD is public, until the cap; the lead holds one tick."""
+    lead, step, guard, cap = (dt.timedelta(minutes=S(k, float)) for k in ("HD_LONG_LEAD_MIN", "HD_STEP_MIN", "HD_GUARD_MIN", "HD_LONG_CAP_MIN"))
+    public_at = public_at or slot
+    if now < slot - lead: return "none", None
+    def on_step(t): return slot + step * math.ceil(max(0.0, (t - slot) / step))
+    if not ready(got):
+        target = min(on_step(now + guard), slot + cap)
+        return ("push", target) if target > public_at else ("none", None)
+    target = max(slot, on_step(now + dt.timedelta(minutes=5)))
+    return ("pull", target) if target < public_at else ("none", None)
+
+def _told(key):
+    """Was a row with this key ever sent to him (open or closed)? His window is ONE card a video, and one late row."""
+    try: return any(r.get("dedupe_key") == key for r in store().rows("Owner_Actions"))
+    except Exception: return False
+
+def long_line(e, got, now):
+    """The `hd_gate` line of a long video YouTube shows public: "public N min after upload; HD yes" or "public N min after upload; HD NO (the cap)" - N
+    from `uploaded_at` to the time it went public (`public_at`, empty = the slot; never later than now). Without HD before the cap: "HD NO"."""
+    slot = parse_iso(e.get("slot_et")); pa = parse_iso(e.get("public_at")); up = parse_iso(e.get("uploaded_at"))
+    went = min(pa or slot or now, now)
+    head = f"public {_mins(up, went)} min after upload" if up else "public (its upload time is not on record)"
+    if got.get("hd"): return head + "; HD yes"
+    at_cap = bool(pa and slot and pa >= slot + dt.timedelta(minutes=S("HD_LONG_CAP_MIN", float)))
+    return head + ("; HD NO (the cap)" if at_cap else "; HD NO")
+
+def window(e, slot, got, now):
+    """HIS WINDOW (item 156): on its day (India time) a long video that is uploaded and ready gets ONE card `prepublic` - the end screen in Studio,
+    optional - with DONE (R18 (6): it stands under "Needs you" and in the 18:00 list; made before 09:00 it is in the morning list), the default "it goes
+    out without an end screen", expiring at the slot. Not ready by 08:30 India time on its day: one `hd_late` row. Nothing after the slot."""
+    from whatifs import notify as NT
+    ep, vid = e["episode_id"], e["yt_id"]; title = e.get("title") or ep; at = slot.astimezone(NT.IST).strftime("%H:%M")
+    if now >= slot or _told(f"prepublic|{ep}"): return
+    if ready(got):
+        NT.send("prepublic", f"Tonight {at}: {title}. Optional before it goes public: the end screen, about 30 seconds in Studio: "
+                             f"https://studio.youtube.com/video/{vid}/edit", [("Done", "DONE")], episode=ep,
+                default="it goes out without an end screen", expires_h=max(0.25, (slot - now).total_seconds() / 3600), dedupe_key=f"prepublic|{ep}")
+    elif now.astimezone(NT.IST).time() >= dt.time(8, 30) and not _told(f"hd_late|{ep}"):
+        NT.send("hd_late", f"{title}: YouTube does not show it in HD yet ({now.astimezone(NT.IST).strftime('%H:%M')} India time). It still goes out tonight; "
+                           f"while it waits for HD its time moves by up to {S('HD_LONG_CAP_MIN', int)} minutes past {at}.", episode=ep, dedupe_key=f"hd_late|{ep}")
+
+def long_tick(now=None):
+    """The long video's gate and his window, at every tick, with HD_GATE_ON (switched off, the gate stops moving times and YouTube's own schedule
+    publishes the video - R18 (4 a)). Only a SCHEDULED video's time is moved: a held or waiting one is never touched. YouTube is read first: a video it
+    no longer shows private (his own hand in Studio, YouTube's schedule, an early release through `go_public`) gets its `hd_gate` line and is left alone
+    - YouTube refuses a time on a video that was ever published (R17 ADDS (A)); an empty read moves nothing (R18 (5)). The new time is written to
+    `public_at` - the gate is its one writer (R17 (3 c)). Returns the ids of the episodes whose time moved."""
+    from whatifs import publish as PUB, notify as NT
+    now = now or now_utc(); moved = []
+    if not S("HD_GATE_ON", bool): return moved
+    lead = dt.timedelta(minutes=S("HD_LONG_LEAD_MIN", float)); today = now.astimezone(NT.IST).date()
+    try: eps = [e for e in store().rows("Episodes") if e.get("status") in LONG_STATUSES and e.get("yt_id") and parse_iso(e.get("slot_et"))]
+    except Exception: return moved
+    for e in eps:
+        try:
+            slot = parse_iso(e["slot_et"]); his_day = slot.astimezone(NT.IST).date() == today
+            gate = e.get("status") == "SCHEDULED" and now >= slot - lead
+            if not (his_day or gate): continue                                       # nothing to read yet: 1 quota unit a read
+            got = PUB.yt_read(e["yt_id"])
+            if his_day: window(e, slot, got, now)
+            if not gate or not got: continue                                         # R18 (5): an empty read is not "already public" and moves nothing
+            if (got.get("privacy") or "") != "private":                              # R17 ADDS (A): published - never scheduled again
+                if not e.get("hd_gate"):
+                    line = long_line(e, got, now); store().update("Episodes", "episode_id", e["episode_id"], {"hd_gate": line, "updated": iso()})
+                    if not got.get("hd"): log(f"HD gate: {e['episode_id']} is public without HD (a miss): {line}", "WARN")
+                continue
+            act, target = long_step(slot, parse_iso(e.get("public_at")) or slot, got, now)
+            if act in ("push", "pull") and PUB.yt_schedule(e["yt_id"], iso(target)):
+                store().update("Episodes", "episode_id", e["episode_id"], {"public_at": iso(target), "updated": iso()}); moved.append(e["episode_id"])
+                log(f"HD gate: {e['episode_id']} {'moved later' if act == 'push' else 'moved back'} to {iso(target)} ({'in HD' if ready(got) else 'not in HD yet'})")
+        except Exception as x: log(f"HD gate: the long video {e.get('episode_id')} was not looked at: {scrub(x)[:160]}", "WARN")
+    return moved
