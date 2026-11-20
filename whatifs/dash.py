@@ -36,6 +36,18 @@ def _verbs(r):
     except Exception: btns = []
     return {str(lbl)[:24]: f"ACT|{r['id']}|{i}" for i, (lbl, _v) in enumerate(btns)}
 
+LINK_RX = re.compile(r"https://[^\s<>\"')\]]+")
+def _links(r):
+    """FINISHED BY FABLE (CB-8): the https addresses a row's text holds, for the page's own link buttons (a card's `links`): one tap, never an
+    address to copy by hand. None for a kind whose text the dashboard does not show (`notify.DASH_PRIVATE`); at most three."""
+    from whatifs import notify as NT
+    if r.get("kind") in NT.DASH_PRIVATE: return []
+    out = []
+    for u in LINK_RX.findall(re.sub(r"<[^>]+>", " ", str(r.get("text", "")))):
+        u = u.rstrip(".,;:!?")
+        if u not in out: out.append(u)
+    return out[:3]
+
 def _docket():
     from whatifs import packaging as PK, notify as NT
     st = store(); cards = []; two = _two()
@@ -55,7 +67,7 @@ def _docket():
         txt = _text(r) if two else re.sub(r"<[^>]+>", "", r.get("text", ""))[:400]
         cards.append({"id": r["id"], "kind": kind, "title": txt[:90], "why": txt[:400],
                       "default_label": r.get("default_action") or "Nothing happens", "default_at": r.get("expires_at") or "",
-                      "window_h": round((exp - created).total_seconds() / 3600) if exp and created else 0, "verbs": verbs})
+                      "window_h": round((exp - created).total_seconds() / 3600) if exp and created else 0, "verbs": verbs, **({"links": _links(r)} if two else {})})
     # title/thumbnail picks still open (before the 2-hour freeze)
     eps = {e.get("episode_id"): e for e in st.rows("Episodes")}
     by = {}
@@ -107,7 +119,7 @@ def _decided_two(now=None):
         btns = [] if ran else json.loads(r.get("buttons") or "[]"); txt = _text(r)
         out.append({"id": r["id"], "kind": "decided", "title": txt[:90], "why": txt[:400],
                     "default_label": ("ran by default: " + str(r.get("default_action") or "nothing changed")) if ran else (r.get("default_action") or "It stays"),
-                    "default_at": (r.get("answered_at") or "") if ran else "", "window_h": 0,
+                    "default_at": (r.get("answered_at") or "") if ran else "", "window_h": 0, "links": _links(r),
                     "verbs": {str(lbl)[:24]: f"ACT|{r['id']}|{i}" for i, (lbl, _v) in enumerate(btns)}})
     return out
 
@@ -198,7 +210,7 @@ def _alarms(two):
     from whatifs import notify as NT
     if not two: return []
     rows = [r for r in NT.open_rows() if NT.klass(r.get("kind")) == NT.ALARM]
-    return [{"id": r["id"], "kind": r.get("kind"), "title": _text(r, 90), "text": _text(r), "count": int(_f(r.get("count"), 1) or 1), "last_at": r.get("last_at") or r.get("created") or "",
+    return [{"id": r["id"], "kind": r.get("kind"), "title": _text(r, 90), "text": _text(r), "count": int(_f(r.get("count"), 1) or 1), "last_at": r.get("last_at") or r.get("created") or "", "links": _links(r),
              "buttons": {str(lbl)[:24]: f"ACT|{r['id']}|{i}" for i, (lbl, _v) in enumerate(json.loads(r.get("buttons") or "[]"))}}
             for r in sorted(rows, key=lambda x: str(x.get("created") or ""), reverse=True)]
 

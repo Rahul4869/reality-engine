@@ -377,3 +377,22 @@ def test_an_open_row_of_his_inputs_can_be_tapped(monkeypatch, setting, tmp_path)
     assert part.count("<button") == 2 and f'data-verb="ACT|{idea}|0"' in part and f'data-verb="ACT|{idea}|1"' in part, part
     ok, _note = DS.route(f"ACT|{idea}|1")                                                                   # the tap is one `dash.route` already answers
     assert ok and all(x["id"] != idea for x in DS.build_snapshot()["groups"]["inputs"])
+
+def test_an_address_in_a_row_is_one_tap_on_the_page(monkeypatch, setting, tmp_path):
+    """F3 (every action one tap) with PART 7's own row ("Watch it (private): https://studio..."). FOUND AT THE FINISH: the page printed an address as
+    text. A card carries the https addresses of its row as `links`; the page's own link buttons draw them, named by where they lead; nothing but
+    https is ever drawn."""
+    _full(monkeypatch, setting)
+    post = NT.send("decided_post", "EP3 was approved by your silence and goes public at Sat 20:30. Watch it (private): https://studio.youtube.com/video/abc123/edit",
+                   [("Take it down", "UNPOST EP3")], expires_h=168)
+    hold = NT.send("api_audit", "Send the YouTube API audit form: https://support.google.com/youtube/contact/yt_api_form.", dedupe_key="api_audit|face")
+    snap = json.loads(json.dumps(DS.build_snapshot()))
+    dec = next(c for c in snap["decided"] if c["id"] == post); card = next(c for c in snap["docket"] if c["id"] == hold)
+    assert dec["links"] == ["https://studio.youtube.com/video/abc123/edit"], dec
+    assert card["links"] == ["https://support.google.com/youtube/contact/yt_api_form"], card                 # the sentence's full stop is not the address
+    home = _render(snap, tmp_path, "links")["home"]
+    assert '<a class="btn ghost" href="https://studio.youtube.com/video/abc123/edit" target="_blank" rel="noopener">Open Studio</a>' in home
+    assert 'href="https://support.google.com/youtube/contact/yt_api_form" target="_blank" rel="noopener">Open the page</a>' in home
+    for c in snap["decided"] + snap["docket"]: c["links"] = ["javascript:alert(1)", 'https://x.test/"onmouseover="y']       # planted: a hostile snapshot
+    home = _render(snap, tmp_path, "badlinks")["home"]
+    assert "javascript:" not in home and 'onmouseover="y' not in home

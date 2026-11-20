@@ -600,6 +600,10 @@ function sayBox(c) {          // v12 B-OWNER (PART 6): under each card of "Needs
   return `<div class="say"><input type="text" maxlength="2000" data-say-for="${esc(c.id)}" value="${esc(said[c.id] || "")}" placeholder="Say something about this" aria-label="Say something about this">
     <button class="btn" data-say="${esc(c.id)}">Send</button></div>`;
 }
+function linkButtons(c) {     // FINISHED BY FABLE (CB-8): an address in a row is one tap - only https, named by where it leads
+  return (c.links || []).filter(u => /^https:\/\//.test(u)).map(u =>
+    `<a class="btn ghost" href="${esc(u)}" target="_blank" rel="noopener">${/^https:\/\/studio\.youtube\.com\//.test(u) ? "Open Studio" : "Open the page"}</a>`).join("");
+}
 function caseCard(c, say) {
   const r = ruled[c.id];
   const total = (c.window_h || 24) * H, rem = Math.max(0, new Date(c.default_at).getTime() - Date.now());
@@ -616,7 +620,7 @@ function caseCard(c, say) {
       <p class="option-title">${cur ? `<b>${esc(cur.key)}.</b> ${esc(cur.label)} <small style="color:var(--muted)">(${esc(cur.detail || "")})</small>` : `<span style="color:var(--muted)">Tap a cover to read its title.</span>`}</p>
       <div class="actions"><button class="btn primary wide" data-rule="${esc(c.id)}" ${sel ? "" : "disabled"}>${sel ? "Rule for " + esc(sel) : "Choose a cover"}</button></div>`;
   } else {
-    const links = (c.links || []).map(u => `<a class="btn ghost" href="${esc(u)}" target="_blank" rel="noopener">Open Studio</a>`).join("");
+    const links = linkButtons(c);
     body = `<div class="actions">${links}${verbButtons(c)}</div>`;
   }
   const ran = /^ran by default/.test(c.default_label || "");      // FINISHED BY FABLE (CB-9): a card says what is true of it
@@ -640,7 +644,7 @@ function alarmCard(a) {       // v12 B-OWNER (PART 3): an open alarm is an incid
     <div class="case-top"><span class="kind held">Alarm</span><span class="case-id">${Number(a.count) > 1 ? "x" + esc(a.count) + ", newest " : ""}${a.last_at ? esc(ago(a.last_at)) : ""}</span></div>
     <h3 class="serif">${esc(a.title)}</h3>
     <p class="why">${esc(a.text)}</p>
-    ${Object.keys(c.verbs).length ? `<div class="actions">${verbButtons(c)}</div>` : ""}
+    ${Object.keys(c.verbs).length || (a.links || []).length ? `<div class="actions">${linkButtons(a)}${verbButtons(c)}</div>` : ""}
     ${r ? `<p class="done-note">${esc(r.note)}</p>` : ""}
   </article>`;
 }
