@@ -127,7 +127,7 @@ def test_a_card_without_a_default_gets_the_fallback_and_is_named(setting):
     setting("TWO_SCREENS_ON", "FALSE"); assert _row(NT.send("org_stuck", "A department is stuck", [("Look", "LOOK X")]))["default_action"] == ""      # the older path
 
 # ------------------------------------------------------------------ step 2a: ONE ROAD (PART 2) - every mail to him goes through notify.mail
-OWN_IDS = ("EP209911260900",)          # the whole production of this file: an id no other test file uses (a test proves it)
+OWN_IDS = ("EP209911260900", "SHSPARSE10")          # the whole productions of this file (step 10b: the sparse clock's Short): ids no other test file uses (a test proves it)
 
 def test_the_whole_productions_of_this_file_use_ids_no_other_test_file_uses():
     root = os.path.dirname(os.path.abspath(__file__)); here = os.path.basename(__file__)
@@ -1230,3 +1230,59 @@ def test_the_daily_jobs_run_once_at_the_first_tick_after_their_hour(monkeypatch,
     assert tick(16, 20) == ["expiry", "switches", "heads_up"] and core.S("EXPIRY_CHECK_DAY") == "2026-12-16" and core.S("OCCASION_DAY") == "2026-12-16"
     assert tick(8, 5, day=17) == ["expiry", "switches", "heads_up", "expiry", "switches"]                        # 08:05: the check; the heads-up waits for 09:00
     assert tick(9, 0, day=17)[-1] == "heads_up" and len(ran) == 6
+
+# ------------------------------------------------------------------ step 10b: R22 (6) - a sparse clock loses nothing
+SPARSE_SHORT = "SHSPARSE10"          # a whole Short of this file (in OWN_IDS)
+
+def test_the_sparse_clock_loses_nothing(monkeypatch, setting):
+    """R22 (6): the REAL `manage.tick`, with every part in it, on the clock GitHub's own schedule gave (measured 19 Nov 2026: about four ticks a day) -
+    three India days (Wed 16 to Fri 18 Dec 2026), ticks at 02:10, 09:40, 16:50 and 23:20 India time. Five cards so spread that one is open every
+    evening, one Short that never reads HD (uploaded at 10:00 on day 1) and one reviewed video uploaded 27 hours before its slot (20:30 on day 3).
+    WhatsApp starts ONE morning message (at the 09:40 tick) and ONE "Needs you" list (at the 23:20 tick, the first after 18:00) a day and nothing
+    between 00:30 and 08:00; every card is DEFAULTED at the first tick after its expiry (the fifth, kept open for day 3's list, closes after the walk);
+    the Short is public at the 16:50 tick (its cap); the video is SCHEDULED for its OWN slot - its silence was taken at the 09:40 tick of day 3
+    (20:30 - SILENCE_LEAD_H 12 = 08:30). R24: the key-expiry check and the occasion's heads-up are no-ops here (this test counts whole lists)."""
+    from whatifs import manage as MG, hdgate as HG, release as REL, shorts2 as SH, caretaker as CT, steward as STWD, occasions as OC
+    UTC = dt.timezone.utc
+    def ist(d, h, m): return dt.datetime(2026, 12, d, h, m, tzinfo=NT.IST).astimezone(UTC)
+    clock = [ist(16, 0, 0)]                                                                                      # always UTC: core.iso never converts a zone
+    for mod in (NT, DG, WA, MG, HG, CON, REL): monkeypatch.setattr(mod, "now_utc", lambda: clock[0])            # every module imports now_utc by name
+    for mod, fn in ((CT, "ensure_expiry_seed"), (CT, "expiry_check"), (STWD, "apply_planned"), (OC, "heads_up")): monkeypatch.setattr(mod, fn, lambda *a, **k: None)
+    setting("TWO_SCREENS_ON", "TRUE"); setting("HD_GATE_ON", "TRUE"); setting("SHORTS_REVIEW_FIRST_N", "0")
+    bodies = _wire(monkeypatch); _mailbox(monkeypatch); _window(False)
+    monkeypatch.setattr(LAU, "uploads_open", lambda: True); monkeypatch.setattr(NT, "in_quiet_hours", lambda now=None: False)
+    monkeypatch.setitem(PUB8.FAKE_FAULTS, "youtube", {"sd": True})                                              # nothing ever reads HD
+    step, sched, real = [-1], [], PUB8.yt_schedule
+    monkeypatch.setattr(PUB8, "yt_schedule", lambda vid, at: sched.append((vid, at, step[0])) or real(vid, at))
+    cards = [NT.send("bakeoff", f"Decision {i}", [("Pick A", f"PICK S{i}")], default="A is used", expires_h=h, dedupe_key=f"sparse|{i}")
+             for i, h in enumerate((12, 20, 29, 47.5, 72))]      # closing day 1 12:00 and 20:00, day 2 05:00 and 23:30, day 4 00:00 (India time)
+    ticks = [ist(d, h, m) for d in (16, 17, 18) for h, m in ((2, 10), (9, 40), (16, 50), (23, 20))]
+    out, seen, svid, vid, review, short_at_cap = [], {}, "", "", "", None
+    slot = core.iso(ist(18, 20, 30))
+    try:
+        for k, t in enumerate(ticks):
+            if k == 2:                                                                                           # 10:00 on day 1: the Short goes up, private
+                clock[0] = ist(16, 10, 0)
+                core.store().append("Premise_Bench", [{"bench_id": "B0", "premise": "What if the Moon left tonight?", "headline": "What if the Moon left tonight?",
+                                                       "family": "", "ptype": "collective", "status": "READY", "claude_score": 9, "gemini_score": 9, "combined": 9, "added": core.iso()}])
+                r = SH.run(force=True, now=clock[0], episode_id=SPARSE_SHORT); assert r["ok"], r
+                svid = r["yt_id"]; assert HG.row(svid)["state"] == HG.WAITING
+            if k == 7:                                                                                           # 17:30 on day 2: the reviewed video, 27 hours before its slot
+                clock[0] = ist(17, 17, 30)
+                vid = PUB8.yt_upload("x/EPSPARSE.mp4", "Title EPSPARSE", "D", [], publish_at=slot, now=clock[0])
+                core.store().append("Episodes", [{"episode_id": "EPSPARSE", "slot_et": slot, "status": "UPLOADED", "yt_id": vid, "title": "Title EPSPARSE",
+                                                  "uploaded_at": core.iso(clock[0])}])
+                CON.await_approval("EPSPARSE", vid, slot, "'Title EPSPARSE'."); review = _kind("creative_review", "EPSPARSE")[0]["id"]
+            clock[0] = t; step[0] = k; n0 = len(core.store().rows("WA_Outbox")); MG.tick()
+            out += [(k, r["kind"]) for r in core.store().rows("WA_Outbox")[n0:]]
+            for i in cards + ([review] if review else []):
+                if i not in seen and _row(i)["status"] == "DEFAULTED": seen[i] = k
+            if k == 2: short_at_cap = (HG.row(svid)["state"], HG.row(svid)["note"], PUB8.yt_read(svid).get("privacy"))
+    finally: shutil.rmtree(os.path.join(core.WORK, SPARSE_SHORT), ignore_errors=True)                           # GitHub runs every test file in one process with one work folder
+    assert out == [(1, "morning"), (3, "needs"), (5, "morning"), (7, "needs"), (9, "morning"), (11, "needs")], out      # nothing at 02:10, nothing at 16:50
+    assert len(core.store().rows("WA_Outbox")) == 6 and len(bodies) == 6                                        # nothing else started a message
+    assert [seen.get(i) for i in cards] == [2, 3, 5, 8, None] and _row(cards[4])["status"] == "OPEN"             # each at the first tick after its expiry
+    assert short_at_cap == (HG.CAP, "public after 410 min; HD NO (the cap)", "public")                          # 10:00 -> the 16:50 tick: its cap
+    assert seen.get(review) == 9 and sched[0] == (vid, slot, 9)                                                  # his silence at the 09:40 tick of day 3, on its OWN slot
+    e = _epi("EPSPARSE"); assert e["status"] == "SCHEDULED" and e["slot_et"] == slot
+    d = _decided("EPSPARSE"); assert len(d) == 1 and "approved by your silence and goes public at" in d[0]["text"] and "had passed" not in d[0]["text"]

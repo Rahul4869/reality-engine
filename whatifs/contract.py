@@ -1180,7 +1180,7 @@ def approve(ep):
         slot = next((s.strftime("%Y-%m-%dT%H:%M:%SZ") for s in next_slots(12, now_utc() + dt.timedelta(minutes=30)) if s.strftime("%Y-%m-%dT%H:%M:%SZ") not in taken), None)
     if not slot: return "no free slot found"
     PUB.yt_schedule(e["yt_id"], slot)
-    st.update("Episodes", "episode_id", ep, {"status": "SCHEDULED", "slot_et": slot, "updated": iso()})
+    st.update("Episodes", "episode_id", ep, {"status": "SCHEDULED", "slot_et": slot, "public_at": "", "updated": iso()})      # v12 B-OWNER (R17 (3 c)): a time set here empties the HD gate's `public_at` (the gate is its one writer)
     return f"approved: {ep} publishes at {slot}"
 
 def hold_review(ep):

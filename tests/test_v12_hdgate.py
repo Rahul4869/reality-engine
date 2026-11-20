@@ -374,14 +374,20 @@ def test_the_real_tick_finishes_a_waiting_short(monkeypatch, setting, gate_on):
 def test_a_video_rescheduled_after_a_pause_is_judged_from_its_new_slot(monkeypatch, setting, gate_on):
     """R17 (3 c): `public_at` has ONE writer, the gate - a time set elsewhere empties it. A video the gate had pushed to its cap, held by a pause and put
     back on its own slot by `manage.resume_held`, is judged from that slot, never from the time the gate set before the pause (else YouTube publishes it
-    on its slot without HD while the gate believes it is two hours later)."""
-    from whatifs import manage as MG
+    on its slot without HD while the gate believes it is two hours later). The same for `contract.approve` (his Approve tap, and his silence through
+    `approve_by_silence`): the time it sets empties `public_at` (step 10b)."""
+    from whatifs import manage as MG, contract as CON
     PUB.FAKE_FAULTS["youtube"] = {"sd": True}
     _long("EPL09", public_at=core.iso(SLOT + 120 * M))
     assert MG.hold_scheduled("paused") == 1 and _ep("EPL09")["status"] == "HELD"
     MG.resume_held(); e = _ep("EPL09")
     assert e["status"] == "SCHEDULED" and e["slot_et"] == core.iso(SLOT) and e["public_at"] == ""
     assert HG.long_tick(_t(13, 44)) == ["EPL09"] and _ep("EPL09")["public_at"] == "2026-12-16T15:00:00Z"
+    s2 = SLOT + 24 * 60 * M                                                                                       # Thursday 20:00 India time: a slot of its own (approve moves a taken one)
+    _long("EPL12", status="AWAITING_APPROVAL", slot=s2, public_at=core.iso(s2 + 120 * M))                         # the gate had pushed it to its cap; then it waited for his approval
+    assert CON.approve("EPL12").startswith("approved: EPL12") and _ep("EPL12")["status"] == "SCHEDULED" and _ep("EPL12")["slot_et"] == core.iso(s2)
+    assert _ep("EPL12")["public_at"] == ""                                                                        # the time approve set empties the gate's
+    assert "EPL12" in HG.long_tick(s2 - 46 * M) and _ep("EPL12")["public_at"] == "2026-12-17T15:00:00Z"            # judged from its slot (14:30 + 30), never from 16:30
 
 def test_the_release_step_writes_the_gates_line_and_waits_for_its_time(monkeypatch, setting, gate_on):
     """PART 9: `manage.release` writes the long video's `hd_gate` line when it sees it public, and its private alert counts from max(slot, public_at) -
@@ -395,3 +401,34 @@ def test_the_release_step_writes_the_gates_line_and_waits_for_its_time(monkeypat
     monkeypatch.setattr(MG, "now_utc", lambda: SLOT + 180 * M); MG.release("EPL11")
     assert "private alert sent" not in str(_ep("EPL11").get("notes")) and _ep("EPL11")["status"] == "SCHEDULED"      # 2 h past its slot, under 2 h past the gate's time
     monkeypatch.setattr(MG, "now_utc", lambda: SLOT + 271 * M); MG.release("EPL11"); assert "private alert sent" in str(_ep("EPL11").get("notes"))
+
+# ------------------------------------------------------------------ step 10b: the designer of record's answers to step 10's DESIGN QUESTIONS 2 and 3 (DESIGNER_ON_STEP10_QUESTIONS.md)
+def _dicts(rel):
+    return [n for n in ast.walk(ast.parse(open(os.path.join(ROOT, rel), encoding="utf-8").read())) if isinstance(n, ast.Dict)]
+
+def _keys(n): return {k.value: v for k, v in zip(n.keys, n.values) if isinstance(k, ast.Constant)}
+
+def test_the_upload_time_is_written_with_the_id():
+    """DESIGN QUESTION 2, settled: `uploaded_at` (when the file reached YouTube) has ONE writer - `episode.py`, in the update that records `yt_id` right
+    after the upload, so the two can never disagree and a resumed attempt that finds its id (it uploads nothing) never rewrites the time. No other
+    line of whatifs/ or tools/ writes the key. The real path is the rehearsal's own assert (a whole production)."""
+    up = [_keys(n) for n in _dicts("whatifs/episode.py") if "yt_id" in _keys(n) and isinstance(_keys(n).get("status"), ast.Constant) and _keys(n)["status"].value == "UPLOADED"]
+    assert len(up) == 1 and "uploaded_at" in up[0] and ast.unparse(up[0]["uploaded_at"]) == "iso()", [sorted(map(str, k)) for k in up]
+    writers = []
+    for base in ("whatifs", "tools"):
+        for dp, _dn, fs in os.walk(os.path.join(ROOT, base)):
+            for f in sorted(fs):
+                if f.endswith(".py"):
+                    rel = os.path.relpath(os.path.join(dp, f), ROOT).replace(os.sep, "/")
+                    writers += [rel for n in _dicts(rel) if "uploaded_at" in _keys(n)]
+    assert writers == ["whatifs/episode.py"], writers
+
+def test_a_video_still_in_production_gets_nothing_from_the_gate(monkeypatch, setting, gate_on):
+    """DESIGN QUESTION 3, settled: HIS WINDOW speaks of an UPLOADED video only (SCHEDULED or AWAITING_APPROVAL, with its id). A long video still in
+    production at 08:30 India time on its day - no `yt_id`, its status neither - gets no `hd_late` and no `prepublic` row, YouTube is not read for it,
+    and the tick raises nothing: its lateness already has its own voices (`slot_skipped`, and after three failed tries `pipeline_stop`)."""
+    setting("TWO_SCREENS_ON", "TRUE"); _quiet(monkeypatch)
+    core.store().append("Episodes", [{"episode_id": "EPL13", "slot_et": core.iso(SLOT), "status": "VISUALS", "title": "Title EPL13"}])
+    reads = []; real = PUB.yt_read; monkeypatch.setattr(PUB, "yt_read", lambda v: reads.append(v) or real(v))
+    assert HG.tick(_t(3, 35)) == [] and HG.long_tick(_t(4, 0)) == []                                             # 09:05 and 09:30 India time, its own day
+    assert not _rows("hd_late") and not _rows("prepublic") and reads == []

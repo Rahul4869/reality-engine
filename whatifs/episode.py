@@ -863,7 +863,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         CON.owner_card(ep, "final", g["failed"], "Nothing was uploaded.")
         return _hold(st, ep, out, {"problems": [{"code": "contract:" + f, "detail": str(ev)} for f, ev in g["failed"]]}, notes, fix)
     vid = ORG.work("D9", "publish", ep, lambda b: PUB.yt_upload(master, title, desc, pkg.get("tags", []), publish_at=slot_iso, ai_label=S("AI_LABEL_DEFAULT", bool)), measure=WR.m_upload)
-    st.update("Episodes", "episode_id", ep, {"title": title, "yt_id": vid, "slot_et": slot_iso, "status": "UPLOADED", "updated": iso()})   # recorded at once: no double upload
+    st.update("Episodes", "episode_id", ep, {"title": title, "yt_id": vid, "slot_et": slot_iso, "status": "UPLOADED", "uploaded_at": iso(), "updated": iso()})   # recorded at once: no double upload | v12 B-OWNER (step 10b): uploaded_at's ONE writer, beside the id
     if vid and ORG.on(): CANON.on_air(ep, vid)                    # v12 B6a: the platform confirmed the upload - this case is now the show's canon
     try:                                                         # v11 (K155): the brain's features + a logged forecast for this video
         from whatifs import brain as BRN, scenes as SCN
