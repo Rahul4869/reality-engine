@@ -155,6 +155,7 @@ ROUTES = {
     "short_writer": ("script", "creative"),          # v12 V2c: a Short is written (and fixed once) by the model that writes the long script
     "probe_gemini": ("flash", "judge"), "probe_claude": ("haiku", "chore"),          # v12 V1b: the promise line-up's two cheap readers (the right answer is known to code: no taste call)
     "floor_gemini": ("board_g", "judge"), "floor_claude": ("board_c", "judge"),      # v12 V1c: the judged floor's two first-time viewers - the Board's own chains (strong, one family each)
+    "owner_desk": ("board_c", "judge"),      # v12 B-OWNER (PART 5, R17 (9 c)): his input is weighed by the Board's own chain - strong, one family, no cheap fall-back (hard rule 9)
 }
 SAVER_MEDIUM = ("scout", "showrunner", "bible", "premise_judge", "memo", "objections", "director", "director_read", "hooks", "packager", "immersion")
 CHAIN_EFFORT = {"opus": "creative", "fable": "creative", "sonnet": "edit", "haiku": "chore"}

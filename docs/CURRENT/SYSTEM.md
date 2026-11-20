@@ -10,7 +10,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 - Writers' room: mode `v2` (3 drafts, blind cross-family jury, one checklist revision, joke tournament). Room v1 is an optional fallback.
 - Animated scenes: 4 per long video on `heygen/heygen-video/image-to-video`; stills on `fal-ai/flux/schnell`; look `toybox_noir`; voice engine `gemini`.
 - Cadence: at most 4 long videos a month, on Sat (US Eastern); 3 standalone Shorts a week, 12 a month at most - every topic starts as a Short and the promote rule picks the long video's topic (`whatifs/ladder.py`); spin-offs: the Case Files countdown and the monthly Deep Trial.
-- Size: 141 code modules, 881 settings, 91 Sheet tabs, 25 GitHub workflows.
+- Size: 141 code modules, 882 settings, 91 Sheet tabs, 25 GitHub workflows.
 
 ## 2. How it runs
 - Code: the Python package `whatifs/` runs on GitHub Actions (`python -m whatifs.cli <command>`). State lives in one Google Sheet (tabs and columns are
@@ -390,7 +390,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Decisions | 18 | id, ts, rule, key, old, new ... |  |
 | Candidates | 11 | id, ts, kind, title, how, sources ... |  |
 | Owner_Input | 1 | input |  |
-| Owner_Desk | 10 | n, ts, sha, verbatim, verdict, how ... |  |
+| Owner_Desk | 13 | n, ts, sha, verbatim, verdict, how ... |  |
 
 ## 9. Modules
 | module | purpose |

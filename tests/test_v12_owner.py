@@ -733,3 +733,131 @@ def test_a_failed_copy_still_reaches_the_screens(monkeypatch, setting):
     assert NT.mail("cost_check", "Weekly cost check", "<p>planted</p>", screens=False) is False
     setting("TWO_SCREENS_ON", "FALSE")
     with pytest.raises(RuntimeError): NT.mail("budget_pct", "Budget: 95%", "<p>planted</p>")              # the older path raises as today
+
+# ------------------------------------------------------------------ step 5: HIS INPUT DESK (PART 5, items 149 and 138) - one store for both screens
+from whatifs.org import desk as DESK
+LABELS = {"kind": "preference", "restated": "r", "department": "D4", "raises_breakout": True, "why": "w", "needs_code": False, "new_arm": False}
+
+def _desk_on(setting): setting("TWO_SCREENS_ON", "TRUE"); setting("STRATEGY_ON", "TRUE")
+def _desk_rows(): return core.store().rows("Owner_Desk")
+
+def _labels(monkeypatch, **w):
+    """The weigher's reply, faked (the model LABELS; code decides): a preference for the writers' room that raises the breakout unless told otherwise."""
+    calls = []; monkeypatch.setattr(DESK, "weigh", lambda text: calls.append(text) or {**LABELS, **w}); return calls
+
+def _inbound(monkeypatch, mid, text):
+    """One typed WhatsApp message through the real `handle_inbound` (the relay's encryption as tests/test_v94b.py does it)."""
+    import base64
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    key = base64.b64encode(bytes(range(32))).decode(); monkeypatch.setenv("WA_RELAY_KEY", key); n = os.urandom(12)
+    c = AESGCM(base64.b64decode(key)).encrypt(n, json.dumps({"messages": [{"id": mid, "type": "text", "text": text}]}).encode(), None)
+    return WA.handle_inbound(json.dumps({"c": base64.b64encode(c).decode(), "n": base64.b64encode(n).decode()}))
+
+def test_an_input_is_kept_word_for_word_once(monkeypatch, setting):
+    """PART 5: his words from either screen are stored AT ONCE, word for word (up to 4,000 characters) with their channel, card and id; the same message
+    twice is stored once, the same words from the other screen are a second input; every row gets the owner memo, as the tab's rows do today."""
+    _desk_on(setting); calls = _labels(monkeypatch, kind="feedback")
+    words = "  The last Short felt slow in its first two seconds;\nstart on the moving picture.  "
+    n1, a1 = DESK.take(words, "whatsapp", ref="wamid.A")
+    assert DESK.take(words, "whatsapp", ref="wamid.A") == (n1, "")
+    n2, _a = DESK.take(words, "dashboard", ref="act-7", card="C9")
+    rows = _desk_rows(); assert [r["verbatim"] for r in rows] == [words, words] and n2 == n1 + 1, rows
+    assert [(r["channel"], r["ref"], r["card"]) for r in rows] == [("whatsapp", "wamid.A", ""), ("dashboard", "act-7", "C9")]
+    assert all(r["verdict"] == "PARKED" and r["memo"] for r in rows) and len(calls) == 2 and a1.startswith(f"Your input {n1}: PARKED"), (rows, a1)
+    DESK.take("y" * 4500, "dashboard", ref="act-8"); assert _desk_rows()[-1]["verbatim"] == "y" * 4000
+
+def test_code_decides_the_verdict(monkeypatch, setting):
+    """Item 138's three conditions are code: TAKEN needs all five labels (a preference, it raises the breakout, no code, no new arm, a department) -
+    flip any one alone and it is PARKED; every other kind has its own plain answer, and a change he wants built is an `idea` row he can tap."""
+    row = {"n": 7}
+    assert DESK.decide(dict(LABELS), row)[0] == "TAKEN"
+    for flip in ({"kind": "video_idea"}, {"raises_breakout": False}, {"needs_code": True}, {"new_arm": True}, {"department": "none"}):
+        assert DESK.decide({**LABELS, **flip}, row)[0] == "PARKED", flip
+    assert DESK.decide({**LABELS, "kind": "question"}, row)[0::2] == ("ANSWERED", "chat")
+    assert "a topic" in DESK.decide({**LABELS, "kind": "video_idea"}, row)[1] and "Good / Not good" in DESK.decide({**LABELS, "kind": "feedback"}, row)[1]
+    assert DESK.decide({**LABELS, "kind": "other", "restated": "he wants less red", "why": "a colour wish"}, row)[1] == "read as: he wants less red. a colour wish."
+    _desk_on(setting); _labels(monkeypatch, kind="change_request", department="none")
+    n, line = DESK.take("Add a countdown clock to every cold open of the long videos.", "dashboard", ref="act-1")
+    idea = _row(_desk_rows()[-1]["action"]); assert "it needs a code change" in line and idea["kind"] == "idea", (line, idea)
+    assert json.loads(idea["buttons"]) == [["Build it", "BUILD"], ["Not now", "PARK"]] and not idea["default_action"] and not idea["expires_at"]
+
+def test_a_taken_input_is_his_word_in_the_palace(monkeypatch, setting):
+    """R17 (10 c): a TAKEN input enters the Palace as HIS word - kind owner_preference, owner_input, accepted by the owner himself, his words (never the
+    model's restatement) - and the answer says where and when, with a "Take it back" button."""
+    from whatifs.org import palace as PAL
+    _desk_on(setting); _labels(monkeypatch, restated="the model's own words"); words = "Open every Short on the moving picture, never on a title card."
+    n, line = DESK.take(words, "dashboard", ref="act-1")
+    it = PAL.get(PAL.item_id(f"owner_input|{n}")); r = _desk_rows()[-1]
+    assert it["kind"] == "owner_preference" and it["owner_input"] and it["status"] == "accepted" and it["summary"] == words and it["departments"] == ["D4"], it
+    assert words in json.dumps(PAL.body(it["id"])) and "the model's own words" not in json.dumps(PAL.body(it["id"])) + it["summary"]
+    assert line.startswith(f"Your input {n}: TAKEN - kept word for word as your standing preference for Creative") and it["id"] in line, line
+    assert r["verdict"] == "TAKEN" and json.loads(_row(r["action"])["buttons"]) == [["Take it back", f"DESK UNDO {n}"]]
+    assert DESK.take("Make it calmer.", "dashboard", ref="act-2")[1].endswith("PARKED - too short to keep as a standing rule.")
+
+def test_a_taken_item_is_served(monkeypatch, setting):
+    """R17 (10 c): "proposed" never reaches a brief - his item is accepted, so the writers' room's playbook holds his words from the next script."""
+    from whatifs.org import palace as PAL
+    _desk_on(setting); _labels(monkeypatch); words = "Every long video ends on the feeling, never on a list of facts."
+    n, _l = DESK.take(words, "whatsapp", ref="wamid.S")
+    pb = PAL.playbook("D4", record=False); assert PAL.item_id(f"owner_input|{n}") in pb["items"] and words in pb["text"], pb["text"]
+
+def test_a_taken_input_can_be_taken_back(monkeypatch, setting):
+    """R17 (10 d), item 150's Undo: "Take it back" retires the item by the owner's own move and the desk row says so."""
+    from whatifs.org import palace as PAL
+    _desk_on(setting); _labels(monkeypatch); n, _l = DESK.take("Every long video ends on the feeling, never on a list of facts.", "dashboard", ref="act-3")
+    aid = _desk_rows()[-1]["action"]; NT.register("desk", on_answer=DESK._do)
+    assert NT.answer(aid, f"DESK UNDO {n}").startswith("taken back ")
+    assert PAL.get(PAL.item_id(f"owner_input|{n}"))["status"] == "retired" and _desk_rows()[-1]["how"].startswith("taken back ")
+    assert PAL.item_id(f"owner_input|{n}") not in PAL.playbook("D4", record=False)["items"]
+
+def test_the_never_list_parks_with_its_reason(monkeypatch, setting):
+    """LAUNCH_MAX C6: an input that asks for what this channel never does is PARKED with the words that hit and the risk - no call is paid for it."""
+    _desk_on(setting); calls = _labels(monkeypatch)
+    for i, t in enumerate(("Let's buy 5,000 views for the next Short.", "Just re-upload the best Short every week.", "Hide the AI label, it looks cheap.")):
+        assert "which this channel never does" in DESK.take(t, "dashboard", ref=f"act-n{i}")[1]
+    assert calls == [] and all(r["verdict"] == "PARKED" for r in _desk_rows())
+    assert DESK.never("Show more of the night sky in every Short.") is None and DESK.never("Copy that channel's video") is not None
+
+def test_an_idea_seven_days_old_is_never_parked_unanswered(monkeypatch, setting):
+    """Item 149 (GAP 2): his own "Build this?" card from WhatsApp had a 7-day default of PARKED - with the switch on it has no default and no expiry: 8 days
+    on `expire_defaults` leaves it OPEN and the morning group "Your inputs" lists it."""
+    _desk_on(setting); _wire(monkeypatch); _labels(monkeypatch, kind="other")
+    monkeypatch.setattr(WA, "chat", lambda text, deep=False: ("Good idea.", "show a countdown clock in cold opens, switch COLD_OPEN_CLOCK_ON", "tweak"))
+    _inbound(monkeypatch, "wamid.I1", "add a countdown clock to cold opens")
+    idea = next(r for r in core.store().rows("Owner_Actions") if r["kind"] == "idea")
+    assert not idea["default_action"] and not idea["expires_at"], idea
+    NT.expire_defaults(core.now_utc() + dt.timedelta(days=8)); assert _row(idea["id"])["status"] == "OPEN"
+    assert idea["id"] in _ids(NT.group_rows("inputs")) and "Build this?" in WA.group_text("inputs")
+
+def test_every_input_is_answered(monkeypatch, setting):
+    """After the tick no row has an empty answer unless the call failed - and then it says so: a failed call is tried at the next two ticks, then STORED;
+    above DESK_MONTHLY_CAP_INR no call is made and the answer says on which day it is read (the desk's cap case of item 146)."""
+    _desk_on(setting); boom = []
+    def fail(text): boom.append(text); raise RuntimeError("the model did not answer")
+    monkeypatch.setattr(DESK, "weigh", fail)
+    n, ack = DESK.take("More of the night sky in every Short, please.", "dashboard", ref="act-f")
+    assert ack == DESK.ACK.format(n=n) and _desk_rows()[-1]["verdict"] == "" and "tried again" in _desk_rows()[-1]["how"]
+    DESK.tick(); assert _desk_rows()[-1]["verdict"] == ""
+    DESK.tick(); r = _desk_rows()[-1]; assert len(boom) == 3 and r["verdict"] == "STORED" and r["how"] == "it could not be read; it is kept word for word", r
+    core.store().append("Owner_Input", [{"input": "Warmer colours in the Shorts, please."}]); _labels(monkeypatch); DESK.tick()
+    assert all(r["verdict"] for r in _desk_rows()) and _desk_rows()[-1]["channel"] == "sheet"
+    core.store().append("Cost_Log", [{"ts": core.iso(), "episode_id": "owner", "item": "claude_board_c", "provider": "anthropic", "units": 1, "inr": 41, "role": "owner_desk"}])
+    calls = _labels(monkeypatch); n, ack = DESK.take("Slower music under the hook, please.", "dashboard", ref="act-c")
+    assert calls == [] and _desk_rows()[-1]["verdict"] == "" and "Rs 40" in ack and "is read on 01 " in ack, ack
+
+def test_a_question_is_answered_once(monkeypatch, setting):
+    """R17 (10 b): a question typed on WhatsApp is answered by the chat - ONE reply, no acknowledgement, no desk line - and stamped briefed, so the next
+    morning does not count it again."""
+    _desk_on(setting); bodies = _wire(monkeypatch); _labels(monkeypatch, kind="question", department="none", raises_breakout=False)
+    monkeypatch.setattr(WA, "chat", lambda text, deep=False: ("Three Shorts went out this week.", "", "feature"))
+    _inbound(monkeypatch, "wamid.Q1", "how many shorts went out this week?")
+    r = _desk_rows()[-1]; texts = [b["text"]["body"] for b in bodies if b.get("type") == "text"]
+    assert r["verdict"] == "ANSWERED" and r["briefed"] and texts == ["Three Shorts went out this week."], (r, texts)
+    assert DESK.lines() == []
+
+def test_talk_is_not_an_input(monkeypatch, setting):
+    """R17 ADDS (D): "ok thanks" is talk - the chat answers it, nothing is stored and no strong call is paid; "more wonder please" is an input."""
+    _desk_on(setting); _wire(monkeypatch); calls = _labels(monkeypatch); monkeypatch.setattr(WA, "chat", lambda text, deep=False: ("Noted.", "", "feature"))
+    assert DESK.talk("Ok, thanks!") and DESK.talk("good night") and not DESK.talk("ok thanks but slower") and not DESK.talk("")
+    _inbound(monkeypatch, "wamid.T1", "Ok, thanks!"); assert _desk_rows() == [] and calls == []
+    _inbound(monkeypatch, "wamid.T2", "more wonder please"); assert [r["verbatim"] for r in _desk_rows()] == ["more wonder please"] and calls == ["more wonder please"]

@@ -940,9 +940,11 @@ def test_a_ticket_on_a_short_share_changes_the_real_short_pick_over_ten_planted_
 
 def test_every_card_v4_sends_names_its_default_and_a_deadline_unless_the_memo_keeps_it_open():
     """V4's finish C9 (RR-22, the owner's item 150): every card to him carries a deadline and a default. The memo keeps three open on purpose:
-    'strategy' and 'desk' tell what was done (an Undo link never dies) and 'risk_lock' is a lock only his tap opens - each still names its default."""
+    'strategy' and 'desk' tell what was done (an Undo link never dies) and 'risk_lock' is a lock only his tap opens - each still names its default.
+    B-OWNER step 5 (the memo's R17 (10 d) and PART 5; R1-110): 'idea' is kept open too, and exactly two standing rows name no default, since his silence
+    does nothing on them - the TAKEN 'desk' row (key desk|taken|<n>, "Take it back") and the 'idea' row ("Build it" / "Not now", never parked by silence)."""
     import re
-    OPEN_BY_DESIGN = ("strategy", "desk", "risk_lock")
+    OPEN_BY_DESIGN = ("strategy", "desk", "idea", "risk_lock")
     def calls(src, name="NT.send("):
         out, i = [], src.find(name)
         while i >= 0:
@@ -950,13 +952,15 @@ def test_every_card_v4_sends_names_its_default_and_a_deadline_unless_the_memo_ke
             while depth: depth += {"(": 1, ")": -1}.get(src[j], 0); j += 1
             out.append(src[i:j]); i = src.find(name, j)
         return out
-    seen = []
+    seen, taken, ideas = [], 0, 0
     for rel in ("whatifs/org/strategy.py", "whatifs/org/risk.py", "whatifs/org/desk.py"):
         for c in calls(open(os.path.join(ROOT, rel), encoding="utf-8").read()):
             kind = re.match(r'NT\.send\(\s*"([a-z_]+)"', c).group(1); seen.append(kind)
-            assert "default=" in c, (rel, kind)
+            is_taken = kind == "desk" and "desk|taken|" in c; taken += is_taken; ideas += kind == "idea"      # B-OWNER step 5 (R1-110): the two standing rows
+            assert "default=" in c or is_taken or kind == "idea", (rel, kind)
             assert "expires_h=" in c or kind in OPEN_BY_DESIGN, (rel, kind)
-    assert sorted(set(seen)) == ["desk", "risk_gone", "risk_lock", "strategy"], seen
+    assert taken == 1 and ideas >= 1, (taken, ideas)                                   # an exception that no send uses any more fails here: the rule cannot rot
+    assert sorted(set(seen)) == ["desk", "idea", "risk_gone", "risk_lock", "strategy"], seen
 
 def test_the_second_point_takes_a_format_still_below_to_0(setting):
     """V4's finish C19 (test-gap reader): no test reached a format's second judgement point."""

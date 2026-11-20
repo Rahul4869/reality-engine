@@ -189,7 +189,8 @@ TABS = {
  # v12 V4 (the owner's desk, whatifs/org/desk.py, until B9): HE types an idea into Owner_Input (one column); THE MACHINE writes Owner_Desk - the input word
  # for word, the verdict by code (ADOPTED only for a request code recognises, else PARKED), its memo and ticket, and `briefed` once a brief carried the answer
  "Owner_Input":     ["input"],
- "Owner_Desk":      ["n", "ts", "sha", "verbatim", "verdict", "how", "memo", "ticket", "action", "briefed"],
+ "Owner_Desk":      ["n", "ts", "sha", "verbatim", "verdict", "how", "memo", "ticket", "action", "briefed",
+                     "channel", "card", "ref"],      # v12 B-OWNER (PART 5): ONE store for both screens - where it came from, the card he typed under, the message / action id
 }
 
 class LocalStore:
@@ -1219,6 +1220,7 @@ DEFAULTS = {
  "PRICE_WA_SERVICE_INR": ("1.0", "v12 B-OWNER: rupees a delivered WhatsApp message inside the 24-hour window once the month's free tier is used - a STATED CEILING, not Meta's rate"),
  "WA_SERVICE_FREE_PER_MONTH": ("1000", "v12 B-OWNER: delivered service messages a month that Meta does not charge for (its pricing page, from 1 Oct 2026)"),
  "WA_MONTHLY_CAP_INR": ("100", "v12 B-OWNER: at this month's WhatsApp spend the morning message and the \"Needs you\" list stop on WhatsApp (the dashboard and the e-mail carry them); an alarm is sent whatever it says. Inside the chat's cap"),
+ "DESK_MONTHLY_CAP_INR": ("40", "v12 B-OWNER: rupees a month for weighing his inputs (one strong call an input, role owner_desk; an estimate: 40 to 80 inputs); above it the input is kept word for word and read on the 1st of next month. Inside the chat's cap"),
 }
 _settings_cache = None
 def settings(refresh=False) -> dict:

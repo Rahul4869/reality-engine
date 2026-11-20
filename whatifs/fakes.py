@@ -265,8 +265,17 @@ def _punch_to_rule(body):
         i = min(cand, key=lambda i: abs(start[i + (i >= first)] - (a + b) / 2))
         body[i] = "[PUNCH] " + body[i]
 
+def _fake_desk(prompt):
+    """v12 B-OWNER (PART 5): the offline weigher of his input - it LABELS only (code decides): a line ending in "?" is a question, one that starts
+    "what if" a video idea, anything else a preference for the writers' room that raises the breakout and needs no code."""
+    text = str(prompt).rsplit("OWNER INPUT:", 1)[-1].strip(); low = text.lower()
+    kind = "question" if low.endswith("?") else ("video_idea" if low.startswith("what if") else "preference")
+    return json.dumps({"kind": kind, "restated": text[:200], "department": "D4" if kind == "preference" else "none", "raises_breakout": kind == "preference",
+                       "why": "the offline weigher", "needs_code": False, "new_arm": False})
+
 def fake_reply(key, prompt):
     r = random.Random(len(prompt))
+    if key == "owner_desk": return _fake_desk(prompt)
     if key == "rnd_research": return _fake_research(prompt)
     if key == "board": return _fake_board(prompt)
     if key == "probe": return _fake_probe(prompt)

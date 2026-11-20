@@ -325,6 +325,11 @@ def register():
 
 def _reply(text): send_text(text)
 
+def reply_answer(text, now=None):
+    """v12 B-OWNER (PART 5): the desk's answer, weighed at a tick, as a REPLY while his 24-hour window is still open - never a new message (outside the
+    window it waits for the morning message). Returns the message id or ''."""
+    return send_text(text) if in_window(now) else ""
+
 def handle_inbound(payload_json):
     """repository_dispatch 'wa_inbound' entry point. Returns the number of messages handled."""
     from whatifs import dash as DS, notify as NT
@@ -384,11 +389,16 @@ def handle_inbound(payload_json):
                 elif low in ("pause", "resume"):
                     ok, note = DS.route(low.upper()); out = ("Done: " if ok else "Not done: ") + note
                 else:
-                    deep = low.startswith("think hard")
+                    deep = low.startswith("think hard"); line = ""
+                    if _on():                                    # v12 B-OWNER (PART 5, R17 (10 a)): ONE place - a typed line that is not a fixed word is his input,
+                        from whatifs.org import desk as DESK      # taken BEFORE the chat answers; a bare acknowledgement is talk (R17 ADDS (D))
+                        if not DESK.talk(text): _n, line = DESK.take(text, "whatsapp", ref=mid)
                     out, spec, kind = chat(re.sub(r"^think hard:?\s*", "", text, flags=re.I) if deep else text, deep=deep)
+                    if line: out = f"{out}\n\n{line}"                # the desk's verdict ends the chat's reply
                     if spec:
-                        aid = NT.send("idea", f"Build this? {spec}", [("Build it", "BUILD"), ("Park", "PARK")], tier="fyi", default="parked", expires_h=24 * 7,
-                                      dedupe_key="idea|" + mid + "|" + json.dumps({"spec": spec, "kind": kind}))
+                        never_parked = _on()                     # v12 B-OWNER: his idea is never parked by silence - no default, no expiry, open until he taps
+                        aid = NT.send("idea", f"Build this? {spec}", [("Build it", "BUILD"), ("Park", "PARK")], tier="fyi", default=None if never_parked else "parked",
+                                      expires_h=None if never_parked else 24 * 7, dedupe_key="idea|" + mid + "|" + json.dumps({"spec": spec, "kind": kind}))
                         send_buttons(out[-900:] + f"\n\nBuild it ({kind}, on your Claude plan, ₹0 API)?", [("Build it", f"ACT|{aid}|0"), ("Park", f"ACT|{aid}|1")])
                         st.append("WA_Chat", [{"ts": iso(), "msg_id": mid + ".r", "who": "assistant", "text": out[:1500]}]); continue
         except Exception as e:
