@@ -356,7 +356,7 @@ def answer(aid, choice, who="owner"):
             out = str(PV.decide(choice))
         h = HANDLERS.get(row.get("kind"))
         if h: out = str(h(row, choice) or out)
-    except Exception as e: log(f"action handler failed for {aid}: {scrub(e)[:160]}", "WARN"); out = f"recorded (handler failed: {str(e)[:80]})"
+    except (Exception, SystemExit) as e: log(f"action handler failed for {aid}: {scrub(e)[:160]}", "WARN"); out = f"recorded (handler failed: {str(e)[:80]})"
     log(f"owner action {aid} ({row.get('kind')}): {choice}"); return out or "recorded"
 
 

@@ -1633,3 +1633,11 @@ def test_a_pick_on_the_dashboard_closes_its_card(monkeypatch, setting):
     card = next(r for r in NT.open_rows() if r["kind"] == "title_pick" and r["episode_id"] == ep)
     assert DS.route(f"PICK|{ep}|B")[0]
     assert _row(card["id"])["status"] == "ANSWERED" and _row(card["id"])["answer"] == f"PICK {ep} B" and not any(r["kind"] == "title_pick" for r in NT.needs())
+
+def test_a_tap_with_a_verb_no_handler_reads_never_stops_the_process(setting):
+    """R1-99 (4) (the code reader's CR-2b-9): a verb `apply_pick` cannot read raises SystemExit ('usage: ...'), which `notify.answer` let through - a
+    malformed tap ended the tick. It is recorded as a handler failure, like any other."""
+    setting("TWO_SCREENS_ON", "TRUE")
+    aid = NT.send("title_pick", "Pick the title", [("Pick B", "PICK EPROW27 B")], default="A goes out", expires_h=24, dedupe_key="title_pick|CA27")
+    out = NT.answer(aid, "PICK EPROW27 B")
+    assert out.startswith("recorded (handler failed") and _row(aid)["status"] == "ANSWERED", out
