@@ -1842,3 +1842,17 @@ def test_a_video_youtube_kept_on_its_schedule_is_never_told_it_can_be_stopped(mo
     monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: (_ for _ in ()).throw(RuntimeError("YouTube does not answer")))
     slot9, _s9 = _ep8(monkeypatch, setting, ep="EP9", status="UPLOADED"); CON.await_approval("EP9", "ytEP9", slot9, "s")
     assert [r for r in _kind("contract_hold", "EP9") if r["dedupe_key"] == "unscheduled|EP9"] and "you can still stop it" not in _kind("creative_review", "EP9")[0]["text"]
+
+def test_a_card_that_said_stays_private_is_never_approved_by_silence(monkeypatch, setting):
+    """CR-8a-2 (PART F, CF-2): `_review_silence` and `review_sweep` never read the card's default. A creative_review card of the older path - sent while
+    TWO_SCREENS_ON was FALSE, "stays private" - was approved at the first sweep once the switch was on (and at its expiry when it expired with the switch
+    on). Only a card that said "approved by your silence" is ever approved by it; and a card sent with the switch on that expires with it off approves nothing."""
+    slot, sched = _ep8(monkeypatch, setting); setting("TWO_SCREENS_ON", "FALSE")
+    CON.await_approval("EP8", "ytEP8", slot, "s"); NT.expire_defaults(now=_later(73)); setting("TWO_SCREENS_ON", "TRUE")
+    assert CON.review_sweep() == 0 and _epi("EP8")["status"] == "AWAITING_APPROVAL" and sched == [] and not _decided("EP8")
+    slot9, sched9 = _ep8(monkeypatch, setting, ep="EP9"); setting("TWO_SCREENS_ON", "FALSE")
+    CON.await_approval("EP9", "ytEP9", slot9, "s"); setting("TWO_SCREENS_ON", "TRUE"); NT.expire_defaults(now=_later(73))
+    assert _epi("EP9")["status"] == "AWAITING_APPROVAL" and sched9 == [] and not _decided("EP9")
+    slot10, sched10 = _ep8(monkeypatch, setting, ep="EP10"); CON.await_approval("EP10", "ytEP10", slot10, "s")
+    setting("TWO_SCREENS_ON", "FALSE"); NT.expire_defaults(now=_later(73))
+    assert _epi("EP10")["status"] == "AWAITING_APPROVAL" and sched10 == [] and not _decided("EP10")

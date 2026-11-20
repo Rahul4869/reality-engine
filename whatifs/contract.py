@@ -1057,17 +1057,22 @@ def _review_silence(row):
     """The default of a creative_review card that expired unanswered (notify.expire_defaults): with TWO_SCREENS_ON his silence is asked; off, nothing
     runs (today's "stays private")."""
     if not S("TWO_SCREENS_ON", bool): return None
+    if row.get("default_action") != "approved by your silence": return None      # v12 B-OWNER (PART F, CF-2): a card that told him "stays private" (the older path, or sent while the switch was off) never posts
     return approve_by_silence(str(row.get("episode_id") or ""), row)
 
 def review_sweep():
     """v12 B-OWNER (R17 (7 a)): every tick, a video still waiting for approval whose newest creative_review card has DEFAULTED is asked again - a pause
-    that ended or an upload check that passed lets it out; a failed check never does (the pattern of floor.eye_sweep). Returns the videos approved."""
+    that ended or an upload check that passed lets it out; a failed check never does (the pattern of floor.eye_sweep). Returns the videos approved.
+    PART F: only a card whose default was "approved by your silence" (CF-2); one video that raises never stops the others (CF-3 (a))."""
     if not S("TWO_SCREENS_ON", bool): return 0
     st = store(); msgs = st.rows("Owner_Actions"); n = 0
     for e in st.rows("Episodes"):
         if e.get("status") != "AWAITING_APPROVAL": continue
         mine = [m for m in msgs if m.get("kind") == "creative_review" and m.get("episode_id") == e.get("episode_id")]
-        if mine and mine[-1].get("status") == "DEFAULTED" and approve_by_silence(e["episode_id"], mine[-1]).startswith("approved"): n += 1
+        if not (mine and mine[-1].get("status") == "DEFAULTED" and mine[-1].get("default_action") == "approved by your silence"): continue
+        try: ans = approve_by_silence(e["episode_id"], mine[-1])
+        except Exception as x: ans = ""; log(f"review sweep: {e['episode_id']} skipped: {scrub(x)[:160]}", "WARN", e["episode_id"])
+        if ans.startswith("approved"): n += 1
     return n
 
 def unpost(ep):
