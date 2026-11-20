@@ -203,3 +203,46 @@ def test_a_kept_input_is_handled_once_by_the_next_run_and_its_key_deleted(monkey
     assert DS.drain(kv) == 0 and "inbox:BAD" in kv.d; kv.d.pop("inbox:BAD")
     kv.d["inbox:W1"] = kept(w1)                                                      # the same id kept again (a dispatch AND a drain): handled once
     assert DS.drain(kv) == 1 and [r["id"] for r in core.store().rows("Dash_Acks")] == ["W1"] and "inbox:W1" not in kv.d
+
+def test_the_snapshot_says_when_the_health_reading_failed(monkeypatch, setting):
+    """CE-2 (CR-7-2): an error or a timeout while the runs are read is said in the snapshot (`read`, `note`) - never an empty list that looks healthy."""
+    from whatifs import caretaker as CT
+    one = [{"workflow": "tick", "ok": True, "at": core.iso()}]
+    def boom(): raise TimeoutError("the sheet did not answer")
+    monkeypatch.setattr(CT, "last_runs", lambda: list(one)); h = DS.build_snapshot()["health"]
+    assert (h["read"], h["note"], h["expiry_read"], h["last_runs"]) == ("ok", "", True, one)
+    monkeypatch.setattr(CT, "last_runs", lambda: []); h = DS.build_snapshot()["health"]
+    assert h["read"] == "none" and "not a green light" in h["note"]
+    monkeypatch.setattr(CT, "last_runs", boom); setting("TWO_SCREENS_ON", "TRUE"); h = DS.build_snapshot()["health"]      # through `_scrubbed` too
+    assert h["read"] == "failed" and h["last_runs"] == [] and "could not be read" in h["note"] and "not a green light" in h["note"]
+    monkeypatch.setattr(CT, "last_runs", lambda: list(one)); monkeypatch.setattr(CT, "expiring", boom); h = DS.build_snapshot()["health"]
+    assert h["read"] == "ok" and h["expiry_read"] is False and h["expiring"] == []
+
+GREEN = ("every recent run is fine", 'tag high">OK<', "Every run fine", 'class="light "')
+
+def test_a_failed_health_read_is_never_the_green_light(monkeypatch, setting, tmp_path):
+    """CE-2 (CR-7-2): Home and Controls say that the reading failed, found nothing or is old - no green light, no "OK", no "every recent run is fine";
+    a run known to have failed stays red; a fresh reading with every run fine IS green (the control that shows these words can appear)."""
+    import copy, datetime as _dt
+    base = _full(monkeypatch, setting); base["generated_at"] = core.iso()
+    run = lambda ok: {"workflow": "tick", "ok": ok, "at": core.iso()}
+    def page(name, health, **over):
+        s = copy.deepcopy(base); s.update(over)
+        if health is None: s.pop("health", None)
+        else: s["health"] = health
+        d = _render(s, tmp_path, name); return d["home"], d["controls"]
+    home, ctl = page("fine", {"expiring": [], "last_runs": [run(True)], "read": "ok", "note": "", "expiry_read": True})
+    assert all(g in home for g in GREEN) and "Not read" not in home + ctl
+    failed = {"expiring": [], "last_runs": [], "read": "failed", "note": DS.HEALTH_NOTE["failed"], "expiry_read": False}
+    cases = {"failed": (failed, {}, "the reading failed"),
+             "todays_shape": ({"expiring": [], "last_runs": []}, {}, "no run has been read yet"),          # what `_health` returns today when the read raises
+             "no_health": (None, {}, "the reading failed"),
+             "old": ({"expiring": [], "last_runs": [run(True)], "read": "ok", "note": ""},
+                     {"generated_at": (core.now_utc() - _dt.timedelta(hours=5)).strftime("%Y-%m-%dT%H:%M:%SZ")}, "too old to call fine")}
+    for name, (health, over, words) in cases.items():
+        home, ctl = page(name, health, **over)
+        assert not [g for g in GREEN if g in home], (name, [g for g in GREEN if g in home])
+        assert words in home and 'class="light off"' in home and "Not read" in home and words in ctl, name
+    assert "could not be read this time" in page("failed2", failed)[1]                                   # Controls carries the snapshot's own words
+    home, ctl = page("bad", {"expiring": [], "last_runs": [run(True), run(False)], "read": "failed", "note": DS.HEALTH_NOTE["failed"]})
+    assert 'class="light bad"' in home and "a run failed" in home and not [g for g in GREEN if g in home]

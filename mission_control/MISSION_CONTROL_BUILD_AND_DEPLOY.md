@@ -20,7 +20,7 @@ Files in this pack:
   - `learned`: last 3 promoted lessons/rules from `Strategy_Log` with confidence and loop.
   - `lab`: running experiments (strategy dimensions and Playbook trials with their posterior `p_best` and n), Retention Microscope boosters/killers (G3; empty list until it exists).
   - `money`: month spend by line from `Cost_Log`, cap, revenue (affiliate/ads/clients from `Revenue_Log`), the three modes with costs from Settings.
-  - `health`: `Expiry_Calendar` rows, last run per workflow from `Run_Log`.
+  - `health`: `Expiry_Calendar` rows, last run per workflow from `Run_Log`; `read`, `note`, `expiry_read` (CE-2).
   - `settings`: the allow-listed quick toggles (`SLEEP_SESSIONS_ON`, `LOCALIZATIONS_ON`, `AFFILIATE_BLOCK_ON`, `NATIVE_TEST_REMINDER_ON`, `SHORTS_PER_WEEK`).
   - `whatsapp`: the test-number link (`wa.me/<number>`) when WP5 is set up, else "".
   - Never include secrets, premises not yet released, scripts or critic notes. Titles of **scheduled** episodes are fine (the owner must see them to pick).

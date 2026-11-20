@@ -158,11 +158,23 @@ def _money():
                       {"id": "standard", "name": "Standard", "cost": round(S("BUDGET_CEILING_INR", float)), "text": "Two long cases a week (Tue + Sat), the full Shorts Lab, faces, research and chat."},
                       {"id": "growth", "name": "Growth", "cost": None, "text": "Standard plus a share of last month's revenue. Switches on by itself when revenue arrives."}]}
 
+HEALTH_NOTE = {"ok": "",
+               "none": "No run has been read yet, so there is nothing to judge. This is not a green light.",
+               "failed": "The health check itself could not be read this time. This is not a green light. It is read again on the next run."}
+
 def _health():
+    """CE-2 (CR-7-2): a reading that failed is SAID, never shown as health. `read`: "ok" = the runs were read and at least one was found; "none" = read,
+    none found; "failed" = an error or a timeout. `note`: the plain words the page shows. `expiry_read`: False when the renewal dates were not read."""
+    from whatifs import caretaker as CT
+    out = {"expiring": [], "last_runs": [], "read": "ok", "expiry_read": True}
     try:
-        from whatifs import caretaker as CT
-        return {"expiring": CT.expiring(), "last_runs": CT.last_runs()}
-    except Exception: return {"expiring": [], "last_runs": []}
+        out["last_runs"] = list(CT.last_runs() or [])
+        if not out["last_runs"]: out["read"] = "none"
+    except Exception as e: out["last_runs"] = []; out["read"] = "failed"; log(f"dashboard health: the runs could not be read ({type(e).__name__})", "WARN")
+    try: out["expiring"] = list(CT.expiring() or [])
+    except Exception as e: out["expiry_read"] = False; log(f"dashboard health: the renewal dates could not be read ({type(e).__name__})", "WARN")
+    out["note"] = HEALTH_NOTE[out["read"]]
+    return out
 
 def _lab():
     try:

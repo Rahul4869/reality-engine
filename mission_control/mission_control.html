@@ -291,6 +291,7 @@ nav.tabs .dot { position: absolute; top: 4px; right: calc(50% - 18px); min-width
 /* ---------- v12 B-OWNER (PART 6): Home's light, his words, the notes ---------- */
 .light { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--vale); margin-right: 6px; vertical-align: 0; }
 .light.bad { background: var(--grimm); }
+.light.off { background: var(--muted); }
 .say { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 12px; }
 .say input, .box textarea, .choose {
   width: 100%; font: inherit; color: var(--chalk); background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-height: 44px;
@@ -639,13 +640,21 @@ function alarmCard(a) {       // v12 B-OWNER (PART 3): an open alarm is an incid
     ${r ? `<p class="done-note">${esc(r.note)}</p>` : ""}
   </article>`;
 }
-function todayNext() {        // v12 B-OWNER (PART 6): today and next, and the health light (every recent run fine or not)
-  const nr = (S.engine || {}).next_release || {}, runs = (S.health || {}).last_runs || [], ok = runs.every(x => x.ok);
-  return `<div class="sec-head"><h2 class="serif">Today and next</h2><p>${runs.length ? (ok ? "Every run fine" : "A run failed") : "No runs yet"}</p></div>
+function healthState() {      // CE-2 (CR-7-2): green ONLY when runs were read, the reading is fresh and every run is fine; a failed, empty, missing or old reading is said in words
+  const h = S.health || {}, runs = Array.isArray(h.last_runs) ? h.last_runs : [], age = Date.now() - new Date(S.generated_at || "").getTime();
+  if (runs.some(x => !x.ok)) return { k: "bad", runs, head: "A run failed", line: "Health: a run failed - Controls shows which", note: "", tag: "Look", cls: "neg", light: "bad" };
+  if (!S.health || h.read === "failed") return { k: "unread", runs, head: "Health not read", line: "Health: the reading failed - this is not a green light", note: h.note || "The health check could not be read. It is read again on the next run.", tag: "Not read", cls: "low", light: "off" };
+  if (!runs.length) return { k: "none", runs, head: "No runs read yet", line: "Health: no run has been read yet - nothing to judge", note: h.note || "This is not a green light.", tag: "Not read", cls: "low", light: "off" };
+  if (age > 3 * 3600e3) return { k: "old", runs, head: "Reading is old", line: "Health: last read " + ago(S.generated_at) + " - too old to call fine", note: "No newer reading has arrived. This is not a green light.", tag: "Not read", cls: "low", light: "off" };
+  return { k: "ok", runs, head: "Every run fine", line: "Health: every recent run is fine", note: "", tag: "OK", cls: "high", light: "" };
+}
+function todayNext() {        // v12 B-OWNER (PART 6): today and next, and the health light (CE-2: one state from healthState, green only on a fresh reading with every run fine)
+  const nr = (S.engine || {}).next_release || {}, hs = healthState();
+  return `<div class="sec-head"><h2 class="serif">Today and next</h2><p>${hs.head}</p></div>
     <div class="list">
       <div class="row"><p>${nr.title ? esc(nr.title) : "Nothing is scheduled yet"}<br><small>${nr.slot_iso ? esc(when(nr.slot_iso)) + ", in " + esc(left(nr.slot_iso)) : "The engine plans the next slot."}</small></p><span class="tag low">Next</span></div>
-      <div class="row"><p><i class="light ${ok ? "" : "bad"}" aria-hidden="true"></i>${ok ? "Health: every recent run is fine" : "Health: a run failed - Controls shows which"}<br><small>${runs.length} recent runs</small></p>
-        <span class="tag ${ok ? "high" : "neg"}">${ok ? "OK" : "Look"}</span></div></div>`;
+      <div class="row"><p><i class="light ${hs.light}" aria-hidden="true"></i>${esc(hs.line)}<br><small>${hs.note ? esc(hs.note) : hs.runs.length + " recent runs"}</small></p>
+        <span class="tag ${hs.cls}">${hs.tag}</span></div></div>`;
 }
 function renderHome() {       // v12 B-OWNER (PART 6): open alarms first, then "Needs you", "Decided for you", today and next, the health light
   const al = S.alarms || [], items = S.docket || [], dec = S.decided || [];
@@ -788,7 +797,7 @@ function renderControls() {
   const e = S.engine, st = S.settings, paused = e.status === "paused";
   const tg = (key, title, sub) => `<div class="switch-row"><p>${esc(title)}<small>${esc(sub)}</small></p>
       <button class="toggle" role="switch" aria-checked="${!!st[key]}" data-toggle="${esc(key)}" aria-label="${esc(title)}"></button></div>`;
-  const health = S.health;
+  const health = S.health || {}, hs = healthState();
   return `<div class="sec-head"><h2 class="serif">Controls</h2><p>Safe defaults always on</p></div>
     <section class="pause-card"><div><b>${paused ? "The engine is paused" : "The engine is running"}</b>
       <p>${paused ? "Scheduled videos are held until you resume." : "Pausing holds new videos and anything not yet released."}</p></div>
@@ -804,8 +813,10 @@ function renderControls() {
     <div class="actions" style="margin-bottom:12px"><button class="btn ghost wide" data-undo="1">Undo the last change</button></div>
     <div class="sec-head"><h2 class="serif">Health</h2><p>Keys and runs</p></div>
     <div class="list">
-      ${health.last_runs.map(r => `<div class="row"><p>${esc(r.workflow)}<br><small>${ago(r.at)}</small></p><span class="tag ${r.ok ? "high" : "neg"}">${r.ok ? "OK" : "Failed"}</span></div>`).join("")}
-      ${health.expiring.map(x => `<div class="row"><p>${esc(x.name)}<br><small>Renews ${esc(x.date)}. You get a reminder 14 and 3 days before.</small></p><span class="tag low">${esc(left(x.date + "T00:00:00Z"))}</span></div>`).join("")}
+      ${hs.k === "ok" || hs.k === "bad" ? "" : `<div class="row"><p>${esc(hs.line)}<br><small>${esc(hs.note)}</small></p><span class="tag low">Not read</span></div>`}
+      ${health.expiry_read === false ? `<div class="row"><p>The renewal dates could not be read this time<br><small>They are read again on the next run.</small></p><span class="tag low">Not read</span></div>` : ""}
+      ${(health.last_runs || []).map(r => `<div class="row"><p>${esc(r.workflow)}<br><small>${ago(r.at)}</small></p><span class="tag ${r.ok ? "high" : "neg"}">${r.ok ? "OK" : "Failed"}</span></div>`).join("")}
+      ${(health.expiring || []).map(x => `<div class="row"><p>${esc(x.name)}<br><small>Renews ${esc(x.date)}. You get a reminder 14 and 3 days before.</small></p><span class="tag low">${esc(left(x.date + "T00:00:00Z"))}</span></div>`).join("")}
     </div>
     <div class="actions"><a class="btn primary wide" href="${S.whatsapp ? "https://wa.me/" + esc(S.whatsapp) : "#"}" ${S.whatsapp ? 'target="_blank" rel="noopener"' : 'aria-disabled="true"'} data-wa="1">Talk it through on WhatsApp</a></div>`;
 }
