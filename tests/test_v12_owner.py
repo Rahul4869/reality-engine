@@ -1088,3 +1088,40 @@ def test_undo_is_private_never_gone(monkeypatch, setting):
     assert ok and "is private again. Nothing was deleted." in note and priv == [("ytEP8", "private")]
     assert _epi("EP8")["status"] == "HELD_BY_OWNER" and _epi("EP8")["yt_id"] == "ytEP8"
     setting("TWO_SCREENS_ON", "FALSE"); assert DS.route("UNPOST|EP8") == (False, "That action is not allowed.")
+
+def _rehearse_to_line_56(monkeypatch, setting, tmp_path):
+    """F-REH-2: the rehearsal's own opening (tools/rehearsal.py: setup, voices, the two opening ticks, the ladder skip) run in this test's store up to
+    its line 56 (the first Premise_Bench row) - reaching it means line 55 held - with its two settings as the rehearsal runs them (the older tests
+    run without both) and the digest's clock at 10:00 India time, planted as `test_a_pause_does_not_silence_him` plants it."""
+    from tools import rehearsal as RH
+    class Line56(Exception): pass
+    real = core.LocalStore.append
+    def append(self, tab, rows, *a, **k):
+        if tab == "Premise_Bench" and rows and rows[0].get("bench_id") == "BREH0": raise Line56()
+        return real(self, tab, rows, *a, **k)
+    monkeypatch.setattr(core.LocalStore, "append", append); monkeypatch.setenv("WI_WORK", str(tmp_path / "rh"))
+    setting("TWO_SCREENS_ON", "TRUE"); setting("LADDER_ON", "TRUE")
+    D = dt.datetime(2026, 11, 20, 4, 30, tzinfo=dt.timezone.utc)                                         # Fri 20 Nov, 10:00 India time: the morning message is due
+    monkeypatch.setattr(DG, "now_utc", lambda: D)
+    return RH, Line56
+
+def test_the_ladder_skip_lets_the_morning_message_pass(monkeypatch, setting, tmp_path):
+    """F-REH-2 (R1-136; the code reader's CR-REH-3): after 09:00 IST the rehearsal's second opening tick pushes the morning message and bills it
+    (item "whatsapp", episode "owner", role "morning") - the overhead of a clock push, not a video's money: the ladder skip (line 55) holds."""
+    RH, Line56 = _rehearse_to_line_56(monkeypatch, setting, tmp_path)
+    with pytest.raises(Line56): RH.run()
+    assert [(r.get("item"), r.get("episode_id"), r.get("role")) for r in core.store().rows("Cost_Log")] == [("whatsapp", "owner", "morning")]
+
+def test_the_ladder_skip_is_red_on_an_alarm_of_the_opening_ticks(monkeypatch, setting, tmp_path):
+    """F-REH-2 (R1-136; the code reader's CR-REH-1): only the two clock pushes (role "morning" or "needs") pass the ladder skip. An alarm WhatsApp took
+    in the opening ticks bills the same item and episode with role "alarm" - on a fresh install that is a false alarm to him: red at line 55."""
+    RH, Line56 = _rehearse_to_line_56(monkeypatch, setting, tmp_path)
+    real, told = DG.tick, []
+    def tick(now=None):
+        if not told: told.append(WA._bill({"type": "template"}, "alarm"))                                # the row an alarm's push writes (wa._bill: role = its kind)
+        return real(now)
+    monkeypatch.setattr(DG, "tick", tick)
+    with pytest.raises(AssertionError) as e: RH.run()
+    tb = e.value.__traceback__
+    while tb.tb_next: tb = tb.tb_next
+    assert told and tb.tb_frame.f_code.co_filename.endswith("rehearsal.py") and "a long video started without a promoted Short" in str(e.value) and "'alarm'" in str(e.value), str(e.value)[:600]
