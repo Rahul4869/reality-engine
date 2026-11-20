@@ -472,7 +472,7 @@ def test_no_free_text_outside_the_window(monkeypatch, setting):
     _window(True); assert WA.send_text("y") and bodies[-1]["type"] == "text"                                         # inside the window a reply goes
     setting("TWO_SCREENS_ON", "FALSE"); _window(False); assert WA.send_text("z") and bodies[-1]["type"] == "text"     # the older path, word for word
 
-SENDERS = ("send_text", "send_buttons", "send_list", "send_image", "send_menu", "send_section", "send_group", "send_template")
+SENDERS = ("send_text", "send_buttons", "send_list", "send_image", "send_menu", "send_section", "send_group", "send_template", "reply_answer")
 
 def _starts_outside_wa(files):
     """Every place outside wa.py that starts a WhatsApp message: a call of `WA._post(`, a call of a sender (allowed only inside `digests._send_old`,
@@ -484,6 +484,10 @@ def _starts_outside_wa(files):
         if rel == "whatifs/digests.py":
             for f in tree.body:
                 if isinstance(f, ast.FunctionDef) and f.name == "_send_old": allowed = {id(n) for n in ast.walk(f)}
+        if rel == "whatifs/org/desk.py":                                 # the desk's answer at a tick: ONE caller of `reply_answer`, and of no other sender
+            for f in tree.body:
+                if isinstance(f, ast.FunctionDef) and f.name == "_tick_two":
+                    allowed = {id(n) for n in ast.walk(f) if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr == "reply_answer"}
         for n in ast.walk(tree):
             if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute):
                 if n.func.attr == "_post" and isinstance(n.func.value, ast.Name) and n.func.value.id in ("WA", "wa"): bad.append(f"{rel}:{n.lineno}: _post")
@@ -1445,3 +1449,15 @@ def test_his_answer_holds_no_bookkeeping_and_one_full_stop(monkeypatch, setting)
     _n, line = DESK.take("What if the Moon was a mirror?", "dashboard", ref="act-u")
     assert line.endswith("send it on WhatsApp as a brief.") and not line.endswith(".."), line
     assert all(".. " not in l and not l.endswith("..") for l in DESK.lines()), DESK.lines()
+
+def test_the_desks_answer_never_wakes_him(monkeypatch, setting):
+    """PART 5 with PART 4: the desk's answer at a tick is a REPLY inside his open window - and never in his quiet hours (the morning message carries
+    it). FOUND AT THE FINISH: it went at any tick; and its sender was outside the scan's list. `reply_answer` has ONE caller, `desk._tick_two`."""
+    _desk_on(setting); setting("QUIET_HOURS_IST", "00:30-08:00"); bodies = _wire(monkeypatch)
+    night = dt.datetime(2026, 11, 20, 21, 10, tzinfo=dt.timezone.utc)                                     # 02:40 India time
+    day = dt.datetime(2026, 11, 20, 6, 0, tzinfo=dt.timezone.utc)                                         # 11:30 India time
+    _window(True, night); assert WA.reply_answer("Your input 1: PARKED - a topic.", night) == "" and bodies == []
+    _window(True, day); assert WA.reply_answer("Your input 1: PARKED - a topic.", day) and bodies[-1]["type"] == "text"
+    _window(False); assert WA.reply_answer("x", day) == "" and len(bodies) == 1
+    assert _starts_outside_wa([("whatifs/x.py", "from whatifs import wa as WA\nWA.reply_answer('hi')\n")]) == ["whatifs/x.py:2: reply_answer"]
+    assert _starts_outside_wa(list(_py_files())) == []

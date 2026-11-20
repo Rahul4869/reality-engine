@@ -333,8 +333,10 @@ def _reply(text): send_text(text)
 
 def reply_answer(text, now=None):
     """v12 B-OWNER (PART 5): the desk's answer, weighed at a tick, as a REPLY while his 24-hour window is still open - never a new message (outside the
-    window it waits for the morning message). Returns the message id or ''."""
-    return send_text(text) if in_window(now) else ""
+    window, and in his quiet hours, it waits for the morning message). Returns the message id or ''."""
+    from whatifs import notify as NT
+    if not in_window(now) or NT.in_quiet_hours(now): return ""      # FINISHED BY FABLE (CB-4): never in his quiet hours - the morning message carries the answer
+    return send_text(text, kind="reply", now=now)                   # the wire's guard and the bill read the caller's clock (`_go` drops `now` when no kind is passed)
 
 def handle_inbound(payload_json):
     """repository_dispatch 'wa_inbound' entry point. Returns the number of messages handled."""
