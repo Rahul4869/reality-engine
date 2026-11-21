@@ -14438,6 +14438,7 @@ Rehearsal asserts `docs_current` ran and passed.
    `part` are proven by tests 2, 5, 7 and 8 and the whole productions under the older tests' cells (F2, no ladder, no path, no motion ladder) - never
    with the camera path, the motion ladder and the opening in the same film. A block part (or the offline Director) that brings each template onto the
    whole path at least once is a design with a measurement over ids, beside open issue 254's.
+262. R1-247 (02 item 222): the 18 HELD findings of the Fable API audits J8 (V1c F3-F11) and J9 (V4 F3-F11) are closed by the first batch after the weekly reset (Thu 26 Nov 2026 18:00 UTC), BEFORE GO-LIVE, each a failing test then the fix - their lines in reviews/V1c_audit.md and reviews/V4_audit.md; V1c and V4 stay in STATE.json's audit queue until then (never `next.py --audited` before).
 
 ## HOW TO RUN ON THIS LAPTOP (the Bash tool = Git Bash works; from `reality-engine/`)
 - (V1c's prover, 16 Nov 2026) THE SERIAL SUITE IS `shim/minitest.py`, NOT PYTEST: it knows only its own fixtures (`tmp_path_factory` is not one: open issue
