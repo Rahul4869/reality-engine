@@ -114,7 +114,9 @@ def _send_new(kind="daily", now=None):
     now = now or now_utc(); top = head(kind, now); took = ""
     try: took = WA.push("morning", now=now, text=top)
     except Exception as e: log(f"the {kind} message was not pushed: {scrub(e)[:120]}", "WARN")
-    mailed = False; text = top + "\n\n" + whole(now)
+    mailed = False
+    try: text = top + "\n\n" + whole(now)
+    except Exception as e: text = top; log(f"the {kind} message's groups were not built - the mail carries the head alone: {scrub(e)[:120]}", "WARN")      # FINISHED BY FABLE (CA2-12b, R1-101): a raise here left the day unstamped and re-sent the billed push at every tick
     try: mailed = bool(PUB.email(f"Reality Engine {kind} brief", "<pre style='font-family:inherit;white-space:pre-wrap'>" + text.replace("<", "&lt;") + "</pre>"))
     except Exception as e: log(f"{kind} message e-mail failed: {scrub(e)[:120]}", "WARN")
     if took or mailed:

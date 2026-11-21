@@ -1964,6 +1964,20 @@ def test_the_owner_memo_names_the_screen_it_came_from(monkeypatch, setting):
     core.store().append("Owner_Input", [{"input": "Warmer colours in the Shorts, please."}]); DESK.tick()
     m = MEM.get(_desk_rows()[-1]["memo"]); assert m["subject"].endswith("(tab Owner_Input)") and m["body"]["channel"] == "Owner_Input", m
 
+def test_a_morning_message_whose_groups_failed_is_sent_once(monkeypatch, setting):
+    """R1-101 (the code reader's CR-4-1; step 4): `_send_new` built the mail's whole text OUTSIDE any try after the WhatsApp push - when a group could
+    not be built the day was never stamped and every later tick pushed the morning message again, a billed template each time. The mail falls back to
+    the head; the stamps stand as they stand."""
+    from whatifs import publish as PUB
+    setting("TWO_SCREENS_ON", "TRUE"); _wire(monkeypatch); box = []
+    monkeypatch.setattr(PUB, "email", lambda subj, html, kind="essential": box.append((subj, html)) or True)
+    def broken(now=None): raise RuntimeError("planted: a group could not be built")
+    monkeypatch.setattr(DG, "whole", broken)
+    t = dt.datetime(2026, 11, 21, 3, 35, tzinfo=dt.timezone.utc)                                       # 09:05 India time, a Saturday (no weekly message)
+    DG.tick(now=t); DG.tick(now=t + dt.timedelta(minutes=30))
+    assert len([r for r in core.store().rows("WA_Outbox") if r.get("kind") == "morning"]) == 1
+    assert str(core.S("DIGEST_DAILY_SENT"))[:10] == "2026-11-21" and len([b for b in box if b[0] == "Reality Engine daily brief"]) == 1
+
 # ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (step 8) - PART C
 def _short8(monkeypatch, setting, on="TRUE", sid="SH209911200900"):
     """A standalone Short that is made and on record (tab Specials), the switch as given; Drive and the upload check stubbed; `approve` recorded."""
