@@ -53,6 +53,7 @@ DASH_PRIVATE = ("script_preview", "special_ready", "special_review", "ladder", "
 INFORM_KEEP_H = 336          # an inform row of a kind outside STANDING_KINDS closes by itself after this many hours (its key holds the India date)
 CARD_FALLBACK = "nothing changes; it is reported in the morning message"      # the default of a card sent without one (the build refuses such a call: the card scan)
 _SEEN_VERBS = ("OK", "NOTED", "SEEN")
+WAITS = ("org_stuck",)       # v12 B-OWNER, FINISHED BY FABLE (CA2-12; R1-99 (3)): cards with no clock - a thing still open waits on his list until he taps or it closes (its sender clears the older card)
 ALARM_REGROUP_H = 24         # an open alarm fired again is pushed again only this many hours after the push he was given (S8's grouping window); a repeat is counted, never dropped
 
 def klass(kind):
@@ -202,10 +203,11 @@ def _shape(kind, episode, buttons, default, expires_h, dedupe_key):
     stored with CARD_FALLBACK and 72 hours, an error is logged and one `card_rule` row a kind a day names it (nothing he is sent may be lost)."""
     buttons = list(buttons or ()); k = klass(kind)
     if k == HOLD and not buttons: buttons = [("Done", "OK")]
+    if kind in WAITS: expires_h = None                              # FINISHED BY FABLE (CA2-12): a card for a thing still open never closes by time, whatever its caller gave
     if k == INFORM and kind not in STANDING_KINDS:
         if expires_h is None: expires_h = INFORM_KEEP_H
         if dedupe_key is None: dedupe_key = f"{kind}|{episode or ''}|{_india_day()}"
-    if k == CARD and buttons and kind not in STANDING_KINDS and (not default or not expires_h):
+    if k == CARD and buttons and kind not in STANDING_KINDS and (not default or (not expires_h and kind not in WAITS)):
         log(f"a card of kind {kind} was sent without a default or an expiry: stored with the fallback default and 72 hours", "ERROR")
         default = default or CARD_FALLBACK; expires_h = expires_h or 72
         try: send("card_rule", f"A message of kind '{kind}' was sent without a default or an expiry. It was given '{CARD_FALLBACK}' and 72 hours.",

@@ -423,7 +423,7 @@ def _cards_without_a_default(files):
             if NT.klass(kind) != NT.CARD or kind in NT.STANDING_KINDS: continue
             btn = kw.get("buttons", n.args[2] if n.func.attr == "send" and len(n.args) > 2 else (n.args[5] if n.func.attr == "mail" and len(n.args) > 5 else None))
             if btn is None or (isinstance(btn, (ast.List, ast.Tuple)) and not btn.elts): continue
-            if "default" not in kw or "expires_h" not in kw: bad.append(f"{rel}:{n.lineno}: {kind}")
+            if "default" not in kw or ("expires_h" not in kw and kind not in NT.WAITS): bad.append(f"{rel}:{n.lineno}: {kind}")
     return bad
 
 def test_every_card_has_a_default_and_an_expiry():

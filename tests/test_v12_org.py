@@ -599,3 +599,26 @@ def test_the_full_episode_runs_under_the_contract_and_a_bypassed_department_hold
     monkeypatch.setattr(EP.ORG, "work", lambda dept, trig, e, fn, **k: fn(None) if dept == "D5" else real(dept, trig, e, fn, **k))      # packaging walks around the runner
     r2 = EP.produce(slot(34), episode_id="EP209901020900"); assert r2.get("held") and "contract:dept_contract" in r2["problems"], r2
     assert not any(s["dept"] in ("D9",) and s["episode_id"] == r2["episode"] for s in sessions())      # held before picture money: nothing was made or uploaded
+
+# ---------------- FINISHED BY FABLE (B-OWNER, PART A2 of the third finisher): a stuck item stays on his list while it is open (R1-99 (3))`)
+def test_a_stuck_item_stays_on_his_list_while_it_is_open(setting):
+    """R1-99 (3) (the code reader's CR-2b-2; R1-94's rule: a row for a thing still open does not leave his list by time): with the switch on every
+    org_stuck card had 72 hours, so after the last reminder his stuck item - his own unfinished instruction included - left both screens while the
+    memo was still LIVE. One card at a time, no clock: the new reminder takes the older card's place; a memo that leaves LIVE clears its card."""
+    setting("TWO_SCREENS_ON", "TRUE"); t0 = now()
+    a = MEM.write(owner_memo(), now=t0)["id"]; b = MEM.write(problem(dedupe_key="cr2b2"), now=t0)["id"]
+    mine = lambda mid: [r for r in NT.needs() if r["kind"] == "org_stuck" and r["dedupe_key"].startswith(f"org_stuck|{mid}|")]
+    for k in (1, 2, 3):                                                                    # both start at level 0 (D4 can act): one pass climbs them to 2 and tells him today; a pass more if the Council is ever wired
+        MEM.watchdog(now=t0 + 30 * H * k)
+        if mine(a) and mine(b): break
+    assert len(mine(a)) == 1 == len(mine(b)) and mine(a)[0]["expires_at"] == "" == mine(b)[0]["expires_at"], (mine(a), mine(b))
+    assert mine(a)[0]["default_action"] == "nothing is done until you answer" and mine(b)[0]["default_action"] == "nothing changes; the organisation works around it"
+    NT.expire_defaults(t0 + 300 * H)                                                                   # past every clock these cards once had (72 h)
+    assert len(mine(a)) == 1 == len(mine(b))
+    for k in range(1, 6): MEM.watchdog(now=t0 + 300 * H * k)                                          # every reminder, then it rests on his list
+    assert MEM.get(a)["reminders"] == 3 and [r["dedupe_key"] for r in mine(a)] == [f"org_stuck|{a}|2"], mine(a)
+    core.store().update(MEM.TAB, "id", b, {"status": "resolved"}); MEM.watchdog(now=t0 + 1600 * H)  # a department closed it without his tap
+    assert mine(b) == [] and len(mine(a)) == 1
+    x = NT.send("org_stuck", "planted", [("Keep pushing", "KEEP M0")], default="d", expires_h=72, dedupe_key="org_stuck|M0|0")     # a caller's hours are dropped; M0 is on no record
+    assert next(r for r in core.store().rows("Owner_Actions") if r["id"] == x)["expires_at"] == ""
+    MEM.watchdog(now=t0 + 1700 * H); assert x in {r["id"] for r in NT.needs()}                       # never cleared by a guess

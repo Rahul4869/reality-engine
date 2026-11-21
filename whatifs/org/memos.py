@@ -253,12 +253,32 @@ def _owner_text(m):
     return (f"Stuck past its deadline: {m['subject']} ({m['type'].replace('_', ' ')} from {m['from_dept']} to {', '.join(m['to_depts'])}). Done when: {m['done_when']}",
             (("Keep pushing", f"KEEP {m['id']}"), ("Drop it", f"DROP {m['id']}")))
 
+def _clear_cards(mid, st, keep=""):
+    """FINISHED BY FABLE (CA2-12; R1-99 (3)): a stuck item's open cards on his list are cleared - all but `keep`, the card just sent. One card at a time
+    while the memo is LIVE; none once it is not. Returns how many were cleared."""
+    from whatifs import notify as NT
+    n = 0
+    for r in NT.open_rows():
+        if r.get("kind") == "org_stuck" and str(r.get("dedupe_key") or "").startswith(f"org_stuck|{mid}|") and r.get("id") != keep:
+            st.update("Owner_Actions", "id", r["id"], {"status": "ANSWERED", "answered_at": iso(), "answer": "cleared"}); n += 1
+    return n
+
+def owner_sweep(st=None):
+    """FINISHED BY FABLE (CA2-12; R1-99 (3 c)): a stuck item's card stands only while its memo is LIVE - resolved by a department, dropped or closed
+    unread, its card is cleared at the next watchdog pass. A memo not on record is never cleared by a guess. Returns the cards cleared."""
+    from whatifs import notify as NT
+    if not S("TWO_SCREENS_ON", bool): return 0
+    st = st or store(); live = {x["id"]: x["status"] in LIVE for x in rows(st)}
+    ids = {str(r.get("dedupe_key") or "").split("|")[1] for r in NT.open_rows() if r.get("kind") == "org_stuck" and str(r.get("dedupe_key") or "").count("|") >= 2}
+    return sum(_clear_cards(mid, st) for mid in ids if live.get(mid) is False)
+
 def _tell_owner(m, st, now):
     from whatifs import notify as NT
     text, buttons = _owner_text(m); p0 = m["urgency"] == "P0"
     on = S("TWO_SCREENS_ON", bool)                                                     # v12 B-OWNER (PART 7): a card says what his silence does, and when
     aid = NT.send("org_stuck", text, buttons, episode=m["episode_id"] or None, tier="now" if p0 else "week", urgent=p0, dedupe_key=f"org_stuck|{m['id']}|{m['reminders']}",
-                  default="nothing changes; the organisation works around it" if on else None, expires_h=72 if on else None)
+                  default=(("nothing is done until you answer" if m["type"] == "owner_memo" else "nothing changes; the organisation works around it") if on else None))
+    if on: _clear_cards(m["id"], st, keep=aid)                                         # FINISHED BY FABLE (CA2-12): one card at a time - the new reminder takes the older card's place
     st.update(TAB, "id", m["id"], {"owner_notified": f"{iso(now)} {aid}", "reminders": m["reminders"] + 1, "sla_due": iso(now + dt.timedelta(hours=_esc_hours(2, m["urgency"]))), "updated": iso(now)})
     return aid
 
@@ -325,6 +345,8 @@ def watchdog(st=None, now=None):
                 escalate(m["id"], "not resolved in time", "clock", st, now); rep["escalated"].append(m["id"])
         except Exception as e: log(f"watchdog: memo {m['id']} skipped: {scrub(e)[:140]}", "WARN")
     rep["swept"] = sweep_episodes(st, now)
+    try: owner_sweep(st)                                                     # FINISHED BY FABLE (CA2-12): a stuck item's card stands only while its memo is LIVE
+    except Exception as e: log(f"watchdog: stuck-item cards not cleared: {scrub(e)[:140]}", "WARN")
     sent = 0; cap = int(S("ORG_OWNER_REMINDS_MAX", float) or 0)
     for m in sorted([x for x in rows(st) if x["status"] in LIVE and x["level"] >= 2 and x["owner_visible"]], key=lambda x: (_URG.get(x["urgency"], 1), x["sla_due"])):
         if sent >= OWNER_MESSAGES_PER_PASS: break
