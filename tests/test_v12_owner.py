@@ -1971,3 +1971,32 @@ def test_keep_it_private_on_a_row_that_says_youtube_may_have_it_asks_youtube(mon
     assert len(sil) == 1 and "MAY ALREADY HAVE IT ON ITS SCHEDULE" in sil[0]["text"] and _epi("EP8")["status"] == "AWAITING_APPROVAL", sil
     said = NT.answer(sil[0]["id"], "HOLDREVIEW EP8")
     assert asked == [("ytEP8", "private")] and said == "EP8 stays private" and _epi("EP8")["status"] == "HELD_BY_OWNER", (asked, said)
+
+# ------------------------------------------------------------------ PART J (R1-184; OF-6 = CF-7 (c)): a pause reaches a waiting video YouTube kept on its schedule
+def test_a_pause_takes_a_waiting_video_youtube_kept_on_its_schedule_private_and_never_schedules_it(monkeypatch, setting):
+    """CJ-1 (OF-6): a pause's `hold_scheduled` reached only SCHEDULED - a video waiting for his approval that YouTube kept on its schedule (CF-1b's open
+    `unscheduled|<ep>` hold) went public on its slot through the pause. Now the pause asks YouTube and reads the answer: refused (False or a raise),
+    nothing is touched and ONE alarm with the Studio link says so; taken private, it stays AWAITING_APPROVAL - never HELD, so the pause's end never
+    schedules a video he did not approve - and the hold and the alarm close."""
+    from whatifs import manage as MG
+    _ep8(monkeypatch, setting); _, sched = _ep8(monkeypatch, setting, ep="EP9")                    # EP9 waits too, with no hold: YouTube took it private at its upload
+    NT.send("contract_hold", "Title EP8 is still on YouTube's schedule: YouTube did not accept the change to private. Set it to Private in YouTube Studio, then "
+            "tap Done: https://studio.youtube.com/video/ytEP8/edit", [("Done", "OK")], tier="now", urgent=True, episode="EP8", dedupe_key="unscheduled|EP8")   # CF-1b's hold, in await_approval's form
+    asked = []; monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: asked.append((vid, p)) or False)
+    rows = lambda key: [r for r in core.store().rows("Owner_Actions") if r.get("dedupe_key") == key]
+    assert MG.hold_scheduled("paused") == 0 and asked == [("ytEP8", "private")], asked              # the pause asks YouTube of the video it kept - only of that one
+    assert _epi("EP8")["status"] == "AWAITING_APPROVAL" and _epi("EP9")["status"] == "AWAITING_APPROVAL" and "made private" not in str(_epi("EP8").get("notes"))
+    al = rows("uploads_private|pause|EP8")
+    assert len(al) == 1 and al[0]["status"] == "OPEN" and "studio.youtube.com/video/ytEP8/edit" in al[0]["text"] and "did NOT" in al[0]["text"]
+    assert [r["status"] for r in rows("unscheduled|EP8")] == ["OPEN"]                                # refused: the hold stays open
+    def boom(vid, p): asked.append((vid, p)); raise RuntimeError("quota")
+    monkeypatch.setattr(PUB8, "yt_set_privacy", boom)
+    assert MG.hold_scheduled("paused") == 0 and len(rows("uploads_private|pause|EP8")) == 1        # a raise is a refusal too, counted on the same alarm
+    assert _epi("EP8")["status"] == "AWAITING_APPROVAL" and [r["status"] for r in rows("unscheduled|EP8")] == ["OPEN"]
+    monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: asked.append((vid, p)) or True)
+    assert MG.hold_scheduled("paused") == 1 and asked[-1] == ("ytEP8", "private")
+    e = _epi("EP8"); assert e["status"] == "AWAITING_APPROVAL" and "made private: paused" in str(e.get("notes"))   # never HELD: it still waits for his approval
+    assert [r["status"] for r in rows("unscheduled|EP8")] == ["ANSWERED"] and [r["status"] for r in rows("uploads_private|pause|EP8")] == ["ANSWERED"]
+    MG.resume_held()
+    assert sched == [] and _epi("EP8")["status"] == "AWAITING_APPROVAL"                             # the pause's end schedules nothing he did not approve
+    assert MG.hold_scheduled("paused") == 0                                                          # the hold is closed: the next paused tick asks nothing

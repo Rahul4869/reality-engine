@@ -69,14 +69,31 @@ def kill_check():
             _CK.clear(e["episode_id"])          # v8.3: its saved pictures and clips no longer sit in Drive for ever
 
 def hold_scheduled(reason="paused"):
-    """While paused, videos already on YouTube's schedule are switched to private so they do NOT publish on their own."""
+    """While paused, videos already on YouTube's schedule are switched to private so they do NOT publish on their own.
+    v12 B-OWNER (PART J, CJ-1 = OF-6): a video waiting for his approval that YouTube kept on its schedule (CF-1b's open `unscheduled|<ep>` hold) is asked
+    too - taken private it stays AWAITING_APPROVAL (never HELD: the pause's end re-schedules HELD, and he never approved it) and the hold closes; refused
+    (False or a raise), nothing is touched and the alarm says so with the Studio link - the next paused tick asks again."""
     st = store(); n = 0
+    kept = {str(r.get("dedupe_key"))[len("unscheduled|"):] for r in NT.open_rows() if str(r.get("dedupe_key") or "").startswith("unscheduled|")}
     for e in st.rows("Episodes"):
         t = parse_iso(e.get("slot_et"))
         if e.get("status") == "SCHEDULED" and e.get("yt_id") and t and t > now_utc():
             if PUB.yt_set_privacy(e["yt_id"], "private"):
                 st.update("Episodes", "episode_id", e["episode_id"], {"status": "HELD", "notes": _note(e, f"held: {reason}"), "updated": iso()}); n += 1
                 log(f"{e['episode_id']} held ({reason}) - it will be re-scheduled when the pause ends")
+        elif e.get("status") == "AWAITING_APPROVAL" and e.get("episode_id") in kept and e.get("yt_id") and t and t > now_utc():      # CJ-1: YouTube kept it on its schedule
+            ep_ = e["episode_id"]
+            try: off = PUB.yt_set_privacy(e["yt_id"], "private") is not False      # CJ-1: the answer is read - False or a raise = YouTube refused
+            except Exception as x: off = False; log(f"{ep_}: the pause could not take it off YouTube's schedule ({scrub(x)[:120]})", "WARN", ep_)
+            if not off:
+                NT.send("uploads_private", f"{e.get('title') or ep_}: the pause did NOT take it off YouTube's schedule - YouTube did not accept the change, so it goes "
+                        f"public on its slot although you have not approved it. Set it to Private in YouTube Studio: https://studio.youtube.com/video/{e['yt_id']}/edit "
+                        f"(the pause asks YouTube again at its next run)", episode=ep_, dedupe_key=f"uploads_private|pause|{ep_}")
+                continue
+            st.update("Episodes", "episode_id", ep_, {"notes": _note(e, f"made private: {reason}"), "updated": iso()}); n += 1      # the status stays AWAITING_APPROVAL (R1-153)
+            log(f"{ep_} made private ({reason}) - it still waits for his approval, so the pause's end does not schedule it")
+            for r in NT.open_rows():
+                if r.get("dedupe_key") in (f"unscheduled|{ep_}", f"uploads_private|pause|{ep_}"): st.update("Owner_Actions", "id", r["id"], {"status": "ANSWERED", "answered_at": iso(), "answer": f"done: made private by the pause ({reason})"})
     return n
 
 def resume_held():
