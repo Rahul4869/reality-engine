@@ -958,8 +958,8 @@ def test_every_card_v4_sends_names_its_default_and_a_deadline_unless_the_memo_ke
             kind = re.match(r'NT\.send\(\s*"([a-z_]+)"', c).group(1); seen.append(kind)
             is_taken = kind == "desk" and "desk|taken|" in c; taken += is_taken; ideas += kind == "idea"      # B-OWNER step 5 (R1-110): the two standing rows
             assert "default=" in c or is_taken or kind == "idea", (rel, kind)
-            assert "expires_h=" in c or kind in OPEN_BY_DESIGN, (rel, kind)
-    assert taken == 1 and ideas >= 1, (taken, ideas)                                   # an exception that no send uses any more fails here: the rule cannot rot
+            assert ("expires_h=" in c) == (kind not in OPEN_BY_DESIGN), (rel, kind)            # CA5-8 (R1-128): a row the memo keeps open names no expiry, nor may one be added
+    assert taken == 1 and ideas == 1, (taken, ideas)                                   # an exception that no send uses any more fails here: the rule cannot rot (CA5-8: ONE idea send)
     assert sorted(set(seen)) == ["desk", "idea", "risk_gone", "risk_lock", "strategy"], seen
 
 def test_the_second_point_takes_a_format_still_below_to_0(setting):

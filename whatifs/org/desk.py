@@ -51,10 +51,11 @@ def _ticket(n, key, new, old, now, dedupe):
     m = STR._ticket(key, new, old, f"DESK-{n}", dedupe, now, words=f"the owner's input {n}: {key} {old} -> {new}")
     return MEM.write(m, now=now)
 
-def _memo(n, text, interp, now, link=""):
+def _memo(n, text, interp, now, link="", channel=""):
     from whatifs.org import memos as MEM
-    m = {"type": "owner_memo", "from_dept": "D0", "to_depts": ["D1"], "subject": f"Owner input {n} (tab Owner_Input)",
-         "body": {"verbatim": str(text)[:4000], "interpretation": interp[:800], "channel": "Owner_Input", "received": iso(now)},
+    where = {"whatsapp": "WhatsApp", "dashboard": "the dashboard"}.get(channel, "tab Owner_Input")      # FINISHED BY FABLE (CA5-8, R1-128): the screen it came from
+    m = {"type": "owner_memo", "from_dept": "D0", "to_depts": ["D1"], "subject": f"Owner input {n} ({where})",
+         "body": {"verbatim": str(text)[:4000], "interpretation": interp[:800], "channel": channel if channel in ("whatsapp", "dashboard") else "Owner_Input", "received": iso(now)},
          "dedupe_key": f"desk|memo|{n}" + (f"|{link}" if link else ""), "done_when": "the desk's verdict is written on tab Owner_Desk and reaches him in the next brief"}
     if link: m["links"] = {"first": link}
     return MEM.write(m, now=now)
@@ -154,7 +155,7 @@ def _do(row, choice):
     if v != "ADOPTED": return f"not done: {how}"
     from whatifs.org import strategy as STR
     t = _ticket(n, rec[0], new, STR._cell(rec[0]), now, f"desk|{n}|anyway")
-    m = _memo(n, r.get("verbatim"), f"recognised as: {rec[0]} = {rec[1]} - his own word overrides the money's fit (Do it anyway)", now, link=r.get("memo") or "")
+    m = _memo(n, r.get("verbatim"), f"recognised as: {rec[0]} = {rec[1]} - his own word overrides the money's fit (Do it anyway)", now, link=r.get("memo") or "", channel=str(r.get("channel") or ""))
     try: _close(m["id"], n, now)
     except Exception as e: log(f"desk: the second owner memo of input {n} was not closed: {scrub(e)[:120]}", "WARN")
     st.update(DESK, "n", r["n"], {"verdict": "ADOPTED", "how": f"{how} (your own word overrode the money's fit)", "ticket": t["id"]})
@@ -300,7 +301,7 @@ def weigh_row(ref, now=None, waiting=False):
     if not EX.on():
         _set(st, r, {"verdict": "STORED", "how": "stored word for word; the organisation is switched off, so nothing was filed"}); return _line(r)
     if not r.get("memo"):
-        try: _set(st, r, {"memo": _memo(n, text, "weighed on the owner's desk", now)["id"]})
+        try: _set(st, r, {"memo": _memo(n, text, "weighed on the owner's desk", now, channel=str(r.get("channel") or ""))["id"]})
         except Exception as e:
             _set(st, r, {"verdict": "STORED", "how": f"Your input {n} is stored; it could not be filed ({scrub(e)[:200]})"}); return _line(r)
     ch = {"briefed": ""}                                          # an answer written later reaches the next morning message

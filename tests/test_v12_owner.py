@@ -1922,6 +1922,48 @@ def test_a_label_the_model_did_not_give_is_never_a_no():
     assert DESK.decide({**LABELS, "needs_code": "false"}, row)[0::2] == ("PARKED", None)                    # a string: neither TAKEN nor a Build card
     assert DESK.decide({**LABELS, "needs_code": True}, row)[0::2] == ("PARKED", "idea") and DESK.decide(dict(LABELS), row)[0] == "TAKEN"
 
+def test_the_desk_cap_holds_at_exactly_forty(monkeypatch, setting):
+    """CR-5-7 (R1-128, CA5-8): PART 5's cap - no call AT Rs 40 (the test had only 41) - and the answer names the day it is read, with its month."""
+    _desk_on(setting); calls = _labels(monkeypatch)
+    core.store().append("Cost_Log", [{"ts": core.iso(), "episode_id": "owner", "item": "claude_board_c", "provider": "anthropic", "units": 1, "inr": 40, "role": "owner_desk"}])
+    now = core.now_utc(); nxt = (now.replace(day=1) + dt.timedelta(days=32)).replace(day=1)
+    n, ack = DESK.take("Slower music under the hook, please.", "dashboard", ref="act-c40")
+    assert calls == [] and _desk_rows()[-1]["verdict"] == "" and f"is read on {nxt:%d %b}" in ack, ack
+
+def test_a_dashboard_question_is_answered_on_the_page(monkeypatch, setting):
+    """CR-5-7 (R1-128, CA5-8): PART 5 - a question typed on the dashboard is asked of the chat once; its reply (800 characters) is the answer, stamped
+    briefed (he has it on the screen he asked from). No test asked one."""
+    _desk_on(setting); _labels(monkeypatch, kind="question", department="none", raises_breakout=False); asked = []
+    monkeypatch.setattr(WA, "chat", lambda text, deep=False: asked.append(text) or ("Three Shorts went out this week. " * 40, "", "feature"))
+    n, line = DESK.take("How many Shorts went out this week?", "dashboard", ref="act-q1"); r = _desk_rows()[-1]
+    assert line == "" and asked == ["How many Shorts went out this week?"] and r["verdict"] == "ANSWERED" and r["briefed"], (line, r)
+    assert r["how"] == ("Three Shorts went out this week. " * 40)[:800] and DESK.lines() == [], r
+
+def test_a_standing_rule_needs_twenty_characters_and_keeps_four_hundred(monkeypatch, setting):
+    """CR-5-7 (R1-128, CA5-8): PART 5's item - a summary under 20 characters is PARKED "too short", 20 is kept; the summary is HIS words cut at a word
+    inside 400, the body all of them. No test sat on either edge."""
+    from whatifs.org import palace as PAL
+    _desk_on(setting); _labels(monkeypatch)
+    assert DESK.take("Make it much calmer", "dashboard", ref="act-e1")[1].endswith("PARKED - too short to keep as a standing rule.")         # 19 characters
+    n, line = DESK.take("Make it much calmer.", "dashboard", ref="act-e2"); assert "TAKEN" in line, line                                     # 20 characters
+    words = ("Open every Short on the moving picture, never on a title card, and let the first spoken line land before the first second ends; "
+             "keep the camera moving through the whole hook, cut on the beat of the music rather than at the end of a sentence, hold the strangest "
+             "picture of the film for two full seconds so the eye can read it, end on the feeling instead of a list of facts, and never put more than "
+             "six words of text on the screen at once.")
+    n, _l = DESK.take(words, "dashboard", ref="act-e3"); it = PAL.get(PAL.item_id(f"owner_input|{n}"))
+    assert len(words) > 400 and len(it["summary"]) <= 400 and words.startswith(it["summary"]) and words[len(it["summary"])] == " ", it
+    assert words in json.dumps(PAL.body(it["id"])), it
+
+def test_the_owner_memo_names_the_screen_it_came_from(monkeypatch, setting):
+    """CR-5-7 (R1-128, CA5-8): every input gets the owner memo (R17 (10 e)) - a WhatsApp or dashboard input's memo said it came from the tab Owner_Input."""
+    from whatifs.org import memos as MEM
+    _desk_on(setting); _labels(monkeypatch, kind="feedback")
+    for ch, ref, where in (("whatsapp", "wamid.M1", "WhatsApp"), ("dashboard", "act-m1", "the dashboard")):
+        DESK.take("The last Short felt slow in its first two seconds.", ch, ref=ref); m = MEM.get(_desk_rows()[-1]["memo"])
+        assert m["subject"].endswith(f"({where})") and m["body"]["channel"] == ch, m
+    core.store().append("Owner_Input", [{"input": "Warmer colours in the Shorts, please."}]); DESK.tick()
+    m = MEM.get(_desk_rows()[-1]["memo"]); assert m["subject"].endswith("(tab Owner_Input)") and m["body"]["channel"] == "Owner_Input", m
+
 # ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (step 8) - PART C
 def _short8(monkeypatch, setting, on="TRUE", sid="SH209911200900"):
     """A standalone Short that is made and on record (tab Specials), the switch as given; Drive and the upload check stubbed; `approve` recorded."""
