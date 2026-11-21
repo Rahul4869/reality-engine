@@ -1957,3 +1957,17 @@ def test_his_kill_counts_only_when_youtube_agreed_and_reaches_a_video_youtube_ke
     monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: asked.append(vid) or True); MG.kill_check()
     assert _epi("EP8")["status"] == "KILLED" and _epi("EP9")["status"] == "KILLED" and alarm("EP8")[0]["status"] == "ANSWERED" and alarm("EP9")[0]["status"] == "ANSWERED"
     assert [r["status"] for r in core.store().rows("Owner_Actions") if r.get("dedupe_key") == "unscheduled|EP8"] == ["ANSWERED"]
+
+def test_keep_it_private_on_a_row_that_says_youtube_may_have_it_asks_youtube(monkeypatch, setting):
+    """R1-234 (R1-233 (5)): a raise of `approve` - in or after `yt_schedule` - leaves a `silence|` row saying YouTube MAY already have the video on its
+    schedule. His "Keep it private" on that row (`notify.answer` closes the row BEFORE `hold_review` runs) asks YouTube to make it private - it never
+    answers "stays private" of a video nobody asked YouTube about."""
+    slot, sched = _ep8(monkeypatch, setting); monkeypatch.setattr(LAU, "uploads_open", lambda: True)
+    monkeypatch.setattr(PUB8, "yt_schedule", lambda vid, at: (_ for _ in ()).throw(RuntimeError("YouTube timed out after it took the time")))
+    CON.await_approval("EP8", "ytEP8", slot, "s")
+    asked = []; monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: asked.append((vid, p)) or True)
+    NT.expire_defaults(now=_later(15))
+    sil = [r for r in _kind("contract_hold", "EP8") if r["dedupe_key"] == "silence|EP8" and r["status"] == "OPEN"]
+    assert len(sil) == 1 and "MAY ALREADY HAVE IT ON ITS SCHEDULE" in sil[0]["text"] and _epi("EP8")["status"] == "AWAITING_APPROVAL", sil
+    said = NT.answer(sil[0]["id"], "HOLDREVIEW EP8")
+    assert asked == [("ytEP8", "private")] and said == "EP8 stays private" and _epi("EP8")["status"] == "HELD_BY_OWNER", (asked, said)

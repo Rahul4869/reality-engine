@@ -1250,7 +1250,7 @@ def approve(ep):
 
 def hold_review(ep):
     from whatifs import notify as NT
-    st = store(); un = [r for r in NT.open_rows() if r.get("dedupe_key") == f"unscheduled|{ep}"]      # v12 B-OWNER (PART F, CF-7 (a)): CF-1b's hold - YouTube kept it on its schedule
+    st = store(); un = [r for r in NT.open_rows() if r.get("dedupe_key") == f"unscheduled|{ep}"] or [r for r in [r for r in st.rows("Owner_Actions") if r.get("dedupe_key") == f"silence|{ep}"][-1:] if "MAY ALREADY HAVE IT ON ITS SCHEDULE" in str(r.get("text") or "") and r.get("answer") != "cleared"]      # v12 B-OWNER (PART F, CF-7 (a)): CF-1b's hold - YouTube kept it on its schedule; R1-234: or the newest `silence|` row (his tap closed it first) said YouTube MAY have it
     if un:                                                        # his Hold asks YouTube once more; False or a raise = refused
         from whatifs import publish as PUB
         e = next((r for r in st.rows("Episodes") if r.get("episode_id") == ep), {}); vid = str(e.get("yt_id") or ""); title = e.get("title") or ep
