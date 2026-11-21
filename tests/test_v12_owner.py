@@ -1895,6 +1895,16 @@ def test_one_input_is_weighed_once_and_numbered_once(monkeypatch, setting):
     core.store().append("Owner_Input", [{"input": "Slower music under the hook, please."}]); DESK.tick()
     nums = [int(r["n"]) for r in _desk_rows()]; assert nums[-1] == n + 7 and len(set(nums)) == len(nums) and len(calls) == 3, (nums, calls)
 
+def test_a_desk_switched_off_says_so(monkeypatch, setting):
+    """CR-5-3 NARROWED (R1-128, CA5-5; PART B's OB-3): with STRATEGY_ON FALSE and TWO_SCREENS_ON TRUE his line was stored with no answer and he was
+    promised "The answer comes with tomorrow's morning message" - but no tick weighs it while the desk is off. Now the row says so at once."""
+    setting("TWO_SCREENS_ON", "TRUE"); setting("STRATEGY_ON", "FALSE"); bodies = _wire(monkeypatch); calls = _labels(monkeypatch)
+    monkeypatch.setattr(WA, "chat", lambda text, deep=False: ("Noted.", "", "feature"))
+    _inbound(monkeypatch, "wamid.O1", "more wonder please"); DESK.tick()
+    r = _desk_rows()[-1]; said = [b["text"]["body"] for b in bodies if b.get("type") == "text"]
+    assert r["verdict"] and not any("tomorrow's morning message" in s for s in said), (r, said)            # the reader's assert
+    assert r["verdict"] == "STORED" and "switched off (STRATEGY_ON)" in r["how"] and calls == [] and said[-1].endswith("so it is not weighed."), (r, said)
+
 # ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (step 8) - PART C
 def _short8(monkeypatch, setting, on="TRUE", sid="SH209911200900"):
     """A standalone Short that is made and on record (tab Specials), the switch as given; Drive and the upload check stubbed; `approve` recorded."""

@@ -291,8 +291,10 @@ def weigh_row(ref, now=None, waiting=False):
     from whatifs import notify as NT
     st = store(); now = now or now_utc()
     r = next((x for x in _rows(st) if str(x.get("ref") or "") == str(ref)), None)
-    if r is None or r.get("verdict") or not on(): return None
+    if r is None or r.get("verdict"): return None
     n = int(r["n"]); text = str(r.get("verbatim") or "")
+    if not on():                                                  # FINISHED BY FABLE (CA5-5, R1-128): the desk switched off says so - never a promise of tomorrow's answer
+        _set(st, r, {"verdict": "STORED", "how": "stored word for word; the desk is switched off (STRATEGY_ON), so it is not weighed"}); return _line(r)
     if not EX.on():
         _set(st, r, {"verdict": "STORED", "how": "stored word for word; the organisation is switched off, so nothing was filed"}); return _line(r)
     if not r.get("memo"):
