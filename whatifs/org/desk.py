@@ -240,11 +240,11 @@ def decide(w, row):
     """Pure: the model's labels -> (verdict, how, act). Item 138's three conditions are the first branch: TAKEN only for a preference that raises the
     breakout, needs no code, opens no new arm and names a department - flip any one alone and it is PARKED."""
     k = str(w.get("kind") or "other"); dept = str(w.get("department") or "none"); n = row["n"]
-    if k == "preference" and w.get("raises_breakout") is True and not w.get("needs_code") and not w.get("new_arm") and dept in DESK_DEPTS:
+    if k == "preference" and w.get("raises_breakout") is True and w.get("needs_code") is False and w.get("new_arm") is False and dept in DESK_DEPTS:      # CA5-7: never a "no" the model did not give
         return "TAKEN", dept, "palace"
     if k == "question": return "ANSWERED", "", "chat"
     if k == "video_idea": return "PARKED", "a topic: every topic starts as a Short that viewers choose. To put yours first, send it on WhatsApp as a brief.", None
-    if k == "change_request" or w.get("needs_code"):
+    if k == "change_request" or w.get("needs_code") is True:
         return "PARKED", (f"it needs a code change. Code changes the organisation orders stay off until their cost caps exist (the first batch after the "
                           f"launch); it is kept as input {n} and decided then. Build it yourself now with one tap."), "idea"
     if k == "feedback": return "PARKED", f"your verdict on a video counts through its Good / Not good card; these words are kept with input {n}.", None

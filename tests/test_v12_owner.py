@@ -1913,6 +1913,15 @@ def test_a_desk_switched_off_says_so(monkeypatch, setting):
     assert r["verdict"] and not any("tomorrow's morning message" in s for s in said), (r, said)            # the reader's assert
     assert r["verdict"] == "STORED" and "switched off (STRATEGY_ON)" in r["how"] and calls == [] and said[-1].endswith("so it is not weighed."), (r, said)
 
+def test_a_label_the_model_did_not_give_is_never_a_no():
+    """CR-5-6 (a) (R1-128, CA5-7): `decide` read a missing `needs_code` or `new_arm` as "no" (TAKEN) and the string "false" as "yes" (a code change with a
+    Build card). Both are read with `is`, as `raises_breakout is True` is: only the JSON's own true or false counts."""
+    row = {"n": 7}
+    for k in ("needs_code", "new_arm"):
+        assert DESK.decide({x: v for x, v in LABELS.items() if x != k}, row)[0] == "PARKED", k               # a label left out: never TAKEN
+    assert DESK.decide({**LABELS, "needs_code": "false"}, row)[0::2] == ("PARKED", None)                    # a string: neither TAKEN nor a Build card
+    assert DESK.decide({**LABELS, "needs_code": True}, row)[0::2] == ("PARKED", "idea") and DESK.decide(dict(LABELS), row)[0] == "TAKEN"
+
 # ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (step 8) - PART C
 def _short8(monkeypatch, setting, on="TRUE", sid="SH209911200900"):
     """A standalone Short that is made and on record (tab Specials), the switch as given; Drive and the upload check stubbed; `approve` recorded."""
