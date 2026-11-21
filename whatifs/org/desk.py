@@ -334,11 +334,11 @@ def weigh_row(ref, now=None, waiting=False):
                         except Exception as e:                    # FINISHED BY FABLE (CA5-1, R1-128): no card, no live item
                             v, how = _unkeep(n, f"its Take it back card could not be written ({scrub(e)[:120]})", now)
                 elif act == "chat":
-                    if r.get("channel") == "whatsapp": how = "answered in the chat"
-                    else:
+                    if waiting and r.get("channel") == "whatsapp": v = ""        # FINISHED BY FABLE (CA5-2, R1-128): the inbound job's chat answers it - `wa` stamps it after its reply went
+                    else:                                                         # a dashboard question, or a WhatsApp one no chat answered (a tick): asked of the chat here
                         from whatifs import wa as WA
                         how = str(WA.chat(text)[0])[:800]
-                    if waiting or r.get("channel") == "whatsapp": ch["briefed"] = iso(now)      # he has the answer on the screen he asked from: not counted next morning
+                        if waiting: ch["briefed"] = iso(now)                      # he has the answer on the screen he asked from: not counted next morning
                 elif act == "idea":
                     ch["action"] = NT.send("idea", f"Build this? {text[:300]}", [("Build it", "BUILD"), ("Not now", "PARK")], tier="week",
                                            dedupe_key=f"idea|desk{n}|" + json.dumps({"spec": text[:500], "kind": "feature"}))
@@ -350,7 +350,7 @@ def weigh_row(ref, now=None, waiting=False):
         log(f"desk: the answer to input {n} was not written ({scrub(e)[:120]}); it is weighed again at a tick", "WARN"); return None
     try: _close(r["memo"], n, now)
     except Exception as e: log(f"desk: the owner memo of input {n} was not closed: {scrub(e)[:160]}", "WARN")
-    return "" if r.get("verdict") == "ANSWERED" and (waiting or r.get("channel") == "whatsapp") else _line(r)      # a question: the chat's reply is the answer
+    return "" if not r.get("verdict") or (r.get("verdict") == "ANSWERED" and waiting) else _line(r)      # a question: the chat's reply is the answer (CA5-2: `wa` stamps a WhatsApp one)
 
 def _said(r):
     """FINISHED BY FABLE (CB-3): a row's `how` as he reads it - without the tick's own count of tries, ending in ONE full stop."""

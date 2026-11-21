@@ -1853,6 +1853,30 @@ def test_his_word_is_never_live_without_its_undo(monkeypatch, setting):
     assert r2["verdict"] == "TAKEN" and it2["status"] == "accepted" and json.loads(_row(r2["action"])["buttons"]) == [["Take it back", f"DESK UNDO {n2}"]], (r2, it2)
     assert len(calls) == 3, calls
 
+def test_a_question_is_marked_answered_only_by_the_road_that_answered_it(monkeypatch, setting):
+    """CR-5-2 (R1-128, CA5-2): the desk wrote a WhatsApp question ANSWERED and briefed BEFORE the chat ran, and `take` and `chat` shared one try - a chat
+    that failed left the question never answered (nor next morning) while he read "Nothing was changed", even of a word it had TAKEN; and a tick wrote
+    "answered in the chat" of a question no chat had answered. Now the row is stamped only after the chat's reply went; a question no chat answered is
+    answered at a tick through the chat, as a dashboard one is."""
+    _desk_on(setting); bodies = _wire(monkeypatch); _labels(monkeypatch, kind="question", department="none", raises_breakout=False)
+    def down(text, deep=False): raise RuntimeError("planted: the chat failed")
+    said = lambda: [b["text"]["body"] for b in bodies if b.get("type") == "text"]
+    monkeypatch.setattr(WA, "chat", down)
+    _inbound(monkeypatch, "wamid.Q2", "how many shorts went out this week?"); r = _desk_rows()[-1]
+    assert not (r["verdict"] == "ANSWERED" and r["briefed"]), r                                             # the reader's assert (today: both)
+    assert r["verdict"] == "" and len(said()) == 1 and "Nothing was changed" not in said()[0] and f"kept as input {r['n']}" in said()[0], (r, said())
+    later = core.now_utc() + dt.timedelta(minutes=11)                                                       # a later tick (past CA5-4's ten minutes)
+    monkeypatch.setattr(WA, "chat", lambda text, deep=False: ("Three Shorts went out this week.", "", "feature")); DESK.tick(now=later)
+    r = _desk_rows()[-1]; assert r["verdict"] == "ANSWERED" and r["how"] == "Three Shorts went out this week." and not r["briefed"], r
+    assert any("Three Shorts went out this week." in l for l in DESK.lines(now=later)), DESK.lines(now=later)     # the morning message carries it
+    def fail(text): raise RuntimeError("planted: the model did not answer")
+    monkeypatch.setattr(DESK, "weigh", fail); monkeypatch.setattr(WA, "chat", down)                         # weighing AND chat fail at inbound
+    _inbound(monkeypatch, "wamid.Q3", "which short did best this week?")
+    _labels(monkeypatch, kind="question", department="none", raises_breakout=False); DESK.tick(now=later)
+    r = _desk_rows()[-1]; assert not (r["verdict"] == "ANSWERED" and r["briefed"]) and r["verdict"] == "STORED", r     # the reader's second leg
+    _labels(monkeypatch); _inbound(monkeypatch, "wamid.P1", "Every Short ends on the strangest fact it holds.")     # a TAKEN word while the chat is down
+    assert "Nothing was changed" not in said()[-1] and f"Your input {_desk_rows()[-1]['n']}: TAKEN" in said()[-1], said()[-1]
+
 # ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (step 8) - PART C
 def _short8(monkeypatch, setting, on="TRUE", sid="SH209911200900"):
     """A standalone Short that is made and on record (tab Specials), the switch as given; Drive and the upload check stubbed; `approve` recorded."""

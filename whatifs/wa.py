@@ -352,7 +352,7 @@ def handle_inbound(payload_json):
         mid = str(m.get("id") or "")
         if not mid or mid in seen: continue
         seen.add(mid); n += 1; set_setting("WA_LAST_INBOUND_AT", iso())
-        payload, text = str(m.get("payload") or ""), str(m.get("text") or "").strip()
+        payload, text = str(m.get("payload") or ""), str(m.get("text") or "").strip(); _n = 0      # FINISHED BY FABLE (CA5-2): the desk's number, once it took this line
         st.append("WA_Chat", [{"ts": iso(), "msg_id": mid, "who": "owner", "text": (payload or text)[:1500]}])
         try:
             if payload.startswith("BRIEF|") or (not payload):               # v10.3 (K154): the owner-brief conversation (start, continue, lock)
@@ -401,7 +401,15 @@ def handle_inbound(payload_json):
                     if _on():                                    # v12 B-OWNER (PART 5, R17 (10 a)): ONE place - a typed line that is not a fixed word is his input,
                         from whatifs.org import desk as DESK      # taken BEFORE the chat answers; a bare acknowledgement is talk (R17 ADDS (D))
                         if not DESK.talk(text): _n, line = DESK.take(text, "whatsapp", ref=mid)
-                    out, spec, kind = chat(re.sub(r"^think hard:?\s*", "", text, flags=re.I) if deep else text, deep=deep)
+                    try: out, spec, kind = chat(re.sub(r"^think hard:?\s*", "", text, flags=re.I) if deep else text, deep=deep)
+                    except Exception as e:                       # FINISHED BY FABLE (CA5-2, R1-128): a failed chat never drops the desk's line nor marks his question answered
+                        if not _n: raise                         # no input of his was taken (talk, the switch off): today's words, below
+                        out, spec, kind = f"I could not answer just now ({type(e).__name__}).", "", "feature"
+                        if not line: line = f"Your question is kept as input {_n}; its answer comes in a later message here, or in the morning message."
+                    else:
+                        d = next((x for x in st.rows("Owner_Desk") if str(x.get("ref") or "") == mid), None) if _n and not line else None
+                        if d is not None and not d.get("verdict"):      # his question, answered by THIS reply: stamped now, never before (a tick answers it otherwise)
+                            st.update("Owner_Desk", "ref", mid, {"verdict": "ANSWERED", "how": "answered in the chat", "briefed": iso()})
                     if line: out = f"{out}\n\n{line}"                # the desk's verdict ends the chat's reply
                     if spec:
                         never_parked = _on(); aid = ""           # v12 B-OWNER: his idea is never parked by silence - no default, no expiry, open until he taps
@@ -414,8 +422,8 @@ def handle_inbound(payload_json):
                                           expires_h=None if never_parked else 24 * 7, dedupe_key="idea|" + mid + "|" + json.dumps({"spec": spec, "kind": kind}))
                         send_buttons(out[-900:] + f"\n\nBuild it ({kind}, on your Claude plan, ₹0 API)?", [("Build it", f"ACT|{aid}|0"), ("Park", f"ACT|{aid}|1")])
                         st.append("WA_Chat", [{"ts": iso(), "msg_id": mid + ".r", "who": "assistant", "text": out[:1500]}]); continue
-        except Exception as e:
-            out = f"Something failed on my side ({type(e).__name__}). Nothing was changed."
+        except Exception as e:                                   # FINISHED BY FABLE (CA5-2, R1-128): once the desk took his line, never "Nothing was changed"
+            out = f"Something failed on my side ({type(e).__name__}). " + (f"Your words are kept as input {_n}." if _n else "Nothing was changed.")
         st.append("WA_Chat", [{"ts": iso(), "msg_id": mid + ".r", "who": "assistant", "text": out[:1500]}])
         _reply(out)
     log(f"WhatsApp: {n} message(s) handled"); return n
