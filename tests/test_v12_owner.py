@@ -1693,6 +1693,18 @@ def test_three_small_hardenings_of_the_two_screens(monkeypatch, setting):
     PV.decide("mode runway"); PV.decide("MODE RUNWAY")
     assert [r["dedupe_key"] for r in sorted((r for r in core.store().rows("Owner_Actions") if r["kind"] == "mode_ack"), key=lambda r: r["id"])] == ["mode_ack|budget|X/2|1", "mode_ack|budget|RUNWAY|1"]      # (4) a pin: expected GREEN
 
+def test_through_a_pause_an_alarm_whatsapp_did_not_take_is_pushed_again(monkeypatch, setting):
+    """CR-3-1 (R1-105): the paused branch of `manage.tick` called `NT.alarm_retry()` while a later line of `tick()` imported notify as NT - unbound at the
+    call, logged as 'alarm retry skipped'. Through a whole pause an alarm WhatsApp did not take was pushed again by nothing (item 180)."""
+    from whatifs import manage as MG
+    setting("TWO_SCREENS_ON", "TRUE"); setting("PAUSED", "TRUE"); _wire(monkeypatch); _mailbox(monkeypatch); _window(False)
+    def untold(ep):                                                                                  # an open alarm whose first push WhatsApp did not take: no WA_Outbox row
+        aid = NT._new_id(); core.store().append("Owner_Actions", [{"id": aid, "created": core.iso(), "tier": "now", "kind": "kids_flag", "episode_id": ep, "text": f"planted: {ep}",
+                                                                   "buttons": json.dumps([["Seen", "SEEN"]]), "status": "OPEN", "dedupe_key": f"kids_flag|{ep}", "urgent": "TRUE", "count": 1}]); return aid
+    told = lambda aid: [r for r in core.store().rows("WA_Outbox") if r.get("action_id") == aid and r.get("kind") == "alarm" and r.get("wamid")]
+    a = untold("EPA13"); assert MG.tick() == {"action": "paused"} and len(told(a)) == 1, core.store().rows("WA_Outbox")[-3:]
+    b = untold("EPA13B"); NT.tick(); assert len(told(b)) == 1                                        # the road un-paused: notify.tick asks alarm_retry first (CR-3-8's first gap)
+
 # ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (step 8) - PART C
 def _short8(monkeypatch, setting, on="TRUE", sid="SH209911200900"):
     """A standalone Short that is made and on record (tab Specials), the switch as given; Drive and the upload check stubbed; `approve` recorded."""
