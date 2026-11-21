@@ -1705,6 +1705,20 @@ def test_through_a_pause_an_alarm_whatsapp_did_not_take_is_pushed_again(monkeypa
     a = untold("EPA13"); assert MG.tick() == {"action": "paused"} and len(told(a)) == 1, core.store().rows("WA_Outbox")[-3:]
     b = untold("EPA13B"); NT.tick(); assert len(told(b)) == 1                                        # the road un-paused: notify.tick asks alarm_retry first (CR-3-8's first gap)
 
+def test_an_alarm_is_mailed_only_when_its_mail_went(monkeypatch, setting):
+    """CR-3-2, ruled by R1-105: for an alarm 'mailed' means the mail WENT. A copy that PUB.email answered False counted as mailed: the alarm's own URGENT
+    mail was skipped and, where WhatsApp is not set up, `delivered_at` was stamped though nothing reached him."""
+    from whatifs import publish as PUB, wa as WA
+    setting("TWO_SCREENS_ON", "TRUE"); box = []
+    monkeypatch.setattr(PUB, "email", lambda subj, html, kind="essential": box.append(str(subj)) or len(box) > 1)        # the first mail fails (False), the next go
+    monkeypatch.setattr(NT, "FAKE", False); monkeypatch.setattr(WA, "configured", lambda: False)                         # no WhatsApp: the mail is the road (R17 ADDS (F))
+    NT.mail("kids_flag", "Kids flag on EPA14", "<p>planted</p>", episode="EPA14")
+    row = next(r for r in core.store().rows("Owner_Actions") if r["kind"] == "kids_flag" and r["episode_id"] == "EPA14")
+    assert [s.startswith("URGENT") for s in box] == [False, True] and row["delivered_at"], (box, row["delivered_at"])     # its own URGENT mail went: then, and only then, delivered
+    monkeypatch.setattr(PUB, "email", lambda subj, html, kind="essential": box.append(str(subj)) and False)               # no mail goes at all
+    NT.mail("kids_flag", "Kids flag on EPA14B", "<p>planted</p>", episode="EPA14B")
+    assert next(r for r in core.store().rows("Owner_Actions") if r["episode_id"] == "EPA14B")["delivered_at"] == ""       # nothing reached him: never stamped
+
 # ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (step 8) - PART C
 def _short8(monkeypatch, setting, on="TRUE", sid="SH209911200900"):
     """A standalone Short that is made and on record (tab Specials), the switch as given; Drive and the upload check stubbed; `approve` recorded."""

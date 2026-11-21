@@ -246,8 +246,8 @@ def mail(kind, subject, html, level="essential", screens=True, buttons=(), episo
     alarm's own "URGENT" mail is still tried); with screens=False a raise returns False. With the switch off the call is today's, raising as today."""
     from whatifs import publish as PUB                     # looked up on the module at call time: the older tests replace PUB.email
     if not _on(): return PUB.email(subject, html, kind=level)
-    went = True                                            # mailed=True whenever PUB.email returned, whatever it returned (R17 (5 c))
-    try: sent = PUB.email(subject, html, kind=level)
+    went = False                                           # FINISHED BY FABLE (CA3-14, R1-105): "mailed" = the mail WENT - PUB.email answering False (Gmail >= 400, no OPERATOR_EMAIL) is not mailed
+    try: sent = PUB.email(subject, html, kind=level); went = bool(sent)
     except Exception as e:                                 # R22 (10): the copy failed; the row is sent all the same
         log(f"the e-mail copy failed: {subject}", "WARN"); sent, went = False, False
     if not screens: return sent
