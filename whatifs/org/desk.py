@@ -259,10 +259,24 @@ def _keep(r, dept, now):
     item = {"kind": "owner_preference", "key": f"owner_input|{n}", "title": f"Owner input {n}: " + re.sub(r"\s+", " ", text[:60]).strip(), "summary": summ,
             "body": text, "departments": [dept], "stages": ["all"], "owner_input": True, "priority": 2, "review_by": "never",
             "evidence": [{"source": f"Owner_Desk:{n}", "date": day, "type": "owner decision", "finding": summ}], "applied_in": ["whatifs/org/desk.py:take"]}
-    try: got = PAL.add(item, actor="owner", status="accepted", now=now)
+    try:
+        got = PAL.add(item, actor="owner", status="accepted", now=now)
+        if got.get("status") == "retired":                        # FINISHED BY FABLE (CA5-1): retired by `_unkeep` when its record failed - weighed again, his word comes back
+            PAL.transition(got["id"], "proposed", "owner", "weighed again after its record failed", now=now)
+            got = PAL.transition(got["id"], "accepted", "owner", "his own word, weighed again", now=now)
     except PAL.PalaceError as e: return "PARKED", "the memory refused it: " + "; ".join(e.problems)[:300]
     return "TAKEN", (f"kept word for word as your standing preference for {DEPARTMENTS[dept][0]}; it is served first in every brief of that department from "
                      f"the next script (Palace item {got['id']}, {day})")
+
+def _unkeep(n, why, now):
+    """FINISHED BY FABLE (CA5-1, R1-128): his word is never live without its Undo - a TAKEN whose "Take it back" card or answer could not be written
+    has its Palace item retired at once. Returns (verdict, how) for the row; when even the retirement is refused, the row says TAKEN with both reasons."""
+    from whatifs.org import palace as PAL
+    try: PAL.transition(PAL.item_id(f"owner_input|{n}"), "retired", "owner", f"not kept: {why}"[:300], now=now)
+    except Exception as e:
+        log(f"desk: the Palace item of input {n} is live and could not be retired ({scrub(e)[:120]}): {why}", "ERROR")
+        return "TAKEN", f"kept word for word as your standing preference, but {why}, and it could not be withdrawn ({scrub(e)[:80]})"
+    return "STORED", f"stored word for word as input {n}; it is not kept as a standing preference: {why}"
 
 def weigh_row(ref, now=None, waiting=False):
     """Weigh ONE stored row whose verdict is "" (the function `take` and the tick share): (1) a request code recognises -> `verdict` as today; (2) the never
@@ -314,8 +328,11 @@ def weigh_row(ref, now=None, waiting=False):
                 v, how, act = decide(w, r)
                 if act == "palace":
                     v, how = _keep(r, how, now)
-                    if v == "TAKEN": ch["action"] = NT.send("desk", f"Your input {n}: TAKEN - {how}.", [("Take it back", f"DESK UNDO {n}")], tier="week",
-                                                             dedupe_key=f"desk|taken|{n}")
+                    if v == "TAKEN":
+                        try: ch["action"] = NT.send("desk", f"Your input {n}: TAKEN - {how}.", [("Take it back", f"DESK UNDO {n}")], tier="week",
+                                                    dedupe_key=f"desk|taken|{n}")
+                        except Exception as e:                    # FINISHED BY FABLE (CA5-1, R1-128): no card, no live item
+                            v, how = _unkeep(n, f"its Take it back card could not be written ({scrub(e)[:120]})", now)
                 elif act == "chat":
                     if r.get("channel") == "whatsapp": how = "answered in the chat"
                     else:
@@ -327,7 +344,10 @@ def weigh_row(ref, now=None, waiting=False):
                                            dedupe_key=f"idea|desk{n}|" + json.dumps({"spec": text[:500], "kind": "feature"}))
                 ch.update(verdict=v, how=how)
     except Exception as e: ch.update(verdict="STORED", how=f"stored word for word as input {n}; it could not be judged ({scrub(e)[:160]})")
-    _set(st, r, ch)
+    try: _set(st, r, ch)
+    except Exception as e:                                        # FINISHED BY FABLE (CA5-1, R1-128): an answer that cannot be written is weighed again at a tick;
+        if ch.get("verdict") == "TAKEN": _unkeep(n, f"its answer could not be written ({scrub(e)[:120]})", now)      # a TAKEN's item never waits live
+        log(f"desk: the answer to input {n} was not written ({scrub(e)[:120]}); it is weighed again at a tick", "WARN"); return None
     try: _close(r["memo"], n, now)
     except Exception as e: log(f"desk: the owner memo of input {n} was not closed: {scrub(e)[:160]}", "WARN")
     return "" if r.get("verdict") == "ANSWERED" and (waiting or r.get("channel") == "whatsapp") else _line(r)      # a question: the chat's reply is the answer

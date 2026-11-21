@@ -1824,6 +1824,35 @@ def test_a_policy_pause_the_weekly_check_could_not_report_is_told_by_a_paused_ti
     with pytest.raises(SystemExit): MG.trend_scout()
     assert len(cell()) == 41 and len(untold()) == 1 and cell()[-1].startswith("untold@") and cell()[0] == "0000000001", cell()      # the oldest sig cut, never the element
 
+def test_his_word_is_never_live_without_its_undo(monkeypatch, setting):
+    """CR-5-1 (R1-128, CA5-1): a TAKEN input entered the Palace BEFORE its "Take it back" card was written - a raise of that send left his words served
+    while the row said STORED, and "Take it back" refuses every row not TAKEN; a raise of the answer's own write left the item live and the row open.
+    Now: no card, no live item (retired at once, the row says why); an answer that cannot be written retires the item and a later tick weighs the row
+    again - his word comes back with its card."""
+    from whatifs.org import palace as PAL
+    _desk_on(setting); calls = _labels(monkeypatch); real_send, real_set = NT.send, DESK._set
+    def boom(kind, *a, **k):
+        if kind == "desk": raise RuntimeError("planted: the card's write failed")
+        return real_send(kind, *a, **k)
+    monkeypatch.setattr(NT, "send", boom)
+    n, line = DESK.take("Every Short ends on a question the viewer can answer.", "dashboard", ref="act-u1")
+    r, it = _desk_rows()[-1], PAL.get(PAL.item_id(f"owner_input|{n}"))
+    assert r["verdict"] == "TAKEN" or it["status"] != "accepted", (r, it)                                 # the reader's assert (today: STORED and accepted)
+    assert r["verdict"] == "STORED" and it["status"] == "retired" and "Take it back card could not be written" in r["how"] and not r["action"], (r, it)
+    assert it["id"] not in PAL.playbook("D4", record=False)["items"] and line.startswith(f"Your input {n}: STORED - stored word for word"), line
+    monkeypatch.setattr(NT, "send", real_send)
+    def lost(st, row, ch):                                                                                 # the answer's own write is refused once
+        if ch.get("verdict") == "TAKEN" and not lost.done: lost.done = True; raise RuntimeError("planted: the Sheet refused the write")
+        return real_set(st, row, ch)
+    lost.done = False; monkeypatch.setattr(DESK, "_set", lost)
+    n2, line2 = DESK.take("Every long video opens on the strangest fact it holds.", "dashboard", ref="act-u2")
+    r2, it2 = _desk_rows()[-1], PAL.get(PAL.item_id(f"owner_input|{n2}"))
+    assert r2["verdict"] == "" and it2["status"] == "retired" and line2 == DESK.ACK.format(n=n2), (r2, it2, line2)     # nothing live, nothing untrue said
+    DESK.tick(now=core.now_utc() + dt.timedelta(minutes=11))                                               # a later tick (past CA5-4's ten minutes)
+    r2, it2 = _desk_rows()[-1], PAL.get(PAL.item_id(f"owner_input|{n2}"))
+    assert r2["verdict"] == "TAKEN" and it2["status"] == "accepted" and json.loads(_row(r2["action"])["buttons"]) == [["Take it back", f"DESK UNDO {n2}"]], (r2, it2)
+    assert len(calls) == 3, calls
+
 # ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (step 8) - PART C
 def _short8(monkeypatch, setting, on="TRUE", sid="SH209911200900"):
     """A standalone Short that is made and on record (tab Specials), the switch as given; Drive and the upload check stubbed; `approve` recorded."""
