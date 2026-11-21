@@ -359,6 +359,10 @@ def answer(aid, choice, who="owner"):
     _ensure_handlers()
     st = store(); row = next((r for r in st.rows("Owner_Actions") if r.get("id") == aid), None)
     if not row: raise RuntimeError(f"unknown action {aid}")
+    if row.get("status") == "ANSWERED" and row.get("answer") == "cleared" and row.get("kind") in WAITS:      # FINISHED BY FABLE (CA3-3; R1-104 (b)): a tap on a card a newer reminder replaced reaches the card that stands - its verb names the memo
+        pre = str(row.get("dedupe_key") or "").rsplit("|", 1)[0] + "|"
+        new = next((r for r in open_rows() if r.get("kind") == row["kind"] and str(r.get("dedupe_key") or "").startswith(pre)), None)
+        if new: return answer(new["id"], choice, who)
     if row.get("status") not in ("OPEN", "QUEUED"): return f"{aid} already {row.get('status')}"
     st.update("Owner_Actions", "id", aid, {"status": "ANSWERED", "answered_at": iso(), "answer": str(choice)[:120], "channel": who})
     out = ""

@@ -622,3 +622,19 @@ def test_a_stuck_item_stays_on_his_list_while_it_is_open(setting):
     x = NT.send("org_stuck", "planted", [("Keep pushing", "KEEP M0")], default="d", expires_h=72, dedupe_key="org_stuck|M0|0")     # a caller's hours are dropped; M0 is on no record
     assert next(r for r in core.store().rows("Owner_Actions") if r["id"] == x)["expires_at"] == ""
     MEM.watchdog(now=t0 + 1700 * H); assert x in {r["id"] for r in NT.needs()}                       # never cleared by a guess
+
+def test_a_tap_on_a_reminder_a_newer_one_replaced_reaches_the_card_that_stands(setting):
+    """B1 (i), ruled (b) by R1-104 (the Fable consult on CA2-12): a WhatsApp message cannot be withdrawn, so the buttons of a reminder that a newer one
+    replaced stay on his phone - a tap there answered '<id> already ANSWERED' and did nothing. It reaches the card that stands for the same memo (the
+    verb names the memo) - on WhatsApp, on a dashboard page loaded before the reminder and by a typed id alike: all three are `notify.answer`."""
+    from whatifs import dash as DS
+    setting("TWO_SCREENS_ON", "TRUE"); t0 = now()
+    a = MEM.write(owner_memo(), now=t0)["id"]
+    cards = lambda: sorted((r for r in core.store().rows("Owner_Actions") if r["kind"] == "org_stuck" and r["dedupe_key"].startswith(f"org_stuck|{a}|")), key=lambda r: r["id"])
+    for k in (1, 2, 3):                                                                                # told at the first pass today (see CA3-8)
+        MEM.watchdog(now=t0 + 30 * H * k)
+        if cards(): break
+    first = cards()[0]["id"]; MEM.watchdog(now=t0 + 300 * H)                                          # a reminder: it takes the first card's place (CA2-12)
+    assert [(r["status"], r["answer"]) for r in cards()] == [("ANSWERED", "cleared"), ("OPEN", "")], [(r["dedupe_key"], r["status"], r["answer"]) for r in cards()]
+    assert DS.route(f"ACT|{first}|1") == (True, "dropped")                                            # "Drop it" on the FIRST message, still on his phone
+    assert MEM.get(a)["status"] == "rejected" and [(r["status"], r["answer"]) for r in cards()] == [("ANSWERED", "cleared"), ("ANSWERED", f"DROP {a}")]
