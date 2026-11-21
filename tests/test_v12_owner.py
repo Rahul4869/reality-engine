@@ -317,12 +317,12 @@ ROAD = [
     (10, "episode.py _hold", "contract_hold", "Video held: the final check failed", "copy", None, {}, _r10),
     (11, "insights.py post_drop", "audio_drop", "First audio drop posted on Instagram", "row", None, {}, _r11),
     (12, "launch.py lock_detected", "uploads_private", "URGENT: YouTube is keeping uploads private again", "row", "uploads_private", {}, _r12),
-    (13, "manage.py _give_up_stuck", "uploads_private", "A video is stuck on Private", "row", "uploads_private", {}, _r13),
+    (13, "manage.py _give_up_stuck", "uploads_private", "A video is stuck on Private", "row", "uploads_private|EPROW13", {}, _r13),
     (14, "manage.py audit_nudge", "api_audit", "Reminder: send the YouTube API audit form", "row", "api_audit", {"buttons": [["Done", "OK"]]}, _r14),
     (15, "manage.py audit_nudge", "api_audit_wait", "Waiting for the YouTube API audit", "row", None, {}, _r15),
     (16, "manage.py _produce_slot", "contract_hold", "Reminder: a video is waiting for your fix click", "copy", None, {}, _r16),
     (17, "manage.py _produce_slot", "money_stop", "Monthly budget reached", "row", "money_stop|{month}", {}, _r17),
-    (18, "manage.py release", "uploads_private", "Video not public yet", "row", "uploads_private", {}, _r18),
+    (18, "manage.py release", "uploads_private", "Video not public yet", "row", "uploads_private|EPROW18", {}, _r18),
     (19, "manage.py release", "live", "We're live", "row", None, {}, _r19),
     (20, "manage.py pr_ready", "build_ready", "Change ready to merge: #7", "row", "build|7",
      {"buttons": [["Merge", "MERGE #7"], ["Reject", "REJECT #7"]], "default_action": "it waits; it closes after 7 days"}, _r20),
@@ -1758,6 +1758,24 @@ def test_an_alarm_meta_refused_or_a_repeat_that_did_not_go_is_said_again(monkeyp
         core.store().update("WA_Outbox", "wamid", _alarms_told()[-1]["wamid"], {"status": "failed"}); assert NT.alarm_retry() == 1
     core.store().update("WA_Outbox", "wamid", _alarms_told()[-1]["wamid"], {"status": "failed"}); n = len(bodies)
     assert NT.alarm_retry() == 0 and len(bodies) == n and [x["action_id"] for x in _alarms_told()].count(c) == 3      # three refused pushes in 24 h: the fourth tick pushes nothing
+
+def test_each_video_stuck_on_private_is_its_own_alarm(monkeypatch, setting):
+    """CR-3-5 with CR-2a-5, ruled by R1-109: every 'stuck on Private' / 'not public yet' took the ONE key `uploads_private`, so video B's alarm merged into
+    video A's open incident - counted, pushed 24 h after A's push, his screens showing A's words. Each video is its own incident: the key names the
+    episode, and its two wordings are one incident, counted. YouTube keeping uploads private (`launch.py`) keeps the kind's own key."""
+    from whatifs import manage as MG, launch as LA
+    setting("TWO_SCREENS_ON", "TRUE"); _wire(monkeypatch); _mailbox(monkeypatch); _window(True)
+    monkeypatch.setattr(MG.PUB, "yt_status", lambda vid: "private"); monkeypatch.setattr(LA, "lock_detected", lambda vid, issues: None)
+    MG._give_up_stuck([{"episode_id": "EPA17", "slot_et": _ago(days=10), "status": "SCHEDULED", "yt_id": "vidA17"}])
+    MG._give_up_stuck([{"episode_id": "EPB17", "slot_et": _ago(days=10), "status": "SCHEDULED", "yt_id": "vidB17"}])
+    up = lambda: [r for r in core.store().rows("Owner_Actions") if r["kind"] == "uploads_private"]
+    assert [(r["dedupe_key"], "EPA17" in r["text"], "EPB17" in r["text"]) for r in up()] == [("uploads_private|EPA17", True, False), ("uploads_private|EPB17", False, True)], \
+        [(r["dedupe_key"], r["text"][:60]) for r in up()]
+    assert [x["action_id"] for x in _alarms_told()] == [r["id"] for r in up()]                                  # B told at once, not 24 h after A
+    core.store().append("Episodes", [{"episode_id": "EPA17", "slot_et": _ago(hours=core.S("PRIVATE_ALERT_HOURS", float) + 1), "status": "SCHEDULED", "yt_id": "vidA17", "notes": ""}])
+    MG.release("EPA17")                                                                                         # A again, in the other wording
+    assert len(up()) == 2 and int(up()[0]["count"]) == 2 and up()[0]["last_text"].startswith("Video not public yet") and len(_alarms_told()) == 2, \
+        [(r["dedupe_key"], r["count"], r["last_text"][:30]) for r in up()]
 
 # ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (step 8) - PART C
 def _short8(monkeypatch, setting, on="TRUE", sid="SH209911200900"):

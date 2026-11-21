@@ -131,9 +131,9 @@ def _give_up_stuck(eps):
                 try:
                     from whatifs import launch as LA; LA.lock_detected(e["yt_id"], ["a scheduled video never became public"])      # v9.3.1 (L3): hold new spend
                 except Exception as x: log(f"lock detector skipped: {scrub(x)}", "WARN")
-                NT.mail("uploads_private", "A video is stuck on Private", dedupe_key="uploads_private", html=f"<p>Episode {e['episode_id']} (<a href='https://studio.youtube.com/video/{e['yt_id']}/edit'>open in Studio</a>) "
+                NT.mail("uploads_private", "A video is stuck on Private", dedupe_key=f"uploads_private|{e['episode_id']}", html=f"<p>Episode {e['episode_id']} (<a href='https://studio.youtube.com/video/{e['yt_id']}/edit'>open in Studio</a>) "
                           "did not become public at its slot. The lock detector has paused new videos so nothing is wasted; a separate urgent email explains the next step. "
-                          "You can publish this one yourself in the YouTube Studio app (set it to Public).</p>")
+                          "You can publish this one yourself in the YouTube Studio app (set it to Public).</p>")      # FINISHED BY FABLE (CA3-17, R1-109): each video stuck on Private is its own incident
             e["status"] = "closed"
         elif e.get("status") == "LIVE1":          # v12 V2c-b2b: a row an older version left between its two reel releases - there is no second release any more
             st.update("Episodes", "episode_id", e["episode_id"], {"status": "LIVE", "notes": _note(e, "closed to LIVE: a long video makes no cut-down reels any more"), "updated": iso()})
@@ -396,9 +396,9 @@ def release(ep_id, which="release1"):
         t = parse_iso(e.get("slot_et")); pa = parse_iso(e.get("public_at"))
         if t and pa and pa > t: t = pa                           # v12 B-OWNER (PART 9): counted from max(slot, public_at) - the HD gate's own wait is never an alarm
         if t and now_utc() > t + dt.timedelta(hours=S("PRIVATE_ALERT_HOURS", float)) and "private alert sent" not in str(e.get("notes", "")):
-            NT.mail("uploads_private", "Video not public yet", dedupe_key="uploads_private", html=f"<p>Episode {ep_id} should be public by now but YouTube still shows it as private. "
+            NT.mail("uploads_private", "Video not public yet", dedupe_key=f"uploads_private|{ep_id}", html=f"<p>Episode {ep_id} should be public by now but YouTube still shows it as private. "
                       "For the first videos this usually means the Google Cloud project still needs the YouTube API audit (SETUP_CHECKLIST Step 4b). "
-                      f"The release step waits; after {S('RELEASE_GIVEUP_HOURS')} h it is closed so new videos are never blocked.</p>")
+                      f"The release step waits; after {S('RELEASE_GIVEUP_HOURS')} h it is closed so new videos are never blocked.</p>")      # FINISHED BY FABLE (CA3-17, R1-109): each video stuck on Private is its own incident
             st.update("Episodes", "episode_id", ep_id, {"notes": _note(e, "private alert sent")})
         log("long video not public yet - waiting", "WARN"); return
     audit_seen_public()
