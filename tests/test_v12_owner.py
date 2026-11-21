@@ -1680,6 +1680,19 @@ def test_a_hold_raised_again_says_what_failed_now(setting):
     CON.owner_card("EPDQ5", "final", [("exhibits", "second")])                                         # held again with the SAME failures: still that one card
     assert [r["status"] for r in holds()] == ["ANSWERED", "OPEN"], [(r["status"], r["text"][:50]) for r in holds()]
 
+def test_three_small_hardenings_of_the_two_screens(monkeypatch, setting):
+    """The Fable consult on PART A2 (R1-104; CA3-9): a WAITS card sent without a default never gets the card rule's 72 hours back; a value holding '|'
+    is never read as another value's key; and two pins - `whole` makes a string of what it is given, and a mode typed in small letters is one value."""
+    from whatifs import preview as PV
+    setting("TWO_SCREENS_ON", "TRUE"); _mailbox(monkeypatch)
+    x = NT.send("org_stuck", "planted: a stuck item sent without a default", [("Keep pushing", "KEEP M9")], dedupe_key="org_stuck|M9|0")
+    assert _row(x)["expires_at"] == "" and _row(x)["default_action"] == NT.CARD_FALLBACK, _row(x)                                   # (1)
+    assert NT.whole(1234567, 4) == "1234"                                                                                             # (2) a pin: expected GREEN
+    k = NT.said_key("mode_ack", "budget", "X|2"); NT.send("mode_ack", "planted: a value with a bar", dedupe_key=k)
+    assert (k, NT.said_key("mode_ack", "budget", "X")) == ("mode_ack|budget|X/2|1", "mode_ack|budget|X|1"), k                       # (3)
+    PV.decide("mode runway"); PV.decide("MODE RUNWAY")
+    assert [r["dedupe_key"] for r in sorted((r for r in core.store().rows("Owner_Actions") if r["kind"] == "mode_ack"), key=lambda r: r["id"])] == ["mode_ack|budget|X/2|1", "mode_ack|budget|RUNWAY|1"]      # (4) a pin: expected GREEN
+
 # ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (step 8) - PART C
 def _short8(monkeypatch, setting, on="TRUE", sid="SH209911200900"):
     """A standalone Short that is made and on record (tab Specials), the switch as given; Drive and the upload check stubbed; `approve` recorded."""

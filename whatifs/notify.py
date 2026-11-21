@@ -188,6 +188,7 @@ def said_key(kind, thing, value):
     """FINISHED BY FABLE (CA2-3; R1-99 (2)): the key of a message that says what was just done to ONE thing (a mode, a pick, a repaired file). The same
     words as the NEWEST open row of this kind and thing reuse its key (one row: `send` returns it); other words get a new key - a new row, now the
     newest. So A, B, A on one day are three rows and the newest says A; A, A is one. With the switch off: None (the call of today)."""
+    value = str(value).replace("|", "/")                              # FINISHED BY FABLE (CA3-9; the Fable consult): a value holding "|" is never read as another value's key
     if not _on(): return None
     pre = f"{kind}|{thing}|"; mine = [r for r in open_rows() if str(r.get("dedupe_key") or "").startswith(pre)]
     last = mine[-1] if mine else None      # v12 B-OWNER (R1-224): the newest is the last row written - two ids of one clock tick are ordered only by a counter that wraps 99 -> 00
@@ -209,7 +210,7 @@ def _shape(kind, episode, buttons, default, expires_h, dedupe_key):
         if dedupe_key is None: dedupe_key = f"{kind}|{episode or ''}|{_india_day()}"
     if k == CARD and buttons and kind not in STANDING_KINDS and (not default or (not expires_h and kind not in WAITS)):
         log(f"a card of kind {kind} was sent without a default or an expiry: stored with the fallback default and 72 hours", "ERROR")
-        default = default or CARD_FALLBACK; expires_h = expires_h or 72
+        default = default or CARD_FALLBACK; expires_h = None if kind in WAITS else (expires_h or 72)      # FINISHED BY FABLE (CA3-9): a card with no clock keeps none, even sent without a default
         try: send("card_rule", f"A message of kind '{kind}' was sent without a default or an expiry. It was given '{CARD_FALLBACK}' and 72 hours.",
                   tier="week", dedupe_key=f"card_rule|{kind}|{_india_day()}")
         except Exception as e: log(f"the card rule's report was not written: {scrub(e)[:120]}", "WARN")
