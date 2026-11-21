@@ -1994,6 +1994,35 @@ def test_a_hold_never_closes_by_time(setting):
     o = next(r for r in core.store().rows("Owner_Actions") if r["episode_id"] == "EPDQ2")
     assert o["expires_at"] and NT.expire_defaults(core.now_utc() + dt.timedelta(hours=49)) >= 1 and _row(o["id"])["status"] == "DEFAULTED"
 
+def test_a_hold_that_ended_another_way_is_closed(setting):
+    """DQ-CR1 (R1-94): a `contract|` hold whose video left HOLD_QC by another road (the e-mail's fix link, KILL, a run that timed out) is closed at the
+    next tick by `contract.hold_sweep` - his silence never keeps a fixed video held (item 150). A video not on record is never closed by a guess."""
+    import inspect
+    from whatifs import contract as CON, manage as MG
+    setting("TWO_SCREENS_ON", "TRUE"); st = core.store()
+    st.append("Episodes", [{"episode_id": "EPDQ3", "status": "HOLD_QC", "notes": ""}])
+    CON.owner_card("EPDQ3", "final", [("x", "y")]); CON.owner_card("EPDQ4", "final", [("x", "y")])                    # EPDQ4: on no record
+    f = NT.send("floor_hold", "held by the floor", [("Publish anyway", "CONTRACT WAIVE EPDQ3 viewer_floor")], episode="EPDQ3", default="stays held", dedupe_key="floor|EPDQ3|hold")
+    sil = NT.send("contract_hold", "what his silence did", [("OK", "OK")], episode="EPDQ3", default="noted", expires_h=24, dedupe_key="silence|EPDQ3")
+    card = lambda ep: next(r for r in st.rows("Owner_Actions") if r["kind"] == "contract_hold" and r["episode_id"] == ep and r["dedupe_key"].startswith("contract|"))
+    assert CON.hold_sweep() == 0 and card("EPDQ3")["status"] == "OPEN"
+    st.update("Episodes", "episode_id", "EPDQ3", {"status": "SCHEDULED"})
+    assert CON.hold_sweep() == 1 and card("EPDQ3")["status"] == "ANSWERED" and card("EPDQ3")["answer"] == "cleared"
+    assert card("EPDQ4")["status"] == "OPEN" and _row(f)["status"] == "OPEN" == _row(sil)["status"] and card("EPDQ3")["id"] not in {r["id"] for r in NT.needs()}
+    src = inspect.getsource(MG.tick); assert src.index("hold_sweep()") < src.index("review_sweep()")
+
+def test_silence_never_posts_a_video_whose_hold_was_given_hours(setting):
+    """DQ-CR1 (R1-94), memo line 1193 ("an open contract_hold of the slop check keeps clear_to_post False"): a hold sent with hours of its own stays
+    OPEN past them, so `clear_to_post` still finds it and his silence posts nothing."""
+    from whatifs import contract as CON
+    setting("TWO_SCREENS_ON", "TRUE"); st = core.store()
+    st.append("Episodes", [{"episode_id": "EPDQ8", "status": "AWAITING_APPROVAL", "yt_id": "vidDQ8", "slot_et": core.iso(), "notes": ""}])
+    NT.send("contract_hold", "held", [("Fix", "CONTRACT FIX EPDQ8 final")], episode="EPDQ8", default="stays held", expires_h=48, dedupe_key="slop|EPDQ8")
+    NT.expire_defaults(core.now_utc() + dt.timedelta(hours=50))
+    ok, why = CON.clear_to_post("EPDQ8")
+    assert not ok and "an open hold waits for you" in why, why
+    assert CON.review_sweep() == 0 and next(e for e in st.rows("Episodes") if e["episode_id"] == "EPDQ8")["status"] == "AWAITING_APPROVAL"
+
 # ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (step 8) - PART C
 def _short8(monkeypatch, setting, on="TRUE", sid="SH209911200900"):
     """A standalone Short that is made and on record (tab Specials), the switch as given; Drive and the upload check stubbed; `approve` recorded."""

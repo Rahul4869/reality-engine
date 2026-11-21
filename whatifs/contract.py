@@ -1088,6 +1088,19 @@ def review_sweep():
         if ans.startswith("approved"): n += 1
     return n
 
+def hold_sweep():
+    """v12 B-OWNER (DQ-CR1): every tick - an open contract_hold card (key contract|...) whose video is no longer HOLD_QC is closed: the hold ended
+    by another road (the fix link of the e-mail, KILL, a run that timed out). A video not on record is never closed by a guess. Returns the rows closed."""
+    if not S("TWO_SCREENS_ON", bool): return 0
+    from whatifs import notify as NT
+    st = store(); status = {e.get("episode_id"): e.get("status") for e in st.rows("Episodes")}; n = 0
+    for r in NT.open_rows():
+        if r.get("kind") != "contract_hold" or not str(r.get("dedupe_key") or "").startswith("contract|"): continue
+        s = status.get(r.get("episode_id"))
+        if not s or s == "HOLD_QC": continue
+        st.update("Owner_Actions", "id", r["id"], {"status": "ANSWERED", "answered_at": iso(), "answer": "cleared"}); n += 1
+    return n
+
 def unpost(ep):
     """v12 B-OWNER (PART 7, UNDO NEVER DELETES; R17 ADDS (B)): his "Take it down" - the video is made private and his Hold is written by the function
     his Hold tap calls. Nothing is deleted or uploaded; no Approve is offered after it (YouTube gives no time to a video that was public)."""

@@ -248,7 +248,7 @@ def tick():
             from whatifs.org import floor as FLR; FLR.eye_sweep()
         except Exception as x: log(f"floor eye sweep skipped: {scrub(x)}", "WARN")
         try:                                                    # v12 B-OWNER (PART 7): a reviewed video whose card defaulted - his silence is asked again (a reason that is gone lets it out)
-            from whatifs import contract as CONR; CONR.review_sweep()
+            from whatifs import contract as CONR; CONR.hold_sweep(); CONR.review_sweep()
         except Exception as x: log(f"review sweep skipped: {scrub(x)}", "WARN")
         try:                                                    # v12 B-OWNER (G8-1): a passed special or Short whose card defaulted while uploads were closed or the engine paused - asked again
             from whatifs import specials as SPCR; SPCR.ready_sweep()
