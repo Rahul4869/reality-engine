@@ -35,12 +35,20 @@
    "github_run": 292,
    "on": "2026-11-19T22:15:02Z",
    "verdict": "DRAWN_d64fdcc_1.json"
+  },
+  {
+   "batch": "B-OWNER",
+   "final_code_commit": "5495cc6b3ae3002b81634356becb42d1d90fd71a",
+   "github_run": 332,
+   "on": "2026-11-21T15:26:01Z",
+   "verdict": "B-OWNER_5495cc6_1.json"
   }
  ],
  "audit_queue": [
   "V1c",
   "V4",
-  "DRAWN"
+  "DRAWN",
+  "B-OWNER"
  ],
  "audited": [
   {
@@ -535,6 +543,15 @@
    "from": "BUILT",
    "to": "PROVING",
    "why": ""
+  },
+  {
+   "at": "2026-11-21T15:26:01Z",
+   "batch": "B-OWNER",
+   "by": "",
+   "commit": "5495cc6",
+   "from": "PROVING",
+   "to": "ACCEPTED",
+   "why": ""
   }
  ],
  "order": [
@@ -555,8 +572,8 @@
   "B10",
   "V3"
  ],
- "phase": "PROVING",
+ "phase": "ACCEPTED",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-21T11:50:24Z"
+ "updated": "2026-11-21T15:26:01Z"
 }

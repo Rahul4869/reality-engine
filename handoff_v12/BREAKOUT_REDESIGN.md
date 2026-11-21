@@ -12,7 +12,10 @@ on a rejected video; Finance counts the Claude credit; a long video whose Short'
 18 Nov 2026 on the second pass, after one red round and its repair, to be re-audited by Fable at the reset), DRAWN BY CODE (a long video in the drawn
 arm explains a number with a diagram in the show's two colours that draws itself on the narrator's own words; every word and number on it is the
 script's own; one that cannot be read on a phone is shown as its moving still; the talking cast is off until DRAWN-b - accepted 19 Nov 2026 on the
-first pass, a scene drawn in F1, F2 and F3); their end notes are the last entries of 11.10. THE ORDER OF THE REMAINING BATCHES IS THE OWNER'S OF 13 NOV 2026 (the last desk note of 11.10): V1c, V4, V5, DRAWN BY CODE, B6b-B10, and going live (V3) LAST.
+first pass, a scene drawn in F1, F2 and F3), B-OWNER (his two screens, with B-HDGATE folded in: every message to him is one registered kind on one
+road, WhatsApp starts three kinds only and an alarm cannot be muted, his inputs from either screen are kept word for word and answered, Undo makes a
+video private and never deletes it, and an upload that would go public at once goes up private and waits for HD or its cap - the gate OFF as shipped -
+accepted 21 Nov 2026 on the first pass); their end notes are the last entries of 11.10. THE ORDER OF THE REMAINING BATCHES IS THE OWNER'S OF 13 NOV 2026 (the last desk note of 11.10): V1c, V4, V5, DRAWN BY CODE, B6b-B10, and going live (V3) LAST.
 
 ## 0. THE HONEST FRAME
 - Nobody can make a channel a sure shot. Of 137,355 new long-video channels, 30.8% got even ONE video past 10,000 views in their first ten (R1).
