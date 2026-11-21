@@ -201,9 +201,10 @@ def _shape(kind, episode, buttons, default, expires_h, dedupe_key):
     """v12 B-OWNER (switch TWO_SCREENS_ON): what the register says a row of this kind must carry, each only where its caller gave none.
     A HOLD without a button gets ("Done", "OK") - his tap closes it; an inform row outside STANDING_KINDS closes by itself after INFORM_KEEP_H hours
     and its key holds the India date (a second one on another day is a new row, never swallowed); a CARD with buttons and no default or no expiry is
-    stored with CARD_FALLBACK and 72 hours, an error is logged and one `card_rule` row a kind a day names it (nothing he is sent may be lost)."""
+    stored with CARD_FALLBACK and 72 hours, an error is logged and one `card_rule` row a kind a day names it (nothing he is sent may be lost). A HOLD carries no expiry, whatever its caller gave: it never closes by time."""
     buttons = list(buttons or ()); k = klass(kind)
     if k == HOLD and not buttons: buttons = [("Done", "OK")]
+    if k == HOLD: expires_h = None                              # v12 B-OWNER (DQ-CR1): a hold never closes by time - its row stays OPEN until his tap, or until contract.hold_sweep finds the video no longer held
     if kind in WAITS: expires_h = None                              # FINISHED BY FABLE (CA2-12): a card for a thing still open never closes by time, whatever its caller gave
     if k == INFORM and kind not in STANDING_KINDS:
         if expires_h is None: expires_h = INFORM_KEEP_H

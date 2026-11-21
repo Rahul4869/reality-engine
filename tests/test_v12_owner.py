@@ -1978,6 +1978,22 @@ def test_a_morning_message_whose_groups_failed_is_sent_once(monkeypatch, setting
     assert len([r for r in core.store().rows("WA_Outbox") if r.get("kind") == "morning"]) == 1
     assert str(core.S("DIGEST_DAILY_SENT"))[:10] == "2026-11-21" and len([b for b in box if b[0] == "Reality Engine daily brief"]) == 1
 
+def test_a_hold_never_closes_by_time(setting):
+    """DQ-CR1 (R1-94; the code reader's CR-1-1): a hold whose caller gave an expiry (`contract.owner_card` 48 h, `shorts2._file_hold` and
+    `specials._await_review` 72 h) closed DEFAULTED while the video stayed held - gone from "Needs you", and his tap on it answered "already
+    DEFAULTED". With the switch on a HOLD carries no expiry: it stands until his tap or until the video leaves the hold."""
+    from whatifs import contract as CON
+    setting("TWO_SCREENS_ON", "TRUE")
+    CON.owner_card("EPDQ1", "final", [("x", "y")])
+    s = NT.send("special_review", "held", [("Approve", "SPECIAL APPROVE S1"), ("Leave it", "OK")], tier="now", episode="S1", default="not posted", expires_h=72, dedupe_key="special|S1")
+    c = next(r for r in NT.open_rows() if r["kind"] == "contract_hold" and r["episode_id"] == "EPDQ1")
+    assert c["expires_at"] == "" == _row(s)["expires_at"] and c["default_action"] == "stays held", (c["expires_at"], _row(s)["expires_at"])
+    NT.expire_defaults(core.now_utc() + dt.timedelta(days=30))
+    assert {c["id"], s} <= {r["id"] for r in NT.needs()} and not NT.answer(c["id"], "CONTRACT WAIVE EPDQ1 x").startswith(f"{c['id']} already")
+    setting("TWO_SCREENS_ON", "FALSE"); CON.owner_card("EPDQ2", "final", [("x", "y")])                           # the older path: 48 hours, as today
+    o = next(r for r in core.store().rows("Owner_Actions") if r["episode_id"] == "EPDQ2")
+    assert o["expires_at"] and NT.expire_defaults(core.now_utc() + dt.timedelta(hours=49)) >= 1 and _row(o["id"])["status"] == "DEFAULTED"
+
 # ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (step 8) - PART C
 def _short8(monkeypatch, setting, on="TRUE", sid="SH209911200900"):
     """A standalone Short that is made and on record (tab Specials), the switch as given; Drive and the upload check stubbed; `approve` recorded."""
