@@ -3,7 +3,7 @@
 # with the verdict BY CODE - ADOPTED only where code can recognise the whole input as a request (three patterns), PARKED otherwise.
 from __future__ import annotations
 import datetime as dt, hashlib, json, re
-from whatifs.core import S, log, store, iso, now_utc, scrub
+from whatifs.core import S, log, store, iso, now_utc, parse_iso, scrub
 
 IN, DESK = "Owner_Input", "Owner_Desk"
 HEAD = r"^\s*(?:please\s+)?(?:(?:make|do|post|set|give me|i want|we want|go to)\s+)?"
@@ -26,6 +26,10 @@ def recognise(text):
 def _sha(text): return hashlib.sha1(str(text).encode("utf-8")).hexdigest()
 
 def _rows(st=None): return (st or store()).rows(DESK)
+
+def _next_n(rows):
+    """FINISHED BY FABLE (CA5-4, R1-128): the next input's number - the largest one + 1, never a count (a row deleted in the Sheet gave two inputs one n)."""
+    return max([int(x["n"]) for x in rows if str(x.get("n") or "").isdigit()] + [0]) + 1
 
 def verdict(key, value, now=None, force=False):
     """('ADOPTED', how, step value) or ('PARKED', why, None) through RANGE, EFFECT and FIT (his own word overrides FIT only - never RANGE or EFFECT)."""
@@ -213,7 +217,7 @@ def take(text, channel, ref="", card="", now=None):
     if ref:
         old = next((r for r in _rows(st) if str(r.get("ref") or "") == str(ref)), None)
         if old is not None: return int(old["n"]), ""
-    n = len(_rows(st)) + 1
+    n = _next_n(_rows(st))
     row = {"n": n, "ts": iso(now), "sha": _sha(text), "verbatim": text[:4000], "verdict": "", "how": "", "memo": "", "ticket": "", "action": "", "briefed": "",
            "channel": str(channel), "card": str(card or ""), "ref": str(ref or f"{channel}|{n}|{iso(now)}")}
     st.append(DESK, [row])
@@ -367,10 +371,12 @@ def _tick_two(now=None):
     for r in st.rows(IN):
         text = str(r.get("input") or "")
         if not text.strip() or _sha(text) in seen: continue
-        n = len(_rows(st)) + 1; seen.add(_sha(text))
+        n = _next_n(_rows(st)); seen.add(_sha(text))
         st.append(DESK, [{"n": n, "ts": iso(now), "sha": _sha(text), "verbatim": text[:4000], "verdict": "", "how": "", "memo": "", "ticket": "", "action": "",
                           "briefed": "", "channel": "sheet", "card": "", "ref": f"sheet|{_sha(text)}"}])
     for r in [x for x in _rows(st) if not x.get("verdict") and x.get("ref")]:
+        t = parse_iso(r.get("ts"))                                 # FINISHED BY FABLE (CA5-4, R1-128): a row of a screen its own job still holds (weighing it, or its
+        if t and r.get("channel") not in ("", None, "sheet") and not r.get("how") and (now - t).total_seconds() < 600: continue   # chat answering it) waits ten minutes
         line = weigh_row(r["ref"], now)
         if line is None: continue
         out.append(next(x for x in _rows(st) if x.get("ref") == r["ref"]))

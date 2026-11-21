@@ -1877,6 +1877,24 @@ def test_a_question_is_marked_answered_only_by_the_road_that_answered_it(monkeyp
     _labels(monkeypatch); _inbound(monkeypatch, "wamid.P1", "Every Short ends on the strangest fact it holds.")     # a TAKEN word while the chat is down
     assert "Nothing was changed" not in said()[-1] and f"Your input {_desk_rows()[-1]['n']}: TAKEN" in said()[-1], said()[-1]
 
+def test_one_input_is_weighed_once_and_numbered_once(monkeypatch, setting):
+    """CR-5-4 (R1-128, CA5-4): the inbound job (group owner-actions) and the tick (group tick) run at once: a tick arriving while the job weighed his line
+    weighed it again - two paid calls, two answers into his window. A tick now leaves a WhatsApp or dashboard row that no answer has reached yet alone for
+    ten minutes (its own job holds it). And an input's number is the largest + 1, never a count: a row deleted in the Sheet gave two inputs one number."""
+    _desk_on(setting); calls = []
+    def weigh(text):
+        calls.append(text)
+        if len(calls) == 1: DESK.tick()                                                                     # the tick arrives while the first line is weighed
+        return dict(LABELS, kind="feedback")
+    monkeypatch.setattr(DESK, "weigh", weigh)
+    n, _l = DESK.take("The last Short felt slow in its first two seconds.", "dashboard", ref="act-w1")
+    assert len(calls) == 1 and _desk_rows()[-1]["verdict"] == "PARKED", (calls, _desk_rows())
+    core.store().append("Owner_Desk", [{"n": n + 5, "ts": core.iso(), "sha": "planted", "verbatim": "planted", "verdict": "PARKED", "how": "planted", "memo": "",
+                                        "ticket": "", "action": "", "briefed": core.iso(), "channel": "dashboard", "card": "", "ref": "planted|gap"}])   # rows deleted in the Sheet
+    n2, _l = DESK.take("Warmer colours in the Shorts, please.", "dashboard", ref="act-w2"); assert n2 == n + 6, (n, n2)
+    core.store().append("Owner_Input", [{"input": "Slower music under the hook, please."}]); DESK.tick()
+    nums = [int(r["n"]) for r in _desk_rows()]; assert nums[-1] == n + 7 and len(set(nums)) == len(nums) and len(calls) == 3, (nums, calls)
+
 # ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (step 8) - PART C
 def _short8(monkeypatch, setting, on="TRUE", sid="SH209911200900"):
     """A standalone Short that is made and on record (tab Specials), the switch as given; Drive and the upload check stubbed; `approve` recorded."""
