@@ -622,6 +622,11 @@ def test_a_stuck_item_stays_on_his_list_while_it_is_open(setting):
     x = NT.send("org_stuck", "planted", [("Keep pushing", "KEEP M0")], default="d", expires_h=72, dedupe_key="org_stuck|M0|0")     # a caller's hours are dropped; M0 is on no record
     assert next(r for r in core.store().rows("Owner_Actions") if r["id"] == x)["expires_at"] == ""
     MEM.watchdog(now=t0 + 1700 * H); assert x in {r["id"] for r in NT.needs()}                       # never cleared by a guess
+    card = mine(a)[0]["id"]; assert NT.answer(card, f"KEEP {a}").startswith("kept") and mine(a) == []                 # CA3-4 (R1-104 (2)): his Keep on the LAST reminder
+    MEM.watchdog(now=t0 + 3000 * H)                                                                                     # its new window has passed: he is told once more
+    assert MEM.get(a)["reminders"] == 3 and len(mine(a)) == 1 and mine(a)[0]["id"] != card, mine(a)
+    MEM.watchdog(now=t0 + 4500 * H); assert len(mine(a)) == 1                                                         # once a window; the card stands, no clock
+    assert NT.answer(mine(a)[0]["id"], f"DROP {a}") == "dropped" and mine(a) == [] and MEM.get(a)["status"] == "rejected"      # his Drop ends it
 
 def test_a_tap_on_a_reminder_a_newer_one_replaced_reaches_the_card_that_stands(setting):
     """B1 (i), ruled (b) by R1-104 (the Fable consult on CA2-12): a WhatsApp message cannot be withdrawn, so the buttons of a reminder that a newer one

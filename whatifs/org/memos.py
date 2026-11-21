@@ -288,7 +288,8 @@ def _on_answer(row, choice):
     if m is None or m["status"] in TERMINAL: return "already closed"
     if verb.upper() == "DROP":
         reject(mid, "owner", "dropped by the owner from the stuck-item message", st); return "dropped"
-    st.update(TAB, "id", mid, {"sla_due": iso(now_utc() + dt.timedelta(hours=_esc_hours(2, m["urgency"]))), "owner_notified": f"{iso()} kept by the owner", "updated": iso()})
+    st.update(TAB, "id", mid, {"sla_due": iso(now_utc() + dt.timedelta(hours=_esc_hours(2, m["urgency"]))), "owner_notified": f"{iso()} kept by the owner", "updated": iso(),
+                               "reminders": min(m["reminders"], int(S("ORG_OWNER_REMINDS_MAX", float) or 0))})      # FINISHED BY FABLE (CA3-4; R1-104 (2)): his Keep re-arms ONE reminder - "you will be told again" is true
     return "kept: it stays on the list and you will be told again if it is still stuck"
 
 def register():
