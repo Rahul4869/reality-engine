@@ -1249,8 +1249,22 @@ def approve(ep):
     return f"approved: {ep} publishes at {slot}"
 
 def hold_review(ep):
-    store().update("Episodes", "episode_id", ep, {"status": "HELD_BY_OWNER", "updated": iso()})
+    from whatifs import notify as NT
+    st = store(); un = [r for r in NT.open_rows() if r.get("dedupe_key") == f"unscheduled|{ep}"]      # v12 B-OWNER (PART F, CF-7 (a)): CF-1b's hold - YouTube kept it on its schedule
+    if un:                                                        # his Hold asks YouTube once more; False or a raise = refused
+        from whatifs import publish as PUB
+        e = next((r for r in st.rows("Episodes") if r.get("episode_id") == ep), {}); vid = str(e.get("yt_id") or ""); title = e.get("title") or ep
+        try: off = bool(vid) and PUB.yt_set_privacy(vid, "private") is not False
+        except Exception as x: off = False; log(f"his hold could not take {vid} off YouTube's schedule: {scrub(x)[:120]}", "WARN", ep)
+    if not un or off: st.update("Episodes", "episode_id", ep, {"status": "HELD_BY_OWNER", "updated": iso()})      # R1-153: never a status YouTube does not have
     try:                                                          # v12 V1c: his Hold is a verdict - "I will not publish this" (D13's label)
         from whatifs.org import verdicts as VER; VER.record(ep, "down", "", via="hold")
     except Exception as e: log(f"his hold was not kept as a verdict: {scrub(e)[:120]}", "WARN", ep)
+    if un and not off:                                            # refused: the hold stays open, an alarm at once, and the answer never says private
+        link = f"https://studio.youtube.com/video/{vid}/edit"
+        NT.send("uploads_private", f"{title}: your Hold did NOT work - YouTube did not accept the change, so the video is still on its schedule and goes public on "
+                f"its slot. Set it to Private in YouTube Studio: {link}", episode=ep, dedupe_key=f"uploads_private|hold|{ep}")
+        return f"NOT private: YouTube still has {title} on its schedule - set it to Private in YouTube Studio: {link}"
+    for r in (NT.open_rows() if un else []):                      # agreed: CF-1b's hold and this road's alarm are done
+        if r.get("dedupe_key") in (f"unscheduled|{ep}", f"uploads_private|hold|{ep}"): st.update("Owner_Actions", "id", r["id"], {"status": "ANSWERED", "answered_at": iso(), "answer": "done: made private by his Hold"})
     return f"{ep} stays private"

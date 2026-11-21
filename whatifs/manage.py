@@ -46,13 +46,24 @@ def _note(e, add):
     return (n + " | " + add).strip(" |")[:400] if add not in n else n
 
 def kill_check():
-    """Owner typed KILL: the video goes private and is never released. Runs even while paused."""
+    """Owner typed KILL: the video goes private and is never released. Runs even while paused. v12 B-OWNER (PART F, CF-7 (b)): KILLED only when YouTube
+    agreed - a refusal raises the alarm and his KILL stays for the next run; a video YouTube kept on its schedule (CF-1b's open hold) is reached whatever its status."""
     if not S("KILL_CHECK", bool): return
-    st = store()
+    st = store(); kept = {str(r.get("dedupe_key"))[len("unscheduled|"):] for r in NT.open_rows() if str(r.get("dedupe_key") or "").startswith("unscheduled|")}
     for e in st.rows("Episodes"):
-        if e.get("status") in ("SCHEDULED", "HELD", "UPLOADED") and str(e.get("kill", "")).upper().startswith("KILL") and e.get("yt_id"):
-            PUB.yt_set_privacy(e["yt_id"], "private"); st.update("Episodes", "episode_id", e["episode_id"], {"status": "KILLED", "updated": iso()})
+        if (e.get("status") in ("SCHEDULED", "HELD", "UPLOADED") or e.get("episode_id") in kept) and str(e.get("kill", "")).upper().startswith("KILL") and e.get("yt_id"):
+            ep_ = e["episode_id"]
+            try: ok = PUB.yt_set_privacy(e["yt_id"], "private") is not False      # False or a raise = YouTube refused
+            except Exception as x: ok = False; log(f"{ep_}: his KILL could not make it private ({scrub(x)[:120]})", "WARN", ep_)
+            if not ok:
+                NT.send("uploads_private", f"{e.get('title') or ep_}: your KILL did NOT work - YouTube did not accept the change, so the video is still scheduled or public. "
+                        f"Set it to Private in YouTube Studio: https://studio.youtube.com/video/{e['yt_id']}/edit (the KILL is tried again at the next run)", episode=ep_,
+                        dedupe_key=f"uploads_private|kill|{ep_}")
+                continue
+            st.update("Episodes", "episode_id", ep_, {"status": "KILLED", "updated": iso()})
             log(f"{e['episode_id']} killed by owner before release")
+            for r in NT.open_rows():
+                if r.get("dedupe_key") in (f"unscheduled|{ep_}", f"uploads_private|kill|{ep_}"): st.update("Owner_Actions", "id", r["id"], {"status": "ANSWERED", "answered_at": iso(), "answer": "done: made private by his KILL"})
         elif e.get("status") == "HOLD_QC" and str(e.get("kill", "")).upper().startswith("KILL"):      # v8.2: a held video is dropped by typing KILL (nothing was uploaded)
             st.update("Episodes", "episode_id", e["episode_id"], {"status": "KILLED", "updated": iso()}); log(f"{e['episode_id']} (held) dropped by owner")
             _CK.clear(e["episode_id"])          # v8.3: its saved pictures and clips no longer sit in Drive for ever

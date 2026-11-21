@@ -1910,3 +1910,50 @@ def test_the_cards_last_sentence_survives_a_long_self_review(monkeypatch, settin
     CON.await_approval("EP8", "ytEP8", slot, "'Title EP8'. " + "x" * 2000)
     t = _kind("creative_review", "EP8")[0]["text"]
     assert len(t) <= 1500 and t.endswith("Until the slot you can still stop it: Decided for you, Take it down.") and "studio.youtube.com/video/ytEP8/edit" in t, t[-300:]
+
+# ------------------------------------------------------------------ CF-7 (R1-162; J13's OPEN): his Hold, his KILL while YouTube still has the video on its schedule
+def test_his_hold_while_youtube_kept_the_video_on_its_schedule_asks_youtube_again_and_never_says_private(monkeypatch, setting):
+    """CF-7 (a) (J13, PART F's EDIT 10): while CF-1b's `unscheduled|<ep>` hold is open, his Hold on the card and "Keep it private" on the `silence|` row
+    answered "<ep> stays private" and touched nothing on YouTube - the video went public at its slot. Now, on the screens' own road (ACT -> notify.answer ->
+    _answer HOLDREVIEW), his Hold asks YouTube once more: refused (False or a raise) - his verdict "down" kept, the hold left open, the answer says NOT private
+    with the Studio link, an alarm; agreed - today's status and answer, the hold and the alarm closed."""
+    from whatifs.org import verdicts as VER
+    got = []; monkeypatch.setattr(VER, "record", lambda ref, v, text="", via="": got.append((ref, v, via)))
+    slot, _s = _ep8(monkeypatch, setting, status="UPLOADED")
+    asked = []; monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: asked.append((vid, p)) or False)
+    CON.await_approval("EP8", "ytEP8", slot, "'Title EP8'.")                                        # CF-1b: YouTube kept it - the hold is open
+    hold = lambda: [r for r in core.store().rows("Owner_Actions") if r.get("dedupe_key") == "unscheduled|EP8"]
+    alarm = lambda: [r for r in core.store().rows("Owner_Actions") if r.get("dedupe_key") == "uploads_private|hold|EP8"]
+    card = _kind("creative_review", "EP8")[0]; assert json.loads(card["buttons"])[1] == ["Hold", "HOLDREVIEW EP8"]
+    _ok, said = DS.route(f"ACT|{card['id']}|1")                                                    # his Hold, as the screens send it
+    assert said.startswith("NOT private: YouTube still has Title EP8 on its schedule") and "studio.youtube.com/video/ytEP8/edit" in said, said
+    assert asked == [("ytEP8", "private"), ("ytEP8", "private")] and _epi("EP8")["status"] == "AWAITING_APPROVAL" and got == [("EP8", "down", "hold")], (asked, got)
+    a = alarm(); assert len(a) == 1 and a[0]["kind"] == "uploads_private" and a[0]["status"] == "OPEN" and "studio.youtube.com/video/ytEP8/edit" in a[0]["text"], a
+    assert len(hold()) == 1 and hold()[0]["status"] == "OPEN"
+    keep = lambda: NT.send("contract_hold", "Title EP8 was not approved by your silence: x. It is STILL ON YOUTUBE'S SCHEDULE.", [("Approve", "APPROVE EP8"),
+                                                                                                                              ("Keep it private", "HOLDREVIEW EP8")], tier="now", episode="EP8", dedupe_key="silence|EP8")
+    monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: (_ for _ in ()).throw(RuntimeError("YouTube does not answer")))
+    _ok, said = DS.route(f"ACT|{keep()}|1")                                                         # "Keep it private" on the silence| row, YouTube not answering
+    assert said.startswith("NOT private:") and len(alarm()) == 1 and int(alarm()[0]["count"]) == 2 and hold()[0]["status"] == "OPEN", (said, alarm())
+    monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: asked.append((vid, p)) or True)
+    _ok, said = DS.route(f"ACT|{keep()}|1")                                                         # YouTube takes it: today's answer, the hold and the alarm closed
+    assert said == "EP8 stays private" and _epi("EP8")["status"] == "HELD_BY_OWNER" and asked[-1] == ("ytEP8", "private"), said
+    assert hold()[0]["status"] == "ANSWERED" and alarm()[0]["status"] == "ANSWERED" and got == [("EP8", "down", "hold")] * 3, (hold(), alarm(), got)
+
+
+def test_his_kill_counts_only_when_youtube_agreed_and_reaches_a_video_youtube_kept_on_its_schedule(monkeypatch, setting):
+    """CF-7 (b): `kill_check` wrote KILLED without reading `yt_set_privacy`'s answer and reached only SCHEDULED/HELD/UPLOADED. Now KILLED only when YouTube
+    agreed; a refusal raises the alarm and his KILL stays for the next tick; a video whose `unscheduled|<ep>` hold is open is reached whatever its status."""
+    from whatifs import manage as MG
+    slot, _s = _ep8(monkeypatch, setting, status="UPLOADED", kill="KILL")
+    _ep8(monkeypatch, setting, ep="EP9", status="SCHEDULED", kill="KILL")
+    asked = []; monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: asked.append(vid) or False)
+    CON.await_approval("EP8", "ytEP8", slot, "s"); asked.clear()                                    # EP8: AWAITING_APPROVAL, CF-1b's hold open
+    alarm = lambda ep: [r for r in core.store().rows("Owner_Actions") if r.get("dedupe_key") == f"uploads_private|kill|{ep}"]
+    MG.kill_check()
+    assert _epi("EP9")["status"] == "SCHEDULED" and _epi("EP8")["status"] == "AWAITING_APPROVAL" and sorted(asked) == ["ytEP8", "ytEP9"], asked
+    assert all(len(alarm(ep)) == 1 and alarm(ep)[0]["status"] == "OPEN" and f"studio.youtube.com/video/yt{ep}/edit" in alarm(ep)[0]["text"] for ep in ("EP8", "EP9"))
+    assert _epi("EP8")["kill"] == "KILL" and _epi("EP9")["kill"] == "KILL"                          # his KILL stays for the next tick
+    monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: asked.append(vid) or True); MG.kill_check()
+    assert _epi("EP8")["status"] == "KILLED" and _epi("EP9")["status"] == "KILLED" and alarm("EP8")[0]["status"] == "ANSWERED" and alarm("EP9")[0]["status"] == "ANSWERED"
+    assert [r["status"] for r in core.store().rows("Owner_Actions") if r.get("dedupe_key") == "unscheduled|EP8"] == ["ANSWERED"]
