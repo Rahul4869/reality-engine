@@ -1777,6 +1777,53 @@ def test_each_video_stuck_on_private_is_its_own_alarm(monkeypatch, setting):
     assert len(up()) == 2 and int(up()[0]["count"]) == 2 and up()[0]["last_text"].startswith("Video not public yet") and len(_alarms_told()) == 2, \
         [(r["dedupe_key"], r["count"], r["last_text"][:30]) for r in up()]
 
+def test_a_policy_pause_the_weekly_check_could_not_report_is_told_by_a_paused_tick(monkeypatch, setting):
+    """CR-3-6, the two-phase mark ruled by R1-113 (CA3-19 = CA3-18 re-cut): `guardian` runs only from the WEEKLY scout (its job's timeout is 30 minutes):
+    it pauses 7 days, asks caretaker's model, then tells him - a job cut in the model's wait left the pause standing and him untold until the next
+    Monday. The finding is marked with an "untold@<time>" element before the rescue and plain after the telling; a paused tick that finds the element
+    older than 45 minutes tells him once, with "Resume now"; the ordinary road is today's card; the trim keeps 40 sigs and the element."""
+    from whatifs import manage as MG, caretaker as CT
+    setting("TWO_SCREENS_ON", "TRUE"); _wire(monkeypatch); _mailbox(monkeypatch); _window(False)
+    crit = {"platform": "YouTube", "change": "AI content is no longer monetised", "severity": "critical", "source": "https://support.google.com/youtube/answer/1"}
+    real_ask, real_rescue, real_mail = MG.ask, CT.policy_rescue, NT.mail
+    monkeypatch.setattr(MG, "ask", lambda key, *a, **k: {"platform_changes": [crit]} if key == "research" else real_ask(key, *a, **k))
+    pol = lambda: [r for r in core.store().rows("Owner_Actions") if r["kind"] == "policy"]
+    cell = lambda: core.S("GUARDIAN_SEEN").split("|")
+    untold = lambda: [x for x in cell() if x.startswith("untold@")]
+    def age(minutes):                                                                                   # the element, as if written `minutes` ago
+        stamp = "untold@" + core.iso(core.now_utc() - dt.timedelta(minutes=minutes))
+        core.set_setting("GUARDIAN_SEEN", "|".join([x for x in cell() if not x.startswith("untold@")] + [stamp]))
+    def cut(items): raise SystemExit("planted: the job was cut in the model's wait")                    # no `except Exception` takes a cut
+    monkeypatch.setattr(CT, "policy_rescue", cut)
+    with pytest.raises(SystemExit): MG.trend_scout()
+    assert MG.paused() and len(cell()) == 2 and len(untold()) == 1 and pol() == [], (cell(), pol())      # the pause, the sig and the element; nobody told
+    age(10); assert MG.tick() == {"action": "paused"} and pol() == [] and len(untold()) == 1              # ten minutes: the job may still be alive - nothing
+    age(120); day = untold()[0][7:17]; MG.tick()                                                         # two hours: the paused tick tells him
+    assert len(pol()) == 1 and pol()[0]["dedupe_key"] == "policy|" + day and json.loads(pol()[0]["buttons"]) == [["Resume now", "RESUME"]], pol()
+    assert pol()[0]["text"].startswith("The channel is paused") and [x["action_id"] for x in _alarms_told()] == [pol()[0]["id"]], _alarms_told()
+    assert len(cell()) == 1 and untold() == [], cell()                                                   # told: the element went, the sig stays
+    MG.tick(); assert len(pol()) == 1 and int(pol()[0]["count"]) == 1 and len(_alarms_told()) == 1          # a second tick: nothing
+    assert NT.answer(pol()[0]["id"], "RESUME") == "resumed" and not MG.paused()                         # his tap
+    crit["change"] = "Synthetic voices are no longer monetised"                                         # a second finding: the alarm's send raises
+    def boom(kind, *a, **k):
+        if kind == "policy": raise RuntimeError("planted: the alarm's send raised")
+        return real_mail(kind, *a, **k)
+    monkeypatch.setattr(CT, "policy_rescue", lambda items: ""); monkeypatch.setattr(NT, "mail", boom)
+    MG.trend_scout(); assert MG.paused() and len(cell()) == 3 and len(untold()) == 1 and len(pol()) == 1, (cell(), pol())      # the job finished; untold
+    monkeypatch.setattr(NT, "mail", real_mail); age(120); MG.tick()
+    assert len(pol()) == 2 and pol()[1]["status"] == "OPEN" and len(cell()) == 2 and untold() == [] and len(_alarms_told()) == 2, (cell(), pol())
+    assert NT.answer(pol()[1]["id"], "RESUME") == "resumed"
+    crit["change"] = "Mass-produced AI videos are no longer monetised"                                  # the ordinary road: today's card, told once
+    monkeypatch.setattr(CT, "policy_rescue", real_rescue); MG.trend_scout()
+    card = [r for r in pol() if r["status"] == "OPEN"]
+    assert len(card) == 1 and [v for _l, v in json.loads(card[0]["buttons"])] == ["DISCUSS policy", "BUILDFIX policy", "RESUME"], card
+    assert len(cell()) == 3 and untold() == [] and len(_alarms_told()) == 3, (cell(), _alarms_told())
+    MG.tick(); assert len(pol()) == 3 and len(_alarms_told()) == 3                                       # a paused tick on the ordinary road: nothing
+    core.set_setting("GUARDIAN_SEEN", "|".join(f"{i:010d}" for i in range(40)) + "|untold@" + core.iso())   # 40 sigs and an element
+    crit["change"] = "Repetitive AI clips are no longer monetised"; monkeypatch.setattr(CT, "policy_rescue", cut)
+    with pytest.raises(SystemExit): MG.trend_scout()
+    assert len(cell()) == 41 and len(untold()) == 1 and cell()[-1].startswith("untold@") and cell()[0] == "0000000001", cell()      # the oldest sig cut, never the element
+
 # ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (step 8) - PART C
 def _short8(monkeypatch, setting, on="TRUE", sid="SH209911200900"):
     """A standalone Short that is made and on record (tab Specials), the switch as given; Drive and the upload check stubbed; `approve` recorded."""

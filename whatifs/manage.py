@@ -220,6 +220,13 @@ def tick():
             except Exception as x: log(f"WhatsApp briefs skipped: {scrub(x)}", "WARN")
             try: NT.alarm_retry()
             except Exception as x: log(f"alarm retry skipped: {scrub(x)}", "WARN")
+            try:                                                       # FINISHED BY FABLE (CA3-19, R1-113): the weekly check paused the channel and was cut before it told him
+                cell = S("GUARDIAN_SEEN").split("|"); late = [x for x in cell if x.startswith("untold@") and (now_utc() - (parse_iso(x[7:]) or now_utc())).total_seconds() > 45 * 60]
+                if late:                                               # 45 minutes: past the weekly job's 30-minute timeout nothing alive tells him
+                    NT.send("policy", "The channel is paused: YouTube changed a rule, and the weekly check could not finish its report. Nothing is posted until the pause ends or you tap Resume now.",
+                            [("Resume now", "RESUME")], tier="now", urgent=True, default="stays paused until the date in Settings", expires_h=24 * 7, dedupe_key="policy|" + late[-1][7:17])
+                    set_setting("GUARDIAN_SEEN", "|".join(x for x in cell if not x.startswith("untold@")))
+            except Exception as x: log(f"the policy pause's telling skipped: {scrub(x)}", "WARN")
             try:
                 from whatifs import dash as DS; DS.publish()
             except Exception as x: log(f"dashboard snapshot skipped: {scrub(x)}", "WARN")
@@ -489,12 +496,14 @@ def trend_scout():
     except Exception as x: log(f"technique research skipped: {scrub(x)}", "WARN")
     PB.ensure_seed(); PB.research()                          # v8.7: the proactive, evidence-graded playbook research (never raises, inside the cap)
     if crit:
-        seen = [x for x in S("GUARDIAN_SEEN").split("|") if x]
+        seen = [x for x in S("GUARDIAN_SEEN").split("|") if x and not x.startswith("untold@")]      # FINISHED BY FABLE (CA3-19, R1-113): the element is no sig
         def sig(x): return hashlib.md5(re.sub(r"[^a-z]", "", (x.get("change", "") + x.get("platform", "")).lower())[:160].encode()).hexdigest()[:10]
         new = [x for x in crit if sig(x) not in seen]
         if new:
-            set_setting("GUARDIAN_SEEN", "|".join((seen + [sig(x) for x in new])[-40:]))
-            guardian(new)
+            seen = (seen + [sig(x) for x in new])[-40:]
+            set_setting("GUARDIAN_SEEN", "|".join(seen + ["untold@" + iso()]))                 # FINISHED BY FABLE (CA3-19, R1-113): marked, not yet told - past 45 minutes a paused tick tells him
+            try: guardian(new); set_setting("GUARDIAN_SEEN", "|".join(seen))                     # told: the element goes
+            except Exception as x: log(f"the policy alarm did not go - the finding stays untold, a paused tick tells him: {scrub(x)[:120]}", "ERROR")
         else: log("policy items already acted on before - no new pause")
     flush_log(); return rep
 
