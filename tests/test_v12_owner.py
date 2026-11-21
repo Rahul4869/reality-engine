@@ -1902,3 +1902,11 @@ def test_the_no_row_tells_the_reason_of_now_and_his_approve_asks_again(monkeypat
     slot10, sched10 = _ep8(monkeypatch, setting, ep="EP10", kill="KILL"); CON.await_approval("EP10", "ytEP10", slot10, "s")
     NT.expire_defaults(now=_later(15))
     assert _epi("EP10")["status"] == "AWAITING_APPROVAL" and sched10 == [] and len(sil("EP10")) == 1 and "KILL" in sil("EP10")[0]["text"]
+
+def test_the_cards_last_sentence_survives_a_long_self_review(monkeypatch, setting):
+    """CR-8a-6 (g) (PART F, CF-6): `notify.send` keeps 1,500 characters of a row's text, and the review card's LAST sentence - when his silence is taken
+    and how to stop the video - was the part a long self-review cut. The self-review is cut, never that sentence or the link."""
+    slot, _s = _ep8(monkeypatch, setting)
+    CON.await_approval("EP8", "ytEP8", slot, "'Title EP8'. " + "x" * 2000)
+    t = _kind("creative_review", "EP8")[0]["text"]
+    assert len(t) <= 1500 and t.endswith("Until the slot you can still stop it: Decided for you, Take it down.") and "studio.youtube.com/video/ytEP8/edit" in t, t[-300:]
