@@ -309,15 +309,26 @@ def _tell(row, now=None, text=None):
 
 
 def alarm_retry(now=None):
-    """R17 (5 a): AN ALARM WHATSAPP DID NOT TAKE IS SENT AGAIN. An alarm is TOLD when WA_Outbox holds a row with a message id for its action id; every
+    """R17 (5 a): AN ALARM WHATSAPP DID NOT TAKE IS SENT AGAIN. An alarm is TOLD when its LAST WA_Outbox row with a message id is not marked "failed" by Meta and no 24-hour repeat is owed (CA3-16); every
     open alarm not yet told is pushed again at every tick - no cap, no quiet hours. Where WhatsApp is not set up there is nothing to retry (R17 ADDS (F)).
     The switch TWO_SCREENS_ON FALSE: nothing (the older path). Returns how many were told now."""
     if not _on(): return 0
     from whatifs import wa as WA
     if not (WA.configured() or FAKE): return 0
-    now = now or now_utc(); told = {r.get("action_id") for r in store().rows("WA_Outbox") if r.get("wamid")}; n = 0
+    now = now or now_utc(); last, recent = {}, {}; n = 0
+    for x in store().rows("WA_Outbox"):                                # FINISHED BY FABLE (CA3-16, R1-109): TOLD = the LAST message id Meta has not marked "failed" (the status webhook, wa.py 337)
+        if not x.get("wamid"): continue
+        last[x.get("action_id")] = x; t = parse_iso(x.get("ts"))
+        if t and (now - t).total_seconds() < 86400: recent[x.get("action_id")] = recent.get(x.get("action_id"), 0) + 1      # R1-116: its pushes that went (each a Cost_Log row) in 24 h
     for r in open_rows():
-        if klass(r.get("kind")) == ALARM and r.get("id") not in told and _tell(r, now): n += 1
+        if klass(r.get("kind")) != ALARM: continue
+        given, fired = parse_iso(r.get("delivered_at")), parse_iso(r.get("last_at"))
+        owed = bool(given and fired and (fired - given).total_seconds() >= ALARM_REGROUP_H * 3600)      # a 24-h repeat whose push returned '' (`_alarm`): fired a day after the push he was given, none taken since
+        if r.get("id") in last and last[r["id"]].get("status") != "failed" and not owed: continue
+        if recent.get(r.get("id"), 0) >= 3: continue                   # R1-116: three pushes in 24 h - it waits; the e-mail and the dashboard carry it
+        k = int(r.get("count") or 1)
+        words = f"x{k} since {(parse_iso(r.get('created')) or now).astimezone(IST):%a %H:%M}: {str(r.get('last_text') or r.get('text'))}" if k > 1 else None
+        if _tell(r, now, words): n += 1
     return n
 
 

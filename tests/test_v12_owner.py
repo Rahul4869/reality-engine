@@ -1735,6 +1735,30 @@ def test_a_sheet_error_never_stops_an_alarm(monkeypatch, setting):
     monkeypatch.setattr(Store, "update", boom(real_update)); said.clear()
     assert NT._alarm("kids_flag", "planted: twice", (), "EPA15B", None, None, None) == first and [l for l, _m in said] == ["WARN"], said      # the repeat: same incident, one WARN
 
+def test_an_alarm_meta_refused_or_a_repeat_that_did_not_go_is_said_again(monkeypatch, setting):
+    """CR-3-3, ruled by R1-109: for an alarm TOLD means its last message id that Meta has not marked "failed". Any WA_Outbox row with an id counted
+    as told, whatever the status webhook wrote on it later (`wa.py` 337), and a 24-hour repeat whose push returned '' was said only at a later firing.
+    Now `alarm_retry` says both again, once; an alarm whose message Meta did not mark failed is not pushed a second time."""
+    T = dt.datetime(2026, 11, 20, 5, 0, tzinfo=dt.timezone.utc)                                          # Fri 20 Nov, 10:30 India time
+    setting("TWO_SCREENS_ON", "TRUE"); bodies = _wire(monkeypatch); _mailbox(monkeypatch); _window(False)
+    def at(h): monkeypatch.setattr(NT, "now_utc", lambda: T + dt.timedelta(hours=h))
+    at(0); a = NT.send("risk_lock", "Uploads locked: a strike was found", dedupe_key="risk|CA316")
+    b = NT.send("kids_flag", "YouTube marked a video as made for kids", dedupe_key="kids|CA316")
+    core.store().update("WA_Outbox", "wamid", next(x["wamid"] for x in _alarms_told() if x["action_id"] == a), {"status": "failed"})      # as the webhook writes it (wa.py 337)
+    assert NT.alarm_retry() == 1 and [x["action_id"] for x in _alarms_told()] == [a, b, a] and len(bodies) == 3, _alarms_told()       # a, refused, is said again; b is not
+    assert NT.alarm_retry() == 0 and len(bodies) == 3                                                                                 # its new message stands: told
+    monkeypatch.setattr(WA, "_wire", lambda body: "")                                                                                  # WhatsApp takes nothing
+    at(25); assert NT.send("kids_flag", "Still made for kids", dedupe_key="kids|CA316") == b and len(bodies) == 3                     # the day-later repeat: its push returned ''
+    monkeypatch.setattr(WA, "_wire", lambda body: bodies.append(body) or f"wamid.T{len(bodies)}")
+    at(26); assert NT.alarm_retry() == 1 and bodies[-1]["template"]["components"][0]["parameters"][1]["text"].startswith("x2 since Fri 10:30: Still made for kids"), bodies[-1]
+    assert NT.alarm_retry() == 0 and len(bodies) == 4                                                                                 # said: never a third push
+    monkeypatch.setattr(NT, "now_utc", core.now_utc)                                     # R1-116's bound reads WA_Outbox's `ts`, written by `iso()`: one clock
+    c = NT.send("risk_gone", "planted: Meta refuses it every time", dedupe_key="gone|CA316")
+    for _ in range(2):
+        core.store().update("WA_Outbox", "wamid", _alarms_told()[-1]["wamid"], {"status": "failed"}); assert NT.alarm_retry() == 1
+    core.store().update("WA_Outbox", "wamid", _alarms_told()[-1]["wamid"], {"status": "failed"}); n = len(bodies)
+    assert NT.alarm_retry() == 0 and len(bodies) == n and [x["action_id"] for x in _alarms_told()].count(c) == 3      # three refused pushes in 24 h: the fourth tick pushes nothing
+
 # ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (step 8) - PART C
 def _short8(monkeypatch, setting, on="TRUE", sid="SH209911200900"):
     """A standalone Short that is made and on record (tab Specials), the switch as given; Drive and the upload check stubbed; `approve` recorded."""
