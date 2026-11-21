@@ -57,7 +57,7 @@
  "base_commit": "d64fdccfc04a7aaf179e4cd2d23c32d8a8b6d8f3",
  "batch": "B-OWNER",
  "fable_design_gate": true,
- "final_code_commit": "",
+ "final_code_commit": "5495cc6b3ae3002b81634356becb42d1d90fd71a",
  "history": [
   {
    "at": "2026-11-13T11:25:00Z",
@@ -517,6 +517,15 @@
    "from": "DESIGN_REVIEW",
    "to": "BUILD",
    "why": ""
+  },
+  {
+   "at": "2026-11-21T11:44:21Z",
+   "batch": "B-OWNER",
+   "by": "",
+   "commit": "5495cc6",
+   "from": "BUILD",
+   "to": "BUILT",
+   "why": ""
   }
  ],
  "order": [
@@ -537,8 +546,8 @@
   "B10",
   "V3"
  ],
- "phase": "BUILD",
+ "phase": "BUILT",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-19T23:12:19Z"
+ "updated": "2026-11-21T11:44:21Z"
 }
