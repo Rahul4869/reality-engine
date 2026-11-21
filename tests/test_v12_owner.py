@@ -833,6 +833,14 @@ def test_the_never_list_parks_with_its_reason(monkeypatch, setting):
         assert "which this channel never does" in DESK.take(t, "dashboard", ref=f"act-n{i}")[1]
     assert calls == [] and all(r["verdict"] == "PARKED" for r in _desk_rows())
     assert DESK.never("Show more of the night sky in every Short.") is None and DESK.never("Copy that channel's video") is not None
+    for wish in ("what if escape pods failed?", "do bots watch our shorts?", "copy the pacing of our own best video", "never hide the ai label",
+                 "delete the long intro from our videos", "Don’t hide the AI label in the Shorts."):        # CR-5-5 (R1-128, CA5-6): the reader's five, and his phone's apostrophe
+        assert DESK.never(wish) is None, (wish, DESK.never(wish))
+    risks = [risk for _rx, risk in DESK.NEVER]
+    for ask, k in (("Let's buy 5,000 views for the next Short.", 0), ("Do sub for sub with other channels.", 1), ("Join an engagement pod for the first hour.", 2),
+                   ("Just re-upload the best Short every week.", 3), ("Delete the old videos that flopped.", 4), ("Mark the Shorts as made for kids.", 5),
+                   ("Why not hide the AI label?", 6), ("Copy another channel's best script.", 7), ("Ask them to comment for a DM with the link.", 8)):
+        assert (DESK.never(ask) or ("", ""))[1] == risks[k], (ask, DESK.never(ask))                         # CA5-8: each of the nine rules has its positive
 
 def test_an_idea_seven_days_old_is_never_parked_unanswered(monkeypatch, setting):
     """Item 149 (GAP 2): his own "Build this?" card from WhatsApp had a 7-day default of PARKED - with the switch on it has no default and no expiry: 8 days

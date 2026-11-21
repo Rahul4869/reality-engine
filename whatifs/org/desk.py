@@ -191,11 +191,13 @@ def talk(text):
     return t in TALK
 
 def never(text):
-    """(the words that hit, the risk) when the input asks for what this channel never does (LAUNCH_MAX C6), else None. Pure."""
+    """(the words that hit, the risk) when the input asks for what this channel never does (LAUNCH_MAX C6), else None. Pure.
+    FINISHED BY FABLE (CA5-6, R1-128; PART B's OB-4): a rule he STATES is no ask - a hit right after "never", "don't", "do not" or "...n't" ("never hide
+    the AI label") is skipped and the next hit of that rule is read; "Why not hide the AI label?" still hits."""
     t = str(text or "").lower()
     for rx, risk in NEVER:
-        m = re.search(rx, t)
-        if m: return m.group(0), risk
+        for m in re.finditer(rx, t):
+            if not re.search(r"(?:\bnever|\bdon['’]?t|\bdo\s+not|n['’]t)\s+(?:ever\s+)?$", t[:m.start()]): return m.group(0), risk
     return None
 
 def _set(st, r, ch):
