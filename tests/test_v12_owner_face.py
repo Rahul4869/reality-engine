@@ -276,12 +276,13 @@ def test_kept_inputs_are_handled_in_the_order_he_gave_them(monkeypatch, setting)
     assert DS.drain(kv) == 2 and kv.d == {} and core.S("PAUSED", bool) is True                  # the next run: Resume, then Pause - his last word
     assert [r["id"] for r in core.store().rows("Dash_Acks")] == ["R1", "P1", "P2", "R3", "P3"]                    # each id once, oldest first
 
-def test_a_run_does_the_kept_inputs_before_its_own_payload(monkeypatch, setting, capsys):
+def test_a_run_does_the_kept_inputs_before_its_own_payload(monkeypatch, setting, capsys, tmp_path):
     """CH-1 (FR-CE1b-1): three taps while one run works - A runs, B waits, C replaces B (GitHub keeps ONE pending run of a group). C's run must do B
     before C: with B = Resume and C = Pause the engine ends PAUSED. C's own payload is kept too, so the drain does it in its place and the payload
     call finds its ack: each id is acked once and the run prints "ok". The same for a WhatsApp run and a kept dash input it finds waiting."""
     import sys
     from whatifs import cli
+    monkeypatch.chdir(tmp_path)                                                                   # R1-291 (6): the crash handler writes last_error.txt into the current folder - NEVER the repo's (test_v12_floor.py 606)
     kept, KV = _inbox(monkeypatch); setting("TWO_SCREENS_ON", "TRUE")
     b, c = {"id": "B1", "verb": "RESUME", "ts": 1_000_000, "src": "dash"}, {"id": "C1", "verb": "PAUSE", "ts": 2_000_000, "src": "dash"}
     kv = KV({"inbox:B1": kept(b), "inbox:C1": kept(c)})

@@ -2086,6 +2086,8 @@ def test_the_held_short_still_waits(monkeypatch, setting):
     expiry (FOUND AT THE FINISH: after 72 hours the card closed, and a Short that was paid for could no longer be approved from either screen)."""
     SH, SP, sid, posted = _short8(monkeypatch, setting)
     gf = {"ok": False, "failed": [("short_sound", "the first sound comes at 0.4 s")]}
+    seen = []; real_send = NT.send                                                                   # R1-291 (4): the caller's own None is CC-3's line - notify._shape drops a HOLD's expiry as well
+    monkeypatch.setattr(NT, "send", lambda kind, *a, **k: seen.append((kind, k.get("expires_h", "none given"))) or real_send(kind, *a, **k))
     upd = SH._file_hold({"id": sid, "file": "drive:f8c"}, gf, True)
     c = _cards8(sid); assert len(c) == 1 and c[0]["kind"] == "special_review" and NT.klass(c[0]["kind"]) == NT.HOLD and "short_sound" in c[0]["text"], c
     assert not c[0]["expires_at"] and c[0]["default_action"] == "not posted: its finished file failed a check, so it waits for your tap"
@@ -2094,6 +2096,7 @@ def test_the_held_short_still_waits(monkeypatch, setting):
     assert "posted" in NT.answer(c[0]["id"], f"SPECIAL APPROVE {sid}") and posted == [sid]          # his one tap still sends it out, as it is
     SH2, _SP2, sid2, _p2 = _short8(monkeypatch, setting, on="FALSE", sid="SH209911200901")         # the switch off: today's card, word for word
     SH2._file_hold({"id": sid2}, gf, True); o = _cards8(sid2)[0]; assert o["default_action"] == "not posted" and o["expires_at"]
+    assert [e for e in seen if e[0] == "special_review"] == [("special_review", None), ("special_review", 72)], seen
 
 def test_a_take_down_that_youtube_refused_is_never_reported_as_done(monkeypatch, setting):
     """PART 7, UNDO (item 150). FOUND AT THE FINISH: `publish.yt_set_privacy` answers False when YouTube refuses the change (it does not raise), and
@@ -2134,6 +2137,10 @@ def test_with_the_switch_off_silence_approves_nothing(monkeypatch, setting):
     assert "approved by your silence" not in r["text"]
     NT.expire_defaults(now=_later(73)); assert CON.review_sweep() == 0
     assert _epi("EP8")["status"] == "AWAITING_APPROVAL" and sched == [] and not _decided("EP8") and _row(r["id"])["status"] == "DEFAULTED"
+    slot9, sched9 = _ep8(monkeypatch, setting, ep="EP9"); CON.await_approval("EP9", "ytEP9", slot9, "s")      # R1-291 (1): a card SENT with the switch on, expired after it was set FALSE
+    c9 = _kind("creative_review", "EP9")[0]; assert c9["default_action"] == "approved by your silence", c9
+    setting("TWO_SCREENS_ON", "FALSE"); NT.expire_defaults(now=_later(73))
+    assert _epi("EP9")["status"] == "AWAITING_APPROVAL" and sched9 == [] and not _decided("EP9") and CON.review_sweep() == 0
 
 def test_the_newest_row_is_the_last_written_even_inside_one_clock_tick(monkeypatch, setting):
     """R1-224 (G4a's pins, 20 Nov 2026): on a clock that ticks in milliseconds (Windows) two ids of one tick are ordered only by `_new_id`'s counter,

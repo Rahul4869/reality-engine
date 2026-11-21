@@ -111,10 +111,12 @@ def test_the_switch_never_strands_a_short(monkeypatch, setting, gate_on):
     its cap, is never read as the lock, and UPLOAD_LOCK is untouched."""
     PUB.FAKE_FAULTS["youtube"] = {"sd": True}
     r = _short(monkeypatch, setting, "SHHD13"); vid = r["yt_id"]; lock = core.S("UPLOAD_LOCK")
+    rb = []; real_rb = REL._rebuild; monkeypatch.setattr(REL, "_rebuild", lambda *a, **k: rb.append(a) or real_rb(*a, **k))      # R1-291 (2): a Short that has its row is never taken as one whose row is missing
     setting("HD_GATE_ON", "FALSE")
     assert HG.tick(NOW + 60 * M) == [vid] and _shown(vid) == "public" and HG.row(vid)["state"] == HG.CAP
     REL.settle(NOW + 61 * M)
     assert _rc("SHHD13") == [REL.KEPT, "public after 60 min; HD NO (the cap)"] and core.S("UPLOAD_LOCK") == lock and LA.lock_state() != "on"
+    assert rb == [], rb
 
 # ------------------------------------------------------------------ R22 (4), (5): a slow clock
 def test_a_late_tick_still_finishes_a_short(monkeypatch, setting, gate_on):
@@ -154,6 +156,10 @@ def test_an_empty_read_makes_nothing_public(monkeypatch, setting, gate_on):
     b = _blocked()[0]; assert b["dedupe_key"] == f"hdblock|{vid}" and "stays private: YouTube could not be read. Nothing was deleted." in b["text"]
     HG.tick(NOW + (late + 60) * M); assert len(_blocked()) == 1 and HG.row(vid)["state"] == HG.BLOCKED
     assert HG.go_public(vid, NOW + (late + 61) * M, "cap") == (False, "blocked: YouTube could not be read") and "privacy" not in _fixed(vid) and HG.row(vid)["note"] == "YouTube could not be read"
+    _bench("What if rain fell upward?"); r2 = SH.run(force=True, now=NOW + 48 * 60 * M, episode_id="SHHD10B"); assert r2["ok"], r2; v2 = r2["yt_id"]      # R1-291 (3): the door itself, a WAITING row, an empty read
+    assert HG.row(v2)["state"] == HG.WAITING and HG.row(v2)["note"] == "unread 1", HG.row(v2)
+    assert HG.go_public(v2, NOW + (48 * 60 + 61) * M, "cap") == (False, "not read") and "privacy" not in _fixed(v2)
+    assert HG.row(v2)["state"] == HG.WAITING and HG.row(v2)["note"] == "unread 2", HG.row(v2)
 
 # ------------------------------------------------------------------ the two policy reads at every door, the lock
 def test_a_short_marked_for_kids_stays_private(monkeypatch, setting, gate_on):
@@ -204,12 +210,15 @@ def test_an_hd_wait_that_cannot_be_read_is_never_taken_as_ungated(monkeypatch, s
         if down[0] and tab == HG.TAB: raise RuntimeError("Sheets 503: planted - tab HD_Wait could not be read")
         return real(tab)
     monkeypatch.setattr(st, "rows", rows)
+    rb = []; real_rb = REL._rebuild; monkeypatch.setattr(REL, "_rebuild", lambda *a, **k: rb.append(a) or real_rb(*a, **k))      # R1-291 (5): a row that cannot be read is never rebuilt (a second HD_Wait row)
     REL.settle(NOW + 10 * M)
     assert LA.lock_state() != "on" and _rc("SHHD30")[0] != REL.DRIFT and _shown(vid) == "private" and "privacy" not in _fixed(vid)
     assert _rc("SHHD30")[0] == REL.WAITING and _rc("SHHD30")[1].startswith("not judged this pass") and _yt("SHHD30")["state"] == REL.OPEN      # R1-167 DQ2 (a)
+    assert rb == [], rb
     down[0] = False
     HG.tick(NOW + 60 * M); assert _shown(vid) == "public" and HG.row(vid)["state"] == HG.CAP
     REL.settle(NOW + 61 * M); assert _rc("SHHD30") == [REL.KEPT, "public after 60 min; HD NO (the cap)"] and LA.lock_state() != "on"
+    assert len([x for x in real(HG.TAB) if x.get("vid") == vid]) == 1                                # R1-291 (5): exactly ONE HD_Wait row for it
 
 def test_a_missing_hd_wait_tab_is_made_once_and_a_read_that_still_fails_rises(monkeypatch):
     """v12 B-OWNER CG-1 (R1-167 DQ1 (a), CHECK A): a failed read of tab HD_Wait runs `ensure_tabs` ONCE and reads again - the house pattern of
