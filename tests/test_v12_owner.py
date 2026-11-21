@@ -1719,6 +1719,22 @@ def test_an_alarm_is_mailed_only_when_its_mail_went(monkeypatch, setting):
     NT.mail("kids_flag", "Kids flag on EPA14B", "<p>planted</p>", episode="EPA14B")
     assert next(r for r in core.store().rows("Owner_Actions") if r["episode_id"] == "EPA14B")["delivered_at"] == ""       # nothing reached him: never stamped
 
+def test_a_sheet_error_never_stops_an_alarm(monkeypatch, setting):
+    """CR-3-4 (R1-105): the alarm's row was written outside any try, before its mail and its push - a Sheet error raised before anything went out. It is a
+    WARN that names the kind; the mail and the push still go. A repeat whose count cannot be written is still the same incident."""
+    from whatifs import wa as WA
+    setting("TWO_SCREENS_ON", "TRUE"); box = _mailbox(monkeypatch); pushed, said = [], []
+    monkeypatch.setattr(WA, "push", lambda kind, row, now=None: pushed.append(row["id"]) or "")          # the push is made ("" : no id, so no stamp follows)
+    monkeypatch.setattr(NT, "log", lambda msg, level="INFO", *a, **k: said.append((level, str(msg))))
+    Store = type(core.store()); real_append, real_update = Store.append, Store.update
+    def boom(real): return lambda self, tab, *a: (_ for _ in ()).throw(RuntimeError("planted: Sheets busy")) if tab == "Owner_Actions" else real(self, tab, *a)
+    monkeypatch.setattr(Store, "append", boom(real_append))
+    aid = NT._alarm("kids_flag", "planted: made for kids", (), "EPA15", None, None, None)
+    assert box == ["URGENT: planted: made for kids"] and pushed == [aid] and [l for l, _m in said] == ["WARN"] and "kids_flag" in said[0][1], (box, pushed, said)
+    monkeypatch.setattr(Store, "append", real_append); first = NT._alarm("kids_flag", "planted: once", (), "EPA15B", None, None, None)
+    monkeypatch.setattr(Store, "update", boom(real_update)); said.clear()
+    assert NT._alarm("kids_flag", "planted: twice", (), "EPA15B", None, None, None) == first and [l for l, _m in said] == ["WARN"], said      # the repeat: same incident, one WARN
+
 # ------------------------------------------------------------------ FINISHED BY FABLE: the corrections of the finishing pass (step 8) - PART C
 def _short8(monkeypatch, setting, on="TRUE", sid="SH209911200900"):
     """A standalone Short that is made and on record (tab Specials), the switch as given; Drive and the upload check stubbed; `approve` recorded."""

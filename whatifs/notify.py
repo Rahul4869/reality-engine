@@ -267,7 +267,8 @@ def _alarm(kind, text, buttons, episode, default, expires_h, key, mailed=False, 
     for r in open_rows():
         if r.get("dedupe_key") != key: continue
         n = int(r.get("count") or 1) + 1
-        st.update("Owner_Actions", "id", r["id"], {"count": n, "last_at": iso(now), "last_text": str(text)[:300]})      # a repeat is counted, never dropped
+        try: st.update("Owner_Actions", "id", r["id"], {"count": n, "last_at": iso(now), "last_text": str(text)[:300]})      # a repeat is counted, never dropped
+        except Exception as e: log(f"the {kind} alarm's count was not written - it is still told: {scrub(e)[:120]}", "WARN")      # FINISHED BY FABLE (CA3-15, R1-105): a Sheet error never stops an alarm
         t = parse_iso(r.get("delivered_at"))
         if t and (now - t).total_seconds() >= ALARM_REGROUP_H * 3600:
             since = (parse_iso(r.get("created")) or now).astimezone(IST)
@@ -279,7 +280,8 @@ def _alarm(kind, text, buttons, episode, default, expires_h, key, mailed=False, 
            "buttons": json.dumps([[str(l)[:30], str(v)[:120]] for l, v in btns]), "default_action": default or "", "expires_at": exp,
            "status": "OPEN", "answered_at": "", "answer": "", "channel": "", "delivered_at": "", "dedupe_key": key, "urgent": "TRUE",
            "count": 1, "last_at": iso(now), "last_text": str(text)[:300]}
-    st.append("Owner_Actions", [row])
+    try: st.append("Owner_Actions", [row])
+    except Exception as e: log(f"the {kind} alarm's row was not written - its mail and push still go: {scrub(e)[:120]}", "WARN")      # FINISHED BY FABLE (CA3-15, R1-105): a Sheet error never stops the mail or the push
     went = bool(mailed)
     if not mailed:                                                     # R17 (5 c): an alarm that came through notify.mail is mailed once
         try:
