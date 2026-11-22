@@ -1,4 +1,5 @@
 # OPUS BUILD PLAN - how the rest of Reality Engine v12 is built, proven and repaired without leaving anything to the builder's opinion
+!!! 23 Nov 2026 (owner's items 227-239 of 02): the build's ORDER, TIMING, ROLES AND WHO STARTS WHOM are REPLACED by SUNDAY_PLAN_29NOV.md in the handoff folder (run only by the scheduled sunday-coordinator). This file's laws on proof still bind where that plan does not override them. !!!
 Written on 13 Nov 2026 by the Fable session that proved batch V2d-b, at the owner's order (item 33 of `02_OWNER_VERBATIM.md`):
 "make a solid detailed level end to end plan with everything ... so that i can use opus 5.5 and get the fable 5.2 extra high level results and
 continuous debugging and automatic self correction repair loop ... i dont want to leave anything to chance to opus".

@@ -1,4 +1,5 @@
 # BREAKOUT REDESIGN - Reality Engine (11 Nov 2026)
+!!! 23 Nov 2026 (owner's items 227-239 of 02): the build's ORDER, TIMING, ROLES AND WHO STARTS WHOM are REPLACED by SUNDAY_PLAN_29NOV.md in the handoff folder (run only by the scheduled sunday-coordinator). This file's laws on proof still bind where that plan does not override them. !!!
 Authority: the owner's free hand, item 17 of `02_OWNER_VERBATIM.md` ("IF YOU HAVE TO REDESIGN CHANNEL, DO IT ... SO DO IT AS PER YOU NOW"), given after he
 rejected the first live video (item 16). This page OVERRIDES `01` section 1 ("concept truth, do not re-open"), the order of the batches in `03` and
 the department list in `01` section 2 wherever they differ. The budget is unchanged: Rs 5,000 a month for everything.
