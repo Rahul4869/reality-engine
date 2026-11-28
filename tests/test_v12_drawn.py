@@ -56,6 +56,8 @@ def test_the_module_is_closed_and_clean_refuses_everything_outside_the_kit():
     assert DRAWN.clean(sc) == (None, "a compare needs two different values above 0")
     sc = json.loads(json.dumps(gold["part"])); sc["slots"]["part"]["value"] = 120
     assert DRAWN.clean(sc) == (None, "a part must be above 0 and under its whole")
+    from tools import repair as RP
+    assert {"whatifs/drawn.py", "whatifs/scenes.py"} <= set(RP.PROTECTED)          # AFD F5 (U1: the real tuple, never the file's text): verify and clean are never merged by a repair alone
 
 
 def test_the_older_tests_run_with_the_drawn_scenes_off():
@@ -100,9 +102,30 @@ def test_verify_refuses_a_number_a_word_a_pair_or_an_arrow_the_script_does_not_s
     assert SCN.verify(_cmp("The Moon", 150000000, "The Sun", 384000), G_LABEL, ("", c1, "")).startswith("a value the script does not give to that name")
     assert SCN.verify(_cmp("The Moon", 384000, "The Sun", 150000000), G_LABEL, ("", c1, "")) == ""
     gp = {"kind": "counter", "label": "Your share of the air", "from": 0, "to": 1, "unit": ""}; ln = "Oxygen is 21 of every 100 parts of all the air."
-    part = lambda pn, pv, wn, wv: {"v": 1, "template": "part", "variant": 0, "slots": {"label": "Your share of the air", "part": {"name": pn, "value": pv}, "whole": {"name": wn, "value": wv}}, "cues": []}
+    part = lambda pn, pv, wn, wv, label="Your share of the air": {"v": 1, "template": "part", "variant": 0, "slots": {"label": label, "part": {"name": pn, "value": pv}, "whole": {"name": wn, "value": wv}}, "cues": []}
     assert SCN.verify(part("Oxygen", 21, "All the air", 100), gp, ("", ln, "")) == ""
     assert SCN.verify(part("All the air", 21, "Oxygen", 100), gp, ("", ln, "")).startswith("a value the script does not give to that name")       # names swapped
+    gp_sleep = {"kind": "counter", "label": "Sleep in a day", "from": 0, "to": 1, "unit": ""}
+    assert SCN.verify(part("Minutes you sleep", 10, "Hours of a day", 24, "Sleep in a day"), gp_sleep, ("", "You sleep 10 minutes out of the 24 hours of a day.", "")) \
+        == "a part and its whole in different units: minutes and hours"          # AFD F2: never "42%" for 10 minutes of 24 hours
+    assert SCN.verify(part("Sleep", 10, "A day", 1440, "Sleep in a day"), gp_sleep, ("", "You sleep 10 minutes out of the 1,440 minutes of a day.", "")) == ""      # one unit: a true share
+    assert SCN.verify(part("Sleep", 1, "A day", 24, "Sleep in a day"), gp_sleep, ("", "You sleep 1 hour out of the 24 hours of a day.", "")) == ""      # U1 (AFD-unit): "hour" and "hours" are ONE unit
+    assert SCN.verify(part("Minutes you sleep", 10, "Hours of a day", 24, "Sleep in a day"), gp_sleep, ("", "You sleep 10 more minutes out of the 24 hours of a day.", "")) \
+        == "a part and its whole in different units: minutes and hours"          # U1 (AFD-unit): one word between the amount and its unit still reads the unit
+    gc = {"kind": "counter", "label": "Cities in history", "from": 0, "to": 1, "unit": ""}
+    assert SCN.verify(part("The cities", 3, "History", 4000, "Cities in history"), gc, ("", "The cities stand 3 centuries of the last 4,000 years of history.", "")) \
+        == "a part and its whole in different units: centuries and years"          # U1 (AFD-unit): a unit the old list did not have
+    g_km = {"kind": "counter", "label": "The Moon away", "from": 0, "to": 1, "unit": ""}
+    moon = lambda unit: {"v": 1, "template": "count", "variant": 0, "slots": {"label": "The Moon away", "from": 0, "to": 384000, "unit": unit}, "cues": []}
+    assert SCN.verify(moon("km"), g_km, ("", "The Moon is 384,000 km away.", "")) == ""
+    assert SCN.verify(moon("kg"), g_km, ("", "The Moon is 384,000 km away.", "")).startswith("a word the script does not have")      # AFD F3: a unit of two letters is asked too
+    assert SCN.verify(moon("km"), g_km, ("", "The Moon is 384,000 kilometres away.", "")) == ""          # CR-AUDITFIX 2: the voice spells its unit out - one name in _UNIT
+    assert SCN.verify(moon("m"), g_km, ("", "The Moon is 384,000 metres away.", "")) == ""
+    assert SCN.verify(moon("kg"), g_km, ("", "The Moon is 384,000 kilometres away.", "")).startswith("a word the script does not have")      # another name: still refused
+    assert SCN.verify(moon("oz"), g_km, ("", "The Moon is 384,000 kilometres away.", "")) == "a word the script does not have: oz"      # CODEREVIEW_AUDITFIX_2 F1: a unit _UNIT does not know is refused (never None == None)
+    assert SCN.verify(moon("km/h"), g_km, ("", "The Moon is 384,000 kilometres an hour away.", "")) == ""      # CODEREVIEW_AUDITFIX_2 F2: "h" is hour's own name in _UNIT
+    assert SCN.verify(moon("%"), g_km, ("", "The Moon is 384,000 km away.", "")) == "a word the script does not have: %"      # U1 (AFD-%): "%" is a unit the voice must say too
+    assert SCN.verify(moon("%"), g_km, ("", "The Moon is 384,000% away.", "")) == "" and SCN.verify(moon("%"), g_km, ("", "The Moon is 384,000 percent away.", "")) == ""
     gl = {"kind": "counter", "label": "Who walks on the Moon", "from": 0, "to": 1, "unit": ""}
     two = ("In the year 1969 people walk on the Moon.", "In the year 1972 the last people leave the Moon.", "")
     lad = lambda rungs: {"v": 1, "template": "ladder", "variant": 0, "slots": {"label": "Who walks on the Moon", "rungs": rungs}, "cues": []}
@@ -127,6 +150,15 @@ def test_verify_refuses_a_number_a_word_a_pair_or_an_arrow_the_script_does_not_s
     assert SCN.verify(flow("The table tilts", "The cup falls"), gf, ("The table tilts.", "So the cup falls.", "")) == ""          # F-6: a cause word that opens its sentence reaches back one
     assert SCN.verify(_cmp("It", 384000, "The Sun", 150000000), G_LABEL, ("", "It is 384,000 km away and the Sun is 150,000,000 km away.", "")).startswith("a part the script cannot place")      # F-16 (D1-14)
     assert SCN.verify(flow("The table", "The cup falls"), gf, ("", "The table is so heavy the cup falls.", "")).startswith("an arrow the script does not state")      # "so" mid-clause is no cause (F-16, D1-19)
+    assert SCN.verify(flow("Heat", "Rain"), gf, ("", "Heat causes rain.", "")) == ""          # the arrow, stated: drawn - each line below only adds its one denial or doubt
+    for deny in ("Heat never causes rain here.", "Nobody knows if the heat causes the rain.", "Heat isn't what causes rain.",       # AFD F1: a cause the script denies or doubts
+                 "Heat is not what causes rain.", "You cannot say heat causes rain.", "No heat causes rain.", "Nobody says heat causes rain.",      # U1 (AFD-deny): one DENY word each
+                 "Nothing says heat causes rain.", "In neither town heat causes rain.", "Nor heat causes rain.", "Heat may be what causes rain.",
+                 "Heat might be what causes rain.", "We ask whether heat causes rain.", "We doubt heat causes rain.", "The myth says heat causes rain."):
+        assert SCN.verify(flow("Heat", "Rain"), gf, ("", deny, "")).startswith("an arrow the script does not state"), deny
+    assert SCN.verify(flow("Heat", "Ice melt"), gf, ("", "The heat no longer makes the ice melt.", "")).startswith("an arrow the script does not state")
+    assert SCN.verify(flow("Heat", "Ice melt"), gf, ("", "The heat makes the ice melt.", "")) == ""          # the same arrow, stated: drawn
+    assert SCN.verify(flow("The table tilts", "The cup falls"), gf, ("The table never tilts.", "So the cup falls.", "")).startswith("an arrow")      # a reached-back sentence that denies
     assert "the" in SCN.STOP and "moon" not in SCN.STOP
 
 
@@ -533,6 +565,54 @@ def test_f3_a_proved_scene_with_no_drawn_state_gets_its_reason_and_the_check_pas
     withsc = [dict(s, scene=sc) if k == 3 else s for k, s in enumerate(shots)]
     st, why = CON.p_drawn_shown({"master": None, "shots": withsc, "drawn": {"plan": {"arm": True}, "proof": {3: job.drawn[3]}, "L": {}, "states": []}})
     assert st == "PASS" and "shown as its still" in why, (st, why)
+
+
+def test_u1d_a_premise_if_states_its_arrow_and_every_other_if_denies():
+    gf = {"kind": "counter", "label": "Why the cup falls", "from": 0, "to": 1, "unit": ""}
+    flow = lambda a, b: {"v": 1, "template": "flow", "variant": 0, "slots": {"label": "Why the cup falls", "links": [a, b]}, "cues": []}
+    heat, cup, rain = flow("Heat", "Ice"), flow("The table tilts", "The cup falls"), flow("Heat", "Rain")
+    assert SCN.verify(heat, gf, ("", "If the heat rises, it makes the ice melt.", "")) == ""          # a. the mark after the if-clause's comma: the what-if's arrow
+    assert SCN.verify(cup, gf, ("What if the table tilts?", "So the cup falls.", "")) == ""             # b. the whole question is the premise, "So ..." its consequence
+    assert SCN.verify(flow("Rain", "Deserts"), gf, ("What if heat causes rain?", "So rain floods the deserts.", "")) == ""      # RUL-U1f G2 is narrow: the head outside the premise is drawn
+    for sc, texts in ((rain, ("", "We asked if heat causes rain.", "")),                              # c. "if" = whether, the only deny word
+                      (rain, ("", "If heat causes rain, deserts flood.", "")),                        # d. the mark inside the if-clause
+                      (heat, ("", "If the heat rises it makes the ice melt.", "")),                   # e. no comma: the clause's end is not known
+                      (heat, ("", "If the heat never rises, it makes the ice melt.", "")),            # f. another DENY word beside the premise-if
+                      (cup, ("What if the table never tilts?", "So the cup falls.", "")),             # g. the same, reached back
+                      (cup, ("We wonder if the table tilts.", "So the cup falls.", "")),              # h. reached back, "if" not the opener
+                      (heat, ("", "If you ask if the heat rises, it makes the ice melt.", "")),       # i. a second "if"
+                      (rain, ("", "What if, tomorrow, heat causes rain?", "")),                       # RUL-U1f j. the reviewer's line (1a and 1b)
+                      (rain, ("", "If, as some say, heat causes rain, deserts flood.", "")),           # k. the reviewer's line (1b and G1)
+                      (rain, ("", "If tomorrow, heat causes rain then deserts flood.", "")),           # l. G1: the tail is not in the if-clause
+                      (rain, ("", "If heat causes rain, it makes rain flood the deserts.", "")),       # m. G2 on P1: the head is in the if-clause
+                      (rain, ("What if heat causes rain?", "So rain floods the deserts.", "")),        # n. G2 on P2: the head is in the question
+                      (heat, ("", "What if the heat rises, and that makes the ice melt?", "")),        # p. 1a: only the opener refuses it
+                      (rain, ("", "If the heat rises, and that makes the rain fall, deserts flood.", ""))):      # q. 1b: only the second comma refuses it
+        assert SCN.verify(sc, gf, texts).startswith("an arrow the script does not state"), texts
+
+
+def test_afd_f4_a_scene_a_repair_redrew_only_in_part_goes_whole_to_its_still(monkeypatch):
+    import types
+    from whatifs import render as RN
+    monkeypatch.setattr(RN, "frame_at", lambda *a, **k: np.zeros((360, 640, 3), np.uint8))          # a readable frame
+    monkeypatch.setattr(DRAWN, "ink", lambda g, L: 11.96)                                            # whose text reads well
+    seg = [{"i": 4, "k": k, "f0": 30 * k, "nf": 30, "drawn": k > 0} for k in range(3)]               # the QC's repair re-drew the first piece only
+    job = types.SimpleNamespace(fps=30, drawn={4: {"ok": True, "L": {"W": 640, "H": 360}}}, segmeta=seg)
+    assert SCN.audit("master.mp4", job) == [(1.5, (4, 1)), (2.5, (4, 2))]                            # the two pieces still drawn go to the still too
+    assert job.drawn[4]["ok"] is False and job.drawn[4]["why"].startswith("shown as its still"), job.drawn
+    whole = types.SimpleNamespace(fps=30, drawn={4: {"ok": True, "L": {"W": 640, "H": 360}}}, segmeta=[dict(m, drawn=True) for m in seg])
+    assert SCN.audit("master.mp4", whole) == [] and whole.drawn[4]["ok"] is True and whole.drawn[4]["ink"] == 11.96      # every piece drawn: measured, kept
+
+
+def test_afd_f6_the_rehearsals_inside_line_prints_the_inside_rules_own_words():
+    import ast
+    fn = next(n for n in ast.walk(ast.parse(open(os.path.join(ROOT, "tools", "rehearsal.py"), encoding="utf-8").read())) if isinstance(n, ast.FunctionDef) and n.name == "run")
+    pr = next(n for n in ast.walk(fn) if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "print" and n.args
+              and isinstance(n.args[0], ast.Constant) and n.args[0].value == "inside the format:")
+    name = next(x.id for x in ast.walk(pr.args[1]) if isinstance(x, ast.Name))
+    sets = [a for a in ast.walk(fn) if isinstance(a, ast.Assign) and a.lineno < pr.lineno and name in {x.id for t in a.targets for x in ast.walk(t) if isinstance(x, ast.Name)}]
+    last = max(sets, key=lambda a: a.lineno)
+    assert isinstance(last.value, ast.Call) and getattr(last.value.func, "id", "") == "inside12", ast.unparse(last)      # AFD F6: never the drawn arm's words
 
 
 def test_f4_a_writers_odd_reply_never_raises(monkeypatch):

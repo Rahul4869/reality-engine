@@ -13,6 +13,14 @@ _TOK = re.compile(r"\d[\d,]*(?:\.\d+)?|[a-z]+|[.,;:!?]")
 _NUM = re.compile(r"\d[\d,]*\.?\d*")
 _SCALE = re.compile(r"(\d[\d,]*(?:\.\d+)?)\s*(thousand|million|billion|trillion)\b", re.I)
 _MUL = {"thousand": 1e3, "million": 1e6, "billion": 1e9, "trillion": 1e12}
+DENY = ("not", "never", "if", "cannot", "no", "nobody", "nothing", "neither", "nor", "may", "might", "whether", "doubt", "myth")      # AFD F1 (+U1): a cause word in a sentence that denies or only doubts ("n't" too, see _denied) states no arrow
+_UNIT = {w: u for u, ws in (("second", "seconds secs sec"), ("minute", "minutes mins min"), ("hour", "hours hrs hr h"), ("day", "days"), ("week", "weeks"),
+                            ("month", "months"), ("year", "years"), ("decade", "decades"), ("century", "centuries"), ("millennium", "millennia millenniums"),
+                            ("degree", "degrees"), ("calorie", "calories"), ("mm", "millimetre millimetres millimeter millimeters"),
+                            ("cm", "centimetre centimetres centimeter centimeters"), ("m", "metre metres meter meters"), ("km", "kilometre kilometres kilometer kilometers"),
+                            ("mile", "miles"), ("foot", "feet ft"), ("inch", "inches"), ("g", "gram grams"), ("kg", "kilo kilos kilogram kilograms"),
+                            ("tonne", "tonnes ton tons"), ("pound", "pounds lb lbs"), ("ml", "millilitre millilitres milliliter milliliters"), ("litre", "litres liter liters"))
+         for w in [u] + ws.split()}                             # AFD F2: the unit a script says after an amount ("10 minutes", "10 more minutes"), by its one name
 
 
 def _scaled(text):
@@ -137,7 +145,7 @@ def _pairs(t, s, graphic, sents):
         es = (s["a"], s["b"]) if t == "compare" else (s["part"], s["whole"])
         ents = [(e["name"], e["value"], _anchors(e["name"]), [float(e["value"])], float(e["value"]), (_plain(e["name"]), _f(e["value"])) in own) for e in es]
         scene_nums = [float(e["value"]) for e in es]
-    places = []
+    places, units = [], []
     for name, val, A, D, V, is_own in ents:
         if is_own: continue                                     # the Director's own pair: drawn as the card draws it, never asked for a sentence
         for x in ((val, name) if t == "ladder" else (name,)):
@@ -153,11 +161,50 @@ def _pairs(t, s, graphic, sents):
                     dist = {n: min(abs(k - j) for k, v in nums if _eq(v, n) for j in pa) for n in present}
                     best = min(dist.values()); win = [n for n in present if dist[n] == best]
                     if len(win) > 1 or not _eq(win[0], V): continue          # a tie, or another number stands nearer the name: not this sentence's pair
-            place = (si, min([k for k, x in enumerate(w) if x in A] + [k for k, v in nums if any(_eq(v, d) for d in D)])); break
+            place = (si, min([k for k, x in enumerate(w) if x in A] + [k for k, v in nums if any(_eq(v, d) for d in D)]))
+            if t == "part":                                     # AFD F2: the unit the voice says after this amount (its number nearest the name)
+                pa = [k for k, x in enumerate(w) if x in A]; at = min((k for k, v in nums if _eq(v, V)), key=lambda k: min(abs(k - j) for j in pa))
+                units.append(_unit_after(w, at))
+            break
         if place is None: return f"a value the script does not give to that name: {name} = {val if isinstance(val, str) else MD._fmt(val, '')}"
         places.append(place)
+    if t == "part" and len(units) == 2 and all(units) and _UNIT[units[0]] != _UNIT[units[1]]:      # AFD F2: 10 minutes of 24 hours is never "42%" - the share of two units is false
+        return f"a part and its whole in different units: {units[0]} and {units[1]}"
     if t == "ladder" and any(places[k] >= places[k + 1] for k in range(len(places) - 1)): return "the rungs are not in the script's order"
     return ""
+
+
+def _unit_after(w, at):
+    """AFD F2 (U1): the unit word the voice says after the amount w[at] - the next word, or the one after a single word between ("10 more minutes",
+    "24 whole hours"); "" when neither is a unit of _UNIT."""
+    return next((x for x in w[at + 1:at + 3] if x in _UNIT), "")
+
+
+def _denied(ws):
+    """AFD F1: do these words deny or only doubt (a word of DENY - "no longer" by its "no" - and "n't": "doesn't" is cut "doesn" + "t")?"""
+    return any(x in DENY or (x == "t" and k and ws[k - 1].endswith("n")) for k, x in enumerate(ws))
+
+
+def _premise_if(toks, sid, j, i0, reach, first, second):
+    """U1d (AFD-if, RUL-U1d 1 as re-ruled by RUL-U1f 1): is toks[j] the "if" of a what-if's premise, whose arrow first -> second the cause mark at
+    toks[i0] states? Only an "if" that opens its sentence ("If ...", "What if ..."). P1, the mark in the same sentence: only an "If" that is the
+    sentence's FIRST word (a "What if" never - the whole question supposes, its link included: 1a), in a sentence holding EXACTLY ONE "," or ";"
+    (none or two: the if-clause's end is not known: 1b), the mark after it (1c); THE PREMISE is the tokens between the "if" and that one stop. P2:
+    the mark opens the next sentence ("What if X? So Y."); THE PREMISE is the whole sentence before. On both roads every anchor of `first` (the
+    arrow's tail) is in THE PREMISE (G1) and not every anchor of `second` (its head) is (G2): the arrow left out is premise -> consequence, never
+    the premise's own supposed link. Every other "if" - "whether", "So if", a mark inside the if-clause - still denies; only this one token is left
+    out of what _denied judges, and only for this (mark, link) pair."""
+    if toks[j] != "if": return False
+    s = [k for k in range(len(toks)) if sid[k] == sid[j]]; w = [k for k in s if toks[k][0].isalnum()]          # its sentence's tokens, and its words, in order
+    if not (w[0] == j or (w[1:2] == [j] and toks[w[0]] == "what")): return False
+    if sid[j] == sid[i0]:                                       # P1: the if-clause has ended before the mark
+        c = [k for k in s if toks[k] in (",", ";")]
+        if w[0] != j: return False                              # 1a: a "What if" takes P2 only
+        if len(c) != 1 or not j < c[0] < i0: return False      # 1b: exactly one "," or ";" in the sentence; 1c: the mark after it
+        prem = {toks[k] for k in range(j + 1, c[0])}
+    elif reach and sid[j] == sid[i0] - 1: prem = {toks[k] for k in s}          # P2: the whole sentence before is the premise
+    else: return False
+    return all(a in prem for a in first) and not all(b in prem for b in second)          # G1, G2: premise -> consequence, never inside the premise
 
 
 def _causes(links, texts):
@@ -181,9 +228,12 @@ def _causes(links, texts):
         for i0, i1, back in marks:
             S_ = sid[i0]
             before = {toks[j] for j in range(i0) if sid[j] == S_}; after = {toks[j] for j in range(i1 + 1, len(toks)) if sid[j] == S_}
-            if not back and not any(toks[j][0].isalnum() for j in range(i0) if sid[j] == S_):      # a cause word that opens its sentence ("So ...") reaches back one sentence
+            reach = not back and not any(toks[j][0].isalnum() for j in range(i0) if sid[j] == S_)
+            if reach:                                           # a cause word that opens its sentence ("So ...") reaches back one sentence
                 before |= {toks[j] for j in range(i0) if sid[j] == S_ - 1}
+            words = [j for j in range(len(toks)) if sid[j] == S_ or (reach and sid[j] == S_ - 1)]
             first, second = (B, A) if back else (A, B)
+            if _denied([toks[j] for j in words if not _premise_if(toks, sid, j, i0, reach, first, second)]): continue      # AFD F1: "Heat never causes rain" draws no Heat -> Rain; U1d/U1f: a premise's "if" is left out
             if all(a in before for a in first) and all(b in after for b in second): ok = True; break
         if not ok: return f"an arrow the script does not state: {links[k]} -> {links[k + 1]}"
     return ""
@@ -205,6 +255,11 @@ def verify(scene, graphic, texts):
     for y in ss:
         for w in re.findall(r"[a-z]+", y.lower()):
             if len(w) >= 3 and w not in vocab: return f"a word the script does not have: {w}"
+    for w in re.findall(r"[a-z]+", str(s.get("unit") or "").lower()):      # AFD F3: a unit is asked at ANY length - "kg" is never the script's "km"
+        if w not in vocab and not (w in _UNIT and any(_UNIT.get(v) == _UNIT[w] for v in vocab)):      # CR-AUDITFIX 2: "km" is the voice's "kilometres" - one name in _UNIT
+            return f"a word the script does not have: {w}"
+    if "%" in str(s.get("unit") or "") and not ("%" in low or "percent" in vocab or "per cent" in low or any("%" in x for x in gs)):      # U1 (AFD-%): "%" has no letters to ask - asked as itself
+        return "a word the script does not have: %"
     if t in ("compare", "part", "ladder"):
         why = _pairs(t, s, g, sentences(texts))
         if why: return why
@@ -388,6 +443,9 @@ def audit(master, job):
         if not st_:                                             # proved, yet no state shows it drawn (a repair re-drew it, or the render failed): its still, with the reason on record
             if r.get("ok"): r.update(ok=False, why=r.get("why") or "shown as its still: the render or a repair re-drew it")
             continue
+        if r.get("ok") and len(st_) < sum(1 for m in job.segmeta if m.get("i") == i):      # AFD F4 (F-12 on this road): a repair re-drew only SOME of its states -
+            out += [((m["f0"] + m["nf"] / 2) / f_, (m["i"], m["k"])) for m in st_]            # never half a diagram: the whole scene goes to its still, with the reason
+            r.update(ok=False, why=r.get("why") or "shown as its still: a repair re-drew part of it"); continue
         if not r.get("L"): continue
         if not r.get("ok"): out += [((m["f0"] + m["nf"] / 2) / f_, (m["i"], m["k"])) for m in st_]; continue
         g = RN.frame_at(master, max((m["f0"] + m["nf"]) / f_ for m in st_) - 0.25, w=int(r["L"]["W"]))

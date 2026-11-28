@@ -175,8 +175,8 @@ def run(ep_id=None):
         from tools.sweep import inside_of as inside12
         ok12, said12 = inside12(core12, epid); assert ok12, ("the inside of the format did not hold", said12)
         from tools.sweep import drawn_of as drawn12                                # v12 DRAWN: THE DRAWN SCENES - in the arm, both checks PASS, as the sweep judges them
-        ok12, said12 = drawn12(core12, epid); assert ok12 and "not in the drawn arm" not in said12, ("the drawn scenes did not hold", said12)
-        print("drawn:", said12[:300])
+        okd12, saidd12 = drawn12(core12, epid); assert okd12 and "not in the drawn arm" not in saidd12, ("the drawn scenes did not hold", saidd12)      # AFD F6: its own names - "inside the format:" below prints the inside rule's words
+        print("drawn:", saidd12[:300])
         fmt2b = str(json.loads(e12["draw_json"]).get("format") or "")                 # the long video's format: what the older asserts below expect follows it
         own2b = S("ENDINGS_ON", bool) and FMT12.ending(fmt2b) != "tease"               # a format with its own ending carries its own asks (3.3)
         voices2b = set(FMT12.FORMATS[fmt2b]["voices"]) if fmt2b in FMT12.FORMATS and len(FMT12.FORMATS[fmt2b]["voices"]) == 1 else {"DIRECTOR", "SKEPTIC"}      # F3: one voice
