@@ -494,22 +494,27 @@ def drain(kv=None):
     try: tries = json.loads(S("DASH_DRAIN_TRIES") or "{}")                # U1 fix 237 (J19-3): the failed tries of each kept key
     except Exception: tries = {}
     tries = {k: v for k, v in (tries if isinstance(tries, dict) else {}).items() if any(k == x[2] for x in kept)}
+    tries = {k: v for k, v in tries.items() if type(v) is int and 1 <= v <= DRAIN_TRIES}      # U1b finding 3 (ii): the cell is read into numbers ONCE, here - a value not a whole number from 1 to DRAIN_TRIES (a hand edit) counts as 0
     for _t, _i, key, val in sorted(kept):
         try:
             if key.startswith("inbox:wa:"):
                 from whatifs.wa import handle_inbound; handle_inbound(val)
             else: handle_action(val)
         except Exception as e:
-            k_ = int(tries.get(key) or 0) + 1; tries[key] = k_
+            k_ = tries.get(key, 0) + 1                                     # no int() of the cell in here: a hand-edited cell never raises out of the drain (U1b finding 3 (ii))
             if k_ < DRAIN_TRIES:
+                tries[key] = k_
                 log(f"a kept input was not handled ({type(e).__name__}); it and the later ones stay for the next run", "WARN"); break
+            if k_ > DRAIN_TRIES:                                           # U1b finding 3 (i): told already - passed over with no alarm, the cell unchanged, no write
+                log(f"a kept input is passed over again ({type(e).__name__}); its alarm was sent", "WARN"); continue
             log(f"a kept input failed {k_} runs ({type(e).__name__}); it stays kept and is passed over, the later ones are handled", "WARN")
-            if k_ == DRAIN_TRIES:                                          # ONE alarm names its key - never a word of his
-                try:
-                    from whatifs import notify as NT
-                    NT.send("pipeline_stop", f"A kept input of yours ({key}) failed {DRAIN_TRIES} runs in a row ({type(e).__name__}). It is kept, not lost, and passed "
-                            "over so your later inputs are handled; it needs a look.", tier="now", urgent=True, dedupe_key=f"pipeline_stop|kept|{key}")
-                except Exception as e2: log(f"the kept input's alarm was not sent ({type(e2).__name__})", "WARN")
+            try:                                                           # ONE alarm names its key - never a word of his
+                from whatifs import notify as NT
+                NT.send("input_unread", "One message you sent could not be read by the pipeline three runs in a row. It is kept, not lost, and your later messages "      # U1 J 237: the one
+                        f"are handled. If it mattered today, send it again in other words. ({key}, {type(e).__name__})", tier="now", urgent=True,                    # thing he can do; the key
+                        dedupe_key=f"input_unread|{key}")                                                                                                            # stays for the repair; U1b finding 4: its own kind
+                tries[key] = DRAIN_TRIES                                   # U1b finding 2: the count reaches DRAIN_TRIES only when the alarm was SENT
+            except Exception as e2: log(f"the kept input's alarm was not sent ({type(e2).__name__}); it is owed, tried again at the next run", "WARN")
             continue
         tries.pop(key, None)
         try: kv.delete(key)

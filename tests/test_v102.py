@@ -60,6 +60,7 @@ def test_every_feature_has_a_probe_and_a_promise():
 
 def test_review_gate_keeps_the_video_private_until_approved(monkeypatch, setting):
     _quiet(monkeypatch); setting("CREATIVE_REVIEW_FIRST_N", "3")
+    from whatifs import launch as LA; monkeypatch.setattr(LA, "uploads_open", lambda: True)      # RUL-U1h 2: the open channel this test always assumed (a fresh store's UPLOAD_LOCK is "unknown"), as `_ep8` stubs it
     import datetime as dt
     slot = (core.now_utc() + dt.timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
     core.store().append("Episodes", [{"episode_id": "EPR", "yt_id": "vidR", "slot_et": slot, "status": "SCHEDULED"}])

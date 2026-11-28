@@ -196,31 +196,47 @@ def hd_of(core, ids):
     if bad: return False, "; ".join(bad)
     return True, f"the HD gate held: {len(ids)} of {len(ids)} upload(s) went up private and public after their wait: " + "; ".join(said)
 
+_WALKED = {}          # U1 J 234 (#268): (id, Sheet) -> the counts its FIRST walk in this process measured around the two planted ticks
+
 def screens_of(core, ids=()):
     """v12 B-OWNER (PART 9, R17 (11 c)): (ok, words) - THE SWEEP WALKS HIS TWO SCREENS on the id's own Sheet, after its run. THE CLOCK IS PLANTED, so the
     counts never hang on the hour of the run: one open card (a decision for the evening list), then `digests.tick` at 09:05 and `digests.needs_tick` at
     18:05 India time of the next India day. The id is BAD when an Owner_Actions kind is not in the register (`notify.KINDS`), when WA_Outbox holds a
-    "refused_window" row or a kind outside morning, needs, alarm, reply, or when it holds no "morning" row or no "needs" row (5.6: a missing row is a
-    failure). Walked twice (the rehearsal, then the sweep's rehearsal branch) it sends nothing twice: both clocks are stamped, the card is one row."""
+    "refused_window" row or a kind outside morning, needs, alarm, reply, or when the planted 09:05 sent no "morning" row or the planted 18:05 no "needs"
+    row (5.6: a missing row is a failure). U1 J 234: the morning and needs counts are those of the TWO PLANTED TICKS - WA_Outbox rows with a message
+    id after them minus before them (WA_Outbox's `ts` is the real time, so only the difference tells them), never the run's own messages; they are
+    kept for the id in `_WALKED`. Walked twice (the rehearsal, then the sweep's rehearsal branch) it sends nothing twice - both clocks are stamped,
+    the card is one row - and the second walk judges the first walk's kept counts. A walk that sent nothing with nothing kept falls back to the totals of the Sheet, its words ending "(already walked)", only when
+    the Sheet's own stamps (DIGEST_DAILY_SENT and NEEDS_SENT, read BEFORE the two planted ticks) already name the planted day - another process walked
+    it; otherwise it is judged by its difference and its counts are kept, zero or not, so a later walk of it in this process is BAD too
+    (RUL-U1g 3: two planted ticks that sent nothing on a first walk are BAD; CR-U1FIX_2 (2))."""
     from whatifs import notify as NT, digests as DG, wa as WA
     ep = str((list(ids) or [""])[0] or "")
+    sent = lambda: {k: sum(1 for r in core.store().rows("WA_Outbox") if r.get("kind") == k and r.get("wamid")) for k in ("morning", "needs")}
     NT.send("bakeoff", "A decision planted by the sweep: the evening list must carry it.", [("Pick A", "PICK A")], episode=ep or None,
             default="A is used", expires_h=72, dedupe_key=f"sweep|planted|{ep}")
-    day = (core.now_utc().astimezone(NT.IST) + dt.timedelta(days=1)).date()
+    day = (core.now_utc().astimezone(NT.IST) + dt.timedelta(days=1)).date(); before = sent()
+    stamped = all(str(core.S(k) or "")[:10] == day.isoformat() for k in ("DIGEST_DAILY_SENT", "NEEDS_SENT"))      # RUL-U1g 3: read BEFORE the ticks - a tick that stamps and sends nothing never vouches for itself
     DG.tick(now=dt.datetime(day.year, day.month, day.day, 9, 5, tzinfo=NT.IST))
     DG.needs_tick(now=dt.datetime(day.year, day.month, day.day, 18, 5, tzinfo=NT.IST))
     st = core.store(); rows = st.rows("Owner_Actions"); out = st.rows("WA_Outbox"); bad = []
+    tot = {k: sum(1 for r in out if r.get("kind") == k and r.get("wamid")) for k in WA.PUSH_KINDS}
+    n = {k: tot[k] - before[k] for k in ("morning", "needs")}; key = (ep, str(getattr(st, "path", "") or getattr(st, "id", "")))
+    if any(n.values()) and key not in _WALKED: _WALKED[key] = n; tail = ""                # the first walk: what the planted ticks THEMSELVES sent (RUL-U3k U1-7: a later walk never replaces kept counts)
+    elif key in _WALKED: n = _WALKED[key]; tail = ""                  # walked again in this process: the first walk's counts
+    elif stamped: n = {k: tot[k] for k in ("morning", "needs")}; tail = " (already walked)"      # another process walked it (its stamps name the planted day): the totals, said so
+    else: _WALKED[key] = n; tail = ""                                 # a first walk, nothing sent, the planted day never stamped: judged by its difference (BAD); its zero counts KEPT (CR-U1FIX_2 (2)) - a later walk is BAD too, never "(already walked)"
     unknown = sorted({str(r.get("kind")) for r in rows if r.get("kind") not in NT.KINDS})
     if unknown: bad.append("a message of a kind the register does not know: " + ", ".join(unknown))
     refused = [str(r.get("kind") or "") for r in out if r.get("status") == "refused_window"]
     if refused: bad.append(f"{len(refused)} WhatsApp message(s) refused outside the 24-hour window: " + ", ".join(sorted(set(refused))))
     odd = sorted({str(r.get("kind") or "") for r in out if r.get("kind") not in WA.PUSH_KINDS + ("reply",)})
     if odd: bad.append("WhatsApp started a message of another kind: " + ", ".join(odd))
-    n = {k: sum(1 for r in out if r.get("kind") == k and r.get("wamid")) for k in WA.PUSH_KINDS}
     if not n["morning"]: bad.append("no morning message went out at the planted 09:05")
     if not n["needs"]: bad.append("no \"Needs you\" list went out at the planted 18:05 with a decision open")
     if bad: return False, "; ".join(bad)
-    return True, f"the owner's road held: {len(rows)} rows, all registered; WhatsApp: {n['morning']} morning, {n['needs']} needs, {n['alarm']} alarm"
+    return True, (f"the owner's road held: {len(rows)} rows, all registered; WhatsApp, by the two planted ticks: {n['morning']} morning, {n['needs']} needs; "
+                  f"{tot['alarm']} alarm in the run{tail}")
 
 # ------------------------------------------------------------------ one id (runs in its own process: module state never leaks between ids)
 def drawn_moments():
@@ -487,6 +503,15 @@ def _strategy_of(core, ep, org=True):
     return True, (f"the month's decision held: {n_dec} decisions (SHORT_SHARE_S2 40 -> 20 decided, told, executed and undone; the trial opened); one judgement; "
                   "a rejected video closed and reopened the uploads")
 
+# U1 J 200 (#226): two owner message kinds come and go with the WEEKDAY of the run, by design - `replan` (replan.weekly: Monday only, and only with
+# STRATEGY_ON FALSE) and `advisor` (caretaker.advisor, inside manage.learn's block opened by `in ("Sun",)`). A difference between two blocks in these
+# two kinds alone is the calendar, not the code; "owner_message_kinds" is unchanged (proving/verdict.py reads it).
+WEEKDAY_KINDS = {"replan": "Monday, and only with STRATEGY_ON FALSE", "advisor": "Sunday"}
+
+def weekday_kinds(kinds):
+    """The kinds of WEEKDAY_KINDS among `kinds`, sorted."""
+    return sorted({str(k) for k in kinds} & set(WEEKDAY_KINDS))
+
 def summary(results):
     by = {}
     for r in results: by[r["outcome"]] = by.get(r["outcome"], 0) + 1
@@ -510,7 +535,8 @@ def summary(results):
             "hd_gated": sum(1 for r in results if str(r.get("hd") or "").startswith("the HD gate held") and r["outcome"] == "ok"),          # v12 B-OWNER: asked only of runs with the organisation on (R24)
             "owner_road_ok": sum(1 for r in results if str(r.get("screens") or "").startswith("the owner's road held") and r["outcome"] == "ok"),      # v12 B-OWNER: every id
             "bad_ids": sorted(r["id"] for r in results if r["outcome"] != "ok"), "fail_classes": {k: sorted(set(v)) for k, v in sorted(fails.items())},
-            "warn_classes": {k: len(v) for k, v in sorted(warn.items())}, "degraded_classes": {k: len(v) for k, v in sorted(deg.items())}, "owner_message_kinds": {k: len(v) for k, v in sorted(own.items())}}
+            "warn_classes": {k: len(v) for k, v in sorted(warn.items())}, "degraded_classes": {k: len(v) for k, v in sorted(deg.items())}, "owner_message_kinds": {k: len(v) for k, v in sorted(own.items())},
+            "owner_weekday_kinds": weekday_kinds(own)}                     # U1 J 200: the kinds the run's weekday decides, named
 
 def main(argv=None):
     p = argparse.ArgumentParser(description="Sweep the fake pipeline over fixed episode ids.")

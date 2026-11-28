@@ -29,8 +29,8 @@ ALARM, HOLD, CARD, INFORM = "alarm", "hold", "card", "inform"
 GROUPS = ("needs", "posted", "learned", "research", "plan", "inputs", "money", "decided")
 def _kinds(klass_, group_, *kinds): return {k: (klass_, group_) for k in kinds}
 KINDS = {
-    # ALARM, the fixed list (item 180): the channel's safety (five), money stopping, the pipeline stopping
-    **_kinds(ALARM, "needs", "kids_flag", "policy", "risk_lock", "risk_gone", "uploads_private", "money_stop", "pipeline_stop", "org_watchdog"),
+    # ALARM, the fixed list (item 180): the channel's safety (five), money stopping, the pipeline stopping; U1b finding 4: a message of his the pipeline could not read
+    **_kinds(ALARM, "needs", "kids_flag", "policy", "risk_lock", "risk_gone", "uploads_private", "money_stop", "pipeline_stop", "org_watchdog", "input_unread"),
     # HOLD, the named hold list (item 150): (a) a quality or policy hold; (b) what only he can lawfully do. (c), the launch un-pause, is his own sitting and has no card
     **_kinds(HOLD, "needs", "contract_hold", "floor_hold", "special_review", "hd_blocked", "org_lever", "api_audit", "ypp_tier"),
     # CARD, a decision with a deadline and a default
@@ -66,7 +66,7 @@ def group(kind):
 
 NAMES = {      # v12 B-OWNER: the plain name of every kind that can ask him or alarm him - what a list row and the dashboard call it (within 24 characters, WhatsApp's limit for a row's title); a layman reads these, never the code's word
     "kids_flag": "Marked made for kids", "policy": "Policy watch: paused", "risk_lock": "Uploads locked", "risk_gone": "A video is gone",
-    "uploads_private": "Uploads kept private", "money_stop": "Monthly budget reached", "pipeline_stop": "Production stopped", "org_watchdog": "The watchdog stopped",
+    "uploads_private": "Uploads kept private", "money_stop": "Monthly budget reached", "pipeline_stop": "Production stopped", "org_watchdog": "The watchdog stopped", "input_unread": "A message was not read",
     "contract_hold": "Video held: a check", "floor_hold": "Video held: first view", "special_review": "Waits for your review", "hd_blocked": "Video kept private",
     "org_lever": "A setting needs your OK", "api_audit": "YouTube audit form", "ypp_tier": "Apply for monetisation",
     "bakeoff": "Pick the better model", "breakout": "A video is taking off", "expiry": "Something expires soon", "build_ready": "A change is ready",

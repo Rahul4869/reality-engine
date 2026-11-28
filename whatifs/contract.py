@@ -74,6 +74,7 @@ def p_hook(ctx):
         if not ref or str(sec.get("short") or "") != ref: return FAIL, f"the second line was taken from Short {sec.get('short') or '?'}, but this video is about {ref or 'no Short'}"
         if rec.get("status") != "applied": return FAIL, f"the hook of Short {ref} is not the second spoken line of the finished narration ({rec.get('status')})"      # the Fable re-audit of C25 (R2-F2): verify_in_narration looked
         return PASS, f"{n} candidates, winner {sc if sc is not None else 'chosen'} by {rec.get('scored_by', '?')}; the hook of Short {ref} follows it, word for word (no question and no 'you' of its own)"
+    if rec.get("status") != "applied": return FAIL, "the hook lab's chosen line is not the first spoken line (a later rewrite changed it)"      # U1 J 123 (#131): verify_in_narration leaves `applied` true and sets the status; the plain lab road read only `applied`
     return PASS, f"{n} candidates, winner {sc if sc is not None else 'chosen'} by {rec.get('scored_by', '?')}"
 
 def p_owners_cut(ctx):
@@ -1000,12 +1001,21 @@ def failed(rows):
     and by `clear_to_post` (WAIVED and N/A are no failure)."""
     return [(r.get("feature"), r.get("evidence")) for r in rows or [] if r.get("status") == FAIL]
 
+def _channel_lock():
+    """U1 J 239 (RUL-U1g 4): "" or why nothing of the channel may go public now - its two channel-wide locks, read as `clear_to_post` reads them (it
+    calls this, same order, same words): the uploads not confirmed open (UPLOAD_LOCK: risk.lock sets it on, the upload check's lock is the same cell),
+    the pipeline paused (PAUSED, PAUSED_UNTIL: the policy pause and his own). His Approve after a take-down asks it before `approve`."""
+    from whatifs import launch as LA
+    from whatifs.manage import paused
+    if not LA.uploads_open(): return "uploads are not confirmed open yet"
+    if paused(): return "the pipeline is paused"
+    return ""
+
 def clear_to_post(ep):
     """v12 B-OWNER (PART 7, A DEFAULT NEVER SKIPS A CHECK): (ok, why) - pure reads. The video waits for approval; no open HOLD row of it (its own
     `silence|` report aside); the newest final-gate row of each feature holds no failure (`failed`); YouTube did not mark it made for kids; uploads are
     open and nothing is paused."""
-    from whatifs import notify as NT, launch as LA
-    from whatifs.manage import paused
+    from whatifs import notify as NT
     st = store(); e = next((r for r in st.rows("Episodes") if r.get("episode_id") == ep), None)
     if not e or e.get("status") != "AWAITING_APPROVAL": return False, f"its status is {(e or {}).get('status') or 'not on record'}, not waiting for approval"
     hold = [r for r in NT.open_rows() if r.get("episode_id") == ep and NT.klass(r.get("kind")) == NT.HOLD and not str(r.get("dedupe_key") or "").startswith("silence|")]
@@ -1017,8 +1027,8 @@ def clear_to_post(ep):
     bad = failed(list(newest.values()))
     if bad: return False, f"a check of the finished video failed ({bad[0][0]})"
     if "True" in str(e.get("kids_check") or ""): return False, "YouTube marked it made for kids"
-    if not LA.uploads_open(): return False, "uploads are not confirmed open yet"
-    if paused(): return False, "the pipeline is paused"
+    held = _channel_lock()                                           # U1 J 239 (RUL-U1g 4): the channel's two locks - one function, both roads
+    if held: return False, held
     return True, "every check passed"
 
 def _ist(slot_iso):
@@ -1068,11 +1078,17 @@ def approve_by_silence(ep, row=None):
     NT.send("decided_post", text + watch, [("Take it down", f"UNPOST {ep}")], tier="week", episode=ep, expires_h=168, dedupe_key=f"decided|{ep}|{new}")
     return ans
 
+def _silence_approves(row):
+    """U1 J 236 (RUL-U1g 2): ONE rule of what his silence does to a creative_review card, asked by the act (`_review_silence`, the expiry) and by the
+    words (his Discuss on the card): true only when TWO_SCREENS_ON is TRUE now AND the card's own `default_action` is "approved by your silence"."""
+    if not S("TWO_SCREENS_ON", bool): return None
+    if (row or {}).get("default_action") != "approved by your silence": return None      # v12 B-OWNER (PART F, CF-2): a card that told him "stays private" (the older path, or sent while the switch was off) never posts
+    return True
+
 def _review_silence(row):
     """The default of a creative_review card that expired unanswered (notify.expire_defaults): with TWO_SCREENS_ON his silence is asked; off, nothing
     runs (today's "stays private")."""
-    if not S("TWO_SCREENS_ON", bool): return None
-    if row.get("default_action") != "approved by your silence": return None      # v12 B-OWNER (PART F, CF-2): a card that told him "stays private" (the older path, or sent while the switch was off) never posts
+    if not _silence_approves(row): return None                      # U1 J 236 (RUL-U1g 2): the switch AND the card's own word - the rule his Discuss answer reads
     return approve_by_silence(str(row.get("episode_id") or ""), row)
 
 def review_sweep():
@@ -1105,11 +1121,17 @@ def hold_sweep():
 
 def unpost(ep):
     """v12 B-OWNER (PART 7, UNDO NEVER DELETES; R17 ADDS (B)): his "Take it down" - the video is made private and his Hold is written by the function
-    his Hold tap calls. Nothing is deleted or uploaded; no Approve is offered after it (YouTube gives no time to a video that was public)."""
+    his Hold tap calls. Nothing is deleted or uploaded. U1 J 239 (J19-5): an Approve IS offered when the video had never been public - YouTube's own
+    read-back said "private" BEFORE the take-down and our record said SCHEDULED: one `decided_post` row with ("Approve", APPROVE <ep>) for 7 days (his
+    tap: the channel's two locks are read (`_channel_lock`), the video's own checks are not asked again, then `approve`, as on the review card - its own
+    slot when that is still 30 minutes ahead and free, otherwise the next free slot). A video that was public, or whose read-back is unknown, gets no
+    Approve (YouTube gives no time to a video that was public)."""
     from whatifs import publish as PUB, notify as NT
     st = store(); e = next((r for r in st.rows("Episodes") if r.get("episode_id") == ep), None)
     if not e or not e.get("yt_id"): return f"{ep} not found"
-    title = e.get("title") or ep
+    title = e.get("title") or ep; was_sched = e.get("status") == "SCHEDULED"
+    try: was = str((PUB.yt_status_full(e["yt_id"]) or {}).get("privacyStatus") or "")      # U1 J 239: YouTube's own word BEFORE the take-down; a raise or an empty answer = unknown
+    except Exception as x: was = ""; log(f"take-down: YouTube's privacy before it could not be read: {scrub(x)[:120]}", "WARN", ep)
     try: ok = PUB.yt_set_privacy(e["yt_id"], "private")              # it answers False when YouTube refuses the change: a take-down that did not happen is never said as done
     except Exception as x: ok = False; log(f"take-down failed: {scrub(x)[:160]}", "WARN", ep)
     if not ok:
@@ -1125,6 +1147,11 @@ def unpost(ep):
     hold_review(ep)
     for r in NT.open_rows():                                         # no open row may still say it goes public, or offer a take-down that is done
         if (r.get("kind") == "decided_post" and r.get("episode_id") == ep) or r.get("dedupe_key") == f"uploads_private|takedown|{ep}": st.update("Owner_Actions", "id", r["id"], {"status": "ANSWERED", "answered_at": iso(), "answer": "taken down"})
+    if was == "private" and was_sched:                               # U1 J 239: never public (a film stopped before its slot) - YouTube takes a time again, so his Approve can put it back
+        n = 1 + sum(1 for r in st.rows("Owner_Actions") if str(r.get("dedupe_key") or "").startswith(f"decided|{ep}|down|"))      # each take-down its own row: a second one is never swallowed
+        NT.send("decided_post", f"{title} is private again. Nothing was deleted. Changed your mind? Approve puts it back on the schedule: at its own time if that is still 30 minutes or more ahead and free, otherwise at the next free slot. After 7 days: "
+                "YouTube Studio, Visibility.", [("Approve", f"APPROVE {ep}")], tier="week", episode=ep, expires_h=168, dedupe_key=f"decided|{ep}|down|{n}")
+        return f"{title} is private again. Nothing was deleted. To put it back: Decided for you, Approve."
     return f"{title} is private again. Nothing was deleted. To publish it later: YouTube Studio, Visibility, Public."
 
 def owner_card(ep, stage, failed, extra=""):
@@ -1154,11 +1181,38 @@ def _answer(row, choice):
         ok, why = clear_to_post(parts[1])                                                                                          # "not approved by your silence" row asks the checks again
         if not ok: _silence_no(parts[1], why); return f"Not approved: {why}. Needs you says why."
         return approve(parts[1])
+    if len(parts) >= 2 and parts[0].upper() == "APPROVE" and str((row or {}).get("dedupe_key") or "").startswith(f"decided|{parts[1]}|down|"):      # U1 J 239: his Approve after his
+        title = next((str(r.get("title") or parts[1]) for r in store().rows("Episodes") if r.get("episode_id") == parts[1]), parts[1])     # own take-down: the review card's Approve,
+        lock = _channel_lock()                                                                                                            # after the channel's two locks (RUL-U1g 4); the
+        if lock:                                                                                                                          # video's own checks are not asked again (J 239 (4))
+            store().update("Owner_Actions", "id", row["id"], {"status": "OPEN", "answered_at": "", "answer": ""})      # nothing sent to YouTube; the row stays open, as below
+            return f"{title} was NOT put back on the schedule: {lock}. Your Approve stays open: tap it again once that is lifted."
+        raised = False
+        try: ans = str(approve(parts[1]))
+        except Exception as x: raised = True; ans = f"{type(x).__name__}: {scrub(x)[:120]}"; log(f"his Approve after a take-down raised: {ans}", "WARN", parts[1])      # CR-U1FIX_2 (3): logged - approve may have reached YouTube before it raised
+        if ans.startswith("approved"): return ans
+        store().update("Owner_Actions", "id", row["id"], {"status": "OPEN", "answered_at": "", "answer": ""})      # not put back: the row stays open, as _ran re-opens a card
+        if not raised: return f"{title} could NOT be put back on the schedule: {ans}. Set it in YouTube Studio."      # RULINGS_U2i 7a (A): approve answered, nothing was sent - no read-back
+        from whatifs import publish as PUB
+        try: seen = PUB.yt_status_full(next((str(r.get("yt_id") or "") for r in store().rows("Episodes") if r.get("episode_id") == parts[1]), "")) or {}      # it raised: what YouTube holds, read ONCE
+        except Exception: seen = {}
+        if seen.get("publishAt"): log(f"his Approve after a take-down raised, and YouTube shows {parts[1]} {seen.get('privacyStatus') or 'with no status'} with the time {seen['publishAt']}; our record still says HELD_BY_OWNER", "WARN", parts[1])      # RUL-U3k U1-1: the log says what YouTube holds
+        if seen.get("privacyStatus") == "private" and seen.get("publishAt"): return f"{title}: YouTube already holds the time {seen['publishAt']} for it, but our own record was not written ({ans}). Your Approve stays open: tap it again to finish it."      # (B)
+        if seen: return f"{title} could NOT be put back on the schedule: {ans}. Set it in YouTube Studio."      # (A) YouTube shows the video with no time
+        log(f"his Approve after a take-down raised, and YouTube could not be read for {parts[1]}: whether it holds a time is not known; our record still says HELD_BY_OWNER", "WARN", parts[1])      # RUL-U3k U1-1 (C)
+        return f"{title} may or may not be back on the schedule: {ans}, and YouTube could not be read just now. Your Approve stays open: tap it again."      # (C)
     if len(parts) >= 2 and parts[0].upper() in ("APPROVE", "HOLDREVIEW"):
+        shut = _channel_lock() if parts[0].upper() == "APPROVE" else ""      # RUL-U1h 2: the review card's Approve reads the channel's two locks, as his silence and his take-down Approve do; his Hold reads none
+        if shut:                                                           # nothing is sent to YouTube, the video keeps its status, the card is open again
+            title = next((str(r.get("title") or parts[1]) for r in store().rows("Episodes") if r.get("episode_id") == parts[1]), parts[1])
+            if (row or {}).get("id"): store().update("Owner_Actions", "id", row["id"], {"status": "OPEN", "answered_at": "", "answer": ""})
+            return f"{title} was NOT approved: {shut}. Nothing was sent to YouTube. Your Approve stays open: tap it again once that is lifted."
         return approve(parts[1]) if parts[0].upper() == "APPROVE" else hold_review(parts[1])
     if len(parts) >= 2 and parts[0].upper() == "UNPOST": return unpost(parts[1])      # v12 B-OWNER (PART 7): "Take it down" on a decided_post row
     if parts and parts[0].upper() == "DISCUSS" and str((row or {}).get("dedupe_key") or "").startswith("review|"):      # U1 fix 236 (J19-2): his talk is recorded (notify.answer
         store().update("Owner_Actions", "id", row["id"], {"status": "OPEN", "answered_at": "", "answer": ""})       # logs it) and the review card stays OPEN, as _ran re-opens one
+        return ("Noted. The review stays open: Approve or Hold. " + ("Without your tap it is approved by your silence at the time on the card." if _silence_approves(row)      # U1 J 236 (RUL-U1g 2):
+                else "Without your tap it stays private."))                                                                                                                # the rule the expiry asks
     return "recorded"
 
 def _ran(row, ep, said):

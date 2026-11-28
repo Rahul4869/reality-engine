@@ -1,5 +1,5 @@
 """Full offline rehearsal: setup -> voices -> tick -> produce -> release -> trends -> learn -> brief with fake models, images and voice; proves every stage connects at zero cost. See docs/CURRENT/SYSTEM.md."""
-import os, re, json, shutil, datetime as dt
+import os, re, json, shutil, contextlib, datetime as dt
 import numpy as np
 from whatifs import checkpoint as CK
 
@@ -31,6 +31,27 @@ def gate_tick(slot):
     day = slot.astimezone(NT.IST).replace(hour=0, minute=0, second=0, microsecond=0)
     return max(slot - dt.timedelta(minutes=30), day).astimezone(dt.timezone.utc)
 
+@contextlib.contextmanager
+def replaying(ep_id):
+    """U1 J 202 (#230): a REPLAY of a past id (its own minute is EARLIER than now) is judged as made on this Sheet. `runner.born_under_org` exempts an
+    older, half-made episode on a real Sheet; in a replay's fresh store the whole film IS made under the organisation - only its stamp is old. For the
+    length of the run this one id is "born under the organisation" (every other id asks the real function; restored in a `finally`). The wrap can
+    only ADD judgement (N/A becomes judged). An id that is not in the past, or none, wraps nothing. `ORG_SINCE` is never moved (it would move every
+    check that counts time since the install) and no production file changes."""
+    from whatifs.org import runner as RUN
+    from whatifs.core import now_utc
+    m = re.match(r"^EP(\d{12})", str(ep_id or ""))
+    try: t = dt.datetime.strptime(m.group(1), "%Y%m%d%H%M").replace(tzinfo=dt.timezone.utc) if m else None
+    except ValueError: t = None
+    if t is None or t >= now_utc().replace(second=0, microsecond=0):
+        yield
+        return
+    real = RUN.born_under_org
+    RUN.born_under_org = lambda ep: True if str(ep or "") == str(ep_id) else real(ep)
+    print(f"REPLAY of a past id {ep_id}: the organisation's checks judge it as made on this Sheet.")
+    try: yield
+    finally: RUN.born_under_org = real
+
 def run(ep_id=None):
     """ep_id = a fixed id for the long episode (the sweep); else the id is the minute. The Shorts' ids are derived from it, so one id reproduces the whole run."""
     assert os.environ.get("WI_FAKE") == "1", "rehearsal needs WI_FAKE=1"
@@ -38,11 +59,13 @@ def run(ep_id=None):
     import whatifs.voice as V
     real = V.KokoroBackend
     V.KokoroBackend = lambda blend: ToneVoice()
+    replay = contextlib.ExitStack()
     try:
         from whatifs.core import store, set_setting, now_utc, flush_costs, iso as iso_now
         def st_rows(t): flush_costs(); return store().rows(t)
         from whatifs import manage as MG, episode as EP
         from whatifs.voice_lab import main as voices
+        replay.enter_context(replaying(ep_id))                               # U1 J 202: a past id is judged as made on this Sheet (nothing for a new id)
         MG.setup(); print("setup ok")
         from whatifs import research as RS92                                  # v9.2: the research brief is a BACKGROUND job (learning / research workflow),
         RS92.save_brief(RS92.run_research()); print("research brief (background) ok")      # never made inside a preview or production
@@ -505,5 +528,5 @@ def run(ep_id=None):
         print("owner road:", saidw9b.replace("the owner's road held: ", "", 1) + f"; HD gate: {len(sh9b)} of {len(sh9b)} uploads")
         print("REHEARSAL: GREEN")
     finally:
-        V.KokoroBackend = real
+        V.KokoroBackend = real; replay.close()                                      # U1 J 202: a replay's wrap is undone
 

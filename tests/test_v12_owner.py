@@ -18,7 +18,7 @@ def test_checks_job_has_room():
 
 # ------------------------------------------------------------------ step 1: THE REGISTER (PART 1) - one table of every kind of message to him
 VARIABLE_KINDS = {"whatifs/contract.py": ("creative_review", "floor_eye"), "whatifs/org/verdicts.py": ("maker_line", "owner_verdict")}      # the two calls that pass the kind as a variable
-ALARMS = ("kids_flag", "policy", "risk_lock", "risk_gone", "uploads_private", "money_stop", "pipeline_stop", "org_watchdog")      # item 180: a FIXED list
+ALARMS = ("kids_flag", "policy", "risk_lock", "risk_gone", "uploads_private", "money_stop", "pipeline_stop", "org_watchdog", "input_unread")      # item 180: a FIXED list; U1b finding 4 adds input_unread on purpose
 HOLDS = {"contract_hold": "(a) a check of the video failed", "floor_hold": "(a) the first-time viewer floor held the film",
          "special_review": "(a) the Short's finished file failed a check; (a) a special has no check on record",
          "hd_blocked": "(a) the HD gate keeps a video private for a policy read",
@@ -995,7 +995,7 @@ def test_every_decision_has_a_plain_name():
     name of its own within WhatsApp's 24 characters - never the code's word ("Floor eye", "Hd blocked", "Ypp tier"); a kind outside the table keeps
     its own word with spaces."""
     asked = [k for k, (c, _g) in NT.KINDS.items() if c in (NT.ALARM, NT.HOLD, NT.CARD)]
-    assert len(asked) == 49 and set(NT.NAMES) == set(asked), sorted(set(asked) ^ set(NT.NAMES))
+    assert len(asked) == 50 and "input_unread" in asked and set(NT.NAMES) == set(asked), sorted(set(asked) ^ set(NT.NAMES))      # U1b finding 4: 49 -> 50
     for k in asked:
         n = NT.name(k); assert n == NT.NAMES[k] and 3 < len(n) <= 24 and "_" not in n and n[0].isupper(), (k, n)
     assert NT.name("floor_eye") == "Watch before it posts" and NT.name("hd_blocked") == "Video kept private" and NT.name("ypp_tier") == "Apply for monetisation"
@@ -1329,7 +1329,7 @@ def test_the_sweep_judges_his_two_screens_on_a_planted_clock(fault, monkeypatch,
     if fault:
         assert not ok and words == SCREENS_FAULTS[fault], words
         return
-    assert ok and words == "the owner's road held: 1 rows, all registered; WhatsApp: 1 morning, 1 needs, 0 alarm", words
+    assert ok and words == "the owner's road held: 1 rows, all registered; WhatsApp, by the two planted ticks: 1 morning, 1 needs; 0 alarm in the run", words      # U1 J 234: the planted ticks' own counts
     out = core.store().rows("WA_Outbox"); card = core.store().rows("Owner_Actions")[0]
     assert sorted(r["kind"] for r in out) == ["morning", "needs"] and len(bodies) == 2 and all(b["type"] == "template" for b in bodies)      # outside the window: the one template
     assert card["kind"] == "bakeoff" and card["status"] == "OPEN" and card["episode_id"] == "EPS9B" and card["id"] in {r["id"] for r in NT.needs()}
@@ -2115,7 +2115,7 @@ def test_a_take_down_that_youtube_refused_is_never_reported_as_done(monkeypatch,
     ok, note = DS.route("UNPOST|EP8"); assert not ok and "could NOT be made private" in note and _epi("EP8")["status"] == "SCHEDULED"
     monkeypatch.setattr(PUB8, "yt_set_privacy", lambda vid, p: True)
     ok, note = DS.route("UNPOST|EP8"); assert ok and "is private again. Nothing was deleted." in note and _epi("EP8")["status"] == "HELD_BY_OWNER"
-    assert not [r for r in _decided("EP8") if r["status"] == "OPEN"]                              # no open row still says it goes public or offers a take-down that is done
+    assert [json.loads(r["buttons"]) for r in _decided("EP8") if r["status"] == "OPEN"] == [[["Approve", "APPROVE EP8"]]]      # no open row still says it goes public or offers a take-down that is done; U1 J 239: the one open row is his Approve (the stand-in reads it private: never public)
 
 def test_the_card_names_the_day_and_a_moved_slot_its_true_reason(monkeypatch, setting):
     """R22 (2), THE WORDS HE READS (two sentences made true at the finish). The card said "from <HH:MM> on" with no day, though his silence can be taken
@@ -2176,7 +2176,7 @@ def test_a_refused_take_down_from_a_screen_raises_an_alarm_and_keeps_the_button(
     retry = [r for r in _decided("EP8") if r["status"] == "OPEN"]; assert len(retry) == 1, retry
     _ok, said = DS.route(f"ACT|{retry[0]['id']}|0")
     assert "is private again" in said and _epi("EP8")["status"] == "HELD_BY_OWNER" and alarm()[0]["status"] == "ANSWERED", (said, alarm())
-    assert not [r for r in _decided("EP8") if r["status"] == "OPEN"]
+    assert [json.loads(r["buttons"]) for r in _decided("EP8") if r["status"] == "OPEN"] == [[["Approve", "APPROVE EP8"]]]      # U1 J 239: the one open row is his Approve (never public)
 
 def test_a_video_youtube_kept_on_its_schedule_is_never_told_it_can_be_stopped(monkeypatch, setting):
     """CR-8a-1b (PART F, CF-1b; P33 / OC-2): `await_approval` did not read `yt_set_privacy`'s answer - a video YouTube kept on its schedule was marked
