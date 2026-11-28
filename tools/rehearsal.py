@@ -165,19 +165,24 @@ def run(ep_id=None):
         assert all(led1c.get(k, ("missing",))[0] == "PASS" for k in ("viewer_floor", "one_story", "makers_line")), {k: led1c.get(k) for k in ("viewer_floor", "one_story", "makers_line")}
         assert led1c["makers_line"][1].startswith(f'the film ends on his own line, word for word: "{line1c}"') and json.loads(row1c["line_used"]) == {"ep": epid, "line": line1c}, \
             ("the film does not end on the line of the row the ladder used", led1c["makers_line"], row1c.get("line_used"))
-        # THE FLOP CASE, ending at the CHECK (3.10, and the memo's change (9)): a session on the stand-in of a flop computes to "fail" and check viewer_floor FAILS on it
+        # THE FLOP CASE, ending at the CHECK (3.10, and the memo's change (9)): a session on the stand-in of a flop computes to "fail"; while the viewers are not measured the check REPORTS it (N/A),
+        # and once the pilot armed the hold the check FAILS on it (RULING_F10)
         can1c, twin1c = FL1c.kit(os.path.join(work, "flop_kit"))
         flop1c = FL1c.session("S-flop-" + epid, "flop", FL1c.stand_in(os.path.join(work, "flop.mp4"), "flop"), can1c, twin1c, [], [], "FLOP" + epid[2:])
-        vf1c = CON1c.p_viewer_floor({"floor": flop1c})
-        assert flop1c["status"] == "fail" and vf1c[0] == CON1c.FAIL and vf1c[1].startswith("ranked beside the rejected video"), ("the floor did not refuse the flop", flop1c["status"], vf1c)
+        vr1c = CON1c.p_viewer_floor({"floor": flop1c})
+        assert flop1c["status"] == "fail" and not FL1c.fail_holds() and vr1c[0] == CON1c.NA and vr1c[1].startswith("reported, not held: ranked beside the rejected video"), ("the unmeasured floor did not report the flop", flop1c["status"], vr1c)
+        set_setting("VIEW_FLOOR_FAIL_HOLDS", "TRUE")
+        try: vf1c = CON1c.p_viewer_floor({"floor": flop1c})
+        finally: set_setting("VIEW_FLOOR_FAIL_HOLDS", "FALSE")
+        assert vf1c[0] == CON1c.FAIL and vf1c[1].startswith("ranked beside the rejected video"), ("the floor did not refuse the flop", flop1c["status"], vf1c)
         # HIS TAP "VERDICT <episode> UP" (played through the verdict's own handler: the long video's ask is sent when it is LIVE, by a later tick): the row,
         # D13's run `verdict`, `agree` against the floor's prediction - and the video becomes a reference of the next film's floor
-        out1c = VER1c._answer({"episode_id": epid}, f"VERDICT {epid} UP"); vr1c = next(x for x in st.rows("Owner_Verdicts") if x["ref"] == epid)
+        out1c = VER1c._answer({"episode_id": epid}, f"VERDICT {epid} UP"); vrow1c = next(x for x in st.rows("Owner_Verdicts") if x["ref"] == epid)
         ses1c = [x for x in st.rows("Sessions") if x.get("dept") == "D13" and x.get("trigger") == "verdict" and x.get("episode_id") == epid]
-        assert vr1c["kind"] == "long" and VER1c.read(vr1c["verdict"]) == "up" and vr1c["via"] == "tap" and vr1c["floor"] == "up" and vr1c["agree"] == "TRUE" and ses1c and ses1c[-1]["status"] == "ok", \
-            ("his tap was not kept or not scored", {k: vr1c.get(k) for k in ("verdict", "via", "floor", "agree")}, [x.get("status") for x in ses1c])
+        assert vrow1c["kind"] == "long" and VER1c.read(vrow1c["verdict"]) == "up" and vrow1c["via"] == "tap" and vrow1c["floor"] == "up" and vrow1c["agree"] == "TRUE" and ses1c and ses1c[-1]["status"] == "ok", \
+            ("his tap was not kept or not scored", {k: vrow1c.get(k) for k in ("verdict", "via", "floor", "agree")}, [x.get("status") for x in ses1c])
         assert [x for x, _v in VER1c.references("EP" + "0" * 12)] == [epid], "his thumbs-up did not make the video a reference"
-        print("floor:", said1c[:300], "| his line, as he typed it:", line1c, "| the flop stand-in:", vf1c[1][:90], "|", out1c[:110])
+        print("floor:", said1c[:300], "| his line, as he typed it:", line1c, "| the flop stand-in, viewers not measured:", vr1c[0], vr1c[1][:60], "| viewers measured:", vf1c[0], vf1c[1][:50], "|", out1c[:110])
         # v12 V4: THE REHEARSAL MONTH (memo 3.10, redesign section 6) - twelve Shorts with readings ("tested"; no format, so the CEO's arm rules do not
         # count them), four promotions by ladder.promote - one before each of four long-video slots, each topic then used - and the CEO's month on this
         # Sheet (sweep.strategy_of: one judgement, one decision told to the owner word for word with its Undo, executed and undone, the trial, the lock).

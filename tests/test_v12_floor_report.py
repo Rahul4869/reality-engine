@@ -22,12 +22,12 @@ def _fixed_day(monkeypatch, t=T0):
 def _cost(inr):                                                                       # one pilot session's rupees on the Cost_Log
     core.store().append("Cost_Log", [{"ts": core.iso(), "episode_id": "FLOORPILOT", "item": "floor_gemini", "provider": "gemini", "units": "1", "inr": str(inr), "basis": "measured"}])
 
-@pytest.mark.parametrize("review", ["0", "3"])
-def test_a_film_the_unmeasured_floor_refuses_goes_to_his_eye_with_the_clock_and_is_never_held(monkeypatch, setting, media, review):
+@pytest.mark.parametrize("review,screens", [("0", "FALSE"), ("3", "TRUE"), ("3", "FALSE")])      # U1 (F10): the review's default under BOTH TWO_SCREENS_ON values
+def test_a_film_the_unmeasured_floor_refuses_goes_to_his_eye_with_the_clock_and_is_never_held(monkeypatch, setting, media, review, screens):
     from tests import test_v12_opening_e2e as E2E
     from whatifs import publish as PUB
-    _start_e2e(monkeypatch, setting); setting("VIEW_FLOOR_FAIL_HOLDS", "FALSE"); setting("ORG_ON", "FALSE"); setting("CREATIVE_REVIEW_FIRST_N", review)
-    ep = OWN_IDS[8] if review == "0" else OWN_IDS[9]
+    _start_e2e(monkeypatch, setting); setting("VIEW_FLOOR_FAIL_HOLDS", "FALSE"); setting("ORG_ON", "FALSE"); setting("CREATIVE_REVIEW_FIRST_N", review); setting("TWO_SCREENS_ON", screens)
+    ep = {("0", "FALSE"): OWN_IDS[8], ("3", "TRUE"): OWN_IDS[9], ("3", "FALSE"): OWN_IDS[13]}[(review, screens)]      # code review U1FIX-b (1): each case its own whole production (one work folder a process, no cleaning)
     mails = []; monkeypatch.setattr(PUB, "email", lambda subject, *a, **k: (mails.append(str(subject)), True)[1])
     real_view = FL.view
     monkeypatch.setattr(FL, "view", lambda src, base, s: FL.stand_in(os.path.join(os.path.dirname(base), "flop.mp4"), "flop") if base.endswith(os.sep + "new") else real_view(src, base, s))
@@ -43,7 +43,8 @@ def test_a_film_the_unmeasured_floor_refuses_goes_to_his_eye_with_the_clock_and_
     if review == "0":
         assert [x["kind"] for x in cards] == ["floor_eye"] and cards[0]["default_action"] == "goes public by itself" and cards[0]["expires_at"], cards
     else:
-        assert [x["kind"] for x in cards] == ["creative_review"], cards      # DESIGN QUESTION (J18 ANSWER 1 (3)(e)): the design asks `not cards[0].get("expires_at")`; at 7f2a815 contract.await_approval gives every creative_review card an expiry (72 h "stays private" with TWO_SCREENS_ON FALSE, "approved by your silence" with it TRUE) - the clause is left out, not adapted
+        assert [x["kind"] for x in cards] == ["creative_review"], cards      # RULING_F10: his first three have the review's own clock (item 223); BEHAVIOUR 6 is void
+        assert cards[0]["expires_at"] and cards[0]["default_action"] == {"TRUE": "approved by your silence", "FALSE": "stays private"}[screens], cards      # U1 (F10): each wording as written (item 223)
     t = cards[0]["text"]                                                                                           # (e) the card says why
     assert "ranked its first minute beside the video you rejected" in t and "not measured yet" in t and f"https://drive.google.com/file/d/{ep}_view.mp4/view" in t, t
     assert not [m for m in mails if m.startswith("Video held")], mails                                             # (f)

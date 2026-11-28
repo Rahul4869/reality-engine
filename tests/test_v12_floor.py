@@ -243,7 +243,8 @@ OWN_IDS = ("EP209910010900", "EP209910080900", "EP209910150900", "EP209910220900
            "EP209912170900", "EP209912240900",                                          # audit F10 (tests/test_v12_floor_report.py): a refused film in the report state, without and with his first-three review
            "EP209912280900",                                                            # (code review C18, 4) audit F6: a void floor under his first-three review - never the id of the void-session test
            "EP209912290900",                                                            # (code review C18, 3) tests/test_v12_floor_report.py: a refused film whose hold cell is armed between its check and its finish
-           "EP209912300900")                                                            # (FIX-C18 round 3) tests/test_v12_floor_report.py: audit V1c F7 - a whole F1 production whose scenes are the viewer's own place
+           "EP209912300900",                                                            # (FIX-C18 round 3) tests/test_v12_floor_report.py: audit V1c F7 - a whole F1 production whose scenes are the viewer's own place
+           "EP209912310915")                                                            # code review U1FIX-b (1): the THIRD case of tests/test_v12_floor_report.py's report state (review 3, TWO_SCREENS_ON FALSE) - one id a case
 
 @pytest.fixture
 def floor_on(setting):
@@ -771,12 +772,23 @@ def test_the_whole_productions_of_this_file_use_ids_no_other_test_file_uses():
             for i in OWN_IDS: assert i not in t, (f, i)
     import ast, glob                                                                              # (code review C18, 4) ONE work folder a process (tests/conftest.py)
     users = {k: [] for k in range(len(OWN_IDS))}                                                  # and no cleaning (tests/test_v12_opening_e2e.py): each id is the
+    def cases(fn):                                                                                # (RB-U1-a, code review U1FIX-b (1)) each parametrised CASE is a whole
+        n = 1                                                                                     # production of its own: the product of the function's
+        for d in fn.decorator_list:                                                               # pytest.mark.parametrize case counts
+            if isinstance(d, ast.Call) and ast.unparse(d.func) == "pytest.mark.parametrize":
+                assert len(d.args) >= 2 and isinstance(d.args[1], (ast.List, ast.Tuple)), (fn.name, "a parametrize whose cases this guard cannot count")
+                n *= len(d.args[1].elts)
+        return n
+    owned = {}
     for f in sorted(glob.glob(os.path.join(root, "test_v12_floor*.py"))):                         # production of exactly ONE test function of the floor files
         for fn in ast.walk(ast.parse(open(f, encoding="utf-8").read())):
             if isinstance(fn, ast.FunctionDef) and fn.name.startswith("test_"):
-                for k in {n.slice.value for n in ast.walk(fn) if isinstance(n, ast.Subscript) and isinstance(n.value, ast.Name) and n.value.id == "OWN_IDS" and isinstance(n.slice, ast.Constant)}:
+                ks = {n.slice.value for n in ast.walk(fn) if isinstance(n, ast.Subscript) and isinstance(n.value, ast.Name) and n.value.id == "OWN_IDS" and isinstance(n.slice, ast.Constant)}
+                for k in ks:
                     users[k].append(f"{os.path.basename(f)}::{fn.name}")
+                if ks: owned[f"{os.path.basename(f)}::{fn.name}"] = (len(ks), cases(fn))
     assert all(len(v) == 1 for v in users.values()), {k: v for k, v in users.items() if len(v) != 1}
+    assert not {k: v for k, v in owned.items() if v[0] < v[1]}, ("a function naming OWN_IDS holds fewer distinct ids than its parametrised cases (ids, cases)", {k: v for k, v in owned.items() if v[0] < v[1]})
 
 def _start_e2e(monkeypatch, setting):
     from tests import test_v12_inside as INS_T
@@ -1580,6 +1592,7 @@ def test_the_sweep_and_the_rehearsal_call_it_and_the_rehearsal_walks_his_verdict
     assert '"I would keep it for one day, then beg for gravity back."' in src and '"Not for one hour."' in src and 'set_setting("OWNER_VERDICT_ASK_MAX_PER_DAY", "9")' in src
     assert 'f"LINE {ref1c} {line1c}"' in src and '.update("Owner_Verdicts"' not in src                               # his line through the second message's link (DESIGN QUESTION 25), never a write of the tab
     assert 'floor1c(core12, epid, climbed=True)' in src and 'FL1c.stand_in(os.path.join(work, "flop.mp4"), "flop")' in src and 'vf1c[1].startswith("ranked beside the rejected video")' in src
+    assert 'vr1c[1].startswith("reported, not held: ranked beside the rejected video")' in src and src.index("vr1c = CON1c.p_viewer_floor(") < src.index('set_setting("VIEW_FLOOR_FAIL_HOLDS", "TRUE")') < src.index("vf1c = CON1c.p_viewer_floor(") < src.index('set_setting("VIEW_FLOOR_FAIL_HOLDS", "FALSE")')      # RULING_F10: both states, the default first, the cell put back
     assert 'VER1c._answer({"episode_id": epid}, f"VERDICT {epid} UP")' in src and 'VER1c.references(' in src and 'print("floor:"' in src
     assert 'FL1c.session("S-flop-" + epid, "flop", FL1c.stand_in(' in src                                                # (V1c finish, C21) the memo's own value: each rehearsal's flop walks its own blind order
     from whatifs import cta as CTA, maker as MK
