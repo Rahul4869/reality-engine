@@ -240,7 +240,10 @@ OWN_IDS = ("EP209910010900", "EP209910080900", "EP209910150900", "EP209910220900
            "EP209910290900", "EP209911050900",                                          # step 2: a film he gave a thumbs-up, and the film judged beside it
            "EP209911120900",                                                            # step 3: a long video about a promoted Short that ends on his line (and the same film on a Sheet without one)
            "EP209911190900",                                                            # the finish (C2): a film held by a measured check, then refused by the floor, then published anyway
-           "EP209912170900", "EP209912240900")                                          # audit F10 (tests/test_v12_floor_report.py): a refused film in the report state, without and with his first-three review
+           "EP209912170900", "EP209912240900",                                          # audit F10 (tests/test_v12_floor_report.py): a refused film in the report state, without and with his first-three review
+           "EP209912280900",                                                            # (code review C18, 4) audit F6: a void floor under his first-three review - never the id of the void-session test
+           "EP209912290900",                                                            # (code review C18, 3) tests/test_v12_floor_report.py: a refused film whose hold cell is armed between its check and its finish
+           "EP209912300900")                                                            # (FIX-C18 round 3) tests/test_v12_floor_report.py: audit V1c F7 - a whole F1 production whose scenes are the viewer's own place
 
 @pytest.fixture
 def floor_on(setting):
@@ -766,6 +769,14 @@ def test_the_whole_productions_of_this_file_use_ids_no_other_test_file_uses():
         if f.endswith(".py") and f != here:
             t = open(os.path.join(root, f), encoding="utf-8").read()
             for i in OWN_IDS: assert i not in t, (f, i)
+    import ast, glob                                                                              # (code review C18, 4) ONE work folder a process (tests/conftest.py)
+    users = {k: [] for k in range(len(OWN_IDS))}                                                  # and no cleaning (tests/test_v12_opening_e2e.py): each id is the
+    for f in sorted(glob.glob(os.path.join(root, "test_v12_floor*.py"))):                         # production of exactly ONE test function of the floor files
+        for fn in ast.walk(ast.parse(open(f, encoding="utf-8").read())):
+            if isinstance(fn, ast.FunctionDef) and fn.name.startswith("test_"):
+                for k in {n.slice.value for n in ast.walk(fn) if isinstance(n, ast.Subscript) and isinstance(n.value, ast.Name) and n.value.id == "OWN_IDS" and isinstance(n.slice, ast.Constant)}:
+                    users[k].append(f"{os.path.basename(f)}::{fn.name}")
+    assert all(len(v) == 1 for v in users.values()), {k: v for k, v in users.items() if len(v) != 1}
 
 def _start_e2e(monkeypatch, setting):
     from tests import test_v12_inside as INS_T
@@ -809,7 +820,7 @@ def test_a_void_floor_on_one_of_his_first_videos_is_his_creative_review_not_the_
     """(audit F6) A video under the creative review of his first videos gets the review's card, whatever the floor said: a void floor and a needed review
     together give `creative_review` and never `floor_eye` (the order of `if CON.review_needed` and the eye's `elif` in episode.py)."""
     from tests import test_v12_opening_e2e as E2E
-    _start_e2e(monkeypatch, setting); setting("ORG_ON", "FALSE"); setting("CREATIVE_REVIEW_FIRST_N", "99"); ep = OWN_IDS[3]
+    _start_e2e(monkeypatch, setting); setting("ORG_ON", "FALSE"); setting("CREATIVE_REVIEW_FIRST_N", "99"); ep = OWN_IDS[10]      # (code review C18, 4) an id of its own
     setting("VIEW_FLOOR_CANARY", json.dumps({"file": "missing.mp4", "sha": "0" * 64, "yt": "", "made": "2026-11-15"}))
     r = EP.produce(E2E._slot(30), episode_id=ep); led = _led(ep)
     assert r.get("ok") and led["viewer_floor"] == (CON.NA, "no canary kit")

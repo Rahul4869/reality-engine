@@ -438,7 +438,7 @@ def test_a_decided_row_without_its_ticket_for_26_hours_fails_only_text_and_is_se
     assert len(STR.settle()) == 1 and row()["state"] == "decided"                            # sent once more
     assert STR.settle() == [] and row()["state"] == "void"                                    # then void
 
-def test_what_was_decided_for_him_is_never_counted_as_open_and_is_listed_on_its_own():
+def test_what_was_decided_for_him_is_never_counted_as_open_and_is_listed_on_its_own(setting, monkeypatch):
     """(audit F4) INFORM_KINDS, read: three rows "Nothing to do" (kinds strategy and desk) are not in the digest's count of open decisions nor on the dashboard's
     docket, and ARE on its list "Decided for you" - both lists (memo 3.4; the review's change 3 (c))."""
     from whatifs import digests as DG, dash as DSH
@@ -447,6 +447,9 @@ def test_what_was_decided_for_him_is_never_counted_as_open_and_is_listed_on_its_
     assert not [x for x in DG._risks({}) if "open decisions on the dashboard" in x], DG._risks({})
     assert not [c for c in DSH._docket() if str(c.get("id")).startswith("OA-inf")]
     assert sorted(c["id"] for c in DSH._decided()) == ["OA-inf0", "OA-inf1", "OA-inf2"]
+    setting("TWO_SCREENS_ON", "FALSE"); sent = []                                                     # (code review C18, 13) the older digest (notify.digest, the switch off)
+    monkeypatch.setattr(PUB, "email", lambda subject, html, *a, **k: (sent.append(str(html)), True)[1])
+    assert NT.digest(force=True) and len(sent) == 1 and not [i for i in range(3) if f"Decided for you {i}." in sent[0]], sent
 
 def test_a_decision_is_a_ticket_or_the_check_fails_only_text(monkeypatch, setting):
     from whatifs.org import runner as RN, memos as MEMO
@@ -509,7 +512,7 @@ def test_every_inbound_memo_of_a_review_is_dispositioned(setting):
     s = [x for x in core.store().rows("Sessions") if x.get("dept") == "D1" and x.get("trigger") == "review"][-1]; assert s["status"] == "ok", s
 
 @pytest.mark.parametrize("dept,trigger", [("D1", "review"), ("D11", "watch")])
-def test_every_type_of_inbound_memo_is_dispositioned_by_strategy_and_by_finance(setting, dept, trigger):
+def test_every_type_of_inbound_memo_is_dispositioned_by_strategy_and_by_finance(setting, monkeypatch, dept, trigger):
     """(audit F6) One memo planted of each of the four types (memo 3.4 (5)) - owner, performance, problem, decision - to Strategy AND to Finance (V4 wires
     D11): the run is "ok" (an undispositioned memo is a breach) and each memo has its disposition on record."""
     from tests.test_v12_org import GOOD
@@ -517,9 +520,13 @@ def test_every_type_of_inbound_memo_is_dispositioned_by_strategy_and_by_finance(
     setting("STRATEGY_ON", "TRUE"); ids = []
     for t in ("owner_memo", "performance_memo", "problem_memo", "decision_memo"):
         ids.append(MEMO.write(dict(GOOD[t], to_depts=[dept], dedupe_key=f"f6|{dept}|{t}"))["id"])
+    seen = []; real = RN._apply_action                                                                  # (code review C18, 11) each memo's disposition, read back
+    monkeypatch.setattr(RN, "_apply_action", lambda m, a, d, st: (seen.append((m["id"], str(a[0]) if a else "")), real(m, a, d, st))[1])
     RN.run(dept, trigger, STR.review if dept == "D1" else FIN.watch)
     s = [x for x in core.store().rows("Sessions") if x.get("dept") == dept and x.get("trigger") == trigger][-1]; assert s["status"] == "ok", s
     assert len(set(ids)) == 4
+    mine = [(i, k) for i, k in seen if i in ids]
+    assert sorted(i for i, _ in mine) == sorted(ids) and {k for _, k in mine} <= {"resolved", "in_progress", "rejected", "deferred"}, seen
 
 def test_the_effect_gate_runs_its_own_arithmetic_for_a_long_share_the_boost_and_shorts_per_week(setting, monkeypatch):
     """(audit F7) STR.effect itself, never replaced: (1) a long format's share under FORMAT_FORCE changes nothing that runs (memo 3.11 row 2: refused) and
@@ -878,6 +885,9 @@ def test_a_candidate_is_filed_only_with_the_policy_page_the_day_and_the_sentence
     c = cands(); assert c["Read policy"]["state"] == "filed" and json.loads(c["Read policy"]["policy"]) == POL, c["Read policy"]
     assert all(c[f"Unread policy {n}"]["state"] == "refused: no policy reading" for n in range(len(bad))), {n: c[f"Unread policy {n}"]["state"] for n in range(len(bad))}
     assert STR.trial_move(JAN)["title"] == "Read policy"
+    edge = dict(POL, url="https://support.google.com/youtube/answer/" + "9" * 248, sentence='"' * 400)      # (code review C18, 5) at the door's limits: an address of
+    STR.file(machine("Policy at the limits", policy=edge)); row = cands()["Policy at the limits"]               # 290 characters, every character of the sentence two in JSON
+    assert len(edge["url"]) == 290 and row["state"] == "filed" and json.loads(row["policy"]) == STR.policy_read(edge), row
 
 def test_one_trial_at_a_time_and_the_next_one_four_weeks_later(setting):
     from whatifs.org import memos as MEMO

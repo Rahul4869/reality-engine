@@ -641,8 +641,9 @@ def file(c, now=None, st=None):
     elif how["lever_class"] == "C" and str(how["target"]).split(":", 1)[-1] not in TRIAL_ROLES: state = f"parked: {how['target']} is no rulebook role"
     elif how["lever_class"] == "B" and not LV.owner_of(str(how["target"])): state = f"parked: {how['target']} is not a lever"
     else: state = "filed"
+    # code review C18 (5): the policy reading is never cut - a cut dump is no JSON; policy_read bounds its parts (an address <= 300, a sentence <= 400 characters)
     row = {"id": cid, "ts": iso(now), "kind": kind, "title": title, "how": json.dumps(how, sort_keys=True)[:2000], "sources": json.dumps(src)[:1000],
-           "policy": json.dumps(pol, ensure_ascii=False)[:800] if pol else str(c.get("policy") or "")[:200], "filed_by": str(c.get("filed_by") or "")[:40], "state": state, "ticket": "", "note": ""}
+           "policy": json.dumps(pol, ensure_ascii=False) if pol else str(c.get("policy") or "")[:200], "filed_by": str(c.get("filed_by") or "")[:40], "state": state, "ticket": "", "note": ""}
     st.append(CAND, [row]); return row
 
 def _filed(now=None):

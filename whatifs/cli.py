@@ -118,9 +118,16 @@ def main():
                         tier="now", expires_h=72, dedupe_key=f"floorkit|{sha[:8]}")
             if len(sys.argv) <= 2 or (len(sys.argv) > 4 and sys.argv[4] == "pilot"):      # audit F11: the workflow run (and a test that asks for it) measures the judges on the kit
                 p = FLR.pilot()
-                said = (f"they named the real minute over its frozen picture in {round(p['q'] * p['answers'])} of {p['answers']} answers" if p["answers"] else "they could not be asked")
-                then = ("From now a video they refuse is held for your tap." if p["trusted"] else "That is not enough to hold a video on their word: a video they refuse comes to you first and is published after your silence.")
-                NT.send("floor_kit", f"The first-time viewers were measured on the reference alone: {said}. {then} Nothing is needed from you.", tier="now", expires_h=72, dedupe_key=f"floorpilot|{p['month']}|{p['answers']}|{p['q']}")
+                held = FLR.fail_holds()                                   # code review C18 (2): the hold cell read AFTER the pilot - the notice says what the code will do
+                if p.get("measured"):
+                    said = f"were measured on the reference alone: they named the real minute over its frozen picture in {round(p['q'] * p['answers'])} of {p['answers']} answers."
+                    then = ("From now a video they refuse is held for your tap." if held else "That is not enough to hold a video on their word: a video they refuse comes to you first and is published after your silence.")
+                else:                                                     # its cap reached, a family down, too few answers: nothing was measured and nothing changes
+                    said = "could not be measured on the reference alone (" + (f"only {p['answers']} answers came back" if p["answers"] else "they could not be asked") + "). Nothing changes."
+                    then = ("A video they refuse is still held for your tap." if held else "A video they refuse still comes to you first and is published after your silence.")
+                from whatifs.core import S as _S
+                paid = f"This month's pilots have cost Rs {FLR.pilot_inr():.0f} of Rs {_S('VIEW_FLOOR_PILOT_CAP_INR', float):.0f}."      # code review C18 (8), RULINGS_U1c 4.3: the rupees, in both wordings
+                NT.send("floor_kit", f"The first-time viewers {said} {then} {paid} Nothing is needed from you.", tier="now", expires_h=72, dedupe_key=f"floorpilot|{p['month']}|{p['answers']}|{p['q']}|{held}")
         elif cmd == "abtest":
             from whatifs.tableread import abtest_main; abtest_main()
         elif cmd == "fixheld":

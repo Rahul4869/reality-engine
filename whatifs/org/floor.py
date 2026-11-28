@@ -142,6 +142,7 @@ def make_kit(path, yt=""):
             k.update({"file2": PUB.drive_upload(v2["clip"], "floor_canary2.mp4", public=False)[0], "sha2": REL.sha(v2["clip"])})
         except Exception as e: print(f"floor kit: the second minute was not filed ({type(e).__name__}) - the pilot will use the same minute twice")
     set_setting("VIEW_FLOOR_CANARY", json.dumps(k))
+    set_setting("VIEW_FLOOR_FAIL_HOLDS", "FALSE")                  # code review C18 (12): the jury is not measured on a NEW kit - REPORT until floor.pilot measures this one
     print(f"floor kit filed: Drive id {fid}, SHA-256 {sha}")
     return sha
 
@@ -332,6 +333,22 @@ def pilot_inr():
     try: return float(p.get("inr") or 0) if str(p.get("month") or "") == iso()[:7] else 0.0
     except Exception: return 0.0
 
+def pilot_left_inr():
+    """code review C18 (8), RULINGS_U1c 4.2: what is left of the month's pilot allowance (VIEW_FLOOR_PILOT_CAP_INR less this month's pilots) while a pilot is
+    OWED - the floor on, a kit on file (the cell VIEW_FLOOR_CANARY, which make_kit writes, not blank) and VIEW_FLOOR_PILOT holding no measurement (blank, or
+    its "measured" not true); otherwise 0; a fault in reading them holds the WHOLE allowance (fail closed, code review U1FIX-b 9).
+    governor.production_room_inr holds it back: it is never production's money."""
+    try:
+        if not on() or not str(S("VIEW_FLOOR_CANARY") or "").strip(): return 0.0
+        p = _js(S("VIEW_FLOOR_PILOT"), {})
+        if isinstance(p, dict) and p.get("measured") is True: return 0.0
+        return round(max(0.0, S("VIEW_FLOOR_PILOT_CAP_INR", float) - pilot_inr()), 2)
+    except Exception as e:                                                       # code review U1FIX-b (9): a fault FAILS CLOSED - the whole allowance is held,
+        try: cap = S("VIEW_FLOOR_PILOT_CAP_INR", float)                         # never handed back to production (governor.production_room_inr)
+        except Exception:
+            from whatifs.core import DEFAULTS; cap = float(DEFAULTS["VIEW_FLOOR_PILOT_CAP_INR"][0])      # no cell readable: the code's own allowance
+        log(f"the pilot's owed money not computed - the whole allowance (Rs {cap:.0f}) is held back from production: {str(e)[:100]}", "WARN"); return round(max(0.0, cap), 2)
+
 def pilot(out=None, n=10):
     """THE PILOT'S MEASUREMENT (memo 3.1; audit F11): n ordinary sessions on the kit alone, the canary's second minute as the new film. (a) THE CLEAR PAIR {C, Z}: q =
     the share of counted looks that name the canary over its frozen twin. (b) THE CLOSE PAIR {N, C}: in how many sessions both families named the second minute in
@@ -342,11 +359,12 @@ def pilot(out=None, n=10):
     canary, tw = kit(out)
     if canary is None: raise RuntimeError(f"the floor's pilot needs the kit: {tw}")
     second = kit2(out); new = second or canary; cap = S("VIEW_FLOOR_PILOT_CAP_INR", float); kinds = ["floor_gemini", "floor_claude"]
-    before = pilot_inr(); flush_costs(); spent0 = G.month_spend_of(kinds); stamp = iso(); sha = REL.sha(new["clip"])
+    before = pilot_inr(); left = max(0.0, cap - before)                     # code review C18 (8), RULINGS_U1c 4.1: ONE allowance a calendar month - a run spends what this month's pilots left
+    flush_costs(); spent0 = G.month_spend_of(kinds); stamp = iso(); sha = REL.sha(new["clip"])
     done = total = right = passes = fams = agree = 0
     for i in range(1, int(n) + 1):
         flush_costs()
-        if G.month_spend_of(kinds) - spent0 >= cap: break
+        if G.month_spend_of(kinds) - spent0 >= left: break
         res = session(f"PILOT-{stamp}-{i:02d}", sha, new, canary, tw, (), (), "FLOORPILOT"); done += 1
         looks = [r for r in res.get("looks") or [] if str(r.get("status") or "") == "counted"]; by = {}
         for r in looks:
@@ -467,9 +485,11 @@ def fail_holds():
     return S("VIEW_FLOOR_FAIL_HOLDS", bool)
 
 def report_line(res):
-    """The report state: what the jury said about a film it refused, for the card of his eye - "" in every other case (the floor off, the hold state, no fail)."""
+    """The report state: what the jury said about a film it refused, for the card of his eye - "" for any result that is not a refusal. Decided on the result
+    ALONE (code review C18, 3): a refused film reaches the finish only in the report state - in the hold state contract.p_viewer_floor FAILs it and the film is
+    held before the upload - so neither VIEW_FLOOR_FAIL_HOLDS nor the switch is read a second time (a pilot may write the cell between the check and the finish)."""
     res = res if isinstance(res, dict) else {}; h = res.get("hold") or {}
-    if not on() or fail_holds() or res.get("status") != "fail": return ""
+    if res.get("status") != "fail": return ""
     watch = f"Watch that minute: {res.get('view_url')}." if res.get("view_url") else "The minute could not be filed for you to watch."
     what = f"beside a video you marked not good, '{h['down']}'" if h.get("down") else "beside the video you rejected"
     return (f"Two first-time viewers ranked its first minute {what} - {h.get('family') or 'a viewer'}: \"{h.get('reason') or ''}\". "

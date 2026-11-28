@@ -197,9 +197,11 @@ def remaining_inr(): return cap_inr() - own_spend_inr()
 def production_room_inr():
     """v8.7: what production may still spend this month. The maintenance reserve is kept INSIDE the cap (it was above it until v8.6, so a month could total
     the cap + Rs 100): production stops BUDGET_MAINT_RESERVE_INR below the cap; the last part is for maintenance jobs and an in-flight overshoot only."""
+    from whatifs.org import floor as FLR                                                                              # imported here: floor imports governor
     return (remaining_inr() - max(0.0, S("BUDGET_MAINT_RESERVE_INR", float)) - earmark_left_inr() - specials_left_inr()      # v9.4a/v10: earmarks are never production money
             - breakout_fund_left_inr()                                                                                     # v11: nor is the breakout fund
-            - org_left_inr())                                                                                              # v12 B5: nor the organisation's thinking caps
+            - org_left_inr()                                                                                               # v12 B5: nor the organisation's thinking caps
+            - FLR.pilot_left_inr())                                                                                        # code review C18 (8), RULINGS_U1c 4.2: nor what is left for a pilot still owed
 
 def episodes_left_this_month(now=None):
     from zoneinfo import ZoneInfo
