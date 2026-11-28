@@ -775,7 +775,7 @@ def test_the_whole_productions_of_this_file_use_ids_no_other_test_file_uses():
     def cases(fn):                                                                                # (RB-U1-a, code review U1FIX-b (1)) each parametrised CASE is a whole
         n = 1                                                                                     # production of its own: the product of the function's
         for d in fn.decorator_list:                                                               # pytest.mark.parametrize case counts
-            if isinstance(d, ast.Call) and ast.unparse(d.func) == "pytest.mark.parametrize":
+            if isinstance(d, ast.Call) and isinstance(d.func, ast.Attribute) and d.func.attr == "parametrize":
                 assert len(d.args) >= 2 and isinstance(d.args[1], (ast.List, ast.Tuple)), (fn.name, "a parametrize whose cases this guard cannot count")
                 n *= len(d.args[1].elts)
         return n
