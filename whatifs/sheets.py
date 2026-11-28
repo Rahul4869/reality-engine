@@ -35,7 +35,9 @@ def masters_plan():
         lock = ANIM.char_lock(c["id"])                    # the canon (Characters.visual), never invented features
         p = (f"Character master portrait, waist-up, three-quarter view, neutral confident expression, plain dark studio background. "
              f"No text, no letters or words on any prop. Same person as the reference image, restyled. {lock}. {ANIM.style_lock()}")
-        out.append({"character": c["id"], "expression": "master", "prompt": p, "hash": hashlib.sha256(p.encode()).hexdigest()[:16]})
+        q = (f"Character master portrait, waist-up, three-quarter view, neutral confident expression, plain dark studio background. "      # v12 F318: the second try of a refused master - no canon text, the face from the reference
+             f"No text, no letters or words on any prop. Take the face, hair, age and costume from the reference image exactly; change only the rendering style. {ANIM.style_lock()}")
+        out.append({"character": c["id"], "expression": "master", "prompt": p, "retry": q, "hash": hashlib.sha256(p.encode()).hexdigest()[:16]})
     return out
 
 def identity_score(ref, new, who):
@@ -49,30 +51,83 @@ def identity_score(ref, new, who):
         return float((r or {}).get("score"))
     except Exception: return None
 
+def master_score(ref, new, who):
+    """v12 F318: the master's identity score - the judge looks both ways (his portrait first, then the new picture first) and the LOWER answer counts; one answer when only one came; None when none came (no floor is judged on no evidence)."""
+    looks = [s for s in (identity_score(ref, new, who), identity_score(new, ref, who)) if s is not None]
+    log(f"master {who}: identity looks {looks}")                              # both answers stay in the run's log: the pilot reads whether the turned look runs lower
+    return min(looks) if looks else None
+
+def master_round(h, rows):
+    """v12 F318: how often he had this master remade - each REDO leaves one row '<hash>-redo-...'."""
+    return sum(1 for r in rows if str(r.get("hash") or "").startswith(h + "-redo-"))
+
+def master_tries(h, rows):
+    """v12 F318: this round's refused attempts, oldest first (rows '<hash>-r<round>-try<k>')."""
+    pre = f"{h}-r{master_round(h, rows)}-try"
+    return [r for r in rows if str(r.get("hash") or "").startswith(pre)]
+
+def status_score(status):
+    m = re.search(r"identity (\d+)/10", str(status or ""))
+    return float(m.group(1)) if m else None
+
+def sheets_owed():
+    """v12 F318: the pictures the plan still needs - every planned master and sheet with no row that has a file."""
+    have = {r.get("hash") for r in store().rows("Character_Sheets") if r.get("file")}
+    return sum(1 for p in masters_plan() + plan() if p["hash"] not in have)
+
 def masters(limit=None):
     """Make the missing master portraits (reference-based, inside the lifetime cap). Each is a DRAFT for him: his Approve locks it, and one he leaves alone is LOCKED by auto_lock after SHEETS_DEFAULT_LOCK_H hours (silence = yes, the memo's row 34) - so the card says each identity score against his portrait (CA3-5)."""
-    from whatifs import anim as ANIM, publish as PUB, specials as SP
+    from whatifs import anim as ANIM, publish as PUB, specials as SP, governor as GOV
     st = store(); have = {r.get("hash"): r for r in st.rows("Character_Sheets")}; cap = S("CHARACTER_SHEET_IMAGE_CAP", int)
     made = 0; out_dir = os.path.join(WORK, "sheets"); os.makedirs(out_dir, exist_ok=True); done = []; scored = []
+    floor_on = S("MASTER_FLOOR_ON", bool); floor = S("MASTER_MIN_IDENTITY", float); low = []      # v12 F318: the floor, the remakes and what the card says of them
+    his = {r.get("character") for r in st.rows("Character_Sheets") if r.get("status") == "LOCKED" and r.get("file")}
     for p in masters_plan():
         if p["hash"] in have and have[p["hash"]].get("file"): continue
-        if used() >= cap or (limit and made >= limit): break
-        ref = SP._portrait(p["character"], out_dir, "SHEETS")
-        path = os.path.join(out_dir, f"{p['character']}_master_{p['hash']}.png")
-        try:
-            ANIM.gemini_image(p["prompt"], [ref] if ref else [], path, "SHEETS", aspect="3:4")
-            sc = identity_score(ref, path, p["character"]) if ref else None
-            fid = PUB.drive_upload(path, os.path.basename(path))[0]
-            st.append("Character_Sheets", [{"ts": iso(), "character": p["character"], "expression": "master", "hash": p["hash"], "prompt": p["prompt"][:400],
-                                            "file": "drive:" + fid, "status": f"DRAFT (identity {sc:.0f}/10)" if sc is not None else "DRAFT", "approved_at": ""}]); made += 1; done.append(p["character"])
-            if sc is not None: scored.append((p["character"], sc))      # FINISHED BY FABLE (CA3-5; B3 ruled (C) by R1-104): the card says each score
-        except Exception as e: log(f"master portrait {p['character']} failed: {str(e)[:120]}", "WARN")
+        if limit and made >= limit: break
+        if used() >= cap and not master_tries(p["hash"], st.rows("Character_Sheets")): break      # as at S0 the cap is asked BEFORE the portrait (it can draw a paid picture); a round already begun still ends below
+        who = p["character"]; ref = SP._portrait(who, out_dir, "SHEETS")          # ONCE per character, never per attempt (it can draw a paid picture)
+        judged = bool(floor_on and ref and who in his)                            # a floor only against a portrait he locked
+        more = max(0, S("MASTER_REMAKES_MAX", int)) if judged else 0; kept = False; why = ""
+        for _ in range(more + 1):                                                 # a paid loop also ends by its own count, never only by a re-read of the tab
+            if kept or why: break
+            rows = st.rows("Character_Sheets"); k = len(master_tries(p["hash"], rows))
+            if k == 0: pass                                                       # the first picture: the cap was asked above, before the portrait
+            elif k > more: why = "no remake left"
+            elif cap - used() - sheets_owed() < 0: why = "no spare picture inside the lifetime cap"
+            else:
+                ok, no = GOV.extras_allowed(S("PRICE_GEM_IMAGE_USD", float) * S("USD_INR", float))
+                if not ok: why = "no money room this month"; log(f"master {who}: no remake - {no}", "WARN")
+            if why: break
+            text = p["retry"] if k == 1 and p.get("retry") else p["prompt"]
+            path = os.path.join(out_dir, f"{who}_master_{p['hash']}.png" if k == 0 else f"{who}_master_{p['hash']}-{k}.png")
+            try:
+                ANIM.gemini_image(text, [ref] if ref else [], path, "SHEETS", aspect="3:4")
+                sc = (master_score if judged else identity_score)(ref, path, who) if ref else None
+                if judged and sc is not None: sc = float(round(sc))               # what is compared is what is stored and said
+                bad = bool(judged and sc is not None and sc < floor)
+                fid = PUB.drive_upload(path, os.path.basename(path))[0]
+                st.append("Character_Sheets", [{"ts": iso(), "character": who, "expression": "master", "hash": f"{p['hash']}-r{master_round(p['hash'], rows)}-try{k}" if bad else p["hash"],
+                                                "prompt": text[:400], "file": "drive:" + fid, "approved_at": "",
+                                                "status": f"REJECTED (identity {sc:.0f}/10)" if bad else f"DRAFT (identity {sc:.0f}/10)" if sc is not None else "DRAFT"}])
+                if not bad:
+                    kept = True; made += 1; done.append(who)
+                    if sc is not None: scored.append((who, sc))      # FINISHED BY FABLE (CA3-5; B3 ruled (C) by R1-104): the card says each score
+            except Exception as e: log(f"master portrait {who} failed: {str(e)[:120]}", "WARN"); why = "a remake failed"
+        tries = master_tries(p["hash"], st.rows("Character_Sheets"))
+        if tries and not kept:                                                    # nothing reached the floor: the best attempt stands as his draft
+            best = max(tries, key=lambda r: status_score(r.get("status")) or 0.0)  # the first of equals = the earliest
+            st.update_where("Character_Sheets", {"hash": best["hash"]}, {"status": str(best.get("status")).replace("REJECTED", "DRAFT", 1), "hash": p["hash"]})
+            made += 1; done.append(who); scored.append((who, status_score(best.get("status")) or 0.0)); low.append((who, len(tries), why or "no remake left"))
     if made:
         dflt, hrs = _review_card()
-        try: NT.mail("sheets_review", "New Toybox Noir character masters to approve", buttons=[(f"Approve {c}", f"APPROVE SHEET {c}") for c in sorted(set(done))],
+        spare_note = " (no spare picture is left: a remake takes one from the expression sheets)" if low and cap - used() - sheets_owed() < 1 else ""
+        try: NT.mail("sheets_review", "New Toybox Noir character masters to approve",
+                     buttons=[(f"Remake {c}", f"REDO SHEET {c} master") for c, _, _ in low] + [(f"Approve {c}", f"APPROVE SHEET {c}") for c in sorted(set(done))],      # v12 F318: Remake first; more than three choices reach WhatsApp as a list (wa.send_buttons, RUL-U1h 1)
                      default=dflt, expires_h=hrs, dedupe_key=f"sheets|masters|{','.join(sorted(set(done)))}|{NT._india_day()}", html=f"<p>{made} master portrait(s) in Drive (Character_Sheets tab, expression 'master'), made from your approved portraits. "
                        f"Approve to LOCK them; animated scenes then use them as the face reference. Lifetime images used: {used()} of {cap}.</p>"
-                       + (f"<p>Identity against your portrait: {', '.join(f'{c} {s:.0f}/10' for c, s in scored)}. A low score means the face moved - look before it locks.</p>" if scored else ""))      # FINISHED BY FABLE (CA3-5): silence locks a scored master - the card says each score first
+                       + (f"<p>Identity against your portrait: {', '.join(f'{c} {s:.0f}/10' for c, s in scored)}. A low score means the face moved - look before it locks.</p>" if scored else "")      # FINISHED BY FABLE (CA3-5): silence locks a scored master - the card says each score first
+                       + (f"<p>Still under {floor:.0f}/10 after every allowed try: {'; '.join(f'{c} ({n} picture(s), {w})' for c, n, w in low)}. The best one is shown. Tap Remake to try again{spare_note}; left alone, {dflt}.</p>" if low else ""))
         except Exception: pass
     return {"made": made, "have": used()}
 
@@ -151,12 +206,24 @@ def decide(title):
         return f"{n} image(s) locked"
     m = re.match(r"^REDO SHEET ([A-Z]+) ([a-z]+)$", t)
     if m:
-        for r in st.rows("Character_Sheets"):
-            if r.get("character") == m.group(1) and r.get("expression") == m.group(2):
-                st.update_where("Character_Sheets", {"hash": r["hash"]}, {"status": "REDO", "hash": r["hash"] + "-redo-" + iso()[:16]})
-                return "cleared; the next sheets run remakes it (lifetime cap still applies)"
+        live = [r for r in st.rows("Character_Sheets") if r.get("character") == m.group(1) and r.get("expression") == m.group(2) and not str(r.get("status") or "").startswith(("REDO", "REJECTED"))]      # v12 F318: the LIVE images, never an old cleared or refused row
+        for r in ([x for x in live if str(x.get("status") or "").startswith("DRAFT")] or live)[-1:]:      # RUL-U1i 2: the DRAFT he was shown before any LOCKED row; of equals the newest
+            was, redo = (r["hash"], r.get("status")), r["hash"] + "-redo-" + iso()[:16]
+            st.update_where("Character_Sheets", {"hash": was[0]}, {"status": "REDO", "hash": redo})
+            if S("MASTER_FLOOR_ON", bool):      # RUL-U3k U1-2: every Remake starts the run that remakes it (sheets.yml is never scheduled: no "next run" comes by itself); off = S0 as typed
+                if start_sheets_run(): return "cleared; the sheets run that remakes it has been started (lifetime cap still applies)"      # code review U1FIX-b (4), widened by RUL-U3k U1-2 to every expression
+                st.update_where("Character_Sheets", {"hash": redo}, {"status": was[1], "hash": was[0]})      # CR-U1FIX_2 (4): no run started, so no next run comes - the image is put back, nothing cleared
+                return f"NOT remade: the sheets run could not be started, so {m.group(1)}'s {m.group(2)} was kept as it was (nothing cleared)."
+            return "cleared; the next sheets run remakes it (lifetime cap still applies)"
         return "no such image"
     raise SystemExit("usage: 'APPROVE SHEET VALE' or 'REDO SHEET VALE smug'")
+
+def start_sheets_run():
+    """v12 F318: his Remake tap starts the sheets run itself (the workflow is never scheduled). True when GitHub took it."""
+    try:
+        from whatifs import builds as BLD
+        return bool(BLD.dispatch("sheets.yml", {}))
+    except Exception as e: log(f"sheets run not started: {str(e)[:120]}", "WARN"); return False
 
 def locked_portraits():
     """{(character, expression): drive file} of LOCKED images (what the theatre layer may show)."""

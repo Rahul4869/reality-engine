@@ -59,7 +59,10 @@ def send_text(text, kind=None, now=None):
     return _go({"type": "text", "text": {"body": _plain(text)[:4000]}}, kind, now)
 
 def send_buttons(text, buttons, kind=None, now=None):
-    """Up to 3 reply buttons [(title, id)]; titles are cut to 20 characters (WhatsApp limit)."""
+    """Up to 3 reply buttons [(title, id)]; titles are cut to 20 characters (WhatsApp limit). More than three choices go out as a list (`send_list`,
+    "Choose"; RUL-U1h 1) of at most ten rows: up to ten choices all reach WhatsApp; past the tenth they are dropped there (send_list keeps
+    rows[:10]). The masters card stays within ten (tests/test_v12_f318.py::test_the_masters_card_never_outgrows_a_whatsapp_list)."""
+    if len(buttons) > 3: return send_list(text, "Choose", [(i, t, "") for t, i in buttons], kind=kind, now=now)
     bs = [{"type": "reply", "reply": {"id": str(i)[:256], "title": str(t)[:20]}} for t, i in buttons[:3]]
     return _go({"type": "interactive", "interactive": {"type": "button", "body": {"text": _plain(text)[:1024]}, "action": {"buttons": bs}}}, kind, now)
 
@@ -70,6 +73,7 @@ MENU_ROWS = [("today", "Today", "next slot, what's being made"), ("numbers", "Nu
 
 def send_list(text, button, rows, header="Reality Engine", kind=None, now=None):
     """Interactive list (max 10 rows; title <= 24, description <= 72 characters). rows = [(id, title, description)]."""
+    if len(rows) > 10: log(f"WhatsApp list cut to 10 of {len(rows)} choices: {_plain(text)[:60]}", "WARN")      # RUL-U3k U1-3: the cut is never silent
     sec = [{"title": "Menu", "rows": [{"id": str(i)[:200], "title": str(t)[:24], "description": str(dd)[:72]} for i, t, dd in rows[:10]]}]
     return _go({"type": "interactive", "interactive": {"type": "list", "header": {"type": "text", "text": header[:60]}, "body": {"text": _plain(text)[:1024]},
                                                        "action": {"button": str(button)[:20], "sections": sec}}}, kind, now)

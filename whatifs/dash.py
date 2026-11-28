@@ -48,6 +48,17 @@ def _links(r):
         if u not in out: out.append(u)
     return out[:3]
 
+def _low_master(ch):
+    """v12 F318: the dashboard's words for a master draft the judge scored under the floor - the same fact the masters' card says."""
+    if not S("MASTER_FLOOR_ON", bool): return ""
+    from whatifs import sheets as SH
+    floor = S("MASTER_MIN_IDENTITY", float)
+    for r in store().rows("Character_Sheets"):
+        if r.get("character") == ch and r.get("expression") == "master" and str(r.get("status") or "").startswith("DRAFT"):
+            sc = SH.status_score(r.get("status"))
+            if sc is not None and sc < floor: return f" The judge scored this master {sc:.0f}/10 against your portrait, under {floor:.0f}/10: Redo remakes it."
+    return ""
+
 def _docket():
     from whatifs import packaging as PK, notify as NT
     st = store(); cards = []; two = _two()
@@ -88,7 +99,7 @@ def _docket():
             ch = r.get("character")
             if not any(c["id"] == f"sheets-{ch}" for c in cards):
                 cards.append({"id": f"sheets-{ch}", "kind": "sheets", "title": f"Lock {str(ch).title()}'s portraits",
-                              "why": "Locked portraits let this character appear on thumbnails and in scenes, always the same face.",
+                              "why": "Locked portraits let this character appear on thumbnails and in scenes, always the same face." + _low_master(ch),
                               "default_label": "Locks by itself after 72 h", "default_at": "", "window_h": 72,
                               "verbs": {"Lock these": f"LOCKSHEETS|{ch}", "Redo": f"REDOSHEETS|{ch}"}})
     return cards
@@ -402,7 +413,10 @@ def route(verb):
                 store().update_where("Character_Sheets", {"hash": r["hash"]}, {"status": "LOCKED", "approved_at": iso() + " (dashboard)"}); n += 1
         return n > 0, f"{n} portrait(s) locked"
     if head == "REDOSHEETS" and len(parts) == 2:
-        return False, "Redo one expression with the email link 'REDO SHEET <NAME> <expression>' (lifetime image cap applies)"
+        if S("MASTER_FLOOR_ON", bool) and any(r.get("character") == parts[1] and r.get("expression") == "master" and str(r.get("status") or "").startswith("DRAFT") for r in store().rows("Character_Sheets")):
+            from whatifs import sheets as SH                                 # v12 F318: his Redo on a master's draft is the card's Remake - one road (sheets.decide)
+            said = str(SH.decide(f"REDO SHEET {parts[1]} master")); return said.startswith("cleared"), said      # code review U1FIX-b (5): ok only when a live master was cleared
+        return False,"Redo one expression with the email link 'REDO SHEET <NAME> <expression>' (lifetime image cap applies)"
     if head == "UNPOST" and len(parts) == 2 and _two():                      # v12 B-OWNER (PART 7): "Take it down" - private and his Hold, never a delete
         from whatifs import contract as CON
         said = CON.unpost(parts[1]); return "is private again" in said, said
