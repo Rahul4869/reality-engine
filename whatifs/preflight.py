@@ -14,14 +14,17 @@ def run(need_voice=True):
     add("disk", free >= need, f"{free:.1f} GB free (need {need:.0f})")
     from whatifs import maker as MAKER                      # v12 V1c: a voice of his is never used without his consent record (offline too: before the line below)
     add("maker voice", not MAKER.voice_issues(), "; ".join(MAKER.voice_issues()))
-    try:                                               # v12 B-OWNER (PART 8): WhatsApp's one template; a warning, never a block (the stand-in answers in fake mode)
-        from whatifs.core import S
-        if S("TWO_SCREENS_ON", bool):
+    try:                                               # U1 (AFB finding 2): the cell is read OUTSIDE the WhatsApp check - an error reading it is named "two screens", never "whatsapp"
+        from whatifs.core import S; two = S("TWO_SCREENS_ON", bool)
+    except Exception as e: two = None; add("two screens", False, f"TWO_SCREENS_ON is not readable: {scrub(e)[:100]}", critical=False)
+    if two is False: add("two screens", False, "TWO_SCREENS_ON is FALSE: with it off a video you do not answer stays private for good (item 223) - set it TRUE", critical=False)   # AFB F3 (the B-OWNER audit): a warning, never a block
+    if two:
+        try:                                           # v12 B-OWNER (PART 8): WhatsApp's one template; a warning, never a block (the stand-in answers in fake mode)
             from whatifs import wa as WA
             if WA.configured() or FAKE:
                 ts = WA.template_status(); add("whatsapp", ts == "APPROVED", f"the Open template is {ts or 'not readable'} at Meta", critical=False)
             else: add("whatsapp", False, "WhatsApp is not set up: the dashboard and e-mail carry everything", critical=False)
-    except Exception as e: add("whatsapp", False, scrub(e)[:120], critical=False)
+        except Exception as e: add("whatsapp", False, scrub(e)[:120], critical=False)
     if FAKE: return r
     for k in ("ANTHROPIC_KEY", "GEMINI_KEY", "FAL_KEY", "SHEET_ID", "G_REFRESH", "G_CLIENT_ID", "G_CLIENT_KEY"):
         add(f"key {k}", bool(env(k)), "present" if env(k) else "MISSING (GitHub Actions secret)")

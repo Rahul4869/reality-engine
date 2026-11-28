@@ -867,8 +867,9 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         if [f for f, _ in g["failed"]] == ["viewer_floor"]:        # v12 V1c: held by the floor alone - its own card (watch the minute; publish anyway or drop it), ONE message, no mail
             FLOOR.hold_card(ep, title, cctx.get("floor"))
             return _hold(st, ep, out, {"problems": [{"code": "contract:" + f, "detail": str(ev)} for f, ev in g["failed"]]}, notes, fix, mail=False)
+        held = _hold(st, ep, out, {"problems": [{"code": "contract:" + f, "detail": str(ev)} for f, ev in g["failed"]]}, notes, fix)   # AFB F2 (the B-OWNER audit): the hold first, as CA3-1's quality hold - a `hold_sweep` in the gap never closes the card of a video still read VISUALS
         CON.owner_card(ep, "final", g["failed"], "Nothing was uploaded.")
-        return _hold(st, ep, out, {"problems": [{"code": "contract:" + f, "detail": str(ev)} for f, ev in g["failed"]]}, notes, fix)
+        return held
     vid = ORG.work("D9", "publish", ep, lambda b: PUB.yt_upload(master, title, desc, pkg.get("tags", []), publish_at=slot_iso, ai_label=S("AI_LABEL_DEFAULT", bool)), measure=WR.m_upload)
     st.update("Episodes", "episode_id", ep, {"title": title, "yt_id": vid, "slot_et": slot_iso, "status": "UPLOADED", "uploaded_at": iso(), "updated": iso()})   # recorded at once: no double upload | v12 B-OWNER (step 10b): uploaded_at's ONE writer, beside the id
     if vid and ORG.on(): CANON.on_air(ep, vid)                    # v12 B6a: the platform confirmed the upload - this case is now the show's canon

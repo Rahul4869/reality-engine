@@ -217,6 +217,8 @@ def window(e, slot, got, now):
     if now >= slot or _told(f"prepublic|{ep}"): return
     if not got or (got.get("privacy") or "") != "private": return                  # R18 (5): a failed read tells him nothing; his window is the private time before it goes public (item 156)
     if ready(got):
+        # RUL-U1d 3 (AFB-3): this covers a video YouTube kept on its schedule too (await_approval could not make it private) - it stays AWAITING_APPROVAL with only its urgent `unscheduled|` alarm, never this card beside it, and gets its ONE card at the first tick after it turns SCHEDULED
+        if e.get("status") != "SCHEDULED": return                                 # AFB F1 (the B-OWNER audit): "before it goes public" only to a video that goes public - one awaiting his approval or refused his silence gets it at the first tick after his Approve or his silence (`_told` keeps it one)
         NT.send("prepublic", f"Tonight {at}: {title}. Optional before it goes public: the end screen, about 30 seconds in Studio: "
                              f"https://studio.youtube.com/video/{vid}/edit", [("Done", "DONE")], episode=ep,
                 default="it goes out without an end screen", expires_h=max(0.25, (slot - now).total_seconds() / 3600), dedupe_key=f"prepublic|{ep}")

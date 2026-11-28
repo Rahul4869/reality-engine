@@ -1276,7 +1276,8 @@ def await_approval(ep, vid, slot_iso, summary, kind="creative_review", default=N
     """The uploaded video is taken OFF YouTube's schedule (private) until the owner approves. v12 V1c: a film the judged floor could not judge comes here
     too (kind floor_eye: its default is that it goes public by itself when his silence lasts its hours). v12 B-OWNER (R22 (2 c)): a passed `default` or
     `expires_h` is honoured; with none, TWO_SCREENS_ON computes ONE arithmetic - CREATIVE_REVIEW_WAIT_H hours, never past SILENCE_LEAD_H hours before
-    the slot, at least one hour, "approved by your silence" - and the switch off keeps 72 hours and "stays private"."""
+    the slot, at least one hour, "approved by your silence" - and the switch off keeps 72 hours and "stays private", and the card says so (RUL-U1d 2:
+    "it stays private for good" - never when YouTube kept the video on its schedule, never when the caller passed its own default and hours)."""
     from whatifs import publish as PUB, notify as NT
     from whatifs.core import parse_iso
     import datetime as dt
@@ -1288,7 +1289,10 @@ def await_approval(ep, vid, slot_iso, summary, kind="creative_review", default=N
             hours, dflt = max(1.0, min(S("CREATIVE_REVIEW_WAIT_H", float), left - lead)), "approved by your silence"
             if t: tail = (f" If you do nothing it is approved by your silence from {_ist((now_utc() + dt.timedelta(hours=hours)).strftime('%Y-%m-%dT%H:%M:%SZ'))} on"
                           f" - at the pipeline's next run - and goes public on its slot, {_ist(slot_iso)}. Until the slot you can still stop it: Decided for you, Take it down.")
-        else: hours, dflt = 72, "stays private"
+        else:
+            hours, dflt = 72, "stays private"
+            tail = (" If you do nothing it stays private for good: while the Settings cell TWO_SCREENS_ON is FALSE your silence approves nothing."
+                    " Tap Approve to let it go public.")      # RUL-U1d 2 (AFB-1): the one harm of the switch off, told on the card of the video it holds
         default = dflt if default is None else default; expires_h = hours if expires_h is None else expires_h
     try: off = PUB.yt_set_privacy(vid, "private") is not False     # v12 B-OWNER (PART F, CF-1b): it answers False when YouTube refuses - read, never assumed
     except Exception as e: off = False; log(f"could not unschedule {vid}: {scrub(e)}", "WARN", ep)

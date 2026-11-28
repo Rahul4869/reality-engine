@@ -433,7 +433,9 @@ def due(now=None):
 # ---------------------------------------------------------------- v10.2: owner review before any special goes public
 def _await_review(path, c, kind, episode, beats, checks=""):
     """v12 B-OWNER (PART 7, R18 (7 c)): with TWO_SCREENS_ON a special whose check result recorded at making is "pass" is a `special_ready` card that
-    is posted by his silence after 72 hours (`_ready_silence`); every other one is `special_review` - a hold with no expiry that waits for his tap."""
+    is posted by his silence after 72 hours (`_ready_silence`); every other one is `special_review` - a hold with no expiry that waits for his tap.
+    RUL-U1f 3: with the switch off every special is a `special_review` of 72 hours that closes "not posted" and is never sent again, and the card
+    says that his silence posts nothing."""
     from whatifs import publish as PUB, notify as NT
     fid, _ = PUB.drive_upload(path, f"{episode}.mp4", public=False)
     script = " | ".join(f"{b.get('who')}: {b.get('line', '')}" for b in beats if b.get("line"))
@@ -442,8 +444,9 @@ def _await_review(path, c, kind, episode, beats, checks=""):
         btn.insert(1, ("Approve + hide old", f"SPECIAL APPROVE {episode} REPLACE"))
     head = f"New {kind.replace('_', ' ')} ready for your review (nothing is posted yet)."
     tail = f" Watch: https://drive.google.com/file/d/{fid}/view  Script: {script[:600]}"; text = head + tail
-    if not S("TWO_SCREENS_ON", bool):
-        NT.send("special_review", text, btn, tier="now", urgent=True, episode=episode, default="not posted", expires_h=72, dedupe_key=f"special|{episode}")
+    if not S("TWO_SCREENS_ON", bool):                              # RUL-U1f 3: his silence holds it for good - the card says so, before the script any cut meets first
+        NT.send("special_review", head + " If you do nothing it stays unposted for good: while the Settings cell TWO_SCREENS_ON is FALSE your silence posts nothing. Tap Approve to post it." + tail,
+                btn, tier="now", urgent=True, episode=episode, default="not posted", expires_h=72, dedupe_key=f"special|{episode}")
     elif str(checks or "").lower() == "pass":                      # he is told what his silence does, and what no button can take back afterwards (item 150: an Undo wherever undoing is possible)
         NT.send("special_ready", head + " If you do nothing for 72 hours it is posted by your silence; once it is public, only your own hand in each app takes it down." + tail,
                 btn, tier="now", urgent=True, episode=episode, default="posted after 72 hours when its checks passed", expires_h=72, dedupe_key=f"special|{episode}")
