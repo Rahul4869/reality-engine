@@ -46,8 +46,7 @@
  ],
  "audit_queue": [
   "V1c",
-  "V4",
-  "B-OWNER"
+  "V4"
  ],
  "audited": [
   {
@@ -64,6 +63,11 @@
    "at": "2026-11-28T02:37:44Z",
    "batch": "DRAWN",
    "verdict": "VERDICT: FINDINGS (6)"
+  },
+  {
+   "at": "2026-11-28T02:37:50Z",
+   "batch": "B-OWNER",
+   "verdict": "VERDICT: FINDINGS (3)"
   }
  ],
  "base_commit": "5495cc6b3ae3002b81634356becb42d1d90fd71a",
@@ -600,5 +604,5 @@
  "phase": "BUILD",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-28T02:37:44Z"
+ "updated": "2026-11-28T02:37:50Z"
 }
