@@ -45,7 +45,6 @@
   }
  ],
  "audit_queue": [
-  "V1c",
   "V4"
  ],
  "audited": [
@@ -68,6 +67,11 @@
    "at": "2026-11-28T02:37:50Z",
    "batch": "B-OWNER",
    "verdict": "VERDICT: FINDINGS (3)"
+  },
+  {
+   "at": "2026-11-28T02:37:55Z",
+   "batch": "V1c",
+   "verdict": "VERDICT: FINDINGS (2) - two findings of B-OWNER's designer o"
   }
  ],
  "base_commit": "5495cc6b3ae3002b81634356becb42d1d90fd71a",
@@ -604,5 +608,5 @@
  "phase": "BUILD",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-28T02:37:50Z"
+ "updated": "2026-11-28T02:37:55Z"
 }
