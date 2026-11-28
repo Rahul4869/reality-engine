@@ -1098,6 +1098,13 @@ def enabled(fid):
     off = {x.strip() for x in str(S("CONTRACT_OFF") or "").split(",") if x.strip()}
     return fid not in off
 
+def floor_waived(res, rows):
+    """(RUL-U1p2) True only when HIS waiver decided THIS refusal of the judged floor: the gate's viewer_floor row is WAIVED with the very evidence run() writes
+    for this result's own why. A waiver of another check, or his waiver meeting an integrity or a crash FAIL of the floor's check, is False (the film reaches his eye)."""
+    if not isinstance(res, dict) or res.get("status") != "fail": return False
+    ev = f"waived by the owner ({str(res.get('why') or '')[:380]})"[:300]
+    return any(isinstance(r_, dict) and r_.get("feature") == "viewer_floor" and r_.get("status") == WAIVED and str(r_.get("evidence") or "") == ev for r_ in rows or [])
+
 # ------------------------------------------------------------------ the gate
 def run(stage, ctx, ep, write=True):
     """Evaluate every feature of a stage. Returns {'ok', 'failed': [(id, evidence)], 'rows'}. Writes Feature_Ledger. Never raises."""

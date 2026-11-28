@@ -931,7 +931,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     if FLOOR.on() and not pre["failed"]: cctx["floor"] = FLOOR.plain(ORG.work("D13", "floor", ep, lambda b: FLOOR.run(b, ep, master, out, VER.references(ep), VER.downs(ep)), measure=FLOOR.m_run))
     cctx["ledger_rows"] = pre["rows"]; cctx["critique"] = CON.critique(cctx, ep)
     g = ORG.work("D8", "final_gate", ep, lambda b: CON.run("final", cctx, ep), measure=WR.m_gate, lesson=WR.gate_lessons, emit=WR.gate_memos(ep, "final"), settle=WR.gate_settle(ep, "final"))
-    if isinstance(cctx.get("floor"), dict) and any(r_["feature"] == "viewer_floor" and r_["status"] == CON.WAIVED for r_ in g.get("rows") or []): cctx["floor"] = dict(cctx["floor"], waived=True)      # RUL-U1p: his "Publish anyway" decided the refusal - no report card asks him again
+    if CON.floor_waived(cctx.get("floor"), g.get("rows")): cctx["floor"] = dict(cctx["floor"], waived=True)      # RUL-U1p2: only HIS waiver of THIS refusal ("Publish anyway") silences the report - never a waiver of another check, an integrity or a crash FAIL
     try:                                                         # v11 (K158): the Breakout Score - ranks and alerts, never holds by itself
         from whatifs import breakout as BRK
         d["breakout"] = BRK.score(d, g.get("rows"), room, cctx.get("critique")); BRK.record(ep, "long", d["breakout"])

@@ -174,6 +174,31 @@ def test_a_refusal_he_waived_gets_no_report_line(floor_on):
     res = {"status": "fail", "hold": {"family": "gemini", "reason": "the frozen picture"}, "view_url": "https://drive.google.com/file/d/X/view"}
     assert FL.report_line(res) and FL.report_line(dict(res, waived=True)) == "" and FL.report_line(dict(res, waived=False)), FL.report_line(dict(res, waived=True))
 
+def test_only_his_waiver_of_this_refusal_marks_it_waived(floor_on, monkeypatch):
+    """(RUL-U1p2; readers SF F1, TG F1) The finish marks a refusal waived (contract.floor_waived) only when the final gate's viewer_floor row was WAIVED by his
+    waiver of THIS refusal. A waiver of another check, or his waiver of the floor meeting an integrity or a crash FAIL of its check, leaves the refusal to his eye."""
+    import json
+    ep, why = "RULU1P2", "ranked beside the rejected video: " + "x" * 400                 # longer than the row's 300 characters: the mark reads the row's own cut
+    res = {"status": "fail", "why": why, "looks": [{"look": 1}], "hold": {"family": "gemini", "reason": "the frozen picture"}}
+    vf = next(f for f in CON.FEATURES if f[0] == "viewer_floor")
+    monkeypatch.setattr(CON, "FEATURES", [vf, ("look_bar", "final", lambda ctx: (CON.FAIL, "planted"), "planted")])
+    def gate(holds, waived, again):
+        core.set_setting("VIEW_FLOOR_FAIL_HOLDS", holds); core.set_setting("CONTRACT_WAIVERS", json.dumps({ep: waived}))
+        monkeypatch.setattr(FL, "again", again)
+        return CON.run("final", {"floor": res}, ep, write=False)["rows"]
+    same = lambda looks: {"status": "fail", "why": why}
+    def crash(looks): raise RuntimeError("planted")
+    st = lambda rows: {r["feature"]: r["status"] for r in rows}
+    rows = gate("TRUE", ["viewer_floor"], same)                                          # his "Publish anyway" on this refusal: marked
+    assert st(rows) == {"viewer_floor": CON.WAIVED, "look_bar": CON.FAIL} and CON.floor_waived(res, rows), rows
+    rows = gate("FALSE", ["look_bar"], same)                                             # TG F1: the report state, another check waived: not marked
+    assert st(rows) == {"viewer_floor": CON.NA, "look_bar": CON.WAIVED} and not CON.floor_waived(res, rows), rows
+    rows = gate("FALSE", ["viewer_floor", "look_bar"], lambda looks: {"status": "fail", "why": "another why"})      # SF F1: an integrity FAIL meets his waiver: not marked
+    assert st(rows) == {"viewer_floor": CON.WAIVED, "look_bar": CON.WAIVED} and not CON.floor_waived(res, rows), rows
+    rows = gate("FALSE", ["viewer_floor"], crash)                                        # SF F1: a crash FAIL meets his waiver: not marked
+    assert st(rows)["viewer_floor"] == CON.WAIVED and rows[0]["evidence"].startswith("waived by the owner (check crashed") and not CON.floor_waived(res, rows), rows
+    assert not CON.floor_waived(dict(res, status="pass"), gate("TRUE", ["viewer_floor"], same)) and not CON.floor_waived(None, rows)
+
 def test_the_pilots_cap_is_one_allowance_for_the_month(floor_on, monkeypatch, tmp_path):
     """(code review C18, 8; RULINGS_U1c 4.1) VIEW_FLOOR_PILOT_CAP_INR is ONE allowance a calendar month: a pilot stops at what this month's earlier pilots left
     of it; a second pilot with nothing left runs no session and changes nothing; a new month starts the allowance again. A fixed day (plan 12 (b))."""
