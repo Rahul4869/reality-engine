@@ -1454,9 +1454,7 @@ def test_the_older_tests_run_with_one_story_off():
     assert OLD_VIEW["ONE_STORY_ON"] == "FALSE" and core.DEFAULTS["ONE_STORY_ON"][0] == "TRUE" and STORY.on() is False
     assert (STORY.OTHER_LOOK, STORY.B_MAX) == ("a closer look from another angle", 160)
     assert STORY.BRIEF.format(words="X") == ("THUMBNAIL SCENE (fixed: the picture this video opens on, the one real viewers stayed for): \"X\". Write thumb_text for THIS scene. "
-                                            "For the runner-up write thumb_prompt_b as ANOTHER LOOK AT THE SAME SCENE - closer or wider, the same place, the same impossible thing - "
-                                            "and thumb_text_b as other words for it; never another scene: whichever thumbnail a viewer taps, the video opens on what it showed."
-                                            " This replaces the rule above that the runner-up is built on a DIFFERENT idea: here it is the SAME scene, seen another way.")      # (V1c finish, C9: a pin moved by design)
+                                            "Whichever thumbnail a viewer taps, the video opens on what it showed.")      # (V1c finish, C9; U1 J 199: the runner-up's words moved to its own block)
 
 def test_the_manifest_carries_the_words_the_shorts_first_clip_was_drawn_from(monkeypatch, tmp_path):
     from whatifs import release as REL
@@ -1478,7 +1476,7 @@ def _pack(monkeypatch, d, opening):
     return seen[-1], pkg
 
 def test_the_packager_is_told_the_scene_on_a_laddered_video_and_not_under_an_override(story_on, monkeypatch):
-    s, _ = _pack(monkeypatch, D1, OPN); assert STORY.BRIEF.format(words=W) in s and "This replaces the rule above" in s      # (V1c finish, C9) the opposite order of the base prompt is named
+    s, _ = _pack(monkeypatch, D1, OPN); assert STORY.BRIEF.format(words=W) in s and "ANOTHER LOOK AT THE SAME SCENE" in s and "replaces the rule" not in s and "DIFFERENT idea" not in s      # (V1c finish, C9; U1 J 199) one rule for the runner-up, no opposite order to name
     for d, opn in (({"ladder": "OV1"}, OPN), (D1, {"short": "SH1", "picture": ""}), (D1, None)):          # an override; an archive with no picture words; no opening
         s, _ = _pack(monkeypatch, d, opn); assert "THUMBNAIL SCENE (fixed" not in s
     story_on("ONE_STORY_ON", "FALSE"); s, _ = _pack(monkeypatch, D1, OPN); assert "THUMBNAIL SCENE (fixed" not in s

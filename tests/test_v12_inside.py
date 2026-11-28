@@ -947,7 +947,7 @@ def test_the_cast_is_left_out_of_a_writers_playbook_outside_a_trial_and_is_not_d
     assert len(cast) == 4 and all(any(n in by[i]["summary"] for n in NAMES) for i in cast)                                     # each cast item names its character
     for fmt in ("F1", "F3"):
         with FMT.using(fmt):
-            left = CANON.cast_left_out("D4"); assert left == cast and CANON.cast_left_out("D5") == set()                         # the writers' playbook only
+            left = CANON.cast_left_out("D4"); assert cast <= left and left - cast == {PAL.item_id("seed:fmt.case_files")} and CANON.cast_left_out("D5") == set()   # the writers' playbook only (U1 J 175: and the seed fmt.case_files)
             pb = PAL.playbook("D4", rs=rs, st=st, leave_out=left, record=False)
             assert pb["items"] and not cast & set(pb["items"]) and not [i for i in cast if f"[{i}]" in pb["text"] or by[i]["summary"] in pb["text"]], fmt      # no cast item, by id or by its line (DESIGN QUESTION 20)
             assert CANON.required(rs, "D4")["cast"] == [] and CANON.required(rs, "D4", fmt="F2")["cast"]                         # not demanded; the format named wins
@@ -955,7 +955,7 @@ def test_the_cast_is_left_out_of_a_writers_playbook_outside_a_trial_and_is_not_d
         assert CANON.cast_left_out("D4") == set()
         pb = PAL.playbook("D4", rs=rs, st=st, leave_out=CANON.cast_left_out("D4"), record=False)
         assert cast <= set(pb["items"]) and all(n in pb["text"] for n in NAMES) and set(CANON.required(rs, "D4")["cast"]) == cast      # the trial's writer: as before
-    assert CANON.cast_left_out("D4", "") == set() and CANON.cast_left_out("D4", "F1") == cast and PAL.playbook("D4", rs=rs, st=st, record=False)["items"] == PAL.playbook("D4", rs=rs, st=st, record=False, leave_out=())["items"]
+    assert CANON.cast_left_out("D4", "") == set() and CANON.cast_left_out("D4", "F1") == CANON.cast_left_out("D4", "F3") >= cast and PAL.playbook("D4", rs=rs, st=st, record=False)["items"] == PAL.playbook("D4", rs=rs, st=st, record=False, leave_out=())["items"]
     from whatifs.org import runner as RU
     import inspect; assert "leave_out=CANON.cast_left_out(dept)" in inspect.getsource(RU.run)                                   # the runner's LOAD chooses the playbook with it
 

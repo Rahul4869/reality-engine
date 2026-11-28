@@ -67,10 +67,11 @@ def anchor_for(text):
     t = str(text or "").lower()
     return next((a for rx, a in POV_ANCHORS if re.search(rx, t)), POV_ANCHOR_DEFAULT)
 
-def pov_prompt(shot, line=""):
-    """The first-person rules appended to a picture / clip prompt (idempotent). Stock and graphic shots are left alone (they get render effects)."""
+def pov_prompt(shot, line="", kind=None):
+    """The first-person rules appended to a picture / clip prompt (idempotent). Stock and graphic shots are left alone (they get render effects).
+    v12 U1 (J 186): the rule is picked by `kind` when the caller gives it, else by the shot's own type (a camera-path format asks the still's rule for a clip)."""
     from whatifs.data import POV_STILL, POV_LIVING, POV_KLING
-    typ = shot.get("type"); p = str(shot.get("prompt") or line or "")
+    typ = kind or shot.get("type"); p = str(shot.get("prompt") or line or "")
     if typ not in ("still", "living", "kling") or "first-person POV" in p: return p
     pv = shot.get("pov") or {}
     anchor = pv.get("anchor") or anchor_for(p + " " + line)
@@ -131,7 +132,7 @@ def apply(shots, units, imap, plan, episode=None):
     path_ = PATH.on(); walk_ = path_ and FMT.camera() == "walk"           # v12 V2b: in a camera-path format the scenes move WITH the viewer, at eye level
     for i, s in enumerate(out):
         if s.get("type") in ("still", "living", "kling"):
-            s["prompt"] = pov_prompt(s, units[i].get("text", "") if i < len(units) else "")
+            s["prompt"] = pov_prompt(s, units[i].get("text", "") if i < len(units) else "", "still" if (path_ and s.get("type") == "kling") else None)      # v12 U1 (J 186): ONE camera in a path film - a clip's prompt says the still's eyes, its motion the path's steps
             if s.get("type") == "kling" and path_:
                 if PATH.KLING_MOTION.strip() not in str(s.get("motion") or ""): s["motion"] = PATH.KLING_MOTION + str(s.get("motion") or "")
             elif s.get("type") == "kling" and "camera mounted" not in str(s.get("motion") or ""):

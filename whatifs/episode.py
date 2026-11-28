@@ -841,7 +841,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
             "stock": {"spans": stock_, "records": files.get("stock") or {}, "description": desc}, "absent": getattr(job, "absent", 0),          # v11: the promise check reads the shot plan; v12 V2c-b2b: and check opening_shown the opening's record
             "chips": list(getattr(job, "chips", None) or []),                                                                            # v12 V2b: the name chips the render drew
             "path_states": [{"t0": t_(m_)[0], "t1": t_(m_)[1], "i": m_["i"], "type": m_.get("type"), "act": m_.get("act"), "src": m_.get("src"), "move": m_.get("move", ""),
-                             "sign": m_.get("sign", 0), "fallback": bool(m_.get("fallback"))} for m_ in sm_]}                                 # v12 V2b: the camera path as the render recorded it (a key of its own: ctx['states'] stays as it is)
+                             "sign": m_.get("sign", 0), "fallback": bool(m_.get("fallback")), "clip": bool(m_.get("clip"))} for m_ in sm_]}   # v12 V2b: the camera path as the render recorded it (a key of its own: ctx['states'] stays as it is) | J 177 (a): and whether its clip really played
     jd_ = getattr(job, "drawn", {}) or {}                       # v12 DRAWN (check drawn_shown): the plan's record, each proof (without its L), THE L of each scene and the states really drawn
     cctx["drawn"] = {"plan": (d.get("drawn") or {}), "proof": {i: {k: v for k, v in r.items() if k != "L"} for i, r in jd_.items()}, "L": {i: r.get("L") for i, r in jd_.items()},
                      "states": [t_(m_) + (m_["i"], m_["k"]) for m_ in sm_ if m_.get("drawn")]}

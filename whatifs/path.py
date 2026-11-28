@@ -165,13 +165,16 @@ def plan_report(shots, units, total, anchors):
             "angles": bool(angles), "problems": list(dict.fromkeys(p))}
 
 def shown_report(states, shots):
-    """camera_shown on what the RENDER recorded (ctx['path_states'], never the plan): for every state of type still with an act - its picture (`src`) is a
-    picture of its own act; unless it is a fall-back its move is in MOVES (recorded); its sign is its act's sign. Returns {states, acts, moves, problems}."""
+    """camera_shown on what the RENDER recorded (ctx['path_states'], never the plan): for every state with an act that was drawn as a still - type still, or
+    type living / kling whose record says its clip did not play (key "clip" present and false; J 177 (a)) - its picture (`src`) is a picture of its own act;
+    unless it is a fall-back its move is in MOVES (recorded); its sign is its act's sign. A graphic, reaction, stock or any other type is never judged, nor
+    a living / kling record without the key "clip". Returns {states, acts, moves, problems}."""
     p = []; moves = {}; acts_ = set(); n = 0
     act_of = {i: (s.get("path") or {}).get("act") for i, s in enumerate(shots or []) if s.get("path")}
     sign_of_ = {(s.get("path") or {}).get("act"): (s.get("path") or {}).get("sign") for s in shots or [] if s.get("path")}
     for st in states or []:
-        if st.get("type") != "still" or st.get("act") is None: continue
+        still_ = st.get("type") == "still" or (st.get("type") in ("living", "kling") and "clip" in st and not st["clip"])      # J 177 (a): the type decides - a clip state drawn as a still is judged
+        if not still_ or st.get("act") is None: continue
         n += 1; a = st["act"]; acts_.add(a); t = float(st.get("t0") or 0)
         src = st.get("src"); b = act_of.get(src)
         if src is None or b != a: p.append(f"at {t:.1f} s act {a} showed a picture made for act {b if src is not None else 'none'}")

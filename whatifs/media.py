@@ -278,13 +278,16 @@ def _fmt(v, unit):
     return (s + (" " + unit if unit else "")).strip()
 
 def _cut(s, n):
-    """A director's text bounded at n characters AT A WORD (open issue 248): the last space inside the bound, never mid-word; a text that ends at the
-    bound, or a first word longer than it (no space to cut at), is cut there."""
-    s = str(s if s is not None else "")
+    """A director's text bounded at n characters AT A WORD (open issue 248): the last space inside the bound, never mid-word; a text whose word ends at the
+    bound is kept to it. v12 U1 (J 217): a first word longer than the bound (no space to cut at) is never hard-cut - ValueError, and clean_graphic refuses
+    the graphic (the shot then becomes a normal still). v12 U1b (finding 6 (c)): the text is stripped FIRST, then measured - a leading space never
+    cuts inside the first word nor leaves an empty text."""
+    s = str(s if s is not None else "").strip()
     if len(s) <= n: return s
     if s[n] == " ": return s[:n].rstrip()
     sp = s[:n].rfind(" ")
-    return s[:sp].rstrip() if sp > 0 else s[:n]
+    if sp <= 0: raise ValueError(f"a first word longer than {n} characters: refused, never cut mid-word")
+    return s[:sp].rstrip()
 
 def clean_graphic(g):
     """Validate a Director graphic. Returns a safe dict (kind counter | timeline | compare) or None when it cannot be drawn (the shot then becomes a normal still)."""
@@ -292,7 +295,7 @@ def clean_graphic(g):
     kind = str(g.get("kind") or "counter").lower()
     try:
         if kind == "timeline":
-            ev = [{"t": _cut(x.get("t", ""), 14), "text": _cut(x.get("text", ""), 34)} for x in (g.get("events") or []) if isinstance(x, dict) and x.get("text")][:5]
+            ev = [{"t": _cut(x.get("t", ""), 14), "text": _cut(x.get("text", ""), 34)} for x in (g.get("events") or []) if isinstance(x, dict) and str(x.get("text") or "").strip()][:5]
             return {"kind": "timeline", "label": _cut(g.get("label", ""), 48), "events": ev} if len(ev) >= 2 else None
         if kind == "compare":
             a, b = g.get("a") or {}, g.get("b") or {}
@@ -301,7 +304,7 @@ def clean_graphic(g):
             return {"kind": "compare", "label": _cut(g.get("label", ""), 48), "unit": _cut(g.get("unit", ""), 16),
                     "a": {"name": _cut(a.get("name", "A"), 22), "value": av}, "b": {"name": _cut(b.get("name", "B"), 22), "value": bv}}
         float(g.get("from", 0)); float(g.get("to", 100))
-        return dict(g, kind="counter")
+        return dict(g, kind="counter", **({"label": _cut(g["label"], 48)} if "label" in g else {}))       # U1b finding 5: its label at a word, like the others
     except Exception: return None
 
 def _timeline_frame(g, t, W, H, img, d, ov):

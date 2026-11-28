@@ -328,12 +328,16 @@ def ease(x):
     return 1 - (1 - x) ** 3
 
 
+LANES = 16                      # v12 U1 (J 220): a reduced box's width is a multiple of 16 pixels of the frame - OpenCV's vector lanes (4, 8 or 16) then sum every pixel as the whole layer does
+
 class Own:
     """The default drawing seam: rect, line, arc and poly on a float layer that keeps STRAIGHT colour beside its alpha (never premultiplied),
-    drawn at twice the size with OpenCV's anti-aliased calls inside each shape's own box and reduced with INTER_AREA."""
+    drawn at twice the size with OpenCV's anti-aliased calls inside each shape's own box and reduced with INTER_AREA. v12 U1 (J 220): only the boxes its
+    shapes touched are reduced (each widened to multiples of k), never the two whole layers; `reduced_px` counts the source pixels reduced a frame."""
     def __init__(self, W, H, k=2):
         self.W, self.H, self.k = int(W), int(H), int(k)
         self.col = np.zeros((self.H * k, self.W * k, 3), np.float32); self.alp = np.zeros((self.H * k, self.W * k), np.float32)
+        self.boxes = []; self.reduced_px = 0
 
     def _roi(self, x0, y0, x1, y1, pad):
         k = self.k; a = max(0, int(math.floor(min(x0, x1) * k - pad))); b = max(0, int(math.floor(min(y0, y1) * k - pad)))
@@ -343,6 +347,9 @@ class Own:
     def _put(self, roi, mask, rgb, a):
         x0, y0, x1, y1 = roi
         if x1 <= x0 or y1 <= y0: return
+        k = self.k; q = k * LANES; b = (x0 // q * q, y0 // k * k, min(self.W * k, -(-x1 // q) * q), min(self.H * k, -(-y1 // k) * k))      # v12 U1 (J 220): the shape's own box,
+        inside = lambda u, v: v[0] <= u[0] and v[1] <= u[1] and u[2] <= v[2] and u[3] <= v[3]                                             # widened to multiples of k (its width to LANES pixels)
+        if not any(inside(b, o) for o in self.boxes): self.boxes = [o for o in self.boxes if not inside(o, b)] + [b]                          # a box inside another is reduced once
         m = mask.astype(np.float32) / 255.0 * float(a); al = self.alp[y0:y1, x0:x1]; na = al + m * (1 - al)
         cs = self.col[y0:y1, x0:x1]; nz = na > 1e-6
         mix = (cs * (al * (1 - m))[..., None] + np.asarray(rgb, np.float32)[None, None, :] * m[..., None])
@@ -369,8 +376,15 @@ class Own:
         mask = np.zeros((roi[3] - roi[1], roi[2] - roi[0]), np.uint8); cv2.fillPoly(mask, [self._pts(pts, roi)], 255, cv2.LINE_AA, 4); self._put(roi, mask, rgb, a)
 
     def result(self):
-        """(colour RGB float, alpha float) at the layer's own size: premultiplied only for the reduction, straight again after it."""
-        pm = cv2.resize(self.col * self.alp[..., None], (self.W, self.H), interpolation=cv2.INTER_AREA); al = cv2.resize(self.alp, (self.W, self.H), interpolation=cv2.INTER_AREA)
+        """(colour RGB float, alpha float) at the layer's own size: premultiplied only for the reduction, straight again after it. v12 U1 (J 220): each
+        shape's widened box is reduced alone (INTER_AREA, factor k); outside every box the layer keeps its cleared value - the frame is byte for byte
+        the whole-layer reduction (tests/test_v12_u1fix_220.py keeps that reduction as its reference)."""
+        k = self.k; pm = np.zeros((self.H, self.W, 3), np.float32); al = np.zeros((self.H, self.W), np.float32); n = 0
+        for x0, y0, x1, y1 in self.boxes:
+            a_ = self.alp[y0:y1, x0:x1]; sz = ((x1 - x0) // k, (y1 - y0) // k)
+            pm[y0 // k:y1 // k, x0 // k:x1 // k] = cv2.resize(self.col[y0:y1, x0:x1] * a_[..., None], sz, interpolation=cv2.INTER_AREA)
+            al[y0 // k:y1 // k, x0 // k:x1 // k] = cv2.resize(np.ascontiguousarray(a_), sz, interpolation=cv2.INTER_AREA); n += (x1 - x0) * (y1 - y0)
+        self.reduced_px = n
         return pm / np.maximum(al, 1e-6)[..., None], al
 
 

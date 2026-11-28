@@ -39,6 +39,20 @@ def watch_s(path):
     """How much of a file a session sees: VIEW_FLOOR_WATCH_S seconds, or the whole file when it is shorter (a walk is shorter than the minute)."""
     return min(S("VIEW_FLOOR_WATCH_S", float), seconds_of(path))
 
+def cut_to(src, seconds):
+    """v12 U1 (J 187): the first `seconds` of a stored clip by STREAM COPY (no encode: one encode an item), a new file beside it (`<src>_cut.mp4`)."""
+    dst = (src[:-4] if src.endswith(".mp4") else src) + "_cut.mp4"
+    _ff(["ffmpeg", "-y", "-v", "error", "-t", f"{float(seconds):g}", "-i", src, "-c", "copy", dst])
+    return dst
+
+def kept(src, base):
+    """v12 U1 (J 187): a STORED viewing (the canary's, a reference's) as a session shows it - its whole seconds up to VIEW_FLOOR_WATCH_S (the stored clip of a
+    minute probes 59.92 s: its encode ends on frame 719, DESIGN QUESTION 8); a stored clip longer than the cell is cut to the cell by stream copy, one not
+    longer is used as it is. Called AFTER the SHA check of the downloaded file."""
+    cell = S("VIEW_FLOOR_WATCH_S", float); whole = float(round(seconds_of(src))); s = min(cell, whole)
+    clip = cut_to(src, cell) if whole > cell else src
+    return {"clip": clip, "frames": strip(clip, base, s), "s": s}
+
 def strip(clip, base, seconds):
     """The film strip of an item, ALWAYS cut from the item's own 640 x 360 clip: one picture of 448 x 252 every EVERY_S seconds, exactly
     int(seconds // EVERY_S) of them (without -frames:v a last one can appear)."""
@@ -161,8 +175,7 @@ def kit(out):
     try: src = PUB.drive_download(fid, os.path.join(d, "canary_src.mp4"))
     except Exception: return None, "no canary kit"
     if REL.sha(src) != sha: return None, "the canary file is not the one on record"
-    s = min(S("VIEW_FLOOR_WATCH_S", float), float(round(seconds_of(src))))      # the stored clip of a minute probes 59.92 s (its encode ends on frame 719): the strip of its whole seconds (DESIGN QUESTION 8)
-    c = {"clip": src, "frames": strip(src, os.path.join(d, "canary"), s), "s": s}
+    c = kept(src, os.path.join(d, "canary"))                                     # v12 U1 (J 187): cut to the cell when longer (stream copy), after the SHA check
     return c, twin(c, os.path.join(d, "canary_twin"))
 
 def kit2(out):
@@ -393,8 +406,7 @@ def m_run(res):
 
 def _fetched(vid, base):
     from whatifs import publish as PUB
-    p = PUB.drive_download(vid, base + "_src.mp4"); s = min(S("VIEW_FLOOR_WATCH_S", float), float(round(seconds_of(p))))      # a kept viewing, as the canary's (DESIGN QUESTION 8)
-    return {"clip": p, "frames": strip(p, base, s), "s": s}
+    return kept(PUB.drive_download(vid, base + "_src.mp4"), base)               # a kept viewing, as the canary's (v12 U1, J 187: cut to the cell when longer)
 
 def run(brief, ep, master, out, refs=(), downs=()):
     """D13's `floor` run (the shape of layman.probe_run): ONE verdict an episode - the newest session on the log that computes to pass or fail decides for
@@ -436,7 +448,14 @@ def run(brief, ep, master, out, refs=(), downs=()):
             if canary is None: res = {"status": "void", "why": str(tw)}
             else:
                 d = os.path.join(out, "floor"); os.makedirs(d, exist_ok=True)
-                sha = REL.sha(master); new = view(master, os.path.join(d, "new"), watch_s(master)); vid = ""; notes = []
+                cell = S("VIEW_FLOOR_WATCH_S", float)
+                sha = REL.sha(master); new = view(master, os.path.join(d, "new"), min(watch_s(master), canary["s"])); vid = ""; notes = []      # v12 U1 (J 187): never longer than the kit
+                if canary["s"] < cell:                                                                  # above the kit nothing can be added to a stored clip: he is told, once a day
+                    try:
+                        from whatifs import notify as NT
+                        NT.send("floor_kit", f"The floor's kit holds {canary['s']:g} s and VIEW_FLOOR_WATCH_S is {cell:g}: the new film is watched for {canary['s']:g} s until the kit is filed again.",
+                                tier="now", expires_h=24, dedupe_key=f"floorcap|{iso()[:10]}")
+                    except Exception as e: log(f"judged floor: the kit's length was not told ({scrub(e)[:120]})", "WARN", ep)
                 try: vid = PUB.drive_upload(new["clip"], f"{ep}_view.mp4", public=False)[0]               # the viewing is filed BEFORE the looks
                 except Exception as e: log(f"judged floor: the viewing could not be kept ({scrub(e)[:120]})", "WARN", ep)
                 rv, dv = [], []

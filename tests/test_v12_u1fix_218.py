@@ -9,7 +9,7 @@ def test_a_refused_scene_without_a_picture_is_one_card_never_micro_cut(monkeypat
     from whatifs import episode as EP, render as RN, drawn as DRAWN
     from whatifs.shotplan import pieces_for
     slot, ep, jobs = _setup(monkeypatch, setting, minute=2)
-    setting("MICRO_CUTS_ON", "TRUE"); setting("PIECE_MAX_SEC", "1.0"); setting("PIECE_MAX_SEC_OPENING", "1.0"); setting("PIECE_MIN_SEC", "0.5")
+    setting("MICRO_CUTS_ON", "TRUE"); setting("PIECE_MAX_SEC_OPENING", "1.0"); setting("PIECE_MIN_SEC", "0.5")      # U1b finding 8: only the opening's pieces at 1 s
     setting("VISUAL_ANIMATED_MAX_S", "100")                   # a card is one piece; a still of the same line would be several
     seen = []; cards = []; first = {}
     def proof(sc, units, i, dur, fps):
