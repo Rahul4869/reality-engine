@@ -503,6 +503,75 @@ def test_undo_of_the_oldest_decision_takes_the_whole_stack_back_one_ticket_at_a_
     for _i in range(6): engine(core.now_utc())                                                          # the engine's passes; settle sends the next undo ticket only when the first is done
     assert core.S("FORMAT_SHARE_F1") == "60"                                                            # the cell ends where he tapped
 
+V4B_T0 = dt.datetime(2026, 12, 16, 12, 0, tzinfo=dt.timezone.utc)      # code review U1FIX-b (7), plan 12 (b): step 0d runs on ONE planted instant - noon UTC, far from a day's edge
+def _v4b_plant_clock(monkeypatch, t=V4B_T0):
+    """Plants `t` as now in every loaded whatifs module (as TG8 does): what the code stamps inside a step-0d test (memos, notices, the engine) reads it."""
+    import sys
+    real = core.now_utc
+    for m in [m for n, m in list(sys.modules.items()) if (n == "whatifs" or n.startswith("whatifs.")) and getattr(m, "now_utc", None) is real]:
+        monkeypatch.setattr(m, "now_utc", lambda t=t: t)
+    return t
+def _v4b_one_verified_decision(monkeypatch, setting):
+    """V4b step 0d: one decision made and VERIFIED as the test above makes its first one (FORMAT_SHARE_F1 60 -> 40) - on the planted clock
+    (code review U1FIX-b (7): never the real one): decided five days before V4B_T0, verified at V4B_T0."""
+    from whatifs.org import memos as MEMO, runner as RN
+    _v4b_plant_clock(monkeypatch); ceo(setting); setting("FORMAT_SHARE_F1", "60"); monkeypatch.setattr(STR, "PORTFOLIO", ("FORMAT_SHARE_F1",))
+    monkeypatch.setattr(STR, "rule_of", lambda key: {"id": "T", "metric": "shorts_engaged_90d", "board": "shorts", "direction": "up", "horizon": 4})
+    monkeypatch.setattr(STR, "effect", lambda key, value, now=None: str(value))
+    monkeypatch.setattr(STR, "targets", lambda now=None: {"FORMAT_SHARE_F1": {"target": "40", "why": "w", "numbers": {}, "evidence": "ok", "count": "", "rule": "T"}})
+    t = V4B_T0 - dt.timedelta(days=5); c, _ = STR.next_move(t); row, memo = STR.decide(c, t); MEMO.write(memo); STR.tell(t)
+    EX.engine_tick(now=t); RN.run("D1", "review", lambda b: (b.take(), RN.Out({"ok": 1}, measures={"engine_passes": 1}))[1]); EX.reconcile(now=V4B_T0); STR.settle(V4B_T0)
+    assert core.S("FORMAT_SHARE_F1") == "40" and [r["state"] for r in decisions()] == ["verified"]
+    return row["id"]
+def _v4b_undo_tickets(did): return [m for m in core.store().rows("Memos") if str(m.get("dedupe_key") or "").startswith(f"strategy|undo|{did}|")]
+def _v4b_engine_refuses_every_ticket(monkeypatch):
+    monkeypatch.setattr(EX, "state_of", lambda tid, st=None: ("refused", "planted: out of range"))
+    monkeypatch.setattr(EX, "engine_tick", lambda st=None, now=None: None)
+    monkeypatch.setattr(STR, "_ticket_in_flight", lambda key, st: False)
+
+def test_an_undo_that_raised_says_what_is_true(monkeypatch, setting):
+    """V4b step 0d (B 207, issue 235 = SF10): an Undo whose ticket could not be written says the change comes after the next daily review - never
+    "between videos" (no ticket waits for that gap); the review then writes ONE ticket and the engine brings the cell back."""
+    from whatifs.org import memos as MEMO
+    did = _v4b_one_verified_decision(monkeypatch, setting); real = MEMO.write
+    def refuse(m, *a, **k):
+        if str(m.get("dedupe_key") or "").startswith("strategy|undo|"): raise RuntimeError("planted: the Sheet refused the write")
+        return real(m, *a, **k)
+    monkeypatch.setattr(MEMO, "write", refuse); t0 = V4B_T0
+    out = STR.undo(did, t0)
+    assert "after the next daily review" in out and "between videos" not in out and decisions()[0]["state"] == "undone", out
+    assert _v4b_undo_tickets(did) == []
+    monkeypatch.setattr(MEMO, "write", real); STR.settle(t0 + dt.timedelta(days=1))
+    assert len(_v4b_undo_tickets(did)) == 1
+    EX.engine_tick(now=t0 + dt.timedelta(days=1)); assert core.S("FORMAT_SHARE_F1") == "60"
+
+def test_a_refused_undo_is_sent_again_once_said_once_and_then_rests(monkeypatch, setting):
+    """V4b step 0d (B 207): an Undo the engine refuses is sent again ONCE by the daily review and said once; then it rests - one line to him, one
+    problem memo to the Engineering Wing (D12) - and that memo is closed by code when the cell reads the value of his Undo (R-V4b C2)."""
+    from whatifs.org import memos as MEMO, schemas as SC
+    did = _v4b_one_verified_decision(monkeypatch, setting); _v4b_engine_refuses_every_ticket(monkeypatch); t0 = V4B_T0
+    assert STR.undo(did, t0) == "the engine refused: planted: out of range" and len(_v4b_undo_tickets(did)) == 1
+    def stuck(): return [m for m in MEMO.find(type="problem_memo", from_dept="D1") if m.get("dedupe_key") == f"strategy_stuck|undo|{did}"]
+    for d in range(1, 6):
+        day = t0 + dt.timedelta(days=d); STR.settle(day); b = STR.brief(day); STR.briefed(day)
+        said = ("was sent again: the first try was refused (planted: out of range)" in b, "could not be applied: the engine refused it 2 times (planted: out of range)" in b)
+        assert len(_v4b_undo_tickets(did)) == 2, (d, len(_v4b_undo_tickets(did)))                   # day 1 sends the second; no third, ever
+        assert said == {1: (True, False), 2: (False, True)}.get(d, (False, False)), (d, b)            # each said once, on its own day
+        assert len(stuck()) == (0 if d == 1 else 1), (d, stuck())
+        assert (d != 2) or "FORMAT_SHARE_F1 stays 40. If you still want it back, set FORMAT_SHARE_F1 to 60 on the Settings tab." in b, b
+    m = stuck()[0]; assert "D12" in json.dumps(m.get("to_depts")) and m["subject"] == "Strategy cannot undo FORMAT_SHARE_F1: 2 undo tickets were refused", m
+    core.set_setting("FORMAT_SHARE_F1", "60"); STR.settle(t0 + dt.timedelta(days=6))
+    assert json.loads(decisions()[0]["numbers"]).get("undo_done") and stuck() == [], stuck()
+    assert MEMO.get(m["id"])["status"] not in SC.LIVE and "repair_verified" in json.dumps(MEMO.get(m["id"]))
+
+def test_with_the_cell_at_0_a_refused_undo_is_sent_every_day_as_v4_shipped(monkeypatch, setting):
+    """V4b step 0d's switch: STRATEGY_UNDO_SENDS_MAX "0" is V4's road - one more undo ticket every daily review and no line to him (on a fresh Sheet)."""
+    did = _v4b_one_verified_decision(monkeypatch, setting); setting("STRATEGY_UNDO_SENDS_MAX", "0"); _v4b_engine_refuses_every_ticket(monkeypatch); t0 = V4B_T0
+    STR.undo(did, t0)
+    for d in range(1, 6):
+        day = t0 + dt.timedelta(days=d); STR.settle(day); b = STR.brief(day); STR.briefed(day)
+        assert len(_v4b_undo_tickets(did)) == 1 + d and "was sent again" not in b and "could not be applied" not in b, (d, b)
+
 def test_strategy_live_is_na_on_an_empty_sheet_fails_when_stale_and_passes_after_a_review(monkeypatch, setting):
     from whatifs.org import runner as RN
     assert CON.p_strategy_live({})[0] == CON.NA                                                         # STRATEGY_ON FALSE
@@ -1430,3 +1499,204 @@ def test_one_whole_month_of_daily_rounds_keeps_every_limit(monkeypatch, setting)
     jp = sorted((r["key"], json.loads(r["numbers"])["point"]) for r in rows if r["state"] == "judged" and r.get("rule") in ("SHORT_ARMS", "ARMS"))
     assert jp == [("FORMAT_SHARE_F2", 8), ("FORMAT_SHARE_F3", 8), ("SHORT_SHARE_S2", 8), ("SHORT_SHARE_S3", 8)], jp          # every arm judged once at its point
     assert undone["key"] == "SHORT_SHARE_S2" and core.S("SHORT_SHARE_S2") == "40" and not [r for r in dec if r["key"] == "SHORT_SHARE_S2" and r["id"] != undone["id"]]   # nothing moved on the key he undid
+
+def test_v4b_tg7_the_docket_carries_the_hold_and_the_decided_list_the_two_inform_rows(monkeypatch):
+    """V4b 0e TG7, both "nothing to do" lists: three OPEN rows through NT.send - kind "strategy", kind "desk" and one contract_hold. The dashboard's
+    docket carries the hold and neither inform row; its list "Decided for you" carries exactly the two inform rows; the evening digest's list
+    "Waiting for you" holds one row: the hold."""
+    from whatifs import dash as DSH
+    mails = []
+    monkeypatch.setattr(PUB, "email", lambda subject, html, *a, **k: (mails.append(str(html)), True)[1])
+    inf = [NT.send("strategy", "Decided for you: SHORTS_PER_MONTH 12 -> 14. Nothing to do - tap Undo to take it back.", [("Undo", "UNDO")], default="It stays"),
+           NT.send("desk", "Decided for you: the desk moved a slot. Nothing to do - tap Undo to take it back.", [("Undo", "UNDO")], default="It stays")]
+    hold = NT.send("contract_hold", "Video held: a check failed on EP-TG7.", [("Fix", "FIX EP-TG7")], episode="EP-TG7")
+    assert len(set(inf + [hold])) == 3 and all(r.get("status") == "OPEN" for r in core.store().rows("Owner_Actions") if r["id"] in inf + [hold])
+    docket = [c.get("id") for c in DSH._docket()]
+    assert hold in docket and not set(inf) & set(docket), docket                                  # the hold waits for him; what was done for him does not
+    assert sorted(c["id"] for c in DSH._decided()) == sorted(inf)                                  # exactly the two inform rows, the hold not among them
+    assert NT.digest(now=dt.datetime(2026, 12, 15, 13, 0, tzinfo=dt.timezone.utc), force=True) is True and len(mails) == 1
+    waiting = mails[0].split("<b>Waiting for you (optional):</b>")[1].split("</ul>")[0]
+    assert waiting.count("<li>") == 1 and "EP-TG7" in waiting and "Nothing to do" not in waiting, waiting
+
+
+def test_v4b_tg8_the_six_other_own_spend_readers_say_his_rs_4400_and_never_5300(monkeypatch, setting):
+    """V4b 0e TG8: on the Rs 5,300 test's planted month (Rs 4,400 of pictures, Rs 900 of Claude, the lane open) the six other readers of his own
+    money say Rs 4,400 and none says 5,300: dash._money, caretaker.advisor, governor.headroom, governor.record_month_close (cell
+    LAST_MONTH_SPEND_INR), manage.monthly_brief (spend_month; its model call faked) - and governor._guard_alert, with Rs 200 more of pictures
+    planted (his own Rs 4,600 is above the 90% guard), says "Rs 4600 of Rs 5000". The clock is planted in every loaded whatifs module."""
+    import re, sys
+    from whatifs import dash as DSH, caretaker as CT, manage as MG, models as MDL
+    t = dt.datetime(2026, 12, 15, 12, 0, tzinfo=dt.timezone.utc); real = core.now_utc; frozen = lambda: t
+    for m in [m for n, m in list(sys.modules.items()) if (n == "whatifs" or n.startswith("whatifs.")) and getattr(m, "now_utc", None) is real]:
+        monkeypatch.setattr(m, "now_utc", frozen)
+    try:
+        cap5000(setting); sent, prompts = [], []
+        monkeypatch.setattr(NT, "send", lambda kind, text, *a, **k: sent.append((kind, str(text))))
+        monkeypatch.setattr(NT, "mail", lambda *a, **k: None)
+        monkeypatch.setattr(MDL, "ask_batch", lambda role, prompt, *a, **k: (prompts.append(str(prompt)), "A brief.")[1])
+        cost(core.iso(t), 4400, provider="fal", item="image"); cost(core.iso(t), 900)                  # the Rs 5,300 test's month: Rs 900 of it Claude's
+        lane(setting, usd="100", frm="2026-12-01", until="2027-01-04")                                  # Rs 9,900, usable 6,930: the Rs 900 is covered
+        assert (G.month_spend(), FIN.cover(), G.own_spend_inr()) == (5300, 900, 4400)
+        assert DSH._money()["month_spend"] == 4400                                                     # the dashboard's money tile
+        CT.advisor(now=t); adv = [x for k, x in sent if k == "advisor"]
+        assert len(adv) == 1 and "spend Rs 4400 of Rs 5000" in adv[0], adv
+        assert G.headroom()["spent_inr"] == 4400
+        G.record_month_close(); assert core.S("LAST_MONTH_SPEND_INR", float) == 4400
+        MG.monthly_brief(); sm = re.findall(r'"spend_month": ([0-9.]+)', prompts[0]) if prompts else []
+        assert len(prompts) == 1 and [float(x) for x in sm] == [4400.0], sm
+        assert not [x for _k, x in sent if "5300" in x or "5,300" in x], sent
+        cost(core.iso(t), 200, provider="fal", item="image")                                           # Rs 200 more of pictures: his own Rs 4,600
+        assert G.own_spend_inr() == 4600 > 0.9 * G.cap_inr() and G.cap_inr() == 5000
+        G._guard_alert(); guard = [x for k, x in sent if k == "budget_guard"]
+        assert len(guard) == 1 and "Rs 4600 of Rs 5000" in guard[0] and "5500" not in guard[0], guard
+    finally:
+        for n, m in list(sys.modules.items()):
+            if n.startswith("whatifs") and getattr(m, "now_utc", None) is frozen: m.now_utc = real
+
+
+# ------------------------------------------------------------------ V4b step 0e: test gaps TG12, TG15, TG16 (no code change; each GREEN on the code as it stands, RED under its break)
+def test_the_covers_cache_reads_cost_log_once_a_ttl_and_forget_reads_it_at_once(monkeypatch, setting):
+    """V4b 0e TG12 (break V4bM-E12): FIN.cover() reads tab Cost_Log at most once in COVER_TTL_S a process - a new Claude row inside it leaves the OLD
+    figure, time.time planted 601 seconds on gives the new one, and FIN.forget() alone gives a newer one at once."""
+    import types
+    from whatifs.org import finance as FIN
+    T0 = 1_000_000.0; T = [T0]; monkeypatch.setattr(FIN, "time", types.SimpleNamespace(time=lambda: T[0]))
+    jan = dt.datetime(2027, 1, 6, 6, 0, tzinfo=dt.timezone.utc)
+    def row(ts, inr): core.store().append("Cost_Log", [{"ts": ts, "episode_id": "EPX", "item": "claude_writer", "provider": "anthropic", "units": 1, "inr": inr, "basis": "measured", "role": "writer"}])
+    lane(setting); cost("2027-01-05T10:00:00Z", 300)                                                   # the lane open (10 Dec to 10 Jan); Rs 300 of Claude in January
+    assert FIN.lane(jan)["open"] and FIN.cover(jan) == 300 and FIN.COVER_TTL_S == 600
+    row("2027-01-06T01:00:00Z", 200)                                                                   # a new Claude row, no forget()
+    T[0] = T0 + FIN.COVER_TTL_S - 1; assert FIN.cover(jan) == 300                                      # inside COVER_TTL_S: the OLD figure
+    T[0] = T0 + 601; assert FIN.cover(jan) == 500                                                      # 601 seconds on: the new figure
+    row("2027-01-06T02:00:00Z", 100); assert FIN.cover(jan) == 500                                     # read again at T0 + 601: cached anew
+    FIN.forget(); assert FIN.cover(jan) == 600                                                         # forget() alone: the newer figure at once
+
+def test_the_scoreboards_inputs_are_youtubes_numbers_and_the_eligible_share(monkeypatch, setting):
+    """V4b 0e TG15 (break V4bM-E15): read() holds ypp.progress's numbers and the subscriber count as they are, the long hours at SCOREBOARD_ELIGIBLE_PCT;
+    line() names the share only when it is not 100; with no subscriber reading keep() writes "" and the line says so."""
+    from whatifs import scoreboard as SB, ypp
+    setting("STRATEGY_ON", "TRUE"); setting("SCOREBOARD_ELIGIBLE_PCT", "80")
+    monkeypatch.setattr(ypp, "progress", lambda now=None: {"hours": 1000, "shorts_views_90d": 5000})
+    subs = [120]; monkeypatch.setattr(SB, "_subs", lambda: subs[0])
+    r = SB.read(SB_NOW); assert (r["subs"], r["hours"], r["shorts_90"]) == (120, 800.0, 5000), r
+    k = SB.keep(SB_NOW); assert (k["subs"], k["hours"], k["shorts_90"]) == (120, 800.0, 5000), k
+    L = SB.line(SB_NOW); assert "120 of 1,000 subscribers" in L and "long watch hours: 800.0 of 4,000" in L and "(counted at 80% eligible)" in L, L
+    setting("SCOREBOARD_ELIGIBLE_PCT", "100"); assert "counted at" not in SB.line(SB_NOW), SB.line(SB_NOW)
+    subs[0] = None; nxt = SB_NOW + dt.timedelta(days=1)
+    assert SB.keep(nxt)["subs"] == "" and "Scoreboard: subscribers: no reading |" in SB.line(nxt), SB.line(nxt)
+
+def test_the_risk_locks_own_words_in_one_row_with_one_tap(setting):
+    """V4b 0e TG16 (break V4bM-E16): lock() closes the uploads and says why in its own words - the why as given, or "is gone from YouTube" for a gone
+    video - in ONE row of kind risk_lock, tier now, keyed risk_lock|<vid>, with one tap that opens them again; no text speaks of an audit."""
+    from whatifs.org import risk as RISK
+    setting("STRATEGY_ON", "TRUE"); setting("UPLOAD_LOCK", "off")
+    RISK.lock("v1", "a video was rejected by YouTube"); assert core.S("UPLOAD_LOCK") == "on"
+    rows = [x for x in core.store().rows("Owner_Actions") if x["kind"] == "risk_lock"]; assert len(rows) == 1, rows
+    a = rows[0]; assert a["tier"] == "now" and a["dedupe_key"] == "risk_lock|v1", a
+    assert a["text"].startswith("The uploads are closed: a video was rejected by YouTube.") and "One tap opens the uploads again." in a["text"], a["text"]
+    assert json.loads(a["buttons"]) == [["Open the uploads", "RISK OPEN v1"]] and a["default_action"] == "the uploads stay closed until you open them", a
+    RISK.lock("v2", "gone 26 hours")
+    b = next(x for x in core.store().rows("Owner_Actions") if x["kind"] == "risk_lock" and x["dedupe_key"] == "risk_lock|v2")
+    assert b["text"].startswith("The uploads are closed: v2 is gone from YouTube"), b["text"]
+    assert not any("audit" in str(x.get("text") or "").lower() for x in core.store().rows("Owner_Actions")), core.store().rows("Owner_Actions")
+
+def test_settle_resends_a_decided_rows_lost_ticket_once_then_voids_it(monkeypatch, setting):
+    """V4b 0e TG11 (i): a row "decided" whose ticket never reached tab Memos - settle sends it once more after DECIDED_MAX_H and stamps `resent`;
+    a day later, still no ticket, the row is void with its note and no second ticket goes out."""
+    from whatifs.org import memos as MEMO
+    ceo(setting); at(monkeypatch, JAN); c, _ = STR.next_move(JAN); row, _memo = STR.decide(c, JAN)                # the ticket is NOT written: never on tab Memos
+    assert MEMO.get(row["ticket"]) is None and EX.state_of(row["ticket"]) is None
+    assert STR.settle(JAN + dt.timedelta(hours=25)) == [] and decisions()[0]["state"] == "decided"             # not yet DECIDED_MAX_H (26 h)
+    t1 = JAN + dt.timedelta(hours=27); out = STR.settle(t1); r = decisions()[0]
+    assert len(out) == 1 and out[0]["type"] == "ticket" and out[0]["dedupe_key"] == f"strategy|{row['id']}" and out[0]["body"]["decision_ref"] == row["id"], out
+    assert (out[0]["body"]["target"], out[0]["body"]["value"], r["state"]) == ("STANDARD_MAX_LONG_PER_MONTH", "5", "decided") and json.loads(r["numbers"])["resent"] == core.iso(t1)
+    t2 = t1 + dt.timedelta(days=1); out2 = STR.settle(t2); r = decisions()[0]
+    assert out2 == [] and r["state"] == "void", (out2, r["state"])                                             # still no ticket a day later: void, no second ticket
+    assert json.loads(r["numbers"])["engine_note"] == "its ticket was never written: nothing changed"
+    assert STR.settle(t2 + dt.timedelta(days=1)) == [] and decisions()[0]["state"] == "void"                  # void is not in force: nothing more
+
+
+def test_two_refused_moves_of_one_key_write_one_stuck_memo_and_freeze_it_and_a_verified_move_resolves_it(monkeypatch, setting):
+    """V4b 0e TG11 (ii): the engine refuses two moves of one key -> ONE problem memo strategy_stuck|<key> to D12 and `frozen_until` set (a third
+    refusal writes no second memo); a later move of that key verified -> settle resolves that memo (a resolve that raised would only be logged)."""
+    from whatifs.org import memos as MEMO
+    ceo(setting); at(monkeypatch, JAN); key = "STANDARD_MAX_LONG_PER_MONTH"; c, _ = STR.next_move(JAN); assert c["key"] == key
+    eng = {}; monkeypatch.setattr(EX, "state_of", lambda tid, st=None: eng.get(tid))                         # the engine's word on each ticket, planted
+    def move(t, word):
+        row, _memo = STR.decide(c, t); eng[row["ticket"]] = word; STR.settle(t + dt.timedelta(hours=1)); return next(r for r in decisions() if r["id"] == row["id"])
+    def stuck(): return [m for m in MEMO.find(live=False, type="problem_memo", from_dept="D1") if m.get("dedupe_key") == f"strategy_stuck|{key}"]
+    r1 = move(JAN, ("refused", "out of its range")); assert r1["state"] == "refused" and stuck() == [] and not r1.get("frozen_until"), r1
+    t2 = JAN + dt.timedelta(days=1); r2 = move(t2, ("refused", "out of its range again")); ms = stuck()
+    assert r2["state"] == "refused" and len(ms) == 1 and ms[0]["to_depts"] == ["D12"] and ms[0]["status"] != "resolved", ms
+    freeze = core.S("STRATEGY_UNDO_FREEZE_DAYS", float)
+    assert r2["frozen_until"] == core.iso(t2 + dt.timedelta(hours=1) + dt.timedelta(days=freeze)) and STR._frozen(decisions(), key, t2 + dt.timedelta(days=freeze - 1))
+    r3 = move(JAN + dt.timedelta(days=2), ("rolled_back", "no proof")); assert r3["state"] == "rolled_back" and len(stuck()) == 1, stuck()   # still ONE memo
+    r4 = move(JAN + dt.timedelta(days=3), ("verified", "the code does 5")); assert r4["state"] == "verified", r4
+    m = MEMO.get(ms[0]["id"])
+    assert m["status"] == "resolved" and m["resolution"]["kind"] == "repair_verified" and m["resolution"]["ref"] == f"Decisions:{r4['id']}", m
+
+
+def test_observe_counts_a_shares_formats_over_the_ten_made_after_the_decision_only(setting):
+    """V4b 0e TG13: a VERIFIED share decision is observed over the next ten made AFTER it - SHORT_SHARE_ from tab Specials (`ts`, `format`), FORMAT_SHARE_
+    from tab Episodes (`draw_json`'s format, `slot_et`); rows made before the decision never count and nine after leave `observed` empty."""
+    st = core.store()
+    def h(n): return core.iso(JAN + dt.timedelta(hours=n))
+    def plant(key, did):
+        st.append("Decisions", [{"id": did, "ts": core.iso(JAN), "rule": STR.rule_of(key)["id"], "key": key, "old": "40", "new": "20", "why": "w", "numbers": "{}",
+                                 "effect_before": "", "effect_after": "", "ticket": "", "state": "verified", "prediction": "{}", "told": "", "frozen_until": "",
+                                 "observed": "", "scored": "", "briefed": ""}])
+    def obs(did):
+        v = next(r for r in decisions() if r["id"] == did)["observed"]; return json.loads(v) if isinstance(v, str) and v else v
+    plant("SHORT_SHARE_S2", "DEC-tg13short"); plant("FORMAT_SHARE_F2", "DEC-tg13long")
+    st.append("Specials", [{"id": f"SP-b{i}", "ts": h(-1 - i), "format": "S1"} for i in range(12)])                                   # twelve made BEFORE the decision
+    st.append("Episodes", [{"id": f"EP-b{i}", "slot_et": h(-1 - i), "draw_json": json.dumps({"format": "F1"})} for i in range(12)])
+    sf = ["S2", "S3", "S2", "S1", "S2", "S3", "S2", "S2", "S3", "S1"]; lf = ["F2", "F3", "F2", "F2", "F1", "F3", "F2", "F2", "F3", "F2"]
+    st.append("Specials", [{"id": f"SP-a{i}", "ts": h(1 + i), "format": f} for i, f in enumerate(sf[:9])])                            # nine after
+    st.append("Episodes", [{"id": f"EP-a{i}", "slot_et": h(1 + i), "draw_json": json.dumps({"format": f})} for i, f in enumerate(lf[:9])])
+    assert STR.observe(JAN + dt.timedelta(days=3)) == 0 and obs("DEC-tg13short") == "" and obs("DEC-tg13long") == "", (obs("DEC-tg13short"), obs("DEC-tg13long"))
+    st.append("Specials", [{"id": "SP-a9", "ts": h(10), "format": sf[9]}, {"id": "SP-a10", "ts": h(11), "format": "S9"}])               # the tenth, and an eleventh that never counts
+    st.append("Episodes", [{"id": "EP-a9", "slot_et": h(10), "draw_json": json.dumps({"format": lf[9]})}, {"id": "EP-a10", "slot_et": h(11), "draw_json": json.dumps({"format": "F9"})}])
+    assert STR.observe(JAN + dt.timedelta(days=3)) == 2
+    assert obs("DEC-tg13short") == {"S1": 2, "S2": 5, "S3": 3} and obs("DEC-tg13long") == {"F1": 1, "F2": 6, "F3": 3}, (obs("DEC-tg13short"), obs("DEC-tg13long"))
+
+
+def test_the_review_gives_each_inbound_memo_type_its_own_disposition_in_words(setting):
+    """V4b 0e TG14: strategy._disposition, read by `review` - five inbound memos (owner, performance, decision, a problem of class "render", a ticket):
+    each is ("deferred", its own sentence), word for word."""
+    setting("STRATEGY_ON", "TRUE")
+    ms = [{"id": "M-owner", "type": "owner_memo", "body": {}}, {"id": "M-perf", "type": "performance_memo", "body": {}}, {"id": "M-dec", "type": "decision_memo", "body": {}},
+          {"id": "M-prob", "type": "problem_memo", "body": {"what_failed": "a render broke", "error_class": "render"}}, {"id": "M-tkt", "type": "ticket", "body": {"target": "X"}}]
+    class Brief:
+        memos = ms
+        def take(self): return None
+    out = STR.review(Brief())
+    assert out.memo_actions == {"M-owner": ("deferred", "answered on the owner's desk: it closes with its answer"),
+                                "M-perf": ("deferred", "read by Strategy: counted in this review's numbers"),
+                                "M-dec": ("deferred", "read by Strategy: counted in this review's numbers"),
+                                "M-prob": ("deferred", "read by Strategy: render is repaired by its own department; counted in the week's line"),
+                                "M-tkt": ("deferred", "read by Strategy: a ticket is not Strategy's to close")}, out.memo_actions
+
+
+def test_the_fit_gate_never_refuses_a_saving_and_refuses_a_move_that_raises_a_month_that_does_not_fit(monkeypatch, setting):
+    """V4b 0e TG17: next_move's FIT gate with G.month_fit planted so the month does NOT fit and its need grows with the long videos - SLOTS' target
+    BELOW the cell is taken (the move lowers the need) and no refusal names the month; ABOVE the cell in the same month: "the month would need"."""
+    from whatifs import governor as G
+    ceo(setting); key = "STANDARD_MAX_LONG_PER_MONTH"
+    monkeypatch.setattr(G, "month_fit", lambda L, sh, *a, **k: {"need_inr": 1000.0 * L + sh, "room_inr": 100.0, "fits": False})
+    setting(key, "5"); plant_target(monkeypatch, key, 4)
+    c, refused = STR.next_move(JAN)
+    assert c is not None and (c["key"], c["old"], c["new"], c["effect_before"], c["effect_after"]) == (key, "5", "4", 5, 4), (c, refused)
+    assert not [x for x in refused if "the month would need" in x], refused
+    setting(key, "4"); plant_target(monkeypatch, key, 5)
+    c, refused = STR.next_move(JAN)
+    assert c is None and refused == [f"not taken: {key} 4 -> 5: the month would need Rs 5012 and has Rs 100 for production"], (c, refused)
+
+
+def test_a_slots_decision_is_told_in_these_exact_words(monkeypatch, setting):
+    """V4b 0e TG17's NOTE: tools/rehearsal.py compares the action's text with text_of itself, so no wrong word could fail there - the sentence of one
+    planted SLOTS decision is held here as literal words (V4's own break at "tap Undo" stands in proving/breaks/V4.json; no break of its own)."""
+    ceo(setting); plant_target(monkeypatch, "STANDARD_MAX_LONG_PER_MONTH", 5, why="January has five Saturdays and the money holds five")
+    c, _ = STR.next_move(JAN); row, _memo = STR.decide(c, JAN); assert row["rule"] == "SLOTS", row
+    assert STR.text_of(row) == ("Strategy decided: 5 long videos a month instead of 4 (STANDARD_MAX_LONG_PER_MONTH 4 -> 5). Why: January has five Saturdays and "
+                                "the money holds five. It should move the long watch hours: the watch hours a long video earns in its first 28 days up. "
+                                "Nothing to do - tap Undo to take it back."), STR.text_of(row)

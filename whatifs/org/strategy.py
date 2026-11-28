@@ -479,7 +479,11 @@ def brief(now=None, st=None):
         elif r["state"] in TAKEN_BACK:
             ex = _js(r.get("numbers"), {}).get("engine_note") or r["state"].replace("_", " ")
             lines.append(f"Taken back: {plain(r['key'], r['old'], r['new'])} ({r['key']} stays {r['old']}). Why: {ex}.")
-        elif r["state"] == "undone": continue
+        elif r["state"] == "undone":
+            nm = _js(r.get("numbers"), {})
+            if nm.get("undo_stuck"): lines.append(f"Your Undo could not be applied: the engine refused it {nm.get('undo_sent')} times ({nm.get('undo_note')}). {r['key']} stays {_cell(r['key'])}. If you still want it back, set {r['key']} to {r['old']} on the Settings tab.")
+            elif nm.get("undo_again"): lines.append(f"Your Undo ({r['key']} back to {r['old']}) was sent again: the first try was refused ({nm.get('undo_note')}). Nothing to do.")
+            else: continue
         else:
             if not r.get("told"): continue      # V4's finish C17: a decision reaches the brief with its Undo link
             a = _action(r, st); lnk = NT.link(f"STRATEGY UNDO {r['id']}", a["id"]) if a else ""
@@ -581,6 +585,18 @@ def _back(st, r, state, note, now):
         except Exception as e: log(f"strategy: the stuck memo was not written: {scrub(e)[:120]}", "WARN")
         _save(st, r, frozen_until=iso(now + dt.timedelta(days=S("STRATEGY_UNDO_FREEZE_DAYS", float))))
 
+def _undo_memo(st, r, sent, note, now):
+    """V4b step 0d: an Undo the engine refused STRATEGY_UNDO_SENDS_MAX times rests with this problem memo to the Engineering Wing (`_back`'s stuck
+    memo, in the undo's words); settle closes it when the cell reads the value of his Undo."""
+    from whatifs.org import memos as MEM
+    try:
+        MEM.write({"type": "problem_memo", "from_dept": "D1", "to_depts": ["D12"], "subject": f"Strategy cannot undo {r['key']}: {sent} undo tickets were refused",
+                   "body": {"what_failed": f"{r['key']}: the owner's Undo of {r['id']} was refused {sent} times ({str(note)[:200]})", "where": f"Decisions:{r['id']}", "attempt": 1,
+                            "error_class": "strategy_stuck"},
+                   "evidence": [{"source": f"Decisions:{r['id']}", "date": iso(now)[:10], "type": "own data"}], "dedupe_key": f"strategy_stuck|undo|{r['id']}",
+                   "done_when": f"{r['key']} reads {r['old']}"}, st, now)
+    except Exception as e: log(f"strategy: the stuck memo was not written: {scrub(e)[:120]}", "WARN")
+
 def settle(now=None, st=None):
     """Every row decided or applied takes the engine's word; an applied change whose effect differs from the decision's is taken back by a new ticket;
     a decision whose ticket is not on tab Memos is sent again at each review until it is written (stamp_resent stamps "resent" once it is), void when
@@ -621,10 +637,25 @@ def settle(now=None, st=None):
         for r in sorted([x for x in _rows(st) if x["key"] == key and x["state"] == "undone"], key=lambda x: x["ts"], reverse=True):
             nums = _js(r.get("numbers"), {})
             if nums.get("undo_done"): continue
-            if _cell(key) == str(r["old"]): _save(st, r, numbers=dict(nums, undo_done=iso(now))); continue
+            if _cell(key) == str(r["old"]):
+                _save(st, r, numbers=dict(nums, undo_done=iso(now)))
+                if nums.get("undo_stuck"):                                          # V4b step 0d: the stuck memo closes with its proof
+                    for sm in MEM.find(st, type="problem_memo", from_dept="D1"):
+                        if sm.get("dedupe_key") == f"strategy_stuck|undo|{r['id']}":
+                            try: MEM.resolve(sm["id"], "D1", "repair_verified", f"Decisions:{r['id']}", "the cell reads the value of his Undo", st, now)
+                            except Exception as e: log(f"strategy: the undo's stuck memo was not closed: {scrub(e)[:120]}", "WARN")
+                continue
             if _ticket_in_flight(key, st): break
-            m = _ticket(key, r["old"], r["new"], r["id"], f"strategy|undo|{r['id']}|{nums.get('undo_sent', 0)}", now)
-            try: MEM.write(m, st, now); _save(st, r, numbers=dict(nums, undo_sent=int(nums.get("undo_sent", 0)) + 1))
+            sent = int(nums.get("undo_sent", 0)); mx = S("STRATEGY_UNDO_SENDS_MAX", int)
+            note = ((EX.state_of(nums["undo_ticket"], st) or ("", ""))[1] if nums.get("undo_ticket") else "") or "no reason was recorded"
+            if mx and sent >= mx:                                                   # V4b step 0d: a refused undo is not sent for ever
+                if not nums.get("undo_stuck"):
+                    _save(st, r, numbers=dict(nums, undo_stuck=iso(now), undo_note=str(note)[:200]), briefed=""); _undo_memo(st, r, sent, note, now)
+                break
+            m = _ticket(key, r["old"], r["new"], r["id"], f"strategy|undo|{r['id']}|{sent}", now)
+            try:
+                t = MEM.write(m, st, now); again = {"undo_again": iso(now), "undo_note": str(note)[:200]} if (mx and sent >= 1) else {}
+                _save(st, r, numbers=dict(nums, undo_sent=sent + 1, undo_ticket=t["id"], **again), **({"briefed": ""} if again else {}))
             except Exception as e: log(f"strategy: an undo ticket was not written: {scrub(e)[:120]}", "WARN")
             break
     return out
@@ -858,13 +889,13 @@ def undo(did, now=None, st=None):
             ans = f"undone: {first['key']} is back at {first['old']}" if _cell(first["key"]) == str(first["old"]) else f"undone: {first['key']} goes back to {first['old']} between videos"
         else:
             m = _ticket(first["key"], first["old"], first["new"], first["id"], f"strategy|undo|{first['id']}|0", now, urgency="P1")
-            t = MEM.write(m, st, now); _save(st, first, numbers=dict(_js(first.get("numbers"), {}), undo_sent=1)); EX.engine_tick(st, now)
+            t = MEM.write(m, st, now); _save(st, first, numbers=dict(_js(first.get("numbers"), {}), undo_sent=1, undo_ticket=t["id"])); EX.engine_tick(st, now)
             e2 = EX.state_of(t["id"], st)
             if e2 and e2[0] in ("refused", "failed"): ans = f"the engine refused: {e2[1]}"
             elif _cell(first["key"]) == str(first["old"]): ans = f"undone: {first['key']} is back at {first['old']}"
             else: ans = f"undone: {first['key']} goes back to {first['old']} between videos"
     except Exception as e:
-        log(f"strategy: undo of {did} did not finish: {scrub(e)[:160]}", "WARN"); ans = f"undone: {first['key']} goes back to {first['old']} between videos"
+        log(f"strategy: undo of {did} did not finish: {scrub(e)[:160]}", "WARN"); ans = f"undone: {first['key']} goes back to {first['old']} after the next daily review (the change did not finish now)"
     answers.append(ans)
     later = [r["id"] for r in stack if r["id"] != did]
     if later: answers.append("taken back with it: " + ", ".join(later))

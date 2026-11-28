@@ -965,6 +965,7 @@ DEFAULTS = {
  "SHORT_VARIANT_EST_INR": ("12", "v12 V4: one more Short script in the estimate (a third of the Rs 36 lump that pays three scripts, the jury and the fix - it errs upward)"),
  "STRATEGY_MOVES_PER_WEEK": ("3", "v12 V4 (Strategy, D1): at most this many decisions in any seven days (his undos and the desk's tickets do not count); one a day (v12 V4b: STRATEGY_ONE_A_DAY)"),
  "STRATEGY_ONE_A_DAY": ("TRUE", "v12 V4b (Strategy, D1): TRUE = at most one decision on a UTC day, whichever job runs the review (a production job's catch-up round included); FALSE = one a review, as V4 shipped"),
+ "STRATEGY_UNDO_SENDS_MAX": ("2", "v12 V4b (Strategy, D1): how many tickets one Undo may send (his tap's own, then the daily review's) before it rests with one line to him and a memo to the Engineering Wing; 0 = no limit and no line, as V4 shipped"),
  "STRATEGY_UNDO_FREEZE_DAYS": ("28", "v12 V4: a key he took back (Undo) or set by hand is not moved by any rule for this many days - the loop never fights his hand"),
  "STRATEGY_RETRY_DAYS": ("7", "v12 V4: a key whose move the engine refused or rolled back is not moved again for this many days (two such tries: frozen 28 days, a memo to Operations)"),
  "STRATEGY_STALE_H": ("36", "v12 V4: check strategy_live fails when Strategy's newest complete review is older than this many hours"),
