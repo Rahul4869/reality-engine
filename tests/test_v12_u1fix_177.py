@@ -92,6 +92,13 @@ def test_a_whole_f1_production_records_a_re_drawn_clip_state_and_camera_shown_ju
         if planted == ["black"]: planted.append("scan"); return {"black": [target["t"]], "frozen": []}
         return real_scan(path)
     monkeypatch.setattr(EP, "_render", render); monkeypatch.setattr(QCM, "full_check", full); monkeypatch.setattr(QCM, "scan_times", scan)
+    real_mark = PATH.mark                                                                 # RULINGS_U3u (2): the fake F1 film has no card or cutaway inside an act - one marked still of an act (never its first) becomes the code-made reaction cutaway before the render draws it, as tests/test_v12_inside.py 1195 does
+    def mark(shots_, *a, **k):
+        out_, plan_ = real_mark(shots_, *a, **k)
+        j = next((j for j, s in enumerate(out_) if j > 0 and (s.get("path") or {}).get("act") is not None and not s["path"].get("first") and s.get("type") == "still"), None)
+        if j is not None: out_[j] = dict(out_[j], type="reaction", speaker="SKEPTIC")
+        return out_, plan_
+    monkeypatch.setattr(PATH, "mark", mark)
     gate = {}; real_run = CON.run
     monkeypatch.setattr(CON, "run", lambda stage, c, *a, **k: (gate.__setitem__(stage, c), real_run(stage, c, *a, **k))[1])
     EP.produce(E2E._slot(10), episode_id=ep)
@@ -105,3 +112,18 @@ def test_a_whole_f1_production_records_a_re_drawn_clip_state_and_camera_shown_ju
     whole = PATH.shown_report(ps, shots); assert whole["problems"] == [], whole
     assert CON.p_camera_shown(gate["final"])[0] == CON.PASS, CON.p_camera_shown(gate["final"])
     shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True)
+
+
+
+def test_camera_shown_never_judges_a_card_or_a_cutaway_whose_record_says_clip_false():
+    """J 177 (a), RULINGS_U3za: the TYPE decides (path.shown_report). The render writes "clip" on EVERY state (episode.py path_states), so a graphic
+    card and a reaction cutaway inside an act are recorded with clip False, move '' and sign 0 (episode.py: mv_ is '' for a graphic, a cutaway).
+    Judged as stills they would fail a good film; they are never judged - only the still beside them is."""
+    shots = [{"type": "still", "path": {"act": "A", "place": "p", "sign": 1, "first": True}},
+             {"type": "graphic", "path": {"act": "A", "place": "p", "sign": 1, "first": False}},
+             {"type": "reaction", "path": {"act": "A", "place": "p", "sign": 1, "first": False}}]
+    rec = [{"t0": 0.0, "t1": 2.0, "i": 0, "type": "still", "act": "A", "src": 0, "move": PATH.MOVES[0], "sign": 1, "fallback": False, "clip": False},
+           {"t0": 2.0, "t1": 4.0, "i": 1, "type": "graphic", "act": "A", "src": 0, "move": "", "sign": 0, "fallback": False, "clip": False},
+           {"t0": 4.0, "t1": 6.0, "i": 2, "type": "reaction", "act": "A", "src": 0, "move": "", "sign": 0, "fallback": False, "clip": False}]
+    r = PATH.shown_report(rec, shots)
+    assert r["states"] == 1 and r["problems"] == [], r

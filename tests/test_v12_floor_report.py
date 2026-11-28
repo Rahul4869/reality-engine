@@ -43,7 +43,8 @@ def test_a_film_the_unmeasured_floor_refuses_goes_to_his_eye_with_the_clock_and_
     if review == "0":
         assert [x["kind"] for x in cards] == ["floor_eye"] and cards[0]["default_action"] == "goes public by itself" and cards[0]["expires_at"], cards
     else:
-        assert [x["kind"] for x in cards] == ["creative_review"], cards      # RULING_F10: his first three have the review's own clock (item 223); BEHAVIOUR 6 is void
+        assert [x["kind"] for x in cards] == {"TRUE": ["title_pick", "scheduled", "creative_review"], "FALSE": ["creative_review"]}[screens], cards      # RULING_F10: his first three have the review's own clock (item 223); BEHAVIOUR 6 is void | RULINGS_U3u (1): with TWO_SCREENS_ON TRUE every mail is also a row of its kind (notify.mail, item 149) - the title pick (packaging.record) and the 'scheduled' notice come before the review card
+        cards = [x for x in cards if x["kind"] == "creative_review"]      # RULINGS_U3u (1): the review's own card - the clock (next line) and (e) read it
         assert cards[0]["expires_at"] and cards[0]["default_action"] == {"TRUE": "approved by your silence", "FALSE": "stays private"}[screens], cards      # U1 (F10): each wording as written (item 223)
     t = cards[0]["text"]                                                                                           # (e) the card says why
     assert "ranked its first minute beside the video you rejected" in t and "not measured yet" in t and f"https://drive.google.com/file/d/{ep}_view.mp4/view" in t, t
