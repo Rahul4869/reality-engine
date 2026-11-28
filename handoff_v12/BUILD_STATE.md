@@ -3443,6 +3443,40 @@ DOUBTS FOR THE REVIEWER (each one line, none decided silently):
 - PRICE_GEM_IMAGE_USD (0.067) against the vendor page's 0.039 for one model is not this patch's to settle.
 
 Designed by Fable at the reset (19 Nov 2026; `PREDESIGN_B_OWNER.md` of the dispatcher's notes folder: the pool's designer R4 and the designers of record R17 and R22, each a Fable 5.2 session at Extra high); pre-reviewed by R7 and reviewed by three fresh Fable sessions - R18 (the review of record, two rounds: APPROVED), R19 (the blocks marked "R22 (" on the tick's real cadence: APPROVED) and R24 (the five late blocks: APPROVED) - whose three files are committed under `reviews/` after this paste, by a clerk; typed ahead on patches by Opus typists.
+
+#### Step 4 BUILD (what changed) - U1 = V4b, DRAWN-b, F318 and their rebased fixes, APPLIED in R by the applier rows AP-U1 and AP-U1b (28 Nov 2026; from N\TYPED_AP-U1.md, N\TYPED_RB-U1-c.md, N\RULING_APU1.md)
+R branch v12-organisation, start HEAD 8276267 (= origin). Twenty patches, each `git apply --check` first, ONE checkpoint commit each; sha256 first 8 of every patch matched the brief; no 3-way was needed. Each patch is checked again with a temp index (the parent checks, the patched tree equals the commit's tree).
+| n | patch | R commit |
+| 1 | CLOSINGS_18 (applied once, here: H6) | 601c694 |
+| 2-4 | C18FIX, F10 (rU1a), PRE-P (rU1a) | d863608, 574aeeb, fa99d5c |
+| 5 | PRE-Q (rU1a) | 79f58d7 |
+| 6-8 | U1-JR-1, U1-JR-2, U1-JR-3 (rU1a) | 0a1d281, 015655c, 84e8848 |
+| 9-10 | F318 (rU1a), RB-U1-a DOCS | 39434a2, 1d509a5 |
+| 11-12 | AUDITFIX-DRAWN, AUDITFIX-BOWNER (rU1b) | 293873b, 6c3bfba |
+| 13-14 | DRAWN-b (rU1d3), U1A_FIX | e5fa85f, 54577cb |
+| 15-16 | SW-U1 (rU1), F10r (rU1a) | e425292, 4ef29ed |
+| 17-18 | V4b (rU1c), BM-V4b (rU1c) | a52c0ba, 8653b83 |
+| 19-20 | RB-U1-c DOCS, U1 FIXCHAIN (typed ahead, reviewed CLEAN) | d704d9b, b3bcd00 |
+What the batches did, from the TYPED files: V4b (TYPED_V4b, TYPED_RB-U1-c) - the appetite plan and the hourly reading (org/appetite), the pair video and its kept tap (org/salvo, contract), the doors of B4 (publish, release), a Short's AI-phrase guard, the hook lab's line holding the stake, one CEO decision a day; DRAWN-b - the look bar, one design system, the restyle arm (episode, org/rnd); F318 and the fix chain - the RB-U1-c rulings (kept tap waits for the channel lock; an unreadable acts cell makes no act; an unreadable file is never uploaded unguarded; a failed depth call is named; SHORTS_PER_MONTH 8; the costguard route look_claude; the u1fix 123/210 tests).
+Tree checks (blob ids, read-only): step 16 against coord/tru1sw/t 89020dc - 105 files, 0 differ; step 19 against FIX-MRU1e/t 280b03a - 138 files, 0 differ; step 20 against FIX-MRU1e/t 283d1ea - 140 files, 0 differ; `git diff --binary 601c694 b3bcd00` = PATCH_U1abdc_STACK_v10 (sha256 e550f5aa).
+Audits (card 2, M1): DRAWN_audit, B-OWNER_audit, V1c_audit, V4_audit closed or held line by line (cb239ad), `next.py --audited` for the four batches (STATE commits 08821d4, 6a6b7fb, b842d34, 62fa743), the ruled lines 1e5336a (RUL-APU1: DRAWN F1 narrowed to F1b, B-OWNER F3 code closed and pack part open, V1c F7 held with its owner).
+
+#### Step 5 ENFORCE (rule -> executing code -> fails when broken; a break's id is its entry in `proving/breaks/U1.json`)
+| rule | executed by | fails when broken |
+| his kept tap waits for the channel's two locks before a pair video is approved | whatifs/org/salvo.py 543 `and not CON._channel_lock()`; whatifs/contract.py `_kept` / `_answer` | tests/test_v12_launch.py::test_a_kept_tap_waits_for_the_channels_two_locks_before_salvo_pair_approves; breaks RBU1c-B001, V4b-B128, V4b-B130 |
+| an unreadable acts cell makes no act, and the owner is told | whatifs/org/appetite.py `acts()` (ERROR log, refused a-e, NT.send "appetite") | tests/test_v12_u1c_fix.py::test_an_unreadable_acts_cell_makes_no_act_again; breaks RBU1c-B005, U1g-B29 |
+| a file that cannot be read is never uploaded unguarded | whatifs/publish.py `yt_upload` raises "upload refused" under ANTI_MYTH_ON; ledger_miss row | tests/test_v12_u1c_fix.py::test_an_unreadable_file_is_never_uploaded_unguarded; test_v12_owner.py::test_every_kind_sent_is_registered |
+| a failed depth call is named, never absent | whatifs/org/salvo.py `depth_split` sets d["depth"]={"skipped": why}; contract `p_depth_frozen`; room2 | tests/test_v12_u1c_fix.py::test_a_failed_depth_call_is_named_not_absent; breaks U1g-B30, U1g-B31 |
+| a film below the look bar pays no floor jury | whatifs/episode.py cctx["look"] set before the floor's `CON.run` (DRAWN-b L3) | tests/test_v12_look.py::test_26_a_long_video_below_the_bar_twice_pays_no_floor_jury_and_its_card_is_look_hold; break DRAWN-b-L3a-LB-38 (re-cut by RUL-APU1) |
+| the show's side counts every contract check | whatifs/org/rnd.py SHOW_CHECKS = 67 | tests/test_v12_rnd.py line 428; break DRAWN-b-L3b-6 (re-cut by RUL-APU1) |
+| a notice kept off his screens is not a row of its own | whatifs/episode.py `screens=False` on the 'scheduled' notice | tests/test_v12_floor_report.py::test_a_film_the_unmeasured_floor_refuses_goes_to_his_eye_with_the_clock_and_is_never_held; break DIAGU1A-1 (re-cut) |
+| the cadence is what the code says (8 Shorts a month) | whatifs/core.py SHORTS_PER_MONTH; docs/CURRENT/SYSTEM.md generated | tests/test_v12_mru1e.py (2), tests/test_docs_current.py; break MRU1e-1 |
+The breaks merged into proving/breaks/U1.json (RUL-APU1 A): the nineteen N\BREAKS_ files less 14 twins and 13 VOID ids, the 5 re-cut ids of N\BREAKS_RUL-APU1.json in place of their originals, plus V4b 308, BM-V4b 14, RB-U1-c 13, MRU1e 1, U1f 2, U1g 33 - 828 entries, ids unique. PRE-Q3's 19 (U3Q-B001..B019) go to U3's breaks file with PATCH_PRE-Q3 (it is U3's, RULING_APU1).
+
+#### 6a (applier's lines; the prover writes 6b and 7)
+- Applied 20 patches in 20 commits (601c694 .. b3bcd00), the four audit files closed (cb239ad, 1e5336a) and the four `--audited` STATE commits, all in R, nothing pushed before the final code commit.
+- RULING_APU1: 5 break FINDs re-cut, PRE-Q3's 19 to U3, plain_held added
+- UNPROVEN (the coordinator's TEST rows, > 4 min): `proving/breaks.py U1` must show the 5 re-cuts CAUGHT (a MISSED one goes to a repair row, never VOID); the whole suite and the counted block are the coordinator's gate.
 ### B-OWNER - THE OWNER'S TWO SCREENS, WITH B-HDGATE FOLDED IN (19-21 Nov 2026) - ACCEPTED (final code commit 5495cc6 GREEN in GitHub Checks run 332: 2157 passed; sweep 66 of 66 ids) - its code 1532e0c, accepted on the prover's first pass, 21 Nov 2026 (`proving/notes/B-OWNER_ACCEPTED.md`; open issues 267 and 268 are the prover's; before it BUILT 21 Nov 2026, `proving/notes/B-OWNER_BUILT.md`) (the designer's record: steps 1 to 3; the Opus typists write steps 4 to 6a, the Fable finisher `FINISHED BY FABLE`, the prover 6b and 7)
 THE BATCH'S START (written by the paster, R22 `local_8b708096-6d3d-468f-86d2-3bf8818e0101`, 19 Nov 2026, 22:30 UTC): the batch before on the record is DRAWN, ACCEPTED at d64fdcc (GitHub Checks run 292: 1911 passed; sweep 66 of 66 ids; the acceptance commit da68cbf); a clean tree at 69528f8, level with origin; no run alive. Usage at the paste (`get_usage`, 22:28 UTC): Fable 65%, all models 37%, the paster's context 56%. THE MEMO BELOW IS `PREDESIGN_B_OWNER.md` WORD FOR WORD, 158,013 bytes, 1,310 lines, compared byte for byte with the file by the paste script (`tools\paste_b_owner.js` of the dispatcher's notes folder).
 CORRECTED AT THE PASTE, ONE THING OF FORM (the designer of record; the plan's A13 (a)): the four design lines of Step 2 stood as list items ("- A. " to "- D. "); the plan's 5.2 orders them as lines `A. `, `B. `, `C. `, and `next.py` counts them in that form. The list mark before each was taken off (8 bytes: 158,021 -> 158,013); no word of the memo changed. The three reviews were written on the 158,021 bytes.
