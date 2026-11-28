@@ -8,7 +8,7 @@ from whatifs.core import S, log, store, iso, now_utc, parse_iso, set_setting, sc
 TAB = "Decisions"
 IN_FORCE = ("decided", "applied")                         # a decision whose ticket the engine has not finished yet
 TAKEN_BACK = ("rolled_back", "refused", "no_effect", "void")
-DECIDED_MAX_H = 26                                        # a row "decided" this long whose ticket is not on tab Memos: its memo is sent once more, then it is void
+DECIDED_MAX_H = 26                                        # a row "decided" this long whose ticket is not on tab Memos: its memo is sent again at each review until it is written ("resent"); void when that written ticket is no longer on tab Memos, or at once when it cannot be written (U1b 210)
 OWNER_ONLY = ("BUDGET_CEILING_INR", "BUDGET_FLOOR_INR", "MONTH_CAP_OVERRIDES", "BUDGET_MODE", "PAUSED", "PUBLISH_DAYS",
               "CREDIT_COVER_MONTH_MAX_INR", "CLAUDE_CREDIT_USD_MONTH", "CLAUDE_CREDIT_FROM", "CLAUDE_CREDIT_UNTIL",     # item 53: the cap and deleting stay his
               "ORG_BUILDS_ON",     # RR-36: only B-ORG turns the organisation's builds on
@@ -425,10 +425,12 @@ def brief(now=None, st=None):
     if wk: lines.append(wk)
     if not lines:
         today = _js(S("STRATEGY_TODAY"), {})
-        at_ = parse_iso(today.get("at")); age_h = (now - at_).total_seconds() / 3600 if at_ else None      # U1 fix 206 (open issue 234): check strategy_live's STALE_H rule, said in the brief
+        at_ = parse_iso(today.get("at")); age_h = (now - at_).total_seconds() / 3600 if at_ and not _not_judged(now) else None      # U1 fix 206 (open issue 234): check strategy_live's STALE_H rule, said in the brief; U1b finding 9: only where that check judges the age (its gate, shared)
         if age_h is not None and age_h > S("STRATEGY_STALE_H", float):
+            from whatifs.manage import paused
             last = f"Not taken: {today['refused'][0]}" if today.get("refused") else "no change"
-            lines.append(f"Strategy has not reviewed for {age_h:.0f} hours (more than STRATEGY_STALE_H, {S('STRATEGY_STALE_H', float):.0f}): its last word is stale - {last}.")
+            if paused(): lines.append(f"Strategy does not review while the channel is paused: its last word is {int(age_h)} hours old - {last}.")      # U1b finding 9: his own pause (cli.strategy_round's reading) is the cause
+            else: lines.append(f"Strategy has not reviewed for {int(age_h)} hours: its last word is old - {last}.")      # U1 J 206: his words, never a cell's name
         elif today.get("refused"): lines.append(f"Not taken today: {today['refused'][0]}.")
         else: lines.append("Strategy today: no change." + (f" Counting: {', '.join(today.get('counting') or counting(now))}." if (today.get("counting") or counting(now)) else ""))
     return "*Decisions*\n" + "\n".join(f"- {l}" for l in lines)
@@ -505,7 +507,9 @@ def _back(st, r, state, note, now):
 
 def settle(now=None, st=None):
     """Every row decided or applied takes the engine's word; an applied change whose effect differs from the decision's is taken back by a new ticket;
-    a decision whose ticket never reached tab Memos is sent once more, then void; the undo stack sends its next ticket (written here: an undo is his).
+    a decision whose ticket is not on tab Memos is sent again at each review until it is written (stamp_resent stamps "resent" once it is), void when
+    its ticket, written once more, is no longer on tab Memos, and void at once when its ticket cannot be written (U1b 210); the undo stack sends its
+    next ticket (written here: an undo is his).
     Returns the tickets for the review's Out.memos (a re-sent decision, a take-back of a change without effect)."""
     from whatifs.org import execute as EX, memos as MEM
     st = st or store(); now = now or now_utc(); out = []
@@ -518,7 +522,11 @@ def settle(now=None, st=None):
                 nums = _js(r.get("numbers"), {})
                 if not nums.get("resent"):
                     out.append(_ticket(r["key"], r["new"], r["old"], r["id"], f"strategy|{r['id']}", now))      # U1 fix 210 (open issue 239): "resent" is stamped by stamp_resent, AFTER the runner wrote it
-                else: _back(st, r, "void", "its ticket was never written: nothing changed", now)
+                    try: tid = MEM.id_for(out[-1], st, now)                                  # U1b 210 (b): the writer's own check before it leaves settle - a ticket that can never be written costs no review its memos
+                    except MEM.MemoError as e:
+                        out.pop(); _back(st, r, "void", f"its ticket cannot be written ({(e.problems or [str(e)])[0]}): nothing changed", now); continue
+                    if tid != r["ticket"]: _save(st, r, ticket=tid)                         # the row names the ticket it sends (as decide does), so stamp_resent can find it
+                else: _back(st, r, "void", "its ticket is not on tab Memos after it was sent once more: nothing changed", now)      # U1b 210 (c): written once more, then gone
             continue
         state, note = es
         if state == "verified":
@@ -579,14 +587,19 @@ def _disposition(m):
     return ("deferred", f"read by Strategy: a {t} is not Strategy's to close")
 
 def stamp_resent(output, brief=None, st=None, now=None):
-    """U1 fix 210 (open issue 239): the review's settle step - the runner calls it only AFTER the run's memos were written (runner.run: EMIT, then
-    settle). Each decision whose ticket settle() sent once more is stamped "resent" now; a review whose memos were not written stamps nothing, so the
-    next review sends it again (never void for a ticket that was not sent). Returns no memo to close."""
+    """U1 fix 210 (open issue 239), U1b 210 (a): the review's settle step - the runner calls it after its EMIT step (runner.run: EMIT, then settle), also
+    when EMIT dropped every memo of the run as invalid. So a decision whose ticket settle() sent once more is stamped "resent" only when that ticket IS
+    on tab Memos now (`MEM.get`, settle's own test); otherwise nothing is stamped and one WARN names it: it is sent again at the next review, never void
+    for a ticket that was not written. A decision stamped "resent" whose ticket is no longer on tab Memos at a later settle is void. No memo to close."""
+    from whatifs.org import memos as MEM
     st = st or store(); now = now or now_utc()
     for did in (output or {}).get("resent") or []:
         r = next((x for x in _rows(st) if x["id"] == did), None)
         if r is None: continue
         nums = _js(r.get("numbers"), {})
+        if MEM.get(r["ticket"], st) is None:
+            if not nums.get("resent"): log(f"strategy: decision {did}: its re-sent ticket was not written in this review: it is sent again at the next", "WARN")
+            continue
         if not nums.get("resent"): _save(st, r, numbers=dict(nums, resent=iso(now)))
     return []
 
@@ -791,16 +804,26 @@ def register():
     NT.register("strategy", on_answer=_answer)
 
 # ------------------------------------------------------------------ check strategy_live (the script gate)
-def live_issues(st=None, now=None):
-    """(problems, stats, na) for check strategy_live."""
-    from whatifs.org import runner as ORG, memos as MEM
+def _not_judged(now=None):
+    """U1b finding 9: check strategy_live's not-judged conditions, ONE reading for the check and for the brief's old-word line - the check's N/A answer
+    ([], {}, the reason in words), or None when the review's age is judged. Strategy off, the organisation off, the Execution Engine off, the
+    organisation younger than STRATEGY_STALE_H."""
+    from whatifs.org import runner as ORG
     if not on(): return [], {}, "Strategy is switched off (STRATEGY_ON)"
     if not ORG.on(): return [], {}, "organisation switched off"
     from whatifs.org import execute as EX
     if not EX.on(): return [], {}, "the Execution Engine is switched off (EXEC_ON): Strategy cannot decide, so it does not review"
-    st = st or store(); now = now or now_utc(); since = parse_iso(S("ORG_SINCE")); lim = dt.timedelta(hours=S("STRATEGY_STALE_H", float))
-    if not since or now - since < lim:
+    now = now or now_utc(); since = parse_iso(S("ORG_SINCE"))
+    if not since or now - since < dt.timedelta(hours=S("STRATEGY_STALE_H", float)):
         return [], {}, f"Strategy has not reviewed yet: the organisation started {round((now - since).total_seconds() / 3600) if since else 0} h ago"
+    return None
+
+def live_issues(st=None, now=None):
+    """(problems, stats, na) for check strategy_live."""
+    from whatifs.org import memos as MEM
+    now = now or now_utc(); na = _not_judged(now)
+    if na: return na
+    st = st or store(); lim = dt.timedelta(hours=S("STRATEGY_STALE_H", float))
     p = []; last = max((t for t in (parse_iso(r.get("started")) for r in st.rows("Sessions") if r.get("dept") == "D1" and r.get("trigger") == "review" and r.get("status") == "ok") if t), default=None)
     if last is None or now - last > lim: p.append(f"Strategy's review is {'missing' if last is None else f'{round((now - last).total_seconds() / 3600)} h old'} (limit {S('STRATEGY_STALE_H', int)} h)")
     rows = _rows(st)

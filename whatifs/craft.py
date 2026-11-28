@@ -55,8 +55,8 @@ def techniques_text(n=10, topic=None):
     return ("Use a card ONLY where it genuinely serves THIS script (at most one per act); never force it, never copy a scene. TRIAL cards are being measured.\n"
             + "\n".join(out))[:2500]
 
-INTAKE_PROMPT = """You are the head of craft for Reality Engine, a faceless first-person science "what if" channel with a recurring cast (Inspector Vale, Dr. Grimm, Nana Rosa)
-and a courtroom verdict act. A new technique was proposed (by the owner or found in an outlier video). Do NOT take it at face value. Reason it through:
+INTAKE_PROMPT = """You are the head of craft for Reality Engine, a faceless first-person science "what if" channel. It makes its films in more than one format: one of them
+is a courtroom trial with a recurring cast and a verdict, the others have no cast and no verdict. A new technique was proposed (by the owner or found in an outlier video). Do NOT take it at face value. Reason it through:
 1. mechanism: why it works on viewers (attention, curiosity, stakes, rewatch);
 2. fit: for which of OUR topics and formats it adds value (long-form cold open, a specific act, Shorts) and where it would hurt or feel forced;
 3. expected effect: which metric it should move (30-s retention, average % viewed, Shorts stay ratio, subscribers per 1,000) and how strongly (low/medium/high);

@@ -106,14 +106,17 @@ def tick(now=None):
 
 def _next_steps(st, now):
     """An ADOPTED request further than one step: the next step once the last ticket is verified. U1 fix 208 (open issue 236): a ticket the engine
-    refused (or failed) or rolled back makes the row REFUSED / ROLLED_BACK with the engine's note, briefed again so the next brief tells him."""
+    refused or rolled back makes the row REFUSED / ROLLED_BACK with the engine's note, briefed again so the next brief tells him. U1b 208: a ticket that
+    FAILED (not done and not put back: the setting may stand changed, the ticket has gone to repair) makes it FAILED, never REFUSED."""
     from whatifs.org import memos as MEM, strategy as STR, execute as EX
     for r in _rows(st):
         if r.get("verdict") != "ADOPTED" or not r.get("ticket"): continue
         es = EX.state_of(r["ticket"], st)
         if es and es[0] in ("refused", "failed", "rolled_back"):
             v = "ROLLED_BACK" if es[0] == "rolled_back" else "REFUSED"
-            how = (f"the engine took it back: {es[1]}" if v == "ROLLED_BACK" else f"the engine refused it: {es[1]}")[:300]
+            if es[0] == "failed": v = "FAILED"                                              # U1b 208: "failed" is not "refused" - the change may stand (no read-back, no undo)
+            how = {"ROLLED_BACK": f"the engine took it back: {es[1]}",
+                   "FAILED": f"the engine could not finish it and could not put it back, so the setting may stand changed; it has gone to repair: {es[1]}"}.get(v, f"the engine refused it: {es[1]}")[:300]
             st.update(DESK, "n", r["n"], {"verdict": v, "how": how, "briefed": ""}); continue
         rec = recognise(r.get("verbatim")); t = MEM.get(r["ticket"], st)
         if not rec or t is None or t["status"] != "resolved" or (t.get("resolution") or {}).get("kind") != "lever_verified": continue
@@ -168,7 +171,7 @@ def _do(row, choice):
     return f"done: {how}"
 
 # ------------------------------------------------------------------ v12 B-OWNER (PART 5, item 149): HIS INPUT DESK - one store for both screens
-SHOWN = {"ADOPTED": "TAKEN"}                                     # the word shown to him for a request code adopted
+SHOWN = {"ADOPTED": "TAKEN", "REFUSED": "NOT DONE", "ROLLED_BACK": "UNDONE", "FAILED": "NOT FINISHED"}      # the words shown to him for a stored verdict (U1 J 208: never a code word)
 DESK_DEPTS = ("D4", "D5", "D6", "D7", "D9", "D14")               # the departments a standing preference of his can be kept for
 TALK = ("ok", "okay", "k", "thanks", "thank you", "ok thanks", "yes", "no", "got it", "noted", "fine", "good", "great", "nice", "cool", "hmm",
         "done", "hi", "hello", "bye", "good morning", "good night")      # R17 ADDS (D): a bare acknowledgement is talk, never an input

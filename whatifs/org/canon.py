@@ -96,20 +96,32 @@ def newest_case(rs, at=None, now=None):
     c = [r for r in rs if is_case(r) and PAL.aired(r) and (lim is None or PAL.aired(r) <= lim) and PAL.servable(r, now)]
     return max(c, key=PAL.aired) if c else None
 
-def cast_left_out(dept, fmt=None):
+def _names_cast(r, names):
+    """Does a Palace item's title or summary hold one of the cast's FULL names (lower case, spaces made one; never a part of a longer word)?"""
+    t = re.sub(r"\s+", " ", str(r.get("title") or "") + " " + str(r.get("summary") or "")).lower()
+    return any(re.search(r"(?<![a-z0-9])" + re.escape(n) + r"(?![a-z0-9])", t) for n in names)
+
+def cast_left_out(dept, fmt=None, rs=None):
     """v12 V2b (issue 77): the cast items a department's playbook leaves out. The cast is the TRIAL's world: in a format that is not a trial the writers
     (D4) are given no cast item and none is demanded of them (check canon_in_brief); the newest aired case and its one plain callback line stay.
-    fmt None = the format in the making ('' = none: as before formats). A set of Palace ids (empty = nothing is left out)."""
-    from whatifs import formats as FMT
+    U1 J 175 (#195): beside the cast's own items, every NON-canon Palace item whose title or summary holds a cast member's FULL NAME as the canon writes
+    it (names read from the character bible the canon mirrors, never typed) - a name in a format without a courtroom invites a courtroom word, which
+    format_kept then holds. The canon's own items (the cast, the cases) are not in this rule. D9 and D8 still get such an item (D4 only).
+    fmt None = the format in the making ('' = none: as before formats). rs = the Palace rows (None = read them). A set of Palace ids (empty = nothing
+    is left out)."""
+    from whatifs import formats as FMT, show as SH
     k = FMT.current() if fmt is None else str(fmt or "")
     if dept != "D4" or k not in FMT.FORMATS or FMT.FORMATS[k]["show"]: return set()
-    return set(cast_ids())
+    cast = set(cast_ids())
+    names = {re.sub(r"\s+", " ", str(c.get("name") or "")).strip().lower() for c in SH.characters() if str(c.get("id") or "").strip()} - {""}
+    rs = PAL.rows(store()) if rs is None else rs
+    return cast | {r["id"] for r in rs if r["id"] not in cast and not is_case(r) and _names_cast(r, names)}
 
 def required(rs, dept="D4", at=None, now=None, fmt=None):
     """What a D4 playbook must hold: every servable cast item addressed to the department (none in a format that is not a trial: `cast_left_out`), and
     the newest case that was on air at that time."""
     from whatifs.org import DEPARTMENTS
-    now = now or now_utc(); by = {r["id"]: r for r in rs}; stage = DEPARTMENTS[dept][1]; left = cast_left_out(dept, fmt)
+    now = now or now_utc(); by = {r["id"]: r for r in rs}; stage = DEPARTMENTS[dept][1]; left = cast_left_out(dept, fmt, rs=rs)
     cast = [i for i in cast_ids() if i in by and i not in left and PAL.servable(by[i], now) and PAL._addressed(by[i], dept, stage)]
     nc = newest_case(rs, at, now) if dept == "D4" else None
     return {"cast": cast, "case": nc["id"] if nc else ""}

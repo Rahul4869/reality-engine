@@ -4,10 +4,12 @@ from whatifs.core import S
 
 OTHER_LOOK = "a closer look from another angle"      # the runner-up's second half when the packager wrote nothing else for it
 B_MAX = 160                                          # characters of the packager's own words after the scene's words in the runner-up (the scene's words are NEVER cut)
-BRIEF = ("THUMBNAIL SCENE (fixed: the picture this video opens on, the one real viewers stayed for): \"{words}\". Write thumb_text for THIS scene. For the "
-         "runner-up write thumb_prompt_b as ANOTHER LOOK AT THE SAME SCENE - closer or wider, the same place, the same impossible thing - and thumb_text_b as "
-         "other words for it; never another scene: whichever thumbnail a viewer taps, the video opens on what it showed."
-         " This replaces the rule above that the runner-up is built on a DIFFERENT idea: here it is the SAME scene, seen another way.")
+BRIEF = ("THUMBNAIL SCENE (fixed: the picture this video opens on, the one real viewers stayed for): \"{words}\". Write thumb_text for THIS scene. "
+         "Whichever thumbnail a viewer taps, the video opens on what it showed.")
+# U1 J 199 (#222): the ONE runner-up order of a one-story film - room.package puts it where prompts.PACKAGER's placeholder stands (prompts.RUNNER_UP otherwise)
+RUNNER_UP = ("Also make a RUNNER-UP thumbnail (thumb_prompt_b + thumb_text_b): ANOTHER LOOK AT THE SAME SCENE as the first - closer or wider, the same place, "
+             "the same impossible thing - with other words for it; never another scene. It goes live only if the first package under-performs, so it should "
+             "pair with your 2nd title and still keep the script's promise.")
 
 def on():
     """Is the thumbnail the picture the film opens on? (cell ONE_STORY_ON)"""

@@ -65,12 +65,14 @@ def script_seconds(text):
 
 def punch_lines(text): return [l for l in text.split("\n") if PUNCH_RE.search(l)]
 
-def joke_need(text, fmt="long"):
-    return max(1, int(math.floor(script_seconds(text) / S("JOKE_EVERY_SEC_LONG" if fmt == "long" else "JOKE_EVERY_SEC_SHORT", float))))
+def joke_need(text, fmt="long", reserve_s=0.0):
+    """reserve_s (U1 J 201 (c)): seconds of narration code will still add before the opening after the measure (hooks.reserve_s)."""
+    return max(1, int(math.floor((script_seconds(text) + float(reserve_s or 0)) / S("JOKE_EVERY_SEC_LONG" if fmt == "long" else "JOKE_EVERY_SEC_SHORT", float))))
 
-def biggest_gap_lines(text):
-    """Largest stretch (in seconds of narration) without a [PUNCH] line."""
-    wpm = max(1.0, S("WPM_ESTIMATE", float)); t = 0.0; last = 0.0; worst = 0.0
+def biggest_gap_lines(text, reserve_s=0.0):
+    """Largest stretch (in seconds of narration) without a [PUNCH] line. reserve_s (U1 J 201 (c)): seconds code will still put BEFORE the first line
+    (the hook lab's line) - they lengthen the first stretch."""
+    wpm = max(1.0, S("WPM_ESTIMATE", float)); t = float(reserve_s or 0); last = 0.0; worst = 0.0
     for l in text.split("\n"):
         if PUNCH_RE.search(l): worst = max(worst, t - last); last = t
         t += len(re.sub(r"\[[^\]]*\]", " ", l).split()) / wpm * 60.0
@@ -78,9 +80,11 @@ def biggest_gap_lines(text):
 
 JOKE_GAP_FACTOR = 2.2            # U1 fix 203 (open issue 231): check joke_density's longest stretch without a [PUNCH] = this x JOKE_EVERY_SEC_LONG - ONE name, read by the check, the offline writer and the sweep test
 
-def joke_gap_max():
-    """The joke rule's longest allowed stretch without a [PUNCH], in seconds of narration: JOKE_GAP_FACTOR x JOKE_EVERY_SEC_LONG."""
-    return JOKE_GAP_FACTOR * S("JOKE_EVERY_SEC_LONG", float)
+def joke_gap_max(fmt="long"):
+    """The joke rule's longest allowed stretch without a [PUNCH], in seconds of narration: JOKE_GAP_FACTOR x JOKE_EVERY_SEC_LONG (fmt 'long') or
+    x JOKE_EVERY_SEC_SHORT (any other fmt). U1 J 203: the check, the offline writer, the sweep test AND the one mandatory repair (the marker fix
+    and marker_issues) read it - the repair never repairs to an older rule."""
+    return JOKE_GAP_FACTOR * S("JOKE_EVERY_SEC_LONG" if fmt == "long" else "JOKE_EVERY_SEC_SHORT", float)
 
 def fix_markers(script, wbrief, episode, fmt="long"):
     """ONE targeted rewrite when punchline density or the [SEND]/[AWE] markers fall short (before the contract checks them)."""
@@ -88,7 +92,7 @@ def fix_markers(script, wbrief, episode, fmt="long"):
     if FMT.rule("joke_density") != "must" and FMT.rule("send_and_awe") != "must": return script, []      # v12 V2a: optional devices are never forced by a rewrite
     text = script.get("script", ""); need = joke_need(text, fmt); have = len(punch_lines(text))
     miss = []
-    if have < need or biggest_gap_lines(text) > 2.2 * S("JOKE_EVERY_SEC_LONG" if fmt == "long" else "JOKE_EVERY_SEC_SHORT", float):
+    if have < need or biggest_gap_lines(text) > joke_gap_max(fmt):
         miss.append(f"add punchlines so there are at least {need} [PUNCH] lines, never more than {int(2 * S('JOKE_EVERY_SEC_LONG', float))} s apart "
                     f"(now {have}; biggest gap {biggest_gap_lines(text):.0f} s)")
     if not SEND_RE.search(text): miss.append("mark one [SEND] moment")
@@ -176,23 +180,26 @@ def fix_retention(script, wbrief, spine, episode):
     log(f"enforce: retention fix ({len(r['issues'])} issue(s))", episode=episode)
     return script, r["issues"]
 
-def marker_issues(text, fmt="long"):
+def marker_issues(text, fmt="long", reserve_s=0.0):
+    """reserve_s (U1 J 201 (c)): seconds of narration code will still put before the opening after this measure (hooks.reserve_s) - the joke rule's
+    need and its first gap are measured with them, so the last fix sees what the viewer hears."""
     from whatifs import formats as FMT
     if FMT.rule("joke_density") != "must" and FMT.rule("send_and_awe") != "must": return []              # v12 V2a: optional devices are never forced by a rewrite
-    need, have, gap = joke_need(text, fmt), len(punch_lines(text)), biggest_gap_lines(text)
+    need, have, gap = joke_need(text, fmt, reserve_s), len(punch_lines(text)), biggest_gap_lines(text, reserve_s)
     out = []
-    if have < need or gap > 2.2 * S("JOKE_EVERY_SEC_LONG" if fmt == "long" else "JOKE_EVERY_SEC_SHORT", float):
+    if have < need or gap > joke_gap_max(fmt):
         out.append(f"add punchlines so there are at least {need} [PUNCH] lines, never more than {int(2 * S('JOKE_EVERY_SEC_LONG', float))} s apart (now {have}; biggest gap {gap:.0f} s)")
     if not SEND_RE.search(text): out.append("mark one [SEND] moment")
     if not AWE_RE.search(text): out.append("mark the [AWE] reveal (not in the last 20%)")
     return out
 
-def fix_all(script, wbrief, spine, episode, fmt="long"):
-    """ONE mandatory rewrite carrying EVERY open retention + marker problem (two separate rewrites could undo each other). Returns (script, issues)."""
+def fix_all(script, wbrief, spine, episode, fmt="long", reserve_s=0.0):
+    """ONE mandatory rewrite carrying EVERY open retention + marker problem (two separate rewrites could undo each other). Returns (script, issues).
+    reserve_s (U1 J 201 (c)): the seconds of narration code will still ADD before the opening after this fix (hooks.reserve_s), counted by the joke rule."""
     from whatifs import growth as GR
     text = script.get("script", "")
     ret = GR.retention_issues(text, spine.get("promise"), S("WPM_ESTIMATE", float), script.get("loops")).get("issues") or []
-    mk = marker_issues(text, fmt)
+    mk = marker_issues(text, fmt, reserve_s)
     from whatifs.org import audience as AUD                 # v12 V1 (D13): too many numbers is fixed by the same single rewrite
     nm = AUD.number_issues(text) if fmt == "long" else []
     from whatifs.org import layman as LAY                   # v12 V1b (D13): too many expert words is fixed by the same single rewrite

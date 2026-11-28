@@ -263,6 +263,17 @@ def stake(line):
     from whatifs import enforce as _EN
     return bool(_EN.v1_hook([{"text": str(line or ""), "start": 0.0}])[0])
 
+def reserve_s(proven=None):
+    """U1 J 201 (c): the seconds of narration run_hooks may still ADD before the opening after the room's last measured fix (enforce.fix_all measures
+    with them). The lab's line is INSERTED before the writer's first line (apply_to_script inserts, it never replaces), so: the lab's longest allowed
+    line (fewer than MAX_WORDS_EXCL words) at WPM_ESTIMATE for every lab film and for a proven line without a stake (the `second` case: the lab's line
+    goes before the Short's); 0 when hooks are off, not applied by code (HOOK_APPLY_MODE suggest), or a proven line with a stake leads (the room put it
+    in place before the fix). proven = {line, short} as run_hooks takes it."""
+    if not S("HOOKS_ON", bool) or S("HOOK_APPLY_MODE").lower() != "auto": return 0.0
+    rec = proven_record("", proven) if proven else None              # the same rule as run_hooks: no line, or not advertiser-safe = the lab runs
+    if rec and stake(rec["candidates"][0]["line"]): return 0.0
+    return (MAX_WORDS_EXCL - 1) / max(1.0, S("WPM_ESTIMATE", float)) * 60.0
+
 def run_hooks(script, spine, episode, out_dir, ask_fn=None, proven=None):
     """Stage entry point for episode.py. Returns (script, record|None). NEVER raises; on any failure the script is returned unchanged.
     proven = {line, short}: the hook of the Short a long video is about (whatifs/opening.py) - used as the first line instead of the lab when the line

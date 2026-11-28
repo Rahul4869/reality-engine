@@ -13,7 +13,6 @@ _LABEL_WORDS = ("hour", "day", "week", "month", "year", "minute", "second", "pha
 _JOIN = ("one", "a", "point", "and", "of", "per", "cent")  # words that continue a number only next to one ("one point four", "a hundred", "two and a half")
 _WORD = re.compile(r"\d[\d,]*(?:\.\d+)?%?|[A-Za-z']+")
 _TAGS = re.compile(r"\[[^\]\n]{0,40}\]|\{[^}\n]{0,40}\}")
-_LABEL = re.compile(r"(?m)^\s*\**[A-Z][A-Za-z .']{1,24}:\**\s*")
 
 def on():
     """Is the viewer's seat switched on (VIEWER_SEAT_ON)? Off = nothing is repaired and its three checks say NA."""
@@ -21,9 +20,12 @@ def on():
 
 # ------------------------------------------------------------------ numbers: what a viewer hears and reads
 def spoken(text):
-    """The words a viewer hears: headings, stage directions, delivery tags, show tags and speaker labels are never spoken."""
+    """The words a viewer hears: headings, stage directions, delivery tags, show tags and speaker labels are never spoken.
+    U1 J 173 (#193): a line's label is read by the VOICE's own parse (voice._peel: only the known names are labels), so 'Next simulation: What if ...'
+    is measured whole, as the voice speaks it - one parser for the voice and its measures, never two that drift."""
+    from whatifs.voice import _peel
     lines = [l for l in str(text or "").split("\n") if not l.strip().startswith(("#", "[SFX", "[MUSIC", "("))]
-    return _LABEL.sub(" ", _TAGS.sub(" ", "\n".join(lines)))
+    return _TAGS.sub(" ", "\n".join(_peel(l)[3] for l in lines))
 
 def count_numbers(text):
     """How many QUANTITIES a viewer hears. A figure in digits, a number word (two ... ninety, hundred ... trillion, percent, half, twice ...) or a run

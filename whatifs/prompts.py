@@ -15,6 +15,7 @@ def fill(t, **kw):
     kw.setdefault("sounds", "6")
     kw.setdefault("promise", "none (no packaging-first promise this time)")
     kw.setdefault("existing", "[]")
+    kw.setdefault("runner_up", RUNNER_UP)          # U1 J 199 (CR-U1FIX-a 6): room.package passes its one order; any other fill of PACKAGER gets the plain one, never the placeholder
     kw.setdefault("asks", ASKS_ALL)                  # v12 V2b: the writer's asks paragraph; room._run_room fills it with formats.asks_brief()
     for k, v in kw.items(): t = t.replace("@@" + k.upper() + "@@", str(v))
     return t
@@ -38,7 +39,7 @@ say plainly what is about to happen to YOU.
 Humour: deadpan, relatable (emails, group chats, Mondays, rent), max 3 spots: cold-open aside, relief after the peak, end callback.
 Never joke during a death or peak moment. The channel is Science & Technology, never a comedy channel.
 ADVERTISER-SAFE (every line, title and picture): danger is implied through stakes, sound, scale and the clock, never shown - no blood, injury detail, gore, corpses
-or profanity, and no cruelty aimed at the viewer (Dr. Grimm is theatrical, never cruel). Prefer objects and places from an adult viewer's everyday life in the
+or profanity, and no cruelty aimed at the viewer. Prefer objects and places from an adult viewer's everyday life in the
 US, UK, Canada and Australia (home, commute, phone, kitchen, sleep, weather, money as a number - never financial advice).
 HUMAN VOICE (non-negotiable): write like one sharp, warm, slightly mischievous person talking to a friend at 1 a.m. - not like an AI or a textbook.
 Concrete over abstract (a bathroom mirror, a Tuesday commute, a cold coffee), mixed sentence lengths, fragments allowed, contractions always,
@@ -144,10 +145,13 @@ THE PROMISE THE SCRIPT WAS WRITTEN TO (v8.7 packaging first: keep it or sharpen 
 Headline Doctor + Psychologist: write 10 title options first (mix question and statement forms, <=60 chars, concrete nouns, stakes inside,
 no clickbait lies, no ALL CAPS words except one if it adds punch), score each 0-10 for curiosity gap + clarity + self-relevance, return the best 3 in order.
 Thumbnail text must be 1-3 words (4 at most) that ADD a new hook (e.g. title "Your Bones Are Glass Now" + thumb "DON'T SNEEZE").
-Also make a RUNNER-UP thumbnail (thumb_prompt_b + thumb_text_b) built on a DIFFERENT idea (another object, angle, scale or emotion; not a re-roll of the first).
-It goes live only if the first package under-performs, so it should pair with your 2nd title and still keep the script's promise.
+@@RUNNER_UP@@
 Return JSON: {"titles":["best 3, best first"],"thumb_text":"<=4 words","thumb_prompt":"cinematic 16:9 key art, no text","thumb_text_b":"<=4 words","thumb_prompt_b":"a different idea, 16:9, no text",
 "description":"150-250 words, first line hooks, then summary, then 'Chapters' placeholder, then 3 hashtags","tags":["15 tags"],"pinned_comment":"a question that sparks replies, then one short witty line that invites a like or a share"}"""
+# U1 J 199 (#222): ONE order about the runner-up thumbnail. PACKAGER holds the placeholder @@RUNNER_UP@@ and room.package fills it with exactly one of
+# these two: this one (word for word the two lines PACKAGER held) for a film that is not one story, story.RUNNER_UP for a one-story film.
+RUNNER_UP = ("Also make a RUNNER-UP thumbnail (thumb_prompt_b + thumb_text_b) built on a DIFFERENT idea (another object, angle, scale or emotion; not a re-roll of the first).\n"
+             "It goes live only if the first package under-performs, so it should pair with your 2nd title and still keep the script's promise.")
 
 HUMANIZE = HOUSE + """
 ROLE: HUMAN EDITOR (a veteran radio storyteller + the room's audience psychologist). Rewrite the narration so it sounds like a real person, not a model.

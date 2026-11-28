@@ -87,11 +87,25 @@ def first_line_brief(spine):
     """v12 V2b (issue 129): the Short's hook HANDED to the writer - when the room's forced pitch is a promoted Short whose ladder row keeps its spoken first
     line (`hook_line`), the writer begins with it word for word. '' otherwise (a row made before this batch, an override, no ladder): the opening's
     insert (`hooks.run_hooks(proven=)`) works as before, and with the line it stays the guard - it adds nothing when the line is already first."""
-    from whatifs import ladder as LAD
-    ref = str((spine or {}).get("ladder") or "")
-    line = " ".join(str((LAD.row(ref) or {}).get("hook_line") or "").split()) if ref else ""
+    line = proven_line(spine)
     if not line: return ""
     return f"FIRST LINE (proven by real viewers; fixed): begin the narration with exactly this line, word for word: \"{line}\" - then go on from it; do not say it again in other words."
+
+def proven_line(spine):
+    """The promoted Short's spoken first line (its ladder row's `hook_line`, spaces made one) when the room's pitch is such a Short, else ''. The ONE
+    source of the writer's FIRST LINE sentence and of its placement before the last measured fix (U1 J 201 (b))."""
+    from whatifs import ladder as LAD
+    ref = str((spine or {}).get("ladder") or "")
+    return " ".join(str((LAD.row(ref) or {}).get("hook_line") or "").split()) if ref else ""
+
+def _short_line_first(script, line):
+    """U1 J 201 (b): the Short's proven line placed first, word for word, by the hooks stage's own placement (apply_to_script; _replace_first when the
+    writer's opening already says it in other words) - no lab, no record. run_hooks later finds it in place and adds nothing."""
+    from whatifs import hooks as HOOKS
+    text = script.get("script", "")
+    new, _ok, why = HOOKS.apply_to_script(text, line)
+    if why == "writer's opening already says this": new = HOOKS._replace_first(text, line)
+    return dict(script, script=new) if new != text else script
 
 def _show_block():
     """v9: the Show Plan request inside the existing Showrunner call ('' when SHOW_MODE = off, so the prompt is exactly v8.11's)."""
@@ -341,6 +355,7 @@ def _run_room(draw, episode):
     except Exception as e: log(f"engagement check skipped: {scrub(e)}", "WARN", episode)
     if S("CTA_ON", bool):                                 # v8.3: like / subscribe / share asks: the writer's own, or a hand-written one added at a calm moment
         script, added, code = _place_asks(script, d, episode)      # v12 V2b: in a format with its own ending, only its kinds and never in its tail
+        d["cta_picked"] = ",".join(p for p in code.split(",") if p[:1] in {CTA.CODE[k] for k in added})      # U1 J 201 (a): the asks this placement REALLY put
         if added: log(f"audience asks added by code: {', '.join(added)}", episode=episode)
         if code != S("CTA_LAST"): set_setting("CTA_LAST", code)
     script = ensure_tease(script, spine.get("next_tease"), episode); d["next_tease"] = spine.get("next_tease") or {}      # v8.9: the video ends on the next episode
@@ -381,12 +396,18 @@ def _run_room(draw, episode):
             iss = SHOW.check_tags(script.get("script", ""), d["show_plan"])
         d["show_tag_issues"] = iss
         if iss: note_degraded("show tags: " + "; ".join(iss[:3]))
-    from whatifs import enforce as EN                        # v11.1: AFTER the last rewrite (fact check, asks, tease, Owner's Cut, variety, tags) -
-    script, d["enforce_fix"] = EN.fix_all(script, wbrief, spine, episode, "long")   # ONE mandatory rewrite for every open retention + marker problem
+    from whatifs import enforce as EN, hooks as HOOKS        # v11.1: AFTER the last rewrite (fact check, asks, tease, Owner's Cut, variety, tags) -
+    short_line = proven_line(spine)                          # U1 J 201 (b): the Short's proven line is in place BEFORE the last measured fix
+    if short_line: script = _short_line_first(script, short_line)
+    reserve = HOOKS.reserve_s({"line": short_line, "short": spine.get("ladder")} if short_line and S("OPENING_HOOK_ON", bool) else None)      # U1 J 201 (c)
+    script, d["enforce_fix"] = EN.fix_all(script, wbrief, spine, episode, "long", reserve_s=reserve)   # ONE mandatory rewrite for every open retention + marker problem
     if d.get("enforce_fix"):                                 # a rewrite may drop the code-added lines: put the asks and the tease back (both idempotent)
         if S("CTA_ON", bool):
-            script = _place_asks(script, d, episode)[0]
+            script = _place_asks(script, d, episode)[0]      # U1 J 201 (a): the SAME asks (d['cta_picked']), never other lines
         script = ensure_tease(script, spine.get("next_tease"), episode)
+    if S("CTA_ON", bool):                                    # U1 J 201 (a): the variety memory names the asks the FINAL text carries
+        final_code = CTA.code_of(script.get("script", ""))
+        if final_code != S("CTA_LAST"): set_setting("CTA_LAST", final_code)
     d["owners_cut"] = {"mean": (oc.get("rounds") or [{}])[-1].get("mean"), "rounds": len(oc.get("rounds") or [])} if oc.get("checked") else {}
     below = [x for x in (spine.get("below_bar"), oc.get("below_bar")) if x]                     # v8.11: made below the bar = noted + ONE email
     if below:
@@ -457,8 +478,9 @@ def _endings_on():
 def _place_asks(script, d, episode):
     """The three call sites of cta.ensure, one rule (v12 V2b): in a format with its own ending, every ask of a kind the format does not carry and every
     ask in the tail is removed by code (counted in d['asks_removed'] for check format_ending), then only the format's kinds are added, never in the tail.
-    Otherwise cta.ensure as before. Returns (script, added_kinds, picked_code)."""
-    text = script.get("script", "")
+    Otherwise cta.ensure as before. Returns (script, added_kinds, picked_code).
+    U1 J 201 (a): once the first placement has put its asks (d['cta_picked']), every later placement (after a rewrite) puts back THOSE lines."""
+    text = script.get("script", ""); picks = d.get("cta_picked") or None
     if _endings_on():
         from whatifs import formats as FMT
         text, removed = CTA.strip(text, keep=FMT.asks(), tail_from=FMT.tail(text))
@@ -467,9 +489,9 @@ def _place_asks(script, d, episode):
             for line in removed:
                 k = CTA.is_ask(CTA._peel(line)[3]); gone[k] = gone.get(k, 0) + 1
             log(f"audience asks removed by code (not this format's, or in its last seconds): {len(removed)}", episode=episode)
-        new, added, code = CTA.ensure(text, episode, S("CTA_LAST"), kinds=FMT.asks(), before=FMT.tail(text))
+        new, added, code = CTA.ensure(text, episode, S("CTA_LAST"), kinds=FMT.asks(), before=FMT.tail(text), picks=picks)
     else:
-        new, added, code = CTA.ensure(text, episode, S("CTA_LAST"))
+        new, added, code = CTA.ensure(text, episode, S("CTA_LAST"), picks=picks)
     return (dict(script, script=new) if new != script.get("script", "") else script), added, code
 
 def tease_brief(spine):
@@ -766,7 +788,8 @@ def promise_shot(shots, units, pkg):
             s = dict(shots[i]); s["prompt"] = f"{tp}; {str(s.get('prompt') or units[i]['text'])[:160]}"; s["promise"] = True; s["hero"] = True
             from whatifs import immersion as IM
             if IM.on() and "first-person POV" not in s["prompt"][:200]:     # v8.11: the re-aimed opening clip keeps the first-person rules
-                s["prompt"] = IM.pov_prompt(dict(s, prompt=f"{tp}; {str(units[i]['text'])[:160]}"), units[i]["text"])
+                from whatifs import path as PATH                             # U1 J 186 (CR-U1FIX-a 5): ONE camera in a path film - the re-aimed clip gets the still's eyes
+                s["prompt"] = IM.pov_prompt(dict(s, prompt=f"{tp}; {str(units[i]['text'])[:160]}", type="still" if PATH.on() else s["type"]), units[i]["text"])
             lock = str(S("STYLE_LOCK") or "").strip()
             if lock and lock not in s["prompt"]: s["prompt"] = s["prompt"].rstrip(". ") + ". " + lock      # v8.9: the style lock survives the re-aim
             out = list(shots); out[i] = s; return out
@@ -813,9 +836,11 @@ def package(room, chapters, draw, episode, opening=None):
     ctx = context(); stg = draw["strategies"]
     excerpt = room["script"].get("script", "")[:3500]
     from whatifs import story as STORY                      # v12 V1c (one story, D5): the packager is told the thumbnail's scene is the picture this video opens on
+    runner_up = STORY.RUNNER_UP if STORY.words_for(draw, opening) else P.RUNNER_UP      # U1 J 199 (#222): ONE runner-up order, the one this film needs
     pkg = ask("packager", FE.inject(GR.insert_before_json(P.fill(P.PACKAGER, title=stg["title"], titledef=ctx["defs"].get(stg["title"], ""), thumb=stg["thumb"],
                thumbdef=ctx["defs"].get(stg["thumb"], ""), spine=_j(room["spine"]), excerpt=excerpt, trends=ctx["trends"][:3000],
-               lessons=ctx["lessons_packager"], chapters=_j(chapters), craft=CRAFT["packager"], promise=GR.promise_text(room["spine"].get("promise"))),
+               lessons=ctx["lessons_packager"], chapters=_j(chapters), craft=CRAFT["packager"], promise=GR.promise_text(room["spine"].get("promise")),
+               runner_up=runner_up),
                "\n".join(x for x in (PB.text_for("packager", draw.get("playbook")), _pkg_extra(), _owner_taste(), STORY.brief(draw, opening)) if x)), "packager"), "Package now.", episode=episode, fake_key="packager")
     pt = str((room["spine"].get("promise") or {}).get("title") or "").strip()       # v8.7: the promise title is always a candidate (it wins only if the Packager's are flawed)
     if isinstance(pkg, dict) and pt and pt.lower() not in [str(t).lower() for t in pkg.get("titles") or []]: pkg["titles"] = list(pkg.get("titles") or []) + [pt]

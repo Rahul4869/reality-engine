@@ -428,7 +428,7 @@ def test_a_cell_put_back_after_a_change_without_effect_is_not_his_hand(setting):
 
 def test_a_decided_row_without_its_ticket_for_26_hours_fails_only_text_and_is_sent_once_more_then_void(setting):
     """(audit F3) The check's FAIL "only text", made to fail: a row "decided" 27 hours ago whose ticket is not on tab Memos; settle sends it once more,
-    then makes it void (memo 3.4)."""
+    then makes it void (memo 3.4). U1b 210 (c): the void step stands for "written once more, then gone" - its re-send stamp is planted below."""
     setting("STRATEGY_ON", "TRUE"); setting("ORG_SINCE", core.iso(now() - dt.timedelta(days=3)))
     core.store().append("Decisions", [{"id": "DEC-t1", "ts": core.iso(now() - dt.timedelta(hours=27)), "rule": "SPLIT", "key": "SHORTS_PER_MONTH", "old": "12", "new": "14",
                                        "state": "decided", "why": "w", "numbers": "{}", "ticket": "MEMO-NEVER-WRITTEN"}])
@@ -436,7 +436,7 @@ def test_a_decided_row_without_its_ticket_for_26_hours_fails_only_text_and_is_se
     assert [x for x in p if x.startswith("decision DEC-t1 (SHORTS_PER_MONTH 12 -> 14) has stood") and x.endswith("only text")], p
     def row(): return next(r for r in decisions() if r["id"] == "DEC-t1")
     assert len(STR.settle()) == 1 and row()["state"] == "decided"                            # sent once more
-    STR.stamp_resent({"resent": ["DEC-t1"]})                                                  # U1 fix 210: the runner's step stamps it after the write
+    core.store().update("Decisions", "id", "DEC-t1", {"numbers": json.dumps({"resent": core.iso(now())})})      # U1b 210 (c), CR-U1FIX-a 8: stands for a re-send WRITTEN to tab Memos (stamp_resent) whose memo is gone again; this ticket was never written, so without the plant production sends it again at every review
     assert STR.settle() == [] and row()["state"] == "void"                                    # then void
 
 def test_what_was_decided_for_him_is_never_counted_as_open_and_is_listed_on_its_own(setting, monkeypatch):

@@ -119,7 +119,7 @@ def test_title_b_and_thumb_b_helpers(tmp_path, setting):
     setting("PKG_RESCUE_ON", "FALSE"); assert EP._thumb_b({"thumb_prompt_b": "x"}, {}, str(tmp_path), "EP", False) == ""
 
 def test_packager_brief_asks_for_a_different_runner_up():
-    assert "thumb_prompt_b" in P.PACKAGER and "DIFFERENT idea" in P.PACKAGER
+    assert "thumb_prompt_b" in P.PACKAGER and "@@RUNNER_UP@@" in P.PACKAGER and "DIFFERENT idea" in P.RUNNER_UP      # U1 J 199: the order is filled in by room.package (not one story)
 
 def test_swapped_episodes_do_not_credit_the_swapped_out_title_strategy(monkeypatch):
     st = core.store()

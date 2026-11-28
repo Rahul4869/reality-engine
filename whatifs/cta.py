@@ -204,23 +204,33 @@ def _safe_slot(lines, spoken, target, before=None):
             if ok(p): return p
     return max(1, min(n - 2, target))
 
-def ensure(script, seed="", last="", kinds=None, before=None):
+def _code_map(code):
+    """'l2,s5,h1' -> {'l': '2', 's': '5', 'h': '1'}."""
+    return {p[0]: p[1:] for p in str(code or "").split(",") if len(p) > 1}
+
+def ensure(script, seed="", last="", kinds=None, before=None, picks=None):
     """Add whatever of the three asks is missing. Returns (new_script, added_kinds, picked) where picked is a short code ('l2,s5,h1') to remember for variety.
     v12 V2b: only the missing kinds that are in `kinds` (None = all three) and never at or after the spoken line `before` (the format's tail).
-    Never raises; an unparsable script is returned unchanged."""
+    U1 J 201 (a): `picks` = the code of the asks this video's first placement really put ('l2,s5'): a missing kind named in it is drawn with THAT index,
+    never another, so what code puts back after a rewrite is word for word what was measured. Never raises; an unparsable script is returned unchanged."""
     try:
         want = KINDS if kinds is None else tuple(k for k in KINDS if k in kinds)
         have = check(script)
         if all(have[k] for k in want): return script, [], last
         lines = str(script).split("\n"); spoken = _spoken_index(lines)
         if len(spoken) < 8: return script, [], last
-        rng = _rng(f"{seed}|cta"); prev = {p[0]: p[1:] for p in str(last or "").split(",") if len(p) > 1}
+        rng = _rng(f"{seed}|cta"); prev = _code_map(last); forced = _code_map(picks)
         picks, plan = {}, []
         for k in want:
             if have[k]: continue
             pool = _pools()[k]; avoid = prev.get(CODE[k], "")
             choices = [i for i in range(len(pool)) if str(i) != avoid] or list(range(len(pool)))
             idx = rng.choice(choices)
+            f = forced.get(CODE[k], "")
+            if f.isdigit() and int(f) < len(pool): idx = int(f)                      # the same line this video already carried
+            elif f:
+                from whatifs.core import log
+                log(f"audience ask {k}: kept code {f!r} names no line of the pool in use - drawn as usual", "WARN", str(seed))
             n = len(spoken); target = (n - 2) if k == "share" else int(n * POS[k])
             slot = _safe_slot(lines, spoken, target, before)
             if before is not None and slot >= before: continue          # no calm slot before the tail: nothing is added (DESIGN QUESTION 8 of V2b)
@@ -235,6 +245,17 @@ def ensure(script, seed="", last="", kinds=None, before=None):
         return "\n".join(lines), sorted(added), ",".join(x for x in (code, keep) if x)
     except Exception:
         return script, [], last
+
+def code_of(script):
+    """U1 J 201 (a): the code ('l2,s5,h1') of the pool asks a text really carries, as the voice reads its lines: for each kind, the first entry of the
+    pool in use whose every line is a spoken line of the text. A kind whose ask is the writer's own (or absent) has no code. CTA_LAST is written from
+    it, so the next video's variety rule avoids the lines this video really has."""
+    said = {_norm(_peel(l)[3]) for l in str(script or "").split("\n") if l.strip()}
+    out = []
+    for k in KINDS:
+        i = next((i for i, entry in enumerate(_pools()[k]) if entry and all(_norm(t[2]) in said for t in entry)), None)
+        if i is not None: out.append(f"{CODE[k]}{i}")
+    return ",".join(out)
 
 def description_footer(seed, link=""):
     r = _rng(f"{seed}|desc"); tr = _trial(); sub = r.choice(TRIAL_DESC_SUB if tr else DESC_SUB); sh = r.choice(TRIAL_DESC_SHARE if tr else DESC_SHARE)

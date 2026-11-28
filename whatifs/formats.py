@@ -176,7 +176,7 @@ def ending_report(text, fmt, removed=None):
     from whatifs.org import audience as AUD, inside as INS, layman as LAY
     fmt = str(fmt or ""); end = ending(fmt); out = {"ending": end, "last": "", "asks": {}, "removed_kinds": dict(removed or {}), "problems": []}
     lines = str(text or "").split("\n"); sp = CTA._spoken_index(lines)
-    said = lambda i: " ".join(AUD._TAGS.sub(" ", CTA._peel(lines[i])[3]).split())      # a line as the voice says it ('Next simulation:' is SPOKEN; audience.spoken drops it)
+    said = lambda i: " ".join(AUD._TAGS.sub(" ", CTA._peel(lines[i])[3]).split())      # a line as the voice says it ('Next simulation:' is SPOKEN; audience.spoken keeps it too since U1 J 173)
     for i in sp:
         k = CTA.is_ask(said(i))
         if k: out["asks"][k] = out["asks"].get(k, 0) + 1
