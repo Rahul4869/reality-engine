@@ -117,7 +117,7 @@ def test_5_only_his_own_lock_turns_the_talking_cast_on(setting):
 # ------------------------------------------------------------------ 3.2 THE PIECE'S OWN CLOCK
 def test_6_each_piece_of_a_long_cutaway_talks_on_its_own_seconds(tmp_path, monkeypatch, setting):
     from whatifs import episode as EP, living as LV, render as RN
-    src = inspect.getsource(EP._render); assert "+ cut[k] / fps" in src and "wav=vo.wav_path" in src
+    src = inspect.getsource(EP._render); assert "+ cut[k] / fps, path, nf, ep" in src and "+ cut[k] / fps, nf, path" in src and "wav=vo.wav_path" in src      # RUL-BRK-U1 (DRAWN-b-B-8): each call site's own offset - the render (:560) and the restyle arm (:562)
     setting("LIVING_CHARACTERS_ON", "TRUE"); _lock("VALE", _art(tmp_path / "vale.png", 640, 360))
     got, real = [], LV.speaking
     monkeypatch.setattr(LV, "speaking", lambda *a, **k: got.append(real(*a, **k)) or got[-1])
