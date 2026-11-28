@@ -169,6 +169,11 @@ def test_the_report_line_is_decided_on_the_result_alone(floor_on):
     core.set_setting("VIEW_FLOOR_ON", "FALSE"); assert "not measured yet" in FL.report_line(res)
     assert [FL.report_line(dict(res, status=s)) for s in ("pass", "void", "off")] == ["", "", ""] and FL.report_line(None) == ""
 
+def test_a_refusal_he_waived_gets_no_report_line(floor_on):
+    """(RUL-U1p) His "Publish anyway" decided the refusal: the finish marks the result waived, and a waived refusal is never reported to his eye again."""
+    res = {"status": "fail", "hold": {"family": "gemini", "reason": "the frozen picture"}, "view_url": "https://drive.google.com/file/d/X/view"}
+    assert FL.report_line(res) and FL.report_line(dict(res, waived=True)) == "" and FL.report_line(dict(res, waived=False)), FL.report_line(dict(res, waived=True))
+
 def test_the_pilots_cap_is_one_allowance_for_the_month(floor_on, monkeypatch, tmp_path):
     """(code review C18, 8; RULINGS_U1c 4.1) VIEW_FLOOR_PILOT_CAP_INR is ONE allowance a calendar month: a pilot stops at what this month's earlier pilots left
     of it; a second pilot with nothing left runs no session and changes nothing; a new month starts the allowance again. A fixed day (plan 12 (b))."""

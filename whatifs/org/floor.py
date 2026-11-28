@@ -508,6 +508,7 @@ def report_line(res):
     ALONE (code review C18, 3): a refused film reaches the finish only in the report state - in the hold state contract.p_viewer_floor FAILs it and the film is
     held before the upload - so neither VIEW_FLOOR_FAIL_HOLDS nor the switch is read a second time (a pilot may write the cell between the check and the finish)."""
     res = res if isinstance(res, dict) else {}; h = res.get("hold") or {}
+    if res.get("waived"): return ""                                  # RUL-U1p: a refusal he waived ("Publish anyway") is decided - never reported to his eye again
     if res.get("status") != "fail": return ""
     watch = f"Watch that minute: {res.get('view_url')}." if res.get("view_url") else "The minute could not be filed for you to watch."
     what = f"beside a video you marked not good, '{h['down']}'" if h.get("down") else "beside the video you rejected"
