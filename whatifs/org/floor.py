@@ -133,7 +133,15 @@ def make_kit(path, yt=""):
     d = os.path.join(WORK, "floor_kit"); os.makedirs(d, exist_ok=True)
     v = view(path, os.path.join(d, "canary"), watch_s(path))
     sha = REL.sha(v["clip"]); fid = PUB.drive_upload(v["clip"], "floor_canary.mp4", public=False)[0]
-    set_setting("VIEW_FLOOR_CANARY", json.dumps({"file": fid, "sha": sha, "yt": str(yt or ""), "made": iso()[:10]}))
+    k = {"file": fid, "sha": sha, "yt": str(yt or ""), "made": iso()[:10]}; s = S("VIEW_FLOOR_WATCH_S", float)
+    if seconds_of(path) >= 2 * s:                                 # audit F11: the SECOND minute is filed too - the close pair of the pilot's measurement (floor.pilot)
+        try:
+            cut = os.path.join(d, "second_src.mp4")
+            _ff(["ffmpeg", "-y", "-v", "error", "-ss", f"{s:g}", "-t", f"{s:g}", "-i", path, "-c:v", "libx264", "-crf", "18", "-c:a", "aac", cut])
+            v2 = view(cut, os.path.join(d, "canary2"), watch_s(cut))
+            k.update({"file2": PUB.drive_upload(v2["clip"], "floor_canary2.mp4", public=False)[0], "sha2": REL.sha(v2["clip"])})
+        except Exception as e: print(f"floor kit: the second minute was not filed ({type(e).__name__}) - the pilot will use the same minute twice")
+    set_setting("VIEW_FLOOR_CANARY", json.dumps(k))
     print(f"floor kit filed: Drive id {fid}, SHA-256 {sha}")
     return sha
 
@@ -155,6 +163,19 @@ def kit(out):
     s = min(S("VIEW_FLOOR_WATCH_S", float), float(round(seconds_of(src))))      # the stored clip of a minute probes 59.92 s (its encode ends on frame 719): the strip of its whole seconds (DESIGN QUESTION 8)
     c = {"clip": src, "frames": strip(src, os.path.join(d, "canary"), s), "s": s}
     return c, twin(c, os.path.join(d, "canary_twin"))
+
+def kit2(out):
+    """The canary's SECOND minute as a viewing (the close pair of the pilot), or None: no second file, a failed fetch, or a file that is not the one on record."""
+    from whatifs import publish as PUB, release as REL
+    d = os.path.join(out, "floor"); os.makedirs(d, exist_ok=True)
+    raw = str(S("VIEW_FLOOR_CANARY") or "").strip()
+    if not raw: return stand_in(os.path.join(d, "canary2.mp4"), "canary2") if FAKE else None
+    try:
+        k = json.loads(raw); src = PUB.drive_download(str(k["file2"]), os.path.join(d, "canary2_src.mp4"))
+        if REL.sha(src) != str(k["sha2"]).strip().lower(): return None
+        s = min(S("VIEW_FLOOR_WATCH_S", float), float(round(seconds_of(src))))
+        return {"clip": src, "frames": strip(src, os.path.join(d, "canary2"), s), "s": s}
+    except Exception: return None
 
 def link(vid):
     """The viewer's link of a kept viewing (a player on his phone, never a download)."""
@@ -305,6 +326,42 @@ def month_cap():
     from whatifs import governor as G
     return S("VIEW_FLOOR_CAP_PER_VIDEO_INR", float) * G.max_long_videos()
 
+def pilot_inr():
+    """What the pilot's measurement cost in THIS month (cell VIEW_FLOOR_PILOT): taken out of the per-video cap's count in `run`."""
+    p = _js(S("VIEW_FLOOR_PILOT"), {})
+    try: return float(p.get("inr") or 0) if str(p.get("month") or "") == iso()[:7] else 0.0
+    except Exception: return 0.0
+
+def pilot(out=None, n=10):
+    """THE PILOT'S MEASUREMENT (memo 3.1; audit F11): n ordinary sessions on the kit alone, the canary's second minute as the new film. (a) THE CLEAR PAIR {C, Z}: q =
+    the share of counted looks that name the canary over its frozen twin. (b) THE CLOSE PAIR {N, C}: in how many sessions both families named the second minute in
+    both looks, and how often a family's two looks agree. Writes VIEW_FLOOR_PILOT, arms or disarms the hold (VIEW_FLOOR_FAIL_HOLDS) by q against VIEW_FLOOR_Q_HOLD."""
+    from whatifs import governor as G, release as REL
+    from whatifs.core import flush_costs
+    out = out or os.path.join(WORK, "floor_pilot"); os.makedirs(out, exist_ok=True)
+    canary, tw = kit(out)
+    if canary is None: raise RuntimeError(f"the floor's pilot needs the kit: {tw}")
+    second = kit2(out); new = second or canary; cap = S("VIEW_FLOOR_PILOT_CAP_INR", float); kinds = ["floor_gemini", "floor_claude"]
+    before = pilot_inr(); flush_costs(); spent0 = G.month_spend_of(kinds); stamp = iso(); sha = REL.sha(new["clip"])
+    done = total = right = passes = fams = agree = 0
+    for i in range(1, int(n) + 1):
+        flush_costs()
+        if G.month_spend_of(kinds) - spent0 >= cap: break
+        res = session(f"PILOT-{stamp}-{i:02d}", sha, new, canary, tw, (), (), "FLOORPILOT"); done += 1
+        looks = [r for r in res.get("looks") or [] if str(r.get("status") or "") == "counted"]; by = {}
+        for r in looks:
+            total += 1; right += int(_named(r, 1, "C", "Z") == "C"); by.setdefault(str(r.get("family") or ""), []).append(_named(r, 2, "N", "C"))
+        full = [v for v in by.values() if len(v) == LOOKS]
+        fams += len(full); agree += sum(1 for v in full if len(set(v)) == 1); passes += int(len(full) >= 2 and all(set(v) == {"N"} for v in full))
+    flush_costs(); inr = round(max(0.0, G.month_spend_of(kinds) - spent0), 2)
+    measured = total >= 0.8 * int(n) * LOOKS * len(JUDGES); q = round(right / total, 4) if total else None
+    trusted = bool(measured and q >= S("VIEW_FLOOR_Q_HOLD", float))
+    r = {"sessions": done, "answers": total, "q": q, "close": "the second minute" if second else "the same minute twice", "close_pass": passes, "close_agree": agree,
+         "close_families": fams, "inr": inr, "month": iso()[:7], "trusted": trusted, "measured": measured}
+    set_setting("VIEW_FLOOR_PILOT", json.dumps(dict(r, inr=round(inr + before, 2))))
+    if measured: set_setting("VIEW_FLOOR_FAIL_HOLDS", "TRUE" if trusted else "FALSE")
+    return r
+
 def plain(x):
     """The run's result as a dict: on, `runner.work` gives the dict; off, it hands back the act's own output too (issue 200) - an Out is unwrapped."""
     from whatifs.org.runner import Out
@@ -354,7 +411,7 @@ def run(brief, ep, master, out, refs=(), downs=()):
         from whatifs import governor as G, publish as PUB, release as REL
         from whatifs.core import flush_costs
         flush_costs()
-        spent, cap = G.month_spend_of(["floor_gemini", "floor_claude"]), month_cap()
+        spent, cap = max(0.0, G.month_spend_of(["floor_gemini", "floor_claude"]) - pilot_inr()), month_cap()      # audit F11: the pilot's sessions are under their own cap
         if spent >= cap: res = {"status": "void", "why": f"the month's floor money is spent (Rs {spent:.0f} of Rs {cap:.0f})"}
         else:
             canary, tw = kit(out)
@@ -404,6 +461,19 @@ def eye_hours(slot_iso):
     lead = S("SILENCE_LEAD_H", float) if S("TWO_SCREENS_ON", bool) else 1.5      # v12 B-OWNER (R22 (2 b)): behind the switch - the close of F1 of V1c's audit for the shipped state
     t = parse_iso(slot_iso); left = ((t - now_utc()).total_seconds() / 3600.0) if t else S("VIEW_FLOOR_EYE_WAIT_H", float) + lead
     return max(1.0, min(S("VIEW_FLOOR_EYE_WAIT_H", float), left - lead))
+
+def fail_holds():
+    """The HOLD state (audit F10): TRUE = a film the jury refuses is held until his tap; FALSE (the default) = REPORT - it goes to his eye with the clock."""
+    return S("VIEW_FLOOR_FAIL_HOLDS", bool)
+
+def report_line(res):
+    """The report state: what the jury said about a film it refused, for the card of his eye - "" in every other case (the floor off, the hold state, no fail)."""
+    res = res if isinstance(res, dict) else {}; h = res.get("hold") or {}
+    if not on() or fail_holds() or res.get("status") != "fail": return ""
+    watch = f"Watch that minute: {res.get('view_url')}." if res.get("view_url") else "The minute could not be filed for you to watch."
+    what = f"beside a video you marked not good, '{h['down']}'" if h.get("down") else "beside the video you rejected"
+    return (f"Two first-time viewers ranked its first minute {what} - {h.get('family') or 'a viewer'}: \"{h.get('reason') or ''}\". "
+            f"These viewers are not measured yet: this is a report, not a hold. {watch} ")
 
 def hold_card(ep, title, res):
     """The floor's own hold card: what the viewers said, the minute to watch, Publish anyway / Drop it / Discuss. It never closes by itself."""

@@ -110,11 +110,17 @@ def main():
             from whatifs.core import WORK
             if len(sys.argv) > 2: src, yt = sys.argv[2], (sys.argv[3] if len(sys.argv) > 3 else "")      # the tests and an offline run: a local file
             else:                                                      # the workflow "Floor kit": the link and the id are read from its event file - never printed or logged
-                ev = json.load(open(os.environ["GITHUB_EVENT_PATH"]))["inputs"]; src = ev["link"]; yt = ev.get("yt") or ""
-            os.makedirs(WORK, exist_ok=True)
-            sha = FLR.make_kit(FLR.fetch(src, os.path.join(WORK, "kit_src.mp4")), yt=yt)
-            NT.send("floor_kit", f"The first-time-viewer check has its reference: the first minute of the video you gave is filed ({sha[:8]}). You can stop sharing the file now.",
-                    tier="now", expires_h=72, dedupe_key=f"floorkit|{sha[:8]}")
+                ev = json.load(open(os.environ["GITHUB_EVENT_PATH"]))["inputs"]; src = ev.get("link") or ""; yt = ev.get("yt") or ""
+            if src:
+                os.makedirs(WORK, exist_ok=True)
+                sha = FLR.make_kit(FLR.fetch(src, os.path.join(WORK, "kit_src.mp4")), yt=yt)
+                NT.send("floor_kit", f"The first-time-viewer check has its reference: the first minute of the video you gave is filed ({sha[:8]}). You can stop sharing the file now.",
+                        tier="now", expires_h=72, dedupe_key=f"floorkit|{sha[:8]}")
+            if len(sys.argv) <= 2 or (len(sys.argv) > 4 and sys.argv[4] == "pilot"):      # audit F11: the workflow run (and a test that asks for it) measures the judges on the kit
+                p = FLR.pilot()
+                said = (f"they named the real minute over its frozen picture in {round(p['q'] * p['answers'])} of {p['answers']} answers" if p["answers"] else "they could not be asked")
+                then = ("From now a video they refuse is held for your tap." if p["trusted"] else "That is not enough to hold a video on their word: a video they refuse comes to you first and is published after your silence.")
+                NT.send("floor_kit", f"The first-time viewers were measured on the reference alone: {said}. {then} Nothing is needed from you.", tier="now", expires_h=72, dedupe_key=f"floorpilot|{p['month']}|{p['answers']}|{p['q']}")
         elif cmd == "abtest":
             from whatifs.tableread import abtest_main; abtest_main()
         elif cmd == "fixheld":

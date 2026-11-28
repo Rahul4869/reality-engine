@@ -8,7 +8,8 @@ on:
     inputs:
       link:
         description: "The share link of the video you rejected (Drive: Anyone with the link)"
-        required: true
+        required: false
+        default: ""
       yt:
         description: "Its YouTube id (optional)"
         required: false
@@ -18,7 +19,7 @@ permissions:
 jobs:
   floorkit:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 120
     concurrency:
       group: floorkit            # never two kit runs at once; NOT the group produce (behind a render the run would wait with his file shared)
       cancel-in-progress: false
@@ -28,6 +29,12 @@ jobs:
       G_CLIENT_KEY: ${{ secrets.G_CLIENT_KEY }}
       G_REFRESH: ${{ secrets.G_REFRESH }}
       G_REFRESH_DRIVE: ${{ secrets.G_REFRESH_DRIVE }}
+      ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_KEY }}
+      GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
+      FAL_KEY: ${{ secrets.FAL_KEY }}
+      PEXELS_KEY: ${{ secrets.PEXELS_KEY }}
+      META_PAGE_KEY: ${{ secrets.META_PAGE_KEY }}
+      AA_API_KEY: ${{ secrets.AA_API_KEY }}
       OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
       GH_REPO: ${{ github.repository }}
       WA_TOKEN: ${{ secrets.WA_TOKEN }}

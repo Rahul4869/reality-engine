@@ -608,6 +608,19 @@ def book(now=None, st=None):
 CAND = "Candidates"
 TRIAL_ROLES = {"showrunner": "D4", "writer": "D4", "packager": "D4", "director": "D4"}         # a rulebook role names no department: the creative lead executes it
 
+POLICY_HOSTS = ("support.google.com", "www.youtube.com", "blog.youtube")       # audit V4 F11: YouTube's own pages - a reading of any other page is no policy reading
+
+def policy_read(p):
+    """A candidate's policy reading (item 65, item 146): {url, date, sentence} - WHICH page of YouTube's own was read, WHEN, and the sentence relied on - or None."""
+    import datetime as _dt, re as _re
+    if not isinstance(p, dict): return None
+    url, day, sent = (str(p.get(k) or "").strip() for k in ("url", "date", "sentence"))
+    m = _re.match(r"https://([^/?#]+)", url)
+    try: _dt.date.fromisoformat(day)
+    except Exception: return None
+    if not m or m.group(1).lower() not in POLICY_HOSTS or len(day) != 10 or not (20 <= len(sent) <= 400): return None
+    return {"url": url[:300], "date": day, "sentence": sent}
+
 def file(c, now=None, st=None):
     """The ONE writer of tab Candidates. Refused without a dated source or without the policy read first; parked when nothing can execute it; a hand
     candidate waits for his desk. The same id twice is a no-op. Returns the row."""
@@ -618,9 +631,10 @@ def file(c, now=None, st=None):
     if old: return old
     src = [x for x in (c.get("sources") or []) if isinstance(x, dict) and str(x.get("url") or "").strip() and str(x.get("date") or "").strip()]
     how = c.get("how") if isinstance(c.get("how"), dict) else {}
+    pol = policy_read(c.get("policy"))
     if kind not in ("machine", "hand", "subject", "name"): state = "refused: unknown kind"
     elif not src: state = "refused: no dated source"
-    elif str(c.get("policy") or "") != "ok": state = "refused: no policy reading"
+    elif pol is None: state = "refused: no policy reading"
     elif kind == "hand": state = "for his desk (B9)"
     elif kind != "machine" or how.get("lever_class") not in ("B", "C") or not how.get("target"): state = "parked: nothing in the pipeline can execute it yet"
     elif how["lever_class"] == "C" and (isinstance(how.get("value"), dict) and how["value"].get("for") == "short"): state = "parked: a rulebook trial is judged on long videos only"
@@ -628,7 +642,7 @@ def file(c, now=None, st=None):
     elif how["lever_class"] == "B" and not LV.owner_of(str(how["target"])): state = f"parked: {how['target']} is not a lever"
     else: state = "filed"
     row = {"id": cid, "ts": iso(now), "kind": kind, "title": title, "how": json.dumps(how, sort_keys=True)[:2000], "sources": json.dumps(src)[:1000],
-           "policy": str(c.get("policy") or ""), "filed_by": str(c.get("filed_by") or "")[:40], "state": state, "ticket": "", "note": ""}
+           "policy": json.dumps(pol, ensure_ascii=False)[:800] if pol else str(c.get("policy") or "")[:200], "filed_by": str(c.get("filed_by") or "")[:40], "state": state, "ticket": "", "note": ""}
     st.append(CAND, [row]); return row
 
 def _filed(now=None):

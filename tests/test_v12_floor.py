@@ -126,6 +126,9 @@ def test_a_place_scene_is_asked_in_the_films_look_on_both_roads_of_its_start_pic
             if sw not in sent: sent = sent.rstrip(". ") + ". " + sw                          # media.still 113
             assert sent == text and sent.count(lock) == 1 and sent.count(sw) == 1
             assert AN.NOBODY in AT.with_directive(text, S("IMAGE_PROMPT_MAX_CHARS", int) - (len(lock) + 2) - (len(sw) + 2))
+            mx = S("IMAGE_PROMPT_MAX_CHARS", int) - (len(lock) + 2) - (len(sw) + 2)          # audit F7: a text AT the directive's cut (room <= 40), where the guard can fail
+            long_ = AN.picture_request(dict(shots[i], prompt=shots[i]["prompt"] + " " + "w" * (mx - 5 - len(text) - 1)), shots[i]["anim"]["line"])
+            assert mx - 42 <= len(long_) <= mx and AN.NOBODY in AT.with_directive(long_, mx), len(long_)
     shot = dict(shots[idx[0]], prompt=shots[idx[0]]["prompt"] + ". " + lock)                  # a prompt that already holds the lock does not get it twice
     assert AN.picture_request(shot, "x").count(lock) == 1
 
@@ -236,11 +239,14 @@ from whatifs import models as M, notify as NT, fakes as FK
 OWN_IDS = ("EP209910010900", "EP209910080900", "EP209910150900", "EP209910220900",      # the whole productions of this file: ids no other test file uses (a test proves it)
            "EP209910290900", "EP209911050900",                                          # step 2: a film he gave a thumbs-up, and the film judged beside it
            "EP209911120900",                                                            # step 3: a long video about a promoted Short that ends on his line (and the same film on a Sheet without one)
-           "EP209911190900")                                                            # the finish (C2): a film held by a measured check, then refused by the floor, then published anyway
+           "EP209911190900",                                                            # the finish (C2): a film held by a measured check, then refused by the floor, then published anyway
+           "EP209912170900", "EP209912240900")                                          # audit F10 (tests/test_v12_floor_report.py): a refused film in the report state, without and with his first-three review
 
 @pytest.fixture
 def floor_on(setting):
-    setting("VIEW_FLOOR_ON", "TRUE"); yield setting
+    setting("VIEW_FLOOR_ON", "TRUE")
+    core.set_setting("VIEW_FLOOR_FAIL_HOLDS", "TRUE")                      # audit F10: the older floor tests are the HOLD state's (the report state: tests/test_v12_floor_report.py)
+    yield setting
 
 def test_the_older_tests_run_with_the_floor_off():
     from tests.conftest import OLD_VIEW
@@ -351,6 +357,18 @@ def test_a_film_cannot_void_its_own_session():
         r = FL.verdict(_fam("gemini", 2, n_over_c) + _fam("claude", 2, n_over_c), (), ())
         assert r["status"] in ("pass", "fail")
     assert all("N" not in p for p in FL.pairs(3, 2) if p[0] != "N")
+    for k, j in ((1, 0), (2, 1), (3, 2)):                                                    # audit F8: k > 0 too - N's pairs are exactly N against C, each Ri, each Di
+        assert sorted(p for p in FL.pairs(k, j) if "N" in p) == sorted([("N", "C")] + [("N", f"R{i}") for i in range(1, k + 1)] + [("N", f"D{i}") for i in range(1, j + 1)])
+
+def test_a_pass_that_lost_to_his_approved_videos_predicts_nothing_and_is_never_void():
+    """(audit F8) The new film LOSES to a reference: a pair {N, R1} can neither void nor fail a session, and a pass that lost to the references in most looks
+    predicts nothing (`predict` "")."""
+    it = {"A": "N", "B": "C", "C": "Z", "D": "R1"}           # pairs: 1 {C, Z}, 2 {N, C}, 3 {R1, C}, 4 {N, R1}
+    def fam(f, n_over_r): return [_look(f, o, it, {"1": ["B", "x"], "2": ["A", "x"], "3": ["D", "x"], "4": ["A" if o < n_over_r else "D", "x"]}) for o in range(2)]
+    for g, c, vr in ((0, 0, 0), (0, 1, 1), (1, 1, 2), (2, 2, 4)):
+        r = FL.verdict(fam("gemini", g) + fam("claude", c), [None], ())
+        assert r["status"] == "pass" and r["vs_refs"] == vr, r
+        assert r["predict"] == ("up" if vr * 2 >= 4 else ""), r
 
 def test_the_stand_in_its_twin_and_the_offline_judge_measured(media):
     can, tw, flop, film = media["canary"], media["twin"], media["flop"], media["film"]
@@ -608,7 +626,9 @@ def test_the_floorkit_workflow_road_reads_the_event_file_and_logs_no_link(floor_
     monkeypatch.setenv("GITHUB_EVENT_PATH", str(ev)); monkeypatch.setattr(sys, "argv", ["cli", "floorkit"])
     cli.main()
     k = json.loads(S("VIEW_FLOOR_CANARY")); assert k["yt"] == ""
-    assert len([r for r in core.store().rows("Owner_Actions") if r.get("kind") == "floor_kit"]) == 1
+    kits = [r for r in core.store().rows("Owner_Actions") if r.get("kind") == "floor_kit"]          # audit F11 (J18 ANSWER 2): the workflow road also measures the judges - its own notice
+    assert len([r for r in kits if str(r.get("text")).startswith("The first-time-viewer check has its reference")]) == 1
+    assert len([r for r in kits if str(r.get("text")).startswith("The first-time viewers were measured")]) == 1 and len(kits) == 2, kits
     before = S("VIEW_FLOOR_CANARY"); capsys.readouterr()
     ev.write_text(json.dumps({"inputs": {"link": "http://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWx/view", "yt": ""}}), encoding="utf-8")
     with pytest.raises(RuntimeError): cli.main()
@@ -616,6 +636,27 @@ def test_the_floorkit_workflow_road_reads_the_event_file_and_logs_no_link(floor_
     assert "1AbCdEf" not in open(tmp_path / "last_error.txt", encoding="utf-8").read()
     assert "1AbCdEf" not in printed.out + printed.err and not [r for r in core.store().rows("Run_Log") if "1AbCdEf" in str(r.get("message"))]
     assert S("VIEW_FLOOR_CANARY") == before
+
+def test_the_floorkit_success_road_prints_and_logs_no_link(floor_on, monkeypatch, media, tmp_path, capsys):
+    """(audit F9) The SUCCESS road with his https link (the fetch stubbed with the film's bytes): the kit is made, and the link - his shared video's address -
+    is in no printed line, no Run_Log row, no card and not in the kit's cell."""
+    import sys
+    from whatifs import cli
+    monkeypatch.chdir(tmp_path)
+    link = "https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWx/view"; data = open(media["film"]["clip"], "rb").read()
+    class R:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def raise_for_status(self): pass
+        def iter_content(self, n): yield data
+    monkeypatch.setattr(FL.requests, "get", lambda url, **k: R())
+    ev = tmp_path / "event.json"; ev.write_text(json.dumps({"inputs": {"link": link, "yt": ""}}), encoding="utf-8")
+    monkeypatch.setenv("GITHUB_EVENT_PATH", str(ev)); monkeypatch.setattr(sys, "argv", ["cli", "floorkit"])
+    capsys.readouterr(); cli.main(); printed = capsys.readouterr()
+    assert json.loads(S("VIEW_FLOOR_CANARY"))["sha"] and [r for r in core.store().rows("Owner_Actions") if r.get("kind") == "floor_kit"]      # the success road ran
+    for t in ("1AbCdEf", "drive.google.com/file"):
+        assert t not in printed.out + printed.err and t not in str(S("VIEW_FLOOR_CANARY"))
+        assert not [r for r in core.store().rows("Run_Log") if t in str(r.get("message"))] and not [r for r in core.store().rows("Owner_Actions") if t in str(r.get("text"))]
 
 def test_check_viewer_floor_says_and_recomputes(floor_on, media):
     r = _session(media, "S-check")
@@ -729,17 +770,23 @@ def test_the_whole_productions_of_this_file_use_ids_no_other_test_file_uses():
 def _start_e2e(monkeypatch, setting):
     from tests import test_v12_inside as INS_T
     INS_T._start(monkeypatch, setting, "F1"); setting("VIEW_FLOOR_ON", "TRUE")
+    core.set_setting("VIEW_FLOOR_FAIL_HOLDS", "TRUE")                      # audit F10: the older floor tests are the HOLD state's (the report state: tests/test_v12_floor_report.py)
 
 def _led(ep): return {x["feature"]: (x["status"], str(x["evidence"])) for x in core.store().rows("Feature_Ledger") if x.get("episode_id") == ep and x.get("stage") == "final"}
 
 def test_a_whole_production_passes_the_floor_with_two_looks_of_each_judge(monkeypatch, setting):
     from tests import test_v12_opening_e2e as E2E
-    from tests.paid_calls import watch
+    from tests.paid_calls import watch, V12V1C_ADDED
     _start_e2e(monkeypatch, setting); c = watch(monkeypatch); ep = OWN_IDS[0]
+    seen, run0 = [], FL.run                                       # audit F4: what the floor's own stage pays, counted on the whole production's counter
+    def run_(*a, **k):
+        b0 = dict(c); out = run0(*a, **k); seen.append({x: c[x] - b0.get(x, 0) for x in c if c[x] != b0.get(x, 0)}); return out
+    monkeypatch.setattr(FL, "run", run_)
     r = EP.produce(E2E._slot(10), episode_id=ep); led = _led(ep)
     assert r.get("ok"), r
     assert led["viewer_floor"][0] == CON.PASS and led["viewer_floor"][1].startswith("two first-time viewers (gemini, claude) named this video over the rejected one in 4 of 4 looks")
     assert c["watch:floor_gemini"] == 2 and c["watch:floor_claude"] == 2
+    assert seen == [V12V1C_ADDED], seen                                                       # audit F4: the four looks "and nothing else new" (tests/paid_calls.py, V12V1C_ADDED)
     rows = [x for x in core.store().rows("Floor_Log") if x["episode_id"] == ep]
     assert len(rows) == 4 and {x["view"] for x in rows} == {f"{ep}_view.mp4"}
     d = os.path.join(core.WORK, ep, "floor"); clips = [os.path.join(d, f) for f in ("new.mp4", "canary.mp4", "canary_twin.mp4")]      # (V1c finish, C10) the session's three clips
@@ -757,6 +804,17 @@ def test_a_void_session_sends_the_film_to_his_eye_with_the_clock(monkeypatch, se
     assert "The first-time-viewer check could not judge this one (no canary kit)." in card["text"] and card["default_action"] == "goes public by itself"
     NT.expire_defaults(now=core.now_utc() + dt.timedelta(hours=21))
     assert next(x for x in core.store().rows("Episodes") if x["episode_id"] == ep)["status"] == "SCHEDULED"
+
+def test_a_void_floor_on_one_of_his_first_videos_is_his_creative_review_not_the_eye(monkeypatch, setting):
+    """(audit F6) A video under the creative review of his first videos gets the review's card, whatever the floor said: a void floor and a needed review
+    together give `creative_review` and never `floor_eye` (the order of `if CON.review_needed` and the eye's `elif` in episode.py)."""
+    from tests import test_v12_opening_e2e as E2E
+    _start_e2e(monkeypatch, setting); setting("ORG_ON", "FALSE"); setting("CREATIVE_REVIEW_FIRST_N", "99"); ep = OWN_IDS[3]
+    setting("VIEW_FLOOR_CANARY", json.dumps({"file": "missing.mp4", "sha": "0" * 64, "yt": "", "made": "2026-11-15"}))
+    r = EP.produce(E2E._slot(30), episode_id=ep); led = _led(ep)
+    assert r.get("ok") and led["viewer_floor"] == (CON.NA, "no canary kit")
+    kinds = [x.get("kind") for x in core.store().rows("Owner_Actions") if x.get("episode_id") == ep]
+    assert "creative_review" in kinds and "floor_eye" not in kinds, kinds
 
 # ================================================================== STEP 2. HIS VERDICT (3.2): one row a release, one tap, the label the floor is scored against
 import datetime as _dt
@@ -809,12 +867,13 @@ def test_the_first_tick_sets_the_day_and_a_sheet_of_old_live_rows_is_never_asked
     _short("SHOLD", _ago(days=30))
     V.sync(); assert str(S("OWNER_VERDICT_SINCE"))[:10] == core.now_utc().strftime("%Y-%m-%d")   # (1): the day is set and nothing else happens
     assert core.store().rows("Owner_Verdicts") == [] and not [a for a in core.store().rows("Owner_Actions") if a.get("kind") == "owner_verdict"]
-    V.sync(); assert core.store().rows("Owner_Verdicts") == []                                   # (2): nothing older than the day is ever asked about
+    for k in range(5): core.store().update("Episodes", "episode_id", f"EP20260101{k:02d}00", {"slot_et": _ago(hours=-48)})   # audit F3: old rows RE-SLOTTED after the day
+    V.sync(); assert core.store().rows("Owner_Verdicts") == []                                   # (2): nothing older than the day is ever asked about, re-slotted or not
 
 def test_review_needed_counts_from_the_day_on_a_sheet_of_old_rows(verdict_on):
     V = _VER(); verdict_on("CREATIVE_REVIEW_FIRST_N", "3")
     for k in range(5): _long(f"EP20260101{k:02d}00", title=f"old {k}")
-    core.store().update("Episodes", "episode_id", "EP2026010100" + "00", {"slot_et": _ago(hours=-48)})      # an old row RE-SLOTTED after the day: still not counted
+    for k in range(4): core.store().update("Episodes", "episode_id", f"EP20260101{k:02d}00", {"slot_et": _ago(hours=-48)})   # audit F3: FOUR old rows (N + 1) RE-SLOTTED after the day: still not counted - counted by slot_et they would end the review
     assert CON.review_needed("long") is False                                                    # the day is not set yet: as before (5 > 3)
     V.sync(); assert CON.review_needed("long") is True                                          # counted from the day: none of the old five
     _long("EP209912020900", status="SCHEDULED", yt="ytNEW"); assert CON.review_needed("long") is True      # the first video of the new code IS reviewed
@@ -968,6 +1027,7 @@ def test_references_and_downs_are_empty_while_his_verdict_is_off(verdict_on, med
     assert V.references("x") == [] and V.downs("x") == []
 
 def test_a_down_canary_fails_a_film_with_its_title_and_the_check_recomputes_it(verdict_on, media, monkeypatch):
+    core.set_setting("VIEW_FLOOR_FAIL_HOLDS", "TRUE")                      # audit F10 (J18 ANSWER 1 (6)): a test that asserts a HOLD by the floor is the HOLD state's
     d = dict(media["film"], episode="EPDN", title='He said "no", twice')
     r = FL.session("S-down", "sha", media["film"], media["canary"], media["twin"], [], [d], "EPDOWN", view="vv")
     assert r["status"] == "fail" and r["why"].startswith("ranked beside a video you marked not good: ") and "'He said \"no\", twice'" in r["why"]
@@ -989,6 +1049,16 @@ def test_the_tick_asks_in_a_try_of_its_own_before_the_eye_sweep_and_the_finish_h
     e = open(EP.__file__, encoding="utf-8").read()
     assert "FLOOR.run(b, ep, master, out, VER.references(ep), VER.downs(ep))" in e and "master, out, (), ())" not in e
     n = open(NT.__file__, encoding="utf-8").read(); assert '("whatifs.org.verdicts", "register")' in n
+
+def test_a_sheet_error_in_the_asks_never_stops_the_eye_sweep(verdict_on, monkeypatch):
+    """(audit F5) "in a try of its own", run: `verdicts.sync` raises inside the REAL tick and `floor.eye_sweep` still runs - a film whose default failed is
+    never left private for ever by an error in the asks."""
+    from whatifs import manage as MG
+    from whatifs.org import verdicts as VER_
+    ran = []
+    def boom(*a, **k): raise RuntimeError("the Sheet is down")
+    monkeypatch.setattr(VER_, "sync", boom); monkeypatch.setattr(FL, "eye_sweep", lambda *a, **k: ran.append(1))
+    MG.tick(); assert ran == [1]
 
 def test_the_real_tick_sets_the_day_asks_about_a_short_and_schedules_a_film_his_silence_approved(verdict_on, monkeypatch):
     """(V1c finish, C13) The hooks run in the REAL tick job (the repo's rule for a new hook): the first tick sets the day, a later one asks about a new Short,

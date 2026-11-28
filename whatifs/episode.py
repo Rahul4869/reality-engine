@@ -972,7 +972,9 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         summ_ = (f"'{title}'. Self-review: " + ", ".join(f"{k} {cr.get(k)}" for k in CON.CRIT_KEYS if k in cr) +
                  f". {cr.get('notes', '')} Checks: {sum(1 for r in g['rows'] if r['status'] != 'FAIL')}/{len(g['rows'])} pass.")
         if CON.review_needed("long"):
-            CON.await_approval(ep, vid, slot_iso, summ_)
+            CON.await_approval(ep, vid, slot_iso, FLOOR.report_line(cctx.get("floor")) + summ_)
+        elif FLOOR.report_line(cctx.get("floor")):                # audit F10, the report state: a film the unmeasured jury refused goes to his eye with the clock, as a void does
+            CON.await_approval(ep, vid, slot_iso, FLOOR.report_line(cctx.get("floor")) + summ_, kind="floor_eye", default="goes public by itself", expires_h=FLOOR.eye_hours(slot_iso))
         elif FLOOR.on() and (cctx.get("floor") or {}).get("status") not in ("pass", "fail"):      # v12 V1c: the floor could not judge it - his eye, with a clock (silence = it goes public)
             CON.await_approval(ep, vid, slot_iso, "The first-time-viewer check could not judge this one (" + str((cctx.get("floor") or {}).get("why") or "not judged") + "). " + summ_,
                                kind="floor_eye", default="goes public by itself", expires_h=FLOOR.eye_hours(slot_iso))

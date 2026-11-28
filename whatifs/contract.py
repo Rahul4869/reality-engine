@@ -749,7 +749,9 @@ def p_viewer_floor(ctx):
         a = FLOOR.again(res.get("looks") or [])
         if a["status"] != st or (st in ("pass", "fail") and a["why"] != why): return FAIL, "the stored verdict is not the code's verdict on its own looks"
     if st == "pass": return PASS, why[:380]
-    if st == "fail": return FAIL, why[:380]
+    if st == "fail":
+        if not FLOOR.fail_holds(): return NA, ("reported, not held: " + why)[:380]      # audit F10: the report state - his eye with the clock (episode._finish)
+        return FAIL, why[:380]
     return NA, (why or st)[:380]
 
 def p_makers_line(ctx):

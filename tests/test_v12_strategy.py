@@ -179,6 +179,31 @@ def test_the_cap_stays_a_breaker_beyond_the_credits_monthly_most(setting):
     cost(core.iso(now), 9000)                                                                           # Rs 9,000 of Claude rows in an open window this month
     assert FIN.cover() == core.S("CREDIT_COVER_MONTH_MAX_INR", float) and G.own_spend_inr() == 9000 - FIN.cover() and G.monthly_cap_reached()
 
+def test_the_learning_job_runs_the_ceos_round_after_learn(monkeypatch):
+    """(audit F9) `learn` is RUN (not its line of cli.py read): research first, the learning run, then the CEO's round, then the daily checks."""
+    import sys
+    from whatifs import cli as CLI, manage as MG
+    order = []
+    monkeypatch.setattr(CLI, "research_round", lambda: order.append("research")); monkeypatch.setattr(CLI, "strategy_round", lambda: order.append("strategy"))
+    monkeypatch.setattr(RUN, "work", lambda dept, *a, **k: order.append(dept)); monkeypatch.setattr(RUN, "daily_check", lambda *a, **k: order.append("check"))
+    monkeypatch.setattr(MG, "money_check", lambda *a, **k: order.append("money")); monkeypatch.setattr(sys, "argv", ["cli", "learn"])
+    CLI.main(); assert order == ["research", "D10", "strategy", "check", "money"], order
+
+def test_the_one_tap_link_is_built_from_the_repo_the_verb_and_the_row(monkeypatch):
+    """(audit F9) notify.link RUN (not "def link(" in the file): the brief's Undo link names the repo, the row and the verb; no repo, no link."""
+    from whatifs import notify as NT_
+    monkeypatch.delenv("GH_REPO", raising=False); assert NT_.link("Undo", "OA-1") == ""
+    monkeypatch.setenv("GH_REPO", "owner/repo"); u = NT_.link("Undo", "OA-1")
+    assert u.startswith("https://github.com/owner/repo/issues/new?title=ACT%20OA-1%20Undo&body=") and "Press%20Submit%20new%20issue" in u, u
+
+def test_the_cover_ceiling_is_its_own_arithmetic_recomputed():
+    """(audit F9) memo 3.3's arithmetic for CREDIT_COVER_MONTH_MAX_INR, recomputed (not the NOTE's word): 1.5 x (long videos x Rs 170.5 x 1.10 + Shorts x
+    (Rs 36 + 4 x Rs 12) + R&D 300 + Review Board 120), up to the next Rs 100 - with the month's long videos and Shorts read from their cells."""
+    import math
+    L, Sh = int(core.DEFAULTS["STANDARD_MAX_LONG_PER_MONTH"][0]), int(core.DEFAULTS["SHORTS_PER_MONTH"][0])
+    x = 1.5 * (L * (166 + 4 + 0.5) * 1.10 + Sh * (36 + 4 * 12) + 300 + 120)
+    assert round(x, 1) == 3267.3 and float(core.DEFAULTS["CREDIT_COVER_MONTH_MAX_INR"][0]) == math.ceil(x / 100) * 100, x
+
 def test_the_cover_ceilings_note_says_it_was_measured():
     n = core.DEFAULTS["CREDIT_COVER_MONTH_MAX_INR"][1]; assert "TO BE CONFIRMED" not in n and "MEASURED on 369ee3e" in n, n
 
@@ -335,6 +360,7 @@ def test_the_ticket_is_told_once_it_exists_and_the_brief_carries_the_whole_text_
     MEMO.write(memo); assert STR.tell(JAN) == 1 and STR.tell(JAN) == 0
     a = next(a for a in core.store().rows("Owner_Actions") if a.get("kind") == "strategy")
     assert a["text"] == STR.text_of(decisions()[0]) and a["text"].startswith("Strategy decided: 5 long videos a month instead of 4 (STANDARD_MAX_LONG_PER_MONTH 4 -> 5). Why: ")
+    assert a["text"].endswith(" free). It should move the long watch hours: the watch hours a long video earns in its first 28 days up. Nothing to do - tap Undo to take it back."), a["text"]      # audit F10: the sentence typed out, word for word
     assert "Nothing to do - tap Undo to take it back." in a["text"] and json.loads(a["buttons"]) == [["Undo", f"STRATEGY UNDO {row['id']}"]] and not a["expires_at"]
     b = STR.brief(JAN + dt.timedelta(hours=20))
     assert b.startswith("*Decisions*\n- Strategy decided: 5 long videos") and "Undo: https://github.com/owner/repo/issues/new?title=" in b and "Strategy, week of" in b
@@ -400,6 +426,28 @@ def test_a_cell_put_back_after_a_change_without_effect_is_not_his_hand(setting):
                            {"id": "DEC-h2", "ts": core.iso(n - dt.timedelta(days=1)), "rule": "SPLIT", "key": "SHORTS_PER_MONTH", "old": "14", "new": "16", "state": "no_effect", "why": "w", "numbers": "{}"}])
     assert [r for r in STR.hands(n) if r["key"] == "SHORTS_PER_MONTH"] == []
 
+def test_a_decided_row_without_its_ticket_for_26_hours_fails_only_text_and_is_sent_once_more_then_void(setting):
+    """(audit F3) The check's FAIL "only text", made to fail: a row "decided" 27 hours ago whose ticket is not on tab Memos; settle sends it once more,
+    then makes it void (memo 3.4)."""
+    setting("STRATEGY_ON", "TRUE"); setting("ORG_SINCE", core.iso(now() - dt.timedelta(days=3)))
+    core.store().append("Decisions", [{"id": "DEC-t1", "ts": core.iso(now() - dt.timedelta(hours=27)), "rule": "SPLIT", "key": "SHORTS_PER_MONTH", "old": "12", "new": "14",
+                                       "state": "decided", "why": "w", "numbers": "{}", "ticket": "MEMO-NEVER-WRITTEN"}])
+    p = STR.live_issues()[0]
+    assert [x for x in p if x.startswith("decision DEC-t1 (SHORTS_PER_MONTH 12 -> 14) has stood") and x.endswith("only text")], p
+    def row(): return next(r for r in decisions() if r["id"] == "DEC-t1")
+    assert len(STR.settle()) == 1 and row()["state"] == "decided"                            # sent once more
+    assert STR.settle() == [] and row()["state"] == "void"                                    # then void
+
+def test_what_was_decided_for_him_is_never_counted_as_open_and_is_listed_on_its_own():
+    """(audit F4) INFORM_KINDS, read: three rows "Nothing to do" (kinds strategy and desk) are not in the digest's count of open decisions nor on the dashboard's
+    docket, and ARE on its list "Decided for you" - both lists (memo 3.4; the review's change 3 (c))."""
+    from whatifs import digests as DG, dash as DSH
+    core.store().append("Owner_Actions", [{"id": f"OA-inf{i}", "kind": k, "status": "OPEN", "tier": "now", "text": f"Decided for you {i}. Nothing to do - tap Undo to take it back.",
+                                           "buttons": json.dumps([["Undo", "UNDO"]]), "default_action": "It stays"} for i, k in enumerate(("strategy", "desk", "strategy"))])
+    assert not [x for x in DG._risks({}) if "open decisions on the dashboard" in x], DG._risks({})
+    assert not [c for c in DSH._docket() if str(c.get("id")).startswith("OA-inf")]
+    assert sorted(c["id"] for c in DSH._decided()) == ["OA-inf0", "OA-inf1", "OA-inf2"]
+
 def test_a_decision_is_a_ticket_or_the_check_fails_only_text(monkeypatch, setting):
     from whatifs.org import runner as RN, memos as MEMO
     setting("STRATEGY_ON", "TRUE"); setting("ORG_SINCE", core.iso(now() - dt.timedelta(days=3))); monkeypatch.setattr(STR, "PORTFOLIO", ("FORMAT_SHARE_F1",))
@@ -459,6 +507,35 @@ def test_every_inbound_memo_of_a_review_is_dispositioned(setting):
         MEMO.write(m)
     RN.run("D1", "review", STR.review)
     s = [x for x in core.store().rows("Sessions") if x.get("dept") == "D1" and x.get("trigger") == "review"][-1]; assert s["status"] == "ok", s
+
+@pytest.mark.parametrize("dept,trigger", [("D1", "review"), ("D11", "watch")])
+def test_every_type_of_inbound_memo_is_dispositioned_by_strategy_and_by_finance(setting, dept, trigger):
+    """(audit F6) One memo planted of each of the four types (memo 3.4 (5)) - owner, performance, problem, decision - to Strategy AND to Finance (V4 wires
+    D11): the run is "ok" (an undispositioned memo is a breach) and each memo has its disposition on record."""
+    from tests.test_v12_org import GOOD
+    from whatifs.org import memos as MEMO, runner as RN, finance as FIN
+    setting("STRATEGY_ON", "TRUE"); ids = []
+    for t in ("owner_memo", "performance_memo", "problem_memo", "decision_memo"):
+        ids.append(MEMO.write(dict(GOOD[t], to_depts=[dept], dedupe_key=f"f6|{dept}|{t}"))["id"])
+    RN.run(dept, trigger, STR.review if dept == "D1" else FIN.watch)
+    s = [x for x in core.store().rows("Sessions") if x.get("dept") == dept and x.get("trigger") == trigger][-1]; assert s["status"] == "ok", s
+    assert len(set(ids)) == 4
+
+def test_the_effect_gate_runs_its_own_arithmetic_for_a_long_share_the_boost_and_shorts_per_week(setting, monkeypatch):
+    """(audit F7) STR.effect itself, never replaced: (1) a long format's share under FORMAT_FORCE changes nothing that runs (memo 3.11 row 2: refused) and
+    does without it; (2) THINK_BOOST_VARIANTS counts only while the credit's lane is open; (3) SHORTS_PER_WEEK caps the month at the week's pace."""
+    import calendar
+    from whatifs import governor as G
+    from whatifs.org import finance as FIN
+    setting("STRATEGY_ON", "TRUE"); setting("FORMATS_ON", "TRUE"); monkeypatch.delenv("WI_FORMAT", raising=False)
+    assert str(core.S("FORMAT_FORCE")) == "F2" and STR.effect("FORMAT_SHARE_F1", "10") == STR.effect("FORMAT_SHARE_F1", "90")
+    setting("FORMAT_FORCE", ""); assert STR.effect("FORMAT_SHARE_F1", "10") != STR.effect("FORMAT_SHARE_F1", "90")
+    base = core.S("SHORTS_VARIANTS", int); monkeypatch.setattr(G, "claude_allowed", lambda *a, **k: True)
+    monkeypatch.setattr(FIN, "credit", lambda now=None: {"open": True}); assert STR.effect("THINK_BOOST_VARIANTS", "2") == base + 2 and STR.effect("THINK_BOOST_VARIANTS", "0") == base
+    monkeypatch.setattr(FIN, "credit", lambda now=None: {"open": False}); assert STR.effect("THINK_BOOST_VARIANTS", "2") == base
+    monkeypatch.setattr(STR, "targets", lambda now=None: {}); monkeypatch.setattr(G, "month_fit", lambda L, j, now=None: {"fits": True}); setting("SHORTS_PER_MONTH", "14")
+    n = core.now_utc(); days = calendar.monthrange(n.year, n.month)[1]
+    assert STR.effect("SHORTS_PER_WEEK", "1") == min(14, days // 7) and STR.effect("SHORTS_PER_WEEK", "7") == 14
 
 def test_what_stays_his_is_a_list_no_lever_moves_without_his_tap_and_d1_is_wired():
     for k in STR.OWNER_ONLY: assert k in core.DEFAULTS and (LV.owner_of(k) == "" or LV.LEVERS[k]["owner"] == "always"), k
@@ -749,6 +826,16 @@ def test_upload_mix_writes_one_row_a_week_and_its_memo_clears_itself(setting):
     RISK.run(later); m = next(x for x in MEMO.find(live=False, type="problem_memo", from_dept="D1") if x["dedupe_key"] == "risk|upload_mix")
     assert m["status"] == "resolved" and [r["state"] for r in watch_rows("upload_mix")] == ["watch", "judged"]
 
+def test_pace_slip_does_not_fire_at_a_fixed_point_without_a_fall_or_under_the_minimum(setting):
+    """(audit F8) pace_slip, the other way (memo 3.6 "each row both ways"): judged at twelve and NOT fired - no fall; a fall from six Shorts that held
+    fewer than PACE_MIN_ENGAGED."""
+    setting("STRATEGY_ON", "TRUE")
+    for i in range(12): ladder_row(i, "S1", 100, day=i)
+    f = RISK.pace_slip()[0]; assert f["point"] == "12" and f["fires"] is False, f
+    lo = int(core.S("PACE_MIN_ENGAGED", float)); assert lo >= 2
+    core.store().replace("Ladder", []); [ladder_row(i, "S1", v, day=i) for i, v in enumerate([lo - 1] * 6 + [1] * 6)]
+    f = RISK.pace_slip()[0]; assert f["point"] == "12" and f["fires"] is False, f
+
 def test_pace_slip_is_judged_only_in_whole_sixes_and_one_huge_short_moves_no_median(setting):
     setting("STRATEGY_ON", "TRUE")
     for i, v in enumerate([100] * 6 + [50] * 5): ladder_row(i, "S1", v, day=i)
@@ -767,8 +854,9 @@ def test_a_watch_row_reaches_the_research_agenda_once(setting):
 
 # ------------------------------------------------------------------ step 6: the arm book (tab Candidates; rule TRIAL)
 SRC = [{"url": "https://support.google.com/youtube/answer/72431", "date": "2026-11-16"}]
+POL = {"url": "https://support.google.com/youtube/answer/1311392", "date": "2026-11-16", "sentence": "TEST: the sentence a filer would quote from the policy page."}      # audit V4 F11
 def machine(title, how=None, **k):
-    return dict({"kind": "machine", "title": title, "sources": SRC, "policy": "ok", "filed_by": "test",
+    return dict({"kind": "machine", "title": title, "sources": SRC, "policy": POL, "filed_by": "test",
                  "how": how if how is not None else {"lever_class": "C", "target": "playbook:packager", "metric": "long_hours_per_video_28d",
                                                      "value": {"rule": f"{title}: write the thumbnail's words large enough to read on a phone.", "metric": "pack",
                                                                "source_url": "https://support.google.com/youtube/answer/72431", "evidence": "YouTube Help"}}}, **k)
@@ -776,9 +864,20 @@ def cands(): return {r["title"]: r for r in core.store().rows("Candidates")}
 
 def test_a_candidate_without_a_dated_source_or_the_policy_read_first_is_refused_and_never_tried(setting):
     setting("STRATEGY_ON", "TRUE")
-    STR.file(machine("No source", sources=[{"url": "https://x.org/a"}])); STR.file(machine("No policy", policy="")); STR.file(machine("No policy", policy="ok"))
+    STR.file(machine("No source", sources=[{"url": "https://x.org/a"}])); STR.file(machine("No policy", policy="")); STR.file(machine("No policy", policy=POL))
     c = cands(); assert c["No source"]["state"] == "refused: no dated source" and c["No policy"]["state"] == "refused: no policy reading"     # the same id twice is a no-op
     assert STR.trial_move(JAN) is None and c["No source"]["id"].startswith("CAN-") and len(c["No source"]["id"]) == 14
+
+def test_a_candidate_is_filed_only_with_the_policy_page_the_day_and_the_sentence_it_relies_on(setting):
+    """(audit V4 F11, DESIGN_ANSWERS_J18 ANSWER 3) The policy reading is {url on YouTube's own pages, a real day, the sentence relied on}, checked at the door."""
+    setting("STRATEGY_ON", "TRUE")
+    bad = ["ok", dict(POL, sentence=""), dict(POL, sentence="too short"), dict(POL, url="https://x.org/policy"), dict(POL, url="http://support.google.com/youtube/answer/1311392"),
+           dict(POL, date=""), dict(POL, date="2026-13-40"), [POL]]
+    STR.file(machine("Read policy", policy=POL))
+    for n, b in enumerate(bad): STR.file(machine(f"Unread policy {n}", policy=b))
+    c = cands(); assert c["Read policy"]["state"] == "filed" and json.loads(c["Read policy"]["policy"]) == POL, c["Read policy"]
+    assert all(c[f"Unread policy {n}"]["state"] == "refused: no policy reading" for n in range(len(bad))), {n: c[f"Unread policy {n}"]["state"] for n in range(len(bad))}
+    assert STR.trial_move(JAN)["title"] == "Read policy"
 
 def test_one_trial_at_a_time_and_the_next_one_four_weeks_later(setting):
     from whatifs.org import memos as MEMO
@@ -793,7 +892,7 @@ def test_a_class_b_candidate_on_a_cell_that_is_no_lever_is_parked_and_the_other_
     setting("STRATEGY_ON", "TRUE")
     STR.file(machine("Not a lever", how={"lever_class": "B", "target": "BUDGET_CEILING_INR", "value": "9000"}))
     STR.file(machine("For Shorts", how={"lever_class": "C", "target": "playbook:writer", "value": {"rule": "x" * 30, "for": "short"}}))
-    STR.file({"kind": "subject", "title": "A subject", "sources": SRC, "policy": "ok", "how": {}}); STR.file({"kind": "hand", "title": "His idea", "sources": SRC, "policy": "ok"})
+    STR.file({"kind": "subject", "title": "A subject", "sources": SRC, "policy": POL, "how": {}}); STR.file({"kind": "hand", "title": "His idea", "sources": SRC, "policy": POL})
     c = cands(); assert c["Not a lever"]["state"] == "parked: BUDGET_CEILING_INR is not a lever" and c["For Shorts"]["state"] == "parked: a rulebook trial is judged on long videos only"
     assert c["A subject"]["state"] == "parked: nothing in the pipeline can execute it yet" and c["His idea"]["state"] == "for his desk (B9)"
     assert STR.candidate_words() == "3 candidate(s) parked, 1 for your desk." and STR.trial_move(JAN) is None
@@ -803,6 +902,15 @@ def test_a_refused_ticket_drops_its_candidate_and_a_verified_one_runs(setting):
     row, memo = STR.decide_trial(STR.trial_move(JAN), JAN)
     core.store().append("Tickets", [{"id": row["ticket"], "state": "refused", "note": "the rulebook refuses the arm: repeats an existing rule"}])
     STR.settle(JAN + dt.timedelta(hours=2)); assert cands()["Dropped idea"]["state"] == "dropped: the rulebook refuses the arm: repeats an existing rule"
+
+def test_a_verified_ticket_runs_its_candidate_and_the_next_trial_can_open(setting):
+    """(audit F5) A verified trial's state: its candidate is "running since <date>" - never left in "trial", which would end the arm book after its first trial."""
+    setting("STRATEGY_ON", "TRUE"); STR.file(machine("Kept idea"), JAN)
+    row, memo = STR.decide_trial(STR.trial_move(JAN), JAN)
+    core.store().append("Tickets", [{"id": row["ticket"], "state": "verified", "note": "verified"}])
+    import re; STR.settle(JAN + dt.timedelta(hours=2)); assert re.fullmatch(r"running since \d{4}-\d{2}-\d{2}", cands()["Kept idea"]["state"]), cands()["Kept idea"]
+    STR.file(machine("Next idea"), JAN + dt.timedelta(hours=3))
+    nxt = STR.trial_move(JAN + dt.timedelta(days=core.S("TRIAL_GAP_DAYS", float) + 1)); assert nxt is not None and nxt["title"] == "Next idea", nxt
 
 def test_the_stand_in_list_is_filed_only_in_fake_mode_with_its_switch_and_its_rule_passes_the_rulebook(setting):
     from whatifs import playbook as PB, fakes as FK
@@ -954,7 +1062,10 @@ def test_every_card_v4_sends_names_its_default_and_a_deadline_unless_the_memo_ke
         return out
     seen, taken, ideas = [], 0, 0
     for rel in ("whatifs/org/strategy.py", "whatifs/org/risk.py", "whatifs/org/desk.py"):
-        for c in calls(open(os.path.join(ROOT, rel), encoding="utf-8").read()):
+        src_ = open(os.path.join(ROOT, rel), encoding="utf-8").read()                    # audit F9: no card is sent under another name (an alias of notify or its send)
+        assert not re.search(r"from whatifs\.notify import|import notify as (?!NT\b)|\bsend\s*=\s*NT\.send", src_), rel
+        for c in calls(src_):
+            assert not re.search(r"\bdefault=(\"\"|''|None)\s*[,)]", c) and not re.search(r"\bexpires_h=(None|0)\s*[,)]", c), (rel, c[:80])      # audit F9: an empty default or no deadline
             kind = re.match(r'NT\.send\(\s*"([a-z_]+)"', c).group(1); seen.append(kind)
             is_taken = kind == "desk" and "desk|taken|" in c; taken += is_taken; ideas += kind == "idea"      # B-OWNER step 5 (R1-110): the two standing rows
             assert "default=" in c or is_taken or kind == "idea", (rel, kind)
