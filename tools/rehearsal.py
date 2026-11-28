@@ -3,6 +3,10 @@ import os, re, json, shutil, datetime as dt
 import numpy as np
 from whatifs import checkpoint as CK
 
+# U1Q-256 (V4 audit F10): the rehearsal month's decision (rule SHORT_ARMS: metric shorts_engaged_first_days, board shorts, up) as he must read it - typed here,
+# never read from strategy.text_of, so a text_of that drops or garbles the sentence fails the rehearsal and tests/test_v12_u1fix_256.py
+STRATEGY_TOLD_TAIL = ". It should move the Shorts views that count: the views a Short holds in its first days up. Nothing to do - tap Undo to take it back."
+
 class ToneVoice:
     SR = 24000
     def __init__(self): self.packs = {"NARRATOR": 150}; self.pack = 150
@@ -202,6 +206,8 @@ def run(ep_id=None):
         dec4 = next(x for x in st.rows("Decisions") if x.get("key") == "SHORT_SHARE_S2" and x.get("state") == "undone")
         act4 = next(a for a in st.rows("Owner_Actions") if a.get("kind") == "strategy" and dec4["id"] in str(a.get("buttons")))
         assert act4["text"] == STR4.text_of(dec4), ("the owner was not told the decision word for word", act4["text"][:200], STR4.text_of(dec4)[:200])
+        assert act4["text"].startswith("Strategy decided: ") and f" ({dec4['key']} {dec4['old']} -> {dec4['new']}). Why: " in act4["text"] and act4["text"].endswith(STRATEGY_TOLD_TAIL), \
+            ("the decision was not told against the words typed here (V4 audit F10: text_of compared with itself)", act4["text"][-220:])      # U1Q-256: an independent source
         n4 = sum(1 for x in st.rows("Decisions") if x.get("rule") not in ("HAND", "WATCH", "RISK") and x.get("state") not in ("judged", "hand", "watch"))
         u4 = sum(1 for x in st.rows("Decisions") if x.get("state") == "undone")
         STRATEGY_SAID[:] = [said4]                                                           # the sweep's rehearsal branch takes these words (a second walk would plant twice)
