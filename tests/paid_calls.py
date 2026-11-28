@@ -76,12 +76,21 @@ V12V1_ADDED = {"image": 2}
 # v12 V1b (the layman test): the promise line-up - one small call to a cheap reader of each model family, once per video (saved with the plan).
 V12V1B_ADDED = {"text:probe_gemini": 1, "text:probe_claude": 1}
 
+# v12 V4b (step 3b): the launch flagship's sequel record - ONE call (salvo.seal; route "sequel"; costguard line salvo_sequel), only in the flagship's production.
+V4B_FLAGSHIP_ADDED = {"text:sequel": 1}
+
+# v12 V4b (step 7): the psyche tags - ONE call a long video and ONE a Short (psyche.tag; route "psyche"; costguard line psyche_tags), only with
+# PSYCHE_TAGS_ON (the older tests run with it FALSE: conftest's OLD_V4B); the early tag of step 7b is a second call only when a drive led 2 of the last 4.
+V4B_PSYCHE_ADDED = {"text:psyche": 1}
+V4B_DEPTH_ADDED = {"text:depth": 1}          # v12 V4b step 8a: the depth pass (a launch pair video while the lane is open; documented, no test reads the V4B_ dicts)
+V4B_CHALLENGER_ADDED = {"text:challenger": 1}          # v12 V4b step 8b: per card drawn (hook, title: a long video; short: a Short) while the lane is open; a Short adds the second jury (short_first_line_jury: two judges x JURY_ORDERINGS orders on two sentences)
+
 # v12 V2c-b2b1 (the opening): what a long video that opens on its Short's footage NO LONGER pays, against one that opens on pictures of its own (a video
 # under an override; every video of the older tests, which run with the ladder off - so the baseline above is unchanged). tests/test_v12_opening_e2e.py
 # makes both and compares.
 V12V2CB2B_REMOVED = {"clip_kling": 1,     # the animated scene at second 0: the Short's footage is there, already paid (about Rs 39)
                      "image_ref": 1,      # ... and its reference-locked start frame (about Rs 6)
-                     "text:hooks": 1,     # the hook lab's ten lines: the first line is the Short's own hook
+                     "text:hooks": 1,     # the hook lab's ten lines: the first line is the Short's own hook (measured where the Short's hook holds a question or a 'you'; on V4's C25 road the lab runs - the estimate carries its line as a ceiling, V4b step 0b)
                      "text:critic": 1}    # ... and the judge of those ten lines
 
 # v12 V2c-b2b (the cut-downs): since this batch the counter also sees the key art and the voice jobs (always paid, never counted: other modules hold their

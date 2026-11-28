@@ -173,16 +173,27 @@ def _guard_alert():
     except Exception: pass
     set_setting("BUDGET_GUARD_ALERTED", mk)
 
+def _org_wired_caps():
+    """{department: monthly cap} of exactly the departments that think for money AND are wired (D2 and D3 only while research is on); {} in Runway or with the organisation off."""
+    if budget_mode() == "runway": return {}
+    from whatifs.org import runner as ORG, registry as REG
+    if not ORG.on(): return {}
+    caps = REG.caps(); res = S("RESEARCH_ON", bool)
+    return {d: float(caps[d]) for d in caps if d in REG.ENTRY and (res or d not in ("D2", "D3"))}
+
+def org_caps_inr():
+    """v12 V4b step 9 (memo 3.9): the sum of the caps of exactly the departments org_left_inr counts - the part of the envelope production already keeps back."""
+    try: return round(sum(_org_wired_caps().values()), 2)
+    except Exception as e:
+        log(f"organisation caps not computed: {str(e)[:100]}", "WARN"); return 0.0
+
 def org_left_inr():
     """v12 B5: the organisation's own thinking money not yet spent this month - the unspent part of the monthly caps of the WIRED departments that
     think for money (R&D Rs 300 and the Review Board Rs 120 today, while research is on) - is never production money. 0 in Runway or with the
-    organisation off. Without this the month's plan would count the same rupees twice."""
-    if budget_mode() == "runway": return 0.0
+    organisation off. Without this the month's plan would count the same rupees twice. V4b step 9: built on org_caps_inr's departments."""
     try:
-        from whatifs.org import runner as ORG, registry as REG
-        if not ORG.on(): return 0.0
-        caps = REG.caps(); res = S("RESEARCH_ON", bool)
-        return round(sum(max(0.0, float(caps[d]) - REG.spent(d)) for d in caps if d in REG.ENTRY and (res or d not in ("D2", "D3"))), 2)
+        from whatifs.org import registry as REG
+        return round(sum(max(0.0, cap - REG.spent(d)) for d, cap in _org_wired_caps().items()), 2)
     except Exception as e:
         log(f"organisation reserve not computed: {str(e)[:100]}", "WARN"); return 0.0
 
@@ -311,7 +322,7 @@ def premium_images():
 
 def long_kind():
     """Which long video the NEXT one is, for the estimate: 'ladder' = a promoted Short waits for it and it will open on that Short's footage (one
-    scene and one start picture fewer, no hook lab); else 'long' (an override, or the ladder off: it opens on its own pictures)."""
+    scene and one start picture fewer; its hook lab a ceiling, run only when the Short's hook has no question and no 'you'); else 'long' (an override, or the ladder off: it opens on its own pictures)."""
     try:
         from whatifs import ladder as LAD, opening as OP
         return "ladder" if (LAD.on() and OP.on() and LAD.waiting() and not str(S("OWNER_NEXT_PREMISE") or "").strip()) else "long"

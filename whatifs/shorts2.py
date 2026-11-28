@@ -67,7 +67,7 @@ def _order_premise(q):
     st = store(); key = q.get("video_key")
     from whatifs import ladder as LAD
     lr = LAD.order_row(key)                                                                             # v12 V4: a long video's order finds its Short's topic
-    if lr and (lr.get("premise") or lr.get("topic")): return lr.get("premise") or lr.get("topic")
+    if lr and lr.get("state") not in ("OVERRIDE", "OVERRIDE_USED") and (lr.get("premise") or lr.get("topic")): return lr.get("premise") or lr.get("topic")      # v12 V4b step 6c (memo 3.6, act e): an override row's topic is its own id (ladder.py 250) - its video's order reads the episode's premise, else its title
     src = next((e for e in st.rows("Episodes") if e.get("episode_id") == key), None) or next((s for s in st.rows("Specials") if s.get("id") == key), {})
     return src.get("premise") or src.get("title") or key
 
@@ -174,6 +174,30 @@ def valid(sc):
         elif not str(b.get("role") or "").strip(): p.append(f"beat {i + 1} has no role")
     return p
 
+def _first_line_contest(sc, fmt, hist, topic, ep):
+    """v12 V4b step 8b (memo 3.8 B5, CARD SHORT): a Short's FIRST LINE, never its script. When the card is drawn for this episode, ONE challenger line; the
+    second jury (R2.jury of [the writer's first line, the challenger's]) picks; the challenger's line replaces the first line ONLY when SEAT.script_issues of
+    the changed script is empty (the hook's length and the hand-back still hold), else the writer's line stays. ONE Contests row; nothing else changes."""
+    from whatifs import models as M, room2 as R2
+    from whatifs.org import salvo as SAL
+    if not M.challenger("short", ep): return sc
+    lines = FMT.short_lines(sc); beats = (sc or {}).get("beats") or []
+    if not lines or not lines[0] or not isinstance(beats[0], dict): return sc
+    try:
+        out = M.ask(M.challenger_role(), 'You write ONE new first sentence for the Short below: a different angle that makes a scrolling viewer stop. Do not change the idea. Return JSON only: {"line": "<one sentence>"}',
+                    f"PREMISE: {topic.get('premise', '')}\nTHE SHORT'S LINES:\n" + "\n".join(lines), episode=ep, fake_key="challenger_line", max_tokens=300, temperature=0.9)
+        new = str((out or {}).get("line") or "").strip() if isinstance(out, dict) else ""
+        if not new or new == lines[0]: return sc
+        win, _ = R2.jury([lines[0], new], "Which first sentence would make you stop scrolling? Judge only that.", "", ep, "short_line")
+    except Exception as e: log(f"short first line challenger skipped: {scrub(e)}", "WARN", ep); return sc
+    took = False
+    if win == 1:
+        ch = dict(sc); ch["beats"] = [dict(b) if isinstance(b, dict) else b for b in beats]; ch["beats"][0]["line"] = new
+        if not SEAT.script_issues(ch, fmt, hist): sc, took = ch, True
+    try: SAL.contest("short", ep, 2, 1, took, "family: " + ("challenger" if took else "writer") + " won")
+    except Exception as e: log(f"short contest not written: {scrub(e)}", "WARN", ep)
+    return sc
+
 def write(topic, fmt, hook, ep, hist):
     """SHORTS_VARIANTS scripts in the Short's format (one call each, nobody sees another's answer). A script the viewer's seat finds clean goes to the
     blind jury (strong judges of two model families see every candidate); the winner gets ONE fix with every measured problem named."""
@@ -193,7 +217,9 @@ def write(topic, fmt, hook, ep, hist):
     if not good: raise RuntimeError("no Short script had the shape asked for: " + "; ".join(", ".join(valid(o)) for o in outs)[:200])
     clean = [g for g in good if not SEAT.script_issues(g, fmt, hist)]; pool = clean or good
     win, _info = R2.jury(["\n".join(FMT.short_lines(g)) for g in pool], FMT.short_rubric(fmt), f"Premise: {topic['premise']}", ep, "short")
-    sc = dict(pool[win]); fixed = 0; left = SEAT.script_issues(sc, fmt, hist)
+    sc = dict(pool[win]); fixed = 0
+    sc = _first_line_contest(sc, fmt, hist, topic, ep)                  # v12 V4b step 8b: the challenger's first line, judged blind, kept only if the seat finds the script clean
+    left = SEAT.script_issues(sc, fmt, hist)
     if left:
         fx = ask("short_writer", system, base + "REWRITE this Short once. Keep the idea and what works; repair EXACTLY these measured problems:\n- " + "\n- ".join(left)
                  + "\nThe Short:\n" + json.dumps({k: sc.get(k) for k in ("title", "promise", "beats")}, ensure_ascii=False), episode=ep, fake_key="short_fix", max_tokens=1500)
@@ -489,6 +515,8 @@ def run(force=False, publish=True, now=None, episode_id=None):
         with FMT.short_using(fmt):
             sc = ORG.work("D14", "write", ep, lambda b: write(topic, fmt, arch, ep, hist), measure=m_write, topic=fmt)
             rec.update(title=sc["title"], script="\n".join(FMT.short_lines(sc)))
+            from whatifs.org import psyche as PSY            # v12 V4b step 7a (memo 3.7 (b)): the same ONE tag call on the premise, the title and each line - checked at the short gate (short_psyche), where nothing is paid yet
+            if PSY.on(): sc["_drives"] = PSY.tag(ep, PSY.short_items(topic["premise"], sc.get("title", ""), FMT.short_lines(sc)))
             v = ORG.work("D7", "short_voice", ep, lambda b: voice(sc, ep, wd), measure=m_voice)
             pl = ORG.work("D13", "short_seat", ep, lambda b: SEAT.shape(plan(sc, v["timeline"], fmt), sc, fmt), measure=SEAT.m_shape)
             ctx = {"ep": ep, "short": {"script": sc, "format": fmt, "hook": arch, "units": v["timeline"].get("units") or [], "plan": pl, "last": hist}}

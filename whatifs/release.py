@@ -283,9 +283,11 @@ def _rebuild(vid, now):
 
 def _youtube(row, path, digest, cov, tx, rec, now):
     from whatifs import publish as PUB, hdgate as HG
+    from whatifs.org import audience as AUD                                         # v12 V4b step 2: the Short's script_sha is the hash of the words a viewer hears
     body, want = want_youtube(tx); vid = str((rec or {}).get("native_id") or ""); first = not vid
     if first:
-        vid = PUB.yt_upload(path, tx["youtube"]["title"], tx["youtube"]["description"], tx["youtube"]["tags"], short=True, ai_label=S("AI_LABEL_DEFAULT", bool), now=now)
+        vid = PUB.yt_upload(path, tx["youtube"]["title"], tx["youtube"]["description"], tx["youtube"]["tags"], short=True, ai_label=S("AI_LABEL_DEFAULT", bool), now=now,
+                            script_sha=PUB.spoken_sha(AUD.spoken(row.get("script"))))
         took = _gated(vid)                                                          # CG-1: one read serves this line and the next (None = HD_Wait unread)
         if took is False and S("HD_GATE_ON", bool): took = _rebuild(vid, now)      # CI-1: this pass's switch took it private (publish.py 86) but its row is missing
         if took or (took is None and S("HD_GATE_ON", bool)): body["status"]["privacyStatus"] = "private"      # v12 B-OWNER (R18 (4 b)): what was really sent - the gate took it up private (unread: this pass's switch decided the upload, publish.py 86)

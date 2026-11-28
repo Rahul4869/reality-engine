@@ -162,7 +162,7 @@ PLAYBOOK_SEED = [
 
 AI_TELLS = ["delve", "tapestry", "in this video", "let's dive", "dive in", "buckle up", "imagine a world", "fascinating", "it's important to note",
             "in conclusion", "embark", "journey", "unleash", "realm", "testament to", "intricate", "moreover", "furthermore", "whether you're",
-            "stay tuned", "mind-blowing", "game-changer", "here's the thing", "let that sink in", "ever wondered", "in today's", "plethora", "navigate the"]
+            "stay tuned", "mind-blowing", "game-changer", "here's the thing", "let that sink in", "ever wondered", "in today's", "plethora", "navigate the", "we will explore"]
 
 def premise_rows():
     rows = []

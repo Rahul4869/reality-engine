@@ -642,10 +642,10 @@ def test_the_sweep_makes_an_id_bad_when_a_rule_was_not_walked(ladder):
 def test_the_batch_is_wired_protected_and_documented():
     prot = open(os.path.join(ROOT, "tools", "repair.py"), encoding="utf-8").read()
     assert '"whatifs/motion.py"' in prot and '"whatifs/stock.py"' in prot and {"whatifs/motion.py", "whatifs/stock.py"} <= set(REG.DEPTS["D6"]["wraps"])
-    stage = {f[0]: f[1] for f in CON.FEATURES}; assert len(stage) == len(CON.FEATURES) == 76          # v12 DRAWN-b L1a: + short_look. v12 DRAWN step 1: + drawn_plan; step 2: + drawn_shown. v12 V4 step 3: + strategy_live (BY DESIGN). v12 V1c step 1: + viewer_floor; step 3: + makers_line; step 4: + one_story (pins moved BY DESIGN)
+    stage = {f[0]: f[1] for f in CON.FEATURES}; assert len(stage) == len(CON.FEATURES) == 81          # RB-U1-c: re-counted on the U1 stack (81). v12 V4b step 8a: + depth_frozen (BY DESIGN). v12 V4b step 6a: + appetite_plan (BY DESIGN). v12 V4b step 3b: + cliffhanger (a pin moved BY DESIGN). v12 DRAWN-b L1a: + short_look. v12 DRAWN step 1: + drawn_plan; step 2: + drawn_shown. v12 V4 step 3: + strategy_live (BY DESIGN). v12 V1c step 1: + viewer_floor; step 3: + makers_line; step 4: + one_story (pins moved BY DESIGN)
     assert (stage["moving_share"], stage["stock_share"], stage["short_moving"], stage["short_sound"], stage["living_characters"]) == ("final", "final", "short_file", "short_file", "final")
     assert [REG.check_owner(k) for k in ("moving_share", "stock_share", "short_moving", "short_sound")] == ["D6", "D6", "D6", "D7"]
-    assert RND.SHOW_CHECKS == 64 and all(k not in RND.ORG_CHECKS and k in RND.metrics() for k in ("moving_share", "stock_share", "short_moving", "short_sound"))
+    assert RND.SHOW_CHECKS == 67 and all(k not in RND.ORG_CHECKS and k in RND.metrics() for k in ("moving_share", "stock_share", "short_moving", "short_sound"))
     assert REG.GATE_RUNS["short_file"] == ("D8", "short_file_gate") and ("whatifs/shorts2.py", "short_file_gate") in REG.ENTRY["D8"] and REG.EPISODE_RUNS["short_file"][-1] == ("D14", "make")
     for k, dept, owner, checks in (("MOVING_SHARE_LONG", "D1", "", ("moving_share",)),      # v12 V4: moved to D1 (BY DESIGN)
                                     ("MOVING_SHARE_MIN_LONG", "D6", "down", ("moving_share",)), ("STOCK_SHARE_MAX_PCT", "D6", "up", ("stock_share",)),

@@ -3,6 +3,7 @@
 # the month's fit, the month's cover kept, an overrun as a memo to Operations. The cap stays a breaker: the lane covers at most CREDIT_COVER_MONTH_MAX_INR a month.
 from __future__ import annotations
 import json, time
+import datetime as dt
 from whatifs.core import S, log, store, iso, now_utc, set_setting, scrub
 
 COVER_TTL_S = 600                     # tab Cost_Log is read at most once in this many seconds a process (forget() for tests; the family of open issue 214)
@@ -29,12 +30,103 @@ def _held():
     except (TypeError, ValueError): d = {}
     return d if isinstance(d, dict) else {}
 
+def lines(now=None):
+    """v12 V4b step 10 (memo 3.10, LINES AS DATA): the credit's lines sorted by `until`: CLAUDE_CREDIT_LINES (JSON [{usd, from, until}], his cell) or, with it
+    empty, V4's three cells as ONE line. Each: {usd, from, until, amount_inr}. A line that does not parse or has no amount or date is dropped."""
+    raw = str(S("CLAUDE_CREDIT_LINES") or "").strip(); rate = S("USD_INR", float) or 99.0; out = []
+    try: data = json.loads(raw) if raw else [{"usd": S("CLAUDE_CREDIT_USD_MONTH", float), "from": S("CLAUDE_CREDIT_FROM"), "until": S("CLAUDE_CREDIT_UNTIL")}]
+    except (TypeError, ValueError): data = []
+    for d in data if isinstance(data, list) else []:
+        try: usd = max(0.0, float(d.get("usd") or 0)); frm = str(d.get("from") or "").strip()[:10]; until = str(d.get("until") or "").strip()[:10]
+        except (AttributeError, TypeError, ValueError): continue
+        if usd > 0 and frm and until: out.append({"usd": usd, "from": frm, "until": until, "amount_inr": round(usd * rate, 2)})
+    return sorted(out, key=lambda l: (l["until"], l["from"]))
+
+def _spend(now):
+    """Each meter row (provider anthropic, not a summary) is charged to the line with the OLDEST expiry that is open on the row's day (our allocation: the
+    provider's page does not order two monthly lines). -> (lines, spent_inr per line, spent before this month per line)."""
+    L = lines(now); first = now.strftime("%Y-%m-01"); sp = [0.0] * len(L); bf = [0.0] * len(L)
+    for r in _cost_rows():
+        if r.get("provider") != "anthropic" or r.get("basis") == "summary": continue
+        day = str(r.get("ts") or "")[:10]
+        for i, l in enumerate(L):                                                   # sorted by until: the first line open on that day is the oldest expiry
+            if l["from"] <= day <= l["until"]:
+                v = _f(r.get("inr")); sp[i] += v; bf[i] += v if day < first else 0.0; break
+    return L, sp, bf
+
+def _credit_of_lines(now):
+    """credit()'s sums over the lines OPEN today (the shape V4's readers use): the amount, the spend charged to them, the covered part of this month; `until` = the
+    nearest end among them (what lapses first). The day after every `until` nothing is open."""
+    L, sp, bf = _spend(now); today = now.strftime("%Y-%m-%d"); floor = S("CREDIT_FLOOR_INR", float)
+    op = [i for i, l in enumerate(L) if l["from"] <= today <= l["until"]]
+    amount = sum(L[i]["amount_inr"] for i in op); spent = sum(sp[i] for i in op); before = sum(bf[i] for i in op); left = amount - spent
+    usable = max(0.0, amount - floor); covered = max(0.0, min(spent, usable) - min(before, usable))
+    until = min((L[i]["until"] for i in op), default=(L[-1]["until"] if L else ""))
+    return {"open": bool(on() and op and left >= floor), "amount_inr": round(amount, 2), "spent_inr": round(spent, 2), "left_inr": round(left, 2),
+            "covered_month": round(covered, 2), "until": until}
+
+def line_state(now=None):
+    """v12 V4b step 10 (THE CURVE, THE REPORT): per line not yet ended {usd, from, until, amount_inr, open, spent_inr, left_inr, target_inr, behind_inr, will_lapse_inr,
+    state}. target = amount x elapsed / total x CREDIT_TARGET_PCT / 100; behind_inr = target - spent (negative = ahead); state "behind"/"ahead" only beyond
+    CREDIT_CURVE_BAND_PCT of the amount, else "on". will_lapse = max(0, left - CREDIT_FLOOR_INR - day_est x days_left): day_est = the line's own spend / the days
+    elapsed since its `from` (0 on its first day) - the meter's measured pace, never a forecast."""
+    now = now or now_utc(); L, sp, _ = _spend(now); today = now.date(); floor = S("CREDIT_FLOOR_INR", float); out = []
+    for l, s in zip(L, sp):
+        try: d0, d1 = dt.date.fromisoformat(l["from"]), dt.date.fromisoformat(l["until"])
+        except ValueError: continue
+        if d1 < today: continue
+        total = max(1, (d1 - d0).days); elapsed = min(total, max(0, (today - d0).days)); days_left = max(0, (d1 - today).days)
+        amount = l["amount_inr"]; left = amount - s; target = amount * elapsed / total * S("CREDIT_TARGET_PCT", float) / 100.0
+        day_est = s / elapsed if elapsed else 0.0; band = amount * S("CREDIT_CURVE_BAND_PCT", float) / 100.0
+        out.append({**l, "open": d0 <= today <= d1, "spent_inr": round(s, 2), "left_inr": round(left, 2), "target_inr": round(target, 2), "behind_inr": round(target - s, 2),
+                    "will_lapse_inr": round(max(0.0, left - floor - day_est * days_left), 2),
+                    "state": "behind" if target - s > band else ("ahead" if s - target > band else "on")})
+    return out
+
+def lapse_lines(now=None):
+    """v12 V4b step 10 (memo 3.10 THE REPORT): one sentence per OPEN line - what WILL lapse at the measured pace, "Claude credit <until>: Rs U used of Rs A; at this pace
+    Rs L will lapse on that day."; [] while the lane is off. The weekly line (strategy.weekly), the Money tab's field (dash) and the morning message (digests.head) all read THIS."""
+    return [f"Claude credit {ls['until']}: Rs {ls['spent_inr']:.0f} used of Rs {ls['amount_inr']:.0f}; at this pace Rs {ls['will_lapse_inr']:.0f} will lapse on that day."
+            for ls in (line_state(now) if on() else []) if ls["open"]]
+
+_SWEPT = set()                      # (until, job) the sweep already ran or failed in this process: a job that raised is not tried again in that line
+
+def sweep(now=None):
+    """v12 V4b step 10 (THE SWEEP): in a line's last CREDIT_SWEEP_H hours, while its left stays above CREDIT_FLOOR_INR (not with CREDIT_TRUE_ZERO_OK TRUE), RUN in
+    this order (a) premise.refill_bench(force=True) and (b) preprod.run() - WITHOUT force, so it obeys the pair rule and its one waiting draft. Both on their own
+    half-price roads. Returns the jobs run ('<until>:<job>'); a job that raised is logged and never tried again in that line."""
+    now = now or now_utc(); ran = []
+    if not on(): return ran
+    zero = S("CREDIT_TRUE_ZERO_OK", bool); floor = S("CREDIT_FLOOR_INR", float)
+    for ls in line_state(now):
+        if not ls["open"]: continue
+        end = dt.datetime.fromisoformat(ls["until"] + "T23:59:59+00:00"); hours = (end - now).total_seconds() / 3600.0
+        if not 0 <= hours <= S("CREDIT_SWEEP_H", float): continue
+        for job in ("refill_bench", "preprod"):
+            tag = (ls["until"], job)
+            if tag in _SWEPT: continue
+            forget(); cur = next((x for x in line_state(now) if x["until"] == ls["until"]), ls)
+            if not zero and cur["left_inr"] <= floor: break
+            _SWEPT.add(tag)
+            try:
+                if job == "refill_bench":
+                    from whatifs import premise as PRM
+                    PRM.refill_bench(force=True)
+                else:
+                    from whatifs import preprod as PRE
+                    PRE.run()
+                ran.append(f"{ls['until']}:{job}")
+            except Exception as e: log(f"finance: the sweep job {job} of the line ending {ls['until']} raised and is not tried again: {scrub(e)[:120]}", "WARN")
+    return ran
+
 def credit(now=None):
     """The Claude credit's meter (ours: the balance is not readable). {open, amount_inr, spent_inr, left_inr, covered_month, until}: the Claude rows
     (provider anthropic, not a summary) dated inside [CLAUDE_CREDIT_FROM, CLAUDE_CREDIT_UNTIL]; covered_month = what of them fell in this month
     and inside the usable part (the amount less CREDIT_FLOOR_INR). Open = the CEO on, an amount, both dates set, today inside, and at least the
-    floor left."""
-    now = now or now_utc(); amount = max(0.0, S("CLAUDE_CREDIT_USD_MONTH", float)) * (S("USD_INR", float) or 99.0)
+    floor left. v12 V4b step 10: with CLAUDE_CREDIT_LINES set, the same figures are the sums over the lines open today."""
+    now = now or now_utc()
+    if str(S("CLAUDE_CREDIT_LINES") or "").strip(): return _credit_of_lines(now)
+    amount = max(0.0, S("CLAUDE_CREDIT_USD_MONTH", float)) * (S("USD_INR", float) or 99.0)
     frm, until = str(S("CLAUDE_CREDIT_FROM") or "").strip()[:10], str(S("CLAUDE_CREDIT_UNTIL") or "").strip()[:10]
     floor = S("CREDIT_FLOOR_INR", float); today = now.strftime("%Y-%m-%d"); first = now.strftime("%Y-%m-01")
     rows = [r for r in _cost_rows() if r.get("provider") == "anthropic" and r.get("basis") != "summary" and frm <= str(r.get("ts") or "")[:10] <= until] if (amount > 0 and frm and until) else []
@@ -118,7 +210,8 @@ def watch(brief):
         held[mk] = c["covered_month"]; set_setting("CLAUDE_CREDIT_COVERED", json.dumps(held, sort_keys=True))
     memos, resolved, seen = overruns(st, now)
     if seen: set_setting("FINANCE_SEEN_TS", seen)
+    swept = sweep(now)                                                              # v12 V4b step 10: in a line's last CREDIT_SWEEP_H hours (the daily learning job: nobody waits)
     acts = {m["id"]: ("deferred", f"read by Finance: a {m.get('type') or 'memo'} is counted in the month's fit") for m in getattr(brief, "memos", None) or []}
-    return Out(output={"fit": fit, "credit": c, "overruns": len(memos), "resolved": resolved}, memos=memos, memo_actions=acts,
+    return Out(output={"fit": fit, "credit": c, "overruns": len(memos), "resolved": resolved, "swept": swept}, memos=memos, memo_actions=acts,
                measures={"fit_need_inr": fit["need_inr"], "fit_free_inr": fit["free_inr"], "fits": int(fit["fits"]), "credit_open": int(c["open"]),
                          "covered_month_inr": round(c["covered_month"], 0), "overrun_memos": len(memos), "overruns_resolved": resolved})

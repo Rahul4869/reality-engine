@@ -32,7 +32,20 @@ def coherent(title, thumb):
     tw = str(thumb or "").split()
     return 1 <= len(tw) <= 4 and len(_words(title) & _words(thumb)) <= 1
 
-def variants(pkg, spine=None):
+def _challenger_titles(pkg, spine, episode):
+    """v12 V4b step 8b (memo 3.8 B5, CARD TITLE; DQ 2): ONE second title set from role challenger joins the packager's set BEFORE the ordering and the
+    validation of titles (nothing after that point changes). [] without an episode, when the card is not drawn, or when the call failed (logged)."""
+    from whatifs import models as M
+    from whatifs.core import log, scrub
+    if not episode or not M.challenger("title", episode): return []
+    try:
+        out = M.ask(M.challenger_role(), "Write up to 3 YouTube titles for the SAME video, each a different angle of its premise. " + TITLE_BRIEF + ' Return JSON only: {"titles": ["...", "..."]}',
+                    "PREMISE: " + str((spine or {}).get("premise") or "")[:300] + "\nTHE CURRENT TITLE: " + str(pkg.get("title") or "")[:120], episode=episode, fake_key="challenger_title", max_tokens=800, temperature=0.9)
+    except Exception as e: log(f"title challenger skipped: {scrub(e)}", "WARN", episode); return []
+    th = pkg.get("thumb_text_c") or pkg.get("thumb_text")
+    return [(str(t).strip(), th) for t in ((out.get("titles") if isinstance(out, dict) else None) or [])[:3] if str(t or "").strip()]
+
+def variants(pkg, spine=None, episode=None):
     """Up to PKG_VARIANTS (title, thumb_text) pairs: A = the chosen package, B = its rescue title, C = the best other candidate that passes the title linter
     and the pair-coherence check. Never the source title of an outlier (demand) premise."""
     from whatifs import growth as GR
@@ -42,6 +55,7 @@ def variants(pkg, spine=None):
     cands += [(pkg.get("title_b"), pkg.get("thumb_text_b") or pkg.get("thumb_text"))]
     for t in (pkg.get("titles") or []) + (spine.get("title_candidates") or []):
         cands.append((t, pkg.get("thumb_text_c") or pkg.get("thumb_text")))
+    cands += _challenger_titles(pkg, spine, episode)                  # v12 V4b step 8b: before the ordering and the validation below
     from whatifs import v91 as V91
     live = bool(str(pkg.get("title") or "").strip())                 # v9.3 (fix): A is the pair already LIVE on YouTube (episode.py uploads pkg["title"]);
     if V91.on("TITLE_SHOCK_ON"):                                      # v9.2: natural English first, then the strongest scroll-stopper; v9.3: only B / C are re-ranked
@@ -96,6 +110,25 @@ def native_test(ep):
     if not e or not e.get("yt_id"): return ""
     st.update("Episodes", "episode_id", ep, {"pkg_check": {"action": "native test: YouTube Test & Compare (the rescue stands aside)", "at": iso()}})
     return f"https://studio.youtube.com/video/{e['yt_id']}/edit"
+
+def may_edit(e, now=None, clock=True):
+    """v12 V4b step 2 (B4 the doors, ALGORITHM A5, A6): may code change this public video's title or thumbnail now? (ok, why) for an Episodes row.
+    Refused (a) while its pkg_check holds a YouTube Test & Compare mark younger than PKG_TEST_DAYS, (b) while the video is younger than
+    VERDICT_EDIT_DAYS_LONG days from its slot. A mark whose time, or a slot that cannot be read, is refused (its clock is unknown). WHO NEVER ASKS:
+    his own pick before release (apply_pick) and the first thumbnails. ANTI_MYTH_ON FALSE: (True, ""). clock=False (v12 V4b step 6c, act c:
+    Part 2's link in the flagship's description at its first hours) asks rule (a) alone."""
+    if not S("ANTI_MYTH_ON", bool): return True, ""
+    now = now or now_utc(); pk = e.get("pkg_check")
+    try: pk = pk if isinstance(pk, dict) else (json.loads(pk) if str(pk or "").strip() else {})
+    except Exception: pk = {}
+    if str((pk or {}).get("action") or "").startswith("native test"):
+        t = parse_iso(pk.get("at")); days = S("PKG_TEST_DAYS", float)
+        if not t or now - t < dt.timedelta(days=days): return False, f"his YouTube Test & Compare runs ({days:g} days from its start): nothing is edited inside a test"
+    if not clock: return True, ""
+    t = parse_iso(e.get("slot_et")); days = S("VERDICT_EDIT_DAYS_LONG", float)
+    if not t: return False, "its slot cannot be read, so its clock is unknown"
+    if now - t < dt.timedelta(days=days): return False, f"it is younger than {days:g} days: nothing is edited before its clock"
+    return True, ""
 
 def pick_deadline(ep):
     """v9.3.1 (L4): the last moment a pick is applied = the episode's slot minus PICK_DEADLINE_BEFORE_SLOT_H. None when the slot is unknown."""
@@ -192,6 +225,8 @@ def rotate_tick():
             st.update_where("Packaging_Tests", {"episode_id": ep, "variant": r["variant"]}, {"window_end": iso(), "views_end": v_now if v_now is not None else "", "views_per_hour": vph,
                                                                                           "status": "TESTED"})
         if k >= len(rows):                                            # the test is over: the best window wins
+            ok, why = may_edit(e)                                      # v12 V4b step 2: asked before the switch, and before any window is closed
+            if not ok: log(f"packaging test {ep}: the winner is not switched yet - {why}", episode=ep); continue
             if live.get("status") == "LIVE": close(live)
             done = [r for r in st.rows("Packaging_Tests") if r.get("episode_id") == ep]
             best = max(done, key=lambda r: float(r.get("views_per_hour") or 0)); _switch(best)
@@ -199,6 +234,9 @@ def rotate_tick():
             log(f"packaging test {ep}: variant {best['variant']} wins ({best.get('views_per_hour')} views/hour)", episode=ep); continue
         want = rows[k]
         if live.get("variant") != want["variant"] or not live.get("window_start"):
+            if live.get("variant") != want["variant"]:
+                ok, why = may_edit(e)                                  # v12 V4b step 2: asked before the switch, and before the window is closed
+                if not ok: log(f"packaging test {ep}: variant {want['variant']} is not switched in yet - {why}", episode=ep); continue
             if live.get("window_start"): close(live)
             if live.get("variant") != want["variant"]: _switch(want)
             st.update_where("Packaging_Tests", {"episode_id": ep, "variant": want["variant"]}, {"status": "LIVE", "window_start": iso(), "views_start": v_now if v_now is not None else ""})

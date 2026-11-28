@@ -12,6 +12,8 @@ def _slot_taken(slot):
 def due(now=None):
     """The slot pre-production should write for now, or None. One waiting draft at a time; never inside the production window."""
     if not S("PREPROD_ON", bool): return None
+    from whatifs.org import salvo as SAL                     # v12 V4b (step 3a): pre-production stands aside while the launch flagship is due (its pair is written inside production, at full price)
+    if SAL.flagship_due(): return None
     if any(r.get("status") == "APPROVED" for r in store().rows("Script_Previews")): return None
     from whatifs.manage import next_slots
     now = now or now_utc(); lead, lo = S("PREPROD_LEAD_HOURS", float), S("PREPROD_MIN_LEAD_HOURS", float)

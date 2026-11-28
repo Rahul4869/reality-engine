@@ -14,6 +14,9 @@ def _handle(name):
 def fetch_comments(vid, n=100):
     """[{id, author, text, published}] newest first (1 quota unit per 100). Untrusted."""
     if FAKE:
+        from whatifs import publish as PUB
+        planted = PUB._fault("youtube", "comments") or {}                     # v12 V4b step 5 (memo 3.5): a test plants what YouTube answers for one id
+        if vid in planted: return [dict(c) for c in planted[vid]][:max(0, int(n))]
         return [{"id": "c1", "author": "Ana", "text": "GUILTY. pillows can't fly", "published": iso()}, {"id": "c2", "author": "Bo", "text": "not guilty!! 0:42 teacup", "published": iso()},
                 {"id": "c3", "author": "Cy", "text": "B convinced me. How high would they go?", "published": iso()},
                 {"id": "c4", "author": "spam", "text": "free crypto giveaway http://x.y", "published": iso()},

@@ -274,13 +274,24 @@ def _plan(two, now=None):
     except Exception as e: log(f"dashboard: the next slots are not available ({type(e).__name__})", "WARN")
     return out
 
-def _owner_money(two):
-    """The Money tab's two new lines: his WhatsApp month (`costguard.owner_messages`, PART 8) and the treasury's note."""
-    out = {"whatsapp": {}, "treasury": {"note": NOTES["treasury"]}}
+def _owner_money(two, now=None):
+    """The Money tab's new lines: his WhatsApp month (`costguard.owner_messages`, PART 8), the treasury's note and (v12 V4b step 10) the credit's field."""
+    out = {"whatsapp": {}, "treasury": {"note": NOTES["treasury"]}, "credit": {}}
     if two:
         from whatifs import costguard as CG
         out["whatsapp"] = {**_section(CG.owner_messages), "src": "Cost_Log (item whatsapp)"}
+        out["credit"] = _section(_credit_field, now or now_utc())
     return out
+
+def _credit_field(now):
+    """v12 V4b step 10 (memo 3.10 THE REPORT (b)): the Money tab's field beside `costguard.lines_daily` - the two lines of the day (while the ring-fence is on) and, per OPEN
+    Claude-credit line, what WILL lapse at the measured pace (`finance.line_state`); every dict carries its `src`."""
+    from whatifs import costguard as CG
+    from whatifs.org import finance as FIN
+    src = "Cost_Log (provider anthropic) and CLAUDE_CREDIT_LINES"
+    return {"daily": CG.lines_daily(now) if S("RING_FENCE_ON", bool) else "", "src": src,
+            "lines": [{"until": ls["until"], "amount_inr": ls["amount_inr"], "spent_inr": ls["spent_inr"], "will_lapse_inr": ls["will_lapse_inr"], "behind_inr": ls["behind_inr"],
+                       "state": ls["state"], "src": src} for ls in (FIN.line_state(now) if FIN.on() else []) if ls["open"]]}
 
 def unsourced(snap):
     """NEVER A NUMBER WITHOUT ITS SOURCE (P13's lesson): every dict in `learning`, `plan`, `groups` and the new parts of `money` that carries a number
@@ -293,7 +304,7 @@ def unsourced(snap):
         elif isinstance(x, list):
             for v in x: walk(v)
     for k in ("learning", "plan", "groups"): walk(snap.get(k))
-    for k in ("whatsapp", "treasury"): walk((snap.get("money") or {}).get(k))
+    for k in ("whatsapp", "treasury", "credit"): walk((snap.get("money") or {}).get(k))
     return bad
 
 def _without(x, bad):

@@ -12,7 +12,7 @@ DEFAULTS = {}          # kind -> callable(row) run when the row expires unanswer
 
 def _ensure_handlers():
     """Every feature's answer/default handlers are known before an answer or a default runs (any entry point: email, dashboard, WhatsApp, tick)."""
-    for mod, fn in (("whatifs.builds", "ensure_registered"), ("whatifs.visual_lab", "register"), ("whatifs.wa", "register"), ("whatifs.caretaker", "register"), ("whatifs.bakeoff", "register"), ("whatifs.steward", "register"), ("whatifs.contract", "register"), ("whatifs.specials", "register"), ("whatifs.sheets", "register"), ("whatifs.breakout", "register"), ("whatifs.ladder", "register"), ("whatifs.replan", "register"), ("whatifs.org.memos", "register"), ("whatifs.org.execute", "register"), ("whatifs.org.floor", "register"), ("whatifs.org.look", "register"), ("whatifs.org.verdicts", "register"), ("whatifs.maker", "register"), ("whatifs.org.strategy", "register"), ("whatifs.org.risk", "register"), ("whatifs.org.desk", "register")):
+    for mod, fn in (("whatifs.builds", "ensure_registered"), ("whatifs.org.appetite", "register"), ("whatifs.visual_lab", "register"), ("whatifs.wa", "register"), ("whatifs.caretaker", "register"), ("whatifs.bakeoff", "register"), ("whatifs.steward", "register"), ("whatifs.contract", "register"), ("whatifs.specials", "register"), ("whatifs.sheets", "register"), ("whatifs.breakout", "register"), ("whatifs.ladder", "register"), ("whatifs.replan", "register"), ("whatifs.org.memos", "register"), ("whatifs.org.execute", "register"), ("whatifs.org.floor", "register"), ("whatifs.org.look", "register"), ("whatifs.org.verdicts", "register"), ("whatifs.maker", "register"), ("whatifs.org.strategy", "register"), ("whatifs.org.risk", "register"), ("whatifs.org.desk", "register")):
         try: getattr(__import__(mod, fromlist=[fn]), fn)()
         except Exception as e: log(f"handlers from {mod} not loaded: {scrub(e)[:80]}", "WARN")
 
@@ -22,7 +22,7 @@ def register(kind, on_answer=None, on_default=None):
 
 
 INFORM_KINDS = ("strategy", "desk")      # v12 V4: rows that tell him what was done ("Nothing to do"): never counted or listed as waiting for him, never expire
-STANDING_KINDS = INFORM_KINDS + ("idea", "decided_post")      # v12 B-OWNER: rows that tell him what was done, with an undo or a next step: never counted as waiting, never given an expiry by the inform rule (the older path reads INFORM_KINDS, word for word)
+STANDING_KINDS = INFORM_KINDS + ("idea", "decided_post", "appetite")      # v12 B-OWNER: rows that tell him what was done, with an undo or a next step: never counted as waiting, never given an expiry by the inform rule (the older path reads INFORM_KINDS, word for word)
 
 # ------------------------------------------------------------------ v12 B-OWNER: THE REGISTER - every kind of message to him, what it is and where it shows (data)
 ALARM, HOLD, CARD, INFORM = "alarm", "hold", "card", "inform"
@@ -40,7 +40,7 @@ KINDS = {
     **_kinds(CARD, "money", "budget_guard", "split", "clip_price", "scout_price"),
     **_kinds(CARD, "plan", "scout_deprecated", "model_switch", "model_plan", "model_new", "model_upgrade", "platform_change", "advisor"),
     # INFORM, what was done - by group
-    **_kinds(INFORM, "decided", "strategy", "decided_post", "pick_ack", "sheets_locked"),
+    **_kinds(INFORM, "decided", "strategy", "decided_post", "pick_ack", "sheets_locked", "appetite"),      # v12 V4b step 6c: "appetite" - the early release told, its Undo and Bring it back
     **_kinds(INFORM, "inputs", "desk", "idea"),
     **_kinds(INFORM, "posted", "scheduled", "live", "audio_drop", "below_bar", "slot_skipped", "api_audit_wait", "floor_kit", "hd_late", "look_run"),
     **_kinds(INFORM, "research", "comments_digest", "region", "similar_script", "slop"),
@@ -204,7 +204,7 @@ def _shape(kind, episode, buttons, default, expires_h, dedupe_key):
     stored with CARD_FALLBACK and 72 hours, an error is logged and one `card_rule` row a kind a day names it (nothing he is sent may be lost). A HOLD carries no expiry, whatever its caller gave: it never closes by time."""
     buttons = list(buttons or ()); k = klass(kind)
     if k == HOLD and not buttons: buttons = [("Done", "OK")]
-    if k == HOLD: expires_h = None                              # v12 B-OWNER (DQ-CR1): a hold never closes by time - its row stays OPEN until his tap, or until contract.hold_sweep finds the video no longer held
+    if k == HOLD and kind != "org_lever": expires_h = None                              # v12 B-OWNER (DQ-CR1): a hold never closes by time - its row stays OPEN until his tap, or until contract.hold_sweep finds the video no longer held
     if kind in WAITS: expires_h = None                              # FINISHED BY FABLE (CA2-12): a card for a thing still open never closes by time, whatever its caller gave
     if k == INFORM and kind not in STANDING_KINDS:
         if expires_h is None: expires_h = INFORM_KEEP_H

@@ -57,7 +57,8 @@ def opening_of(core, ep):
 def release_of(core, ep, r):
     """v12 V2c-b2b: (ok, words) - the long video of this id made NO cut-down reel and its release is ONE step. The slot is moved into the past, the
     tick must name its release, the release must end at LIVE, and the next tick must name no release; no reel file, cover or plan was made, nothing
-    is on the episode's reel cells, and every short video that went out is a standalone Short with a record on tab Release_Sheet."""
+    is on the episode's reel cells, and every short video that went out is a standalone Short with a record on tab Release_Sheet. The armed
+    launch flagship (cell SALVO_FLAGSHIP = this id) is judged on its files only; its release step is the salvo walk's."""
     from whatifs import manage as MG
     st = core.store(); out = os.path.dirname(str(r.get("master") or "")); bad = []
     junk = sorted(f for f in os.listdir(out) if re.match(r"(reel\d|cover\d|r\d_|clean\d)", f))
@@ -69,18 +70,20 @@ def release_of(core, ep, r):
     try: dj = json.loads(row.get("draw_json") or "{}") if isinstance(row.get("draw_json"), str) else (row.get("draw_json") or {})
     except ValueError: dj = {}
     if "reel_style" in dj or "reel_formats" in dj or "reel" in (dj.get("strategies") or {}): bad.append("the draw still carries a reel strategy")
-    st.update("Episodes", "episode_id", ep, {"slot_et": (core.now_utc() - dt.timedelta(hours=8)).strftime("%Y-%m-%dT%H:%M:%SZ")})
-    a = MG.tick()
-    if a.get("action") != "release1" or a.get("episode") != ep: bad.append(f"the tick did not name the long video's release: {json.dumps(a)[:120]}")
-    else:
-        MG.release(ep, "release1"); row = next(x for x in st.rows("Episodes") if x.get("episode_id") == ep)
-        if row.get("status") != "LIVE": bad.append(f"the release did not end at LIVE in one step (status {row.get('status')})")
-        a2 = MG.tick()
-        if str(a2.get("action")).startswith("release"): bad.append(f"a second release was named: {json.dumps(a2)[:120]}")
+    walked = str(core.S("SALVO_FLAGSHIP") or "").strip() == ep            # v12 V4b (RULINGS_U3o 2): the armed launch flagship waits private on the review road - no tick names its release; the salvo walk releases it at S
+    if not walked:
+        st.update("Episodes", "episode_id", ep, {"slot_et": (core.now_utc() - dt.timedelta(hours=8)).strftime("%Y-%m-%dT%H:%M:%SZ")})
+        a = MG.tick()
+        if a.get("action") != "release1" or a.get("episode") != ep: bad.append(f"the tick did not name the long video's release: {json.dumps(a)[:120]}")
+        else:
+            MG.release(ep, "release1"); row = next(x for x in st.rows("Episodes") if x.get("episode_id") == ep)
+            if row.get("status") != "LIVE": bad.append(f"the release did not end at LIVE in one step (status {row.get('status')})")
+            a2 = MG.tick()
+            if str(a2.get("action")).startswith("release"): bad.append(f"a second release was named: {json.dumps(a2)[:120]}")
     if any(str(row.get(k) or "").strip() for k in ("reel1_yt", "reel2_yt", "reel3_yt", "reel4_yt", "ig1", "ig2", "fb1", "fb2")): bad.append("a cut-down reel is on the episode's row")
     kinds = sorted({str(x.get("kind")) for x in st.rows("Release_Sheet")}) if "Release_Sheet" in core.TABS else []
     if [k for k in kinds if k != "short"]: bad.append(f"a short video went out that is not a standalone Short: {kinds}")
-    return (not bad), ("; ".join(bad) if bad else "no cut-down made or uploaded; released in one step" + (f"; short videos out: {len({x.get('id') for x in st.rows('Release_Sheet')})} standalone Short(s)" if kinds else ""))
+    return (not bad), ("; ".join(bad) if bad else "no cut-down made or uploaded; " + ("its release step is the salvo walk's (the flagship waits on the review road)" if walked else "released in one step") + (f"; short videos out: {len({x.get('id') for x in st.rows('Release_Sheet')})} standalone Short(s)" if kinds else ""))
 
 def money_of(core, ids):
     """v12 V2d: (ok, words) - THE SWEEP WALKS THE MONEY. For every id made in this run (a long video and the Short it climbed from; a Short and the one
@@ -127,6 +130,22 @@ def motion_of(core, ep, shorts=()):
     if bad: return False, "; ".join(bad)
     said = ([str(led[(ep, "moving_share")].get("evidence"))[:300], str(led[(ep, "stock_share")].get("evidence"))[:90]] if ep else []) + [f"{len(list(shorts))} Short(s): every half second of the file moves, sound from the first frame"]
     return True, "the ladder's rules held: " + " | ".join(said)
+
+def plain_of(core, shorts):
+    """v12 V4b (step 12 (3)): (ok, words) - THE SWEEP READS short_plain's NEW EVIDENCE WORDS. Every Short named must have PASSED short_plain and its
+    evidence must carry the AI-phrase part step 1 added ("<n> AI phrase(s) (limit <max>)") with n inside the limit: an older evidence line without it
+    would mean the AI-phrase guard was not walked. Words begin "the Shorts' plain words held: "."""
+    led = {}
+    for r in core.store().rows("Feature_Ledger"): led[(r.get("episode_id"), r.get("feature"))] = r
+    bad, said = [], []
+    for i in shorts:
+        r = led.get((i, "short_plain")) or {}; ev = str(r.get("evidence") or ""); m = re.search(r"(\d+) AI phrase\(s\) \(limit (\d+)\)", ev)
+        if r.get("status") != "PASS": bad.append(f"{i} short_plain {r.get('status') or 'missing'}: {ev[:140]}")
+        elif not m: bad.append(f"{i} short_plain says nothing of the AI phrases: {ev[:140]}")
+        elif int(m.group(1)) > int(m.group(2)): bad.append(f"{i} short_plain passed with {m.group(1)} AI phrase(s) over the limit {m.group(2)}")
+        else: said.append(f"{i} {m.group(1)} AI phrase(s) (limit {m.group(2)})")
+    if bad or not said: return False, "; ".join(bad) or "no Short named"
+    return True, "the Shorts' plain words held: " + "; ".join(said)
 
 def inside_of(core, ep):
     """v12 V2b: (ok, words) - THE SWEEP WALKS THE INSIDE OF THE FORMAT. The long video of this id must have PASSED viewer_inside and format_ending - a trial
@@ -261,6 +280,95 @@ def screens_of(core, ids=()):
                   f"{tot['alarm']} alarm in the run{tail}")
 
 # ------------------------------------------------------------------ one id (runs in its own process: module state never leaks between ids)
+def appetite_of(core, ep, org, salvo=False):
+    """v12 V4b (step 12 (1)): (ok, words) - THE SWEEP WALKS THE APPETITE PLAN of every long video, and it costs no production. With the organisation on the
+    id's own video has ONE row on tab Appetite_Plans, state "frozen", whose JSON hashes to its `sha`, and its ledger says appetite_plan PASS; with the
+    organisation off no row was written. Both good cases begin "the appetite plan held: "."""
+    from whatifs.org import appetite as APP
+    st = core.store(); rows = [r for r in st.rows("Appetite_Plans") if str(r.get("ep") or "") == str(ep)] if "Appetite_Plans" in core.TABS else []
+    if not org:
+        return (True, "the appetite plan held: the organisation is off, no plan row was written") if not rows else (False, f"the organisation is off but {len(rows)} appetite plan row(s) were written")
+    if len(rows) != 1: return False, f"{len(rows)} appetite plan row(s) for {ep}, expected exactly one"
+    r = rows[0]; led = [x for x in st.rows("Feature_Ledger") if x.get("episode_id") == ep and x.get("feature") == "appetite_plan"]; last = led[-1] if led else {}
+    want = "fired" if salvo else "frozen"                                 # v12 V4b (RULINGS_U3o 2): on the --salvo id the walk ran first - it froze the flagship's row (step 2 checks it) and fired it (step 5)
+    if str(r.get("state") or "") != want: return False, f"the plan row is {r.get('state') or 'without a state'}, expected {want}"
+    if APP.unsealed(r) or not r.get("sha") or APP.sha(r.get("plan")) != str(r.get("sha")): return False, APP.unsealed(r) or "the plan row has no sha or its JSON no longer hashes to it"
+    if last.get("status") != "PASS": return False, f"the ledger says appetite_plan {last.get('status') or 'missing'}: {str(last.get('evidence') or '')[:140]}"
+    return True, f"the appetite plan held: one {r.get('role')} row, frozen, sha {str(r.get('sha'))[:12]}, ledger appetite_plan PASS"
+
+
+def salvo_of(core, ep):
+    """v12 V4b (step 12 (2)): (ok, words) of the FLAGSHIP's half of the salvo walk - the Sheet was armed (`cli salvo`), the id was produced as the flagship and its
+    plan row waits open with the role flagship. Words begin "the salvo held: " only when the whole walk held; the flagship's half only checks the cell and the plan row, then `salvo_walk` walks the pair."""
+    from whatifs.org import appetite as APP
+    st = core.store(); cell = str(core.S("SALVO_FLAGSHIP") or "").strip(); r = APP.plan_row(ep, st) or {}
+    if cell != ep: return False, f"the flagship's cell holds '{cell}', not {ep}: the id was not produced as the flagship"
+    if r.get("role") != "flagship" or r.get("state") != "open": return False, f"the flagship's plan row is {r.get('role') or 'missing'}/{r.get('state') or 'missing'}, expected flagship/open"
+    return salvo_walk(core, ep)
+
+
+def salvo_walk(core, ep):
+    """v12 V4b (step 12 (2); RULINGS_U3j 8): THE PAIR'S WALK after the flagship's half - only the production functions the memo names, on the sweep's own Sheet in fake
+    mode, on PLANTED HOURS (the `now=` each already takes; S = the flagship's public time `slot_et`; no monkeypatch of the clock, no sleeping): Part 2 by the tick's
+    own road (`manage._produce_slot` then `episode.produce`, as `cli produce` runs it); the freeze at S-13 h; the default at S-12 h; public at S; the hour-9 reading
+    (375 views, 5 asking authors) that makes the fire through `appetite.read` then `appetite.act`; two more ticks; Undo; Bring it back. A step that fails returns
+    (False, "the salvo broke at <step>: <what was read>"); all held: (True, "the salvo held: ..."). The one stand-in is YouTube's own schedule: a long video is
+    never made public by code, so at S the fake's own record is written as YouTube's clock writes it (`publish._fake_put`, only on the fake - never a privacy call, so `hdgate.go_public` stays the one code road to public; RULINGS_U3z), and the read-back is judged. The default at S-12 h is his silence's own
+    function (`contract.approve_by_silence`) and the release at S is the tick's own step (`manage.release`)."""
+    import re
+    from whatifs.org import appetite as APP, salvo as SAL
+    from whatifs import manage as MG, episode as EP, publish as PUB, ladder as LAD, contract as CON
+    def row(e): return next((x for x in core.store().rows("Episodes") if x.get("episode_id") == e), None) or {}
+    def broke(step, read): return False, f"the salvo broke at {step}: {read}"
+    def H(h): return dt.timedelta(hours=h)
+    def appetite_rows(): return [o for o in core.store().rows("Owner_Actions") if o.get("kind") == "appetite"]
+    if not (core.FAKE and PUB.FAKE): return broke("the flagship", "the walk runs only on the fake (WI_FAKE=1): its stand-in for YouTube's clock writes the fake's own record")      # RULINGS_U3z: a sweep-only plant, never a live road
+    fl = row(ep); vf = str(fl.get("yt_id") or ""); t0 = core.parse_iso(str(fl.get("slot_et") or ""))
+    if not vf or t0 is None: return broke("the flagship", f"its Episodes row reads yt_id '{vf}' and slot_et '{fl.get('slot_et') or ''}': no upload or no public time")
+    slot = MG._produce_slot(core.store().rows("Episodes"))                           # 1. Part 2: the tick's own road
+    if not isinstance(slot, str) or slot == "busy": return broke("part 2", f"the tick's production slot answered {slot!r}, not a slot")
+    sim0 = str(core.S("SCRIPT_SIMILARITY_MAX") or "0.35"); core.set_setting("SCRIPT_SIMILARITY_MAX", "1")      # RULING_V4bFS: a NAMED sweep setting (as tests/test_v12_floor_his_word.py:24): the offline writers' one text is ~62-66% like itself and Part 2 is the second long script on this Sheet; `originality` has its own tests (test_v101, test_v12_creative 337-341); the guard must still RUN (checked below)
+    try: r2 = EP.produce(slot)
+    finally: core.set_setting("SCRIPT_SIMILARITY_MAX", sim0)
+    p2 = str(core.S("SALVO_PART2") or "").strip()
+    if not (r2 or {}).get("ok") or not p2 or p2 in ("STOOD_DOWN", ep) or not row(p2).get("yt_id"):
+        return broke("part 2", f"produce({slot}) said ok={(r2 or {}).get('ok')}, SALVO_PART2 holds '{p2}', its yt_id is '{row(p2).get('yt_id') or ''}'")
+    if not any(str(x.get("episode_id") or "") == p2 for x in core.store().rows("Script_Fingerprints")): return broke("part 2", f"{p2} has no script fingerprint: the originality guard did not run")
+    vp = str(row(p2).get("yt_id"))
+    SAL.pair(now=t0 - H(13)); pr = APP.plan_row(ep, core.store()) or {}; held = str((APP.numbers(pr) or {}).get("held") or "")         # 2. the freeze
+    if pr.get("state") != "frozen" or held != p2 or APP.sha(pr.get("plan")) != str(pr.get("sha")):
+        return broke("the freeze", f"the plan row is {pr.get('state') or 'missing'} with held '{held}' and its sha {'matches' if APP.sha(pr.get('plan')) == str(pr.get('sha')) else 'does not match'}; expected frozen, held {p2}, sha matching")
+    SAL.pair(now=t0 - H(12)); p3 = APP.plan_row(ep, core.store()) or {}                                                                  # 3. the default at S-12 h
+    if p3.get("state") != "frozen" or p3.get("sha") != pr.get("sha"): return broke("the default at S-12 h", f"the plan row is {p3.get('state') or 'missing'}, its sha {'unchanged' if p3.get('sha') == pr.get('sha') else 'rewritten'}; a frozen row is never rewritten")
+    said = CON.approve_by_silence(ep); f3 = row(ep); at = core.parse_iso(str((PUB.yt_read(vf) or {}).get("publish_at") or ""))        # 3. ... and his silence: the function the card's default runs (RULINGS_U3o 1)
+    if f3.get("status") != "SCHEDULED" or at != t0: return broke("the default at S-12 h", f"his silence answered '{str(said)[:140]}'; the flagship is {f3.get('status')} with YouTube's time {at}, expected SCHEDULED for {t0}")
+    fx = {k: v for k, v in (PUB._fake_get("youtube", vf).get("fixed") or {}).items() if k != "publish_at"}                              # 4. public at S: YouTube's own clock (the ONE stand-in) on the fake's own record (RULINGS_U3z) -
+    SAL.pair(now=t0); PUB._fake_put("youtube", vf, fixed={**fx, "privacy": "public", "was_public": True}); MG.release(ep, "release1"); got = (PUB.yt_read(vf) or {}).get("privacy")     # never a privacy call: `hdgate.go_public` stays the one code road to public; then the tick's release step (RULINGS_U3o 1)
+    if got != "public" or row(ep).get("status") != "LIVE": return broke("public at S", f"the flagship reads {got or 'nothing'} with status {row(ep).get('status')}, expected public and LIVE by the release step")
+    faults = PUB.FAKE_FAULTS                                                                                                              # 5. the hour-9 reading, planted
+    asks = [{"id": f"salvo{i}", "author": f"Viewer{i}", "text": "Please make part 2 of this one soon"} for i in range(5)]
+    PUB.FAKE_FAULTS = dict(faults, youtube=dict(faults.get("youtube") or {}, comments={vf: asks}, stats={vf: {"views": 375, "likes": 9, "comments": 5}}))
+    try:
+        rows = APP.read(now=t0 + H(9)); acts = APP.act(ep, now=t0 + H(9)); r9 = [(x.get("h"), x.get("views"), x.get("askers"), x.get("fired")) for x in rows]
+    finally: PUB.FAKE_FAULTS = faults
+    if r9 != [(9, 375, 5, True)]: return broke("the hour-9 reading", f"APP.read(S+9 h) wrote (hour, views, askers, fired) {r9}, expected [(9, 375, 5, True)]")
+    pr = APP.plan_row(ep, core.store()) or {}; acts = APP.acts(pr) or acts; link = f"Part 2: https://youtu.be/{vp}"; orders = [x for x in core.store().rows(LAD.QUEUE) if x.get("video_key") == ep]
+    if (PUB.yt_read(vp) or {}).get("privacy") != "public" or not str(acts.get("a") or "").startswith("made"):                                # 6. Part 2 through the door, the comment, the description, one order, one row
+        return broke("the fire (act a)", f"Part 2 reads {(PUB.yt_read(vp) or {}).get('privacy') or 'nothing'}, act a says '{acts.get('a')}'")
+    if not re.match(r"made: comment \S+ kept by YouTube", str(acts.get("b") or "")): return broke("the fire (act b)", f"act b says '{acts.get('b')}', expected a made comment with its id")
+    if not str((PUB.yt_read(vf) or {}).get("description") or "").startswith(link): return broke("the fire (act c)", f"the flagship's description does not start with '{link}' (act c says '{acts.get('c')}')")
+    if len(orders) != 1 or len(appetite_rows()) != 1: return broke("the fire (acts d, e and the row to him)", f"{len(orders)} order row(s) and {len(appetite_rows())} appetite row(s), expected one each")
+    for h in (10, 11):                                                                                                                    # 7. two more ticks
+        SAL.pair(now=t0 + H(h))
+        if (PUB.yt_read(vp) or {}).get("privacy") != "public" or len(appetite_rows()) != 1: return broke(f"the tick at S+{h} h", f"Part 2 reads {(PUB.yt_read(vp) or {}).get('privacy') or 'nothing'} and {len(appetite_rows())} appetite row(s), expected public and one")
+    said = APP.undo(p2, now=t0 + H(12)); e2 = row(p2)                                                                                     # 8. Undo
+    if (PUB.yt_read(vp) or {}).get("privacy") != "private" or (PUB.yt_read(vp) or {}).get("publish_at") or APP.undone(p2, core.store()) is None:
+        return broke("undo", f"Part 2 reads {(PUB.yt_read(vp) or {}).get('privacy') or 'nothing'} (status {e2.get('status')}), its undone_at is {'set' if APP.undone(p2, core.store()) else 'empty'}: {str(said)[:140]}")
+    said = SAL.back(p2, now=t0 + H(13))                                                                                                   # 9. Bring it back
+    if (PUB.yt_read(vp) or {}).get("privacy") != "public" or APP.undone(p2, core.store()) is not None: return broke("bring it back", f"Part 2 reads {(PUB.yt_read(vp) or {}).get('privacy') or 'nothing'}: {str(said)[:140]}")
+    return True, f"the salvo held: {ep} flagship, Part 2 {p2}, the planted hours, Undo and Bring it back"
+
+
 def drawn_moments():
     """v12 DRAWN (DQ-3 AMENDED): every id in the drawn arm, explaining moments from the first second and from 1.0 s, on the id's OWN Sheet - exactly
     the three cells tests/test_v12_drawn_film.py's _setup sets; nothing else is ever set by it (the offline film keeps none under the defaults: 0 of 80 ids)."""
@@ -306,7 +414,7 @@ def drawn_template_of(core, ep, template):
     return False, f"the planted template {template} was not drawn on the finished file (drawn: {', '.join(seen) or 'nothing'}) | {said[:200]}"
 
 
-def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10, drawn=False, template=""):
+def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10, drawn=False, template="", salvo=False):
     os.environ.update(WI_FAKE="1", WI_SMALL="1", WI_WORK=os.path.join(work, "work"), PYTHONUTF8="1")
     for k in KEYS: os.environ.pop(k, None)
     os.makedirs(os.environ["WI_WORK"], exist_ok=True); sys.path.insert(0, repo)
@@ -356,6 +464,8 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10, drawn=False, t
                 if not ok_m: late.append("the cost model: " + res["money"][:240])
                 ok_x, res["motion"] = motion_of(core, None, [r0["id"], ep])          # v12 V2d-b: THE SWEEP WALKS THE LADDER'S RULES - both Shorts' finished files were measured
                 if not ok_x: late.append("the ladder's rules: " + res["motion"][:240])
+                ok_p, res["plain"] = plain_of(core, [r0["id"], ep])                  # v12 V4b step 12 (3): both Shorts' short_plain evidence carries the AI-phrase words
+                if not ok_p: late.append("the plain words: " + res["plain"][:240])
                 if org:                                                              # v12 B-OWNER (R24): THE SWEEP WALKS THE HD GATE - only where it set HD_GATE_ON: both Shorts went up private and out through the gate
                     ok_h, res["hd"] = hd_of(core, [r0["id"], ep])
                     if not ok_h: late.append("the HD gate: " + res["hd"][:240])
@@ -388,6 +498,9 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10, drawn=False, t
             if res["outcome"] == "ok" and org:                                      # v12 B-OWNER (R24): THE SWEEP WALKS THE HD GATE - the rehearsal's Shorts went up private and out through the gate
                 ok_h, res["hd"] = hd_of(core, [x["id"] for x in core.store().rows("Ladder") if str(x.get("id", "")).startswith("SH")])
                 if not ok_h: res["outcome"] = "odd"; res["problems"].append("the HD gate: " + res["hd"]); res["error"] = res["hd"][:300]
+            if res["outcome"] == "ok":                                              # v12 V4b (step 12 (1)): THE SWEEP WALKS THE APPETITE PLAN - one frozen row, its sha, its ledger
+                ok_a, res["appetite"] = appetite_of(core, ep, org)
+                if not ok_a: res["outcome"] = "odd"; res["problems"].append("the appetite plan: " + res["appetite"]); res["error"] = res["appetite"][:300]
             if res["outcome"] == "ok":                                              # v12 B-OWNER: THE SWEEP WALKS HIS TWO SCREENS - judged again on the rehearsal's Sheet (nothing is sent twice)
                 ok_w, res["screens"] = screens_of(core, [ep])
                 if not ok_w: res["outcome"] = "odd"; res["problems"].append("his two screens: " + res["screens"]); res["error"] = res["screens"][:300]
@@ -404,6 +517,8 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10, drawn=False, t
             if not org: core.set_setting("ORG_ON", "FALSE")
             if drawn: drawn_moments()                                             # v12 DRAWN (DQ-3): the flag --drawn-moments - after the setup, before the long video
             if drawn and template: plant_template(template)                          # open issue 261: the flag --drawn-template
+            if salvo:                                                              # v12 V4b (step 12 (2)): the flag --salvo - the Sheet is armed (`cli salvo`) before the long video is planned
+                from whatifs.org import salvo as SAL12; res["salvo_armed"] = SAL12.arm()
             slot = (core.now_utc() + dt.timedelta(hours=slot_h)).strftime("%Y-%m-%dT%H:%M:%SZ")
             if climb(core, ep): res["ladder"] = "climbed"                          # v12 V2c-b: every topic starts as a Short - the long video of this id is about its promoted Short
             r = EP.produce(slot, episode_id=ep)
@@ -441,6 +556,12 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10, drawn=False, t
             if res["outcome"] == "ok" and org:                                      # v12 B-OWNER (R24): THE SWEEP WALKS THE HD GATE - the climbed Short went up private and out through the gate
                 ok_h, res["hd"] = hd_of(core, ["SH" + ep[2:]] if res.get("ladder") == "climbed" else [])
                 if not ok_h: res["outcome"] = "odd"; res["problems"].append("the HD gate: " + res["hd"]); res["error"] = res["hd"][:300]
+            if res["outcome"] == "ok" and salvo:                                   # v12 V4b (step 12 (2); RULINGS_U3o 2): THE SWEEP WALKS THE SALVO - after the CEO's month (its tap leaves the uploads open), BEFORE the appetite plan (the walk freezes the flagship's row, then fires it)
+                ok_v, res["salvo"] = salvo_of(core, ep)
+                if not ok_v: res["outcome"] = "odd"; res["problems"].append("the salvo: " + res["salvo"]); res["error"] = res["problems"][-1][:300]
+            if res["outcome"] == "ok":                                              # v12 V4b (step 12 (1)): THE SWEEP WALKS THE APPETITE PLAN - one frozen row, its sha, its ledger
+                ok_a, res["appetite"] = appetite_of(core, ep, org, salvo)
+                if not ok_a: res["outcome"] = "odd"; res["problems"].append("the appetite plan: " + res["appetite"]); res["error"] = res["appetite"][:300]
             if res["outcome"] == "ok":                                              # v12 B-OWNER: THE SWEEP WALKS HIS TWO SCREENS - the register, the window at the wire, the planted morning and evening
                 ok_w, res["screens"] = screens_of(core, [ep])
                 if not ok_w: res["outcome"] = "odd"; res["problems"].append("his two screens: " + res["screens"]); res["error"] = res["screens"][:300]
@@ -491,7 +612,7 @@ def evidence(core, ep, org):
 def child(ep, a, base):
     work = os.path.join(base, ep); shutil.rmtree(work, ignore_errors=True); os.makedirs(work, exist_ok=True)
     logp = os.path.join(a.logs, ep + ".log")
-    cmd = [sys.executable, os.path.abspath(__file__), "--one", ep, "--work", work, "--repo", a.repo, "--mode", a.mode, "--slot-h", str(a.slot_h)] + (["--org", "off"] if a.org == "off" else []) + (["--drawn-moments"] if a.drawn_moments else []) + (["--drawn-template", a.drawn_template] if a.drawn_template else [])
+    cmd = [sys.executable, os.path.abspath(__file__), "--one", ep, "--work", work, "--repo", a.repo, "--mode", a.mode, "--slot-h", str(a.slot_h)] + (["--org", "off"] if a.org == "off" else []) + (["--drawn-moments"] if a.drawn_moments else []) + (["--drawn-template", a.drawn_template] if a.drawn_template else []) + (["--salvo"] if getattr(a, "salvo", False) else [])
     env = dict(os.environ, WI_FAKE="1", WI_SMALL="1", PYTHONUTF8="1"); t0 = time.time()
     try:
         with open(logp, "w", encoding="utf-8", errors="replace") as lf:
@@ -599,10 +720,13 @@ def summary(results):
     return {"n": len(results), "outcomes": by, "opened_on_footage": sum(1 for r in results if r.get("opening") and r["outcome"] == "ok"),
             "released_without_cutdowns": sum(1 for r in results if str(r.get("release") or "").startswith("no cut-down") and r["outcome"] == "ok"),
             "money_agreed": sum(1 for r in results if str(r.get("money") or "").startswith("every paid picture") and r["outcome"] == "ok"),
+            "plain_held": sum(1 for r in results if str(r.get("plain") or "").startswith("the Shorts' plain words held: ") and r["outcome"] == "ok"),          # v12 V4b: Short ids
             "ladder_rules_held": sum(1 for r in results if str(r.get("motion") or "").startswith("the ladder's rules held") and r["outcome"] == "ok"),
             "format_inside_held": sum(1 for r in results if str(r.get("inside") or "").startswith("inside the format held") and r["outcome"] == "ok"),
             "drawn_held": sum(1 for r in results if str(r.get("drawn") or "").startswith("the drawn arm held:") and r["outcome"] == "ok"),          # v12 DRAWN: every long-video id
             "drawn_ids": sum(1 for r in results if _drew(r.get("drawn")) and r["outcome"] == "ok"),                                                  # ... and a FLOOR: ids that drew a scene
+            "appetite_held": sum(1 for r in results if str(r.get("appetite") or "").startswith("the appetite plan held: ") and r["outcome"] == "ok"),          # v12 V4b: every long-video id
+            "salvo_held": sum(1 for r in results if str(r.get("salvo") or "").startswith("the salvo held: ") and r["outcome"] == "ok"),                      # v12 V4b: the flag --salvo
             "floor_judged": sum(1 for r in results if str(r.get("floor") or "").startswith("the floor judged") and r["outcome"] == "ok"),
             "look_judged": sum(1 for r in results if str(r.get("look") or "").startswith("the look bar judged") and r["outcome"] == "ok"),          # v12 DRAWN-b (L1c): held in code by the class walk:look_not_judged (RULINGS_U2g 2.1); no block counter
             "strategy_month_held": sum(1 for r in results if str(r.get("strategy") or "").startswith("the month's decision held") and r["outcome"] == "ok"),      # v12 V4
@@ -620,8 +744,9 @@ def main(argv=None):
     p.add_argument("--slot-h", type=int, default=10); p.add_argument("--timeout", type=int, default=TIMEOUT_S); p.add_argument("--keep", action="store_true"); p.add_argument("--one", default="")
     p.add_argument("--drawn-moments", action="store_true", help="v12 DRAWN: every id in the drawn arm, explaining moments from the first second and from 1.0 s - the offline film keeps none under the defaults: 0 of 80 ids, DQ-3")
     p.add_argument("--drawn-template", default="", choices=("",) + DRAWN_PLANTS, help="open issue 261: with --drawn-moments, the id's first explaining moment carries this template of the kit")
+    p.add_argument("--salvo", action="store_true", help="v12 V4b: arm the Sheet (cli salvo) and walk the launch pair on the id - the flagship, its Part 2, the planted hours, Undo and Bring it back")
     a = p.parse_args(argv); a.repo = os.path.abspath(a.repo)
-    if a.one: return 0 if one(a.one, os.path.abspath(a.work or tempfile.mkdtemp(prefix="sweep_")), a.repo, a.org == "on", a.mode, a.slot_h, a.drawn_moments, a.drawn_template)["outcome"] == "ok" else 1
+    if a.one: return 0 if one(a.one, os.path.abspath(a.work or tempfile.mkdtemp(prefix="sweep_")), a.repo, a.org == "on", a.mode, a.slot_h, a.drawn_moments, a.drawn_template, a.salvo)["outcome"] == "ok" else 1
     base = os.path.abspath(a.work or tempfile.mkdtemp(prefix="sweep_"))
     if inside(base, ROOT) or inside(base, a.repo): sys.exit("the work folder must be OUTSIDE the repo")
     out = os.path.abspath(a.out or os.path.join(base, "sweep_results.txt")); a.logs = os.path.join(base, "_logs"); os.makedirs(a.logs, exist_ok=True)

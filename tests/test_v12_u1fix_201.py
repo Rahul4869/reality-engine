@@ -28,7 +28,7 @@ def _room(monkeypatch, setting, line, ep):
                                                "ladder": SID, "scores": {"grasp": 9, "pull": 9}, "total": 999})
     seen = {}
 
-    def fix_all(script, wbrief, spine, episode, fmt="long", reserve_s=0.0):
+    def fix_all(script, wbrief, spine, episode, fmt="long", reserve_s=0.0, ps=None):     # RB-U1-c: the stand-in takes V4b's ps (room.py passes both)
         text = script.get("script", ""); lines = text.split("\n")
         first = next(i for i, l in enumerate(lines) if l.strip() and not l.strip().startswith("##"))
         out = "\n".join(l for i, l in enumerate(lines) if i != first and not CTA.is_ask(CTA._peel(l)[3]))

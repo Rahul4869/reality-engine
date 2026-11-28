@@ -82,16 +82,25 @@ def combine(sc):
     return round((sc["clarity"] + sc["relevance"] + sc["curiosity"] + sc["promise_accuracy"]) / 4, 2)
 
 # ---------------- generation ----------------
-def _generate(script, spine, n, avoid, ask_fn, episode):
+def _generate(script, spine, n, avoid, ask_fn, episode, stake=False, role="hooks", fake_key="hooks"):
     from whatifs import prompts as P
     av = ("Do not repeat or rephrase these rejected lines: " + json.dumps(avoid)) if avoid else ""
-    out = ask_fn("hooks", P.fill(P.HOOKS, n=n, script=_script_text(script)[:24000], spine=json.dumps(spine or {}, ensure_ascii=False)[:2500], avoid=av),
-                 "Write the opening lines now.", episode=episode, fake_key="hooks", temperature=0.9, max_tokens=3000)
+    if stake: av = (av + " " if av else "") + "Each line holds a question to the viewer or the word 'you'."      # v12 V4b step 1b: the one refill asks for the stake
+    out = ask_fn(role, P.fill(P.HOOKS, n=n, script=_script_text(script)[:24000], spine=json.dumps(spine or {}, ensure_ascii=False)[:2500], avoid=av),
+                 "Write the opening lines now.", episode=episode, fake_key=fake_key, temperature=0.9, max_tokens=3000)
     res = []
     for c in (out.get("candidates") if isinstance(out, dict) else None) or []:
         line = _clean_line(c.get("line"))
         if line: res.append({"line": line, "type": c.get("type") if c.get("type") in TYPES else "unclassified", "basis": str(c.get("basis", ""))[:200]})
     return res
+
+def _challenger_lines(script, spine, ask_fn, episode):
+    """v12 V4b step 8b (memo 3.8 B5, CARD HOOK): a long video's opening LINE - CHALLENGER_HOOK_LINES more candidates from role challenger when the card is
+    drawn for this episode (models.challenger); [] when not drawn or the call failed (logged): the writer's lines stand alone."""
+    from whatifs import models as M
+    if not M.challenger("hook", episode): return []
+    try: return _generate(script, spine, max(1, S("CHALLENGER_HOOK_LINES", int)), [], ask_fn, episode, role=M.challenger_role(), fake_key="challenger_hook")
+    except Exception as e: log(f"hook challenger skipped: {scrub(e)}", "WARN", episode); return []
 
 def _judge(script, cands, ask_fn, episode):
     from whatifs import prompts as P
@@ -108,7 +117,8 @@ def _judge(script, cands, ask_fn, episode):
 
 def build_record(script, spine=None, episode="", ask_fn=None, behind=None):
     """Generate -> validate -> score -> rank -> choose. Pure of side effects except model calls. Raises only if nothing can be generated.
-    behind = the Short's line this lab's line will stand before (V4's repair C25): the lab is told not to repeat it, and only a line with a stake may lead."""
+    behind = the Short's line this lab's line will stand before (V4's repair C25): the lab is told not to repeat it, and only a line with a stake may lead.
+    V4b step 1b (P-A; HOOK_STAKE_ON): on EVERY road only a line with a stake may lead - the one refill asks for one when no kept line holds it."""
     if ask_fn is None:
         from whatifs.models import ask as ask_fn
     premise = (spine or {}).get("premise", "")
@@ -121,10 +131,14 @@ def build_record(script, spine=None, episode="", ask_fn=None, behind=None):
             hard = [i for i in c["issues"] if i.startswith(("too_long", "empty", "greeting", "hype", "ad_unsafe"))]
             (rejected if hard else kept).append(c)
     take(_generate(script, spine, WANT, [behind] if behind else [], ask_fn, episode))      # the Fable re-audit of C25 (R2-F1): never an echo of the line that follows
-    if len(kept) < WANT:        # one refill for the shortfall
-        try: take(_generate(script, spine, WANT - len(kept) + 3, [c["line"] for c in rejected], ask_fn, episode))
+    chal = _challenger_lines(script, spine, ask_fn, episode); take(chal)      # v12 V4b step 8b: before its own validation of the rest and the blind judging; the family stays here, never in a prompt
+    chal_keys = {re.sub(r"\W+", " ", c["line"].lower()).strip() for c in chal}
+    need = S("HOOK_STAKE_ON", bool) and not any(stake(c["line"]) for c in kept)      # v12 V4b step 1b (P-A): no kept line holds a question or a 'you'
+    if len(kept) < WANT or need:        # one refill for the shortfall - or for the stake (never a second refill, never a second judge call)
+        try: take(_generate(script, spine, max(0, WANT - len(kept)) + 3, [c["line"] for c in rejected], ask_fn, episode, stake=need))
         except Exception as e: log(f"hook refill skipped: {scrub(e)}", "WARN", episode)
-    kept = kept[:WANT]
+    if need: kept.sort(key=lambda c: not stake(c["line"]))      # stable: the lines that hold a stake first, so the cut keeps them
+    kept = kept[:WANT + len(chal)]      # v12 V4b step 8b: the challenger's lines are judged with the writer's (p = 3/13)
     notes = []
     if not kept: raise RuntimeError("no valid hook candidates")
     if len(kept) < WANT: notes.append(f"Only {len(kept)} of {WANT} candidates passed the word-limit / greeting / hype checks.")
@@ -150,13 +164,25 @@ def build_record(script, spine=None, episode="", ask_fn=None, behind=None):
     if any(v == 0 for v in mix.values()): notes.append("Type mix is uneven: " + json.dumps(mix))
     min_score = S("HOOK_MIN_SCORE", float)
     eligible = [c for c in kept if c["valid"] and c["promise_accuracy"] >= 7 and c["total"] >= min_score] if scored_by == "judge" else []
-    if behind: eligible = [c for c in eligible if stake(c["line"])]      # the Fable re-audit of C25: the line behind this one has no question and no 'you', so this one must
+    top = eligible[0] if eligible else None
+    if behind or S("HOOK_STAKE_ON", bool): eligible = [c for c in eligible if stake(c["line"])]      # the Fable re-audit of C25: the line behind this one has no question and no 'you', so this one must; V4b step 1b: on every road
     chosen = eligible[0] if eligible else None
     if chosen and S("COLD_OPEN_YOU_ON", bool):                                 # v9.3: YOU before lore - a passing second-person line leads when it is close in score
         you = next((c for c in eligible if _YOU.search(c["line"])), None)
         if you and you["total"] >= chosen["total"] - YOU_MARGIN: chosen = you
     if not chosen: notes.append("No candidate passed every check; a person should pick one or keep the writer's opening.")
     if not chosen and behind: notes.append("No candidate that passed every check carries a question or a 'you' for the first three seconds, and the Short's hook behind it has none: a person should pick one.")
+    if S("HOOK_STAKE_ON", bool) and chosen and top and top is not chosen and not stake(top["line"]):
+        notes.append("The top-scored line holds no question and no 'you': the first three seconds' rule would hold the film. The best line that holds one leads.")
+    if S("HOOK_STAKE_ON", bool) and not chosen and not behind:
+        notes.append("No candidate that passed every check holds a question or a 'you': the film waits at its script gate, before any picture.")
+    if chal_keys and chosen:                 # v12 V4b step 8b: ONE Contests row - the family of each candidate stays in `note`, never in a judge's prompt
+        try:
+            from whatifs.org import salvo as SAL
+            nk = lambda c: re.sub(r"\W+", " ", c["line"].lower()).strip()
+            k = sum(1 for c in kept if nk(c) in chal_keys)
+            if k: SAL.contest("hook", episode, len(kept), k, nk(chosen) in chal_keys, "family: " + ("challenger" if nk(chosen) in chal_keys else "writer") + " won")
+        except Exception as e: log(f"hook contest not written: {scrub(e)}", "WARN", episode)
     return {"episode_id": episode, "created": iso(), "scored_by": scored_by, "mode": S("HOOK_APPLY_MODE").lower(), "min_score": min_score,
             "candidates": kept, "rejected": rejected, "type_mix": mix, "chosen_id": chosen["id"] if chosen else None,
             "status": "pending", "applied": False, "notes": notes}
@@ -210,6 +236,7 @@ def verify_in_narration(rec, units):
     ok = bool(want) and spoken.startswith(want[:30])
     if not ok:
         rec["notes"].append("After narration the first spoken line differs from the chosen hook (a rewrite changed it). Please review."); rec["status"] = "needs_human_choice"
+        rec["lost_line"] = "first"          # v12 V4b step 1b (P-B; RULINGS_U1c 2, DQ-1): which line a rewrite removed - p_hook names it truly; a record checked twice never keeps an old "second"
         try:          # v8.9.1 (fix): the Hook_Candidates tab said applied=TRUE for a line that is no longer the opening; the row is corrected too
             from whatifs.core import store
             store().update_where("Hook_Candidates", {"episode_id": rec.get("episode_id", ""), "applied": "TRUE"}, {"applied": "FALSE", "issues": "replaced by a later rewrite"})
@@ -219,6 +246,7 @@ def verify_in_narration(rec, units):
         ok2 = bool(want) and said.startswith(want + norm(rec["second"]["line"]))
         if not ok2:
             rec["notes"].append("After narration the Short's hook is no longer the second spoken line (a rewrite changed it). Please review."); rec["status"] = "needs_human_choice"
+            rec["lost_line"] = "second"          # v12 V4b step 1b (RULINGS_U1c 2, DQ-1)
             return False
     return ok
 

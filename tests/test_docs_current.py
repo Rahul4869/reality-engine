@@ -176,3 +176,25 @@ def test_archive_keeps_history_marked_and_complete():
     for f in ("KERNEL.md", "CHANGES.md", "MODULE_DOCSTRINGS_v11_1.md"):
         t = open(os.path.join(arch, f), encoding="utf-8").read(); assert t.startswith(TRU.ARCHIVE_HEADER) and "Superseded by" in t.splitlines()[0], f
     assert "K77" in open(os.path.join(arch, "KERNEL.md"), encoding="utf-8").read()                               # the history itself is intact, only moved
+
+
+def test_claude_md_carries_the_v4b_recipes():
+    """RULINGS_U3l 4: the three V4b recipes stand in the one file every builder reads, word for word in their titles (the cap test above holds the size)."""
+    t = open(os.path.join(ROOT, "CLAUDE.md"), encoding="utf-8").read()
+    for title in ("- **The salvo: armed once, a pair on the review road** (v12 V4b;", "- **The appetite engine: one line, every hour, acts read back through the one door** (v12 V4b;", "- **The doors** (v12 V4b;"):
+        assert title in t, title
+
+
+def test_the_readme_tells_a_buyer_how_to_arm_the_salvo():
+    """RULINGS_U3l 5: README.md holds the buyer's V4b lines; every `whatifs.` module and `docs/` path it names exists."""
+    import re
+    t = open(os.path.join(ROOT, "README.md"), encoding="utf-8").read()
+    assert "python -m whatifs.cli salvo" in t and "SALVO_FLAGSHIP" in t
+    refs = 0
+    for span in re.findall(r"`([^`]+)`", t):
+        for mod in re.findall(r"whatifs(?:\.[a-z_][a-z0-9_]*)+", span):
+            rel = mod.replace(".", "/"); refs += 1
+            assert os.path.isfile(os.path.join(ROOT, rel + ".py")) or os.path.isdir(os.path.join(ROOT, rel)), mod
+        for path in re.findall(r"docs/[A-Za-z0-9_./-]+", span):
+            refs += 1; assert os.path.isfile(os.path.join(ROOT, path)), path
+    assert refs >= 3, refs

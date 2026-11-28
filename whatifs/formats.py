@@ -199,9 +199,10 @@ def ending_issues(text):
     if not S("ENDINGS_ON", bool) or k not in FORMATS or ending(k) == "tease": return []
     r = ending_report(text, k)
     if not r["problems"]: return []
-    return ["THE ENDING: " + "; ".join(r["problems"]) + ". This format ends on " + ("the question to the viewer - would you keep it? - in your own words"
+    from whatifs.org import salvo as SAL                    # v12 V4b (step 3b, R15 review 10d): the writers' fix keeps the flagship's cliff - its words in place of the stock ones
+    how = SAL.CLIFF_FIX if SAL.role() == "flagship" else "This format ends on " + ("the question to the viewer - would you keep it? - in your own words"
             if r["ending"] == "question" else "the arrival: one sentence to 'you' saying what you now see differently")
-            + "; it is the last line and nothing follows it; no ask and no 'next time' near the end"]
+    return ["THE ENDING: " + "; ".join(r["problems"]) + ". " + how + "; it is the last line and nothing follows it; no ask and no 'next time' near the end"]
 
 def rule(check, fmt=None):
     """'must' | 'advisory' | 'never' for a contract check in a format (default: the format in the making). Anything that is not a DEVICE is always 'must'."""
@@ -232,6 +233,7 @@ def pick(episode, draw=None, st=None):
     it. Otherwise the format furthest below its share among the last ten episodes (so 70 / 30 is 7 and 3 of ten, not a coin); the very first episode of
     a Sheet is drawn by its id."""
     if not on(): return ""
+    if (draw or {}).get("salvo"): return "F1"                      # v12 V4b (step 3a): the launch pair is made in F1 - before the Deep Trial and any forced format
     if (draw or {}).get("deep_trial"): return "F2"
     force = str(os.environ.get("WI_FORMAT") or S("FORMAT_FORCE") or "").strip().upper()          # the env var wins (a rehearsal or a sweep of one format)
     if force in FORMATS and FORMATS[force]["status"] == "on": return force
@@ -255,7 +257,12 @@ def pick(episode, draw=None, st=None):
 def block(role):
     """The format's own text for one room role ('showrunner' | 'bible' | 'writer'); '' for the trial (whatifs/show.py speaks for it) and when no format is set."""
     texts = {"F1": {"showrunner": F1_SHOWRUNNER, "bible": F1_BIBLE, "writer": F1_WRITER}, "F3": {"showrunner": F3_SHOWRUNNER, "bible": F3_BIBLE, "writer": F3_WRITER}}      # v12 V2b: F3's own
-    return texts.get(current(), {}).get(role, "")
+    t = texts.get(current(), {}).get(role, "")
+    if role == "writer":                                            # v12 V4b (step 3b): the launch flagship's writer is told to end on its cliff (salvo.note)
+        from whatifs.org import salvo as SAL
+        n = SAL.note()
+        if n: t = (t + "\n\n" + n) if t else n
+    return t
 
 def rubric(kind):
     """What the blind jury is asked to rank by ('drafts' | 'jokes') in the format in the making; '' = the room's own rubric (the trial)."""
@@ -305,7 +312,7 @@ SHORT_HOUSE = ("You write ONE standalone vertical Short (YouTube Shorts, Instagr
                "RULES. ONE voice, the guide, speaking to 'you' in the present tense. The FIRST sentence is the hook: at most {hook} words, short enough to be said inside "
                "{by:g} seconds, and it says the impossible thing the first picture shows. ONE idea; at most {nums} number in the whole Short; everyday words only - no expert "
                "word a viewer who never studied science would not know. No greeting, no channel name, and never an ask (no like, follow, subscribe, comment, 'full video', "
-               "'link'). The LAST line hands back to the first picture: a word of the first sentence returns in it, so that the video loops into its own beginning. "
+               "'link'). HUMAN VOICE: one sharp, warm person talking to a friend - never an announcer, a textbook or an AI. Never use these phrases: {tells}. The LAST line hands back to the first picture: a word of the first sentence returns in it, so that the video loops into its own beginning. "
                "A complete story in {lo:g} to {hi:g} seconds of speech (about {wlo} to {whi} words) - never a trailer and never a cut-down of a longer video.\n"
                "PICTURES. Every beat names what the viewer SEES: first person, eye level, his own hands or body where natural, one place, real light; the impossible "
                "thing is already happening in the first frame. No faces of people, no text or logo in a picture, no courtroom.")
@@ -324,7 +331,7 @@ SHORT_JSON = ("JSON only: {{\"title\": \"<= 60 characters\", \"promise\": \"the 
               "\"<the beat's name from the format>\", \"line\": \"what the guide says\", \"picture\": \"what the viewer sees\"}}]}}")
 SHORT_RUBRIC = ("Rank these scripts for a vertical Short of a first-person science what-if channel, best first, as a viewer swiping a feed. Judge ONLY what a viewer would "
                 "feel: (1) would you stop on the first sentence; (2) does it happen to YOU; (3) one clear idea a stranger gets on one listen; (4) does every beat give the "
-                "eye something new; (5) does the last line make you want to see the first picture again; (6) is it true to the science. Scripts are anonymous; never guess "
+                "eye something new; (5) does the last line make you want to see the first picture again; (6) is it true to the science; (7) does it sound like a person talking, not like an AI or an advert. Scripts are anonymous; never guess "
                 "who wrote them.")
 _SCUR = {"key": ""}          # the Short format of the Short being made in this process
 _W3 = re.compile(r"[a-z']+")
@@ -372,9 +379,10 @@ def short_brief(key, hook="", avoid=()):
     """The writer's brief of a Short in format `key`: the house rules with the seat's numbers, the format's beats, the hook archetype the learning core
     picked, the openers of the last Shorts to stay away from, and the JSON shape."""
     from whatifs import brain as BR
+    from whatifs.data import AI_TELLS
     lo, hi = short_len(key); wps = max(60.0, S("WPM_ESTIMATE", float)) / 60.0
     house = SHORT_HOUSE.format(hook=S("SHORT_HOOK_WORDS_MAX", int), by=S("SHORT_HOOK_BY_S", float), nums=S("SHORT_NUMBERS_MAX", int), lo=lo, hi=hi,
-                               wlo=int(lo * wps * 0.9), whi=int(hi * wps * 0.85))
+                               wlo=int(lo * wps * 0.9), whi=int(hi * wps * 0.85), tells=", ".join(AI_TELLS))      # v12 V4b step 1: the long video's own list of AI phrases
     arch = f"\nHOOK ARCHETYPE (for the first sentence): {hook} - {BR.HOOK_ARCHETYPES.get(hook, '')}." if hook else ""
     away = ("\nSTAY AWAY FROM THESE OPENERS (the last Shorts began with them; begin differently and build differently): " + "; ".join(f"'{a}'" for a in avoid if a) + "."
             if [a for a in avoid if a] else "")

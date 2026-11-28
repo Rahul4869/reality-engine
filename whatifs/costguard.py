@@ -7,6 +7,46 @@ from whatifs import notify as NT
 # ---------------------------------------------------------------- the cost model: ONE table of lines (v12 V2d)
 TEXT = ("text:", "vision", "batch")          # what the writing lines stand for in the paid-call counter: every text call, vision check and batch submission
 
+# v12 V4b step 9 (memo 3.9; D11): THREE LISTS BY `models.ROUTES` KEY - every key is in exactly one (a test fails on one in none or in two).
+# OVERHEAD = the organisation's own thinking; PROTECTED = never refused, never batched (the policy watch, his cheap chat answer); PRODUCTION = every other key, written out.
+OVERHEAD = ("strategy", "brief", "technique_intake", "rnd_research", "board_gemini", "board_claude", "owner_chat", "owner_chat_deep",
+    "occasions_check", "owner_desk")
+PROTECTED = ("policy_rescue", "owner_chat_cheap")
+PRODUCTION = ("scout", "showrunner", "bible", "premise_bank", "bench", "premise_judge", "owners_cut", "sequel", "psyche", "challenger", "challenger_base", "depth",
+    "writer", "rewrite", "memo", "objections", "director_read", "director", "scene", "length", "format", "retention", "humanize", "factfix",
+    "packager", "immersion", "hooks", "repair", "json_repair", "localize", "special", "pilot", "jury", "jury_flash", "jury_claude", "punchup",
+    "short_writer", "probe_gemini", "probe_claude", "floor_gemini", "floor_claude")
+UNCAPPED = ("strategy", "brief", "technique_intake", "occasions_check")      # the overhead roles with no cap of their own: the door (models._ring_fence) refuses them at BUDGET_MAINT_RESERVE_INR
+BATCH_JOBS = ("learn", "research", "brief", "money", "trends")      # the jobs nobody waits for: an overhead call in one of them may go through the Batch API at half price (models.batch_due)
+
+def _month_rows(now=None):
+    from whatifs.core import store, now_utc
+    ym = (now or now_utc()).strftime("%Y-%m")
+    return [r for r in store().rows("Cost_Log") if str(r.get("ts") or "")[:7] == ym and str(r.get("basis") or "") != "summary"]
+
+def _inr(r):
+    try: return float(r.get("inr") or 0)
+    except (TypeError, ValueError): return 0.0
+
+def overhead_month(now=None):
+    """ONE METER, EACH RUPEE ONCE: this month's Cost_Log rows (basis not summary) of an OVERHEAD role, plus B-OWNER's message rows (item whatsapp). Nothing of
+    registry.spent is added: the capped departments' runs ARE those rows."""
+    return round(sum(_inr(r) for r in _month_rows(now) if str(r.get("role") or "") in OVERHEAD or str(r.get("item") or "") == "whatsapp"), 2)
+
+def uncapped_month(now=None):
+    """This month's Cost_Log rows of the four roles with no cap of their own (the door's meter)."""
+    return round(sum(_inr(r) for r in _month_rows(now) if str(r.get("role") or "") in UNCAPPED), 2)
+
+def envelope():
+    """What production already keeps back, plus the chat's cap: the caps of the wired capped departments + CHAT_MONTHLY_CAP_INR + the maintenance reserve."""
+    from whatifs import governor as G
+    return round(G.org_caps_inr() + S("CHAT_MONTHLY_CAP_INR", float) + max(0.0, S("BUDGET_MAINT_RESERVE_INR", float)), 2)
+
+def lines_daily(now=None):
+    """BOTH LINES DAILY: "Videos Rs X; the organisation Rs A of Rs B." (A = overhead_month, B = envelope, X = the rest of the month's rows)."""
+    rows = _month_rows(now); a = overhead_month(now); x = max(0.0, sum(_inr(r) for r in rows) - a)
+    return f"Videos Rs {x:,.0f}; the organisation Rs {a:,.0f} of Rs {envelope():,.0f}."
+
 def _line(key, what, n, unit_inr, stage, unit="", item=None, calls=None):
     return {"key": key, "what": what, "n": n, "unit": unit, "unit_inr": round(float(unit_inr), 4), "inr": round(float(n) * float(unit_inr), 2), "stage": stage,
             "item": item, "calls": dict(calls or {})}
@@ -48,11 +88,42 @@ def short_shots(fmt):
     each = max(1, math.ceil(per / CL.longest() - 1e-6))
     return nb * each, per / each, (nb if cut else 1), sec
 
+def _psyche_line(kind):
+    """v12 V4b (step 7, memo 3.0 and 3.7): the psyche tag calls of one video (route psyche) - ONE a long video or a Short; a long video gets a second
+    (the early tag of 7b) only when a drive led 2 of the last 4 long videos. Shown only when above 0 (V4's boost pattern)."""
+    from whatifs.org import psyche as PSY
+    n = (1 + (1 if kind != "short" and PSY.avoided() else 0)) if PSY.on() else 0
+    return [_line("psyche_tags", "the psyche tags: one drive for the premise, the title, the thumbnail, the hook and each beat (one call; a second only when a drive led 2 of the last 4)",
+                  n, S("PSYCHE_EST_INR", float), "ai_writing", "", None, {"text:psyche": n})] if n > 0 else []
+
+def _depth_line():
+    """v12 V4b (step 8a, memo 3.0 and 3.8): the depth pass - ONE call for a launch flagship or a Part 2 while the pass is open (salvo.depth_open: the
+    lane open, Claude allowed, the record not closing it). Shown only when above 0 (V4's boost pattern)."""
+    from whatifs.org import salvo as SAL
+    n = 1 if SAL.role() in ("flagship", "part2") and SAL.depth_open() else 0
+    return [_line("depth_calls", "the depth pass: four questions answered for this episode and a brief for some of the drafts (one call)", n,
+                  S("DEPTH_EST_INR", float), "ai_writing", "", None, {"text:depth": n})] if n > 0 else []
+
+def _challenger_line(kind):
+    """v12 V4b step 8b (memo 3.0, 3.8): challenger_calls (one per card that can act: hook and title on a long video, title only on a ladder video, short on a
+    Short) x CHALLENGER_EST_INR, and on a Short short_first_line_jury (1 x SHORT_LINE_JURY_EST_INR: the second jury's calls on two sentences). Shown only
+    while the card can act (models.challenger_share above 0)."""
+    from whatifs import models as M
+    cards = {"long": ("hook", "title"), "ladder": ("title",), "short": ("short",)}.get(kind, ())
+    n = sum(1 for c in cards if M.challenger_share(c) > 0)
+    L = [_line("challenger_calls", "the challenger's extra candidates: " + ", ".join(c for c in cards if M.challenger_share(c) > 0) + " (one call each)", n, S("CHALLENGER_EST_INR", float), "ai_writing", "", None, {"text:challenger": n})] if n else []
+    if not M._lane_open():                                        # v12 V4b step 8b-M1: the base challenger, a line of the cost model (BASE money; the lane closed)
+        nb = sum(max(0, min(100, S(f"CHALLENGER_BASE_{c.upper()}", int))) / 100.0 for c in cards if c in M.BASE_CARDS and S("CHALLENGER_ON", bool))
+        if nb > 0: L.append(_line("challenger_base", "the base's challenger candidates: " + ", ".join(c for c in cards if S(f"CHALLENGER_BASE_{c.upper()}", int) > 0), round(nb, 4), S("CHALLENGER_BASE_EST_INR", float), "ai_writing", "", None, {"text:challenger_base": round(nb, 4)}))
+    if kind == "short" and M.challenger_share("short") > 0:
+        L.append(_line("short_first_line_jury", "the second jury on a Short's first line: two sentences, blind", 1, S("SHORT_LINE_JURY_EST_INR", float), "ai_writing"))
+    return L
+
 def lines(kind="long", kling=None, stills=None, living=None, table_read=None, fmt=None, shots=None, seconds=None, living_s=None):
     """THE estimate: every paid second and call of one video as a line - {key, what, n, unit, unit_inr, inr, stage, item, calls}. `n` times the price
     cell is the line; `item` is the Cost_Log item that pays it (reconcile); `calls` is what the paid-call counter must see for it. Kinds: 'long' (a
     long video that opens on its own pictures: an override, or the ladder off), 'ladder' (a long video about a promoted Short: its opening is that
-    Short's footage, already paid - one scene and one start picture fewer, no hook lab), 'short' (fmt = its Short format; shots = its real plan once
+    Short's footage, already paid - one scene and one start picture fewer; its hook lab a ceiling, run only when the Short's hook has no question and no 'you'), 'short' (fmt = its Short format; shots = its real plan once
     it exists; seconds = its real length). Every gate reads this one table (governor, episode, shorts2)."""
     from whatifs import governor as G, clips as CL, media as MD
     u = S("USD_INR", float); hero_inr = CL.hero_usd_s() * u
@@ -67,10 +138,11 @@ def lines(kind="long", kling=None, stills=None, living=None, table_read=None, fm
         n_var = max(1, S("SHORTS_VARIANTS", int))
         from whatifs.org import finance as FIN, look as LOOK              # v12 DRAWN-b: the look bar's session is in every Short's estimate
         boost = FIN.boost("THINK_BOOST_VARIANTS")                         # v12 V4: more scripts while the Claude credit's lane is open (closed: the base's lines, key for key)
-        return [_line("hero_clips", "every second of the Short but the loop's: clips of the hero model", hero_s, hero_inr, "visuals", "s", "hero_clip", {"clip_kling": n_clips}),
+        _short_L = [_line("hero_clips", "every second of the Short but the loop's: clips of the hero model", hero_s, hero_inr, "visuals", "s", "hero_clip", {"clip_kling": n_clips}),
                 _line("pictures", "the start picture of each beat", pics, MD.still_usd(*SH._still_size()) * u, "visuals", "", "image", {"image": pics}),
                 _line("writing", f"{n_var} scripts, the blind jury, one fix", 1, S("REPLAN_SHORT_INR", float), "ai_writing", "", None, {"text:short_writer": n_var + 1}),
-                _line("voice", "the guide's voice, by the second", 1, voice_inr(sec), "tts", "", "gemini_tts", {"voice_job": 1})] +                ([_line("boost_variants", f"{boost} more scripts while the Claude credit lasts", boost, S("SHORT_VARIANT_EST_INR", float), "ai_writing", "", None, {"text:short_writer": boost})] if boost > 0 else []) + ([_line("look", "the look bar: one strong judge answers eight questions about the film's pictures beside the owner's reference sheets", 1, S("LOOK_EST_INR", float), "ai_writing", "", None, {"watch:look_claude": 2})] if LOOK.on() else [])
+                _line("voice", "the guide's voice, by the second", 1, voice_inr(sec), "tts", "", "gemini_tts", {"voice_job": 1})] +                ([_line("boost_variants", f"{boost} more scripts while the Claude credit lasts", boost, S("SHORT_VARIANT_EST_INR", float), "ai_writing", "", None, {"text:short_writer": boost})] if boost > 0 else []) + ([_line("look", "the look bar: one strong judge answers eight questions about the film's pictures beside the owner's reference sheets", 1, S("LOOK_EST_INR", float), "ai_writing", "", None, {"watch:look_claude": 2})] if LOOK.on() else []) + _psyche_line("short")
+        return _short_L + _challenger_line("short")                      # v12 V4b step 8b: the challenger's first line and its second jury (shown only when above 0)
     ladder = kind == "ladder"; full = G.TIERS[0]
     k = S("KLING_CLIPS", int) if kling is None else int(kling)
     if ladder: k = max(0, k - 1)                                          # the scene at second 0 is the Short's footage: paid when the Short was made
@@ -92,7 +164,13 @@ def lines(kind="long", kling=None, stills=None, living=None, table_read=None, fm
          _line("writing", "the writers' room, the juries and every edit of the script", 1, max(0.0, S("LLM_EST_INR", float) - S("HOOK_LAB_EST_INR", float)), "ai_writing", "", None, {t: None for t in TEXT}),
          _line("thinking", "thinking tokens of the text models", 1, S("THINK_EST_INR", float), "thinking"),
          _line("room_extras", "the premise judges, the Immersion Director, the Owner's Cut", 1, S("ROOM_EXTRA_EST_INR", float), "ai_writing")]
-    if not ladder: L.append(_line("hook_lab", "the hook lab: ten opening lines and their judge", 1, S("HOOK_LAB_EST_INR", float), "ai_writing", "", None, {"text:hooks": 1}))
+    L.append(_line("hook_lab", "the hook lab, run only when the Short's hook has no question and no 'you' (V4's repair C25)" if ladder else "the hook lab: ten opening lines and their judge", 1, S("HOOK_LAB_EST_INR", float), "ai_writing", "", None, {"text:hooks": 1}))     # v12 V4b step 0b (R2-F3): on a ladder video the lab is a CEILING
+    from whatifs.org import salvo as SAL
+    seq = 1 if SAL.role() == "flagship" else 0                      # v12 V4b (step 3b): the launch flagship's sequel record - ONE call; the line is shown only when above 0 (V4's boost pattern)
+    if seq: L.append(_line("salvo_sequel", "the launch flagship's sequel record: Part 2's premise, its answer and the line (one call)", seq, S("SEQUEL_EST_INR", float), "ai_writing", "", None, {"text:sequel": seq}))
+    L += _psyche_line("long")                                       # v12 V4b (step 7): the psyche tags (shown only when above 0)
+    L += _depth_line()                                              # v12 V4b (step 8a): the depth pass (shown only when above 0)
+    L += _challenger_line(kind)                                     # v12 V4b (step 8b): the challenger's cards (shown only when above 0)
     if table_read_runs(table_read): L.append(_line("table_read", "the older room's objections round and the Director's read", 1, S("TABLE_READ_EXTRA_INR", float), "ai_writing"))
     if G.palace_prompt_inr(): L.append(_line("palace", "the Palace playbook inside the creative prompts", 1, G.palace_prompt_inr(), "ai_writing"))
     if S("LAYMAN_PROBE_ON", bool): L.append(_line("probe", "the promise line-up: two cheap readers", 1, S("PROBE_EST_INR", float), "ai_writing", "", None, {"text:probe_gemini": 1, "text:probe_claude": 1}))

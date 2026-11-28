@@ -95,6 +95,11 @@ def head(kind="daily", now=None):
     first = next((r for r in need if r.get("expires_at")), None)
     lines.append(f"Needs you: {len(need)}" + (f" (the first closes {parse_iso(first['expires_at']).astimezone(IST):%a %H:%M}: {first.get('default_action') or 'it waits'})" if first else ""))
     lines += [NT.whole(r.get("text") or "", 120) for r in NT.open_rows() if r.get("kind") in ("topup", "expiry")][:2]
+    try:                                                                              # v12 V4b step 10 (memo 3.10 THE REPORT (c)): the money line, on the day the weekly line is due
+        from whatifs.org import strategy as STR, finance as FIN
+        ml = FIN.lapse_lines(now) if STR.weekly_day(now, IST) else []
+        if ml: lines.append(NT.whole(" ".join(ml), 240))
+    except Exception as e: log(f"the morning head's credit line was not built: {scrub(e)[:120]}", "WARN")
     try:
         from whatifs.org import desk as DK; ans = len(DK.lines(now))
     except Exception as e: ans = 0; log(f"the morning head's answers were not counted: {scrub(e)[:120]}", "WARN")

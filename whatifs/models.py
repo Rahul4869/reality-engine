@@ -142,6 +142,11 @@ class Declined(Exception):
 ROUTES = {
     "scout": ("opus", "creative"), "showrunner": ("opus", "creative"), "bible": ("opus", "creative"), "premise_bank": ("opus", "creative"),
     "bench": ("opus", "creative"), "premise_judge": ("opus", "judge"), "owners_cut": ("opus", "judge"),
+    "sequel": ("opus", "creative"),                       # v12 V4b (step 3b): the launch flagship's sequel record (salvo.seal)
+    "psyche": ("board_c", "judge"),                       # v12 V4b (step 7, memo 3.7): the psyche tags - a label that can hold a video is never a cheap model's (strong, one family; hard rule 9)
+    "challenger_base": ("fable", "creative"),             # v12 V4b step 8b-M1: the same route as "challenger", paid from the base (the lane closed)
+    "challenger": ("fable", "creative"),                  # v12 V4b (step 8b, memo 3.0): the challenger's three cards (hook lines, titles, a Short's first line) - CHAINS["fable"] falls to Opus by itself
+    "depth": ("fable", "creative"),                       # v12 V4b (step 8a, memo 3.0): the depth pass (salvo.depth_split) - CHAINS["fable"] falls to Opus by itself
     "writer": ("script", "creative"), "rewrite": ("script", "creative"),
     "memo": ("sonnet", "edit"), "objections": ("sonnet", "edit"), "director_read": ("sonnet", "edit"), "director": ("sonnet", "edit"), "scene": ("sonnet", "edit"),
     "length": ("sonnet", "edit"), "format": ("sonnet", "edit"), "retention": ("sonnet", "edit"), "humanize": ("sonnet", "edit"),
@@ -165,6 +170,62 @@ def _json_setting(key):
     try:
         v = json.loads(S(key) or "{}"); return v if isinstance(v, dict) else {}
     except Exception: return {}
+
+CHALLENGER_CARDS = {"hook": ("CHALLENGER_SHARE_HOOK", 12), "title": ("CHALLENGER_SHARE_TITLE", 5), "short": ("CHALLENGER_SHARE_SHORT", 5)}      # card -> (its share cell, N: the smallest run with (1 - p)^N <= 0.05 for the challenger's share p of the candidates - HOOK p = 3/13, TITLE and SHORT p = 1/2)
+
+def challenger_taper(now=None):
+    """v12 V4b step 8b: 1, then 0.5 inside the last 14 days before CLAUDE_CREDIT_UNTIL, 0 inside the last 7 (and 0 with no end date: no lane)."""
+    from datetime import date
+    from whatifs.core import now_utc
+    try:
+        from whatifs.org import finance as FIN      # v12 V4b step 10: the end of the LAST credit line (with CLAUDE_CREDIT_LINES empty, the cell)
+        ls = FIN.lines(now); d = (date.fromisoformat(str(ls[-1]["until"] if ls else S("CLAUDE_CREDIT_UNTIL") or "").strip()[:10]) - (now or now_utc()).date()).days
+    except Exception: return 0.0
+    return 0.0 if d < 7 else (0.5 if d < 14 else 1.0)
+
+def challenger_dry(card, now=None):
+    """v12 V4b step 8b (R15 review 14d): 1; 0.5 when the newest N rows of tab Contests for the card hold no win; 0 when the newest 2N hold none. READ here, never a
+    cell written from a rule: a win among the newest N puts it back to 1."""
+    from whatifs.org import salvo as SAL
+    n = CHALLENGER_CARDS[card][1]; rows = SAL.contests(card)
+    if len(rows) >= 2 * n and not any(SAL.won(r) for r in rows[-2 * n:]): return 0.0
+    if len(rows) >= n and not any(SAL.won(r) for r in rows[-n:]): return 0.5
+    return 1.0
+
+def challenger_share(card, now=None):
+    """v12 V4b step 8b: the percent of this card's items that get the challenger: its share cell x taper x dry(card), 0 with CHALLENGER_ON FALSE, the lane
+    closed, Claude not allowed or an error reading any of it (logged)."""
+    if card not in CHALLENGER_CARDS or not S("CHALLENGER_ON", bool): return 0.0
+    try:
+        from whatifs.org import finance as FIN
+        from whatifs import governor as G
+        if not (FIN.lane(now) and G.claude_allowed()): return 0.0
+        return max(0, min(100, S(CHALLENGER_CARDS[card][0], int))) * challenger_taper(now) * challenger_dry(card, now)
+    except Exception as e:
+        from whatifs.core import scrub
+        log(f"models: the challenger share of {card} was not read, so it is 0: {scrub(e)[:120]}", "WARN"); return 0.0
+
+BASE_CARDS = ("hook", "title", "short")      # v12 V4b step 8b-M1: a CLOSED list - the cheap cards ("a few short words") may have a base challenger; a long passage never
+
+def _lane_open(now=None):
+    """The credit's lane is open and Claude may be used (an error reading it = closed)."""
+    try:
+        from whatifs.org import finance as FIN
+        from whatifs import governor as G
+        return bool(FIN.lane(now) and G.claude_allowed())
+    except Exception: return False
+
+def challenger_role(now=None):
+    """The role a challenger call asks: "challenger" while the lane is open, "challenger_base" (the base's money) while it is closed."""
+    return "challenger" if _lane_open(now) else "challenger_base"
+
+def challenger(card, key, now=None):
+    """v12 V4b step 8b (memo 3.8 B5, THE SWITCH): True when sha1(key) % 100 < the card's share (CHALLENGER_ON, the lane open, taper, dry). With the lane CLOSED
+    (8b-M1): the base share of a cheap card, CHALLENGER_BASE_<CARD> (0 = none)."""
+    h = int(hashlib.sha1(str(key).encode("utf-8")).hexdigest(), 16) % 100
+    if not _lane_open(now): return bool(S("CHALLENGER_ON", bool) and card in BASE_CARDS and h < S(f"CHALLENGER_BASE_{card.upper()}", int))      # MISS3 8b-M1 (RULINGS_U3f 1a): B8b's WRITER_OF guard becomes this function's first line
+    share = challenger_share(card, now)
+    return share > 0 and h < share
 
 def route(task):
     """task -> (chain key, effort class). Legacy chain keys ('opus', 'sonnet', 'critic', ...) pass through unchanged."""
@@ -604,10 +665,45 @@ def _rtap(task, res):
         except Exception as e: log(f"reply tap failed: {type(e).__name__}", "WARN")
     return res
 
+class EnvelopeFull(RuntimeError):
+    """v12 V4b step 9 (memo 3.9): the organisation's own money for this month is used - raised for a role of costguard.UNCAPPED only."""
+
+LAST_BATCH = {"task": "", "due": False, "why": ""}      # the newest overhead call's answer of batch_due: a test reads it (in fake mode no stand-in can record a batch)
+
+def _ring_fence(task):
+    """THE DOOR (RING_FENCE_ON): a role with no cap of its own is refused when its month has reached BUDGET_MAINT_RESERVE_INR. A role with a cap of its own is
+    never refused here (R&D and the Review Board stop at their own caps, the chat at the chat's cap); his chat never meets this door."""
+    if not S("RING_FENCE_ON", bool): return
+    from whatifs import costguard as CG
+    if task not in CG.UNCAPPED: return
+    spent = CG.uncapped_month(); cap = S("BUDGET_MAINT_RESERVE_INR", float)
+    if spent >= cap: raise EnvelopeFull(f"the organisation's own money for this month is used: Rs {spent:,.0f} of Rs {cap:,.0f}")
+
+def batch_due(task, search=False, now=None):
+    """v12 V4b step 9 (memo 3.9, P-7: HALF PRICE WHEN THE MONEY IS HIS): (due, why) for an OVERHEAD role. Due only when ring-fence is on, the job is one nobody waits
+    for (costguard.BATCH_JOBS), no web search, a Claude chain, and the Claude credit does not already pay it; else `why` is one of a CLOSED list of stated reasons."""
+    from whatifs import costguard as CG
+    if not S("RING_FENCE_ON", bool): return False, "ring-fence off"
+    job = JOB.get("name")
+    if job not in CG.BATCH_JOBS: return False, f"somebody waits: job {job}"
+    if search: return False, "web search"
+    chain_key, _ = route(task)
+    if chain_key not in CHAINS or CHAINS[chain_key][0][0] != "c": return False, "not a Claude chain"
+    from whatifs.org import finance as FIN
+    if FIN.lane(now) and FIN.cover(now) < S("CREDIT_COVER_MONTH_MAX_INR", float): return False, "the Claude credit pays it"
+    return True, "nobody waits: half price"
+
+def _note_batch(task, search):
+    from whatifs import costguard as CG
+    if task not in CG.OVERHEAD: return False
+    due, why = batch_due(task, search); LAST_BATCH.update(task=task, due=due, why=why); return due
+
 def ask(role, system, prompt, want_json=True, max_tokens=6000, temperature=0.8, search=False, episode=None, fake_key=None, fanout=False, _direct=False):
     """Never blocks: walks the fallback chain. Claude roles move to Gemini when Claude credit runs out.
     v8.11: role may be a writers'-room task (ROUTES: model + effort chosen by capability) or a chain key as before; system may be a prompts.Packed."""
     task = role; chain_key, ecls = route(role); _CUR.task = str(task); _CALL.task = str(task)          # v9.1: Cost_Log 'role'; v9.2: per-role caps
+    _ring_fence(task)                                                      # v12 V4b step 9: the door, before anything is routed or faked
+    _due = False if _direct else _note_batch(task, search)                 # v12 V4b step 9 (P-7): decided here so a test can read LAST_BATCH
     if ASK_TAPS: system = _tap(task, system, prompt)
     _CALL.last = {}
     if FAKE:
@@ -625,6 +721,9 @@ def ask(role, system, prompt, want_json=True, max_tokens=6000, temperature=0.8, 
     if not _direct and _preprod_batch(chain_key, search):                     # v9.4a (WP2): same request, half price, nobody waiting
         return ask_batch(role, system, prompt, want_json=want_json, max_tokens=max_tokens, episode=episode, fake_key=fake_key, temperature=temperature,
                          force=True, max_wait_min=S("ROOM_BATCH_MAX_WAIT_MIN", float))
+    if _due:                                                                 # v12 V4b step 9 (P-7): an overhead call nobody waits for, at half price; `_direct` is honoured above, so the batch's fall-back cannot loop
+        return ask_batch(role, system, prompt, want_json=want_json, max_tokens=max_tokens, episode=episode, fake_key=fake_key, temperature=temperature,
+                         force=True, max_wait_min=S("ORG_BATCH_WAIT_MIN", float))
     from whatifs.governor import claude_allowed, opus_allowed, monthly_cap_reached
     if monthly_cap_reached(maintenance=JOB.get("name") in MAINTENANCE_JOBS):
         raise RuntimeError("monthly budget cap reached; no new paid model calls will be started")
@@ -673,6 +772,7 @@ def ask_batch(role, system, prompt, want_json=True, max_tokens=6000, episode=Non
     polled for at most BATCH_MAX_WAIT_MIN minutes; on any error or timeout it is cancelled and the SAME request goes through ask() once (never two paid
     answers: a cancelled batch request that already finished is used instead). Cost is logged at PRICE_BATCH_DISCOUNT x the normal rate.
     Prompt caching inside batches is applied as usual; whether the discounts stack was not verified (see the report)."""
+    _ring_fence(role)                                                      # v12 V4b step 9: the door
     chain_key, ecls = route(role)
     if ASK_TAPS: system = _tap(role, system, prompt)
     if FAKE or not (S("BATCH_ON", bool) or force) or chain_key not in CHAINS or CHAINS[chain_key][0][0] != "c":

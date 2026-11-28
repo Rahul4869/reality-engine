@@ -323,7 +323,7 @@ def test_a_long_video_that_slipped_past_the_gate_is_held_at_the_script_gate_befo
     from tools.rehearsal import ToneVoice
     from whatifs import episode as EP
     _quiet(monkeypatch); monkeypatch.setattr(V, "KokoroBackend", lambda blend: ToneVoice()); MG.setup(); core.set_setting("VOICE", "C"); _on(setting)
-    monkeypatch.setattr(LAD, "gate", lambda now=None: (True, "a path around the gate", None))      # some other way into production
+    monkeypatch.setattr(LAD, "gate", lambda now=None, salvo=False: (True, "a path around the gate", None))      # some other way into production (v12 V4b step 3a: MOVED BY DESIGN - production calls gate(salvo=True))
     paid = []; real = MD.animate; monkeypatch.setattr(MD, "animate", lambda *a, **k: (paid.append(1), real(*a, **k))[1])
     r = EP.produce((core.now_utc() + dt.timedelta(hours=10)).strftime("%Y-%m-%dT%H:%M:%SZ"), episode_id="EP209901010900")
     assert r.get("held") and "contract:topic_ladder" in r["problems"] and not paid, r               # written, judged, held - no picture and no clip was paid

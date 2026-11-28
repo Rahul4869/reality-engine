@@ -446,7 +446,7 @@ def _ask_owner(row, t, op, st, now):
     p0 = t["urgency"] == "P0"
     text = f"{DEPARTMENTS[row['dept']][0]} wants to change {op['target']} from {op['old'] or 'empty'} to {op['new'] or 'empty'}. Why: {t['subject']}. It needs your OK because {op['owner']}."
     aid = NT.send("org_lever", text, [("Approve", f"APPROVE {row['id']}"), ("Reject", f"REJECT {row['id']}")], tier="now" if p0 else "week", urgent=p0,
-                  default="nothing changes until you answer", dedupe_key=f"org_lever|{row['id']}")
+                  default="it stays as it is", expires_h=S("ORG_ASK_EXPIRES_H", float), dedupe_key=f"org_lever|{row['id']}")      # v12 V4b step 11: EVERY ask has a deadline and a default
     if row["state"] != "awaiting_owner":
         _save(st, row, now, state="awaiting_owner", owner_action=str(aid), target=op["target"], old=op["old"], new=op["new"], note=op["owner"][:400])
         _log(st, row, "owner_asked", now, by=row["dept"], note=op["owner"])
@@ -464,9 +464,21 @@ def _on_answer(arow, choice):
     out = _start(row, m, st, now)
     return {"applied": "approved and changed; it is now being verified", "queued": "approved; it changes between videos, at the next free moment"}.get(out, f"approved ({out})")
 
+def _on_default(arow):
+    """v12 V4b step 11 (memo 3.11; R15 TO CORRECT 14): the ask ran out of time. `arow` is the Owner_Actions ROW (notify.py): the ticket's id is in its dedupe_key
+    ("org_lever|<id>"). The ticket closes with its OWN words - refused, "no answer in <hours> hours", ledger "owner_silent", the memo rejected with "no answer in <hours>
+    hours: it stays as it is" - never "the owner said no". A ticket already settled (his tap came first) is left alone."""
+    tid = str((arow or {}).get("dedupe_key") or "").partition("|")[2].strip(); st = store(); now = now_utc(); row = _get(tid, st) if tid else None
+    if row is None or row["state"] != "awaiting_owner": return "already settled"
+    said = f"no answer in {S('ORG_ASK_EXPIRES_H', float):g} hours"
+    _save(st, row, now, state="refused", note=said); _log(st, row, "owner_silent", now, by="clock", note=said)
+    m = MEM.get(tid, st); by_ = (MEM.holders(m) or ["owner"])[0] if m else "owner"      # RULINGS_U3h 2: the memo's holder closes it (MOVES "rejected" = holder / owner; "clock" is refused) - never "owner" while a department holds it
+    _memo_move(MEM.reject, tid, by_, f"{said}: it stays as it is", st, now)      # the WORDS say nobody answered
+    return "no answer: it stays as it is"
+
 def register():
     from whatifs import notify as NT
-    NT.register("org_lever", on_answer=_on_answer)
+    NT.register("org_lever", on_answer=_on_answer, on_default=_on_default)
 
 def _close(row, kind, note, st, now):
     """The ticket (and the build request of a code lever) is closed with the ledger row as its proof - the only way memos.resolve accepts."""

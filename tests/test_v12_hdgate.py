@@ -56,11 +56,12 @@ def test_a_repair_survives_the_next_change():
     """R17 (2): the stand-in MERGES every change - a repaired AI label is not forgotten when the privacy or the time changes; the fake privacy call
     honours refuse and ignore as the label's does (R18 (7 d))."""
     PUB.FAKE_FAULTS["youtube"] = {"drift": {"ai": False}}
-    vid = PUB.yt_upload("x/SHHD09.mp4", "T", "D", [], short=True, now=NOW)
+    vid = PUB.yt_upload("x/SHHD09.mp4", "T", "D", [], short=True, now=NOW, privacy="private")      # V4b step 5: uploaded private - a video sent public never gets a time
     assert PUB.yt_read(vid)["ai"] is False and PUB.yt_set_label(vid, True) and PUB.yt_read(vid)["ai"] is True
     assert PUB.yt_set_privacy(vid, "private") and PUB.yt_read(vid)["privacy"] == "private" and PUB.yt_read(vid)["ai"] is True
+    assert PUB.yt_schedule(vid, "2026-12-20T10:00:00Z"); g = PUB.yt_read(vid); assert g["ai"] is True and g["privacy"] == "private"      # V4b step 5 (memo 3.5): moved BY DESIGN before the public change - YouTube gives no time to a video that was public
     assert PUB.yt_set_privacy(vid, "public"); g = PUB.yt_read(vid); assert g["ai"] is True and g["privacy"] == "public"
-    assert PUB.yt_schedule(vid, "2026-12-20T10:00:00Z"); g = PUB.yt_read(vid); assert g["ai"] is True and g["privacy"] == "private"
+    assert PUB.yt_schedule(vid, "2026-12-20T10:00:00Z") is False and PUB.yt_set_privacy(vid, "private"); g = PUB.yt_read(vid); assert g["ai"] is True and g["privacy"] == "private"
     PUB.FAKE_FAULTS["youtube"] = {"refuse": ("privacy",)}; assert PUB.yt_set_privacy(vid, "public") is False and PUB.yt_read(vid)["privacy"] == "private"
     PUB.FAKE_FAULTS["youtube"] = {"ignore": ("privacy",)}; assert PUB.yt_set_privacy(vid, "public") is True and PUB.yt_read(vid)["privacy"] == "private"
     PUB.FAKE_FAULTS["youtube"] = {"sd": True}; assert PUB.yt_read(vid)["hd"] is False and PUB.yt_read(vid)["processed"] is True

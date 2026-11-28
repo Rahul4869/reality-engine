@@ -68,8 +68,12 @@ def refresh_lunar_dates(now=None):
     keys = [k for k, (_n, rule, _b) in OCCASIONS.items() if rule == "lunar"]
     if all(str(y) in (cur.get(k) or {}) for k in keys): return False
     from whatifs.models import ask
-    out = ask("occasions_check", "Return JSON only: {key: 'YYYY-MM-DD'} for the requested festivals in the requested year, from official or widely published calendars.",
+    from whatifs.models import EnvelopeFull
+    try: out = ask("occasions_check", "Return JSON only: {key: 'YYYY-MM-DD'} for the requested festivals in the requested year, from official or widely published calendars.",
               json.dumps({"year": y, "festivals": {k: OCCASIONS[k][0] for k in keys}}), want_json=True, max_tokens=600, search=True, fake_key="occasions_check")
+    except EnvelopeFull as e:
+        from whatifs.core import log, scrub
+        log(f"occasions check skipped: {scrub(e)}", "WARN"); return False
     added = []
     for k in keys:
         v = str((out or {}).get(k) or "") if isinstance(out, dict) else ""

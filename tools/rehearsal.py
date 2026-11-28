@@ -99,7 +99,7 @@ def run(ep_id=None):
         rs12 = SH12.run(force=True, publish=True, now=t12, episode_id="SH" + epid[2:]); rs12b = SH12.run(force=True, publish=True, now=t12 + dt.timedelta(hours=48), episode_id="SHB" + epid[2:])
         assert rs12.get("ok") and os.path.exists(str(rs12.get("path") or "")) and rs12b.get("ok"), ("the rehearsal's Shorts were not made", {k: v for k, v in rs12.items() if k != "script"}, {k: v for k, v in rs12b.items() if k != "script"})
         sl12 = {r["feature"]: r["status"] for r in st_rows("Feature_Ledger") if r.get("episode_id") == rs12["id"]}
-        assert sl12 == {k: "PASS" for k in ("short_open", "short_plain", "short_shape", "short_kept", "short_contract", "short_moving", "short_sound", "release_sheet")}, ("the short gate, the gate of the Short's finished file or the release gate did not pass", sl12)
+        assert sl12 == {k: "PASS" for k in ("short_open", "short_plain", "short_shape", "short_kept", "short_contract", "short_psyche", "short_moving", "short_sound", "release_sheet")}, ("the short gate, the gate of the Short's finished file or the release gate did not pass", sl12)
         ss12 = [(s["dept"], s["trigger"], s["status"]) for s in st.rows("Sessions") if s.get("episode_id") == rs12["id"]]
         assert ss12 == [("D14", "write", "ok"), ("D7", "short_voice", "ok"), ("D13", "short_seat", "ok"), ("D8", "short_gate", "ok"), ("D14", "make", "ok"), ("D8", "short_file_gate", "ok"), ("D9", "short_publish", "ok"), ("D8", "release_gate", "ok")], ("a department run of the Short is missing or broken", ss12)
         # v12 V2c-b2: THE PLATFORMS - the Short went out as three native uploads of ONE master file under Publishing's own run, and every row of its release
@@ -110,7 +110,7 @@ def run(ep_id=None):
         assert sp12["made"] and sp12["status"] == "POSTED" and sp12["yt_id"] == rl12["youtube"]["native_id"] and sp12["file"].startswith("drive:") and sp12["cover"], ("the Short's record is incomplete", sp12)
         assert all(k in rl12[p]["receipts"] for p in REL12.PLATFORMS for k in REL12.rows_of(p)) and not [v for p in rl12.values() for v in p["receipts"].values() if v[0] not in REL12.GOOD], "a row of the release sheet has no good receipt"
         lo12, hi12 = FMT12.short_len(rs12["format"]); assert lo12 <= float(rs12["sec"]) <= hi12 and SH12._loop_diff(rs12["path"]) <= SH12.LOOP_MAX, ("the Short has the wrong length or does not loop", rs12["sec"])
-        print("short:", rs12["id"], "format", rs12["format"], "(" + FMT12.short_name(rs12["format"]) + "), hook", rs12["hook"], ",", rs12["sec"], "s; short gate 5 / 5; its finished file 2 / 2 (every half second moves, sound from the first frame); release sheet 1 / 1 on", len(rl12), "platforms; 8 department runs")
+        print("short:", rs12["id"], "format", rs12["format"], "(" + FMT12.short_name(rs12["format"]) + "), hook", rs12["hook"], ",", rs12["sec"], "s; short gate 6 / 6; its finished file 2 / 2 (every half second moves, sound from the first frame); release sheet 1 / 1 on", len(rl12), "platforms; 8 department runs")
         lad12 = {x["id"]: x for x in LAD12.rows()}
         assert set(lad12) == {rs12["id"], rs12b["id"]} and all(x["state"] == "POSTED" and x["yt_id"] and x["footage"] for x in lad12.values()), ("a Short is not on the ladder, not posted or its footage was not kept", lad12)
         from whatifs.org import verdicts as VER1c                                       # v12 V1c (3.2, 3.3): both public Shorts are asked about - his verdict, and the second message: his line
@@ -247,6 +247,20 @@ def run(ep_id=None):
         STRATEGY_SAID[:] = [said4]                                                           # the sweep's rehearsal branch takes these words (a second walk would plant twice)
         print("strategy:", sum(1 for x in st.rows("Ladder") if str(x.get("id", "")).startswith("RM")), "Shorts tested,", len(prom4), "promoted,", n4,
               "decisions (" + dec4["key"] + " " + dec4["old"] + " -> " + dec4["new"] + ", told word for word; the trial),", u4, "undo | scoreboard:", SB4.line()[:200])
+        # v12 V4b (step 12 (4)): THE APPETITE PLAN of the long video - frozen before the final gate, its JSON hashing to its sha; a planted hour-48 reading goes through
+        # appetite.fire (V4's 48-hour rule) and the fire's act e orders ONE follow-up Short. No Part 2 and no production is added.
+        from tools.sweep import appetite_of as app13
+        from whatifs.org import appetite as APP13, runner as ORG13
+        from whatifs import ladder as LAD13
+        if ORG13.on() and APP13.on():
+            ok13, said13 = app13(core12, epid, True); assert ok13, ("the appetite plan did not hold", said13)
+            y13 = str(e12.get("yt_id") or "") or "VREH" + epid[-8:]; APP13.uploaded(epid, y13)
+            st.append("Appetite", [{"ts": iso_now(t4), "ep": epid, "yt_id": y13, "h": "48", "views": "1200", "likes": "40", "comments": "6", "askers": "1", "line": "800", "fired": "TRUE"}])
+            n13 = sum(1 for x in st.rows("Appetite") if x.get("ep") == epid)
+            assert APP13.fire(epid, y13, 1200.0, 800.0, 48, "the 48-hour rule"), "V4's 48-hour rule did not fire the plan"
+            o13 = [x for x in st.rows(LAD13.QUEUE) if x.get("video_key") == epid]
+            assert APP13.plan_row(epid)["state"] == "fired" and len(o13) == 1, ("the fire left no single order", APP13.plan_row(epid).get("state"), len(o13), APP13.acts(APP13.plan_row(epid)))
+            print(f"appetite: plan frozen, {n13} reading(s), fired at hour 48 by V4's rule, {len(o13)} order")
         # v7.2 independent checks on the real rendered files
         from whatifs import qc as QC
         from whatifs.render import probe_dur
@@ -393,7 +407,7 @@ def run(ep_id=None):
         print("cut-downs: none made, none uploaded; short videos out:", len({x.get("id") for x in st.rows("Release_Sheet")}), "standalone Shorts through the release sheet")
         print("v8.5 checks ok")
         MG.trend_scout(); print("trends ok")
-        old = (now_utc() - dt.timedelta(days=6)).strftime("%Y-%m-%dT%H:%M:%SZ")      # v9.3.1: the rescue now looks at 72-120 h; 6 days old = "too old" (fake mode has no view counts)
+        old = (now_utc() - dt.timedelta(days=10)).strftime("%Y-%m-%dT%H:%M:%SZ")      # v12 V4b step 2: the rescue reads at 168-216 h; 10 days old = 'too old' (fake mode has no view counts)
         st.update("Episodes", "episode_id", e["episode_id"], {"slot_et": old})
         MG.learn(); assert st.rows("Analytics"), "no analytics"; print("learn ok")
         assert re.search(r"too old|v9 rotation test", str(next(x for x in st.rows("Episodes") if x["episode_id"] == e["episode_id"])["pkg_check"])), "packaging check did not run"      # v9: the rotation test replaces the v8.5 rescue

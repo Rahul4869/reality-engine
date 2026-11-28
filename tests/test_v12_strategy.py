@@ -352,6 +352,21 @@ def test_one_decision_a_review_and_three_in_seven_days(monkeypatch, setting):
     assert moved == ["FORMAT_SHARE_F1", "FORMAT_SHARE_F2", "FORMAT_SHARE_F3"]                          # one a review; the fourth day: three in seven days already
     assert STR.next_move(JAN + dt.timedelta(days=3))[1] == ["not taken: 3 decisions in seven days already"]
 
+def test_a_second_round_on_one_day_decides_nothing_more(monkeypatch, setting):
+    """V4b step 0c: one decision a DAY is a rule of the code - a production job's catch-up round (cli.strategy_catch_up) and the learning job's
+    round can fall on one UTC day; the second decides nothing, and the key it would have moved is decided the day after."""
+    from whatifs import cli as CLI
+    from whatifs.org import finance as FINX, memos as MEMX, runner as RUNX
+    ceo(setting)                                              # Jan 2027: five Saturdays, Rs 20,000 - SLOTS 4 -> 5 is due and SPLIT's week behind it
+    def day(t):
+        for mod in (STR, FINX, EX, MEMX, RUNX): monkeypatch.setattr(mod, "now_utc", lambda t=t: t)
+    dec = lambda: [r for r in decisions() if r.get("rule") not in ("HAND", "WATCH", "RISK") and r["state"] not in ("judged", "hand", "watch")]
+    day(JAN); assert CLI.strategy_round() is True and len(dec()) == 1
+    day(JAN + dt.timedelta(hours=6)); assert CLI.strategy_round() is True                     # the second round of the same UTC day
+    assert len(dec()) == 1, [(r["key"], r["ts"]) for r in dec()]                               # FAILS ON THE CODE AS IT STANDS: two rows dated 2027-01-01
+    assert json.loads(core.S("STRATEGY_TODAY"))["refused"] == ["not taken: one decision was taken today already"]
+    day(JAN + dt.timedelta(days=1)); CLI.strategy_round(); assert len(dec()) == 2              # a second key WAS due: the test cannot pass on an empty month
+
 def test_the_ticket_is_told_once_it_exists_and_the_brief_carries_the_whole_text_and_its_undo_link(monkeypatch, setting):
     from whatifs.org import memos as MEMO
     ceo(setting); at(monkeypatch, JAN); monkeypatch.setenv("GH_REPO", "owner/repo")
@@ -722,7 +737,7 @@ def test_the_replanner_steps_aside_and_the_spin_offs_are_paused_once(setting):
 def test_the_lever_table_is_strategys_where_the_plan_is(setting):
     for k in ("SHORTS_PER_WEEK", "SHORTS_PER_MONTH", "MOVING_SHARE_LONG", "DEEP_TRIAL_ON", "CASEFILES_ON", "THINK_BOOST_VARIANTS", "STANDARD_MAX_LONG_PER_MONTH"): assert LV.owner_of(k) == "D1", k
     assert (LV.LEVERS["SHORTS_PER_WEEK"]["lo"], LV.LEVERS["SHORTS_PER_WEEK"]["hi"], LV.LEVERS["SHORTS_PER_MONTH"]["lo"], LV.LEVERS["SHORTS_PER_MONTH"]["hi"]) == (2, 4, 8, 16)
-    assert LV.LEVERS["DEEP_TRIAL_ON"]["owner"] == "on" and LV.LEVERS["CASEFILES_ON"]["owner"] == "on" and len(LV.LEVERS) == 98 and LV.issues() == []      # v12 DRAWN-b B2: + RESTYLE_SHARE_PCT (D6) (pin moved BY DESIGN). v12 DRAWN-b L2: + LOOK_BAR_PCT (D13), SHORT_GRADE_ON (D6) (pins moved BY DESIGN). v12 DRAWN step 1: + DRAWN_SHARE_PCT, DRAWN_TEXT_MIN_PCT (a pin moved BY DESIGN)
+    assert LV.LEVERS["DEEP_TRIAL_ON"]["owner"] == "on" and LV.LEVERS["CASEFILES_ON"]["owner"] == "on" and len(LV.LEVERS) == 102 and LV.issues() == []      # RB-U1-c: re-counted on the U1 stack, 95 (S0) + 3 (DRAWN-b) + 4 (V4b) = 102. v12 V4b step 8b: + CHALLENGER_SHARE_HOOK, _TITLE, _SHORT, D1. v12 V4b step 1: + SHORT_TELLS_MAX. v12 DRAWN-b B2: + RESTYLE_SHARE_PCT (D6) (pin moved BY DESIGN). v12 DRAWN-b L2: + LOOK_BAR_PCT (D13), SHORT_GRADE_ON (D6) (pins moved BY DESIGN). v12 DRAWN step 1: + DRAWN_SHARE_PCT, DRAWN_TEXT_MIN_PCT (a pin moved BY DESIGN)
     assert [r["id"] for r in STR.RULES] == ["CREDIT", "SHORT_ARMS", "SLOTS", "SPLIT", "ARMS", "TRIAL"]
     for k in ("SHORT_ARM_MIN", "ARM_MIN_VIDEOS", "RISK_MIN_VIEWS", "STRATEGY_WINDOW_END", "CREDIT_TAPER_DAYS"): assert k in core.DEFAULTS and k not in LV.LEVERS, k
     setting("STRATEGY_ON", "TRUE"); from whatifs import dash as DS
@@ -1198,6 +1213,39 @@ def test_the_shorts_hook_must_still_be_the_second_spoken_line_after_the_voice(tm
     ok, said = CON.p_hook({"hook_rec": rec, "d": {"ladder": sid}})
     assert ok == CON.FAIL and "second spoken line" in said, said
 
+def test_a_rewrite_that_drops_the_labs_line_is_refused_before_any_picture(tmp_path):
+    """V4b step 1b (P-B): the hook lab's line was applied and a later rewrite removed it - verify_in_narration says so, but check hook_lab's lab
+    branch read only `applied`: the film was paid and then held by the first three seconds' rule at the final gate."""
+    from whatifs import hooks as HOOKS, contract as CON
+    script = "## BEAT 1\n[DIRECTOR] You find out what happens to you when the rain stops at exactly noon.\n[CURIOUS] The strangest part is what happens to your street."
+    new, rec = HOOKS.run_hooks(script, {"premise": "What if the rain stopped at noon?"}, "EPPB1", str(tmp_path))
+    first = next(c["line"] for c in rec["candidates"] if c["id"] == rec["chosen_id"])
+    assert rec["applied"] and HOOKS.verify_in_narration(rec, [{"text": first}, {"text": "You wake up."}]) and CON.p_hook({"hook_rec": rec})[0] == CON.PASS
+    assert not HOOKS.verify_in_narration(rec, [{"text": "Something else entirely opens the film."}, {"text": "You wake up."}])
+    ok, said = CON.p_hook({"hook_rec": rec}); assert ok == CON.FAIL and "first spoken line" in said, said      # FAILS TODAY: the check passes
+
+def test_on_the_shorts_road_a_dropped_first_line_is_named_as_the_first_line(tmp_path):
+    """V4b step 1b (DQ-1, RULINGS_U1c 2): verify_in_narration wrote one status for two losses and p_hook could not tell them apart - on C25's road a
+    rewrite that dropped the lab's FIRST line was told "not the second spoken line". The record now says which line was lost; a record checked twice
+    never keeps an old "second"."""
+    from whatifs import hooks as HOOKS, contract as CON
+    hook, sid = "Something is wrong with the rain.", "SHDQ1"
+    script = "## BEAT 1\n[DIRECTOR] You find out what happens to you when the rain stops at exactly noon.\n[CURIOUS] The strangest part is what happens to your street."
+    gone = [{"text": "Something else entirely opens the film."}, {"text": hook}, {"text": "You wake up."}]
+    def made(ep):
+        new, rec = HOOKS.run_hooks(script, {"premise": "What if the rain stopped at noon?"}, ep, str(tmp_path), proven={"line": hook, "short": sid})
+        return rec, next(c["line"] for c in rec["candidates"] if c["id"] == rec["chosen_id"])
+    rec, first = made("EPDQ1A")
+    assert rec.get("second", {}).get("short") == sid and not HOOKS.verify_in_narration(rec, gone)
+    ok, said = CON.p_hook({"hook_rec": rec, "d": {"ladder": sid}})
+    assert ok == CON.FAIL and "first spoken line" in said and "second spoken line" not in said, said
+    rec, first = made("EPDQ1B")
+    assert not HOOKS.verify_in_narration(rec, [{"text": first}, {"text": "Something else entirely."}, {"text": "You wake up."}])
+    ok, said = CON.p_hook({"hook_rec": rec, "d": {"ladder": sid}}); assert ok == CON.FAIL and "second spoken line" in said, said
+    assert not HOOKS.verify_in_narration(rec, gone)                                              # the same record, checked again: now its FIRST line is gone
+    ok, said = CON.p_hook({"hook_rec": rec, "d": {"ladder": sid}})
+    assert ok == CON.FAIL and "first spoken line" in said and "second spoken line" not in said, said
+
 def test_the_writers_near_copy_of_the_shorts_hook_becomes_the_hook(tmp_path):
     """R2-F2 (step 0b) through the code reader's CR-0b-1: the writer, told to open on the Short's line, said it with one word changed ("this rain"); the
     Short's line was not inserted (the opening 'already says this') and the word-for-word check after the voice held the film at the script gate. On
@@ -1230,3 +1278,155 @@ def test_the_writers_near_copy_of_a_shorts_hook_that_leads_becomes_the_hook(tmp_
     spoken = [l for l in new.split("\n") if l.strip() and not l.startswith("##")]
     assert rec.get("source") == "short" and rec["applied"] and spoken[0] == f"[DIRECTOR] [tension] {hook}" and "this whole street" not in new, spoken[:2]
     assert HOOKS.verify_in_narration(rec, [{"text": hook}, {"text": "Nobody on it can say why."}]) and CON.p_hook({"hook_rec": rec, "d": {"ladder": sid}})[0] == CON.PASS, rec["notes"]
+
+# ------------------------------------------------------------------ V4b step 1b (P-A): the hook lab's chosen line holds the stake on every road (whatifs/hooks.py, D4)
+STAKE_SCRIPT = ("## BEAT 1\n[DIRECTOR] The ocean boils in nine seconds, and you have nine seconds before the whole ocean boils over your street.\n"
+                "[CURIOUS] The strangest part is what the boiling ocean does to your quiet street in those nine seconds, and every street waits while it boils.")
+NO_STAKE = ["The ocean boils in nine seconds.", "The whole ocean boils over the street.", "The street goes quiet as the ocean boils.", "Nine seconds, and the ocean boils.",
+            "The boiling ocean reaches the street.", "The ocean boils before the street knows.", "The strangest part is the boiling ocean.",
+            "The ocean boils, and then the street.", "The street waits while the ocean boils.", "Every ocean boils in those nine seconds."]
+YOU_LINE = "You have nine seconds before the ocean boils."
+
+def _stake_lab(first, refill=(), low=()):
+    """The lab as an `ask_fn` stand-in (as C25's test): the first request gets `first`, the one refill `refill`; the judge scores a line 10 on every
+    count, a line of `low` 3 lower. `asked` keeps each lab request's system text (its avoid sentence is there)."""
+    asked = []
+    def ask(role, system, user, **kw):
+        if kw.get("fake_key") == "hooks":
+            asked.append(system); return {"candidates": [{"line": l, "type": "concrete_stakes", "basis": "script"} for l in (first if len(asked) == 1 else refill)]}
+        cands = json.loads(user.split("CANDIDATES (JSON): ", 1)[1])
+        return {"scores": [{"id": c["id"], **{k: (7.0 if c["line"] in low else 10.0) for k in ("clarity", "relevance", "curiosity", "promise_accuracy")}, "unsupported_claim": False} for c in cands]}
+    return ask, asked
+
+def _chosen(rec): return next((c["line"] for c in rec["candidates"] if c["id"] == rec["chosen_id"]), None)
+
+def test_the_labs_best_line_that_holds_a_stake_leads_over_a_higher_scored_one_without(setting):
+    """V4b step 1b (P-A; REAUDIT_R2 126-131): under an override the film opens on the lab's line and nothing asked that it hold a question or a 'you' -
+    the first three seconds' rule held the PAID film at the final gate. The best line that holds one now leads (before: the top-scored line)."""
+    from whatifs import hooks as HOOKS, enforce as EN
+    setting("HOOK_STAKE_ON", "TRUE"); ask, asked = _stake_lab([NO_STAKE[0], YOU_LINE], low={YOU_LINE})
+    rec = HOOKS.build_record(STAKE_SCRIPT, {"premise": "What if the ocean boiled?"}, "EPSTK1", ask_fn=ask)
+    assert [c["valid"] for c in rec["candidates"]] == [True, True] and rec["candidates"][0]["line"] == NO_STAKE[0], rec["candidates"]      # the stakeless line is the top-scored
+    assert _chosen(rec) == YOU_LINE and EN.v1_hook([{"text": YOU_LINE, "start": 0.35}])[0], rec
+    assert "The top-scored line holds no question and no 'you': the first three seconds' rule would hold the film. The best line that holds one leads." in rec["notes"]
+    assert "Each line holds a question" not in asked[1]                                                  # a kept line holds a stake: the refill is the shortfall's, as before
+
+def test_ten_lines_without_a_stake_ask_the_one_refill_for_one_and_its_line_leads(setting):
+    from whatifs import hooks as HOOKS
+    setting("HOOK_STAKE_ON", "TRUE"); ask, asked = _stake_lab(NO_STAKE, refill=[YOU_LINE])
+    rec = HOOKS.build_record(STAKE_SCRIPT, {"premise": "p"}, "EPSTK2", ask_fn=ask)
+    assert len(asked) == 2 and "Each line holds a question to the viewer or the word 'you'." in asked[1] and "Each line holds a question" not in asked[0]     # ONE refill, the sentence in it
+    assert len(rec["candidates"]) == 10 and YOU_LINE in [c["line"] for c in rec["candidates"]]
+    assert _chosen(rec) == YOU_LINE, (rec["chosen_id"], rec["notes"])                                    # the cut kept it (the sort), the filter chose it
+
+def test_a_lab_with_no_stake_line_chooses_nothing_and_the_film_waits_at_its_script_gate(setting, tmp_path):
+    from whatifs import hooks as HOOKS, contract as CON
+    setting("HOOK_STAKE_ON", "TRUE"); ask, asked = _stake_lab(NO_STAKE, refill=NO_STAKE[:3])
+    new, rec = HOOKS.run_hooks(STAKE_SCRIPT, {"premise": "p"}, "EPSTK3", str(tmp_path), ask_fn=ask)
+    assert rec["chosen_id"] is None and not rec["applied"] and new == STAKE_SCRIPT and len(asked) == 2, rec
+    assert "No candidate that passed every check holds a question or a 'you': the film waits at its script gate, before any picture." in rec["notes"]
+    ok, said = CON.p_hook({"hook_rec": rec}); assert ok == CON.FAIL and {f[0]: f[1] for f in CON.FEATURES}["hook_lab"] == "script", (ok, said)          # held at the SCRIPT gate
+
+def test_a_production_whose_lab_has_no_stake_line_is_held_before_any_picture_is_paid(monkeypatch, setting):
+    """V4b step 1b: the whole offline production under an override, its lab's lines all without a stake (the offline lab's two 'you' lines taken out):
+    the film is held at its script gate - the paid-call counter saw no picture."""
+    from whatifs import hooks as HOOKS, fakes as FKX, episode as EPX, ladder as LADX
+    from tests.paid_calls import watch
+    from tests.test_v12_opening_e2e import _start, _slot, _ledger
+    _start(monkeypatch, setting); setting("HOOK_STAKE_ON", "TRUE"); real = FKX.fake_reply
+    def fr(key, prompt):
+        out = real(key, prompt)
+        if key != "hooks": return out
+        d = json.loads(out); d["candidates"] = [c for c in d["candidates"] if not HOOKS.stake(c["line"])]; return json.dumps(d)
+    monkeypatch.setattr(FKX, "fake_reply", fr); ep = "EP209903010900"
+    assert EPX.produce(_slot(10), episode_id=ep).get("skipped") == "ladder"; LADX.override("owner", "make it anyway")
+    paid = watch(monkeypatch); r = EPX.produce(_slot(10), episode_id=ep); led = _ledger(ep)
+    assert not r.get("ok") and led["hook_lab"][0] == "FAIL", (r, led.get("hook_lab"))
+    assert not [k for k in ("image", "image_premium", "image_ref", "clip", "clip_kling") if paid.get(k)], dict(paid)
+
+def test_the_switch_off_keeps_the_base_choice_key_for_key(setting):
+    from whatifs import hooks as HOOKS
+    setting("HOOK_STAKE_ON", "FALSE")
+    ask, asked = _stake_lab([NO_STAKE[0], YOU_LINE], low={YOU_LINE}); rec = HOOKS.build_record(STAKE_SCRIPT, {"premise": "p"}, "EPSTK5", ask_fn=ask)
+    assert _chosen(rec) == NO_STAKE[0] and not [n for n in rec["notes"] if "question or a 'you'" in n or "top-scored line" in n] and len(asked) == 2 and "Each line holds" not in asked[1]
+    ask, asked = _stake_lab(NO_STAKE, refill=[YOU_LINE]); rec = HOOKS.build_record(STAKE_SCRIPT, {"premise": "p"}, "EPSTK6", ask_fn=ask)
+    assert len(asked) == 1 and _chosen(rec) == NO_STAKE[0] and [c["line"] for c in rec["candidates"]] == NO_STAKE                  # no refill: ten kept, the top-scored leads
+
+def test_the_stake_rule_ships_on_and_is_no_lever():
+    from tests.conftest import OLD_V4B
+    assert core.DEFAULTS["HOOK_STAKE_ON"][0] == "TRUE" and OLD_V4B["HOOK_STAKE_ON"] == "FALSE"
+    assert LV.owner_of("HOOK_STAKE_ON") == "" and "HOOK_STAKE_ON" not in LV.LEVERS and not [d for d, v in REG.DEPTS.items() if "HOOK_STAKE_ON" in v.get("levers", ())]
+
+def test_a_whole_offline_production_under_an_override_opens_on_a_line_that_passes_the_first_three_seconds(monkeypatch, setting):
+    """V4b step 1b (TO VERIFY 9): the offline lab holds two 'you' lines among twelve; with the switch on, one F1 production under an override names the
+    chosen line, and the first three seconds' rule passes at the final gate."""
+    from whatifs import hooks as HOOKS, episode as EPX, ladder as LADX
+    from tests.test_v12_opening_e2e import _start, _slot, _ledger
+    _start(monkeypatch, setting); setting("HOOK_STAKE_ON", "TRUE"); setting("FORMAT_FORCE", "F1"); ep = "EP209903080900"
+    assert EPX.produce(_slot(10), episode_id=ep).get("skipped") == "ladder"; LADX.override("owner", "make it anyway")
+    r = EPX.produce(_slot(10), episode_id=ep); led = _ledger(ep); assert r.get("ok"), (r, {k: v for k, v in led.items() if v[0] == "FAIL"})
+    hl = next(x for x in core.store().rows("Hook_Candidates") if x.get("episode_id") == ep and str(x.get("applied")).upper() == "TRUE")
+    assert HOOKS.stake(hl["line"]) and led["hook_lab"][0] == "PASS" and led["impact_map"][0] == "PASS", (hl["line"], led["hook_lab"], led.get("impact_map"))
+
+# ------------------------------------------------------------------ V4b step 0a: V4's re-audit R2-F4 and R2-F5 (tests only, no code)
+def test_a_credit_decision_is_observed_from_a_real_write_run(setting):
+    """V4b step 0a (R2-F4): a CREDIT decision's `observed` comes from ONE real D14 write run through the runner in fake mode - not from a planted
+    Takeaways row: `asked` is what the write run really asked, the Short's variants and the boost."""
+    from whatifs import shorts2 as SH2, formats as FMTX
+    from whatifs.org import strategy as STR, runner as RUNM, finance as FINM
+    from tests.test_v12_short import _bench, MOON
+    setting("STRATEGY_ON", "TRUE"); s = core.store()
+    s.append("Decisions", [{"id": "DEC-wmf4", "ts": core.iso(core.now_utc() - dt.timedelta(hours=1)), "rule": "CREDIT", "key": "THINK_BOOST_VARIANTS", "old": "0", "new": "2",
+                            "state": "verified", "why": "w", "numbers": "{}", "observed": "", "briefed": "x"}])
+    _bench(MOON); topic = SH2.pick_topic(None); assert topic and topic["premise"] == MOON          # shorts2.run's own lines above its D14 call
+    hist = SH2.history(); fmt = FMTX.short_pick("SHWMF4", [h["format"] for h in hist]); choice = SH2.hook_for(fmt, hist, "SHWMF4"); arch = choice["level"]
+    with FMTX.short_using(fmt):
+        RUNM.work("D14", "write", "SHWMF4", lambda b: SH2.write(topic, fmt, arch, "SHWMF4", hist), measure=SH2.m_write, topic=fmt)
+    assert STR.observe() == 1
+    row = next(r for r in s.rows("Decisions") if r["id"] == "DEC-wmf4")
+    assert json.loads(row["observed"]) == {"asked": core.S("SHORTS_VARIANTS", int) + FINM.boost("THINK_BOOST_VARIANTS")}, row["observed"]
+
+def test_one_whole_month_of_daily_rounds_keeps_every_limit(monkeypatch, setting):
+    """V4b step 0a (R2-F5; V4's memo 3.10, ONE WHOLE MONTH): thirty planted days of the CEO's REAL round (cli.strategy_round, execute.engine_tick)
+    on one Sheet. Four keys are off their targets from day 0 and two are due on day 0: one decision a day, three in any seven days, every decision a
+    ticket told once, every arm judged once, nothing moved on the key he undid."""
+    from whatifs import cli as CLI
+    from whatifs.org import strategy as STR, finance as FIN, execute as EXE, memos as MEMM, runner as RUNM
+    setting("STRATEGY_ON", "TRUE"); setting("SHORT_FORMAT_FORCE", ""); setting("FORMAT_FORCE", ""); setting("EXEC_VERIFY_DAYS", "60")
+    monkeypatch.delenv("WI_SHORT_FORMAT", raising=False); monkeypatch.delenv("WI_FORMAT", raising=False)
+    for k in ("FORMAT_SHARE_F1", "FORMAT_SHARE_F2", "FORMAT_SHARE_F3", "SHORT_SHARE_S1", "SHORT_SHARE_S2", "SHORT_SHARE_S3"): setting(k, core.DEFAULTS[k][0])   # 60 / 20 / 20 and 40 / 40 / 20: conftest's shares would be HIS hand
+    day0 = dt.datetime(2027, 3, 1, 9, 0, tzinfo=dt.timezone.utc); s = core.store(); t0 = day0 - dt.timedelta(days=50)
+    shorts = [("S1", 100 + i) for i in range(8)] + [("S3", 40 + i) for i in range(8)] + [("S2", 10 + i) for i in range(8)]
+    s.append("Ladder", [{"id": f"WM{n:02d}", "format": f, "posted": core.iso(t0 + dt.timedelta(hours=n)), "state": "READ", "evidence": "measured",
+                         "first": json.dumps({"days": 3, "engaged": v})} for n, (f, v) in enumerate(shorts)])
+    longs = [("F1", 100 + i) for i in range(4)] + [("F3", 40 + i) for i in range(8)] + [("F2", 10 + i) for i in range(8)]
+    for n, (f, v) in enumerate(longs):                                                              # LIVE with a ripe reading and NO yt_id: the watch book has nothing to read
+        ep = f"EPWM{n:02d}"; slot = core.iso(t0 + dt.timedelta(days=n))
+        s.append("Episodes", [{"episode_id": ep, "slot_et": slot, "status": "LIVE", "draw_json": json.dumps({"format": f})}])
+        s.append("Analytics", [{"episode_id": ep, "ripe_at": slot, "ripe_views": v, "ripe_sec": 3600}])      # h = v watch hours
+    s.append("Decisions", [{"id": "DEC-wmrisk", "ts": core.iso(day0 + dt.timedelta(minutes=1)), "rule": "RISK", "key": "risk_line", "old": "", "new": "worse", "why": "planted: this test takes the month's money out of the question",
+                            "ticket": "", "numbers": "{}", "effect_before": "", "effect_after": "", "prediction": "", "state": "judged", "told": "", "frozen_until": "", "observed": "", "scored": "", "briefed": ""}])   # rule SPLIT raises nothing on a "worse" risk line, and one "worse" reading lowers nothing; dated one minute AFTER day 0's round so that no new risk row is written before day 8
+    undone = None
+    for d in range(30):
+        today = day0 + dt.timedelta(days=d)
+        for mod in (STR, FIN, EXE, MEMM, RUNM): monkeypatch.setattr(mod, "now_utc", lambda t=today: t)
+        CLI.strategy_round(); EXE.engine_tick(now=today + dt.timedelta(minutes=5))
+        if d == 0: assert not STR.at_target("SHORT_SHARE_S3", "10", today)                         # R15 SECOND PASS: TWO keys were due on day 0 and ONE was decided
+        if d == 3:                                                                                  # a FOURTH key is due, and the round's own refusal names the week's limit
+            assert not STR.at_target("FORMAT_SHARE_F3", "10", today) and json.loads(core.S("STRATEGY_TODAY"))["refused"] == ["not taken: 3 decisions in seven days already"]
+        if d == 1:                                                                                  # his Undo, on day 1, of day 0's decision
+            undone = sorted([r for r in s.rows("Decisions") if r.get("told")], key=lambda r: r["ts"])[0]
+            assert str(NT.answer(undone["told"], f"STRATEGY UNDO {undone['id']}")).startswith("undone"), undone
+    rows = s.rows("Decisions")
+    dec = sorted([r for r in rows if r.get("rule") not in ("HAND", "WATCH", "RISK") and r["state"] not in ("judged", "hand", "watch")], key=lambda r: r["ts"])
+    ts = [core.parse_iso(r["ts"]) for r in dec]; days = [t.date() for t in ts]
+    first = [((t - day0).days, r["key"], r["old"], r["new"]) for t, r in zip(ts, dec) if t < day0 + dt.timedelta(days=8)]
+    assert len(days) == len(set(days)), days                                                                              # at most one decision a day
+    assert all(sum(1 for u in ts if t - dt.timedelta(days=7) < u <= t) <= core.S("STRATEGY_MOVES_PER_WEEK", int) for t in ts), ts      # three in any seven days
+    assert first == [(0, "SHORT_SHARE_S2", "40", "20"), (1, "SHORT_SHARE_S3", "20", "10"), (2, "FORMAT_SHARE_F2", "20", "10"), (7, "FORMAT_SHARE_F3", "20", "10")], first
+    assert not [r for r in rows if r.get("rule") == "HAND"], [r["key"] for r in rows if r.get("rule") == "HAND"]              # nothing of the plant is his hand
+    assert all(MEMM.get(r["ticket"]) for r in dec) and all(r.get("told") for r in dec)                                   # every decision a ticket, told
+    told = [a["dedupe_key"] for a in s.rows("Owner_Actions") if a.get("kind") == "strategy"]; assert len(told) == len(set(told)) == len(dec), told   # told once each
+    jp = sorted((r["key"], json.loads(r["numbers"])["point"]) for r in rows if r["state"] == "judged" and r.get("rule") in ("SHORT_ARMS", "ARMS"))
+    assert jp == [("FORMAT_SHARE_F2", 8), ("FORMAT_SHARE_F3", 8), ("SHORT_SHARE_S2", 8), ("SHORT_SHARE_S3", 8)], jp          # every arm judged once at its point
+    assert undone["key"] == "SHORT_SHARE_S2" and core.S("SHORT_SHARE_S2") == "40" and not [r for r in dec if r["key"] == "SHORT_SHARE_S2" and r["id"] != undone["id"]]   # nothing moved on the key he undid

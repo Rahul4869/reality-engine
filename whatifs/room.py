@@ -107,6 +107,11 @@ def _short_line_first(script, line):
     if why == "writer's opening already says this": new = HOOKS._replace_first(text, line)
     return dict(script, script=new) if new != text else script
 
+def _psyche_block(episode):
+    """v12 V4b step 7b (memo 3.7, R15 on review 12a): a drive that led 2 of the last 4 long videos - the Showrunner is told first, for a free AND a forced premise."""
+    from whatifs.org import psyche as PSY
+    return PSY.avoid(episode)
+
 def _show_block():
     """v9: the Show Plan request inside the existing Showrunner call ('' when SHOW_MODE = off, so the prompt is exactly v8.11's)."""
     from whatifs import show as SHOW
@@ -137,12 +142,13 @@ def scout_and_pick(draw, ctx, episode):
 
     def showrun(good, tz, below=None):
         """The Showrunner chooses among vetted pitches and sets the spine. None when it returns no premise."""
-        tz_note = ("THE OWNER'S DECISION (discussed and locked with him): the FIRST pitch. Choose it and keep its premise." if tz and tz.get("owner") else
+        tz_note = (SAL.PITCH_NOTE if tz and tz is p2 else                # v12 V4b (step 4, 3.4 THE PITCH): Part 2 is no Short real viewers stayed for
+                   "THE OWNER'S DECISION (discussed and locked with him): the FIRST pitch. Choose it and keep its premise." if tz and tz.get("owner") else
                    "PROVEN WITH REAL VIEWERS: the FIRST pitch is the topic of our Short that real viewers stayed for. Choose it and keep its premise word for word; "
                    "the other pitches are only candidates for the tease of the next case." if tz and tz.get("ladder") else
                    "TEASED AT THE END OF OUR LAST VIDEO (viewers were promised it): the FIRST pitch. Choose it and keep its premise unless it breaks a channel rule." if tz else "")
         spine = ask("showrunner", FE.inject(GR.insert_before_json(P.fill(P.SHOWRUNNER, pitches=_j(good[:5]), draw=_j(draw), defs=_j({k: ctx["defs"].get(v, "") for k, v in draw["strategies"].items()}),
-                    trends=ctx["trends"], lessons=ctx["lessons"], research=ctx.get("research", "")[:3000]), "\n".join(x for x in (PB.text_for("showrunner", draw.get("playbook")), tz_note, CR.brief("showrunner"), _show_block(), _format_block("showrunner")) if x)), "showrunner"), "Choose and set the spine.", episode=episode, fake_key="showrunner")
+                    trends=ctx["trends"], lessons=ctx["lessons"], research=ctx.get("research", "")[:3000]), "\n".join(x for x in (PB.text_for("showrunner", draw.get("playbook")), tz_note, CR.brief("showrunner"), _show_block(), _format_block("showrunner"), _psyche_block(episode)) if x)), "showrunner"), "Choose and set the spine.", episode=episode, fake_key="showrunner")
         if not spine.get("premise"): return None
         if tz and tz.get("ladder"):                                 # v12 V2c-b: the promoted Short's premise is kept word for word BY CODE (check topic_ladder compares them)
             spine["premise"] = tz["premise"]; spine["ladder"] = tz["ladder"]; spine["headline"] = spine.get("headline") or tz.get("headline") or tz["premise"]
@@ -169,6 +175,14 @@ def scout_and_pick(draw, ctx, episode):
         return spine
 
     from whatifs import ladder as LAD                           # v12 V2c-b: every topic starts as a Short - the promoted Short's topic is THE pitch
+    from whatifs.org import salvo as SAL                        # v12 V4b (step 4, 3.4 THE PITCH): Part 2 of the launch flagship takes the sequel record's premise
+    p2 = SAL.pitch(draw)                                         # on a branch of its own - before his locked topic and the promoted Short, never through either
+    if p2:
+        if dual: PR.score([p2], ctx["recent"] + past[-20:], episode)             # the judges' score is recorded, never a bar: Part 1's cliff chose this premise
+        nxt = [p for p in LAD.runner_ups() + PR.bench_pitches(ctx["banned"], ctx["recent"], past, lambda f: _family_ok(f, recent_fams), k=3) if not same(p["premise"], p2["premise"])]
+        spine = showrun([p2] + nxt[:4], p2)
+        if not spine: raise RuntimeError("the Showrunner returned no spine for Part 2 of the launch flagship")
+        log(f"premise of Part 2: the sequel record of {draw['salvo']['of']}", episode=episode); return spine
     lad = None if str(S("OWNER_NEXT_PREMISE") or "").strip() else LAD.pitch()      # the owner's own locked topic comes first (his override is on the ladder's record)
     if lad:
         if dual: PR.score([lad], ctx["recent"] + past[-20:], episode)            # the judges' score is recorded, never a bar: real viewers chose this topic
@@ -186,6 +200,8 @@ def scout_and_pick(draw, ctx, episode):
             if tz.get("combined", 0) < S("PREMISE_MIN_SCORE", float) and not tz.get("owner"):
                 log("the teased premise did not reach the quality bar - dropped (quality over the promise)", "WARN", episode); set_setting("NEXT_PREMISE", ""); tz = None
         if bench:
+            from whatifs.org import salvo as SAL
+            bench = SAL.by_parts(bench, tz)                      # v12 V4b step 3b (RR-8): the launch flagship's free choice - the premise's parts nudge the order above the bar
             good = ([tz] if tz else []) + [p for p in bench if not (tz and same(p["premise"], tz["premise"]))]
             PR.log_scores(good, episode, "bench", "bench")
             spine = showrun(good[:5], tz)
@@ -292,6 +308,8 @@ def _run_room(draw, episode):
     wbrief = GR.insert_before_json(wbrief, EN.writer_rules("long"))
     d["brain_block"] = EN.brain_block("long")
     if d["brain_block"]: wbrief = GR.insert_before_json(wbrief, d["brain_block"])
+    from whatifs.org import psyche as PSY                    # v12 V4b step 7b (memo 3.7): ... and the writers too - the premise stays word for word, the feeling that leads changes
+    if PSY.avoid(episode): wbrief = GR.insert_before_json(wbrief, PSY.avoid(episode))
     d["brain_block_in_brief"] = bool(d["brain_block"]) and d["brain_block"] in wbrief
     if d.get("deep_trial"):                                  # v11 (K163): the monthly ~20-minute special
         from whatifs import deeptrial as DT; wbrief = GR.insert_before_json(wbrief, DT.NOTE)
@@ -397,10 +415,12 @@ def _run_room(draw, episode):
         d["show_tag_issues"] = iss
         if iss: note_degraded("show tags: " + "; ".join(iss[:3]))
     from whatifs import enforce as EN, hooks as HOOKS        # v11.1: AFTER the last rewrite (fact check, asks, tease, Owner's Cut, variety, tags) -
+    from whatifs.org import psyche as PSY                    # v12 V4b step 7b (memo 3.7, R15 on review 12b; DQ 8): only when a drive led 2 of the last 4, ONE early tag of the chosen draft;
     short_line = proven_line(spine)                          # U1 J 201 (b): the Short's proven line is in place BEFORE the last measured fix
     if short_line: script = _short_line_first(script, short_line)
     reserve = HOOKS.reserve_s({"line": short_line, "short": spine.get("ladder")} if short_line and S("OPENING_HOOK_ON", bool) else None)      # U1 J 201 (c)
-    script, d["enforce_fix"] = EN.fix_all(script, wbrief, spine, episode, "long", reserve_s=reserve)   # ONE mandatory rewrite for every open retention + marker problem
+    ps, d["psyche_early"] = PSY.early(episode, spine.get("premise", ""), script.get("script", ""))     # an avoided or house lead puts FEELING FIX on the one rewrite
+    script, d["enforce_fix"] = EN.fix_all(script, wbrief, spine, episode, "long", reserve_s=reserve, ps=ps)   # ONE mandatory rewrite for every open retention + marker problem
     if d.get("enforce_fix"):                                 # a rewrite may drop the code-added lines: put the asks and the tease back (both idempotent)
         if S("CTA_ON", bool):
             script = _place_asks(script, d, episode)[0]      # U1 J 201 (a): the SAME asks (d['cta_picked']), never other lines

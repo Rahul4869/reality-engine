@@ -28,7 +28,6 @@ While the v12 "Organisation" build is running, progress and open issues are in `
 8. **One current truth.** When something is replaced, add it to `truth.RETIRED` (what replaced it goes in `truth`), move old docs to `docs/ARCHIVE/` (history,
    under the HISTORICAL header), and run `python tools/gen_docs.py`. A module docstring is ONE line: purpose + "See docs/CURRENT/SYSTEM.md."
 9. **Cheap models never make taste calls.** Strong, cross-family, blind judges see every candidate; cheap models only do mechanical work.
-
 ## A change is not done until (integration checklist)
 - [ ] Production code really runs it (a prompt, a check, a scorer or a Setting) and a contract check or test fails without it.
 - [ ] It has a row in `docs/CURRENT/ENFORCEMENT_MATRIX.md` (the meta-test in `tests/test_v111_enforce.py` proves the row is wired).
@@ -39,12 +38,10 @@ While the v12 "Organisation" build is running, progress and open issues are in `
 - [ ] All four are green, results pasted in the pull request:
       `python tools/gen_docs.py` (no diff left uncommitted) - `python tools/plan_guard.py` - `python -m pytest tests -q` -
       `WI_FAKE=1 WI_SMALL=1 WI_WORK=<dir outside the repo> python -m whatifs.cli rehearsal`
-
 ## Delivering
 Work on a branch; never push to `main`. Open a pull request with: plain-English summary, the decision, cost impact, how to switch it off (the
 Settings cell) and the check results. The Checks workflow re-runs everything; when green the owner gets a one-click Merge. After the merge the next
 pipeline run uses the new code. Nothing restarts.
-
 ## Recipes (non-obvious rules of this codebase)
 - **Text models**: route a role by its job in `models.ROUTES`; pass system prompts as `prompts.Packed` so they are cached; never retry a cut reply with MORE tokens (lower the effort, `models.TIGHT_NOTE`).
 - **Image and clip models** are Settings cells (`FAL_STILL_MODEL`, `FAL_PREMIUM_MODEL`, `FAL_LIVING_MODEL`, `FAL_HERO_MODEL`) with `PRICE_*` cells; the two clip models are rows of `CLIP_MODELS`.
@@ -198,3 +195,6 @@ pipeline run uses the new code. Nothing restarts.
 - **Strategy, the watch book, the credit lane** (v12 V4; `whatifs/org/strategy.py`, `risk.py`, `finance.py`): a rule of the CEO is ONE row of `strategy.RULES` whose keys are levers; never write a Settings cell from a rule - `next_move` moves ONE key one step through RANGE, EFFECT (`strategy.effect` must know what the code does with the key) and FIT, and `decide` makes it a ticket.
   A cell he owns is in `strategy.OWNER_ONLY`; a key he set by hand is a `hand` row no rule moves for 28 days. A new danger is ONE row of `risk.WATCH` (owner department, a measure -> findings with a fixed `point` and `fires`, memo True/False): judge only at fixed points, never on a peek; a failed read is never a finding; the act is a lock, a message or ONE memo the watch closes itself.
   Money the credit paid is never his: every reader of his month asks `governor.own_spend_inr()`, never `month_spend()`; a boost is a `THINK_BOOST_*` cell of D1 with its own line in `costguard.lines` (shown only above 0), read through `finance.boost(key)`, so it ends by itself when the lane closes.
+- **The salvo: armed once, a pair on the review road** (v12 V4b; `whatifs/org/salvo.py`): `python -m whatifs.cli salvo` writes ARMED into the cell once; the draw of the flagship comes before its format; the flagship ends on its cliff and Part 2 is made a week ahead on its own ground, never on his topic or a promoted Short. A pair video is uploaded private (an upload without `privacyStatus` is public since 2 Nov 2026) and goes public only through `hdgate.go_public`. Never write a pair row by hand; the sweep's `--salvo` walks it.
+- **The appetite engine: one line, every hour, acts read back through the one door** (v12 V4b; `whatifs/org/appetite.py`): a long video has ONE `Appetite_Plans` row, frozen before its final gate (check `appetite_plan`); an hour's reading (views, distinct asking AUTHORS - never a share of comments) is kept on tab `Appetite`; the fire follows V4's 48-hour rule and every act is read back from what YouTube kept. A new act is a call through the same door, never a second writer.
+- **The doors** (v12 V4b; `ANTI_MYTH_ON`, tab `Upload_Hashes`): a public render or script is never uploaded again, nothing deletes a ledger video, no title or thumbnail of a public video is changed inside a test or before the clock, one variable a move. A new upload path calls the same door first.

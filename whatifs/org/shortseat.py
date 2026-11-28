@@ -92,6 +92,26 @@ def plain_report(sc):
     if len(hard) > em: p.append(f"{len(hard)} expert word(s) a layman would not know (limit {em}): {', '.join(hard[:6])}")
     return {"numbers": n, "numbers_max": nm, "hard": hard, "hard_max": em, "problems": p}
 
+def _tell_norm(text):
+    """Both sides of the AI-phrase match alike (V4b step 1, R15): the curly apostrophe is a plain one, a hyphen a space, a run of spaces one."""
+    return re.sub(r"\s+", " ", str(text or "").replace("\u2019", "'").replace("-", " ")).strip().lower()
+
+def tells_report(sc):
+    """{found, max, problems}: the phrases of data.AI_TELLS a viewer hears in the Short (v12 V4b step 1, item 194) - as WHOLE words, so "dive in" never
+    matches "dive into"; a one-word entry also takes its plain endings (delves, realms, embarked); an entry of SHORT_TELLS_SKIP is passed over.
+    A problem when more than SHORT_TELLS_MAX are found. SHORT_TELLS_ON FALSE or the seat off: nothing is found."""
+    from whatifs.data import AI_TELLS
+    mx = S("SHORT_TELLS_MAX", int)
+    if not (S("SHORT_TELLS_ON", bool) and on()): return {"found": [], "max": mx, "problems": []}
+    text = _tell_norm(AUD.spoken(FMT.short_text(sc))); skip = {_tell_norm(x) for x in str(S("SHORT_TELLS_SKIP") or "").split(",") if x.strip()}
+    found = []
+    for t in AI_TELLS:
+        q = _tell_norm(t)
+        if not q or q in skip or t in found: continue
+        if re.search(r"(?<![a-z])" + re.escape(q) + ("" if " " in q else r"(?:s|d|ed|ing)?") + r"(?![a-z])", text): found.append(t)
+    p = ["it sounds like an AI: " + ", ".join(f"'{t}'" for t in found) + f" (limit {mx})"] if len(found) > mx else []
+    return {"found": found, "max": mx, "problems": p}
+
 # ------------------------------------------------------------------ shape: the length, the hand-back, no ask, every second animated, the loop, captions
 def _seconds(units=None, plan=None):
     try:
@@ -131,7 +151,7 @@ def shape_report(sc, fmt, units=None, plan=None):
 # ------------------------------------------------------------------ the writers' one fix: everything a rewrite can repair, named
 def script_issues(sc, fmt, last=()):
     """For the writers' ONE fix of a Short, before the voice is paid: the hook, the numbers, the expert words, the asks, the hand-back, the length by
-    its word count, the format and the likeness - each as an instruction a rewrite can follow ([] = clean, or the seat is off)."""
+    its word count, the AI phrases (V4b), the format and the likeness - each as an instruction a rewrite can follow ([] = clean, or the seat is off)."""
     if not on(): return []
     out = []; o = open_report(sc); pl = plain_report(sc); sh = shape_report(sc, fmt); lo, hi = sh["band"]; wps = _wps()
     hp = list(o["problems"]); est = LEAD_S + o["hook_words"] / wps
@@ -143,6 +163,8 @@ def script_issues(sc, fmt, last=()):
     sp = list(sh["problems"]); wlo, whi = int(lo * wps * 0.8), int(hi * wps)
     if sh["words"] < wlo or sh["words"] > whi: sp.append(f"the Short has {sh['words']} words, about {sh['words'] / wps:.0f} s of speech (format {fmt}: {lo:g} to {hi:g} s, about {wlo} to {whi} words)")
     if sp: out.append("THE SHAPE: " + "; ".join(sp) + ". No ask of any kind; let a word of the first sentence return in the last line so that the Short loops; keep the length")
+    tr = tells_report(sc)
+    if tr["problems"]: out.append("HUMAN VOICE: " + "; ".join(tr["problems"]) + ". Say it as a person would to a friend, in other words; none of these phrases")      # v12 V4b step 1
     return out + FMT.short_kept_issues(sc, fmt, last)
 
 # ------------------------------------------------------------------ the plan: repaired by code before any picture is paid

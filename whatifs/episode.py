@@ -11,6 +11,7 @@ from whatifs.governor import plan_for_episode, fal_allowed, episodes_left_this_m
 from whatifs import governor as G
 from whatifs import growth as GR
 from whatifs.org import runner as ORG, wraps as WR, canon as CANON          # v12: every step below that names a department runs under the department contract
+from whatifs.org import salvo as SAL          # v12 V4b (step 3a): the launch flagship - who it is, and the salvo role of the episode in the making
 from whatifs import format_engine as FE, cta as CTA, formats as FMT
 from whatifs import sound as SD
 from whatifs import notify as NT          # v12 B-OWNER: every mail to him goes through notify.mail (one road: e-mail is the copy, both screens carry it)
@@ -69,7 +70,7 @@ def blend():
 
 def est_cost_inr(d):
     """v12 V2d: the estimate of THIS episode - the lines of the one cost model (costguard.lines) at its own tier. A video about a promoted Short
-    is its own kind (one scene and one start picture fewer, no hook lab); the table read is counted only where it runs."""
+    is its own kind (one scene and one start picture fewer; its hook lab a ceiling, run only when the Short's hook has no question and no 'you'); the table read is counted only where it runs."""
     from whatifs import costguard as CG, opening as OPEN
     kind = ("ladder" if OPEN.source(d)[0] == "short" else "long") if d.get("ladder") else G.long_kind()
     return CG.total(CG.lines(kind, kling=d["kling"], stills=d["stills"], living=d["living"], living_s=d.get("living_s"), table_read=TR.active_arm(d.get("episode_id", ""))[0] == "on"))
@@ -114,6 +115,7 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     try:                                                     # v11 (K163): the monthly Deep Trial
         from whatifs import deeptrial as DT; DT.maybe(d, ep, slot_iso)
     except Exception as x: log(f"Deep Trial check skipped: {scrub(x)}", "WARN", ep)
+    SAL.mark(d, ep)                                          # v12 V4b (step 3a): THE DRAW, BEFORE THE FORMAT - the launch flagship is marked before an approved draft or the format is taken
     mp = G.moving_plan(None, d.get("runtime_sec"), mine=True)       # v12 V2d-b: the moving seconds this video gets - the floor, plus what the month's split leaves free, up to the target
     if mp["on"]: d["living_s"] = mp["living_s"]
     plan = plan_for_episode(est_cost_inr(d), eps_left, living_s=d.get("living_s"), floor_s=mp.get("living_floor_s"))
@@ -124,7 +126,7 @@ def _stage_plan(ep, out, eps_left, slot_iso):
         d["moving"] = {"floor_pct": mp["floor_pct"], "target_pct": mp["target_pct"], "own_s": mp["own_s"], "living_s": plan["living_s"], "living_floor_s": mp["living_floor_s"],
                        "bought_pct": round(100.0 * (mp["own_s"] + plan["living_s"]) / max(1.0, mp["runtime_s"]), 1), "free_inr": mp["free_inr"]}
     from whatifs import preview as PV
-    took = PV.take_approved(ep) if not fix_mode() else None          # v8.10: an approved Script Preview is used as written (not paid for twice)
+    took = PV.take_approved(ep) if not fix_mode() and not d.get("salvo") else None          # v8.10: an approved Script Preview is used as written (not paid for twice) - v12 V4b: never for a salvo draw (the pair is written inside production; a stray draft keeps its status)
     if took:
         sd, room = took
         for k in ("strategies", "rhythm_plan", "playbook", "cast", "guest", "promise", "next_tease", "owners_cut", "family", "ptype", "research_brief", "retention_check", "table_read", "hook_sec", "format", "ladder"):
@@ -133,9 +135,10 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     log(f"draw: {json.dumps(d)} | spend plan: {plan['reason']}")
     if not took and "format" not in d: d["format"] = FMT.pick(ep, d)      # v12 V2b (issue 77): the format is known when D4 loads its playbook (run_room finds it in the draw and picks nothing)
     with FMT.using(d.get("format") or ""):
+        SAL.use(d)                                           # v12 V4b (step 3a): the salvo role is kept beside the format
         room = ORG.work("D4", "write", ep, (lambda b: took[1]) if took else (lambda b: ROOM.run_room(d, ep)), measure=WR.m_room, topic=str(d.get("ptype") or ""),
                         adopt=(took[1] or {}).get("org_session") if took else None, legacy=(took[1] or {}).get("_legacy_draft") if took else None)      # v12: an approved Script Preview is adopted as written - with its D4 draft run's proof (B6a); an owner-approved draft from before B6a is recorded as such
-    FMT.use(d.get("format") or "")                          # v12 V2a: everything after the room (voice, package, shots) is made in the episode's format
+    FMT.use(d.get("format") or ""); SAL.use(d)              # v12 V2a: everything after the room (voice, package, shots) is made in the episode's format
     if ORG.on(): CANON.record(ep, room, ORG.last_session("D4", "write", ep))          # v12 B6a: D4's continuity takeaway - the case record (canon once it is on air)
     from whatifs import ladder as LAD                       # v12 V2c-b: where this video's topic comes from - its promoted Short, else the override on record ('' = neither: check topic_ladder holds it)
     d["ladder"] = str(room["spine"].get("ladder") or (d.get("ladder") if took else "") or LAD.claim() or "")
@@ -152,7 +155,7 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     beat_names = [b.get("purpose", f"Part {b.get('n')}") for b in room["bible"].get("beats", [])]
     clean, beat_marks, beats = _strip_beats(script)
     from whatifs import maker as MAKER                      # v12 V1c (D7): his own last words for this topic - taken once, on record; into the VOICE, never into the script
-    mk = MAKER.take(d, ep, clean) if MAKER.on() else None
+    mk = MAKER.take(d, ep, clean) if MAKER.on() and (d.get("salvo") or {}).get("role") != "flagship" else None          # v12 V4b (step 3b, R15): a flagship carries no maker's line (it would be heard after its cliff); his line waits, unused
     voiced, vbeats = MAKER.attach(clean, beats, mk)
     hook = RX.ensure_units if FE.mode() != "classic" else None
     vkw = dict(style=d["strategies"]["voice"] or "slow_burn", seed=ep, speaker_blends=speaker_blends(d.get("guest"), d.get("cast")), unit_hook=hook)
@@ -172,6 +175,7 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     if tl.get("voice_fallback") and not S("VOICE_FALLBACK_OK", bool):
         raise RuntimeError(f"character voice {tl['voice_fallback']} could not load - stopping before any picture money is spent (a third narrator voice is never used); will retry")
     if hook_rec: HOOKS.verify_in_narration(hook_rec, units); _save_hook_final(hook_rec, out)
+    SAL.seal(d, clean, room, ep)                            # v12 V4b (step 3b, R15 review 9): the flagship's cliff and sequel record - the narration is final; written to draw_json below
     log(f"narration {vo.duration:.1f}s, {len(units)} units, voice {vo.voiceprint}" + (f", character voice fallback for {tl['voice_fallback']}" if tl.get("voice_fallback") else ""))
     beats_at = [(units[i]["start"], beat_names[k] if k < len(beat_names) else f"Part {k+1}") for k, i in enumerate(beat_marks) if i < len(units)]
     chs = chapters(tl, beats_at)
@@ -179,6 +183,8 @@ def _stage_plan(ep, out, eps_left, slot_iso):
     pkg = tidy_pkg(ORG.work("D5", "package", ep, lambda b: ROOM.package(room, chs, d, ep, opening=opn), measure=WR.m_pkg, topic=str(room["spine"].get("premise") or "")))          # v8.6: title + thumbnail are decided BEFORE the shots (the opening must pay off the click)
     from whatifs import story as STORY                      # v12 V1c (one story, D5): both thumbnails are the picture the film opens on, by construction (a video under an override keeps its own)
     pkg = STORY.align(pkg, d, opn)
+    from whatifs.org import psyche as PSY                   # v12 V4b step 7a (memo 3.7 (a)): ONE tag call once the script, the package and the hook exist - BEFORE the script gate (check psyche_tags)
+    if PSY.on(): d["drives"] = PSY.tag(ep, PSY.long_items(room["spine"].get("premise", ""), (pkg.get("titles") or [room["spine"].get("headline") or ""])[0], pkg.get("thumb_text", ""), PSY.first_line(clean), script))
     su = units[:len(units) - MAKER.k(mk)]                   # v12 V1c: the Director and the continuity judge are never handed his line (the script's units alone)
     shots = ORG.work("D6", "plan", ep, lambda b: ROOM.plan_shots(room, su, d, plan, ep), measure=WR.m_shots, topic=str(room["spine"].get("premise") or ""))
     sync = ROOM.continuity({"script": clean[:20000], "shots": shots[:80], "spine": room["spine"]}, ep)
@@ -672,7 +678,7 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
     if not fix:                                                                # v12 V2c-b: every topic starts as a Short - asked BEFORE the first paid call
         from whatifs import ladder as LAD
         if not LAD.used_by(episode_id or (prev or {}).get("episode_id")):        # a retry keeps the topic its first attempt took
-            ok_l, why_l, _lrow = LAD.gate()
+            ok_l, why_l, _lrow = LAD.gate(salvo=True)          # v12 V4b (step 3a): production answers the gate's salvo branch
             if not ok_l:
                 log(f"no long video is started: {why_l} (nothing spent; your override is one tap on the message)", "WARN"); LAD.refuse(slot_iso, why_l)
                 return {"ok": False, "skipped": "ladder", "why": why_l}
@@ -700,8 +706,9 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
             set_setting("OWNER_BRIEF_ACTIVE", "")                  # v10.3: the owner brief was used by this episode's room
             consume_tease(S_)              # v8.9.1: the teased premise is used up only now that the plan (which made it) is safely saved
             from whatifs import ladder as LAD; LAD.use(S_["d"].get("ladder"), ep)      # v12 V2c-b: and so is the promoted Short's topic (or the override)
+            SAL.took(ep, S_["d"])                                 # v12 V4b (step 4, 3.4): the cell of the role the draw carries (SALVO_FLAGSHIP / SALVO_PART2) holds this episode's id
         d, plan, shots = S_["d"], S_["plan"], S_["shots"]
-        FMT.use(d.get("format") or "")                      # v12 V2a: a resumed plan is finished in the format it was written in ('' = written before formats)
+        FMT.use(d.get("format") or ""); SAL.use(d)          # v12 V2a: a resumed plan is finished in the format it was written in ('' = written before formats)
         vo = _vo_of(S_, out); tl = json.load(open(vo.timeline_path)); units = tl["units"]
         S_ = plan_check(S_, units); shots = S_["shots"]          # v8.9: the last free check before any picture money is spent
         from whatifs import opening as OPEN                     # v12 V2c-b2b: the Short's footage is fetched again where this job runs (free) and the marks are rebuilt from the rule
@@ -736,7 +743,10 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
                      measure=WR.m_gate, lesson=WR.gate_lessons, emit=WR.gate_memos(ep, "script"), settle=WR.gate_settle(ep, "script"))
         if not g["ok"]:
             st.update("Episodes", "episode_id", ep, {"status": "HOLD_QC", "notes": CK.set_attempts("contract hold (script): " + ", ".join(f for f, _ in g["failed"]), 1), "updated": iso()})
-            CON.owner_card(ep, "script", g["failed"], "No picture money was spent.")
+            from whatifs.org import salvo as SAL_                # v12 V4b step 6a (0b), R23 (3)/R24: a pair video's card says its clock; every other card is the base's
+            _hc = SAL_.hold_card(d)
+            if _hc: CON.owner_card(ep, "script", g["failed"], _hc[0], default=_hc[1], expires_h=_hc[2])
+            else: CON.owner_card(ep, "script", g["failed"], "No picture money was spent.")
             return {"ok": False, "held": True, "episode": ep, "problems": ["contract:" + f for f, _ in g["failed"]]}
         st.update("Episodes", "episode_id", ep, {"status": "VISUALS", "updated": iso()})
         # ---- assets (only what is missing is made on a resume)
@@ -765,7 +775,7 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
             return PR.skip_slot(str(e), ep, slot_iso)
         log(f"episode failed: {e}", "ERROR"); st.update("Episodes", "episode_id", ep, {"status": "FAILED", "notes": CK.set_attempts(str(e)[:360], CK.attempts(next((r for r in st.rows("Episodes") if r["episode_id"] == ep), {}))), "updated": iso()})
         raise
-    finally: FMT.use(""); flush_log()
+    finally: FMT.use(""); SAL.use(None); flush_log()
 
 def _look_lever_acts(x, ep):
     """Can this lever of the look's free fix change THIS film? light: the Atmosphere pack is on and its level follows the plan (a fixed ATMOSPHERE_LEVEL
@@ -800,6 +810,13 @@ def reaction_events(units, shots):
     shot of the Short's footage - the opening shows the pictures real viewers stayed for as they were; the reaction LINE is still spoken."""
     ev = RX.find_events(units) if (FE.mode() != "classic" and S("REACTION_FX_ON", bool)) else []
     return [e for e in ev if not (0 <= int(e.get("i", -1)) < len(shots or []) and shots[int(e["i"])].get("short"))]
+
+def _held_words(d, title, slot_iso):
+    """v12 V4b step 6a (memo 996; R23 (1), R1-60): the row of a launch pair video says true words - it has no time on YouTube, so never "Goes live"."""
+    if ((d or {}).get("salvo") or {}).get("role") == "part2":
+        return f"{title} is uploaded and private. It goes public early if Part 1 breaks out, else on {slot_iso} (UTC), after its own review card."
+    return f"{title} is uploaded and private. It goes public on {slot_iso} (UTC) once its Part 2 is ready and its review card is approved - by you or by your silence."
+
 
 def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     d, room, shots, pkg, chs, hook_rec = S_["d"], S_["room"], S_["shots"], tidy_pkg(S_["pkg"]), S_["chs"], S_["hook_rec"]
@@ -906,6 +923,9 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     cctx["maker_used"] = str((VER_._row(mk_["ref"]) or {}).get("line_used") or "") if mk_ else ""
     k_ = MAKER.k(mk_); cctx["maker_states"] = [(m_["i"], m_.get("type"), m_.get("src")) for m_ in sm_ if k_ and m_["i"] >= len(units) - k_]
     cctx["look"] = lk_                                           # v12 DRAWN-b (L3, R16 change 16): BEFORE the measured checks - pre["failed"] then holds look_bar, so no jury is paid for a film the look holds
+    from whatifs.org import appetite as APP_                     # v12 V4b step 6a (memo 3.6): THE PLAN, BEFORE THE FINAL GATE - written once; check appetite_plan reads it
+    try: APP_.plan(ep, d, now_utc())
+    except Exception as e: log(f"appetite plan not written: {scrub(e)} - check appetite_plan holds the film", "WARN", ep)
     pre = CON.run("final", dict(cctx, critique={"hook": 10, "clarity": 10, "humour": 10, "visual_variety": 10, "audio": 10, "accuracy": 10}), ep, write=False)   # measured checks first (not logged)
     from whatifs.org import floor as FLOOR, verdicts as VER     # v12 V1c (D13): the judged floor - only a film every measured check passed is paid a jury; his approved films are its references
     if FLOOR.on() and not pre["failed"]: cctx["floor"] = FLOOR.plain(ORG.work("D13", "floor", ep, lambda b: FLOOR.run(b, ep, master, out, VER.references(ep), VER.downs(ep)), measure=FLOOR.m_run))
@@ -928,14 +948,17 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         held = _hold(st, ep, out, {"problems": [{"code": "contract:" + f, "detail": str(ev)} for f, ev in g["failed"]]}, notes, fix)   # AFB F2 (the B-OWNER audit): the hold first, as CA3-1's quality hold - a `hold_sweep` in the gap never closes the card of a video still read VISUALS
         CON.owner_card(ep, "final", g["failed"], "Nothing was uploaded.")
         return held
-    vid = ORG.work("D9", "publish", ep, lambda b: PUB.yt_upload(master, title, desc, pkg.get("tags", []), publish_at=slot_iso, ai_label=S("AI_LABEL_DEFAULT", bool)), measure=WR.m_upload)
+    _pair = bool(SAL.on() and isinstance(d, dict) and d.get("salvo"))      # v12 V4b step 6a (memo 996, R19): a pair video is uploaded PRIVATE WITH NO TIME - YouTube holds no clock for it until contract.approve gives it one
+    vid = ORG.work("D9", "publish", ep, lambda b: PUB.yt_upload(master, title, desc, pkg.get("tags", []), publish_at=(None if _pair else slot_iso), privacy=("private" if _pair else None), ai_label=S("AI_LABEL_DEFAULT", bool), script_sha=PUB.spoken_sha(" ".join(str(u.get("text") or "") for u in MAKER.script_units(shots, units)))), measure=WR.m_upload)      # v12 V4b step 2: the long script's spoken words (his maker's line is the voice's, not the script's)
     st.update("Episodes", "episode_id", ep, {"title": title, "yt_id": vid, "slot_et": slot_iso, "status": "UPLOADED", "uploaded_at": iso(), "updated": iso()})   # recorded at once: no double upload | v12 B-OWNER (step 10b): uploaded_at's ONE writer, beside the id
+    try: APP_.uploaded(ep, vid)                                  # v12 V4b step 6a: the plan row's yt_id, outside its JSON
+    except Exception as e: log(f"appetite plan: yt_id not recorded: {scrub(e)}", "WARN", ep)
     if vid and ORG.on(): CANON.on_air(ep, vid)                    # v12 B6a: the platform confirmed the upload - this case is now the show's canon
     try:                                                         # v11 (K155): the brain's features + a logged forecast for this video
         from whatifs import brain as BRN, scenes as SCN
         hk = (hook_rec or {}).get("archetype") or (pkg.get("hook_shape") if isinstance(pkg, dict) else "") or "unknown"
         BRN.tag(ep, "long", title=title, premise=room["spine"].get("premise", ""), hook=hk, sec=vo.duration, lead=((d.get("show_plan") or {}).get("lead") or ""),
-                origin="owner_idea" if d.get("owner_brief") else "ai", yt_id=vid, arm={"playbook": d.get("playbook") or {}, "format": d.get("format") or ""} | SCN.feature(d, {m_["i"] for m_ in getattr(job, "segmeta", []) if m_.get("drawn")}))      # v12: the video's experiment arms are in its features (the Execution Engine verifies an arm there); V2b: its format is an arm (DESIGN QUESTION 17)
+                drives=d.get("drives") or None, origin="owner_idea" if d.get("owner_brief") else "ai", yt_id=vid, arm={"playbook": d.get("playbook") or {}, "format": d.get("format") or ""} | SCN.feature(d, {m_["i"] for m_ in getattr(job, "segmeta", []) if m_.get("drawn")}))      # v12: the video's experiment arms are in its features (the Execution Engine verifies an arm there); V2b: its format is an arm (DESIGN QUESTION 17)
         BRN.forecast(ep, "long", hook=hk)
     except Exception as e: log(f"brain tag skipped: {scrub(e)}", "WARN", ep)
     try:
@@ -972,7 +995,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         if SHOW.leads_on():                                      # v9: 3 packaging pairs (owner pick + rotation) + the Experiments row - in EVERY format (v12 V2a); the Season row and the Case Files slides are the trial's
             try:
                 from whatifs import packaging as PK, community as CM
-                vs = PK.variants(dict(pkg, title=title, title_b=rel["title_b"]), room.get("spine") if isinstance(room, dict) else {})
+                vs = PK.variants(dict(pkg, title=title, title_b=rel["title_b"]), room.get("spine") if isinstance(room, dict) else {}, episode=ep)
                 thumbs = {"A": thumb}
                 if thumb_b: thumbs["B"] = thumb_b
                 for k_, p_ in list(thumbs.items()):
@@ -1021,7 +1044,9 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         set_setting("NEXT_PREMISE", json.dumps(dict({k: nt.get(k, "") for k in ("premise", "headline", "family", "ptype")}, set_at=iso()), ensure_ascii=False)[:600])
     log(f"SCHEDULED {vid} for {slot_iso}: {title}", public=f"SCHEDULED {vid} for {slot_iso}")
     if not S("PILOT_DONE", bool): set_setting("PILOT_DONE", "TRUE"); log("pilot episode made")
-    try: NT.mail("scheduled", "Video scheduled", f"<p>{title}<br>Goes live {slot_iso} (UTC). To stop it, type KILL in the Episodes tab, kill column.</p>"
+    try:
+        if _pair: NT.mail("scheduled", "Video uploaded and held", f"<p>{_held_words(d, title, slot_iso)}</p><p>{_review_note(hook_rec, cut_map)}</p>", level="info", episode=ep, dedupe_key=f"scheduled|{ep}")      # v12 V4b step 6a (memo 996, R23 (1)): no time on YouTube - never "Goes live"; the kind, the key and the review note do not move
+        else: NT.mail("scheduled", "Video scheduled", f"<p>{title}<br>Goes live {slot_iso} (UTC). To stop it, type KILL in the Episodes tab, kill column.</p>"
                  f"<p>{_review_note(hook_rec, cut_map)}</p>", level="info", episode=ep, dedupe_key=f"scheduled|{ep}")
     except Exception as e:                                       # FINISHED BY FABLE (CA2-2, R1-90 (1)): the message never raises past the review gate below (R22 (10)'s form)
         if not S("TWO_SCREENS_ON", bool): raise                  # the older path: as today
@@ -1030,7 +1055,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         cr = cctx.get("critique") or {}
         summ_ = (f"'{title}'. Self-review: " + ", ".join(f"{k} {cr.get(k)}" for k in CON.CRIT_KEYS if k in cr) +
                  f". {cr.get('notes', '')} Checks: {sum(1 for r in g['rows'] if r['status'] != 'FAIL')}/{len(g['rows'])} pass.")
-        if CON.review_needed("long"):
+        if CON.review_needed("long") or (SAL.on() and d.get("salvo")):      # v12 V4b step 6a (memo 995): EVERY PAIR VIDEO TAKES THE REVIEW ROAD, whatever CREATIVE_REVIEW_FIRST_N says
             CON.await_approval(ep, vid, slot_iso, FLOOR.report_line(cctx.get("floor")) + summ_)
         elif FLOOR.report_line(cctx.get("floor")):                # audit F10, the report state: a film the unmeasured jury refused goes to his eye with the clock, as a void does
             CON.await_approval(ep, vid, slot_iso, FLOOR.report_line(cctx.get("floor")) + summ_, kind="floor_eye", default="goes public by itself", expires_h=FLOOR.eye_hours(slot_iso))

@@ -374,8 +374,17 @@ def fake_reply(key, prompt):
                 every = 1 if "MARKER FIX" in prompt else (6 if f1 else 2)                      # a marker-fix request gets a punchline on every line
                 mk = ("" if f1 else "[SEND] " if k == 2 else "[AWE] " if k == 5 else "") + ("[PUNCH] " if k % every == 0 else "")   # v11.1: markers like the real writer
                 body.append(mk + [f"[{who}] {tag} {rest}", f"{tag} [{who}] {rest}", f"{who}: {rest}"][k % 3]); k += 1
-        if _ending() == "question": body.append("[DIRECTOR] [close] So... would you keep it?")          # v12 V2b: a writer who obeys F1's ending (DESIGN QUESTION 9)
+        from whatifs.org import salvo as _SAL
+        if _ending() == "question" and _SAL.CLIFF_NOTE in prompt + _FMT.block("writer"): body.append("[DIRECTOR] [close] What do you do when it happens again tonight?")      # v12 V4b (step 3b, R15 (c)): told CLIFF_NOTE, a question about its own story - never the stock one
+        elif _ending() == "question": body.append("[DIRECTOR] [close] So... would you keep it?")          # v12 V2b: a writer who obeys F1's ending (DESIGN QUESTION 9)
         if _ending() == "arrival": body.append("[DIRECTOR] [close] You are home, and you see your street differently.")      # ... and F3's arrival (DESIGN QUESTION 16)
+        _src = prompt + _FMT.block("writer")              # v12 V4b (step 3b, R15 (c)): told THIS IS PART 2, its first spoken line says the listed words of Part 1's cliff
+        _p2 = re.search(r"these words(?: of that question)?: (.+?)(?: - while|, while)", _src) if "THIS IS PART 2" in _src else None
+        if _p2:
+            say = ", ".join(w.strip() for w in _p2.group(1).split(",") if w.strip()).capitalize() + " - it is happening to you now. "
+            j = next(i for i, x in enumerate(body) if not x.startswith(("## BEAT", "[pause")))
+            nw = re.sub(r"^((?:\[[^\]]*\]\s*)+)", lambda m_: m_.group(1) + say, body[j], count=1)
+            body[j] = nw if nw != body[j] else say + body[j]
         mt = re.search(r"Title: ([^|]+?)\s*\|", prompt)                    # v11.1: a RETENTION FIX request is answered like a compliant writer:
         L = [i for i, x in enumerate(body) if not x.startswith(("## BEAT", "[pause"))]      # v9: the trial tags (never spoken; ignored when SHOW_MODE = off)
         if len(L) >= 8 and not f1:
@@ -455,6 +464,23 @@ def fake_reply(key, prompt):
         if sigs: cands.append({"premise": "What if you never slept again?", "family": "F01_body", "audience_need": "Suggests interest in sleep loss.", "click_emotion": "Dread.",
                                "evidence": [sigs[0]["id"]], "channel_fit": "Body family."})
         return json.dumps({"candidates": cands})
+    if key == "psyche_tags":                                       # v12 V4b (step 7): the psyche tags - every value a key of psyche.DRIVES; the lead the drive that led least lately (never the house constant)
+        from whatifs.org import psyche as PSY
+        m_ = re.search(r"BEAT NUMBERS: ([0-9,]*)", prompt); ns = [x for x in (m_.group(1) if m_ else "").split(",") if x]
+        free = [k for k in PSY.DRIVES if k not in PSY.HOUSE]; lead = PSY.least()
+        return json.dumps({"premise": lead, "title": "curiosity_gap", "thumb": "awe_scale", "hook": "curiosity_gap", "beats": {n: free[i % len(free)] for i, n in enumerate(ns)}, "lead": lead})
+    if key == "challenger_hook":                                    # v12 V4b step 8b: three more opening lines (none the writer's)
+        return json.dumps({"candidates": [{"line": a, "type": b, "basis": "script"} for a, b in (("Three lines nobody wrote down yet.", "curiosity_gap"), ("You would have missed the first clue.", "you_stakes"), ("The tide leaves before anyone looks.", "concrete_stakes"))]})
+    if key == "challenger_title": return json.dumps({"titles": ["The Day The Sea Never Came Back", "What One Harbour Log Hid For Years"]})
+    if key == "challenger_line": return json.dumps({"line": "Nobody noticed the clock had stopped."})
+    if key == "depth":                                             # v12 V4b (step 8a): the depth pass - four answers and an addendum under 180 words
+        return json.dumps({"answers": ["The expert reads the change against the normal record, not the raw number.", "One harbour's tide record and its chart.",
+                                       "A level, a clock and the public log.", "A harbour master: every figure must match the log."],
+                           "addendum": "Open on the one number an expert would check first and show where it comes from; keep every figure traceable to the record."})
+    if key == "salvo_sequel":                                      # v12 V4b (step 3b): the launch flagship's sequel record (salvo.seal) - its line passes line_ok
+        return json.dumps({"premise": "What if the second sun rose twice as close, and you had one night to warn your family?",
+                           "answer": "The second sun rises again, closer, and your street turns gold at midnight.",
+                           "line": "Part 2 shows what happens when the second sun rises again, twice as close to your street."})
     if key == "hooks":
         L = [("Eight billion people do it at exactly noon.", "surprising_claim"), ("The water starts to change colour.", "outcome_promise"),
              ("The strangest part is what happens to you.", "curiosity_gap"), ("A number nobody has ever written down.", "curiosity_gap"),

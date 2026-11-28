@@ -1,10 +1,10 @@
 """Publishing: YouTube upload (scheduled, verified), thumbnail, captions, playlist, AI label; Instagram and Facebook Reels; Drive archive; Gmail notices. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
-import os, re, json, time, base64
+import os, re, json, time, base64, hashlib
 from email.mime.text import MIMEText            # v8.9.3: imported by name; the module-level email() function below would hide the `email` package
 from email.mime.multipart import MIMEMultipart
 import requests
-from whatifs.core import gheaders, gdrive_headers, env, log, S, FAKE, retry, WORK, now_utc
+from whatifs.core import gheaders, gdrive_headers, env, log, S, FAKE, retry, WORK, now_utc, iso, store
 
 YT = "https://www.googleapis.com/youtube/v3/"
 UP = "https://www.googleapis.com/upload/youtube/v3/"
@@ -55,6 +55,9 @@ def yt_body(title, description, tags, publish_at=None, made_for_kids=False, ai_l
 # answer from it - so the release sheet's receipts are proven offline with the same code that reads the real platforms. FAKE_FAULTS lets a test make
 # a platform misbehave: {"youtube": {"drift": {"ai": False}, "processing": True, "refuse": ("thumbnail",), "ignore": ("label",), "fail": True},
 # "instagram": {"drift": {...}, "fail": True, "fail_cover": True}, "facebook": {"drift": {...}, "fail": True}}.
+# v12 V4b step 5 (memo 3.5): "refuse" also takes "comment" and "schedule" (step 6c: and "description"); "comments" = {id: [{"id", "author", "text", "published"}]} is what
+# `community.fetch_comments` answers for that id; v12 V4b step 6 (memo 3.6): "stats" = {id: {"views", "likes", "comments"}} plants what
+# `yt_stats` reads.
 FAKE_FAULTS = {}
 
 def _fake_file(platform, nid):
@@ -78,16 +81,66 @@ def _fake_get(platform, nid):
 
 def _fault(platform, key, default=None): return (FAKE_FAULTS.get(platform) or {}).get(key, default)
 
-def yt_upload(path, title, description, tags, publish_at=None, made_for_kids=False, ai_label=True, short=False, privacy=None, verify=True, hd_gate=True, now=None):
+# ------------------------------------------------------------------ v12 V4b step 2 (B4 the doors, item 124; ALGORITHM A1): the upload ledger
+LEDGER = "Upload_Hashes"          # one row per upload: its file's hash, its spoken script's hash, and the minute code first SAW it public
+
+class ReUpload(RuntimeError):
+    """An upload whose file, or whose spoken script, was already seen public: refused before any request (V4b step 2, ANTI_MYTH_ON)."""
+
+def _file_sha(path):
+    """SHA-256 of the file's bytes; "" when the file cannot be read (an empty hash matches nothing)."""
+    try:
+        h = hashlib.sha256()
+        with open(path, "rb") as f:
+            for b in iter(lambda: f.read(1 << 20), b""): h.update(b)
+        return h.hexdigest()
+    except Exception: return ""
+
+def spoken_sha(text):
+    """The `script_sha` of an upload (V4b step 2): SHA-256 of the spoken text, lower case, whitespace collapsed - a re-made copy of a published script is the
+    same video; "" when the text holds no word (an empty hash matches nothing). Its callers: `episode._finish` (the long script's units, without his
+    maker's line) and `release._youtube` (the words of the Short a viewer hears)."""
+    said = " ".join(str(text or "").lower().split())
+    return hashlib.sha256(said.encode("utf-8")).hexdigest() if re.search(r"\w", said) else ""
+
+def _published(file_sha, script_sha):
+    """Raise ReUpload when a ledger row WHOSE public_at IS SET has the same file hash, or the same non-empty script hash. A copy that never went public
+    (a first attempt held private) blocks nothing."""
+    for r in store().rows(LEDGER):
+        if r.get("public_at") and ((file_sha and r.get("file_sha") == file_sha) or (script_sha and r.get("script_sha") == script_sha)):
+            what = "render" if file_sha and r.get("file_sha") == file_sha else "spoken script"
+            raise ReUpload(f"refused: this {what} went public as {r.get('yt_id')} at {r.get('public_at')} - a public video is never uploaded again (V4b, ANTI_MYTH_ON)")
+
+def _ledger_add(vid, kind, file_sha, script_sha, now=None):
+    """The row of a successful upload. Never raises: a raise here would make a caller retry an upload that went through."""
+    try: store().append(LEDGER, [{"ts": iso(now or now_utc()), "yt_id": vid, "kind": kind, "file_sha": file_sha, "script_sha": script_sha, "public_at": ""}])
+    except Exception as e: log(f"upload ledger: the row of {vid} was not written ({e})", "ERROR")
+
+def seen_public(yt_id, now=None):
+    """Code SAW `yt_id` public: its ledger row gets `public_at`, once. True only when it set the minute; nothing with ANTI_MYTH_ON off or without a row.
+    Never raises."""
+    try:
+        if not yt_id or not S("ANTI_MYTH_ON", bool): return False
+        st = store(); rs = [r for r in st.rows(LEDGER) if str(r.get("yt_id")) == str(yt_id)]
+        if not rs or any(r.get("public_at") for r in rs): return False
+        return bool(st.update(LEDGER, "yt_id", yt_id, {"public_at": iso(now or now_utc())}))
+    except Exception as e: log(f"upload ledger: {yt_id} not marked public ({e})", "WARN"); return False
+
+def yt_upload(path, title, description, tags, publish_at=None, made_for_kids=False, ai_label=True, short=False, privacy=None, verify=True, hd_gate=True, now=None, script_sha="", ledger=True):
     """privacy: v9.3.1 explicit privacy (e.g. 'unlisted' for the upload check); default = private when scheduled, else public.
     verify: v9.3.1 (L2) read the upload back (lock detector + AI-label read-back).
     hd_gate: v12 B-OWNER (PART 9) - with HD_GATE_ON, an upload that would go public at once (no publish_at, a wanted privacy of public) goes up PRIVATE
-    and gets its row on tab HD_Wait; `hdgate` makes it public when YouTube shows it in HD, or at its cap. now = the job's clock (the row's upload time)."""
+    and gets its row on tab HD_Wait; `hdgate` makes it public when YouTube shows it in HD, or at its cap. now = the job's clock (the row's upload time).
+    script_sha / ledger: v12 V4b step 2 (ANTI_MYTH_ON) - a file or spoken script already seen public is refused BEFORE any request (ReUpload); every
+    upload but the upload check's (ledger=False) writes its row on tab Upload_Hashes."""
+    led = bool(ledger) and S("ANTI_MYTH_ON", bool); fsha = _file_sha(path) if led else ""
+    if led: _published(fsha, script_sha)                     # v12 V4b step 2: the ledger is read first - before the body, the offline stand-in and every request
     gate = bool(hd_gate) and not publish_at and (privacy or "public") == "public" and S("HD_GATE_ON", bool)
     body = yt_body(title, description, tags, publish_at, made_for_kids, ai_label, "private" if gate else privacy)
     if FAKE:
         if _fault("youtube", "fail"): raise RuntimeError("YouTube start 503: offline fault")
         vid = "FAKE_" + os.path.basename(path); _fake_put("youtube", vid, sent=body)
+        if led: _ledger_add(vid, "short" if short else "long", fsha, script_sha, now)
         if gate:
             from whatifs import hdgate as HG; HG.enter(vid, "short" if short else "video", now, ai=bool(ai_label))      # as soon as the id is known
         return vid
@@ -126,6 +179,7 @@ def yt_upload(path, title, description, tags, publish_at=None, made_for_kids=Fal
                 rng = rr.headers.get("Range"); sent = int(rng.split("-")[1]) + 1 if rng else 0; f.seek(sent)
         raise RuntimeError("upload ended without id")
     vid = retry(go, tries=3, wait=30, what="youtube upload")
+    if led: _ledger_add(vid, "short" if short else "long", fsha, script_sha, now)      # v12 V4b step 2: as soon as the id is known
     if gate:
         from whatifs import hdgate as HG; HG.enter(vid, "short" if short else "video", now, ai=bool(ai_label))          # v12 B-OWNER: as soon as the id is known
     if verify:
@@ -173,7 +227,9 @@ def yt_set_label(vid, on=True):
     except Exception as e: log(f"AI label update failed: {e}", "WARN"); return False
 
 def yt_delete(vid):
-    """v9.3.1: delete a video (used only for the upload-check clip)."""
+    """v9.3.1: delete a video (used only for the upload-check clip). v12 V4b step 2: a video on the upload ledger is never deleted."""
+    if S("ANTI_MYTH_ON", bool) and vid and any(str(r.get("yt_id")) == str(vid) for r in store().rows(LEDGER)):
+        raise RuntimeError(f"refused: {vid} is on the upload ledger (tab {LEDGER}) - an uploaded video is never deleted by code; only the upload check's own clip is")
     if FAKE: return True
     r = requests.delete(YT + f"videos?id={vid}", headers=gheaders(), timeout=30)
     if r.status_code >= 400: raise RuntimeError(f"delete failed {r.status_code}: {r.text[:200]}")
@@ -252,18 +308,27 @@ def yt_playlist(vid, name):
         pl = next((p["id"] for p in r.get("items", []) if p["snippet"]["title"] == name), None)
         if not pl:
             pl = requests.post(YT + "playlists?part=snippet,status", headers=gheaders(), json={"snippet": {"title": name}, "status": {"privacyStatus": "public"}}, timeout=30).json()["id"]
-        requests.post(YT + "playlistItems?part=snippet", headers=gheaders(), json={"snippet": {"playlistId": pl, "resourceId": {"kind": "youtube#video", "videoId": vid}}}, timeout=30)
+        rr = requests.post(YT + "playlistItems?part=snippet", headers=gheaders(), json={"snippet": {"playlistId": pl, "resourceId": {"kind": "youtube#video", "videoId": vid}}}, timeout=30)
+        if not 200 <= rr.status_code < 300: log(f"playlist insert failed {rr.status_code}: {rr.text[:200]}", "WARN"); return False      # v12 V4b step 5: True only on a 2xx of the insert
         return True
     except Exception as e: log(f"playlist failed: {e}", "WARN"); return False
 
 def yt_comment(vid, text):
-    if FAKE or not text: return True
+    """v12 V4b step 5 (memo 3.5, P23): what YouTube KEPT - the new comment's id (real: its answer's `id` on a 2xx), else None: refused, failed, or an
+    empty text (nothing is posted; no caller may record a comment without an id). Offline the stand-in appends {"id", "text"} to the record's
+    `comments` (the id: "FAKEC_" + the first 8 hex of the text's SHA-1) and the fault refuse "comment" refuses it."""
+    if not str(text or "").strip(): return None
+    if FAKE:
+        if "comment" in (_fault("youtube", "refuse") or ()): return None
+        cid = "FAKEC_" + hashlib.sha1(str(text).encode("utf-8")).hexdigest()[:8]
+        _fake_put("youtube", vid, comments=list(_fake_get("youtube", vid).get("comments") or []) + [{"id": cid, "text": str(text)}]); return cid
     try:
-        cid = requests.get(YT + "channels?part=id&mine=true", headers=gheaders(), timeout=30).json()["items"][0]["id"]
-        requests.post(YT + "commentThreads?part=snippet", headers=gheaders(), json={"snippet": {"channelId": cid, "videoId": vid,
-                      "topLevelComment": {"snippet": {"textOriginal": text}}}}, timeout=30)
-        return True
-    except Exception as e: log(f"comment failed: {e}", "WARN"); return False
+        ch = requests.get(YT + "channels?part=id&mine=true", headers=gheaders(), timeout=30).json()["items"][0]["id"]
+        r = requests.post(YT + "commentThreads?part=snippet", headers=gheaders(), json={"snippet": {"channelId": ch, "videoId": vid,
+                          "topLevelComment": {"snippet": {"textOriginal": text}}}}, timeout=30)
+        if 200 <= r.status_code < 300: return r.json()["id"]
+        log(f"comment refused {r.status_code}: {r.text[:200]}", "WARN"); return None
+    except Exception as e: log(f"comment failed: {e}", "WARN"); return None
 
 def yt_reply(parent_id, text):
     """v9: a reply under a comment (comments.insert). Same OAuth scope as yt_comment. True when posted."""
@@ -276,7 +341,10 @@ def yt_reply(parent_id, text):
 def yt_set_privacy(vid, privacy):
     if FAKE:                                                                        # v12 B-OWNER (PART 9): the stand-in records it, MERGED, and honours refuse / ignore as the label does
         ok = "privacy" not in (_fault("youtube", "refuse") or ())
-        if ok and "privacy" not in (_fault("youtube", "ignore") or ()): _fake_put("youtube", vid, fixed={**(_fake_get("youtube", vid).get("fixed") or {}), "privacy": privacy})
+        if ok and "privacy" not in (_fault("youtube", "ignore") or ()):
+            fx = {**(_fake_get("youtube", vid).get("fixed") or {}), "privacy": privacy}; fx.pop("publish_at", None)      # v12 V4b step 5: the time goes with it, as the real call pops publishAt
+            if privacy == "public": fx["was_public"] = True                                                              # ... and the first public privacy is kept for good
+            _fake_put("youtube", vid, fixed=fx)
         return ok
     r = requests.get(YT + f"videos?part=status&id={vid}", headers=gheaders(), timeout=30).json()
     if not r.get("items"): return False
@@ -285,9 +353,16 @@ def yt_set_privacy(vid, privacy):
     if rr.status_code >= 400: log(f"privacy change failed {rr.status_code}: {rr.text[:300]}", "WARN"); return False
     return True
 
+def _ever_public(rec):
+    """v12 V4b step 5: the stand-in's record ever read public - its upload was sent public, or a privacy change made it public (`fixed.was_public`)."""
+    return bool((rec.get("fixed") or {}).get("was_public")) or ((rec.get("sent") or {}).get("status") or {}).get("privacyStatus") == "public"
+
 def yt_schedule(vid, publish_at):
     """Put a held (private) video back on the schedule at a new time."""
-    if FAKE: _fake_put("youtube", vid, fixed={**(_fake_get("youtube", vid).get("fixed") or {}), "privacy": "private"}); return True      # v12 B-OWNER: merged (R17 (2))
+    if FAKE:                                                                        # v12 B-OWNER: merged (R17 (2))
+        rec = _fake_get("youtube", vid)
+        if "schedule" in (_fault("youtube", "refuse") or ()) or _ever_public(rec): return False      # v12 V4b step 5: as YouTube does, no time for a video that ever read public; nothing recorded
+        _fake_put("youtube", vid, fixed={**(rec.get("fixed") or {}), "privacy": "private", "publish_at": publish_at}); return True
     r = requests.get(YT + f"videos?part=status&id={vid}", headers=gheaders(), timeout=30).json()
     if not r.get("items"): raise RuntimeError(f"video {vid} not found")
     stt = r["items"][0]["status"]; stt["privacyStatus"] = "private"; stt["publishAt"] = publish_at
@@ -325,6 +400,49 @@ def yt_set_title(vid, title):
     body["snippet"]["title"] = t
     rr = requests.put(YT + "videos?part=snippet", headers=gheaders(), json=body, timeout=30)
     if rr.status_code >= 400: log(f"title change failed {rr.status_code}: {rr.text[:300]}", "WARN"); return False
+    return True
+
+def yt_stats(ids):
+    """v12 V4b step 5 (memo 3.5): {id: {"views", "likes", "comments"}} - ONE videos.list?part=statistics a 50 ids (1 quota unit each). An id YouTube
+    does not answer, or a batch whose read failed, is LEFT OUT (a reading that failed is never a zero); a count YouTube hides is None. Offline the
+    plant FAKE_FAULTS["youtube"]["stats"] answers its ids and every other id is seeded by the id (no clock, no randomness)."""
+    want = list(dict.fromkeys(str(i) for i in (ids or []) if i))
+    if not want: return {}
+    if FAKE:
+        plant, out = _fault("youtube", "stats") or {}, {}
+        for i in want:
+            if i in plant: out[i] = dict(plant[i]); continue
+            h = hashlib.sha1(i.encode("utf-8")).hexdigest(); v = int(h[:4], 16) % 5000
+            out[i] = {"views": v, "likes": int(h[4:8], 16) % (v // 10 + 1), "comments": int(h[8:12], 16) % (v // 50 + 1)}
+        return out
+    num = lambda x: int(x) if str(x if x is not None else "").isdigit() else None
+    out = {}
+    for k in range(0, len(want), 50):
+        try:
+            r = requests.get(YT + "videos?part=statistics&id=" + ",".join(want[k:k + 50]), headers=gheaders(), timeout=30)
+            if r.status_code >= 400: log(f"stats read failed {r.status_code}: {r.text[:200]}", "WARN"); continue
+            for it in r.json().get("items") or []:
+                s = it.get("statistics") or {}
+                out[str(it.get("id"))] = {"views": num(s.get("viewCount")), "likes": num(s.get("likeCount")), "comments": num(s.get("commentCount"))}
+        except Exception as e: log(f"stats read failed: {e}", "WARN")
+    return out
+
+def yt_set_description(vid, text):
+    """v12 V4b step 5 (memo 3.5): change ONLY the description of a video - the `yt_set_title` pattern: the rest of the snippet, its title included, is
+    sent back exactly as YouTube returned it. True when YouTube took it. Offline the stand-in records it (merged); the fault refuse "description"
+    refuses it and records nothing."""
+    if FAKE:
+        ok = "description" not in (_fault("youtube", "refuse") or ())
+        if ok: _, d, _ = clean_meta("", text, []); _fake_put("youtube", vid, fixed={**(_fake_get("youtube", vid).get("fixed") or {}), "description": d})
+        return ok
+    r = requests.get(YT + f"videos?part=snippet&id={vid}", headers=gheaders(), timeout=30).json()
+    if not r.get("items"): return False
+    sn = r["items"][0]["snippet"]
+    _, d, _ = clean_meta(sn.get("title", ""), text, [])
+    body = {"id": vid, "snippet": {k: sn[k] for k in ("title", "description", "tags", "categoryId", "defaultLanguage", "defaultAudioLanguage") if k in sn}}
+    body["snippet"]["description"] = d
+    rr = requests.put(YT + "videos?part=snippet", headers=gheaders(), json=body, timeout=30)
+    if rr.status_code >= 400: log(f"description change failed {rr.status_code}: {rr.text[:300]}", "WARN"); return False
     return True
 
 def yt_channel():

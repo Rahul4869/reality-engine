@@ -247,10 +247,10 @@ def test_a_clean_script_needs_no_fix_and_only_clean_scripts_reach_the_jury(monke
     with pytest.raises(RuntimeError, match="no Short script had the shape asked for"): SH.write({"premise": MOON}, "S1", "you_pov", "SHT3", [])
 
 # ------------------------------------------------------------------ the short gate
-def test_the_short_gate_judges_five_checks_before_any_picture(setting):
-    stage = {f[0]: f[1] for f in CON.FEATURES}; mine = ("short_open", "short_plain", "short_shape", "short_kept", "short_contract")
+def test_the_short_gate_judges_six_checks_before_any_picture(setting):
+    stage = {f[0]: f[1] for f in CON.FEATURES}; mine = ("short_open", "short_plain", "short_shape", "short_kept", "short_contract", "short_psyche")          # v12 V4b step 7 (DESIGN_V4b 3.7 (b), DQ 4): + short_psyche, the Short's drives at the short gate (a pin moved BY DESIGN)
     assert [k for k, v in stage.items() if v == "short"] == list(mine) and all(FMT.rule(c, "F1") == "must" and FMT.rule(c, "") == "must" for c in mine)
-    g = led(gate(good())); assert [g[c][0] for c in mine] == ["PASS"] * 4 + [CON.NA], g                    # no department run in this unit test: the organisation's check steps aside
+    g = led(gate(good())); assert [g[c][0] for c in mine] == ["PASS"] * 4 + [CON.NA] * 2 and g["short_psyche"] == (CON.NA, "PSYCHE_TAGS_ON is FALSE"), g                    # no department run in this unit test: the organisation's check steps aside
     assert "ends at" in g["short_open"][1] and "0 number(s) heard" in g["short_plain"][1] and "the last is the first clip returning" in g["short_shape"][1] and "format S1" in g["short_kept"][1]
     bad = with_line(with_line(good(), 1, "By breakfast two cups and three plates slide a quark away. Subscribe for more."), 3, "So tonight, do you sleep?")
     g = led(gate(bad)); assert g["short_plain"][0] == "FAIL" and g["short_shape"][0] == "FAIL" and g["short_open"][0] == "PASS" and g["short_kept"][0] == "PASS"
@@ -303,7 +303,7 @@ def test_the_real_production_makes_a_short_in_every_format(monkeypatch, setting)
         kinds, dur = _made(r); lo, hi = FMT.short_len(fmt)
         assert kinds >= {"video", "audio"} and lo <= dur <= hi and abs(dur - float(r["sec"])) < 0.2
         led_ = {x["feature"]: x for x in st.rows("Feature_Ledger") if x["episode_id"] == r["id"]}
-        assert {k: v["status"] for k, v in led_.items()} == {c: "PASS" for c in ("short_open", "short_plain", "short_shape", "short_kept", "short_contract")}, led_
+        assert {k: v["status"] for k, v in led_.items()} == dict({c: "PASS" for c in ("short_open", "short_plain", "short_shape", "short_kept", "short_contract")}, short_psyche=CON.NA) and led_["short_psyche"]["evidence"] == "PSYCHE_TAGS_ON is FALSE", led_          # v12 V4b step 7 (DESIGN_V4b 3.7 (b), DQ 4): the sixth check of the short gate, N/A under the older tests' switch (a pin moved BY DESIGN)
         assert all(v["stage"] == "short" for v in led_.values()) and "3 department run(s) complete" in led_["short_contract"]["evidence"]
         ses = [(s["dept"], s["trigger"], s["status"]) for s in st.rows("Sessions") if s["episode_id"] == r["id"]]
         assert ses == [("D14", "write", "ok"), ("D7", "short_voice", "ok"), ("D13", "short_seat", "ok"), ("D8", "short_gate", "ok"), ("D14", "make", "ok")], ses
@@ -383,3 +383,77 @@ def test_a_creative_run_that_goes_first_on_an_empty_sheet_gets_the_founding_know
     w = next(s for s in st.rows("Sessions") if s["trigger"] == "write"); load = CITE._receipt(w, "LOAD")
     mine = {x["id"] for x in P.rows(st) if "D14" in x["departments"]}
     assert load["items"] >= 5 and len(mine) >= 5 and mine <= set(P.playbook("D14", "writing", record=False)["items"])          # not the cast alone
+
+
+# ------------------------------------------------------------------ V4b step 1 (item 194): a Short gets the long video's AI-phrase guard (D13 with D14)
+def _tells(setting, **cells):
+    setting("SHORT_TELLS_ON", "TRUE")
+    for k, v in cells.items(): setting(k, v)
+
+def test_a_short_that_says_imagine_a_world_is_named_in_its_fix_and_held_at_the_gate(setting):
+    """V4b step 1: a phrase of the long video's own AI list, heard in a Short, is found by the measure, named in the writers' ONE fix and fails check
+    short_plain - before the voice and any picture are paid. The offline writer's own Short passes, its evidence counting the AI phrases."""
+    _tells(setting); sc = with_line(good(), 1, "Imagine a world where the cat has stopped trusting you.")
+    r = SEAT.tells_report(sc); assert r["found"] == ["imagine a world"] and r["problems"] == ["it sounds like an AI: 'imagine a world' (limit 0)"], r
+    assert "HUMAN VOICE: it sounds like an AI: 'imagine a world' (limit 0). Say it as a person would to a friend, in other words; none of these phrases" in SEAT.script_issues(sc, "S1")
+    g = led(gate(sc)); assert g["short_plain"][0] == "FAIL" and "it sounds like an AI: 'imagine a world' (limit 0)" in g["short_plain"][1], g["short_plain"]
+    ok = led(gate(good())); assert ok["short_plain"][0] == "PASS" and ok["short_plain"][1].endswith("; 0 AI phrase(s) (limit 0)"), ok["short_plain"]
+
+def test_a_phrase_is_matched_as_whole_words_so_dive_into_the_pool_is_no_tell(setting):
+    _tells(setting)
+    assert SEAT.tells_report(with_line(good(), 1, "You dive into the pool and the water is already gone."))["found"] == []
+    assert SEAT.tells_report(with_line(good(), 1, "Now dive in, the water is already gone."))["found"] == ["dive in"]          # the entry itself, as written
+
+def test_the_limit_is_a_cell_one_phrase_passes_at_one_two_fail(setting):
+    _tells(setting, SHORT_TELLS_MAX="1")
+    one = with_line(good(), 1, "Imagine a world where the cat has stopped trusting you.")
+    two = with_line(one, 2, "Buckle up, the whole street walks beside its own echo.")
+    assert SEAT.tells_report(one)["problems"] == [] and led(gate(one))["short_plain"][0] == "PASS"
+    assert SEAT.tells_report(two)["problems"] == ["it sounds like an AI: 'buckle up', 'imagine a world' (limit 1)"] and led(gate(two))["short_plain"][0] == "FAIL"
+
+def test_the_switch_off_measures_nothing_and_the_check_passes(setting):
+    _tells(setting, SHORT_TELLS_ON="FALSE"); sc = with_line(good(), 1, "Imagine a world where the cat has stopped trusting you.")
+    assert SEAT.tells_report(sc) == {"found": [], "max": 0, "problems": []} and not [i for i in SEAT.script_issues(sc, "S1") if i.startswith("HUMAN VOICE")]
+    assert led(gate(sc))["short_plain"][0] == "PASS"
+
+def test_the_brief_names_the_long_videos_own_list_and_the_rubric_asks_for_a_person():
+    from whatifs.data import AI_TELLS
+    for fmt in FMT.SHORTS:
+        b = FMT.short_brief(fmt)
+        assert "HUMAN VOICE: one sharp, warm person talking to a friend - never an announcer, a textbook or an AI. Never use these phrases: " + ", ".join(AI_TELLS) + "." in b, fmt
+    assert "(7) does it sound like a person talking, not like an AI or an advert. Scripts are anonymous" in FMT.short_rubric()
+
+def test_the_list_gains_the_reels_narrator_tell_and_not_a_foils_honest_line():
+    from whatifs.data import AI_TELLS
+    assert AI_TELLS.count("we will explore") == 1 and "you're absolutely right" not in AI_TELLS
+
+def test_the_offline_writers_shorts_of_every_format_say_no_ai_phrase(setting):
+    _tells(setting)
+    for fmt in FMT.SHORTS:
+        for before in ("", f"{fmt}: something else here"):
+            for prem in SW.SHORT_PREMISES + (MOON, "What if two million bees moved in?", "What if the sea froze?"):
+                sc = good(fmt, prem, before); assert SEAT.tells_report(sc)["found"] == [] and SEAT.script_issues(sc, fmt) == [], (fmt, prem, SEAT.tells_report(sc))
+
+@pytest.mark.parametrize("line, found", [
+    ("The sea delves under the realms of the deep.", ["delve", "realm"]),                      # R15: a one-word entry with its plain endings
+    ("Your journeys to work are embarked on at noon.", ["embark", "journey"]),
+    ("Let’s dive under the ice before it is gone.", ["let's dive"]),                           # R15: the curly apostrophe is a plain one
+    ("It is mind blowing, and it is a game changer.", ["mind-blowing", "game-changer"]),          # R15: a hyphen is a space, on both sides
+])
+def test_the_plain_endings_the_curly_apostrophe_and_the_hyphen_are_the_same_tell(setting, line, found):
+    _tells(setting); assert SEAT.tells_report(with_line(good(), 1, line))["found"] == found
+
+def test_the_kill_rule_moves_the_shorts_own_cell_never_the_shared_list(setting):
+    """R15 (TO CORRECT 3): the worst good Short is held - 'journey' is the first candidate for SHORT_TELLS_SKIP; the cell passes it over for the Short
+    alone, data.AI_TELLS keeps it for the long video's prompts and scrubs."""
+    from whatifs.data import AI_TELLS
+    _tells(setting); sc = with_line(good(), 1, "Your journey to work now takes nine hours.")
+    assert SEAT.tells_report(sc)["found"] == ["journey"]
+    setting("SHORT_TELLS_SKIP", " Journey , buckle up"); assert SEAT.tells_report(sc) == {"found": [], "max": 0, "problems": []} and "journey" in AI_TELLS
+    assert SEAT.tells_report(with_line(sc, 2, "Buckle up."))["found"] == []
+
+def test_the_cells_ship_on_the_limit_is_d13s_lever_and_the_skip_is_no_lever():
+    assert [core.DEFAULTS[k][0] for k in ("SHORT_TELLS_ON", "SHORT_TELLS_MAX", "SHORT_TELLS_SKIP")] == ["TRUE", "0", ""]
+    assert LV.LEVERS["SHORT_TELLS_MAX"]["checks"] == ("short_plain",) and (LV.LEVERS["SHORT_TELLS_MAX"]["lo"], LV.LEVERS["SHORT_TELLS_MAX"]["hi"]) == (0, 2)
+    assert "SHORT_TELLS_MAX" in REG.DEPTS["D13"]["levers"] and LV.owner_of("SHORT_TELLS_MAX") == "D13" and LV.issues() == []
+    assert "SHORT_TELLS_SKIP" not in LV.LEVERS and LV.owner_of("SHORT_TELLS_SKIP") == "" and "SHORT_TELLS_ON" not in LV.LEVERS

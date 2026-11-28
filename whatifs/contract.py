@@ -65,6 +65,7 @@ def p_hook(ctx):
         if not ref or str(rec.get("short") or "") != ref: return FAIL, f"the opening line was taken from Short {rec.get('short') or '?'}, but this video is about {ref or 'no Short'}"
         if rec.get("status") != "applied": return FAIL, f"the hook of Short {ref} is not the first spoken line of the finished narration ({rec.get('status')})"
         return PASS, f"the opening line is the hook of Short {ref}, word for word: the line its viewers stayed for (no lab needed)"
+    if rec.get("status") == "needs_human_choice" and rec.get("lost_line") != "second": return FAIL, "the hook lab's chosen line is not the first spoken line of the finished narration (a rewrite changed it)"      # v12 V4b step 1b (P-B; RULINGS_U1c 2, DQ-1): a rewrite after the lab dropped its line - refused at the script gate, before any picture
     n = len(rec.get("candidates") or []); sc = rec.get("score") or rec.get("winner_score")
     if n < S("CONTRACT_HOOK_MIN_CANDIDATES", int): return FAIL, f"only {n} hook candidates (need {S('CONTRACT_HOOK_MIN_CANDIDATES', int)})"
     if sc is not None and float(sc) < S("CONTRACT_HOOK_MIN_SCORE", float): return FAIL, f"winning hook scored {sc} (bar {S('CONTRACT_HOOK_MIN_SCORE', float)})"
@@ -539,6 +540,88 @@ def p_format_ending(ctx):
     return PASS, (f"ends on its {r['ending']}: '{r['last'][:90]}'; no ask and no pointer in the tail; asks in this video: {asks}; "
                   f"removed by code: {sum(int(v) for v in r['removed_kinds'].values())}")
 
+def p_appetite_plan(ctx):
+    """v12 V4b step 6a (memo 3.6, THE PLAN, BEFORE THE FINAL GATE): no long video goes out without its appetite plan - its ONE row on tab
+    Appetite_Plans, written before this gate (appetite.plan), whose numbers every reading uses. N/A with APPETITE_ON FALSE or the organisation off
+    (then nothing is written); FAIL without a row for the episode, or when a frozen row's JSON no longer hashes to its sha."""
+    from whatifs.org import appetite as APP, runner as ORG_
+    if not APP.on() or not ORG_.on(): return NA, "the appetite engine is off (APPETITE_ON FALSE or the organisation off): no plan is written"
+    r = APP.plan_row(ctx.get("ep"))
+    if not r: return FAIL, "no appetite plan for this episode: it was not written before the final gate - no long video goes out without one"
+    bad = APP.unsealed(r)
+    if bad: return FAIL, bad
+    return PASS, f"the appetite plan is written ({r.get('role')}, {r.get('state')}" + (f", sha {str(r.get('sha'))[:12]})" if r.get("sha") else ")")
+
+def p_psyche_tags(ctx):
+    """v12 V4b step 7 (memo 3.7; R15 on review 12a): every long video carries its drives - read from the tags themselves (psyche.problems): FAIL when
+    a tag is missing or outside psyche.DRIVES after the one retry, when the lead is the house constant, or - THE VARIETY FLOOR, binding EVERY long
+    video, a free or a forced premise - when its lead already led 2 of the last 4 long videos. N/A with PSYCHE_TAGS_ON FALSE."""
+    from whatifs.org import psyche as PSY
+    if not PSY.on(): return NA, "PSYCHE_TAGS_ON is FALSE"
+    d = ctx.get("d") if isinstance(ctx.get("d"), dict) else {}
+    bad = PSY.problems(d.get("drives"), ctx.get("ep"), long=True)
+    return (FAIL, "; ".join(bad)) if bad else (PASS, f"lead {d['drives']['lead']}; every item tagged; the floor holds (last leads: {', '.join(PSY.recent_leads(ctx.get('ep'))) or 'none'})")
+
+
+def p_short_psyche(ctx):
+    """v12 V4b step 7 (memo 3.7 (b); DQ 4: a check id serves one stage): a Short's tags, checked at the SHORT gate where nothing is paid yet - FAIL when
+    a tag is missing or unknown after the one retry or the lead is the house constant; a Short has no variety floor. N/A with PSYCHE_TAGS_ON FALSE."""
+    from whatifs.org import psyche as PSY
+    if not PSY.on(): return NA, "PSYCHE_TAGS_ON is FALSE"
+    sh = ctx.get("short") if isinstance(ctx.get("short"), dict) else {}
+    sc = sh.get("script") if isinstance(sh.get("script"), dict) else {}
+    bad = PSY.problems(sc.get("_drives"), ctx.get("ep"), long=False)
+    return (FAIL, "; ".join(bad)) if bad else (PASS, f"lead {sc['_drives']['lead']}; every item tagged")
+
+
+def p_depth_frozen(ctx):
+    """v12 V4b step 8a (memo 3.8 B7; rnd.ORG_CHECKS): the depth brief is frozen. N/A without d['depth'] (no depth pass for this video); FAIL when the
+    drafts that carried it are not exactly k, or when any carried brief's SHA-256 (taken at the call site from the prompts sent) is not the addendum's."""
+    d = ctx.get("d") if isinstance(ctx.get("d"), dict) else {}
+    dp = d.get("depth") if isinstance(d.get("depth"), dict) else None
+    if not dp: return NA, "no depth pass for this video (not a launch pair video, the lane closed, the pass closed by its record, or DEPTH_ON FALSE)"
+    sent = [str(h) for h in (dp.get("sent") or [])]; k = int(dp.get("k") or 0); sha = str(dp.get("sha") or "")
+    if len(sent) != k: return FAIL, f"{len(sent)} drafts carried the depth brief; the split said {k}"
+    if any(h != sha for h in sent): return FAIL, "a draft carried a changed depth brief: its hash is not the frozen addendum's"
+    return PASS, f"{k} of the drafts carried the frozen depth brief (sha {sha[:12]})"
+
+
+def p_cliffhanger(ctx):
+    """v12 V4b step 3b (3.3; R15 review 10; RULINGS_U1e 1 and 2): the launch pair's cliff, on the show's side. N/A without d['salvo']. THE FLAGSHIP:
+    the format's own ending holds (formats.ending_report in F1, whatever ENDINGS_ON says after its draw), and its cliff - the last spoken sentence,
+    sealed in d['salvo']['cliff'] - is no pointer to another video (formats.TEASE), no ask (shortseat.ASK_RX) and not the format's stock question
+    (salvo.KEEP_RX); OWED: a cliff only with a Part 2 already written down (the sequel record's premise). PART 2 (PAID): at least CLIFF_PAID_WORDS of
+    the stems of Part 1's cliff (salvo.cliff_words; all of them when it has fewer) return in the voice units that START inside the first CLIFF_PAID_S
+    seconds of the real voice timeline - never the plan; and Part 2 itself carries no cliff note (the salvo's words to its writer, salvo.note). The
+    leg FRESH (step 6a; RULINGS_U1e 2): the cliff is not like (formats.likeness at or above SHORT_SIMILAR_MAX) the cliff of an earlier plan
+    (salvo.earlier_plans: frozen flagship rows of other episodes; an open row never counts)."""
+    from whatifs import formats as FMT
+    from whatifs.org import salvo as SAL, shortseat as SS
+    d = ctx.get("d") if isinstance(ctx.get("d"), dict) else {}
+    sv = d.get("salvo") if isinstance(d.get("salvo"), dict) else {}
+    role = str(sv.get("role") or "")
+    if role not in ("flagship", "part2"): return NA, "no launch salvo on this episode (an ordinary video)"
+    if role == "flagship":
+        r = FMT.ending_report(_script_text(ctx), "F1"); cliff = " ".join(str(sv.get("cliff") or r["last"] or "").split()); low = cliff.lower()
+        p = list(r["problems"])
+        if FMT.TEASE.search(cliff): p.append(f"the cliff points to another video: '{cliff[:90]}'")
+        if SS.ASK_RX.search(low): p.append(f"the cliff is an ask: '{cliff[:90]}'")
+        if SAL.KEEP_RX.search(low): p.append(f"the cliff is the format's stock question, no cliff: '{cliff[:90]}'")
+        rep_ = [c for c in (str(q.get("cliff") or "") for q in SAL.earlier_plans(ctx.get("ep"))) if c.strip() and FMT.likeness(cliff, c) >= S("SHORT_SIMILAR_MAX", float)]
+        if rep_: p.insert(0, f"FRESH: the cliff repeats an earlier flagship's: '{rep_[0][:90]}'")          # v12 V4b step 6a (RULINGS_U1e 2)
+        seq = sv.get("sequel") if isinstance(sv.get("sequel"), dict) else {}
+        if not str(seq.get("premise") or "").strip(): p.append("OWED: no Part 2 is written down (the sequel record has no premise) - no cliff without its Part 2")
+        if p: return FAIL, "; ".join(p)[:380]
+        return PASS, f"the flagship ends on its cliff: '{cliff[:90]}'; its Part 2 is written down: '{str(seq['premise'])[:90]}'"
+    words = SAL.cliff_words(sv.get("cliff")); stems = {w[:5] for w in words}
+    lim = S("CLIFF_PAID_S", float); need = min(S("CLIFF_PAID_WORDS", int), len(stems))
+    early = " ".join(str(u.get("text") or "") for u in (ctx.get("units") or []) if float(u.get("start", 0) or 0) < lim)
+    heard = SS.content_words(early); got = [w for w in words if w[:5] in heard]; p = []
+    if len(got) < need: p.append(f"PAID: Part 2 does not open on Part 1's question - {len(got)} of its words ({', '.join(words)}) in the first {lim:g} s of the voice, {need} needed")
+    if SAL.role() == "part2" and SAL.CLIFF_NOTE in SAL.note(): p.append("Part 2 itself carries a cliff note: it is told to end on a cliff of its own")
+    if p: return FAIL, "; ".join(p)[:380]
+    return PASS, f"Part 2 opens on Part 1's question: {len(got)} of its words ({', '.join(got)}) in the first {lim:g} s of the voice ({need} needed)"
+
 def p_camera_path(ctx):
     """v12 V2b (the camera path, D6): on the shot list, BEFORE any picture is paid - every shot of an act carries its mark, every act opens on a picture of
     its own (episode.anchors_for: what the asset step will make), every picture whose angle code assigned is at eye level, every still and living prompt
@@ -867,13 +950,14 @@ def p_short_open(ctx):
                   "the first frame is the moving promise picture" + (f"; promise text '{pr}' from the first frame" if pr else "; no promise text (switched off)"))
 
 def p_short_plain(ctx):
-    """v12 V2c (D13): a Short a layman follows on one listen - at most SHORT_NUMBERS_MAX number heard and SHORT_EXPERT_MAX expert words."""
+    """v12 V2c (D13): a Short a layman follows on one listen - at most SHORT_NUMBERS_MAX number heard and SHORT_EXPERT_MAX expert words; V4b step 1:
+    and at most SHORT_TELLS_MAX phrases of the long video's AI list (a Short never sounds like an AI)."""
     from whatifs.org import shortseat as SEAT
     s, out = _short_seat(ctx)
     if s is None: return out
-    r = SEAT.plain_report(s["script"])
-    if r["problems"]: return FAIL, "; ".join(r["problems"])[:380]
-    return PASS, f"{r['numbers']} number(s) heard (limit {r['numbers_max']}); {len(r['hard'])} expert word(s) a layman would not know (limit {r['hard_max']})"
+    r = SEAT.plain_report(s["script"]); t = SEAT.tells_report(s["script"])
+    if r["problems"] or t["problems"]: return FAIL, "; ".join(r["problems"] + t["problems"])[:380]
+    return PASS, f"{r['numbers']} number(s) heard (limit {r['numbers_max']}); {len(r['hard'])} expert word(s) a layman would not know (limit {r['hard_max']}); {len(t['found'])} AI phrase(s) (limit {t['max']})"
 
 def p_short_shape(ctx):
     """v12 V2c (D13): the shape of a Short - its real length inside the format's band, the last line hands back to the first, no ask, every second
@@ -940,6 +1024,10 @@ FEATURES = [
     ("camera_path",   "script", p_camera_path,   "one place per act, seen from where the viewer stands: every act opens on a picture of its own, every picture at eye level holds its act's place, the acts are joined to an allowance (inside the format)"),
     ("drawn_plan",    "script", p_drawn_plan,    "the explaining moments drawn by code: a scene only in the drawn arm and only on an explaining moment, every word, number, name-value pair and arrow the script's own, readable at the work size, no composition twice and none repeating the last drawn video's (drawn by code)"),
     ("format_ending", "script", p_format_ending,"the video ends as its format ends - F1 on the question to the viewer, F3 on the arrival - with no ask and no pointer to another video in its last seconds, and carries only the asks of its format (inside the format)"),
+    ("cliffhanger",   "script", p_cliffhanger,  "the launch pair keeps its promise: the flagship ends on ONE question about its own story - the format's own ending, no pointer, no ask, not the stock question - only with its Part 2 written down, and Part 2 opens on that question in its first seconds (the launch salvo)"),
+    ("psyche_tags",   "script", p_psyche_tags,  "every long video carries its drives: one tag of psyche.DRIVES for the premise, the title, the thumbnail text, the hook and each beat, the lead never the house constant, and no drive leads more than 2 of the last 5 long videos (the variety floor, a free or a forced premise)"),          # v12 V4b step 7 (memo 3.7; the show's side: rnd.SHOW_CHECKS raised)
+    ("depth_frozen",  "script", p_depth_frozen, "a launch pair video's depth brief is frozen: exactly k of the room's drafts carried it between its markers, each hashing to the one addendum (N/A without a depth pass)"),          # v12 V4b step 8a (memo 3.8 B7; in rnd.ORG_CHECKS)
+    ("appetite_plan", "final", p_appetite_plan, "no long video goes out without its appetite plan: ONE row on tab Appetite_Plans written before this gate, frozen (its JSON hashes to its sha) unless a flagship waits for its Part 2"),          # v12 V4b step 6a (memo 3.6; in rnd.ORG_CHECKS)
     ("topic_ladder", "script", p_topic_ladder, "every topic starts as a Short: this long video is about the topic of a Short the promote rule took, or was made under an override on record (the ladder)"),
     ("opening_footage", "script", p_opening_footage, "a long video about a promoted Short opens on that Short's own footage, laid by code under its first sentences - or was made under an override, which has none (the opening)"),
     ("one_story",     "script", p_one_story,    "one story: the thumbnail a viewer taps is the picture the video opens on - the first picture of the promoted Short whose footage opens it - and the runner-up thumbnail is another look at the same scene (one story)"),
@@ -994,6 +1082,7 @@ FEATURES = [
     ("short_shape",   "short",  p_short_shape,  "a Short has its format's length, hands its last line back to the first, asks for nothing, is an animated clip in every second and loops into its first frame, captions above the buttons (the viewer's seat for a Short)"),
     ("short_kept",    "short",  p_short_kept,   "a Short is what its Short format says and is not like the last ten Shorts (Short formats as data)"),
     ("short_contract", "short", p_short_contract, "every department that worked on a Short (the Shorts Studio, Sound, Audience) ran under the department contract before the short gate"),
+    ("short_psyche", "short", p_short_psyche, "every Short carries its drives: one tag of psyche.DRIVES for the premise, the title, the hook and each line, the lead never the house constant - checked before anything is made"),          # v12 V4b step 7 (memo 3.7 (b), DQ 4)
     # v12 V2d-b: stage "short_file" = the gate of a Short's FINISHED FILE (whatifs/shorts2.py), after it is made and before it is handed to Publishing; a Short that fails is kept and waits for the owner's tap
     ("short_moving",  "short_file", p_short_moving, "a Short moves in every second: every half second of its finished file changes (the motion ladder)"),
     ("short_sound",   "short_file", p_short_sound, "a Short sounds from its first frame: its place's own sound inside SHORT_SOUND_BY_S seconds at full level, the guide's first word inside SHORT_VOICE_BY_S seconds - measured on the finished file"),
@@ -1047,13 +1136,14 @@ def _channel_lock():
     if paused(): return "the pipeline is paused"
     return ""
 
-def clear_to_post(ep):
-    """v12 B-OWNER (PART 7, A DEFAULT NEVER SKIPS A CHECK): (ok, why) - pure reads. The video waits for approval; no open HOLD row of it (its own
+def clear_to_post(ep, scheduled=False):
+    """v12 B-OWNER (PART 7, A DEFAULT NEVER SKIPS A CHECK): (ok, why) - pure reads. The video waits for approval (v12 V4b step 6c, memo 3.6 act a:
+    with `scheduled=True` a "SCHEDULED" row is taken too - one function with a keyword, never a copy; every other read is the same); no open HOLD row of it (its own
     `silence|` report aside); the newest final-gate row of each feature holds no failure (`failed`); YouTube did not mark it made for kids; uploads are
     open and nothing is paused."""
     from whatifs import notify as NT
     st = store(); e = next((r for r in st.rows("Episodes") if r.get("episode_id") == ep), None)
-    if not e or e.get("status") != "AWAITING_APPROVAL": return False, f"its status is {(e or {}).get('status') or 'not on record'}, not waiting for approval"
+    if not e or e.get("status") not in (("AWAITING_APPROVAL", "SCHEDULED") if scheduled else ("AWAITING_APPROVAL",)): return False, f"its status is {(e or {}).get('status') or 'not on record'}, not waiting for approval"
     hold = [r for r in NT.open_rows() if r.get("episode_id") == ep and NT.klass(r.get("kind")) == NT.HOLD and not str(r.get("dedupe_key") or "").startswith("silence|")]
     if hold: return False, f"an open hold waits for you ({NT.name(hold[0].get('kind'))})"
     if str(e.get("kill") or "").strip().upper().startswith("KILL"): return False, "you typed KILL for it in the Episodes tab"      # v12 B-OWNER (PART F, CF-5 (c)): `kill_check` never reads a video waiting for approval
@@ -1065,6 +1155,9 @@ def clear_to_post(ep):
     if "True" in str(e.get("kids_check") or ""): return False, "YouTube marked it made for kids"
     held = _channel_lock()                                           # U1 J 239 (RUL-U1g 4): the channel's two locks - one function, both roads
     if held: return False, held
+    from whatifs.org import salvo as SAL                    # v12 V4b step 6a (memo 991): the launch pair's ONE rule, ONE MORE READ ("added by V4b in its own build")
+    pok, pwhy = SAL.pair_clear(ep, st)
+    if not pok: return False, pwhy
     return True, "every check passed"
 
 def _ist(slot_iso):
@@ -1155,13 +1248,14 @@ def hold_sweep():
         st.update("Owner_Actions", "id", r["id"], {"status": "ANSWERED", "answered_at": iso(), "answer": "cleared"}); n += 1
     return n
 
-def unpost(ep):
+def unpost(ep, verdict=True):
     """v12 B-OWNER (PART 7, UNDO NEVER DELETES; R17 ADDS (B)): his "Take it down" - the video is made private and his Hold is written by the function
     his Hold tap calls. Nothing is deleted or uploaded. U1 J 239 (J19-5): an Approve IS offered when the video had never been public - YouTube's own
     read-back said "private" BEFORE the take-down and our record said SCHEDULED: one `decided_post` row with ("Approve", APPROVE <ep>) for 7 days (his
     tap: the channel's two locks are read (`_channel_lock`), the video's own checks are not asked again, then `approve`, as on the review card - its own
     slot when that is still 30 minutes ahead and free, otherwise the next free slot). A video that was public, or whose read-back is unknown, gets no
-    Approve (YouTube gives no time to a video that was public)."""
+    Approve (YouTube gives no time to a video that was public).
+    v12 V4b step 6c (memo 1074): `verdict=False` - the appetite Undo of an early release - writes the status and passes over his "down" verdict."""
     from whatifs import publish as PUB, notify as NT
     st = store(); e = next((r for r in st.rows("Episodes") if r.get("episode_id") == ep), None)
     if not e or not e.get("yt_id"): return f"{ep} not found"
@@ -1177,10 +1271,10 @@ def unpost(ep):
         NT.send("uploads_private", f"{title}: your Take it down did NOT work - YouTube did not accept the change, so the video is still scheduled or public. Set it to "      # v12 B-OWNER (PART F, CF-1): an alarm - at once, both screens
                 f"Private in YouTube Studio: https://studio.youtube.com/video/{e['yt_id']}/edit", episode=ep, dedupe_key=f"uploads_private|takedown|{ep}")
         try:                                                         # R1-153: his word is kept as his verdict "down" (as `hold_review` keeps it), never as a status YouTube does not have
-            from whatifs.org import verdicts as VER; VER.record(ep, "down", "", via="hold")
+            if verdict: from whatifs.org import verdicts as VER; VER.record(ep, "down", "", via="hold")
         except Exception as x: log(f"his take-down was not kept as a verdict: {scrub(x)[:120]}", "WARN", ep)
         return f"{title} could NOT be made private: YouTube did not accept the change, and nothing else was changed. Tap again, or set it to Private in YouTube Studio."
-    hold_review(ep)
+    hold_review(ep, verdict=verdict)
     for r in NT.open_rows():                                         # no open row may still say it goes public, or offer a take-down that is done
         if (r.get("kind") == "decided_post" and r.get("episode_id") == ep) or r.get("dedupe_key") == f"uploads_private|takedown|{ep}": st.update("Owner_Actions", "id", r["id"], {"status": "ANSWERED", "answered_at": iso(), "answer": "taken down"})
     if was == "private" and was_sched:                               # U1 J 239: never public (a film stopped before its slot) - YouTube takes a time again, so his Approve can put it back
@@ -1190,7 +1284,7 @@ def unpost(ep):
         return f"{title} is private again. Nothing was deleted. To put it back: Decided for you, Approve."
     return f"{title} is private again. Nothing was deleted. To publish it later: YouTube Studio, Visibility, Public."
 
-def owner_card(ep, stage, failed, extra=""):
+def owner_card(ep, stage, failed, extra="", default="stays held", expires_h=48):      # v12 V4b step 6a (0b), R23 (3): the card says its clock (one function, never a copy)
     from whatifs import notify as NT
     lines = "; ".join(f"{f}: {str(ev)[:90]}" for f, ev in failed[:5])
     btn = [("Rewrite" if stage == "script" else "Fix", f"CONTRACT FIX {ep} {stage}"), ("Approve anyway", f"CONTRACT WAIVE {ep} {','.join(f for f, _ in failed)}"), ("Discuss", f"DISCUSS contract {ep}")]
@@ -1199,7 +1293,18 @@ def owner_card(ep, stage, failed, extra=""):
     old = next((r for r in NT.open_rows() if r.get("dedupe_key") == f"contract|{ep}|{stage}"), None)      # FINISHED BY FABLE (CA2-11 re-cut as CA3-6; R1-94 (3), R1-104 (2)): held again with other failures - a NEW card says what failed now
     if old and old.get("text") != text[:1500]: store().update("Owner_Actions", "id", old["id"], {"status": "ANSWERED", "answered_at": iso(), "answer": "held again - a newer card took its place"})
     NT.send("contract_hold", f"{ep} is HELD at the {stage} check (nothing goes public). Failed: {lines}. {extra}".strip(), btn, tier="now", urgent=True,
-            episode=ep, default="stays held", expires_h=48, dedupe_key=f"contract|{ep}|{stage}")
+            episode=ep, default=default, expires_h=expires_h, dedupe_key=f"contract|{ep}|{stage}")
+
+def _kept(ep):
+    """v12 V4b step 6a (memo 1004-1006): HIS TAP IS KEPT, NEVER LOST AND NEVER A WAY ROUND - his Approve of a launch pair video that is not
+    salvo.pair_clear does not call approve: "approved by him <iso>" goes on its plan row's note and salvo.pair calls approve once it turns clear.
+    "" for every other video, and with SALVO_PART2 "STOOD_DOWN" (then his Approve approves: the row that told him said what he decides)."""
+    from whatifs.org import salvo as SAL
+    if not SAL.on() or str(S("SALVO_PART2") or "").strip() == "STOOD_DOWN": return ""
+    ok, why = SAL.pair_clear(ep)
+    if ok: return ""
+    SAL.keep_tap(ep)
+    return f"Kept: {why}. It goes public by itself when that is done."
 
 def _answer(row, choice):
     parts = str(choice).split()
@@ -1213,6 +1318,9 @@ def _answer(row, choice):
     if len(parts) >= 3 and parts[0].upper() == "CONTRACT" and parts[1].upper() == "FIX":
         if len(parts) > 3 and parts[3] == "script": _drop_for_rewrite(parts[2]); return f"{parts[2]} dropped: a fresh episode is written for its slot"
         return _ran(row, parts[2], f"{parts[2]}: the one-click fix is running")
+    if len(parts) >= 2 and parts[0].upper() == "APPROVE":                    # v12 V4b step 6a (memo 1004-1006): on every road his Approve of a pair video that is not clear is KEPT
+        kept = _kept(parts[1])
+        if kept: return kept
     if len(parts) >= 2 and parts[0].upper() == "APPROVE" and str((row or {}).get("dedupe_key") or "").startswith("silence|"):      # v12 B-OWNER (PART F, CF-5 (a)): his Approve on the
         ok, why = clear_to_post(parts[1])                                                                                          # "not approved by your silence" row asks the checks again
         if not ok: _silence_no(parts[1], why); return f"Not approved: {why}. Needs you says why."
@@ -1344,6 +1452,9 @@ def await_approval(ep, vid, slot_iso, summary, kind="creative_review", default=N
             episode=ep, default=default, expires_h=expires_h, dedupe_key=f"review|{ep}")
 
 def approve(ep):
+    from whatifs.org import appetite as APP
+    if APP.undone(ep):                                                # v12 V4b step 6c (memo 1078-1080): a Part 2 his Undo holds goes back through the one door (salvo.back), never to yt_schedule - by whatever road an Approve arrives
+        from whatifs.org import salvo as SAL; return SAL.back(ep)
     from whatifs import publish as PUB
     from whatifs.manage import next_slots
     st = store(); e = next((r for r in st.rows("Episodes") if r.get("episode_id") == ep), None)
@@ -1359,7 +1470,7 @@ def approve(ep):
     st.update("Episodes", "episode_id", ep, {"status": "SCHEDULED", "slot_et": slot, "public_at": "", "updated": iso()})      # v12 B-OWNER (R17 (3 c)): a time set here empties the HD gate's `public_at` (the gate is its one writer)
     return f"approved: {ep} publishes at {slot}"
 
-def hold_review(ep):
+def hold_review(ep, verdict=True):
     from whatifs import notify as NT
     st = store(); un = [r for r in NT.open_rows() if r.get("dedupe_key") == f"unscheduled|{ep}"] or [r for r in [r for r in st.rows("Owner_Actions") if r.get("dedupe_key") == f"silence|{ep}"][-1:] if "MAY ALREADY HAVE IT ON ITS SCHEDULE" in str(r.get("text") or "") and r.get("answer") != "cleared"]      # v12 B-OWNER (PART F, CF-7 (a)): CF-1b's hold - YouTube kept it on its schedule; R1-234: or the newest `silence|` row (his tap closed it first) said YouTube MAY have it
     if un:                                                        # his Hold asks YouTube once more; False or a raise = refused
@@ -1369,7 +1480,7 @@ def hold_review(ep):
         except Exception as x: off = False; log(f"his hold could not take {vid} off YouTube's schedule: {scrub(x)[:120]}", "WARN", ep)
     if not un or off: st.update("Episodes", "episode_id", ep, {"status": "HELD_BY_OWNER", "updated": iso()})      # R1-153: never a status YouTube does not have
     try:                                                          # v12 V1c: his Hold is a verdict - "I will not publish this" (D13's label)
-        from whatifs.org import verdicts as VER; VER.record(ep, "down", "", via="hold")
+        if verdict: from whatifs.org import verdicts as VER; VER.record(ep, "down", "", via="hold")      # v12 V4b step 6c: never for the appetite Undo (unpost(.., verdict=False))
     except Exception as e: log(f"his hold was not kept as a verdict: {scrub(e)[:120]}", "WARN", ep)
     if un and not off:                                            # refused: the hold stays open, an alarm at once, and the answer never says private
         link = f"https://studio.youtube.com/video/{vid}/edit"

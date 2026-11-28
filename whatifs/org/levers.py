@@ -7,6 +7,8 @@ from whatifs.org import DEPARTMENTS, registry as REG
 DAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 MERGE_MAX_LINES = 400                   # a bigger diff is read by the owner, whatever it touches
 GATE, COST, PLAN, OWNER = "it weakens a quality gate", "it costs more money", "it changes the plan you set", "it switches off something you rely on"
+# v12 V4b step 11 (memo 3.11, THE CLOSED LIST): every reason a lever needs the owner maps to ONE class of ask; a test fails on a lever with an owner whose reason has none.
+ASK = {GATE: "locked_words", PLAN: "locked_words", OWNER: "locked_words", "always": "locked_words", COST: "above_cap"}
 
 def _n(kind, lo, hi, step, owner="", why="", checks=()): return {"kind": kind, "lo": lo, "hi": hi, "step": step, "owner": owner, "why": why, "checks": tuple(checks)}
 def _b(owner="", why="", checks=()): return {"kind": "bool", "owner": owner, "why": why, "checks": tuple(checks)}
@@ -40,10 +42,12 @@ LEVERS = {
     "ACT_MIN_S": _n("float", 6, 30, 2, "", "", ("camera_path",)), "PLACE_CHANGES_PER_MIN_MAX": _n("float", 0.5, 3, 0.25, "up", GATE, ("camera_path",)),      # v12 V2b: the camera path's acts (D6; DESIGN QUESTION 13 of V2b: ACT_MIN_S has no direction that needs the owner)
     "FORMAT_SHARE_F1": _n("int", 0, 100, 20), "FORMAT_SHARE_F2": _n("int", 0, 100, 20), "FORMAT_SHARE_F3": _n("int", 0, 100, 20),      # v12 V2a: Strategy moves the mix by small steps
     "SHORT_SHARE_S1": _n("int", 0, 100, 20), "SHORT_SHARE_S2": _n("int", 0, 100, 20), "SHORT_SHARE_S3": _n("int", 0, 100, 20),         # v12 V2c: the Shorts Studio moves its own mix by small steps
+    "CHALLENGER_SHARE_HOOK": _n("int", 0, 100, 50), "CHALLENGER_SHARE_TITLE": _n("int", 0, 100, 50), "CHALLENGER_SHARE_SHORT": _n("int", 0, 100, 50),      # v12 V4b step 8b: the challenger's three share levers (100 -> 50 -> 0)
     "SHORT_MIN_S": _n("int", 10, 40, 5, "down", GATE, ("short_shape",)), "SHORT_MAX_S_S1": _n("int", 20, 60, 5, "up", GATE, ("short_shape",)),
     "SHORT_MAX_S_S2": _n("int", 20, 60, 5, "up", GATE, ("short_shape",)), "SHORT_MAX_S_S3": _n("int", 20, 60, 5, "up", GATE, ("short_shape",)),
     "SHORT_HOOK_WORDS_MAX": _n("int", 4, 20, 2, "up", GATE, ("short_open",)), "SHORT_HOOK_BY_S": _n("float", 1.5, 6, 1, "up", GATE, ("short_open",)),
     "SHORT_NUMBERS_MAX": _n("int", 0, 4, 1, "up", GATE, ("short_plain",)), "SHORT_EXPERT_MAX": _n("int", 0, 3, 1, "up", GATE, ("short_plain",)),
+    "SHORT_TELLS_MAX": _n("int", 0, 2, 1, "up", GATE, ("short_plain",)),      # v12 V4b step 1: the AI phrases one Short may say
     "SHORT_PROMISE_WORDS_MAX": _n("int", 2, 10, 2, "up", GATE, ("short_open",)),
     "ROOM_MODE": _e(("v2", "v1"), ("v1",), "v1 is the older writers' room without the blind jury", ("owners_cut",)),
     "ROOM_V2_DRAFTS": _n("int", 2, 5, 1, "up", COST, ("owners_cut",)), "REHOOK_MAX_GAP_SEC": _n("int", 30, 120, 15, "up", GATE, ("retention",)),
@@ -75,6 +79,11 @@ LEVERS = {
     "PALACE_LIMITS_SHARE": _n("float", 0.1, 0.9, 0.2, "", "", ("palace_health",)), "PALACE_REVIEW_DAYS": _j("kind", 0, 3650, checks=("palace_health",)),
     "PALACE_KIND_CAPS": _j("kind", 1, 5000, checks=("palace_health",)),
 }
+
+# The ten levers whose owner reason is its own sentence (not one of the four above) are all "locked_words" (RULINGS_U3h 1): each is a gate, a plan or something he
+# relies on - MONTH_RESERVE_INR's "it removes the month's safety reserve" buys nothing at a price, it lowers the floor under his money, so it is never "above_cap".
+ASK.update({LEVERS[k]["why"]: "locked_words" for k in ("VIEW_FLOOR_REFS_MAX", "VIEW_FLOOR_DOWNS_MAX", "MAKER_LINE_MAX_WORDS",
+            "ROOM_MODE", "DRAWN_TEXT_MIN_PCT", "DEEP_TRIAL_ON", "CASEFILES_ON", "BRAIN_ON", "MONTH_RESERVE_INR", "PREFLIGHT_ON")})
 
 def owner_of(key):
     """The department whose lever this cell is ('' = nobody's)."""

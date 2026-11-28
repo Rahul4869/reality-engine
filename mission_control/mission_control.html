@@ -798,11 +798,13 @@ function renderMoney() {
     </div>${moneyMore(m)}`;
 }
 function moneyMore(m) {       // v12 B-OWNER (PART 6, PART 8): WhatsApp's line, the money group's rows, the treasury's note
-  const w = m.whatsapp || {}, gr = (S.groups || {}).money || [];
+  const w = m.whatsapp || {}, gr = (S.groups || {}).money || [], cr = m.credit || {}, cl = cr.lines || [];       // v12 V4b step 10 (b): `m.credit`, the credit's open lines
   return `<div class="sec-head"><h2 class="serif">Messages to you</h2><p>WhatsApp</p></div>
     <div class="list"><div class="row"><p>WhatsApp this month<br><small>${w.cap != null ? esc(w.src || "") : "Not set up: the dashboard and e-mail carry everything."}</small></p><b>${w.cap != null ? inr(w.spent || 0) + " of " + inr(w.cap) : "-"}</b></div>
       ${w.cap != null ? `<div class="row"><p>${esc(w.templates)} opening messages, ${esc(w.replies)} replies<br><small>${esc(w.free_left)} free replies left this month</small></p><span></span></div>` : ""}</div>
     ${gr.length ? `<div class="sec-head"><h2 class="serif">Money news</h2><p>${gr.length}</p></div>${listOr(gr.map(r => `<div class="row"><p>${esc(r.text)}<br><small>${r.at ? esc(ago(r.at)) : ""}</small></p><span></span></div>`), "")}` : ""}
+    ${cl.length ? `<div class="sec-head"><h2 class="serif">Claude credit</h2><p>${esc(cr.daily || "")}</p></div>
+      <div class="list">${cl.map(l => `<div class="row"><p>Claude credit until ${esc(l.until || "")}: ${inr(l.spent_inr || 0)} of ${inr(l.amount_inr || 0)}<br><small>${esc(l.src || cr.src || "")}</small></p><b>${inr(l.will_lapse_inr || 0)} will lapse</b></div>`).join("")}</div>` : ""}
     ${m.treasury && m.treasury.note ? `<p class="note-line">${esc(m.treasury.note)}</p>` : ""}`;
 }
 

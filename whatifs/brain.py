@@ -46,13 +46,14 @@ def length_band(sec, fmt):
     if fmt == "short": return "short_20_35" if s <= 35 else ("short_36_50" if s <= 50 else "short_51_60")
     return "long_lt9" if s < 540 else ("long_9_11" if s <= 660 else "long_gt11")
 
-def tag(video_key, fmt, title="", premise="", hook="", sec=0, lead="", origin="ai", arm=None, holdout=False, yt_id=""):
+def tag(video_key, fmt, title="", premise="", hook="", sec=0, lead="", origin="ai", arm=None, holdout=False, yt_id="", drives=None):
     """Record one video's features (once per video_key). fmt = 'short' | 'long'."""
     st = store()
     if any(r.get("video_key") == video_key for r in st.rows("Video_Features")): return False
     st.append("Video_Features", [{"ts": iso(), "video_key": video_key, "yt_id": yt_id, "format": fmt, "hook": hook or "unknown", "title": title_pattern(title),
                                   "topic": topic_cluster(premise or title), "length": length_band(sec, fmt), "lead": (lead or "ensemble").upper(),
-                                  "origin": origin, "arm": json.dumps(arm or {}), "holdout": "TRUE" if holdout else "", "title_text": str(title)[:120]}])
+                                  "origin": origin, "arm": json.dumps(arm or {}), "holdout": "TRUE" if holdout else "", "title_text": str(title)[:120],
+                                  "drives": json.dumps(drives, ensure_ascii=False) if isinstance(drives, dict) and drives else ""}])      # v12 V4b step 7: the psyche tags
     return True
 
 def link_yt(video_key, yt_id):

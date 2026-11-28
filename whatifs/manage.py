@@ -231,7 +231,18 @@ def tick():
                 from whatifs import dash as DS; DS.publish()
             except Exception as x: log(f"dashboard snapshot skipped: {scrub(x)}", "WARN")
         log(f"paused - nothing to do ({n} scheduled video(s) held)"); return {"action": "paused"}
+    try:                                                        # v12 V4b step 6a (memo 1003): the launch pair FIRST in every tick, before resume_held - a held pair video with an open plan is never handed a time when a pause ends
+        from whatifs.org import salvo as SAL_
+        SAL_.pair(now_utc())
+    except Exception as x: log(f"the launch pair's step skipped: {scrub(x)}", "WARN")
     resume_held()
+    try:                                                        # v12 V4b step 6 (memo 3.6, THE READING): every hour, before any model call - a long video's
+        from whatifs.org import appetite as APP                 # views, likes, comments and asking authors in its hours 1 to 48 (a failed read writes nothing)
+        APP.read(now_utc())
+    except Exception as x: log(f"appetite reading skipped: {scrub(x)}", "WARN")
+    try:                                                        # v12 V4b step 6c (memo 3.6, R23 (12)): the pending acts of every fired plan, tried again BEFORE hdgate.tick
+        from whatifs.org import appetite as APP_; APP_.retry(now_utc())
+    except Exception as x: log(f"appetite acts not tried again: {scrub(x)}", "WARN")
     try:                                                        # v9: packaging rotation windows (title + thumbnail through the API)
         from whatifs import packaging as PK
         PK.rotate_tick()
@@ -374,15 +385,20 @@ def _produce_slot(eps):
             set_setting("BUDGET_MAIL_MONTH", mk)
         return None
     taken = {e.get("slot_et") for e in eps if e.get("status") in ("SCHEDULED", "LIVE1", "LIVE", "HELD", "HOLD_QC", "SKIPPED")}      # v8.10: a skipped slot stays skipped
+    from whatifs.org import salvo as SAL                        # v12 V4b (step 3a): the launch flagship carries its own margin against a slow clock (SALVO_AHEAD_H)
+    if SAL.on():                                                # v12 V4b (step 4, R15 review 2b): a video that awaits its review, his hold or its privacy fix owns its slot (episode._TAKEN's waiting statuses)
+        taken |= {e.get("slot_et") for e in eps if e.get("status") in ("AWAITING_APPROVAL", "HELD_BY_OWNER", "STUCK_PRIVATE")}
+        pair = {str(S(c) or "").strip() for c in ("SALVO_FLAGSHIP", "SALVO_PART2")}      # R23 (1): an uploaded film of the pair is never made and paid twice; R24: after his KILL its slot is offered again
+        taken |= {e.get("slot_et") for e in eps if e.get("episode_id") and e.get("episode_id") in pair and e.get("yt_id") and e.get("status") != "KILLED"}
     for slot in next_slots(4):
         s = slot.strftime("%Y-%m-%dT%H:%M:%SZ")
         if s in taken: continue
         hours = (slot - now_utc()).total_seconds() / 3600
         tries = sum(_attempts(e) for e in eps if e.get("slot_et") == s and e.get("status") == "FAILED")      # v8.2: a resumed attempt reuses its row, so attempts are counted, not rows
-        if hours <= S("PRODUCE_AHEAD_HOURS", float) and tries < 2:
+        if (hours <= S("PRODUCE_AHEAD_HOURS", float) or (SAL.flagship_due() and hours <= S("SALVO_AHEAD_H", float)) or SAL.owed(eps)) and tries < 2:      # v12 V4b (step 4): Part 2 starts in the first free tick after the flagship's upload
             from whatifs import ladder as LAD                   # v12 V2c-b: every topic starts as a Short - no promoted Short and no override = no long video (and no money)
             if not any(LAD.used_by(e.get("episode_id")) for e in eps if e.get("slot_et") == s and e.get("status") == "FAILED"):      # a retry keeps the topic its first attempt took
-                ok_l, why_l, _lrow = LAD.gate()
+                ok_l, why_l, _lrow = LAD.gate(salvo=True)          # v12 V4b (step 3a): the tick answers the gate's salvo branch
                 if not ok_l:
                     log(f"ladder gate: no long video is started for {s} - {why_l}", "WARN"); LAD.refuse(s, why_l); return None
             return s
@@ -409,6 +425,7 @@ def release(ep_id, which="release1"):
             st.update("Episodes", "episode_id", ep_id, {"notes": _note(e, "private alert sent")})
         log("long video not public yet - waiting", "WARN"); return
     audit_seen_public()
+    PUB.seen_public(e["yt_id"], now_utc())                       # v12 V4b step 2: code sees the long video public - its render and script are on the ledger as public
     if (S("HD_GATE_ON", bool) or S("TWO_SCREENS_ON", bool)) and not e.get("hd_gate"):          # v12 B-OWNER (PART 9): the gate's receipt - "public N min after upload; HD yes" or "...; HD NO (the cap)"
         try:
             from whatifs import hdgate as HGR; st.update("Episodes", "episode_id", ep_id, {"hd_gate": HGR.long_line(e, PUB.yt_read(e["yt_id"]) or {}, now_utc())})
@@ -1169,9 +1186,10 @@ def pkg_rescue(now=None):
     if not S("PKG_RESCUE_ON", bool): return []
     st = store(); eps = st.rows("Episodes"); now = now or now_utc(); done = []
     if eps and "pkg_check" not in eps[0]: log("packaging rescue waits: the Sheet does not have the v8.5 columns yet (the daily learning job adds them by itself)", "WARN"); return []
-    hrs = S("PKG_RESCUE_HOURS", float)
+    hrs = S("PKG_RESCUE_HOURS", float); doors = S("ANTI_MYTH_ON", bool)
+    if doors: hrs = max(hrs, 24 * S("VERDICT_EDIT_DAYS_LONG", float))     # v12 V4b step 2: the clock moves WHOLE - read once between day 7 and day 9, never before
     def _src(c): return c.get("src") or "views"
-    allhist = [(float(c["pace"]), _src(c)) for c in (_pkg(e) for e in eps) if c.get("pace") is not None]
+    allhist = [(float(c["pace"]), _src(c), c.get("age_h")) for c in (_pkg(e) for e in eps) if c.get("pace") is not None]
     for e in eps:
         if e.get("status") not in ("LIVE1", "LIVE") or not e.get("yt_id") or str(e.get("pkg_check") or "").strip(): continue
         t = parse_iso(e.get("slot_et"))
@@ -1182,7 +1200,7 @@ def pkg_rescue(now=None):
             st.update("Episodes", "episode_id", e["episode_id"], {"pkg_check": {"action": "not checked: too old for a fair comparison"}}); continue
         v, src = _rescue_views(e["yt_id"], t)                       # v9.3.1 (L5): engaged views first (public views count autoplay since 2026-08-24)
         if v is None: continue                                     # try again tomorrow (still inside the window)
-        hist = [p for p, s in allhist if s == src]                 # compare like with like (engaged vs engaged, public vs public)
+        hist = [p for p, s, a in allhist if s == src and (not doors or (a not in (None, "") and abs(float(a) - age) <= 48))]      # like with like; V4b: and read at the same age (+-48 h)
         pace = v / max(1.0, age); rec = {"views": v, "src": src, "age_h": round(age, 1), "pace": round(pace, 3), "at": iso()}
         need = max(1, S("PKG_RESCUE_MIN_HISTORY", int))
         if len(hist) < need: rec["action"] = f"kept: only {len(hist)} earlier videos measured (needs {need})"
@@ -1194,7 +1212,7 @@ def pkg_rescue(now=None):
             elif S("PKG_DIP_GUARD_ON", bool) and len(recent) == 3 and all(p < S("PKG_RESCUE_RATIO", float) * med for p in recent):
                 rec["action"] = "kept: channel-wide dip (the last 3 videos were all behind too), not a packaging problem"
             else: rec["action"] = _swap(st, e, rec)
-        allhist.append((pace, src))
+        allhist.append((pace, src, rec["age_h"]))
         st.update("Episodes", "episode_id", e["episode_id"], {"pkg_check": rec, "updated": iso()}); done.append((e["episode_id"], rec["action"]))
         log(f"packaging check {e['episode_id']}: {rec['action']} (pace {rec.get('ratio', '-')}x the median)", public=f"packaging check {e['episode_id']}: {rec['action'].split(':')[0]}")
     try: done += _judge_swaps(st, now)
@@ -1223,21 +1241,38 @@ def _judge_swaps(st, now):
         if v is None: continue
         hrs = (now - t).total_seconds() / 3600; after = max(0.0, (v - float(rec.get("views") or 0)) / max(1.0, hrs))
         rec["after"] = {"views": v, "pace": round(after, 3), "hours": round(hrs, 1), "verdict": "helped" if after > float(rec.get("pace") or 0) else "unclear"}
+        if S("ANTI_MYTH_ON", bool) and rec["after"]["verdict"] == "unclear" and rec.get("var") == "title" and "second" not in rec:      # v12 V4b step 2: THE SECOND MOVE, once
+            from whatifs import packaging as PK
+            ok, _why = PK.may_edit(e, now); thumb_b = _runner_up(e)[1] if ok else None
+            if thumb_b and PUB.yt_thumbnail(e["yt_id"], thumb_b): rec["second"] = {"var": "thumbnail", "at": iso(now)}
         st.update("Episodes", "episode_id", e["episode_id"], {"pkg_check": rec, "updated": iso()}); out.append((e["episode_id"], "judged: " + rec["after"]["verdict"]))
         if rec["after"]["verdict"] == "helped":
             st.append("Lessons", [{"ts": iso(), "lesson": f"packaging: the runner-up package lifted '{e.get('title', '')}' from {rec.get('pace')} to {after:.2f} views/hour; "
                                    "the first package had undersold it", "evidence": "pkg_check before/after", "applies_to": "packaging"}])
     return out
 
-def _swap(st, e, rec):
+def _runner_up(e):
+    """The Packager's runner-up of a release: (title_b, path of the B thumbnail or None) - the one fetch _swap and the second move share."""
     got = _fetch_some(e["episode_id"], e.get("assets"), ["release.json", "thumb_b.jpg"])
     try: rel = json.load(open(got["release.json"])) if "release.json" in got else {}
     except Exception: rel = {}
-    title_b = str(rel.get("title_b") or "").strip(); thumb_b = got.get("thumb_b.jpg") if rel.get("thumb_b") else None
+    return str(rel.get("title_b") or "").strip(), (got.get("thumb_b.jpg") if rel.get("thumb_b") else None)
+
+def _swap(st, e, rec):
+    from whatifs import packaging as PK
+    ok, why = PK.may_edit(e)                                       # v12 V4b step 2: nothing is edited inside a test or before its clock
+    if not ok: return f"kept: behind pace but not edited - {why}"
+    title_b, thumb_b = _runner_up(e)
     if not title_b and not thumb_b: return "kept: behind pace but no runner-up package was made"
     changed = []
-    if title_b and PUB.yt_set_title(e["yt_id"], title_b): changed.append("title")
-    if thumb_b and PUB.yt_thumbnail(e["yt_id"], thumb_b): changed.append("thumbnail")
+    if S("ANTI_MYTH_ON", bool):                                    # v12 V4b step 2: ONE variable a move - the title when a runner-up title exists, else the thumbnail
+        if title_b:
+            if PUB.yt_set_title(e["yt_id"], title_b): changed.append("title")
+        elif PUB.yt_thumbnail(e["yt_id"], thumb_b): changed.append("thumbnail")
+        if changed: rec.update(var=changed[0], pred="pace up")
+    else:
+        if title_b and PUB.yt_set_title(e["yt_id"], title_b): changed.append("title")
+        if thumb_b and PUB.yt_thumbnail(e["yt_id"], thumb_b): changed.append("thumbnail")
     if not changed: return "kept: behind pace but the swap was refused by YouTube (see Run_Log)"
     old = e.get("title", "")
     upd = {"notes": _note(e, "packaging swapped to the runner-up (" + " + ".join(changed) + ")")}
@@ -1409,9 +1444,11 @@ def monthly_brief():
         data["role_roi"] = INS.roi_summary(); data["retention_map"] = [r for r in st.rows("Retention_Map") if r.get("confidence") in ("high", "medium")][-30:]
     except Exception: pass
     from whatifs.models import ask_batch
-    txt = ask_batch("brief", P.fill(P.BRIEF, data=json.dumps(data, default=str)[:20000]) + ("\nEnd with ONE priority fix for next month (the single change most "
+    from whatifs.models import EnvelopeFull
+    try: txt = ask_batch("brief", P.fill(P.BRIEF, data=json.dumps(data, default=str)[:20000]) + ("\nEnd with ONE priority fix for next month (the single change most "
               "likely to raise click-through or retention, with the evidence), then a short list of other ideas. Recommend only: budget and visuals are never changed automatically."),
               "Write it.", want_json=False, fake_key="brief")
+    except EnvelopeFull as e: log(f"monthly brief skipped: {scrub(e)}", "WARN"); return
     NT.mail("monthly_brief", "Monthly brief", "<pre style='font-family:sans-serif;white-space:pre-wrap'>" + txt + "</pre>",
             dedupe_key=NT.said_key("monthly_brief", NT._india_day(), hashlib.sha1(str(txt).encode("utf-8")).hexdigest()[:12]))      # FINISHED BY FABLE (CA3-11; B4 (ii)): a second brief of one India day is its own row, the newest; the same brief twice is one
 

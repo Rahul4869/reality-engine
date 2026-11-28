@@ -251,9 +251,9 @@ def test_the_table_read_is_money_only_where_it_runs(market, setting):
 
 def test_a_long_video_about_a_promoted_short_is_its_own_kind(market, setting):
     lo = {l["key"]: l for l in CG.lines("long")}; la = {l["key"]: l for l in CG.lines("ladder")}; u = core.S("USD_INR", float)
-    assert (lo["hero_clips"]["n"], la["hero_clips"]["n"]) == (20, 15) and (lo["start_frames"]["n"], la["start_frames"]["n"]) == (4, 3) and "hook_lab" in lo and "hook_lab" not in la
+    assert (lo["hero_clips"]["n"], la["hero_clips"]["n"]) == (20, 15) and (lo["start_frames"]["n"], la["start_frames"]["n"]) == (4, 3) and "hook_lab" in lo and "hook_lab" in la     # V4b step 0b (R2-F3) MOVED BY DESIGN: the ladder kind carries the lab's line as a ceiling
     assert lo["hero_clips"]["calls"] == {"clip_kling": 4} and la["hero_clips"]["calls"] == {"clip_kling": 3} and la["start_frames"]["calls"] == {"image_ref": 3}
-    assert CG.total(list(lo.values())) - CG.total(list(la.values())) == pytest.approx(5 * 0.02 * u + 0.067 * u + core.S("HOOK_LAB_EST_INR", float), abs=0.02)
+    assert CG.total(list(lo.values())) - CG.total(list(la.values())) == pytest.approx(5 * 0.02 * u + 0.067 * u, abs=0.02)     # V4b step 0b MOVED BY DESIGN: the lab's Rs 4 is in both kinds
     setting("LADDER_ON", "TRUE"); assert G.long_kind() == "long"                                    # nothing promoted yet: the next long video opens on its own pictures (an override)
     core.store().append("Ladder", [{"id": "SHK1", "premise": "p", "state": "PROMOTED"}, {"id": "OVR1", "state": "OVERRIDE", "by": "owner"}])
     assert G.long_kind() == "ladder" and G.full_episode_inr() == CG.total(list(la.values()))

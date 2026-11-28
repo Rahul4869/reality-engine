@@ -72,13 +72,18 @@ def write(spine, wbrief, d, episode):
     reqs = [dict(role="writer", system=wbrief, episode=episode, fake_key="writer", max_tokens=16000,
                  prompt=f"Write the full narration. COLD-OPEN ARCHETYPE (mandatory, it shapes the first 10 seconds): {a} - {BR.HOOK_ARCHETYPES.get(a, '')}. "
                         "Everything after the cold open follows the bible and the rules above.") for a in arch]
+    from whatifs.org import salvo as SAL
+    deep = SAL.depth_split(d, spine, episode, reqs)                           # v12 V4b step 8a (memo 3.8 B7; DQ 7): a launch pair video's k drafts carry the depth brief
+    if isinstance(d.get("depth"), dict): d["depth"]["sent"] = SAL.marked(reqs)    # the call site hashes the text between the markers of each prompt it really sends
     drafts = ask_many(reqs)
     ok = [(a, x) for a, x in zip(arch, drafts) if isinstance(x, dict) and str(x.get("script", "")).strip()]
+    carried = [c for c, x in zip(deep, drafts) if isinstance(x, dict) and str(x.get("script", "")).strip()]
     if not ok: raise RuntimeError("room v2: no draft came back")
     texts = [x["script"] for _, x in ok]
     ctx = f"Premise: {spine.get('premise', '')}. Promise to the viewer: {GR.promise_text(spine.get('promise'))}"
     win, info = jury(texts, _rubric("drafts"), ctx, episode, "drafts")
     chosen_arch, script = ok[win]
+    SAL.depth_contest(d, episode, carried, win)                                # v12 V4b step 8a: ONE Contests row (card depth); the blind jury picked as today
     d["room_v2"] = {"drafts": [a for a, _ in ok], "winner": chosen_arch, "scores": [round(s, 1) for s in info["scores"]]}
     d["hook_archetype"] = chosen_arch
     fixes = list(dict.fromkeys(info.get("notes", {}).get(win, [])))[:4]

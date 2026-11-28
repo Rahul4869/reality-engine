@@ -1,4 +1,4 @@
-"""Strategy (D1): the loop - a rule book as data, at most one decision a review, each a ticket told to him with an Undo. See docs/CURRENT/SYSTEM.md."""
+"""Strategy (D1): the loop - a rule book as data, at most one decision a day, each a ticket told to him with an Undo. See docs/CURRENT/SYSTEM.md."""
 # v12 V4: every decision a ticket the Execution Engine executes and verifies, told to the owner with an Undo link that never dies, settled against the
 # gate's own arithmetic, frozen when he takes a hand. What stays his is a list (OWNER_ONLY) a test holds.
 from __future__ import annotations
@@ -10,7 +10,7 @@ IN_FORCE = ("decided", "applied")                         # a decision whose tic
 TAKEN_BACK = ("rolled_back", "refused", "no_effect", "void")
 DECIDED_MAX_H = 26                                        # a row "decided" this long whose ticket is not on tab Memos: its memo is sent again at each review until it is written ("resent"); void when that written ticket is no longer on tab Memos, or at once when it cannot be written (U1b 210)
 OWNER_ONLY = ("BUDGET_CEILING_INR", "BUDGET_FLOOR_INR", "MONTH_CAP_OVERRIDES", "BUDGET_MODE", "PAUSED", "PUBLISH_DAYS",
-              "CREDIT_COVER_MONTH_MAX_INR", "CLAUDE_CREDIT_USD_MONTH", "CLAUDE_CREDIT_FROM", "CLAUDE_CREDIT_UNTIL",     # item 53: the cap and deleting stay his
+              "CREDIT_COVER_MONTH_MAX_INR", "CLAUDE_CREDIT_USD_MONTH", "CLAUDE_CREDIT_FROM", "CLAUDE_CREDIT_UNTIL", "CLAUDE_CREDIT_LINES", "CREDIT_TRUE_ZERO_OK",     # item 53: the cap and deleting stay his
               "ORG_BUILDS_ON",     # RR-36: only B-ORG turns the organisation's builds on
               "TWO_SCREENS_ON", "WA_ON", "QUIET_HOURS_IST", "NOTIFY_NOW_MAX_PER_DAY", "DIGEST_DAILY_HOUR_IST", "NEEDS_HOUR_IST", "WA_MONTHLY_CAP_INR",
               "DASH_ON")           # v12 B-OWNER (item 180): no department turns the cells around an alarm - each is no lever or one whose every move needs his tap
@@ -209,15 +209,59 @@ def _split_target(now):
     return {"SHORTS_PER_MONTH": {"target": str(tgt), "why": why, "numbers": nums, "evidence": "ok", "count": "", "wait": wait},
             "SHORTS_PER_WEEK": {"target": str(wt), "why": why, "numbers": nums, "evidence": "ok", "count": ""}}
 
-def _credit_target(now):
-    """RULE CREDIT: lane closed -> 0; open -> 4 while UNTIL is CREDIT_TAPER_DAYS or more away, else 0 (the last week walks 4, 2, 0); a step UP only when
+CHALLENGER_KEYS = ("CHALLENGER_SHARE_HOOK", "CHALLENGER_SHARE_TITLE", "CHALLENGER_SHARE_SHORT")      # v12 V4b step 10: rule CREDIT's three shares, after the boost, in the order BEHIND raises them
+
+def _boost_gate(st=None):
+    """v12 V4b step 10 (THE VALUE GATE): (n, wins) of the newest 12 BOOSTED Shorts (the write run's own measures in tab Takeaways, D14, `asked` above
+    SHORTS_VARIANTS): n of them, and in how many the jury chose one of the boost's extra scripts (`won` >= SHORTS_VARIANTS)."""
+    st = st or store(); base = S("SHORTS_VARIANTS", int); rows = []
+    for x in st.rows("Takeaways"):
+        if x.get("dept") != "D14" or x.get("trigger") != "write": continue
+        m = _js(x.get("measures"), {})
+        try: asked, won = int(m.get("asked")), int(m.get("won"))
+        except (TypeError, ValueError): continue
+        if asked > base: rows.append((str(x.get("ts") or ""), won))
+    rows = sorted(rows)[-12:]
+    return len(rows), sum(1 for _, w in rows if w >= base)
+
+def _challenger_month_inr(shares):
+    """The month's estimate of the challenger's calls at `shares` ({key: percent}): a hook and a title on each long video, a first line and its jury on each Short.
+    Estimates from 3.0's prices (CHALLENGER_EST_INR, SHORT_LINE_JURY_EST_INR), not a bill."""
+    from whatifs import governor as G
+    est = S("CHALLENGER_EST_INR", float)
+    return (G.max_long_videos() * est * (shares["CHALLENGER_SHARE_HOOK"] + shares["CHALLENGER_SHARE_TITLE"])
+            + S("SHORTS_PER_MONTH", int) * (est + S("SHORT_LINE_JURY_EST_INR", float)) * shares["CHALLENGER_SHARE_SHORT"]) / 100.0
+
+def _challenger_targets(now):
+    """v12 V4b step 10 (THE CURVE): BEHIND the curve -> the FIRST share below its range's top has the top as its target; AHEAD -> the LAST share above 0 has one
+    step less; ON -> every share stays. A share rises only while `FIN.cover` plus the challenger's month estimate stays under CREDIT_COVER_MONTH_MAX_INR (never
+    his money) and its card is not dry (3.8's gate: models.challenger_dry above 0). One move a review: one key differs from its cell."""
+    from whatifs import models as M
+    from whatifs.org import finance as FIN, levers as LV
+    cells = {k: max(0, int(float(_cell(k) or 0))) for k in CHALLENGER_KEYS}; line = next((l for l in FIN.line_state(now) if l["open"]), None)
+    state = line["state"] if line else "on"; cover = FIN.cover(now); nums = {"state": state, "cover_inr": cover, "behind_inr": line["behind_inr"] if line else 0}
+    out = {k: {"target": str(cells[k]), "why": f"the credit's curve is {state}: the share stays", "numbers": dict(nums), "evidence": "ok", "count": ""} for k in CHALLENGER_KEYS}
+    if state == "behind":
+        k = next((k for k in CHALLENGER_KEYS if cells[k] < LV.LEVERS[k]["hi"]), None)
+        if k is not None:
+            top = LV.LEVERS[k]["hi"]; month = _challenger_month_inr(dict(cells, **{k: top})); nums = dict(nums, month_inr=round(month, 0))
+            if cover + month > S("CREDIT_COVER_MONTH_MAX_INR", float): out[k].update(why=f"a step up waits: the credit's cover Rs {cover:.0f} plus Rs {month:.0f} would pass his cap on it", numbers=nums)
+            elif M.challenger_dry(k[len("CHALLENGER_SHARE_"):].lower(), now) <= 0: out[k].update(why="a step up waits: this card has won no contest in its newest runs", numbers=nums)
+            else: out[k].update(target=str(top), why=f"the credit is Rs {line['behind_inr']:.0f} behind its curve: this share goes to {top}%", numbers=nums)
+    elif state == "ahead":
+        k = next((k for k in reversed(CHALLENGER_KEYS) if cells[k] > 0), None)
+        if k is not None: out[k].update(target=str(max(0, cells[k] - LV.LEVERS[k]["step"])), why=f"the credit is Rs {-line['behind_inr']:.0f} ahead of its curve: one step less")
+    return out
+
+def _boost_target(now, c, cell):
+    """RULE CREDIT, the boost's key: open -> 4 while UNTIL is CREDIT_TAPER_DAYS or more away (on the LAST line only: V4b step 10), else 0 (the last week walks 4, 2, 0); a step UP only when
     its cost for the rest of the month fits as extra money AND the cover already realised is at least that cost."""
     from whatifs import governor as G
     from whatifs.org import finance as FIN
-    cell = int(float(_cell("THINK_BOOST_VARIANTS") or 0)); c = FIN.lane(now)
-    if not c: return {"THINK_BOOST_VARIANTS": {"target": "0", "why": "the Claude credit's lane is closed", "numbers": {}, "evidence": "ok", "count": ""}}
-    left_days = (dt.date.fromisoformat(c["until"]) - now.date()).days
-    if left_days < S("CREDIT_TAPER_DAYS", int): return {"THINK_BOOST_VARIANTS": {"target": "0", "why": f"the credit ends in {left_days} days: the boost steps down", "numbers": {"days": left_days}, "evidence": "ok", "count": ""}}
+    left_days = (dt.date.fromisoformat(c["until"]) - now.date()).days; last = not any(l["until"] > c["until"] for l in FIN.lines(now))
+    if last and left_days < S("CREDIT_TAPER_DAYS", int): return {"THINK_BOOST_VARIANTS": {"target": "0", "why": f"the credit ends in {left_days} days: the boost steps down", "numbers": {"days": left_days}, "evidence": "ok", "count": ""}}
+    n, wins = _boost_gate()
+    if n >= 12 and wins <= 1: return {"THINK_BOOST_VARIANTS": {"target": "0", "why": f"the jury chose one of the extra scripts {wins} time(s) in the newest {n} boosted Shorts: the boost stops for this line", "numbers": {"boosted": n, "won": wins}, "evidence": "ok", "count": ""}}      # v12 V4b step 10 (THE VALUE GATE)
     fit = G.month_fit(G.max_long_videos(), S("SHORTS_PER_MONTH", int), now=now); cost = fit["short_left"] * 2 * S("SHORT_VARIANT_EST_INR", float)
     up = G.month_fit(G.max_long_videos(), S("SHORTS_PER_MONTH", int), extra_inr=cost, now=now)["fits"] and FIN.cover(now) >= cost
     t = 4 if up or cell >= 4 else cell
@@ -225,8 +269,15 @@ def _credit_target(now):
                                                             else f"a step up waits: the credit has paid Rs {FIN.cover(now):.0f} of the Rs {cost:.0f} it would cost"),
                                      "numbers": {"cost_inr": cost, "cover_inr": FIN.cover(now)}, "evidence": "ok", "count": ""}}
 
+def _credit_target(now):
+    """RULE CREDIT (V4's boost, then V4b step 10's three challenger shares): lane closed -> every key 0; open -> the boost's rule and the curve's rule for the shares."""
+    from whatifs.org import finance as FIN
+    cell = int(float(_cell("THINK_BOOST_VARIANTS") or 0)); c = FIN.lane(now)
+    if not c: return {k: {"target": "0", "why": "the Claude credit's lane is closed", "numbers": {}, "evidence": "ok", "count": ""} for k in ("THINK_BOOST_VARIANTS",) + CHALLENGER_KEYS}
+    return {**_boost_target(now, c, cell), **_challenger_targets(now)}
+
 RULES = (
-    {"id": "CREDIT", "keys": ("THINK_BOOST_VARIANTS",), "target": _credit_target, "metric": "shorts_engaged_first_days", "board": "shorts", "direction": "up", "horizon": 8},
+    {"id": "CREDIT", "keys": ("THINK_BOOST_VARIANTS",) + CHALLENGER_KEYS, "target": _credit_target, "metric": "shorts_engaged_first_days", "board": "shorts", "direction": "up", "horizon": 8},
     {"id": "SHORT_ARMS", "keys": ("SHORT_SHARE_S1", "SHORT_SHARE_S2", "SHORT_SHARE_S3"), "target": _short_arms_target, "metric": "shorts_engaged_first_days", "board": "shorts", "direction": "up", "horizon": 8},
     {"id": "SLOTS", "keys": ("STANDARD_MAX_LONG_PER_MONTH",), "target": _slots_target, "metric": "long_hours_per_video_28d", "board": "hours", "direction": "up", "horizon": 4},
     {"id": "SPLIT", "keys": ("SHORTS_PER_MONTH", "SHORTS_PER_WEEK"), "target": _split_target, "metric": "shorts_engaged_90d", "board": "shorts", "direction": "up", "horizon": 12},
@@ -236,6 +287,8 @@ RULES = (
 PORTFOLIO = tuple(k for r in RULES for k in r["keys"])
 WORDS = {"STANDARD_MAX_LONG_PER_MONTH": "{new} long videos a month instead of {old}", "SHORTS_PER_MONTH": "{new} Shorts a month instead of {old}",
          "SHORTS_PER_WEEK": "{new} Shorts a week instead of {old}", "THINK_BOOST_VARIANTS": "{new} more scripts for every Short instead of {old}",
+         "CHALLENGER_SHARE_HOOK": "the challenger's hook lines on {new}% of the long videos instead of {old}%", "CHALLENGER_SHARE_TITLE": "the challenger's title set on {new}% of the long videos instead of {old}%",
+         "CHALLENGER_SHARE_SHORT": "the challenger's first line on {new}% of the Shorts instead of {old}%",
          **{f"SHORT_SHARE_S{i}": "Short format S%d: %s%% of the Shorts instead of %s%%" % (i, "{new}", "{old}") for i in (1, 2, 3)},
          **{f"FORMAT_SHARE_F{i}": "format F%d: %s%% of the long videos instead of %s%%" % (i, "{new}", "{old}") for i in (1, 2, 3)}}
 
@@ -284,6 +337,12 @@ def effect(key, value, now=None):
     if key.startswith("SHORT_SHARE_"):
         if str(S("SHORT_FORMAT_FORCE") or "").strip() or os.environ.get("WI_SHORT_FORMAT"): return {k[len("SHORT_SHARE_"):]: _cell(k) for k in sorted(DEFAULTS) if k.startswith("SHORT_SHARE_")}
         return _vector(FMT.short_shares(), key, value, "SHORT_SHARE_")
+    if key in CHALLENGER_KEYS:                    # v12 V4b step 10: the share x the taper while the lane is open (and the card may act), else 0
+        from whatifs.org import finance as FIN
+        from whatifs import models as M
+        try: v = max(0, min(100, int(float(value))))
+        except (TypeError, ValueError): v = 0
+        return int(v * M.challenger_taper(now) + 0.5) if (S("CHALLENGER_ON", bool) and FIN.credit(now)["open"] and G.claude_allowed()) else 0
     if key == "THINK_BOOST_VARIANTS":
         from whatifs.org import finance as FIN
         try: v = int(float(value))
@@ -315,6 +374,11 @@ def _moves_this_week(rows, now):
     return sum(1 for r in rows if r.get("rule") not in ("HAND", "WATCH", "UNDO") and r["state"] not in ("hand", "watch", "judged")
                and parse_iso(r.get("ts")) and parse_iso(r["ts"]) > t)
 
+def _moved_today(rows, now):
+    """A decision was already taken on this UTC day: the limit is one a DAY, whichever job runs the round (V4b step 0c)."""
+    return any(r.get("rule") not in ("HAND", "WATCH", "UNDO") and r["state"] not in ("hand", "watch", "judged")
+               and parse_iso(r.get("ts")) and parse_iso(r["ts"]).date() == now.astimezone(dt.timezone.utc).date() for r in rows)
+
 def _step(key, old, target):
     from whatifs.org import levers as LV
     sp = LV.LEVERS.get(key) or {}
@@ -331,6 +395,7 @@ def next_move(now=None, st=None):
     now = now or now_utc(); rows = _rows(st); t = targets(now); refused = []
     if _moves_this_week(rows, now) >= S("STRATEGY_MOVES_PER_WEEK", int):
         return None, [f"not taken: {S('STRATEGY_MOVES_PER_WEEK', int)} decisions in seven days already"]
+    if S("STRATEGY_ONE_A_DAY", bool) and _moved_today(rows, now): return None, ["not taken: one decision was taken today already"]
     for key in PORTFOLIO:
         if key not in t or _frozen(rows, key, now) or _retry_wait(rows, key, now): continue
         if any(r["key"] == key and r["state"] in IN_FORCE for r in rows): continue
@@ -433,10 +498,22 @@ def brief(now=None, st=None):
             else: lines.append(f"Strategy has not reviewed for {int(age_h)} hours: its last word is old - {last}.")      # U1 J 206: his words, never a cell's name
         elif today.get("refused"): lines.append(f"Not taken today: {today['refused'][0]}.")
         else: lines.append("Strategy today: no change." + (f" Counting: {', '.join(today.get('counting') or counting(now))}." if (today.get("counting") or counting(now)) else ""))
+    from whatifs.org import salvo as SAL                                               # v12 V4b (step 3a): every day while the launch flagship is not armed and no long video is out
+    un = SAL.unarmed_line(st)
+    if un: lines.append(un)
+    if S("RING_FENCE_ON", bool):                                                       # v12 V4b step 9 (memo 3.9, BOTH LINES DAILY): the videos' money and the organisation's own, every day
+        from whatifs import costguard as CG
+        lines.append(CG.lines_daily(now))
     return "*Decisions*\n" + "\n".join(f"- {l}" for l in lines)
 
 def _weekly_due(now):
     at = parse_iso(S("STRATEGY_WEEKLY_AT")); return at is None or now - at >= dt.timedelta(days=7)
+
+def weekly_day(now, tz):
+    """v12 V4b step 10 (memo 3.10 THE REPORT (c)): True on the day Strategy's weekly line is DUE or already went out in the brief - the day, in `tz` (the morning message's
+    own clock), whose morning message carries the credit's money line."""
+    at = parse_iso(S("STRATEGY_WEEKLY_AT"))
+    return _weekly_due(now) or at.astimezone(tz).date() == now.astimezone(tz).date()
 
 def weekly(now=None, st=None):
     """THE WEEKLY LINE (every 7 days): the plan, the money, the mix, the risk words, the credit, what Strategy did and what is his."""
@@ -453,8 +530,7 @@ def weekly(now=None, st=None):
     if cnt: out.append("Counting: " + ", ".join(cnt) + ".")
     rw = risk_words(now)
     if rw: out.append(rw)
-    c = FIN.lane(now)
-    if c: out.append(f"Claude credit: Rs {c['spent_inr']:.0f} used of Rs {c['amount_inr']:.0f}, Rs {c['left_inr']:.0f} left until {c['until']}; what is left on that day lapses.")
+    out += FIN.lapse_lines(now)                                                          # v12 V4b step 10 (memo 3.10 THE REPORT): per line, what WILL lapse at the measured pace
     out.append("Spin-offs: switched off; they come back only rebuilt.")
     cw = candidate_words(st)
     if cw: out.append(cw)
@@ -617,7 +693,7 @@ def review(brief):
     cands = intake(now, st)
     c, refused = next_move(now, st); memos = list(resend) + list(risk_memos); decided = 0
     if c: _row, memo = decide(c, now, st); memos.append(memo); decided = 1
-    elif _moves_this_week(_rows(st), now) < S("STRATEGY_MOVES_PER_WEEK", int):
+    elif not (S("STRATEGY_ONE_A_DAY", bool) and _moved_today(_rows(st), now)) and _moves_this_week(_rows(st), now) < S("STRATEGY_MOVES_PER_WEEK", int):
         tc = trial_move(now, st)
         if tc:
             _row, memo = decide_trial(tc, now, st)

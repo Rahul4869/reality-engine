@@ -165,8 +165,12 @@ def monitor(now=None):
         if hit:
             found.append({"key": key, "yt_id": y, "views": v, "base": base, "kind": kind})
             from whatifs import ladder as LAD
-            if kind == "long" and S("STRATEGY_ON", bool) and LAD.order_row(key) and not LAD.row(key):      # v12 V4: ONE rule for a breakout - a long video about a Short gets what a Short gets
+            from whatifs.org import appetite as APP
+            if kind == "long" and APP.on() and APP.plan_of(y, key): APP.fire(key, y, v, base, 48, "the 48-hour rule")      # v12 V4b step 6b (memo 3.6): the 48-hour fire is appetite's - its acts (6c) instead of the order-or-card
+            elif kind == "long" and S("STRATEGY_ON", bool) and LAD.order_row(key) and not LAD.row(key):      # v12 V4: ONE rule for a breakout - a long video about a Short gets what a Short gets
                 LAD.order_followup(key, y, v, base, 48, now, kind="long video", line=S("BREAKOUT_MIN_VIEWS", float))      # keyed by the EPISODE's id, never the Short's
+            elif kind == "long" and S("SALVO_ON", bool):                                                  # v12 V4b step 6c (memo 3.6, act e; item 150): with the switch on EVERY long video gets the order, the override's too - `_breakout_card` is never sent
+                LAD.order_followup(key, y, v, base, 48, now, kind="long video", line=S("BREAKOUT_MIN_VIEWS", float))
             else: _breakout_card(key, y, v, base, kind)                                                  # an override's long video has no Ladder row: the old card stays
     return found
 

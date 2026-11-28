@@ -19,8 +19,8 @@ BARREN_MIN = 2                # a weekly run that asked at least this many quest
 REVALIDATE_KINDS = ("tool_fact", "plan", "policy_rule")
 FACT_KINDS = ("policy", "tool", "revalidate")            # questions about facts: the only ones the Review Board may "accept"
 ORG_CHECKS = ("docs_current", "palace_health", "dept_contract", "takeaways_written", "decisions_executed", "lever_verified", "research_cadence",
-              "palace_injected", "palace_cited", "canon_in_brief", "short_contract", "strategy_live")   # checks on the organisation's own machinery: code faults, never research topics or prediction metrics
-SHOW_CHECKS = 64           # v12 DRAWN-b L3: + look_bar. v12 DRAWN-b L1a: + short_look. v12 DRAWN step 1: + drawn_plan; step 2: + drawn_shown. Every other contract check is a promise about the show; a NEW check must be put on one side (tests/test_v12_rnd.py counts)
+              "palace_injected", "palace_cited", "canon_in_brief", "short_contract", "strategy_live", "appetite_plan", "depth_frozen")   # checks on the organisation's own machinery: code faults, never research topics or prediction metrics
+SHOW_CHECKS = 67           # v12 DRAWN-b L3: + look_bar. v12 DRAWN-b L1a: + short_look. v12 V4b step 7: + psyche_tags, short_psyche. v12 DRAWN step 1: + drawn_plan; step 2: + drawn_shown. v12 V4b step 3b: + cliffhanger. RB-U1-c: 62 + 2 (DRAWN-b) + 3 (V4b) = 67 on the U1 stack. Every other contract check is a promise about the show; a NEW check must be put on one side (tests/test_v12_rnd.py counts)
 OFFICIAL = ("youtube.com", "youtu.be", "blog.youtube", "google.com", "googleblog.com", "ai.google.dev", "anthropic.com", "claude.com", "fal.ai", "meta.com",
             "facebook.com", "instagram.com", "fb.com", "tiktok.com", "openai.com", "artificialanalysis.ai", "x.ai", "elevenlabs.io", "ftc.gov", "europa.eu")
 MEASURED = ("arxiv.org", "doi.org", "aclanthology.org", "openreview.net", "nature.com", "science.org", "acm.org", "ieee.org", "springer.com", "sciencedirect.com",

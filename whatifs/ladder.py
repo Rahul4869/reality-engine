@@ -75,7 +75,9 @@ def went_public(sid, yt_id, now=None):
     clock starts NOW - the numbers of its first days are counted from the moment viewers could see it. Once per Short."""
     r = row(sid)
     if not r or r.get("state") != "MADE" or not yt_id: return False
-    _set(sid, yt_id=str(yt_id), posted=iso(now or now_utc()), state="POSTED"); return True
+    _set(sid, yt_id=str(yt_id), posted=iso(now or now_utc()), state="POSTED")
+    from whatifs import publish as PUB; PUB.seen_public(yt_id, now)            # v12 V4b step 2: code sees this Short public - its render is on the ledger as public
+    return True
 
 def _drop_footage(r):
     fid = str(r.get("footage") or "")
@@ -180,8 +182,10 @@ def waiting(rs=None):
     """The promoted Short that waits for its long video (the oldest), or None."""
     return next((r for r in (rows() if rs is None else rs) if r.get("state") == "PROMOTED"), None)
 
+OWN_GROUND = ("part2",)      # an override row that is ONE video's own ground (salvo.ground): never handed to another video, to his tap or to claim()
+
 def waiting_override(rs=None):
-    return next((r for r in (rows() if rs is None else rs) if r.get("state") == "OVERRIDE"), None)
+    return next((r for r in (rows() if rs is None else rs) if r.get("state") == "OVERRIDE" and str(r.get("by") or "") not in OWN_GROUND), None)
 
 # ------------------------------------------------------------------ D10's run: promote
 def _promote(now):
@@ -247,11 +251,17 @@ def override(by, note, now=None):
     log(f"ladder: override recorded by {by} ({str(note)[:120]}): the next long video does not need a promoted Short", "WARN")
     return row(oid)
 
-def gate(now=None):
+def gate(now=None, salvo=False):
     """(ok, why, row): may a long video start? Yes when the ladder is off; when the owner locked his own topic (recorded as an override); when a
     promoted Short waits (one is promoted on the spot when a candidate exists); or when his override is on record. An override is used only when
-    no Short can be promoted. Costs nothing; spends nothing."""
+    no Short can be promoted. v12 V4b (step 3a): for the tick and production only (salvo=True), last, the launch flagship is its own ground - ONE
+    override "launch_flagship", recorded once (a Script Preview or a pre-production draft never records it). Costs nothing; spends nothing.
+    v12 V4b (step 4, 3.4; R15 TO CORRECT 11): for salvo=True, FIRST - before his own locked topic - Part 2 of the launch flagship while it is owed is its own
+    ground: its own row (salvo.ground), never his override."""
     now = now or now_utc()
+    if salvo:
+        from whatifs.org import salvo as SAL
+        if SAL.owed(): return True, "Part 2 of the launch flagship", SAL.ground(now)
     if not on(): return True, "the ladder is switched off (LADDER_ON / SHORTS_TRACK_ON)", None
     if str(S("OWNER_NEXT_PREMISE") or "").strip():
         o = override("owner_brief", "the owner locked his own topic for the next long video (Owner Brief)", now)
@@ -262,6 +272,10 @@ def gate(now=None):
     if r: return True, f"the topic of Short {r['id']} ({str(r.get('score'))[:80]})", r
     o = waiting_override()
     if o: return True, f"override recorded by {o.get('by')} on {str(o.get('promoted_at'))[:10]}", o
+    if salvo:
+        from whatifs.org import salvo as SAL                # v12 V4b (step 3a, item 122): YPP from the first long video - the launch flagship needs no promoted Short
+        if SAL.flagship_due(now):
+            o = override("launch_flagship", "item 122: YPP from the first long video - the launch flagship needs no promoted Short", now); return True, "the launch flagship (item 122, recorded once)", o
     return False, why_not(now), None
 
 def refuse(slot, why):

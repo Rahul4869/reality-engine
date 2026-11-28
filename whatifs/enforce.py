@@ -193,7 +193,7 @@ def marker_issues(text, fmt="long", reserve_s=0.0):
     if not AWE_RE.search(text): out.append("mark the [AWE] reveal (not in the last 20%)")
     return out
 
-def fix_all(script, wbrief, spine, episode, fmt="long", reserve_s=0.0):
+def fix_all(script, wbrief, spine, episode, fmt="long", reserve_s=0.0, ps=None):
     """ONE mandatory rewrite carrying EVERY open retention + marker problem (two separate rewrites could undo each other). Returns (script, issues).
     reserve_s (U1 J 201 (c)): the seconds of narration code will still ADD before the opening after this fix (hooks.reserve_s), counted by the joke rule."""
     from whatifs import growth as GR
@@ -209,10 +209,13 @@ def fix_all(script, wbrief, spine, episode, fmt="long", reserve_s=0.0):
     from whatifs.org import inside as INS                   # v12 V2b (D13): a voice from outside the scene is fixed by the same single rewrite
     ins = INS.issues(text) if fmt == "long" else []
     en = FMT.ending_issues(text) if fmt == "long" else []    # v12 V2b (D4): an ending that is not the format's is fixed by the same single rewrite
-    issues = ret + mk + nm + pl + fo + ins + en
+    from whatifs.org import salvo as SAL                    # v12 V4b (step 3b, R15 review 10 (b)): a Part 2 that does not open on Part 1's question is fixed by the same single rewrite
+    pd = SAL.paid_issues(text) if fmt == "long" else []
+    ps = [str(x) for x in (ps or [])] if fmt == "long" else []   # v12 V4b (step 7b, memo 3.7): the early tag's FEELING FIX rides on the same single rewrite
+    issues = ret + mk + nm + pl + fo + ins + en + pd + ps
     if not issues: return script, []
     from whatifs.models import ask
-    tags = (["RETENTION FIX"] if ret else []) + (["MARKER FIX"] if mk else []) + (["NUMBERS FIX"] if nm else []) + (["PLAIN WORDS FIX"] if pl else []) + (["FORMAT FIX"] if fo else []) + (["INSIDE FIX"] if ins else []) + (["ENDING FIX"] if en else [])
+    tags = (["RETENTION FIX"] if ret else []) + (["MARKER FIX"] if mk else []) + (["NUMBERS FIX"] if nm else []) + (["PLAIN WORDS FIX"] if pl else []) + (["FORMAT FIX"] if fo else []) + (["INSIDE FIX"] if ins else []) + (["ENDING FIX"] if en else []) + (["PART 2 FIX"] if pd else []) + (["FEELING FIX"] if ps else [])
     rev = ask("rewrite", wbrief, f"MANDATORY FIX ({' + '.join(tags)}; keep every label, tag, [PUNCH]/[SEND]/[AWE] marker and fact; change only what fixes these): "
               + " | ".join(issues) + "\nNARRATION:\n" + text + "\nRewrite the full narration.", episode=episode, fake_key="writer", max_tokens=16000)
     if str(rev.get("script", "")).strip(): script = rev

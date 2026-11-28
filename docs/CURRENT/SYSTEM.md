@@ -104,6 +104,10 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | camera_path | script | one place per act, seen from where the viewer stands: every act opens on a picture of its own, every picture at eye level holds its act's place, the acts are joined to an allowance (inside the format) |
 | drawn_plan | script | the explaining moments drawn by code: a scene only in the drawn arm and only on an explaining moment, every word, number, name-value pair and arrow the script's own, readable at the work size, no composition twice and none repeating the last drawn video's (drawn by code) |
 | format_ending | script | the video ends as its format ends - F1 on the question to the viewer, F3 on the arrival - with no ask and no pointer to another video in its last seconds, and carries only the asks of its format (inside the format) |
+| cliffhanger | script | the launch pair keeps its promise: the flagship ends on ONE question about its own story - the format's own ending, no pointer, no ask, not the stock question - only with its Part 2 written down, and Part 2 opens on that question in its first seconds (the launch salvo) |
+| psyche_tags | script | every long video carries its drives: one tag of psyche.DRIVES for the premise, the title, the thumbnail text, the hook and each beat, the lead never the house constant, and no drive leads more than 2 of the last 5 long videos (the variety floor, a free or a forced premise) |
+| depth_frozen | script | a launch pair video's depth brief is frozen: exactly k of the room's drafts carried it between its markers, each hashing to the one addendum (N/A without a depth pass) |
+| appetite_plan | final | no long video goes out without its appetite plan: ONE row on tab Appetite_Plans written before this gate, frozen (its JSON hashes to its sha) unless a flagship waits for its Part 2 |
 | topic_ladder | script | every topic starts as a Short: this long video is about the topic of a Short the promote rule took, or was made under an override on record (the ladder) |
 | opening_footage | script | a long video about a promoted Short opens on that Short's own footage, laid by code under its first sentences - or was made under an override, which has none (the opening) |
 | one_story | script | one story: the thumbnail a viewer taps is the picture the video opens on - the first picture of the promoted Short whose footage opens it - and the runner-up thumbnail is another look at the same scene (one story) |
@@ -156,6 +160,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | short_shape | short | a Short has its format's length, hands its last line back to the first, asks for nothing, is an animated clip in every second and loops into its first frame, captions above the buttons (the viewer's seat for a Short) |
 | short_kept | short | a Short is what its Short format says and is not like the last ten Shorts (Short formats as data) |
 | short_contract | short | every department that worked on a Short (the Shorts Studio, Sound, Audience) ran under the department contract before the short gate |
+| short_psyche | short | every Short carries its drives: one tag of psyche.DRIVES for the premise, the title, the hook and each line, the lead never the house constant - checked before anything is made |
 | short_moving | short_file | a Short moves in every second: every half second of its finished file changes (the motion ladder) |
 | short_sound | short_file | a Short sounds from its first frame: its place's own sound inside SHORT_SOUND_BY_S seconds at full level, the guide's first word inside SHORT_VOICE_BY_S seconds - measured on the finished file |
 | short_look | short_file | the look bar for a Short: a strong judge, blind, found at least LOOK_BAR_PCT of the look points in its pictures, in a call where the owner's reference sheets passed and the Short's own flattened picture did not; a Short below the bar twice - the second time after its free re-grade - is kept and waits for his tap, never more than LOOK_HOLDS_MAX_RUN Shorts in a row; a call that cannot be calibrated holds nothing |
@@ -349,7 +354,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Monitor48 | 7 | yt_id, video_key, kind, published, v24, v48 ... |  |
 | Breakout_Queue | 7 | ts, video_key, status, plan, left, due ... |  |
 | Jury_Log | 7 | ts, episode_id, stage, judge, order, ranking ... |  |
-| Video_Features | 13 | ts, video_key, yt_id, format, hook, title ... |  |
+| Video_Features | 14 | ts, video_key, yt_id, format, hook, title ... |  |
 | Technique_Evidence | 19 | technique_id, format, family, level, alpha, beta ... | the learning core's evidence table (whatifs/brain.py) |
 | Brain_Log | 6 | ts, event, technique_id, from, to, evidence |  |
 | Forecasts | 11 | ts, video_key, format, metric, lo, mid ... |  |
@@ -395,6 +400,10 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | Owner_Input | 1 | input |  |
 | Owner_Desk | 13 | n, ts, sha, verbatim, verdict, how ... |  |
 | HD_Wait | 10 | vid, kind, uploaded, cap_min, ai, state ... |  |
+| Upload_Hashes | 6 | ts, yt_id, kind, file_sha, script_sha, public_at |  |
+| Appetite_Plans | 12 | ts, ep, role, yt_id, plan, sha ... |  |
+| Appetite | 10 | ts, ep, yt_id, h, views, likes ... |  |
+| Contests | 7 | ts, card, video_key, n, k, won ... |  |
 
 ## 9. Modules
 | module | purpose |
@@ -509,6 +518,7 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | whatifs/wa.py | The WhatsApp control room: interactive buttons inside the 24-hour window, the approved template outside it, and inbound owner messages. |
 | whatifs/ypp.py | The North-Star tracker: weekly YouTube Analytics progress toward the Partner Program thresholds. |
 | whatifs/org/__init__.py | The Organisation: the departments and work stages every org module shares (Knowledge Palace now; memos, runner and registry build on these). |
+| whatifs/org/appetite.py | The appetite engine (B3, items 141 and 148 to 150): every hour of a long video's first 48 it is read - views, likes, comments and the authors who ask for more - one row a video and hour. |
 | whatifs/org/audience.py | Audience (D13): the viewer's seat - what a first-time viewer would meet is measured by code and repaired by code before any picture is paid: the promise as the first picture, a voice that breathes, few numbers. |
 | whatifs/org/board.py | Review Board (D3): every research memo judged blind by strong judges of two model families on a fixed yes/no checklist, with a planted canary in every session; scores and the verdict are computed by code. |
 | whatifs/org/canon.py | World canon: the show's living bible as Palace items - the cast mirrored from the character bible, a case record written by code after every D4 write and accepted only when the upload is confirmed, the continuity debt the next script must pay, and the check canon_in_brief. |
@@ -523,13 +533,15 @@ GENERATED from the code by `python tools/gen_docs.py`. Never edit by hand: chang
 | whatifs/org/look.py | The look bar (D13): one strong judge answers fixed yes/no questions about the art direction of a finished film's pictures, blind, beside the owner's reference sheets, the film's own flattened picture and the video he rejected; the verdict is computed by code. |
 | whatifs/org/memos.py | Memos: the organisation's nervous system - validated on write, read only by their audience, moved only with proof, escalated by the SLA watchdog when a clock runs out. |
 | whatifs/org/palace.py | Knowledge Palace: the one repository every department reads and writes - guarded items, life cycle, versions and bounded department playbooks. |
+| whatifs/org/psyche.py | The psyche tags at making (v12 V4b step 7, D4): one vocabulary of drives, ONE tag call a video, the house constant never leads, the variety floor told first, repaired once, then held. |
 | whatifs/org/registry.py | Department registry: what each department is for, the code it wraps, its rhythm, levers, thinking cap, owned checks and the call sites that really run under the runner. |
 | whatifs/org/risk.py | The watch book (D1): a danger has an owner, a measure and an act the same day; WATCH is data. |
 | whatifs/org/rnd.py | R&D (D2): a research agenda computed from the organisation's own gaps, one bounded web-search question at a time, every source proven by code, research memos to the Review Board. |
 | whatifs/org/runner.py | Department runner: the six-step contract of every department run - LOAD, ACT, EMIT, LEARN, EXECUTE, REPORT - each proven by a receipt the runner itself builds and chains. |
+| whatifs/org/salvo.py | The launch salvo (D1, items 122 and 140): ONE launch flagship, armed by data (cli salvo, no lever), made in F1, with its Part 2 held. |
 | whatifs/org/schemas.py | Memo schemas: every memo type the organisation can send - sender, audience, body, clocks, statuses and legal moves as data - with the validator that runs on every write. |
 | whatifs/org/shortseat.py | Audience (D13): the viewer's seat for a Short - the first frame, the hook, plain words, the shape and the loop are measured by code and repaired by code before any picture is paid. |
-| whatifs/org/strategy.py | Strategy (D1): the loop - a rule book as data, at most one decision a review, each a ticket told to him with an Undo. |
+| whatifs/org/strategy.py | Strategy (D1): the loop - a rule book as data, at most one decision a day, each a ticket told to him with an Undo. |
 | whatifs/org/verdicts.py | His verdict (D13): one row and one tap a release on tab Owner_Verdicts - his tap is the strongest label, the judged floor is scored against it and the videos he approved are its references. |
 | whatifs/org/wraps.py | Department wrappers: what each wrapped production step reports about its own output (measures, lessons, problem memos) when it runs under the department runner. |
 | tools/atmos_bench.py | Render performance check: times one still shot through the real render path with the atmosphere layer off and on (run: python tools/atmos_bench.py [seconds]). |
@@ -799,6 +811,7 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | SHORT_NUMBERS_MAX | D13 | int | 0 to 4 | 1 | up: it weakens a quality gate | short_plain |
 | SHORT_EXPERT_MAX | D13 | int | 0 to 3 | 1 | up: it weakens a quality gate | short_plain |
 | SHORT_PROMISE_WORDS_MAX | D13 | int | 2 to 10 | 2 | up: it weakens a quality gate | short_open |
+| SHORT_TELLS_MAX | D13 | int | 0 to 2 | 1 | up: it weakens a quality gate | short_plain |
 | INSIDE_MIN_PCT_F1 | D13 | int | 20 to 80 | 5 | down: it weakens a quality gate | viewer_inside |
 | INSIDE_MIN_PCT_F2 | D13 | int | 20 to 80 | 5 | down: it weakens a quality gate | viewer_inside |
 | INSIDE_MIN_PCT_F3 | D13 | int | 20 to 80 | 5 | down: it weakens a quality gate | viewer_inside |
@@ -820,6 +833,9 @@ Runs an episode needs before each gate: script: D4 write, D7 voice, D5 package, 
 | SHORT_MAX_S_S3 | D14 | int | 20 to 60 | 5 | up: it weakens a quality gate | short_shape |
 | SHORTS_BREAKOUT_X | D14 | float | 2 to 10 | 1 | down: it costs more money | the next complete run |
 | FOLLOWUP_WITHIN_H | D14 | int | 24 to 96 | 24 | - | the next complete run |
+| CHALLENGER_SHARE_HOOK | D14 | int | 0 to 100 | 50 | - | the next complete run |
+| CHALLENGER_SHARE_TITLE | D14 | int | 0 to 100 | 50 | - | the next complete run |
+| CHALLENGER_SHARE_SHORT | D14 | int | 0 to 100 | 50 | - | the next complete run |
 | ORG_SLA_HOURS | C | json | 0.25 to 720 | - | always: it changes how fast the organisation must act | the next complete run |
 | PALACE_PLAYBOOK_TOKENS | L | int | 200 to 6000 | 600 | - | palace_health |
 | PALACE_PLAYBOOK_TOKENS_BY_DEPT | L | json | 200 to 6000 | - | - | palace_health |

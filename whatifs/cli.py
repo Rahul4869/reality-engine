@@ -192,6 +192,8 @@ def main():
             from whatifs.dash import build_snapshot; print(_json.dumps(build_snapshot())[:2000])
         elif cmd == "build_ready":                                       # v9.4a (WP3): claude-build.yml -> one owner message (Merge / Reject)
             from whatifs.builds import build_ready; print(build_ready(sys.argv[2], sys.argv[3], sys.argv[4] if len(sys.argv) > 4 else "", sys.argv[5] if len(sys.argv) > 5 else ""))
+        elif cmd == "salvo":                                             # v12 V4b (step 3a): arm the launch flagship (a pack step; data, no lever)
+            from whatifs.org.salvo import arm; print(arm())
         elif cmd == "preprod":                                           # v9.4a (WP2): the writers' room early, at half price
             from whatifs.preprod import run as _pp
             r = _pp(force="--force" in sys.argv, check_only="--check" in sys.argv); print(r)

@@ -243,3 +243,12 @@ sessions, tools and estimates) and nothing of the product - they are listed last
    and their read-only key, the skill packs and plugins) and what each may never do, the estimates computed from measured numbers only, and his usage
    that no command can reset. They govern the build, never the product: they live in `02` and the plan (`handoff_v12/OPUS_BUILD_PLAN.md`); none of
    them enters the pipeline, `proving/` or the project's `.venv`.
+
+**V4b BUILT - THE SALVO, THE APPETITE ENGINE, THE DOORS AND THE CREDIT (27 Nov 2026; typed in sections, NOT yet accepted)**. Where each of his items is executed:
+items 122 and 140 (one launch flagship and its Part 2, a week ahead) - `python -m whatifs.cli salvo` arms the Sheet once (`whatifs/org/salvo.py:arm`), the flagship
+ends on its cliff and the pair walks the review road (`salvo.pair_clear`, `salvo.pair`), check `cliffhanger`; items 141 and 148 to 150 (a video's appetite is read
+every hour and acted on) - ONE frozen plan row a long video before its final gate (`whatifs/org/appetite.py`, check `appetite_plan`), the reading, the line (views and
+asking authors, never a share), the fire and its acts read back through the one door; item 194 (a Short never sounds like an AI) - `shortseat.tells_report` inside
+check `short_plain`; item 124 (the doors: nothing public is uploaded again, no edit inside a test) - tab `Upload_Hashes`, `ANTI_MYTH_ON`. The sweep walks all of it:
+`tools/sweep.py` `appetite_of` on every long-video id, `plain_of` on every Short id, `--salvo` for the one pair; the rehearsal prints its own "appetite:" line. What
+is NOT yet built is named in `NOTES/TYPED_V4b.md` (the salvo's walk after the flagship) and stays a NEEDS RULING there.

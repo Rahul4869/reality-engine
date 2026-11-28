@@ -397,3 +397,17 @@ def test_an_address_in_a_row_is_one_tap_on_the_page(monkeypatch, setting, tmp_pa
     for c in snap["decided"] + snap["docket"]: c["links"] = ["javascript:alert(1)", 'https://x.test/"onmouseover="y']       # planted: a hostile snapshot
     home = _render(snap, tmp_path, "badlinks")["home"]
     assert "javascript:" not in home and 'onmouseover="y' not in home
+
+
+def test_the_money_page_draws_the_credit_field_one_row_per_open_line_and_nothing_when_the_field_is_empty(monkeypatch, setting, tmp_path):
+    """V4b step 10 (b) (memo 3.10 THE REPORT (b)): the Money page reads the snapshot's `credit` field - one row per open line ("Claude credit until <until>: <spent> of <amount>", the
+    figure that will lapse, its source beside it), every string through `esc`; an empty field draws nothing."""
+    assert "m.credit" in _page()
+    snap = _full(monkeypatch, setting); bad = "A" * 40 + "<script>alert(1)</script>"
+    snap["money"]["credit"] = {"daily": "Videos Rs 90 a day", "src": "the Sheet's cell CLAUDE_CREDIT_LINES", "lines": [
+        {"until": "2026-12-17", "amount_inr": 19800.0, "spent_inr": 990.0, "will_lapse_inr": 13860.0, "behind_inr": 0.0, "state": "open", "src": bad}]}
+    money = _render(snap, tmp_path, "credit")["money"]
+    assert "Claude credit until 2026-12-17" in money and "990" in money and "19,800" in money and "13,860 will lapse" in money and "Videos Rs 90 a day" in money, money[-900:]
+    assert "<script" not in money.lower() and "&lt;script&gt;" in money
+    snap["money"]["credit"] = {}
+    assert "Claude credit until" not in _render(snap, tmp_path, "nocredit")["money"]
