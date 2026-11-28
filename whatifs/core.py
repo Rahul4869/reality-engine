@@ -930,6 +930,7 @@ DEFAULTS = {
  "ARM_STAND_IN_ON": ("FALSE", "v12 V4 (the arm book): TRUE = in fake mode the stand-in list of candidates is filed (the rehearsal month and the sweep's judge set it on their own Sheet) until the Observatory (V5) files real ones"),
  "TRIAL_GAP_DAYS": ("28", "v12 V4 (rule TRIAL): one candidate trial at a time, and the next one at least this many days after the last opened"),
  "V12V4_MOVE_DONE": ("", "v12 V4: set once after the one-time move (the two spin-offs paused, the Max credit's old end date cleared) on a live Sheet"),
+ "DASH_DRAIN_TRIES": ("", "auto - v12 U1 fix 237 (J19-3): the failed tries of each kept input of his (by its key, never his words); at the third the drain passes it, kept, and sends one alarm"),
  "STRATEGY_TODAY": ("", "auto - v12 V4: the newest review's refusals and counting, for the brief's one line on a day without a decision"),
  "FINANCE_SEEN_TS": ("", "auto - v12 V4: the newest cost summary Finance's watch has read (an overrun after it becomes a memo to Operations)"),
  "GEMINI_CREDIT_USD_MONTH": ("0", "v9.4a: monthly Gemini API credit from Google AI Pro (10 when linked); money view only"),

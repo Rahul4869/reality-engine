@@ -436,6 +436,7 @@ def test_a_decided_row_without_its_ticket_for_26_hours_fails_only_text_and_is_se
     assert [x for x in p if x.startswith("decision DEC-t1 (SHORTS_PER_MONTH 12 -> 14) has stood") and x.endswith("only text")], p
     def row(): return next(r for r in decisions() if r["id"] == "DEC-t1")
     assert len(STR.settle()) == 1 and row()["state"] == "decided"                            # sent once more
+    STR.stamp_resent({"resent": ["DEC-t1"]})                                                  # U1 fix 210: the runner's step stamps it after the write
     assert STR.settle() == [] and row()["state"] == "void"                                    # then void
 
 def test_what_was_decided_for_him_is_never_counted_as_open_and_is_listed_on_its_own(setting, monkeypatch):

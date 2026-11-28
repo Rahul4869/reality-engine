@@ -518,6 +518,8 @@ def _answer(row, choice):
         try:                                                      # his drop is a verdict - "I will not publish this" (3.2)
             from whatifs.org import verdicts as VER; VER.record(ep, "down", "", via="drop")
         except Exception as e: log(f"his drop was not kept as a verdict: {scrub(e)[:120]}", "WARN", ep)
+        if not S("KILL_CHECK", bool):                             # U1 fix 192 (open issue 215): kill_check returns at once - never "is dropped" while nothing drops it
+            return f"{ep} is marked KILL, but the kill check is switched off (cell KILL_CHECK): nothing drops it until it is switched on"
         return f"{ep} is dropped"
     return CON._answer(row, choice)
 

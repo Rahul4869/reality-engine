@@ -76,6 +76,12 @@ def biggest_gap_lines(text):
         t += len(re.sub(r"\[[^\]]*\]", " ", l).split()) / wpm * 60.0
     return max(worst, t - last)
 
+JOKE_GAP_FACTOR = 2.2            # U1 fix 203 (open issue 231): check joke_density's longest stretch without a [PUNCH] = this x JOKE_EVERY_SEC_LONG - ONE name, read by the check, the offline writer and the sweep test
+
+def joke_gap_max():
+    """The joke rule's longest allowed stretch without a [PUNCH], in seconds of narration: JOKE_GAP_FACTOR x JOKE_EVERY_SEC_LONG."""
+    return JOKE_GAP_FACTOR * S("JOKE_EVERY_SEC_LONG", float)
+
 def fix_markers(script, wbrief, episode, fmt="long"):
     """ONE targeted rewrite when punchline density or the [SEND]/[AWE] markers fall short (before the contract checks them)."""
     from whatifs import formats as FMT

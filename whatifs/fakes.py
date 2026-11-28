@@ -243,17 +243,17 @@ def _keep_given_asks(body, prompt):
 
 def _punch_to_rule(body):
     """v12 V1c repair (red round 2): the stand-in's [PUNCH] lines follow the joke rule's own measures (enforce.joke_need, enforce.biggest_gap_lines, the
-    check's 2.2 x JOKE_EVERY_SEC_LONG) on the narration the script gate measures: this answer with the Short's hook that hooks.apply_to_script puts first
+    check's enforce.joke_gap_max()) on the narration the script gate measures: this answer with the Short's hook that hooks.apply_to_script puts first
     when the writer did not open on it - the stand-in never sees that FIRST LINE (models.ask hands a fake only its user message), so it counts a line of
     SHORT_HOOK_WORDS_MAX words. Until both hold, a [PUNCH] goes on its own line nearest the middle of the longest stretch without one (never on an ask)."""
     from whatifs import enforce as _EN, hooks as _HK, cta as _CTA
     from whatifs.core import S as _S
-    every, wpm = _S("JOKE_EVERY_SEC_LONG", float), max(1.0, _S("WPM_ESTIMATE", float))
+    wpm = max(1.0, _S("WPM_ESTIMATE", float))
     hook = " ".join(["word"] * _S("SHORT_HOOK_WORDS_MAX", int))
     secs = lambda l: len(re.sub(r"\[[^\]]*\]", " ", l).split()) / wpm * 60.0
     while True:
         gate = _HK.apply_to_script("\n".join(body), hook)[0].split("\n")
-        if len(_EN.punch_lines("\n".join(gate))) >= _EN.joke_need("\n".join(gate)) and _EN.biggest_gap_lines("\n".join(gate)) <= 2.2 * every: return body
+        if len(_EN.punch_lines("\n".join(gate))) >= _EN.joke_need("\n".join(gate)) and _EN.biggest_gap_lines("\n".join(gate)) <= _EN.joke_gap_max(): return body
         sp = _CTA._spoken_index(body); first = sp[0] if sp else len(body)    # where the hook goes: body line i is gate line i (i < first) or i + 1
         t, start = 0.0, []
         for l in gate: start.append(t); t += secs(l)

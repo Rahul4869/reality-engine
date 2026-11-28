@@ -37,7 +37,7 @@ def strategy_round():
     if not S("STRATEGY_ON", bool) or not EX.on() or paused(): return False
     try: ORG.run("D11", "watch", FIN.watch)
     except Exception as x: log(f"Finance watch failed: {type(x).__name__}: {str(x)[:160]}", "WARN")
-    try: ORG.run("D1", "review", STR.review)
+    try: ORG.run("D1", "review", STR.review, settle=STR.stamp_resent)      # U1 fix 210: "resent" is stamped only after the runner wrote the ticket
     except Exception as x: log(f"Strategy review failed: {type(x).__name__}: {str(x)[:160]}", "WARN")
     try: STR.tell()                                                                         # level-triggered: a decision whose ticket is on tab Memos is told once
     except Exception as x: log(f"Strategy's message was not sent: {type(x).__name__}: {str(x)[:160]}", "WARN")

@@ -199,3 +199,17 @@ test("CE-1b: the key is in KV when the dispatch leaves; a failed put answers 503
     assert.equal(r.status, 503); assert.equal(calls, 0);
   } finally { globalThis.fetch = real; }
 });
+test("CA5-3: a failed status of an alarm reaches a run, kept first (U1 fix 235, J19-1)", async () => {
+  const e = env(); sent.length = 0;
+  const hook = async (value) => { const raw = JSON.stringify({ entry: [{ changes: [{ value }] }] });
+    return worker.fetch(new Request("https://re.test/webhook", { method: "POST", headers: { "x-hub-signature-256": "sha256=" + await hmacHex(e.WA_APP_SECRET, raw) }, body: raw }), e); };
+  await hook({ statuses: [{ id: "wamid.D1", status: "delivered", timestamp: "1", recipient_id: e.OWNER_WA }] });
+  assert.equal(sent.length, 0);                                                       // delivered / read alone: still no run
+  const r = await hook({ statuses: [{ id: "wamid.F1", status: "failed", timestamp: "2", recipient_id: e.OWNER_WA }] });
+  assert.equal(r.status, 200); assert.equal(sent.length, 1);                          // failed alone: a run
+  const kept = await decrypt(e.WA_RELAY_KEY, JSON.parse(e.RE_KV.m.get("inbox:wa:status:wamid.F1")));
+  assert.deepEqual(kept.messages, []); assert.deepEqual(kept.statuses.map(s => [s.id, s.status]), [["wamid.F1", "failed"]]);
+  e.RE_KV.put = async () => { throw new Error("kv down"); };
+  const r2 = await hook({ statuses: [{ id: "wamid.F2", status: "failed", timestamp: "3", recipient_id: e.OWNER_WA }] });
+  assert.equal(r2.status, 503);                                                       // not kept: Meta delivers it again
+});

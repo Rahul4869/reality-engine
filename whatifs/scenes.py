@@ -39,8 +39,9 @@ def _dur(units, i, total):
 
 def slots(shots, units, total):
     """The explaining moments: every shot after the first whose type is "graphic", whose graphic media.clean_graphic can draw, and whose line
-    (its start to the next line's start) lasts at least DRAWN_MIN_S."""
-    lo = S("DRAWN_MIN_S", float); out = []
+    (its start to the next line's start) lasts at least DRAWN_MIN_S - and never less than UNIT_MERGE_SEC, or the renderer's merge takes the line away and
+    the scene has no proof and no reason (open issue 250): the larger of the two cells."""
+    lo = max(S("DRAWN_MIN_S", float), S("UNIT_MERGE_SEC", float)); out = []
     for i, s in enumerate(shots or []):
         if i < 1 or i >= len(units) or not isinstance(s, dict) or s.get("type") != "graphic": continue
         if MD.clean_graphic(s.get("graphic")) is None: continue

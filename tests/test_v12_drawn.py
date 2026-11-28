@@ -654,7 +654,7 @@ def test_t2_a_refused_scenes_line_is_cut_as_a_still_is():
     import inspect
     from whatifs import episode as EP
     src = inspect.getsource(EP._render)                                                         # T-2 AMENDED: a pin of the one line it guards (the house's way for a call's text)
-    assert '_pieces_for(dur, "still" if (sc_ and not dr_["ok"]) else s["type"], opening_, ep)' in src
+    assert '_pieces_for(dur, "still" if (sc_ and not dr_["ok"] and img) else s["type"], opening_, ep)' in src      # U1 fix 218: no picture = the card, cut as a graphic
     assert 'fxk = s.get("pov_fx") if (k == 0 and not (dr_ and dr_["ok"])) else None' in src      # F-16 (D2-03): the camera effect's guard, a defence beside set_overlay(None) - no frame can tell them apart
 
 

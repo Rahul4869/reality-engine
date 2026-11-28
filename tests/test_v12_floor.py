@@ -1650,6 +1650,6 @@ def test_no_F2_rehearsal_id_comes_up_short_of_the_joke_rule_whatever_its_short(m
         for s, hook in _short_hooks().items():
             for ep in ids:
                 t, issues = _gate_narration(ep, hook, setting); walked += bool(issues)
-                if len(EN.punch_lines(t)) < EN.joke_need(t) or EN.biggest_gap_lines(t) > 2.2 * S("JOKE_EVERY_SEC_LONG", float): held.append((s, ep))
+                if len(EN.punch_lines(t)) < EN.joke_need(t) or EN.biggest_gap_lines(t) > EN.joke_gap_max(): held.append((s, ep))
     assert walked == len(ids) * len(_short_hooks()), walked           # the ONE mandatory fix is walked on every id (the road on which the stand-in answers)
     assert held == [], (len(held), held[:10])

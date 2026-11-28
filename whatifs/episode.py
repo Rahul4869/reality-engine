@@ -490,7 +490,7 @@ def _render(job):
             except Exception as e:
                 log(f"drawn scene {i} not proved: {e} -> its still", "WARN"); dr_ = {"ok": False, "why": (str(e) or type(e).__name__)[:120]}
             job.drawn[i] = dr_
-        pieces = 1 if (s.get("short") and i in files["clips"]) else _pieces_for(dur, "still" if (sc_ and not dr_["ok"]) else s["type"], opening_, ep)      # v12 DRAWN: a refused scene's line is cut as a still is | v12 V2c-b2b: a clip cut from the Short's footage plays whole | v9.3: micro-cuts (MICRO_CUTS_ON); OFF = the v9.2 rule (1 / 2 / 3 pieces)
+        pieces = 1 if (s.get("short") and i in files["clips"]) else _pieces_for(dur, "still" if (sc_ and not dr_["ok"] and img) else s["type"], opening_, ep)      # v12 DRAWN: a refused scene's line is cut as a still is - with no picture it is the card (C10), cut as a graphic (open issue 249) | v12 V2c-b2b: a clip cut from the Short's footage plays whole | v9.3: micro-cuts (MICRO_CUTS_ON); OFF = the v9.2 rule (1 / 2 / 3 pieces)
         cut = [int(n_total * k / pieces) for k in range(pieces + 1)]
         cd = 0.0
         if i in files["clips"] and s["type"] in ("kling", "living"):

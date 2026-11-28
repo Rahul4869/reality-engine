@@ -168,9 +168,11 @@ async function waInbound(req, env) {
     for (const m of v.messages || []) if (String(m.from) === String(env.OWNER_WA)) messages.push(normaliseMessage(m));
     for (const s of v.statuses || []) if (String(s.recipient_id) === String(env.OWNER_WA)) statuses.push({ id: s.id, status: s.status, ts: s.timestamp });
   }
-  if (messages.length) {                                        // CE-1b (R1-144 (b)): a status-only webhook starts no run; each message of his is kept first
+  const failed = statuses.filter(s => String(s.status) === "failed");   // U1 fix 235 (J19-1; CA5-3): a status alone starts a run only when it is failed - kept first, as his messages are
+  if (messages.length || failed.length) {                       // CE-1b (R1-144 (b)): a status-only webhook starts no run; each message of his is kept first
     let lost = false;                                           // a message that is not kept is answered 503: Meta delivers it again; the pipeline dedupes by its id
     for (const m of messages) { try { await keep(env, "wa:" + m.id, { messages: [m], statuses: [] }); } catch (e) { lost = true; } }
+    for (const s of failed) { try { await keep(env, "wa:status:" + s.id, { messages: [], statuses: [s] }); } catch (e) { lost = true; } }
     try { await dispatch(env, "wa_inbound", { messages, statuses }); } catch (e) { /* the next run's drain handles the kept messages; the pipeline dedupes by message id */ }
     if (lost) return new Response("", { status: 503 });
   }

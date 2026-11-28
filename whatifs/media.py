@@ -277,20 +277,29 @@ def _fmt(v, unit):
     s = f"{v/1e9:.2f} billion" if a >= 1e9 else f"{v/1e6:.1f} million" if a >= 1e6 else f"{v:,.1f}" if 0 < a < 10 else f"{v:,.0f}"
     return (s + (" " + unit if unit else "")).strip()
 
+def _cut(s, n):
+    """A director's text bounded at n characters AT A WORD (open issue 248): the last space inside the bound, never mid-word; a text that ends at the
+    bound, or a first word longer than it (no space to cut at), is cut there."""
+    s = str(s if s is not None else "")
+    if len(s) <= n: return s
+    if s[n] == " ": return s[:n].rstrip()
+    sp = s[:n].rfind(" ")
+    return s[:sp].rstrip() if sp > 0 else s[:n]
+
 def clean_graphic(g):
     """Validate a Director graphic. Returns a safe dict (kind counter | timeline | compare) or None when it cannot be drawn (the shot then becomes a normal still)."""
     if not isinstance(g, dict): return None
     kind = str(g.get("kind") or "counter").lower()
     try:
         if kind == "timeline":
-            ev = [{"t": str(x.get("t", ""))[:14], "text": str(x.get("text", ""))[:34]} for x in (g.get("events") or []) if isinstance(x, dict) and x.get("text")][:5]
-            return {"kind": "timeline", "label": str(g.get("label", ""))[:48], "events": ev} if len(ev) >= 2 else None
+            ev = [{"t": _cut(x.get("t", ""), 14), "text": _cut(x.get("text", ""), 34)} for x in (g.get("events") or []) if isinstance(x, dict) and x.get("text")][:5]
+            return {"kind": "timeline", "label": _cut(g.get("label", ""), 48), "events": ev} if len(ev) >= 2 else None
         if kind == "compare":
             a, b = g.get("a") or {}, g.get("b") or {}
             av, bv = float(a.get("value")), float(b.get("value"))
             if av <= 0 or bv <= 0: return None
-            return {"kind": "compare", "label": str(g.get("label", ""))[:48], "unit": str(g.get("unit", ""))[:16],
-                    "a": {"name": str(a.get("name", "A"))[:22], "value": av}, "b": {"name": str(b.get("name", "B"))[:22], "value": bv}}
+            return {"kind": "compare", "label": _cut(g.get("label", ""), 48), "unit": _cut(g.get("unit", ""), 16),
+                    "a": {"name": _cut(a.get("name", "A"), 22), "value": av}, "b": {"name": _cut(b.get("name", "B"), 22), "value": bv}}
         float(g.get("from", 0)); float(g.get("to", 100))
         return dict(g, kind="counter")
     except Exception: return None

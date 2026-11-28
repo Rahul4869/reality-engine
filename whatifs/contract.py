@@ -216,7 +216,7 @@ def p_joke_density(ctx):
     t = _script_text(ctx)
     if not t: return FAIL, "no script"
     need, have, gap = EN.joke_need(t), len(EN.punch_lines(t)), EN.biggest_gap_lines(t)
-    ok = have >= need and gap <= 2.2 * S("JOKE_EVERY_SEC_LONG", float)
+    ok = have >= need and gap <= EN.joke_gap_max()
     return (PASS if ok else FAIL), f"{have} punchlines (need {need}); biggest gap {gap:.0f} s"
 
 def p_send_awe(ctx):
@@ -1157,6 +1157,8 @@ def _answer(row, choice):
     if len(parts) >= 2 and parts[0].upper() in ("APPROVE", "HOLDREVIEW"):
         return approve(parts[1]) if parts[0].upper() == "APPROVE" else hold_review(parts[1])
     if len(parts) >= 2 and parts[0].upper() == "UNPOST": return unpost(parts[1])      # v12 B-OWNER (PART 7): "Take it down" on a decided_post row
+    if parts and parts[0].upper() == "DISCUSS" and str((row or {}).get("dedupe_key") or "").startswith("review|"):      # U1 fix 236 (J19-2): his talk is recorded (notify.answer
+        store().update("Owner_Actions", "id", row["id"], {"status": "OPEN", "answered_at": "", "answer": ""})       # logs it) and the review card stays OPEN, as _ran re-opens one
     return "recorded"
 
 def _ran(row, ep, said):

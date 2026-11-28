@@ -105,10 +105,16 @@ def tick(now=None):
     return out
 
 def _next_steps(st, now):
-    """An ADOPTED request further than one step: the next step once the last ticket is verified."""
-    from whatifs.org import memos as MEM, strategy as STR
+    """An ADOPTED request further than one step: the next step once the last ticket is verified. U1 fix 208 (open issue 236): a ticket the engine
+    refused (or failed) or rolled back makes the row REFUSED / ROLLED_BACK with the engine's note, briefed again so the next brief tells him."""
+    from whatifs.org import memos as MEM, strategy as STR, execute as EX
     for r in _rows(st):
         if r.get("verdict") != "ADOPTED" or not r.get("ticket"): continue
+        es = EX.state_of(r["ticket"], st)
+        if es and es[0] in ("refused", "failed", "rolled_back"):
+            v = "ROLLED_BACK" if es[0] == "rolled_back" else "REFUSED"
+            how = (f"the engine took it back: {es[1]}" if v == "ROLLED_BACK" else f"the engine refused it: {es[1]}")[:300]
+            st.update(DESK, "n", r["n"], {"verdict": v, "how": how, "briefed": ""}); continue
         rec = recognise(r.get("verbatim")); t = MEM.get(r["ticket"], st)
         if not rec or t is None or t["status"] != "resolved" or (t.get("resolution") or {}).get("kind") != "lever_verified": continue
         key, value = rec; cur = STR._cell(key)

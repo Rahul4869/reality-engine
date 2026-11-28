@@ -471,6 +471,8 @@ def _when(key, item):
         return float(item.get("ts") or 0)
     except (TypeError, ValueError, AttributeError): return 0.0
 
+DRAIN_TRIES = 3                  # U1 fix 237 (J19-3): a kept key whose handling raised this many runs is passed over (kept) and named in one alarm
+
 def drain(kv=None):
     """CE-1b (R1-144 (b)): every input and message of his the Worker kept (`inbox:<id>`) before its dispatch is handled exactly once - a WhatsApp
     message through `wa.handle_inbound` (deduped by its id), the rest through `handle_action` (an acked id is skipped) - and its key deleted. A run
@@ -489,14 +491,32 @@ def drain(kv=None):
         except Exception as e: log(f"a kept input was not readable ({type(e).__name__}); it stays for the next run", "WARN"); continue
         kept.append((_when(key, item), len(kept), key, val))
     n = 0
+    try: tries = json.loads(S("DASH_DRAIN_TRIES") or "{}")                # U1 fix 237 (J19-3): the failed tries of each kept key
+    except Exception: tries = {}
+    tries = {k: v for k, v in (tries if isinstance(tries, dict) else {}).items() if any(k == x[2] for x in kept)}
     for _t, _i, key, val in sorted(kept):
         try:
             if key.startswith("inbox:wa:"):
                 from whatifs.wa import handle_inbound; handle_inbound(val)
             else: handle_action(val)
-        except Exception as e: log(f"a kept input was not handled ({type(e).__name__}); it and the later ones stay for the next run", "WARN"); break
+        except Exception as e:
+            k_ = int(tries.get(key) or 0) + 1; tries[key] = k_
+            if k_ < DRAIN_TRIES:
+                log(f"a kept input was not handled ({type(e).__name__}); it and the later ones stay for the next run", "WARN"); break
+            log(f"a kept input failed {k_} runs ({type(e).__name__}); it stays kept and is passed over, the later ones are handled", "WARN")
+            if k_ == DRAIN_TRIES:                                          # ONE alarm names its key - never a word of his
+                try:
+                    from whatifs import notify as NT
+                    NT.send("pipeline_stop", f"A kept input of yours ({key}) failed {DRAIN_TRIES} runs in a row ({type(e).__name__}). It is kept, not lost, and passed "
+                            "over so your later inputs are handled; it needs a look.", tier="now", urgent=True, dedupe_key=f"pipeline_stop|kept|{key}")
+                except Exception as e2: log(f"the kept input's alarm was not sent ({type(e2).__name__})", "WARN")
+            continue
+        tries.pop(key, None)
         try: kv.delete(key)
         except Exception as e: log(f"a handled input's key was not deleted ({type(e).__name__}); the next run finds it handled", "WARN")
         n += 1
+    try:
+        if json.dumps(tries, sort_keys=True) != (S("DASH_DRAIN_TRIES") or "{}"): set_setting("DASH_DRAIN_TRIES", json.dumps(tries, sort_keys=True))
+    except Exception as e: log(f"the kept inputs' tries were not stored ({type(e).__name__})", "WARN")
     if n: log(f"dashboard inbox: {n} kept input(s) handled")
     return n

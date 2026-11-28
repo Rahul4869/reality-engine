@@ -425,7 +425,11 @@ def brief(now=None, st=None):
     if wk: lines.append(wk)
     if not lines:
         today = _js(S("STRATEGY_TODAY"), {})
-        if today.get("refused"): lines.append(f"Not taken today: {today['refused'][0]}.")
+        at_ = parse_iso(today.get("at")); age_h = (now - at_).total_seconds() / 3600 if at_ else None      # U1 fix 206 (open issue 234): check strategy_live's STALE_H rule, said in the brief
+        if age_h is not None and age_h > S("STRATEGY_STALE_H", float):
+            last = f"Not taken: {today['refused'][0]}" if today.get("refused") else "no change"
+            lines.append(f"Strategy has not reviewed for {age_h:.0f} hours (more than STRATEGY_STALE_H, {S('STRATEGY_STALE_H', float):.0f}): its last word is stale - {last}.")
+        elif today.get("refused"): lines.append(f"Not taken today: {today['refused'][0]}.")
         else: lines.append("Strategy today: no change." + (f" Counting: {', '.join(today.get('counting') or counting(now))}." if (today.get("counting") or counting(now)) else ""))
     return "*Decisions*\n" + "\n".join(f"- {l}" for l in lines)
 
@@ -513,7 +517,7 @@ def settle(now=None, st=None):
             if r["state"] == "decided" and age > dt.timedelta(hours=DECIDED_MAX_H) and not MEM.get(r["ticket"], st):
                 nums = _js(r.get("numbers"), {})
                 if not nums.get("resent"):
-                    out.append(_ticket(r["key"], r["new"], r["old"], r["id"], f"strategy|{r['id']}", now)); _save(st, r, numbers=dict(nums, resent=iso(now)))
+                    out.append(_ticket(r["key"], r["new"], r["old"], r["id"], f"strategy|{r['id']}", now))      # U1 fix 210 (open issue 239): "resent" is stamped by stamp_resent, AFTER the runner wrote it
                 else: _back(st, r, "void", "its ticket was never written: nothing changed", now)
             continue
         state, note = es
@@ -574,6 +578,18 @@ def _disposition(m):
     if t == "problem_memo": return ("deferred", f"read by Strategy: {(m.get('body') or {}).get('error_class') or 'the problem'} is repaired by its own department; counted in the week's line")
     return ("deferred", f"read by Strategy: a {t} is not Strategy's to close")
 
+def stamp_resent(output, brief=None, st=None, now=None):
+    """U1 fix 210 (open issue 239): the review's settle step - the runner calls it only AFTER the run's memos were written (runner.run: EMIT, then
+    settle). Each decision whose ticket settle() sent once more is stamped "resent" now; a review whose memos were not written stamps nothing, so the
+    next review sends it again (never void for a ticket that was not sent). Returns no memo to close."""
+    st = st or store(); now = now or now_utc()
+    for did in (output or {}).get("resent") or []:
+        r = next((x for x in _rows(st) if x["id"] == did), None)
+        if r is None: continue
+        nums = _js(r.get("numbers"), {})
+        if not nums.get("resent"): _save(st, r, numbers=dict(nums, resent=iso(now)))
+    return []
+
 def review(brief):
     """D1's run `review` (cli.strategy_round, in the daily learning job): settle, hands, the watch book and the intake (later steps), then at most ONE
     decision; every inbound memo dispositioned. Returns an Out: the decision's ticket goes out through the runner."""
@@ -596,7 +612,7 @@ def review(brief):
     cnt = counting(now)
     set_setting("STRATEGY_TODAY", json.dumps({"at": iso(now), "refused": refused[:3], "counting": cnt}))
     acts = {m["id"]: _disposition(m) for m in getattr(brief, "memos", None) or []}
-    return Out(output={"decided": c, "refused": refused, "hands": len(hs)}, memos=memos, memo_actions=acts,
+    return Out(output={"decided": c, "refused": refused, "hands": len(hs), "resent": [m["body"]["decision_ref"] for m in resend]}, memos=memos, memo_actions=acts,
                measures={"decisions": decided, "refused": len(refused), "counting": len(cnt), "risks": risks, "candidates": len(cands), "hands": len(hs)})
 
 def book(now=None, st=None):
