@@ -44,9 +44,7 @@
    "verdict": "B-OWNER_5495cc6_1.json"
   }
  ],
- "audit_queue": [
-  "V4"
- ],
+ "audit_queue": [],
  "audited": [
   {
    "at": "2026-11-14T03:18:41Z",
@@ -72,6 +70,11 @@
    "at": "2026-11-28T02:37:55Z",
    "batch": "V1c",
    "verdict": "VERDICT: FINDINGS (2) - two findings of B-OWNER's designer o"
+  },
+  {
+   "at": "2026-11-28T02:38:01Z",
+   "batch": "V4",
+   "verdict": "VERDICT: FINDINGS (2) - the re-audit of C25 by Fable (R2, 19"
   }
  ],
  "base_commit": "5495cc6b3ae3002b81634356becb42d1d90fd71a",
@@ -608,5 +611,5 @@
  "phase": "BUILD",
  "red_notes": [],
  "red_rounds": 0,
- "updated": "2026-11-28T02:37:55Z"
+ "updated": "2026-11-28T02:38:01Z"
 }
