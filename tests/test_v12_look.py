@@ -294,6 +294,8 @@ def test_22_the_sweep_judges_the_look_of_each_id_on_its_short_and_counts_it(bar)
                     {"id": "c", "outcome": "ok", "look": "the look bar was void by its canary: x"}, {"id": "d", "outcome": "ok", "look": "the look bar asked nothing of d"},
                     {"id": "e", "outcome": "ok"}])
     assert s["look_judged"] == 1 and s["bad_ids"] == ["b"], s
+    assert s["fail_classes"]["walk:look_not_judged"] == ["c", "d", "e"], s
+    assert "walk:look_not_judged" not in SW.summary([{"id": "a", "outcome": "ok", "look": "the look bar judged: x"}, {"id": "b", "outcome": "odd"}])["fail_classes"]
     src = inspect.getsource(SW.one)
     assert src.count('ok_l, res["look"] = look_of(core, ep, short=') == 3 and 'look_of(core, ep, short=ep)' in src and 'look_of(core, ep, short="SH" + ep[2:], long=True)' in src \
         and 'look_of(core, ep, short="SH" + ep[2:] if res.get("ladder") == "climbed" else None, long=True)' in src and 'if not ok_l: late.append("the look bar: "' in src

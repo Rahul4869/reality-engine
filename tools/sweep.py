@@ -595,6 +595,7 @@ def summary(results):
         for d in r.get("degraded", []): deg.setdefault(str(d)[:90], []).append(r["id"])
         for k in r.get("owner", []): own.setdefault(k, []).append(r["id"])
         for b in r.get("runs_bad", []) + r.get("memos_open", []): fails.setdefault("org:" + b, []).append(r["id"])
+        if r["outcome"] == "ok" and not str(r.get("look") or "").startswith("the look bar judged"): fails.setdefault("walk:look_not_judged", []).append(r["id"])   # v12 DRAWN-b (RULINGS_U2g 2.1): the look's counter is held HERE - the block reds any failure class, on every part
     return {"n": len(results), "outcomes": by, "opened_on_footage": sum(1 for r in results if r.get("opening") and r["outcome"] == "ok"),
             "released_without_cutdowns": sum(1 for r in results if str(r.get("release") or "").startswith("no cut-down") and r["outcome"] == "ok"),
             "money_agreed": sum(1 for r in results if str(r.get("money") or "").startswith("every paid picture") and r["outcome"] == "ok"),
@@ -603,7 +604,7 @@ def summary(results):
             "drawn_held": sum(1 for r in results if str(r.get("drawn") or "").startswith("the drawn arm held:") and r["outcome"] == "ok"),          # v12 DRAWN: every long-video id
             "drawn_ids": sum(1 for r in results if _drew(r.get("drawn")) and r["outcome"] == "ok"),                                                  # ... and a FLOOR: ids that drew a scene
             "floor_judged": sum(1 for r in results if str(r.get("floor") or "").startswith("the floor judged") and r["outcome"] == "ok"),
-            "look_judged": sum(1 for r in results if str(r.get("look") or "").startswith("the look bar judged") and r["outcome"] == "ok"),          # v12 DRAWN-b (L1c): the block holds it on C, D and E; L3: every produce and rehearsal id also asks look_bar (R16 (a))
+            "look_judged": sum(1 for r in results if str(r.get("look") or "").startswith("the look bar judged") and r["outcome"] == "ok"),          # v12 DRAWN-b (L1c): held in code by the class walk:look_not_judged (RULINGS_U2g 2.1); no block counter
             "strategy_month_held": sum(1 for r in results if str(r.get("strategy") or "").startswith("the month's decision held") and r["outcome"] == "ok"),      # v12 V4
             "hd_gated": sum(1 for r in results if str(r.get("hd") or "").startswith("the HD gate held") and r["outcome"] == "ok"),          # v12 B-OWNER: asked only of runs with the organisation on (R24)
             "owner_road_ok": sum(1 for r in results if str(r.get("screens") or "").startswith("the owner's road held") and r["outcome"] == "ok"),      # v12 B-OWNER: every id
