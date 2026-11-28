@@ -21,7 +21,7 @@ def test_the_cover_ceiling_is_recomputed_from_the_cost_models_own_prices(setting
     cell moved, the recomputed ceiling no longer equals the default - so a price change in the cost model turns this red, which a typed number never did.
     The hook lab is not moved: it is a part of LLM_EST_INR (its note), so moving it alone leaves a long video's text cost - and the ceiling - unchanged."""
     c, x = _ceiling(); default = float(core.DEFAULTS["CREDIT_COVER_MONTH_MAX_INR"][0])
-    assert round(x, 1) == 3267.3 and c == default, (x, c, default)
+    assert round(x, 1) == 2763.3 and c == default, (x, c, default)
     for cell, moved in (("LLM_EST_INR", "270"), ("PROBE_EST_INR", "100.5"), ("REPLAN_SHORT_INR", "136"), ("SHORT_VARIANT_EST_INR", "112"),
                         ("ORG_CAPS_INR", json.dumps({"D2": 400})), ("ORG_CAPS_INR", json.dumps({"D3": 220}))):
         setting(cell, moved); assert _ceiling()[0] != default, (cell, moved, _ceiling())

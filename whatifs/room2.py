@@ -1,7 +1,7 @@
 """Writers' room v2 (the default): diverse drafts from one strong writer, a blind cross-family jury, one checklist revision and the joke tournament. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json, re
-from whatifs.core import S, log, store, iso, scrub, FAKE
+from whatifs.core import S, log, store, iso, scrub
 
 JURY = (("jury", "Gemini Pro"), ("jury_flash", "Gemini Flash"), ("jury_claude", "Claude Sonnet"))
 JOKE_JURY = (("jury", "Gemini Pro"), ("jury_claude", "Claude Sonnet"))
@@ -74,7 +74,7 @@ def write(spine, wbrief, d, episode):
                         "Everything after the cold open follows the bible and the rules above.") for a in arch]
     from whatifs.org import salvo as SAL
     deep = SAL.depth_split(d, spine, episode, reqs)                           # v12 V4b step 8a (memo 3.8 B7; DQ 7): a launch pair video's k drafts carry the depth brief
-    if isinstance(d.get("depth"), dict): d["depth"]["sent"] = SAL.marked(reqs)    # the call site hashes the text between the markers of each prompt it really sends
+    if isinstance(d.get("depth"), dict) and not d["depth"].get("skipped"): d["depth"]["sent"] = SAL.marked(reqs)    # the call site hashes the text between the markers of each prompt it really sends
     drafts = ask_many(reqs)
     ok = [(a, x) for a, x in zip(arch, drafts) if isinstance(x, dict) and str(x.get("script", "")).strip()]
     carried = [c for c, x in zip(deep, drafts) if isinstance(x, dict) and str(x.get("script", "")).strip()]

@@ -94,7 +94,7 @@ def test_a_row_that_cannot_be_the_hero_says_why(market):
     assert "failing or retired" in CL.issues(CL.row(HEY), dead={HEY})[0] and CL.pick(_rows(), 0.07, dead={HEY})["row"]["id"] == H3
 
 def test_the_line_is_what_the_months_plan_can_pay_for_a_second_of_hero_clip(market, setting):
-    line = G.line_usd_s(); assert 0.040 < line < 0.045 and G.month_room_inr() == 5000 - 100 - 200 - 420, line          # Rs 5,000 less the reserve, the earmark and the organisation's caps
+    setting("SHORTS_PER_MONTH", "12"); line = G.line_usd_s(); assert 0.040 < line < 0.045 and G.month_room_inr() == 5000 - 100 - 200 - 420, line          # Rs 5,000 less the reserve, the earmark and the organisation's caps
     setting("FAL_HERO_MODEL", H3); assert G.line_usd_s() == pytest.approx(line)                                    # it does not depend on the PRICE of the model in use
     setting("SHORTS_PER_MONTH", "20"); more = G.line_usd_s(); assert more < line
     setting("SHORTS_PER_MONTH", "12"); setting("MONTH_RESERVE_INR", "900"); assert G.line_usd_s() < line
@@ -102,6 +102,7 @@ def test_the_line_is_what_the_months_plan_can_pay_for_a_second_of_hero_clip(mark
     setting("MONTH_CAP_OVERRIDES", ""); setting("LLM_EST_INR", "400"); assert G.line_usd_s() < line                    # dearer writing leaves less for a second of clip
 
 def test_the_stewards_replacement_for_the_hero_follows_the_same_rule(market, setting, monkeypatch):
+    setting("SHORTS_PER_MONTH", "12")                                                                  # MR-U1e: written for a 12-Short plan the money does not pay in full
     _quiet(monkeypatch); assert CL.choice()["row"]["id"] == HEY
     nxt = STW.next_candidate("hero", after=HEY); assert nxt == {"id": H3, "usd": pytest.approx(0.30)} == STW.next_candidate("hero")      # the best OTHER model by the same rule; three times the price: the price-ratio rule would have refused it
     h = STW.health(); h[HEY] = {"status": "dead"}; STW._save(h)
@@ -308,9 +309,9 @@ def test_a_thumbnail_is_booked_to_the_video_that_ordered_it_and_stays_the_same_p
 # ------------------------------------------------------------------ the month's split
 def test_the_months_split_says_how_many_shorts_fit(market, setting, monkeypatch):
     monkeypatch.setattr(G, "episodes_left_this_month", lambda: 4)
-    sp = G.split(DEC); assert sp["fits"] and sp["fit"] == sp["plan"] == 12 and sp["long_left"] == 4 and sp["reserve_inr"] == 300 and sp["free_inr"] > 900, sp
+    sp = G.split(DEC); assert sp["fits"] and sp["fit"] == sp["plan"] == 8 and sp["long_left"] == 4 and sp["reserve_inr"] == 300 and sp["free_inr"] > 900, sp
     assert sp["need_long_inr"] == pytest.approx(4 * G.full_episode_inr() * 1.1, abs=1) and sp["short_inr"] == pytest.approx(G.short_inr(), abs=0.1)
-    setting("FAL_HERO_MODEL", H3); sp = G.split(DEC); assert not sp["fits"] and sp["fit"] == 8, sp           # at USD 0.06 a second: eight, not twelve
+    setting("SHORTS_PER_MONTH", "12"); setting("FAL_HERO_MODEL", H3); sp = G.split(DEC); assert not sp["fits"] and sp["fit"] == 8, sp           # at USD 0.06 a second: eight, not twelve
     setting("FAL_HERO_MODEL", KLING); sp = G.split(DEC); assert not sp["fits"] and sp["fit"] == 5, sp        # at the price of the model this batch replaced: five
     setting("SHORTS_PER_MONTH", "4"); assert G.split(DEC)["fits"] and G.split(DEC)["fit"] == 4
     setting("SHORTS_PER_MONTH", "12"); setting("MONTH_RESERVE_INR", "0"); assert G.split(DEC)["fit"] == 6
@@ -320,6 +321,7 @@ def _made(n, now, apart_h=60):
     core.store().append("Specials", [{"ts": core.iso(now - dt.timedelta(hours=apart_h * (i + 1))), "id": f"SHM{i}", "kind": "short", "format": "S1", "status": "POSTED", "made": "x", "premise": f"p{i}"} for i in range(n)])
 
 def test_the_cadence_makes_what_fits_spread_over_the_month_and_the_owner_is_told_once(market, setting, monkeypatch):
+    setting("SHORTS_PER_MONTH", "12")                                                                  # MR-U1e: written for a 12-Short month plan (the month as shipped plans 8)
     _quiet(monkeypatch); now = DEC.replace(day=11); fit = {"fits": False, "fit": 5, "plan": 12, "days_left": 21, "short_inr": 233.0, "long_left": 3, "need_long_inr": 1700.0, "room_inr": 2500.0}
     monkeypatch.setattr(G, "split", lambda n=None: dict(fit)); _made(3, now)                              # three made this month (two of them in the last 7 days), the last 60 hours ago; five fit
     due, why = SH.cadence(now); assert not due and "252 hours apart" in why, why                          # 2 more in 21 days: one every 252 hours, not every 48

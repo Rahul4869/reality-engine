@@ -114,7 +114,11 @@ def _published(file_sha, script_sha):
 def _ledger_add(vid, kind, file_sha, script_sha, now=None):
     """The row of a successful upload. Never raises: a raise here would make a caller retry an upload that went through."""
     try: store().append(LEDGER, [{"ts": iso(now or now_utc()), "yt_id": vid, "kind": kind, "file_sha": file_sha, "script_sha": script_sha, "public_at": ""}])
-    except Exception as e: log(f"upload ledger: the row of {vid} was not written ({e})", "ERROR")
+    except Exception as e:
+        log(f"upload ledger: the row of {vid} was not written ({e})", "ERROR")
+        try:
+            from whatifs import notify as NT; NT.send("ledger_miss", f"The upload of {vid} went through, but its row on the upload ledger was not written: the guard against posting the same file twice does not know it. Nothing to tap.", tier="now", dedupe_key=f"ledger|{vid}")      # RUL-U1c C3: never only a log line
+        except Exception as x: log(f"upload ledger: the owner row for {vid} was not sent ({x})", "ERROR")
 
 def seen_public(yt_id, now=None):
     """Code SAW `yt_id` public: its ledger row gets `public_at`, once. True only when it set the minute; nothing with ANTI_MYTH_ON off or without a row.
@@ -134,6 +138,7 @@ def yt_upload(path, title, description, tags, publish_at=None, made_for_kids=Fal
     script_sha / ledger: v12 V4b step 2 (ANTI_MYTH_ON) - a file or spoken script already seen public is refused BEFORE any request (ReUpload); every
     upload but the upload check's (ledger=False) writes its row on tab Upload_Hashes."""
     led = bool(ledger) and S("ANTI_MYTH_ON", bool); fsha = _file_sha(path) if led else ""
+    if led and not fsha: raise RuntimeError(f"upload refused: {os.path.basename(str(path))} could not be read to take its hash (ANTI_MYTH_ON) - nothing was sent")      # RUL-U1c C3: an empty hash matches nothing - never an unguarded upload
     if led: _published(fsha, script_sha)                     # v12 V4b step 2: the ledger is read first - before the body, the offline stand-in and every request
     gate = bool(hd_gate) and not publish_at and (privacy or "public") == "public" and S("HD_GATE_ON", bool)
     body = yt_body(title, description, tags, publish_at, made_for_kids, ai_label, "private" if gate else privacy)

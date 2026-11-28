@@ -539,7 +539,7 @@ def pair(now=None):
         log(f"{fid}: the launch flagship's appetite plan is frozen with its Part 2 {p2}", "INFO", fid)
     for ep in (fid, p2):
         e = by.get(ep) or {}
-        if ep and e.get("status") == "AWAITING_APPROVAL" and "approved by him" in str((APP.plan_row(ep, st) or {}).get("note") or "") and pair_clear(ep, st)[0]:
+        if ep and e.get("status") == "AWAITING_APPROVAL" and "approved by him" in str((APP.plan_row(ep, st) or {}).get("note") or "") and pair_clear(ep, st)[0] and not CON._channel_lock():      # RUL-U1g 4 on the stack: his kept tap waits for the channel's two locks, as every Approve road
             out[ep] = CON.approve(ep)
     return out
 
@@ -625,12 +625,12 @@ def depth_split(d, spine, ep, reqs, now=None):
         r = ask("depth", DEPTH_SYS, f"PREMISE: {sp.get('premise', '')}\nPROMISE TO THE VIEWER: {GR.promise_text(sp.get('promise'))}\n"
                 f"THIS VIDEO: {d['salvo'].get('role')} of the launch pair", episode=ep, fake_key="depth", max_tokens=2000)
     except Exception as e:
-        log(f"salvo: the depth call failed - the drafts go plain: {scrub(e)[:160]}", "WARN", episode=ep); return plain
+        log(f"salvo: the depth call failed - the drafts go plain: {scrub(e)[:160]}", "WARN", episode=ep); d["depth"] = {"skipped": f"the depth call failed: {scrub(e)[:160]}"}; return plain      # RUL-U1c C5
     r = r if isinstance(r, dict) else {}
     ans = [str(x).strip() for x in (r.get("answers") or []) if str(x).strip()]
     add = " ".join(str(r.get("addendum") or "").split()[:DEPTH_WORDS])
     if len(ans) != 4 or not add:
-        log("salvo: the depth reply lacks its four answers or its addendum - the drafts go plain", "WARN", episode=ep); return plain
+        log("salvo: the depth reply lacks its four answers or its addendum - the drafts go plain", "WARN", episode=ep); d["depth"] = {"skipped": "the depth reply lacked its four answers or its addendum"}; return plain      # RUL-U1c C5
     nth = len(contests("depth")) + 1; k = min(2 if nth % 2 else 1, len(reqs) - 1)
     pick = [(nth + i) % len(reqs) for i in range(k)]
     for i in pick: reqs[i]["prompt"] = GR.insert_before_json(reqs[i]["prompt"], f"{DEPTH_OPEN}\n{add}\n{DEPTH_CLOSE}")
@@ -649,7 +649,7 @@ def marked(reqs):
 def depth_contest(d, ep, carried, win):
     """After the blind jury: d['depth']['won'] and ONE Contests row (card depth). Nothing without a depth pass."""
     dp = d.get("depth") if isinstance(d, dict) else None
-    if not isinstance(dp, dict): return
+    if not isinstance(dp, dict) or dp.get("skipped"): return      # RUL-U1c C5: a lost pass is no pass
     w = bool(carried[win]) if 0 <= win < len(carried) else False
     dp["won"] = w
     contest("depth", ep, len(carried), sum(1 for c in carried if c), w, f"contest {dp.get('nth')}: the jury chose {'a depth draft' if w else 'a plain draft'}")

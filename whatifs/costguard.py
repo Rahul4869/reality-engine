@@ -1,7 +1,7 @@
 """Cost controls that never touch pictures: the per-stage estimator, the spend monitor and the overrun ladder. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import json
-from whatifs.core import S, log, store, iso, now_utc, month_spend, set_setting, JOB
+from whatifs.core import S, log, store, iso, now_utc, month_spend, set_setting
 from whatifs import notify as NT
 
 # ---------------------------------------------------------------- the cost model: ONE table of lines (v12 V2d)
@@ -15,7 +15,7 @@ PROTECTED = ("policy_rescue", "owner_chat_cheap")
 PRODUCTION = ("scout", "showrunner", "bible", "premise_bank", "bench", "premise_judge", "owners_cut", "sequel", "psyche", "challenger", "challenger_base", "depth",
     "writer", "rewrite", "memo", "objections", "director_read", "director", "scene", "length", "format", "retention", "humanize", "factfix",
     "packager", "immersion", "hooks", "repair", "json_repair", "localize", "special", "pilot", "jury", "jury_flash", "jury_claude", "punchup",
-    "short_writer", "probe_gemini", "probe_claude", "floor_gemini", "floor_claude")
+    "short_writer", "probe_gemini", "probe_claude", "floor_gemini", "floor_claude", "look_claude")      # v12 DRAWN-b (RUL-U1f): the look bar's judge is a per-film production call, capped by look.month_cap
 UNCAPPED = ("strategy", "brief", "technique_intake", "occasions_check")      # the overhead roles with no cap of their own: the door (models._ring_fence) refuses them at BUDGET_MAINT_RESERVE_INR
 BATCH_JOBS = ("learn", "research", "brief", "money", "trends")      # the jobs nobody waits for: an overhead call in one of them may go through the Batch API at half price (models.batch_due)
 
@@ -256,7 +256,7 @@ def stage_of(item, provider=""):
 # ---------------------------------------------------------------- spend monitor
 def spend_monitor():
     """One email per threshold per month. Returns the thresholds mailed now."""
-    from whatifs import governor as G, publish as PUB
+    from whatifs import governor as G
     from whatifs.org import finance as FIN
     cap = G.cap_inr(); spent = month_spend() - FIN.cover(); mk = now_utc().strftime("%Y-%m"); sent = str(S("SPEND_WARN_SENT") or "")      # v12 V4: his own money = governor.own_spend_inr() (its own month_spend: tests/test_v9_cost.py plants the spend here)
     out = []

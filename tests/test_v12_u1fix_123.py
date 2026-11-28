@@ -5,7 +5,7 @@ its hook. On the plain lab road (no `second`, source not "short") the check now 
 from whatifs import hooks as HOOKS, contract as CON
 from tests.test_hooks import SCRIPT, fake_ask
 
-MOVED = "the hook lab's chosen line is not the first spoken line (a later rewrite changed it)"
+MOVED = "the hook lab's chosen line is not the first spoken line of the finished narration (a rewrite changed it)"      # RUL-U1g (6): V4b's line 68 of p_hook answers this road first
 
 
 def _lab():
@@ -25,3 +25,17 @@ def test_the_lab_road_passes_with_the_line_in_place():
     rec, line = _lab()
     assert HOOKS.verify_in_narration(rec, [{"text": line}, {"text": "The water starts to change colour."}]) is True and rec["status"] == "applied"
     assert CON.p_hook({"hook_rec": rec, "d": {}}) == (CON.PASS, f"{len(rec['candidates'])} candidates, winner chosen by judge")      # today's words
+
+
+def test_the_lab_road_backstop_fails_a_status_line_68_lets_by():
+    rec, _line = _lab(); rec["status"] = "needs_human_choice"; rec["lost_line"] = "second"      # RUL-U1i (1): no `second` road - line 68 lets it by, only line 78 can refuse it
+    assert CON.p_hook({"hook_rec": rec, "d": {}}) == (CON.FAIL, "the hook lab's chosen line is not the first spoken line (a later rewrite changed it)")
+
+
+def test_the_lab_road_backstop_fails_a_record_with_no_status():
+    rec, _line = _lab(); rec.pop("status")      # RUL-U1j (TG 5): an older record - applied true, no status at all; only line 78 can refuse it
+    assert CON.p_hook({"hook_rec": rec, "d": {}}) == (CON.FAIL, "the hook lab's chosen line is not the first spoken line (a later rewrite changed it)")
+
+def test_the_lab_road_backstop_fails_an_applied_record_still_pending():
+    rec, _line = _lab(); rec["status"] = "pending"      # RUL-SWEEP-U1 (RD-U1j-TG F2): applied true, status never set to applied - only line 78 can refuse it
+    assert CON.p_hook({"hook_rec": rec, "d": {}}) == (CON.FAIL, "the hook lab's chosen line is not the first spoken line (a later rewrite changed it)")

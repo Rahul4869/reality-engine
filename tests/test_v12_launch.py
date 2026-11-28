@@ -29,6 +29,15 @@ def _dr_render(tmp_path, name, data=None):
 
 def _dr_ledger(): return [(r["yt_id"], r["kind"], r["file_sha"], r["script_sha"], r["public_at"]) for r in core.store().rows("Upload_Hashes")]
 
+def _readable(name):
+    """RUL-U1d B: a readable stand-in render for an upload made with ANTI_MYTH_ON TRUE (RUL-U1c C3 refuses a file it cannot hash). Its bytes are unique to
+    the call, so the ledger matches nothing across uploads - as the old unreadable "x/<name>" never did either - and its base name keeps the fake id ("FAKE_" + name)."""
+    import tempfile, uuid
+    d = os.path.join(tempfile.gettempdir(), "rul_u1d_renders"); os.makedirs(d, exist_ok=True)
+    p = os.path.join(d, name)
+    with open(p, "wb") as fh: fh.write(f"{name}|{uuid.uuid4().hex}".encode("utf-8"))
+    return p
+
 def _dr_title(vid):
     from whatifs import publish as PUB
     return ((PUB._fake_get("youtube", vid).get("sent") or {}).get("snippet") or {}).get("title")
@@ -164,7 +173,7 @@ def test_the_long_videos_upload_carries_the_hash_of_its_scripts_words(monkeypatc
     seen = {}; real = EPX._finish
     def spy(st, ep, out, S_, files, vo, tl, units, *a, **k): seen.update(shots=S_["shots"], units=units); return real(st, ep, out, S_, files, vo, tl, units, *a, **k)
     monkeypatch.setattr(EPX, "_finish", spy)
-    r = EPX.produce((core.now_utc() + dt.timedelta(hours=10)).strftime("%Y-%m-%dT%H:%M:%SZ"), episode_id="EP209912300900"); assert r.get("ok"), r
+    r = EPX.produce((core.now_utc() + dt.timedelta(hours=10)).strftime("%Y-%m-%dT%H:%M:%SZ"), episode_id="EP209912301000"); assert r.get("ok"), r
     words = " ".join(str(u.get("text") or "") for u in MAKER.script_units(seen["shots"], seen["units"]))
     rows = core.store().rows("Upload_Hashes"); assert [(x["kind"], x["script_sha"]) for x in rows] == [("long", PUB.spoken_sha(words))] and rows[0]["script_sha"], rows
     assert PUB.spoken_sha(" A  b ") == PUB.spoken_sha("a b") == hashlib.sha256(b"a b").hexdigest() and PUB.spoken_sha(" ... ") == ""
@@ -814,7 +823,7 @@ def test_each_act_is_read_back_from_the_stand_in(monkeypatch, setting):
     time with it; YouTube's refusal of a time for a video that was ever public is played."""
     from whatifs import publish as PUB
     monkeypatch.setattr(PUB, "FAKE_FAULTS", {})
-    vid = PUB.yt_upload("x/V4B5A.mp4", "T", "D", ["t"], publish_at="2099-01-01T10:00:00Z")
+    vid = PUB.yt_upload(_readable("V4B5A.mp4"), "T", "D", ["t"], publish_at="2099-01-01T10:00:00Z")
     cid = PUB.yt_comment(vid, "Guilty or not guilty?")
     assert cid == "FAKEC_" + hashlib.sha1("Guilty or not guilty?".encode("utf-8")).hexdigest()[:8], cid
     assert PUB._fake_get("youtube", vid)["comments"] == [{"id": cid, "text": "Guilty or not guilty?"}]
@@ -826,7 +835,7 @@ def test_each_act_is_read_back_from_the_stand_in(monkeypatch, setting):
     assert PUB.yt_set_privacy(vid, "public") and PUB.yt_read(vid)["privacy"] == "public" and "publish_at" not in PUB.yt_read(vid)
     assert PUB.yt_schedule(vid, "2099-02-01T10:00:00Z") is False and PUB.yt_read(vid)["privacy"] == "public" and "publish_at" not in PUB.yt_read(vid)
     assert PUB.yt_set_privacy(vid, "private") and PUB.yt_schedule(vid, "2099-02-01T10:00:00Z") is False and "publish_at" not in PUB.yt_read(vid)
-    sent_public = PUB.yt_upload("x/V4B5B.mp4", "T", "D", ["t"], hd_gate=False)                      # uploaded public: it read public from its first minute
+    sent_public = PUB.yt_upload(_readable("V4B5B.mp4"), "T", "D", ["t"], hd_gate=False)                      # uploaded public: it read public from its first minute
     assert PUB.yt_set_privacy(sent_public, "private") and PUB.yt_schedule(sent_public, "2099-02-01T10:00:00Z") is False
     one = PUB.yt_stats([vid, "OTHER1", vid, ""]); assert set(one) == {vid, "OTHER1"} and one == PUB.yt_stats(["OTHER1", vid]), one
     assert all(set(v) == {"views", "likes", "comments"} and all(isinstance(x, int) and x >= 0 for x in v.values()) for v in one.values()), one
@@ -839,7 +848,7 @@ def test_a_refused_act_returns_what_youtube_kept_and_a_refused_jury_comment_is_n
     from whatifs import publish as PUB, community as CM
     monkeypatch.setattr(PUB, "email", lambda *a, **k: True); monkeypatch.setattr(CM.NT, "mail", lambda *a, **k: None); setting("JURY_COMMENT_ON", "TRUE")
     monkeypatch.setattr(PUB, "FAKE_FAULTS", {"youtube": {"refuse": ("comment", "schedule", "playlist", "description")}})
-    vid = PUB.yt_upload("x/V4B5R.mp4", "T", "D", ["t"], publish_at="2099-01-01T10:00:00Z")
+    vid = PUB.yt_upload(_readable("V4B5R.mp4"), "T", "D", ["t"], publish_at="2099-01-01T10:00:00Z")
     assert PUB.yt_comment(vid, "Guilty?") is None and PUB.yt_schedule(vid, "2099-01-08T10:00:00Z") is False
     assert PUB.yt_playlist(vid, "P") is False
     assert PUB.yt_set_description(vid, "new") is False
@@ -1100,12 +1109,29 @@ def test_his_approve_of_a_pair_video_not_clear_is_kept_and_salvo_pair_approves_i
     assert out == "Kept: the flagship waits for its Part 2: not made yet. It goes public by itself when that is done." and called == [], out
     assert str(APP.plan_row("EPF1")["note"]).startswith("approved by him 20")
     assert CON._answer({"id": "X2", "dedupe_key": "silence|EPF1"}, "APPROVE EPF1").startswith("Kept: the flagship waits") and called == []
+    monkeypatch.setattr(CON, "_channel_lock", lambda: "")      # RUL-U1d A: the channel's two locks open - RUL-U1c A1 asks them before salvo.pair approves a kept tap (that leg: test_a_kept_tap_waits_for_the_channels_two_locks_before_salvo_pair_approves)
     assert SAL.pair(NOW_SV) == {} and called == []
     setting("SALVO_PART2", "EPP2"); APP.plan("EPP2", {"salvo": {"role": "part2"}})
     core.store().append("Episodes", [{"episode_id": "EPP2", "yt_id": "VIDP2", "status": "SCHEDULED"}])
     assert SAL.pair(NOW_SV) == {"frozen": "EPF1", "EPF1": "approved EPF1"} and called == ["EPF1"]
     assert CON._answer({"id": "X3", "dedupe_key": "review|EPO"}, "APPROVE EPO") == "approved EPO"
     setting("SALVO_PART2", "STOOD_DOWN"); assert CON._answer({"id": "X4", "dedupe_key": "review|EPF1"}, "APPROVE EPF1") == "approved EPF1"
+
+
+def test_a_kept_tap_waits_for_the_channels_two_locks_before_salvo_pair_approves(monkeypatch, setting):
+    """RUL-U1c A1 (RUL-U1g 4 on the U1 + V4b stack): his kept tap is an Approve road too - salvo.pair approves it only when the channel's two locks are open."""
+    from whatifs import contract as CON
+    from whatifs.org import appetite as APP
+    SAL, rec = _p2_sheet(monkeypatch, setting, status="AWAITING_APPROVAL")
+    setting("ORG_ON", "TRUE"); setting("PALACE_ON", "TRUE"); setting("APPETITE_ON", "TRUE"); APP.plan("EPF1", {"salvo": {"role": "flagship"}})
+    called = []; monkeypatch.setattr(CON, "approve", lambda ep: called.append(ep) or f"approved {ep}")
+    assert CON._answer({"id": "X1", "dedupe_key": "review|EPF1"}, "APPROVE EPF1").startswith("Kept: ") and called == []
+    setting("SALVO_PART2", "EPP2"); APP.plan("EPP2", {"salvo": {"role": "part2"}})
+    core.store().append("Episodes", [{"episode_id": "EPP2", "yt_id": "VIDP2", "status": "SCHEDULED"}])
+    monkeypatch.setattr(CON, "_channel_lock", lambda: "uploads are not confirmed open yet")
+    out = SAL.pair(NOW_SV); assert "EPF1" not in out and called == [], out
+    monkeypatch.setattr(CON, "_channel_lock", lambda: "")
+    assert SAL.pair(NOW_SV).get("EPF1") == "approved EPF1" and called == ["EPF1"]
 
 
 def test_salvo_pair_runs_first_in_every_tick_before_resume_held():
@@ -1233,7 +1259,7 @@ def test_a_fire_puts_part2_s_link_first_in_the_flagship_s_description_once_part2
     st = core.store(); now = core.now_utc(); nine = (now - dt.timedelta(hours=9)).strftime("%Y-%m-%dT%H:%M:%SZ")
     row = lambda e: next(r for r in st.rows("Episodes") if r["episode_id"] == e)
     def pair(f, p2, mark=""):
-        vf = PUB.yt_upload(f"x/{f}.mp4", "Flag", "Old words", ["t"], hd_gate=False); vp = PUB.yt_upload(f"x/{p2}.mp4", "P2", "D", ["t"], publish_at="2099-01-01T10:00:00Z")
+        vf = PUB.yt_upload(_readable(f"{f}.mp4"), "Flag", "Old words", ["t"], hd_gate=False); vp = PUB.yt_upload(_readable(f"{p2}.mp4"), "P2", "D", ["t"], publish_at="2099-01-01T10:00:00Z")
         st.append("Episodes", [{"episode_id": f, "yt_id": vf, "status": "LIVE", "slot_et": nine, "pkg_check": mark}, {"episode_id": p2, "yt_id": vp, "status": "SCHEDULED"}])
         j = json.loads(APP.plan(f, {"salvo": {"role": "flagship"}})["plan"]); j["held"] = p2; js = json.dumps(j, sort_keys=True)
         st.update("Appetite_Plans", "ep", f, {"plan": js, "sha": APP.sha(js), "state": "frozen"}); APP.uploaded(f, vf)
@@ -1257,7 +1283,7 @@ def test_a_fire_puts_part2_s_link_first_in_the_flagship_s_description_once_part2
     assert APP.fire("EPAF5", vf3, 400.0, 375.0, 9, "the appetite line")
     assert APP.acts(APP.plan_row("EPAF5"))["c"] == "refused: YouTube did not take the description" and PUB.yt_read(vf3)["description"] == "Old words"
     PUB.FAKE_FAULTS.clear(); assert APP.act("EPAF5")["c"].startswith("refused") and PUB.yt_read(vf3)["description"] == "Old words"   # never made later
-    vl = PUB.yt_upload("x/EPAL7.mp4", "L", "D", ["t"], hd_gate=False); st.append("Episodes", [{"episode_id": "EPAL7", "yt_id": vl, "status": "LIVE", "slot_et": nine}])
+    vl = PUB.yt_upload(_readable("EPAL7.mp4"), "L", "D", ["t"], hd_gate=False); st.append("Episodes", [{"episode_id": "EPAL7", "yt_id": vl, "status": "LIVE", "slot_et": nine}])
     APP.plan("EPAL7", {}); APP.uploaded("EPAL7", vl); assert APP.fire("EPAL7", vl, 400.0, 375.0, 9, "the appetite line")
     assert APP.acts(APP.plan_row("EPAL7"))["c"] == "not made: no held Part 2 - nothing to link" and PUB.yt_read(vl)["description"] == "D"
 
@@ -1274,7 +1300,7 @@ def test_a_fire_posts_the_channel_s_comment_on_the_flagship_only_after_part2_rea
     st = core.store(); now = core.now_utc(); nine = (now - dt.timedelta(hours=9)).strftime("%Y-%m-%dT%H:%M:%SZ")
     L = "The ice shelf cracked open in nineteen minutes flat"
     def pair(f, p2, line=L):
-        vf = PUB.yt_upload(f"x/{f}.mp4", "Flag", "Old words", ["t"], hd_gate=False); vp = PUB.yt_upload(f"x/{p2}.mp4", "P2", "D", ["t"], publish_at="2099-01-01T10:00:00Z")
+        vf = PUB.yt_upload(_readable(f"{f}.mp4"), "Flag", "Old words", ["t"], hd_gate=False); vp = PUB.yt_upload(_readable(f"{p2}.mp4"), "P2", "D", ["t"], publish_at="2099-01-01T10:00:00Z")
         st.append("Episodes", [{"episode_id": f, "yt_id": vf, "status": "LIVE", "slot_et": nine}, {"episode_id": p2, "yt_id": vp, "status": "SCHEDULED"}])
         j = json.loads(APP.plan(f, {"salvo": {"role": "flagship"}})["plan"]); j["held"] = p2; j["line"] = line; js = json.dumps(j, sort_keys=True)
         st.update("Appetite_Plans", "ep", f, {"plan": js, "sha": APP.sha(js), "state": "frozen"}); APP.uploaded(f, vf)
@@ -1318,7 +1344,7 @@ def test_a_fire_releases_the_held_part2_through_hdgate_go_public_at_the_act_s_mo
     card = lambda e: next(o for o in st.rows("Owner_Actions") if o.get("dedupe_key") == f"review|{e}")
     hd = lambda v: [w for w in st.rows("HD_Wait") if w.get("vid") == v]
     def pair(f, p2, line, status):
-        vf = PUB.yt_upload(f"x/{f}.mp4", "Flag", "Old words", ["t"], hd_gate=False); vp = PUB.yt_upload(f"x/{p2}.mp4", "P2", "D", ["t"], publish_at=cal, hd_gate=False)
+        vf = PUB.yt_upload(_readable(f"{f}.mp4"), "Flag", "Old words", ["t"], hd_gate=False); vp = PUB.yt_upload(_readable(f"{p2}.mp4"), "P2", "D", ["t"], publish_at=cal, hd_gate=False)
         st.append("Episodes", [{"episode_id": f, "yt_id": vf, "status": "LIVE", "slot_et": nine}, {"episode_id": p2, "yt_id": vp, "status": status, "slot_et": cal}])
         st.append("Owner_Actions", [{"id": f"OA-{p2}", "kind": "contract_review", "episode_id": p2, "status": "OPEN", "dedupe_key": f"review|{p2}"}])
         j = json.loads(APP.plan(f, {"salvo": {"role": "flagship"}})["plan"]); j["held"] = p2; j["line"] = line; js = json.dumps(j, sort_keys=True)
@@ -1424,7 +1450,7 @@ def test_the_appetite_row_its_undo_and_bring_it_back_go_through_the_one_door_and
     downs = lambda e: [v for v in st.rows("Owner_Verdicts") if v.get("ref") == e and v.get("verdict") == "down"]
     backs = lambda e: [o for o in rows(e) if "APPETITE BACK" in str(o.get("buttons")) and o.get("status") in ("OPEN", "QUEUED")]
     def pair(f, p2, held=True, status="AWAITING_APPROVAL"):
-        vf = PUB.yt_upload(f"x/{f}.mp4", "Flag", "Old words", ["t"], hd_gate=False); vp = PUB.yt_upload(f"x/{p2}.mp4", "P2", "D", ["t"], publish_at=cal, hd_gate=False)
+        vf = PUB.yt_upload(_readable(f"{f}.mp4"), "Flag", "Old words", ["t"], hd_gate=False); vp = PUB.yt_upload(_readable(f"{p2}.mp4"), "P2", "D", ["t"], publish_at=cal, hd_gate=False)
         st.append("Episodes", [{"episode_id": f, "yt_id": vf, "status": "LIVE", "slot_et": nine, "title": f"Title {f}"}, {"episode_id": p2, "yt_id": vp, "status": status, "slot_et": cal}])
         j = json.loads(APP.plan(f, {"salvo": {"role": "flagship"}})["plan"]); j["line"] = "The ice shelf cracked open in nineteen minutes flat"
         if held: j["held"] = p2
@@ -2075,12 +2101,12 @@ def test_the_sweeps_salvo_flag_reaches_the_child_and_the_summary_counts_the_salv
     cmds = []
     monkeypatch.setattr(SW.subprocess, "run", lambda cmd, **k: cmds.append(cmd) or types.SimpleNamespace(returncode=0))
     for flag in (True, False):
-        a = types.SimpleNamespace(logs=str(tmp_path), repo=ROOT, mode="produce", slot_h=10, org="on", drawn_moments=False, salvo=flag, timeout=5, keep=True)
+        a = types.SimpleNamespace(logs=str(tmp_path), repo=ROOT, mode="produce", slot_h=10, org="on", drawn_moments=False, drawn_template="", salvo=flag, timeout=5, keep=True)
         SW.child("EP209901010900", a, str(tmp_path / ("b" + str(flag))))
     assert "--salvo" in cmds[0] and "--salvo" not in cmds[1], cmds
     assert SW.summary([{"id": "A", "outcome": "ok", "salvo": "the salvo held: x"}, {"id": "B", "outcome": "ok", "salvo": "the salvo's flagship stood: x"}, {"id": "C", "outcome": "odd", "salvo": "the salvo held: x"}])["salvo_held"] == 1
     src = open(os.path.join(ROOT, "tools", "sweep.py"), encoding="utf-8").read()
-    assert 'p.add_argument("--salvo", action="store_true"' in src and "a.drawn_moments, a.salvo)" in src
+    assert 'p.add_argument("--salvo", action="store_true"' in src and "a.drawn_moments, a.drawn_template, a.salvo)" in src
     assert 'if not ok_v: res["outcome"] = "odd"; res["problems"].append("the salvo: " + res["salvo"]); res["error"] = res["problems"][-1][:300]' in src          # RULINGS_U3j 8: only a walk that failed ends the id "odd"
 
 
@@ -2090,7 +2116,7 @@ def test_a_planted_hour_48_reading_fires_the_plan_by_v4s_rule_and_orders_one_fol
     from whatifs import ladder as LAD, publish as PUB
     from whatifs.org import appetite as APP
     setting("ORG_ON", "TRUE"); setting("PALACE_ON", "TRUE"); setting("APPETITE_ON", "TRUE"); st = core.store(); now = core.now_utc()
-    vl = PUB.yt_upload("x/EPRH1.mp4", "L", "D", ["t"], hd_gate=False); st.append("Episodes", [{"episode_id": "EPRH1", "yt_id": vl, "status": "LIVE", "slot_et": (now - dt.timedelta(hours=48)).strftime("%Y-%m-%dT%H:%M:%SZ")}])
+    vl = PUB.yt_upload(_readable("EPRH1.mp4"), "L", "D", ["t"], hd_gate=False); st.append("Episodes", [{"episode_id": "EPRH1", "yt_id": vl, "status": "LIVE", "slot_et": (now - dt.timedelta(hours=48)).strftime("%Y-%m-%dT%H:%M:%SZ")}])
     r = APP.plan("EPRH1", {}); APP.uploaded("EPRH1", vl); assert r["state"] == "frozen" and APP.sha(r["plan"]) == r["sha"]
     st.append("Appetite", [{"ts": core.iso(now), "ep": "EPRH1", "yt_id": vl, "h": "48", "views": "1200", "likes": "40", "comments": "6", "askers": "1", "line": "800", "fired": "TRUE"}])
     assert APP.fire("EPRH1", vl, 1200.0, 800.0, 48, "the 48-hour rule") and not APP.fire("EPRH1", vl, 1300.0, 800.0, 48, "the 48-hour rule")
@@ -2129,12 +2155,12 @@ def _salvo_walk_world(monkeypatch, setting):
     for k in ("ORG_ON", "PALACE_ON", "APPETITE_ON", "ANTI_MYTH_ON", "SALVO_ON", "TWO_SCREENS_ON"): setting(k, "TRUE")
     setting("UPLOAD_LOCK", "off")                                                      # uploads are open (launch.uploads_open): act a releases Part 2 only then
     st = core.store(); t0 = core.now_utc() + dt.timedelta(hours=10); iso0 = t0.strftime("%Y-%m-%dT%H:%M:%SZ")
-    vf = PUB.yt_upload("x/EPSV1.mp4", "Flag", "Old words", ["t"], publish_at=None, privacy="private", hd_gate=False)
+    vf = PUB.yt_upload(_readable("EPSV1.mp4"), "Flag", "Old words", ["t"], publish_at=None, privacy="private", hd_gate=False)
     dj = json.dumps({"salvo": {"role": "flagship", "cliff": "the door was open", "sequel": {"premise": "what the door hid", "line": "The ice shelf cracked open in nineteen minutes flat"}}})
     st.append("Episodes", [{"episode_id": "EPSV1", "yt_id": vf, "status": "AWAITING_APPROVAL", "slot_et": iso0, "draw_json": dj}])
     APP.plan("EPSV1", {"salvo": {"role": "flagship"}}); APP.uploaded("EPSV1", vf); setting("SALVO_FLAGSHIP", "EPSV1")
     def produce(slot, episode_id=None, eps_left=None, fix=False):
-        vp = PUB.yt_upload("x/EPSV2.mp4", "P2", "D", ["t"], publish_at=slot, hd_gate=False)
+        vp = PUB.yt_upload(_readable("EPSV2.mp4"), "P2", "D", ["t"], publish_at=slot, hd_gate=False)
         core.store().append("Episodes", [{"episode_id": "EPSV2", "yt_id": vp, "status": "SCHEDULED", "slot_et": slot}]); setting("SALVO_PART2", "EPSV2"); core.store().append("Script_Fingerprints", [{"ts": core.iso(), "episode_id": "EPSV2", "sig": "1,2,3"}])      # the row room.py:368's guard writes on the real road (RULING_V4bFS)
         return {"ok": True, "episode": "EPSV2"}
     monkeypatch.setattr(MG, "_produce_slot", lambda eps: "2099-01-01T10:00:00Z"); monkeypatch.setattr(EP, "produce", produce)
@@ -2172,7 +2198,7 @@ def test_the_salvo_breaks_at_part2_when_its_originality_guard_did_not_run(monkey
     from whatifs import episode as EP, publish as PUB
     _salvo_walk_world(monkeypatch, setting)
     def produce(slot, episode_id=None, eps_left=None, fix=False):
-        vp = PUB.yt_upload("x/EPSV2.mp4", "P2", "D", ["t"], publish_at=slot, hd_gate=False)
+        vp = PUB.yt_upload(_readable("EPSV2.mp4"), "P2", "D", ["t"], publish_at=slot, hd_gate=False)
         core.store().append("Episodes", [{"episode_id": "EPSV2", "yt_id": vp, "status": "SCHEDULED", "slot_et": slot}]); setting("SALVO_PART2", "EPSV2")
         return {"ok": True, "episode": "EPSV2"}      # item 3's plant WITHOUT the fingerprint row
     monkeypatch.setattr(EP, "produce", produce)

@@ -35,7 +35,7 @@ def read(now=None):
     have = {(str(r.get("yt_id")), str(r.get("h"))) for r in st.rows("Appetite")}
     due, plans = {}, {}
     for p in st.rows("Appetite_Plans"):
-        vid, e = str(p.get("yt_id") or ""), eps.get(p.get("ep"))
+        e = eps.get(p.get("ep")); vid = str(p.get("yt_id") or (e or {}).get("yt_id") or "")      # RUL-U1c C4: a plan row whose yt_id write failed reads the Episodes row's id (episode.py:953 writes it first)
         t = parse_iso((e or {}).get("slot_et") or "")
         if not vid or t is None: continue                       # nothing uploaded yet, or no episode row: nothing to read
         h = int((now - t).total_seconds() // 3600)
@@ -138,10 +138,19 @@ def fire(key, y, v, base, h, why):
 
 def acts(r):
     """The acts recorded on plan row `r` (memo 3.6, step 6c): {act: "<made | done | pending | refused | not made>: <what was read back>"} from its
-    cell `acts` - OUTSIDE the sealed JSON, whose `acts` [] stays as it was hashed (section 13's choice 1). An unreadable cell is {}."""
-    try: a = json.loads(str((r or {}).get("acts") or "") or "{}")
-    except Exception: return {}
-    return a if isinstance(a, dict) else {}
+    cell `acts` - OUTSIDE the sealed JSON, whose `acts` [] stays as it was hashed (section 13's choice 1). An unreadable cell refuses every act (an ERROR; RUL-U1c C1)."""
+    cell = str((r or {}).get("acts") or "")
+    try: a = json.loads(cell or "{}")
+    except Exception: a = None
+    if isinstance(a, dict): return a
+    ep = (r or {}).get("ep")
+    log(f"appetite: the acts cell of {ep} cannot be read ({cell[:80]!r}) - no act is made again", "ERROR", ep)      # RUL-U1c C1: never {} (every act would run again: a second public comment)
+    try:
+        from whatifs import notify as NT
+        NT.send("appetite", f"The record of what was done for '{ep}' after Part 1 passed its appetite line could not be read, so no act is made again (no second comment, no second release). Nothing to do.",
+                episode=ep, expires_h=168, dedupe_key=f"appetite|acts|{ep}")      # RUL-U1c C1: an owner row for a refused act (it never raises)
+    except Exception as x: log(f"appetite: the row to him for the unreadable acts of {ep} was not sent: {str(x)[:120]}", "WARN", ep)
+    return {k: "refused: the acts cell could not be read - no act is made again" for k in "abcde"}
 
 def retry(now=None):
     """v12 V4b step 6c (memo 3.6, R23 (12)): every tick, BEFORE `hdgate.tick` (manage.tick), the acts of every FIRED plan row that are still
@@ -157,10 +166,10 @@ def retry(now=None):
 
 
 def _since(r, now=None):
-    """Seconds since plan row `r` fired (its cell `fired_at`, written by `fire`; an older row: its `ts`); 0 when neither reads."""
+    """Seconds since plan row `r` fired (its cell `fired_at`, written by `fire`; an older row: its `ts`); None when neither reads."""
     try: t = parse_iso(str(r.get("fired_at") or r.get("ts") or ""))
     except Exception: t = None
-    return max(0.0, ((now or now_utc()) - t).total_seconds()) if t else 0.0
+    return max(0.0, ((now or now_utc()) - t).total_seconds()) if t else None      # RUL-U1c C2: an unreadable time is never "0 seconds" (the act would never lapse)
 
 def _act_a(r, p, eps, st, now=None):
     """ACT a (memo 3.6; R15, R18, R19 (12), R23 (12)): RELEASE THE HELD PART 2. ONE condition for both statuses: `contract.clear_to_post(<part 2>,
@@ -183,7 +192,7 @@ def _act_a(r, p, eps, st, now=None):
             if w and w.get("state") == HG.WAITING: HG.block(vid, f"its early release was stopped: {why}", got, now)
             return f"pending: {why}"
         if not got: return "pending: Part 2 was not read"
-        if not HG.ready(got) and _since(r, now) < S("HD_LONG_CAP_MIN", int) * 60: return "pending: YouTube has not processed Part 2 in HD yet"
+        if not HG.ready(got) and (_since(r, now) is None or _since(r, now) < S("HD_LONG_CAP_MIN", int) * 60): return "pending: YouTube has not processed Part 2 in HD yet"
         if w is None: HG.enter(vid, "long", now)
         ok, note = HG.go_public(vid, now, "appetite")
         if not ok: return "pending: Part 2 was not read at the door" if note == "not read" else f"refused: {note}"
@@ -235,10 +244,10 @@ def _word(r, held, said, eps, st, now=None):
         return NT.send("appetite", f"'{title}' passed its appetite line at hour {h}, but Part 2 was not released early ({said.split(':', 1)[-1].strip()}). "
                        "Part 2 stays as it was. Nothing to do.", episode=held, expires_h=168, dedupe_key=f"appetite|{held}")
     L = _num(fr.get("base")) if h <= 47 else S("BREAKOUT_MIN_VIEWS", float)
-    rd = next((x for x in st.rows("Appetite") if str(x.get("video_key")) == str(fr.get("key")) and int(_num(x.get("hour"))) == h), {})
-    n = int(_num(rd.get("ask_authors"))); vid = str((eps.get(held) or {}).get("yt_id") or "")
-    return NT.send("appetite", f"Part 2 is public since {iso(now or now_utc())}: '{title}' had {views} views at hour {h} (the line was {L:g}) and {n} viewers "
-                   f"asked for more. Saturday's slot stays empty. Optional, ten seconds in Studio: pin the top comment, set the end screen to Part 2 "
+    rd = next((x for x in st.rows("Appetite") if str(x.get("ep")) == str(r.get("ep")) and int(_num(x.get("h"))) == h), None)      # RUL-U1c A3: the row `read` writes (ep, h, askers)
+    asked = f"{int(_num(rd.get('askers')))} viewers asked for more" if rd else "the viewers who asked for more were not read for that hour"; vid = str((eps.get(held) or {}).get("yt_id") or "")
+    return NT.send("appetite", f"Part 2 is public since {iso(now or now_utc())}: '{title}' had {views} views at hour {h} (the line was {L:g}) and {asked}. "
+                   f"Saturday's slot stays empty. Optional, ten seconds in Studio: pin the top comment, set the end screen to Part 2 "
                    f"https://youtu.be/{vid}. Undo makes it private again: your own hold on your own video, never the engine's.",
                    [("Undo", f"APPETITE UNDO {held}")], episode=held, expires_h=168, dedupe_key=f"appetite|{held}")
 
@@ -344,7 +353,7 @@ def act(ep, now=None):
     if todo("d"): done["d"] = "done: nothing sent - every long video is in its family's playlist since its upload (episode.py)"
     if todo("e"): done["e"] = _act_e(r, eps, st, now)             # e - THE NEXT RELATED SHORT FORWARD, for every long video (the override's too)
     lim = S("APPETITE_PENDING_H", int)
-    if _since(r, now) >= lim * 3600:                                  # the lapse (memo 3.6, act a): ONE fire a video - a pending act is not tried for ever
+    if _since(r, now) is None or _since(r, now) >= lim * 3600:                                  # the lapse (memo 3.6, act a): ONE fire a video - a pending act is not tried for ever; RUL-U1c C2: a fire time that cannot be read lapses the pending acts (said to him), never retried for ever
         for k, v in list(done.items()):
             if str(v).startswith("pending"):
                 done[k] = f"lapsed: {str(v).split(':', 1)[-1].strip()} - still pending {lim} hours after the fire"

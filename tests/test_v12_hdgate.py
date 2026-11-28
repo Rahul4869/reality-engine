@@ -13,6 +13,7 @@ M = dt.timedelta(minutes=1)
 
 @pytest.fixture(autouse=True)
 def _no_faults():
+    import shutil; shutil.rmtree(os.path.join(core.WORK, "_platform"), ignore_errors=True)      # RUL-M2R: the offline stand-in's records (WORK/_platform, merged by id) never leak between tests - EPL12, SHHD14, SHHD21 are each used by two tests
     PUB.FAKE_FAULTS.clear(); yield; PUB.FAKE_FAULTS.clear()
 
 @pytest.fixture

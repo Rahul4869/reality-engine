@@ -702,7 +702,7 @@ def stamp_resent(output, brief=None, st=None, now=None):
     st = st or store(); now = now or now_utc()
     for did in (output or {}).get("resent") or []:
         r = next((x for x in _rows(st) if x["id"] == did), None)
-        if r is None: continue
+        if r is None: log(f"strategy: decision {did}: re-sent, but no such row on tab {TAB}: nothing stamped", "WARN"); continue      # RUL-SWEEP-U1: an unknown id is never dropped without a trace
         nums = _js(r.get("numbers"), {})
         if MEM.get(r["ticket"], st) is None:
             if not nums.get("resent"): log(f"strategy: decision {did}: its re-sent ticket was not written in this review: it is sent again at the next", "WARN")

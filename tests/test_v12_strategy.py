@@ -3,7 +3,7 @@ for a breakout, the owner's desk. Every rule is proven both ways; the real code 
 import json, os
 import pytest
 from whatifs import core, contract as CON, episode as EP
-from whatifs.org import runner as RUN, layman as LAY
+from whatifs.org import runner as RUN
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def now(): return core.now_utc()
@@ -202,7 +202,7 @@ def test_the_cover_ceiling_is_its_own_arithmetic_recomputed():
     import math
     L, Sh = int(core.DEFAULTS["STANDARD_MAX_LONG_PER_MONTH"][0]), int(core.DEFAULTS["SHORTS_PER_MONTH"][0])
     x = 1.5 * (L * (166 + 4 + 0.5) * 1.10 + Sh * (36 + 4 * 12) + 300 + 120)
-    assert round(x, 1) == 3267.3 and float(core.DEFAULTS["CREDIT_COVER_MONTH_MAX_INR"][0]) == math.ceil(x / 100) * 100, x
+    assert round(x, 1) == 2763.3 and float(core.DEFAULTS["CREDIT_COVER_MONTH_MAX_INR"][0]) == math.ceil(x / 100) * 100, x
 
 def test_the_cover_ceilings_note_says_it_was_measured():
     n = core.DEFAULTS["CREDIT_COVER_MONTH_MAX_INR"][1]; assert "TO BE CONFIRMED" not in n and "MEASURED on 369ee3e" in n, n
@@ -428,6 +428,7 @@ def test_his_hand_on_a_portfolio_cell_is_recorded_once_said_in_the_week_and_froz
     from whatifs.org import runner as RN
     ceo(setting); setting("STANDARD_MAX_LONG_PER_MONTH", "6")                                         # set by hand in the Sheet
     for k in ("FORMAT_SHARE_F1", "FORMAT_SHARE_F2", "FORMAT_SHARE_F3"): setting(k, core.DEFAULTS[k][0])   # the shares as shipped (conftest's 70 / 30 / 0 would be his hands too)
+    setting("SHORTS_PER_MONTH", core.DEFAULTS["SHORTS_PER_MONTH"][0])                               # MR-U1e: the cell as shipped (ceo()'s 12 is no longer the default, so it would be his hand too)
     RN.run("D1", "review", STR.review); RN.run("D1", "review", STR.review)                              # two reviews: ONE hand row
     h = [r for r in decisions() if r["state"] == "hand"]; assert len(h) == 1 and h[0]["key"] == "STANDARD_MAX_LONG_PER_MONTH" and h[0]["new"] == "6"
     assert core.parse_iso(h[0]["frozen_until"]) > core.now_utc() + dt.timedelta(days=27) and not [r for r in decisions() if r["state"] == "decided" and r["key"] == "STANDARD_MAX_LONG_PER_MONTH"]   # the key is frozen (V4's finish C12: SPLIT may move another key - BY DESIGN)
@@ -1601,18 +1602,33 @@ def test_the_risk_locks_own_words_in_one_row_with_one_tap(setting):
     assert not any("audit" in str(x.get("text") or "").lower() for x in core.store().rows("Owner_Actions")), core.store().rows("Owner_Actions")
 
 def test_settle_resends_a_decided_rows_lost_ticket_once_then_voids_it(monkeypatch, setting):
-    """V4b 0e TG11 (i): a row "decided" whose ticket never reached tab Memos - settle sends it once more after DECIDED_MAX_H and stamps `resent`;
-    a day later, still no ticket, the row is void with its note and no second ticket goes out."""
+    """V4b 0e TG11 (i), as U1 fix 210 (open issue 239) rules it: a row "decided" whose ticket never reached tab Memos - settle sends it once more
+    after DECIDED_MAX_H and stamps nothing; the runner's step (stamp_resent) stamps `resent` only once that ticket IS on tab Memos; a day later
+    that written ticket is gone: the row is void with its note and no second ticket goes out."""
     from whatifs.org import memos as MEMO
     ceo(setting); at(monkeypatch, JAN); c, _ = STR.next_move(JAN); row, _memo = STR.decide(c, JAN)                # the ticket is NOT written: never on tab Memos
     assert MEMO.get(row["ticket"]) is None and EX.state_of(row["ticket"]) is None
     assert STR.settle(JAN + dt.timedelta(hours=25)) == [] and decisions()[0]["state"] == "decided"             # not yet DECIDED_MAX_H (26 h)
     t1 = JAN + dt.timedelta(hours=27); out = STR.settle(t1); r = decisions()[0]
     assert len(out) == 1 and out[0]["type"] == "ticket" and out[0]["dedupe_key"] == f"strategy|{row['id']}" and out[0]["body"]["decision_ref"] == row["id"], out
-    assert (out[0]["body"]["target"], out[0]["body"]["value"], r["state"]) == ("STANDARD_MAX_LONG_PER_MONTH", "5", "decided") and json.loads(r["numbers"])["resent"] == core.iso(t1)
+    assert (out[0]["body"]["target"], out[0]["body"]["value"], r["state"]) == ("STANDARD_MAX_LONG_PER_MONTH", "5", "decided") and "resent" not in json.loads(r["numbers"])      # U1 fix 210: settle stamps nothing
+    seen = []; monkeypatch.setattr(STR, "log", lambda m, *a, **k: seen.append((m, a, k)))      # RUL-U1i (4): the not-written branch's only trace is its WARN
+    assert STR.stamp_resent({"resent": [row["id"]]}, now=t1) == [] and "resent" not in json.loads(decisions()[0]["numbers"])      # not written in this review: nothing stamped
+    assert [m for m, a, k in seen if "WARN" in (a + tuple(k.values()))] == [f"strategy: decision {row['id']}: its re-sent ticket was not written in this review: it is sent again at the next"], seen      # ...and one WARN names it (RUL-U1j: exactly one, with the decision's id)
+    tk = decisions()[0]["ticket"]; real_get = MEMO.get
+    assert tk == MEMO.id_for(out[0], core.store(), t1) and MEMO.get(tk) is None, (tk, out[0])      # RUL-U1i (3): the faked "written" ticket is the very memo settle sent, not yet on tab Memos
+    monkeypatch.setattr(MEMO, "get", lambda tid, st=None: {"id": tid} if tid == tk else real_get(tid, st))      # the runner WROTE the re-sent ticket: it is on tab Memos
+    assert STR.settle(t1) == [] and decisions()[0]["state"] == "decided" and "resent" not in json.loads(decisions()[0]["numbers"]), decisions()[0]      # RUL-U1j (TG 4): written but not yet stamped - the gate at strategy.py:613 sends no second ticket
+    assert STR.stamp_resent({"resent": [row["id"]]}, now=t1) == [] and json.loads(decisions()[0]["numbers"])["resent"] == core.iso(t1)
+    assert STR.stamp_resent({"resent": [row["id"]]}, now=t1 + dt.timedelta(hours=2)) == [] and json.loads(decisions()[0]["numbers"])["resent"] == core.iso(t1)      # RUL-U1i (5): a second stamp keeps the first
+    assert STR.settle(t1 + dt.timedelta(hours=3)) == [] and decisions()[0]["state"] == "decided"      # RUL-U1i (2): written and still on tab Memos: no void, no second ticket (RUL-U1j: after both stamps)
+    monkeypatch.setattr(MEMO, "get", real_get)                                                                  # ...then it is gone from tab Memos
+    assert [m for m, a, k in seen if "WARN" in (a + tuple(k.values()))] == [f"strategy: decision {row['id']}: its re-sent ticket was not written in this review: it is sent again at the next"], seen      # RUL-SWEEP-U1 (RD-U1j-SF F1): the written branch (settle t1, both stamps, settle t1+3h) adds no WARN
+    seen.clear(); assert STR.stamp_resent({"resent": [row["id"]]}, now=t1 + dt.timedelta(hours=3)) == [] and seen == [], seen      # RUL-U1j (TG 2): stamped and gone - no WARN (the guard at strategy.py:708)
+    monkeypatch.setattr(STR, "log", core.log)      # RUL-U1j (SF F2): the WARN is read - later logs print again (strategy.py:6 binds core.log)
     t2 = t1 + dt.timedelta(days=1); out2 = STR.settle(t2); r = decisions()[0]
-    assert out2 == [] and r["state"] == "void", (out2, r["state"])                                             # still no ticket a day later: void, no second ticket
-    assert json.loads(r["numbers"])["engine_note"] == "its ticket was never written: nothing changed"
+    assert out2 == [] and r["state"] == "void", (out2, r["state"])                                             # sent once more, then gone: void, no second ticket
+    assert json.loads(r["numbers"])["engine_note"] == "its ticket is not on tab Memos after it was sent once more: nothing changed"
     assert STR.settle(t2 + dt.timedelta(days=1)) == [] and decisions()[0]["state"] == "void"                  # void is not in force: nothing more
 
 

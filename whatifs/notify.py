@@ -42,7 +42,7 @@ KINDS = {
     # INFORM, what was done - by group
     **_kinds(INFORM, "decided", "strategy", "decided_post", "pick_ack", "sheets_locked", "appetite"),      # v12 V4b step 6c: "appetite" - the early release told, its Undo and Bring it back
     **_kinds(INFORM, "inputs", "desk", "idea"),
-    **_kinds(INFORM, "posted", "scheduled", "live", "audio_drop", "below_bar", "slot_skipped", "api_audit_wait", "floor_kit", "hd_late", "look_run"),
+    **_kinds(INFORM, "posted", "scheduled", "live", "audio_drop", "below_bar", "slot_skipped", "api_audit_wait", "floor_kit", "hd_late", "look_run", "ledger_miss"),      # RUL-U1d D: an upload whose ledger row was not written - told, nothing to tap (RUL-U1c C3)
     **_kinds(INFORM, "research", "comments_digest", "region", "similar_script", "slop"),
     **_kinds(INFORM, "plan", "monthly_brief", "preview_none", "repair_waiting", "org_cap", "org_build_held", "occasion_dates", "card_rule"),
     **_kinds(INFORM, "money", "budget_pct", "cost_overrun", "cost_check", "headroom", "topup", "mode_ack", "wa_cap"),
@@ -249,7 +249,7 @@ def mail(kind, subject, html, level="essential", screens=True, buttons=(), episo
     if not _on(): return PUB.email(subject, html, kind=level)
     went = False                                           # FINISHED BY FABLE (CA3-14, R1-105): "mailed" = the mail WENT - PUB.email answering False (Gmail >= 400, no OPERATOR_EMAIL) is not mailed
     try: sent = PUB.email(subject, html, kind=level); went = bool(sent)
-    except Exception as e:                                 # R22 (10): the copy failed; the row is sent all the same
+    except Exception:                                      # R22 (10): the copy failed; the row is sent all the same
         log(f"the e-mail copy failed: {subject}", "WARN"); sent, went = False, False
     if not screens: return sent
     return send(kind, text or _screen_text(subject, html, buttons), buttons, episode, tier="week", default=default, expires_h=expires_h, dedupe_key=dedupe_key, mailed=went)

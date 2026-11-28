@@ -833,7 +833,7 @@ DEFAULTS = {
  "SPINOFF_CAP_INR": ("130", "v11 G0: most a spin-off may cost"),
  "SHORTS_TRACK_ON": ("TRUE", "v11 (K159): standalone Shorts - every topic starts as a Short (v12 V2c-b: SHORTS_PER_WEEK and SHORTS_PER_MONTH set how many)"),
  "SHORTS_PER_WEEK": ("3", "v12 V2c-b (a lever of the Shorts Studio, D14): standalone Shorts in any 7 days (3 = inside the band of 2 to 4 a week in which a Short does best per post). They are spaced 24 x floor(7 / this) hours apart; a follow-up of a winner comes on top"),
- "SHORTS_PER_MONTH": ("12", "v12 V2c-b (a lever of the Shorts Studio, D14): standalone Shorts in a calendar month at most (a follow-up of a winner comes on top)"),
+ "SHORTS_PER_MONTH": ("8", "v12 V2c-b (a lever of the Shorts Studio, D14): standalone Shorts in a calendar month at most (a follow-up of a winner comes on top). MR-U1e: 8, not 12 - at the shipped defaults the month's money pays 8 Shorts beside 4 long videos on the hero clip model (governor.split already made 8 of the 12); at 8 the line is USD 0.0215 a second, over HeyGen Video 1's 0.02 (9 does not fit). Strategy raises it when month_fit says the money pays more"),
  "SHORTS_START_HOUR_IST": ("7", "v11: no Short is started before this hour (IST)"),
  "SHORTS_VARIANTS": ("3", "v11: script variants per Short (judged blind by Gemini)"),
  "SHORTS_REVIEW_FIRST_N": ("3", "v11: the first N standalone Shorts wait for the owner's Approve"),
@@ -954,7 +954,7 @@ DEFAULTS = {
  "CLAUDE_CREDIT_FROM": ("", "v12 V4 (Finance, D11): the first day of the Claude credit's window (YYYY-MM-DD; typed by the owner with each cycle; empty = the lane is closed)"),
  "CREDIT_FLOOR_INR": ("2970", "v12 V4: the part of the Claude credit the lane never counts on (USD 30, the launch kit's floor): the meter is ours, the balance is not readable - below it the lane closes"),
  "CLAUDE_CREDIT_COVERED": ("{}", "auto - v12 V4: what the Claude credit paid in each month ({YYYY-MM: rupees}), written by Finance's daily watch and never lowered"),
- "CREDIT_COVER_MONTH_MAX_INR": ("3300", "v12 V4 (the owner's cell, no lever): the most the Claude credit's lane covers in a month - beyond it Claude's rows count against the cap again (code cannot see whether the credit really pays). 1.5 x (4 long videos x Rs 170.5 of text lines (writing 166 + hook lab 4 + line-up 0.5) x 1.10 + 12 Shorts x (Rs 36 writing + 4 x Rs 12 boost) + R&D 300 + Review Board 120) = 3,267.3, up to the next Rs 100 - MEASURED on 369ee3e (17 Nov 2026, the build's first act)"),
+ "CREDIT_COVER_MONTH_MAX_INR": ("2800", "v12 V4 (the owner's cell, no lever): the most the Claude credit's lane covers in a month - beyond it Claude's rows count against the cap again (code cannot see whether the credit really pays). 1.5 x (4 long videos x Rs 170.5 of text lines (writing 166 + hook lab 4 + line-up 0.5) x 1.10 + 8 Shorts x (Rs 36 writing + 4 x Rs 12 boost) + R&D 300 + Review Board 120) = 2,763.3, up to the next Rs 100 - MEASURED on 369ee3e (17 Nov 2026, the build's first act); re-cut for SHORTS_PER_MONTH 8 by MR-U1e (a lower ceiling: more of Claude's rows count against his cap)"),
  "CLAUDE_CREDIT_LINES": ("", "v12 V4b step 10 (memo 3.10; his cell): the Claude credit as several lines - JSON [{\"usd\": 200, \"from\": \"YYYY-MM-DD\", \"until\": \"YYYY-MM-DD\"}]; empty = the three cells above as ONE line (V4's behaviour); each meter row is charged to the line with the OLDEST expiry that is open on its day"),
  "CREDIT_TARGET_PCT": ("97", "v12 V4b step 10: the burn-down curve ends at this percent of a line's amount on its last day (the rest is the floor's safety)"),
  "CREDIT_CURVE_BAND_PCT": ("5", "v12 V4b step 10: a line is BEHIND or AHEAD of its curve only beyond this percent of its amount"),
@@ -1440,7 +1440,7 @@ def safe_append(tab, rows):
     if not rows: return True
     st = store()
     try: st.append(tab, rows); return True
-    except Exception as e:
+    except Exception:
         try: st.ensure_tabs(); st.append(tab, rows); return True
         except Exception as e2:
             log(f"could not save to {tab}: {scrub(e2)}", "WARN"); return False

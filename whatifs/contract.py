@@ -1,7 +1,7 @@
 """Feature Contract: every promised feature is a named HARD check at a stage, judged from real evidence; a FAIL holds the episode and sends the owner a decision message. See docs/CURRENT/SYSTEM.md."""
 from __future__ import annotations
 import os
-import json, math, os, re, statistics, subprocess
+import json, math, re, statistics, subprocess
 from whatifs.core import S, log, store, iso, now_utc, set_setting, FAKE, scrub
 
 PASS, FAIL, WAIVED, NA = "PASS", "FAIL", "WAIVED", "N/A"
@@ -580,6 +580,7 @@ def p_depth_frozen(ctx):
     d = ctx.get("d") if isinstance(ctx.get("d"), dict) else {}
     dp = d.get("depth") if isinstance(d.get("depth"), dict) else None
     if not dp: return NA, "no depth pass for this video (not a launch pair video, the lane closed, the pass closed by its record, or DEPTH_ON FALSE)"
+    if dp.get("skipped"): return NA, f"the depth pass was due and did not run: {dp['skipped']}"[:380]      # RUL-U1c C5: a lost pass is named, never absence and never a PASS of 0 drafts
     sent = [str(h) for h in (dp.get("sent") or [])]; k = int(dp.get("k") or 0); sha = str(dp.get("sha") or "")
     if len(sent) != k: return FAIL, f"{len(sent)} drafts carried the depth brief; the split said {k}"
     if any(h != sha for h in sent): return FAIL, "a draft carried a changed depth brief: its hash is not the frozen addendum's"
@@ -614,6 +615,7 @@ def p_cliffhanger(ctx):
         if p: return FAIL, "; ".join(p)[:380]
         return PASS, f"the flagship ends on its cliff: '{cliff[:90]}'; its Part 2 is written down: '{str(seq['premise'])[:90]}'"
     words = SAL.cliff_words(sv.get("cliff")); stems = {w[:5] for w in words}
+    if not stems: return FAIL, "PAID: Part 1's cliff is not on record in Part 2's draw - Part 2 cannot be checked against it"      # RUL-U1c A4: a check that cannot look never passes
     lim = S("CLIFF_PAID_S", float); need = min(S("CLIFF_PAID_WORDS", int), len(stems))
     early = " ".join(str(u.get("text") or "") for u in (ctx.get("units") or []) if float(u.get("start", 0) or 0) < lim)
     heard = SS.content_words(early); got = [w for w in words if w[:5] in heard]; p = []
@@ -1303,7 +1305,7 @@ def _kept(ep):
     if not SAL.on() or str(S("SALVO_PART2") or "").strip() == "STOOD_DOWN": return ""
     ok, why = SAL.pair_clear(ep)
     if ok: return ""
-    SAL.keep_tap(ep)
+    if not SAL.keep_tap(ep): return f"Not kept: {why}, and there is no appetite plan for it to carry your Approve, so nothing will approve it by itself. Your Approve stays open: tap it again once that is done."      # RUL-U1c A2: a tap that was not written is never told "Kept"
     return f"Kept: {why}. It goes public by itself when that is done."
 
 def _answer(row, choice):
@@ -1320,6 +1322,7 @@ def _answer(row, choice):
         return _ran(row, parts[2], f"{parts[2]}: the one-click fix is running")
     if len(parts) >= 2 and parts[0].upper() == "APPROVE":                    # v12 V4b step 6a (memo 1004-1006): on every road his Approve of a pair video that is not clear is KEPT
         kept = _kept(parts[1])
+        if kept.startswith("Not kept") and (row or {}).get("id"): store().update("Owner_Actions", "id", row["id"], {"status": "OPEN", "answered_at": "", "answer": ""})      # RUL-U1c A2: his card is open again, as every road that did not act
         if kept: return kept
     if len(parts) >= 2 and parts[0].upper() == "APPROVE" and str((row or {}).get("dedupe_key") or "").startswith("silence|"):      # v12 B-OWNER (PART F, CF-5 (a)): his Approve on the
         ok, why = clear_to_post(parts[1])                                                                                          # "not approved by your silence" row asks the checks again
