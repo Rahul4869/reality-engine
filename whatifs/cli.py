@@ -128,6 +128,11 @@ def main():
                 from whatifs.core import S as _S
                 paid = f"This month's pilots have cost Rs {FLR.pilot_inr():.0f} of Rs {_S('VIEW_FLOOR_PILOT_CAP_INR', float):.0f}."      # code review C18 (8), RULINGS_U1c 4.3: the rupees, in both wordings
                 NT.send("floor_kit", f"The first-time viewers {said} {then} {paid} Nothing is needed from you.", tier="now", expires_h=72, dedupe_key=f"floorpilot|{p['month']}|{p['answers']}|{p['q']}|{held}")
+        elif cmd == "look_kit":                                         # v12 DRAWN-b L1b: his reference sheets become the look bar's kit (cell LOOK_REFS), once; no message
+            from whatifs.org import look as LOOK
+            parts = [a.rsplit("|", 2) for a in sys.argv[2:]]
+            if not parts or any(len(x) != 3 for x in parts): raise SystemExit('usage: python -m whatifs.cli look_kit "<path>|<name>|<key,key,...>" ...')
+            LOOK.make_kit([(p, n, ks.split(",")) for p, n, ks in parts])
         elif cmd == "abtest":
             from whatifs.tableread import abtest_main; abtest_main()
         elif cmd == "fixheld":

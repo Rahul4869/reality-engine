@@ -12,7 +12,7 @@ DEFAULTS = {}          # kind -> callable(row) run when the row expires unanswer
 
 def _ensure_handlers():
     """Every feature's answer/default handlers are known before an answer or a default runs (any entry point: email, dashboard, WhatsApp, tick)."""
-    for mod, fn in (("whatifs.builds", "ensure_registered"), ("whatifs.visual_lab", "register"), ("whatifs.wa", "register"), ("whatifs.caretaker", "register"), ("whatifs.bakeoff", "register"), ("whatifs.steward", "register"), ("whatifs.contract", "register"), ("whatifs.specials", "register"), ("whatifs.sheets", "register"), ("whatifs.breakout", "register"), ("whatifs.ladder", "register"), ("whatifs.replan", "register"), ("whatifs.org.memos", "register"), ("whatifs.org.execute", "register"), ("whatifs.org.floor", "register"), ("whatifs.org.verdicts", "register"), ("whatifs.maker", "register"), ("whatifs.org.strategy", "register"), ("whatifs.org.risk", "register"), ("whatifs.org.desk", "register")):
+    for mod, fn in (("whatifs.builds", "ensure_registered"), ("whatifs.visual_lab", "register"), ("whatifs.wa", "register"), ("whatifs.caretaker", "register"), ("whatifs.bakeoff", "register"), ("whatifs.steward", "register"), ("whatifs.contract", "register"), ("whatifs.specials", "register"), ("whatifs.sheets", "register"), ("whatifs.breakout", "register"), ("whatifs.ladder", "register"), ("whatifs.replan", "register"), ("whatifs.org.memos", "register"), ("whatifs.org.execute", "register"), ("whatifs.org.floor", "register"), ("whatifs.org.look", "register"), ("whatifs.org.verdicts", "register"), ("whatifs.maker", "register"), ("whatifs.org.strategy", "register"), ("whatifs.org.risk", "register"), ("whatifs.org.desk", "register")):
         try: getattr(__import__(mod, fromlist=[fn]), fn)()
         except Exception as e: log(f"handlers from {mod} not loaded: {scrub(e)[:80]}", "WARN")
 
@@ -32,7 +32,7 @@ KINDS = {
     # ALARM, the fixed list (item 180): the channel's safety (five), money stopping, the pipeline stopping; U1b finding 4: a message of his the pipeline could not read
     **_kinds(ALARM, "needs", "kids_flag", "policy", "risk_lock", "risk_gone", "uploads_private", "money_stop", "pipeline_stop", "org_watchdog", "input_unread"),
     # HOLD, the named hold list (item 150): (a) a quality or policy hold; (b) what only he can lawfully do. (c), the launch un-pause, is his own sitting and has no card
-    **_kinds(HOLD, "needs", "contract_hold", "floor_hold", "special_review", "hd_blocked", "org_lever", "api_audit", "ypp_tier"),
+    **_kinds(HOLD, "needs", "contract_hold", "floor_hold", "look_hold", "special_review", "hd_blocked", "org_lever", "api_audit", "ypp_tier"),
     # CARD, a decision with a deadline and a default
     **_kinds(CARD, "needs", "bakeoff", "breakout", "expiry", "build_ready", "ladder", "occasion", "replan", "linkpack", "model_dead", "style_pick", "visual_idea",
              "creative_review", "floor_eye", "special_ready", "maker_line", "owner_verdict", "org_stuck", "pin_comment", "title_pick", "script_preview",
@@ -42,7 +42,7 @@ KINDS = {
     # INFORM, what was done - by group
     **_kinds(INFORM, "decided", "strategy", "decided_post", "pick_ack", "sheets_locked"),
     **_kinds(INFORM, "inputs", "desk", "idea"),
-    **_kinds(INFORM, "posted", "scheduled", "live", "audio_drop", "below_bar", "slot_skipped", "api_audit_wait", "floor_kit", "hd_late"),
+    **_kinds(INFORM, "posted", "scheduled", "live", "audio_drop", "below_bar", "slot_skipped", "api_audit_wait", "floor_kit", "hd_late", "look_run"),
     **_kinds(INFORM, "research", "comments_digest", "region", "similar_script", "slop"),
     **_kinds(INFORM, "plan", "monthly_brief", "preview_none", "repair_waiting", "org_cap", "org_build_held", "occasion_dates", "card_rule"),
     **_kinds(INFORM, "money", "budget_pct", "cost_overrun", "cost_check", "headroom", "topup", "mode_ack", "wa_cap"),
@@ -67,7 +67,7 @@ def group(kind):
 NAMES = {      # v12 B-OWNER: the plain name of every kind that can ask him or alarm him - what a list row and the dashboard call it (within 24 characters, WhatsApp's limit for a row's title); a layman reads these, never the code's word
     "kids_flag": "Marked made for kids", "policy": "Policy watch: paused", "risk_lock": "Uploads locked", "risk_gone": "A video is gone",
     "uploads_private": "Uploads kept private", "money_stop": "Monthly budget reached", "pipeline_stop": "Production stopped", "org_watchdog": "The watchdog stopped", "input_unread": "A message was not read",
-    "contract_hold": "Video held: a check", "floor_hold": "Video held: first view", "special_review": "Waits for your review", "hd_blocked": "Video kept private",
+    "contract_hold": "Video held: a check", "floor_hold": "Video held: first view", "look_hold": "Video held: its look", "special_review": "Waits for your review", "hd_blocked": "Video kept private",
     "org_lever": "A setting needs your OK", "api_audit": "YouTube audit form", "ypp_tier": "Apply for monetisation",
     "bakeoff": "Pick the better model", "breakout": "A video is taking off", "expiry": "Something expires soon", "build_ready": "A change is ready",
     "ladder": "The next long video", "occasion": "An occasion special", "replan": "The week's plan", "linkpack": "Link the winning Shorts",

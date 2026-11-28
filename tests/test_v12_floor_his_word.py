@@ -38,10 +38,10 @@ def test_a_long_video_about_a_promoted_short_ends_on_his_line_and_pays_nothing_f
     from tests.paid_calls import watch
     from tools.sweep import climb
     from whatifs import ladder as LAD, models as M_
-    from tests.conftest import OLD_CLIPS, OLD_MOTION, OLD_INSIDE, OLD_VIEW, OLD_DRAWN, OLD_LIVING
+    from tests.conftest import OLD_CLIPS, OLD_MOTION, OLD_INSIDE, OLD_VIEW, OLD_DRAWN, OLD_LIVING, OLD_LOOK
     MK = _MK(); ep = OWN_IDS[6]; sid = "SH" + ep[2:]; line = GOOD_LINES[0]
     def go():                                                     # both Sheets under the same cells (a new Sheet starts from the shipped defaults: the test setup's cells first)
-        for k, v in list(OLD_CLIPS.items()) + list(OLD_MOTION.items()) + list(OLD_INSIDE.items()) + list(OLD_VIEW.items()) + list(OLD_DRAWN.items()) + list(OLD_LIVING.items()): setting(k, v)
+        for k, v in list(OLD_CLIPS.items()) + list(OLD_MOTION.items()) + list(OLD_INSIDE.items()) + list(OLD_VIEW.items()) + list(OLD_DRAWN.items()) + list(OLD_LIVING.items()) + list(OLD_LOOK.items()): setting(k, v)
         for k in list(OLD_CLIPS) + list(OLD_MOTION): setting(k, core.DEFAULTS[k][0])         # ... and the clip market and the motion ladder as shipped: no living clip may land on his line
         setting("MONTH_CAP_OVERRIDES", "")
         for k, v in (("FORMAT_FORCE", "F1"), ("INSIDE_ON", "TRUE"), ("ENDINGS_ON", "TRUE"), ("CAMERA_PATH_ON", "TRUE"), ("OWNER_VERDICT_ON", "TRUE"), ("MAKER_LINE_ON", "TRUE"),

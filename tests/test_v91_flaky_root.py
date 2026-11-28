@@ -25,8 +25,8 @@ def test_same_minute_leftovers_never_leak_into_a_new_episode(monkeypatch, tmp_pa
     core._store = core.LocalStore(str(tmp_path / "sheet2.json")); core._store.ensure_tabs(); _setup(monkeypatch)
     core.set_setting("CREATIVE_REVIEW_FIRST_N", "0")      # v10.2: a fresh Sheet in a test schedules directly
     core.set_setting("LADDER_ON", "FALSE")                # v12 V2c-b: and, like every older test, makes its long video without the ladder (tests/conftest.py set this on the first Sheet only)
-    from tests.conftest import OLD_DRAWN, OLD_LIVING
-    for k_, v_ in list(OLD_DRAWN.items()) + list(OLD_LIVING.items()): core.set_setting(k_, v_)          # v12 DRAWN: ... and with the number cards as they were
+    from tests.conftest import OLD_DRAWN, OLD_LIVING, OLD_LOOK
+    for k_, v_ in list(OLD_DRAWN.items()) + list(OLD_LIVING.items()) + list(OLD_LOOK.items()): core.set_setting(k_, v_)          # v12 DRAWN: ... and with the number cards as they were
     real = EP._assets; boom = {"n": 0}
     def flaky(*a, **k):
         boom["n"] += 1

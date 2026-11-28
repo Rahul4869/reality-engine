@@ -277,13 +277,16 @@ def p_living(ctx):
     if bare: return FAIL, f"a reaction cutaway is planned for {', '.join(bare)} without approved character art: a character is drawn or absent"
     absent = int(ctx.get("absent") or 0)
     if absent: return FAIL, f"{absent} of {len(react)} reaction cutaways could not show the approved character (the picture before was continued; nothing was drawn in its place)"
+    crooked = [u for u in LV.USED if float(u.get("shape_err") or 0) > 0.01]       # v12 DRAWN-b (3.1): the approved art whole at its own shape, never stretched or cut
+    if crooked: return FAIL, f"{len(crooked)} cutaway(s) drew the approved art out of its own shape ({max(u['shape_err'] for u in crooked):.0%} off): the art is shown whole at its own shape or not at all"
     chip_ = S("CHIP_DRAWN_ONLY_ON", bool); tail_ = "; no name chip for a character nobody sees" if chip_ else ""
     if chip_:
         unseen = sorted({str(c[2]) for c in (ctx.get("chips") or []) if not LV.has_art(c[2])})
         if unseen: return FAIL, "; ".join(f"a name chip for {x}, who is never seen" for x in unseen)
     if not react: return PASS, ("nobody is on screen: no cutaway and no staged scene of a character was made" if nobody_ else "nobody is on screen: no cutaway of a character was made") \
                          + " (a character without approved art is absent, never a shape)" + tail_      # v12 V1c (DESIGN QUESTION 1 of its record: today's parenthesis kept)
-    return PASS, f"{len(react)} reaction cutaways, each the approved character ({sum(u['blinks'] for u in LV.USED)} blinks, {sum(u['mouth_frames'] for u in LV.USED)} talking frames in this job)" + tail_
+    shut_ = sum(1 for u in LV.USED if u.get("mouth_rule") == "none")      # RUL-U3k DRAWN-1: a cutaway whose mouth never moved is said, never held (H42 is measured, not gated)
+    return PASS, f"{len(react)} reaction cutaways, each the approved character ({sum(u['blinks'] for u in LV.USED)} blinks, {sum(u['mouth_frames'] for u in LV.USED)} talking frames in this job" + (f"; {shut_} with the mouth shut: no usable mouth picture" if shut_ else "") + ")" + tail_
 
 def p_visual_change(ctx):
     """Impact Map V2 + V5: a new picture state at least every VISUAL_CHANGE_MAX_S (graphics/reaction cutaways animate: 2x), and no 2-s window
@@ -811,6 +814,37 @@ def p_short_sound(ctx):
 def _short(ctx):
     s = ctx.get("short"); return s if isinstance(s, dict) and isinstance(s.get("script"), dict) else None
 
+def _look(ctx):
+    """v12 DRAWN-b (D13): THE LOOK BAR - the verdict of the film's newest look session is computed AGAIN here by code from its own stored answers and
+    its stored bar (`look.again`), never taken as stored. A void session holds nothing; below the bar once holds nothing (no free fix has run). L2: below it
+    after its free fix (or a second look that agreed, "none") FAILS - unless `look.held_run` says the last films of its kind were all held, asked here
+    from the log: then it is reported, not held."""
+    from whatifs.org import look as LOOK
+    if not LOOK.on(): return NA, "the look bar is switched off (LOOK_BAR_ON / VIEWER_SEAT_ON)"
+    res = ctx.get("look")
+    if not isinstance(res, dict) or not res.get("status"): return NA, "not judged"
+    st, why = str(res.get("status") or ""), str(res.get("why") or "")
+    if res.get("row"):
+        a = LOOK.again([res["row"]])
+        if a["status"] != st or a["why"] != why.removesuffix(" (not judged again)"): return FAIL, "the stored verdict is not the code's verdict on its own answers"      # run's own words after LOOK_MAX_VOID voids
+    if st == "pass": return PASS, why[:380]
+    if st == "fail" and res.get("fix"):                                   # v12 DRAWN-b (L2): below the bar after its free fix
+        row = res["row"]
+        if LOOK.held_run(str(row.get("kind") or ""), str(row.get("episode_id") or "")): return NA, f"the look bar held {S('LOOK_HOLDS_MAX_RUN', int)} films in a row: reported, not held - {why}"[:380]
+        form_ = " - a second look agreed; no free fix exists for these points" if res["fix"] == "none" else " - after its free fix"
+        return FAIL, why[:380 - len(form_)] + form_
+    if st == "fail": return NA, "below the bar once: no free fix has run, so nothing is held"
+    return NA, (why or st)[:380]          # a void session (the judge could not be calibrated) holds nothing
+
+def p_look_bar(ctx):
+    """v12 DRAWN-b (L3, D13): THE LOOK BAR FOR A LONG VIDEO - on its final master, the verdict of `look.run` computed again (`_look`)."""
+    return _look(ctx)
+
+def p_short_look(ctx):
+    """v12 DRAWN-b (D13): THE LOOK BAR FOR A SHORT - on its finished file (the gate of the Short's file), the verdict of `look.run` computed again."""
+    f, bad = _short_file(ctx)
+    return bad if bad else _look(ctx)
+
 def _short_seat(ctx):
     """(the Short at the gate, None) or (None, the (status, evidence) to return): the seat switched off = NA, nothing at the gate = FAIL."""
     from whatifs.org import shortseat as SEAT
@@ -951,6 +985,7 @@ FEATURES = [
     ("moving_share",  "final",  p_moving_share, "the share of the finished film that really moves - measured on the file where the renderer played a clip made by a model - is at least MOVING_SHARE_MIN_LONG, and the seconds of clip the video paid for are on screen and moving (the motion ladder)"),
     ("stock_share",   "final",  p_stock_share,  "real footage (NASA, Pexels) is a short anchor: STOCK_SHARE_MAX_PCT of the film at most, never the first picture, never two in a row, changed, no clip whose title names a person, every credit in the description"),
     ("viewer_floor",  "final",  p_viewer_floor, "the judged floor: two strong first-time viewers of two model families named the first minute of this film over the video the owner rejected in every look, and kept the planted ladder - a film they cannot tell from it is held (the judged floor)"),
+    ("look_bar",      "final",  p_look_bar,     "the look bar for a long video: a strong judge, blind, found at least LOOK_BAR_PCT of the look points in its pictures, in a call where the owner's reference sheets passed and the film's own flattened picture did not; its free fix is one more render with more light, a livelier place and more changes of framing; a long video still below the bar after it is kept and waits for his tap on its own card, never more than LOOK_HOLDS_MAX_RUN in a row"),      # v12 DRAWN-b (L3): the look bar for a long video (D13)
     ("makers_line",   "final",  p_makers_line,  "the maker's line: a film that carries his line ends on it word for word after its lead-in, over the film's last picture, with the line on his record and in the description that is sent; a film without one speaks and writes none (the maker's line)"),
     ("takeaways_written", "final", p_takeaways_written, "every department run of this episode finished its six steps and wrote a valid takeaway"),
     # v12 V2c: stage "short" = the short gate of a standalone Short (whatifs/shorts2.py), judged before any picture is paid; a held Short is not made
@@ -962,6 +997,7 @@ FEATURES = [
     # v12 V2d-b: stage "short_file" = the gate of a Short's FINISHED FILE (whatifs/shorts2.py), after it is made and before it is handed to Publishing; a Short that fails is kept and waits for the owner's tap
     ("short_moving",  "short_file", p_short_moving, "a Short moves in every second: every half second of its finished file changes (the motion ladder)"),
     ("short_sound",   "short_file", p_short_sound, "a Short sounds from its first frame: its place's own sound inside SHORT_SOUND_BY_S seconds at full level, the guide's first word inside SHORT_VOICE_BY_S seconds - measured on the finished file"),
+    ("short_look",    "short_file", p_short_look, "the look bar for a Short: a strong judge, blind, found at least LOOK_BAR_PCT of the look points in its pictures, in a call where the owner's reference sheets passed and the Short's own flattened picture did not; a Short below the bar twice - the second time after its free re-grade - is kept and waits for his tap, never more than LOOK_HOLDS_MAX_RUN Shorts in a row; a call that cannot be calibrated holds nothing"),      # v12 DRAWN-b (L1a)
     # v12 V2c-b2: stage "release" = the release gate of a standalone Short (whatifs/release.py), judged AFTER the uploads from the platforms' own answers; the Short is public by then: nothing is held
     ("release_sheet", "release", p_release_sheet, "every setting of a Short's release sheet that code sets was kept by YouTube, Instagram and Facebook as each platform itself answers (or was repaired once), and each got the one master file (the release sheet)"),
 ]

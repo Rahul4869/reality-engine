@@ -167,6 +167,20 @@ def fake_watch(prompt, views):
         out[n] = [pick, f"its picture changes in {round(ch.get(pick, 0.0), 1):g}% of the minute against {round(ch.get(other, 0.0), 1):g}%"]
     return json.dumps({"pairs": out})
 
+LOOK_FAKE_MIN = 50.0          # v12 DRAWN-b (the look bar): offline a film is "directed" when at least this share (percent) of the gaps between its twelve pictures change
+LOOK_FAULTS = {"mode": ""}    # the judge's planted faults (tests): "lenient" = every answer yes, "harsh" = every answer no, "mute" = the first question left out of every film
+
+def fake_look(prompt, views):
+    """For each film (view) every question of the prompt ('- key: ...' lines) is answered "yes" when its pictures change in at least LOOK_FAKE_MIN percent of
+    the gaps, else "no" - a rule of the FAKE WORLD only, never a limit on a real film."""
+    keys = re.findall(r"(?m)^- (\w+):", str(prompt)); mode = str(LOOK_FAULTS.get("mode") or ""); films = {}
+    for v in views or []:
+        c = _changing(v.get("frames")); a = "yes" if c >= LOOK_FAKE_MIN else "no"
+        if mode == "lenient": a = "yes"
+        elif mode == "harsh": a = "no"
+        films[str(v.get("label"))] = dict({k: a for k in keys if not (mode == "mute" and keys and k == keys[0])}, why=f"its pictures change in {c:g}% of the gaps")
+    return json.dumps({"films": films})
+
 # v12 V2c: what the offline writer of a Short can write - two scripts per Short format ({w} = one plain word of the premise). Each is written to pass the
 # viewer's seat for a Short (a hook of at most 6 words, no number, no expert word, no ask, the last line picks up a word of the first).
 _SHORT_FAKE = {

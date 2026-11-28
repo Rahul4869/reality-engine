@@ -20,8 +20,8 @@ def _new_sheet(tmp_path, name):
     with core._clock: core._cost_buf.clear(); core._session.clear()
     core._base["v"] = None; M.CACHE.__init__(); F.FAKE_ANTHROPIC.reset(); M._models = None; FM.use("")
     for k, v in (("CREATIVE_REVIEW_FIRST_N", "0"), ("V11_FLIPS_DONE", "test"), ("FORMAT_FORCE", "F2"), ("DEEP_TRIAL_ON", "FALSE")): core.set_setting(k, v)
-    from tests.conftest import OLD_DRAWN, OLD_LIVING
-    for k, v in list(OLD_DRAWN.items()) + list(OLD_LIVING.items()): core.set_setting(k, v)              # v12 DRAWN: a new Sheet starts from the shipped defaults - the number cards as they were here
+    from tests.conftest import OLD_DRAWN, OLD_LIVING, OLD_LOOK
+    for k, v in list(OLD_DRAWN.items()) + list(OLD_LIVING.items()) + list(OLD_LOOK.items()): core.set_setting(k, v)              # v12 DRAWN: a new Sheet starts from the shipped defaults - the number cards as they were here
     MG.setup(); core.set_setting("VOICE", "C"); core.set_setting("LADDER_ON", "TRUE")
 
 def _slot(h): return (core.now_utc() + dt.timedelta(hours=h)).strftime("%Y-%m-%dT%H:%M:%SZ")

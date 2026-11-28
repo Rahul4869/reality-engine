@@ -6,7 +6,7 @@ from whatifs import prompts as P
 SECRET_ENVS = ("G_CLIENT_ID", "G_CLIENT_KEY", "G_REFRESH", "G_REFRESH_DRIVE", "ANTHROPIC_KEY", "GEMINI_KEY", "FAL_KEY", "PEXELS_KEY", "META_PAGE_KEY",
                "SHEET_ID", "GH_TOKEN", "GITHUB_TOKEN", "OWNER_EMAIL")
 # v8.3: files that guard money, quality and publishing are NEVER merged automatically, whatever the setting says: the owner (or Claude, with the owner) reads the change first.
-PROTECTED = ("whatifs/qc.py", "whatifs/governor.py", "whatifs/fixes.py", "whatifs/publish.py", "whatifs/episode.py", "whatifs/core.py", "whatifs/models.py",
+PROTECTED = ("whatifs/qc.py", "whatifs/org/look.py", "whatifs/governor.py", "whatifs/fixes.py", "whatifs/publish.py", "whatifs/episode.py", "whatifs/core.py", "whatifs/models.py",
              "whatifs/checkpoint.py", "whatifs/preflight.py", "whatifs/manage.py", "tools/plan_guard.py", "tools/repair.py", "whatifs/playbook.py",
              "whatifs/tts_gemini.py", "whatifs/premise.py", "whatifs/craft.py", "whatifs/preview.py",
              "whatifs/immersion.py", "whatifs/room.py",

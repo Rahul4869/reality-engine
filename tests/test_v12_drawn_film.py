@@ -95,3 +95,18 @@ def test_a_refused_scene_is_its_moving_still_and_a_failed_render_never_the_zero_
         arm = json.loads(next(x for x in core.store().rows("Video_Features") if x["video_key"] == ep)["arm"])
         assert comp[i0] not in (arm.get("drawn") or []), (comp, arm)                                                         # F-10: the learning core never counts a scene no viewer saw
     finally: shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True)
+
+
+def test_an_error_inside_the_audit_shows_every_drawn_scene_as_its_still_and_holds_nothing(monkeypatch, setting):
+    """The Fable re-audit, open issue 256 (a): an error inside the finished file's audit never holds a video for a drawn scene."""
+    from whatifs import episode as EP
+    slot, ep, jobs = _setup(monkeypatch, setting, minute=5); seen = []
+    def boom(master, job): seen.append(sum(1 for m in job.segmeta if m.get("drawn"))); raise RuntimeError("planted")
+    monkeypatch.setattr(SCN, "audit", boom)
+    try:
+        r = EP.produce(slot); assert r["ok"], r                                              # the production ends and is NOT held
+        job = jobs[-1]; assert seen and seen[0] >= 1, "this id's film drew no scene: name another minute in the record"
+        assert not any(m.get("drawn") for m in job.segmeta)                                  # every drawn state became its still
+        assert any(str(x.get("why", "")).startswith("the audit could not run (RuntimeError)") for x in job.drawn.values() if isinstance(x, dict))
+        led = _ledger(); assert led["drawn_shown"][0] == "PASS" and "the audit could not run" in led["drawn_shown"][1], led
+    finally: shutil.rmtree(os.path.join(core.WORK, ep), ignore_errors=True)

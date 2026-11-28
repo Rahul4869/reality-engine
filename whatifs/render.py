@@ -17,10 +17,12 @@ def out_size():
 def work_size():
     return (640, 360) if SMALL else (1920, 1080)
 
+GRADE = "eq=contrast=1.06:saturation=1.08:gamma=0.98,vignette=PI/5"          # v12 DRAWN-b (L2): the house grade - ONE source for every long video's encode and the look bar's free fix of a Short
+
 def _enc_args(W, H, extra_vf=""):
     try: g = max(0, min(6, S("GRAIN_LEVEL", int))); crf = max(16, min(28, S("VIDEO_CRF", int)))
     except Exception: g, crf = 3, 20
-    grade = "eq=contrast=1.06:saturation=1.08:gamma=0.98,vignette=PI/5" + (f",noise=alls={g}:allf=t" if g else "")     # v8.3: light grain + CRF 20 (v8.2: grain 4, CRF 17 made ~4 GB masters)
+    grade = GRADE + (f",noise=alls={g}:allf=t" if g else "")     # v8.3: light grain + CRF 20 (v8.2: grain 4, CRF 17 made ~4 GB masters)
     vf = f"{extra_vf + ',' if extra_vf else ''}scale={W}:{H}:flags=lanczos,{grade},format=yuv420p"
     return ["-vf", vf, "-r", str(fps()), "-c:v", "libx264", "-preset", "veryfast" if not SMALL else "ultrafast",
             "-crf", str(crf), "-pix_fmt", "yuv420p", "-video_track_timescale", "15360", "-an"]
@@ -174,6 +176,16 @@ PARTICLE_WORLDS = {
 }
 WORLD_PARTICLES = {"court": "dust", "case": "dust", "lab": "embers", "office": "rain", "outdoor": "wind"}
 
+_FIX = {"density": 1.0}                 # v12 DRAWN-b (L3): the look's free fix of a long video - set by episode._render for each render (1.0 = as first made)
+def set_fix(density=1.0): _FIX["density"] = float(density)
+def fixed(fn):
+    """A render's free fix lives for that render only: whatever `fn` set through set_fix is 1.0 again when it returns or raises."""
+    @functools.wraps(fn)
+    def run(*a, **k):
+        try: return fn(*a, **k)
+        finally: set_fix(1.0)
+    return run
+
 class Particles:
     def __init__(self, world, src, seed, ww, wh, nframes, fpsv):
         style = PARTICLE_WORLDS[WORLD_PARTICLES.get(world, world) if WORLD_PARTICLES.get(world, world) in PARTICLE_WORLDS else "dust"]
@@ -184,7 +196,7 @@ class Particles:
         top = src.reshape(-1, 3)[np.argsort(src.reshape(-1, 3).sum(1))[-max(10, src.shape[0] * src.shape[1] // 100):]].mean(0)   # key light colour
         key = top / max(1.0, top.max()); tint = np.array(style["tint"], np.float32) / 255.0
         self.col = (0.55 * tint + 0.45 * key).astype(np.float32)
-        dens = S("PARTICLE_DENSITY", float); self.layers = []
+        dens = S("PARTICLE_DENSITY", float) * _FIX["density"]; self.layers = []
         for li, (n, size, speed, op) in enumerate(zip(style["n"], style["size"], style["speed"], style["op"])):
             m = max(1, int(round(n * area * dens)))
             vx = rng.uniform(*style["vx"], m); vy = rng.uniform(*style["vy"], m); norm = np.maximum(1e-3, np.hypot(vx, vy))

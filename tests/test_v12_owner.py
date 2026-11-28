@@ -20,6 +20,7 @@ def test_checks_job_has_room():
 VARIABLE_KINDS = {"whatifs/contract.py": ("creative_review", "floor_eye"), "whatifs/org/verdicts.py": ("maker_line", "owner_verdict")}      # the two calls that pass the kind as a variable
 ALARMS = ("kids_flag", "policy", "risk_lock", "risk_gone", "uploads_private", "money_stop", "pipeline_stop", "org_watchdog", "input_unread")      # item 180: a FIXED list; U1b finding 4 adds input_unread on purpose
 HOLDS = {"contract_hold": "(a) a check of the video failed", "floor_hold": "(a) the first-time viewer floor held the film",
+         "look_hold": "(a) a quality hold: the look bar held a long video after its free fix",
          "special_review": "(a) the Short's finished file failed a check; (a) a special has no check on record",
          "hd_blocked": "(a) the HD gate keeps a video private for a policy read",
          "org_lever": "(b) a lever only he may turn", "api_audit": "(b) only he can send YouTube's API audit form",
@@ -995,7 +996,7 @@ def test_every_decision_has_a_plain_name():
     name of its own within WhatsApp's 24 characters - never the code's word ("Floor eye", "Hd blocked", "Ypp tier"); a kind outside the table keeps
     its own word with spaces."""
     asked = [k for k, (c, _g) in NT.KINDS.items() if c in (NT.ALARM, NT.HOLD, NT.CARD)]
-    assert len(asked) == 50 and "input_unread" in asked and set(NT.NAMES) == set(asked), sorted(set(asked) ^ set(NT.NAMES))      # U1b finding 4: 49 -> 50
+    assert len(asked) == 51 and "input_unread" in asked and set(NT.NAMES) == set(asked), sorted(set(asked) ^ set(NT.NAMES))      # U1b finding 4: 49 -> 50; DRAWN-b L3 look_hold: 50 -> 51 (re-counted on the U1 stack, RB-U1-d)
     for k in asked:
         n = NT.name(k); assert n == NT.NAMES[k] and 3 < len(n) <= 24 and "_" not in n and n[0].isupper(), (k, n)
     assert NT.name("floor_eye") == "Watch before it posts" and NT.name("hd_blocked") == "Video kept private" and NT.name("ypp_tier") == "Apply for monetisation"

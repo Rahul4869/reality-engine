@@ -7,13 +7,13 @@ from whatifs.org import audience as AUD, layman as LAY
 
 FORWARD = ("therefore", "which means", "that means", "makes", "causes", "leads to", "forces")      # and "so" only at a clause's start (after , ; or .)
 BACK = ("because",)
+DENY = ("not", "never", "if", "cannot", "no", "nobody", "nothing", "neither", "nor", "may", "might", "whether", "doubt", "myth", "without", "none", "hardly", "rarely", "seldom", "barely", "false", "untrue", "wrong")      # RUL-U3p 1: ONE list - AFD F1 (+U1) denies or doubts, DRAWN-b A0a (R2-F6) adds its nine; "n't" too, see _denied; a premise's "if", see _premise_if
 STOP = ("the", "and", "but", "its", "this", "that", "these", "those", "with", "from", "into", "onto", "your", "you", "are", "was", "were", "has", "have", "had",
         "will", "would", "can", "could", "then", "than", "when", "what", "who")      # C1: never an anchor
 _TOK = re.compile(r"\d[\d,]*(?:\.\d+)?|[a-z]+|[.,;:!?]")
 _NUM = re.compile(r"\d[\d,]*\.?\d*")
 _SCALE = re.compile(r"(\d[\d,]*(?:\.\d+)?)\s*(thousand|million|billion|trillion)\b", re.I)
 _MUL = {"thousand": 1e3, "million": 1e6, "billion": 1e9, "trillion": 1e12}
-DENY = ("not", "never", "if", "cannot", "no", "nobody", "nothing", "neither", "nor", "may", "might", "whether", "doubt", "myth")      # AFD F1 (+U1): a cause word in a sentence that denies or only doubts ("n't" too, see _denied) states no arrow
 _UNIT = {w: u for u, ws in (("second", "seconds secs sec"), ("minute", "minutes mins min"), ("hour", "hours hrs hr h"), ("day", "days"), ("week", "weeks"),
                             ("month", "months"), ("year", "years"), ("decade", "decades"), ("century", "centuries"), ("millennium", "millennia millenniums"),
                             ("degree", "degrees"), ("calorie", "calories"), ("mm", "millimetre millimetres millimeter millimeters"),
@@ -132,6 +132,7 @@ def _own(graphic):
         for e in (g.get("a") or {}, g.get("b") or {}): out.add((_plain(e.get("name", "")), _f(e.get("value"))))
     if g.get("kind") == "timeline":
         for e in g.get("events") or []: out.add((_plain(e.get("t", "")), _plain(e.get("text", ""))))
+    if g.get("kind") == "counter": out.add((_plain(g.get("label", "")), _f(g.get("to"))))      # DRAWN-b A0a (253 (a)): the Director's own count
     return out
 
 
@@ -142,7 +143,7 @@ def _pairs(t, s, graphic, sents):
                 (_plain(r["t"]), _plain(r["text"])) in own) for r in s["rungs"]]
         for r in s["rungs"]: scene_nums += _nums(_scaled(r["t"])) + _nums(_scaled(r["text"]))
     else:
-        es = (s["a"], s["b"]) if t == "compare" else (s["part"], s["whole"])
+        es = (s["a"], s["b"]) if t == "compare" else (s["part"], s["whole"]) if t == "part" else ({"name": s["label"], "value": s["to"]},)      # DRAWN-b A0a (253 (a)): a count's number under its own noun
         ents = [(e["name"], e["value"], _anchors(e["name"]), [float(e["value"])], float(e["value"]), (_plain(e["name"]), _f(e["value"])) in own) for e in es]
         scene_nums = [float(e["value"]) for e in es]
     places, units = [], []
@@ -231,11 +232,77 @@ def _causes(links, texts):
             reach = not back and not any(toks[j][0].isalnum() for j in range(i0) if sid[j] == S_)
             if reach:                                           # a cause word that opens its sentence ("So ...") reaches back one sentence
                 before |= {toks[j] for j in range(i0) if sid[j] == S_ - 1}
-            words = [j for j in range(len(toks)) if sid[j] == S_ or (reach and sid[j] == S_ - 1)]
+            words = [j for j in range(len(toks)) if sid[j] == S_ or (reach and sid[j] == S_ - 1) or sid[j] == S_ + 1]      # RUL-U3p 1: ONE scope - its own sentence, the one a "So" reaches back to (AFD F1), the next ("... a cold. It doesn't.": DRAWN-b A0a, T2)
             first, second = (B, A) if back else (A, B)
-            if _denied([toks[j] for j in words if not _premise_if(toks, sid, j, i0, reach, first, second)]): continue      # AFD F1: "Heat never causes rain" draws no Heat -> Rain; U1d/U1f: a premise's "if" is left out
+            if _denied([toks[j] for j in words if not _premise_if(toks, sid, j, i0, reach, first, second)]): continue      # AFD F1 + DRAWN-b A0a (R2-F6), ONE check (RUL-U3p 1): a denial or doubt in that scope draws no arrow; U1d/U1f: only a premise's "if" is left out
             if all(a in before for a in first) and all(b in after for b in second): ok = True; break
         if not ok: return f"an arrow the script does not state: {links[k]} -> {links[k + 1]}"
+    return ""
+
+
+# DRAWN-b A0b (253 (b), (c)): a computed figure is drawn only where the voice says it, digit for digit; a unit only behind a value the script gives it to
+_SAY = {"pct": (("percent",), ("per", "cent")), "x": (("times",), ("x",), ("fold",))}
+_XWORD = {"twice": 2.0, "double": 2.0, "triple": 3.0, "half": 2.0}
+
+
+def _wd(sent): return _words(_toks(str(sent or "").replace("%", " percent ")))          # a sentence's words and numbers in order; "%" is read as the word
+
+
+def _said(w, kind):
+    """[(place, figure)] of every percentage ("pct") or ratio ("x") the words SAY: a number in digits followed by "percent", "per cent" or "%" - by "times",
+    "x" or "fold" - and, for a ratio, the words of _XWORD. A number spelled in words is not read: the scene is refused, the card stays."""
+    out = []
+    for k, x in enumerate(w):
+        if x[0].isdigit():
+            for m in _SAY[kind]:
+                if tuple(w[k + 1:k + 1 + len(m)]) == m and not (m == ("x",) and k + 2 < len(w) and w[k + 2][0].isdigit()) and not (m == ("times",) and w[k + 2:k + 3] in (["a"], ["an"], ["per"], ["each"], ["every"])):
+                    if _f(x) is not None: out.append((k, _f(x)))
+                    break
+        elif kind == "x" and x in _XWORD and w[k + 1:k + 2] not in (["a"], ["an"]): out.append((k, _XWORD[x]))      # R16 [R1-18, change 7]: "half a billion", "twice a day" are no ratio
+    return out
+
+
+def _states(sents, kind, want, names):
+    """True when ONE sentence says, as a percentage (a ratio), exactly the number the screen will show (`want` = drawn._pct_text / _ratio_text of the computed
+    figure), carries every anchor of one of `names`, and - where it says several different figures - the one nearest that name's anchors is this one (a tie refuses)."""
+    n = _f(str(want).rstrip("%x"))
+    for sent in sents:
+        w = _wd(sent); said = _said(w, kind)
+        for A in names:
+            if not said or not A or not all(a in w for a in A): continue
+            pa = [k for k, x in enumerate(w) if x in A]; dist = {}
+            for k, q in said: dist[q] = min([dist.get(q, len(w))] + [abs(k - j) for j in pa])
+            best = min(dist.values()); win = [q for q, d_ in dist.items() if d_ == best]
+            if len(win) == 1 and _eq(win[0], n): return True
+    return False
+
+
+_JOIN = ("a", "an", "per")      # RUL-U3p 2b: the joining words of a unit said aloud ("kilometres an hour", "kilometres per hour")
+
+
+def _unit_at(U, w, k):
+    """253 (c) + CR-AUDITFIX 2 (RUL-U3p 2b): do the unit's words U stand right behind the value w[k] - from the next word or the one after it?
+    As written ("km" after "384,000"), or each word by its one name in _UNIT ("km" is the voice's "kilometres", "h" its "hour"), a joining "a",
+    "an" or "per" read on neither side ("km/h" = "kilometres an hour"); the unit never starts on a joining word of the line."""
+    if U in (w[k + 1:k + 1 + len(U)], w[k + 2:k + 2 + len(U)]): return True
+    nm = lambda xs: [_UNIT.get(x, x) for x in xs if x not in _JOIN]
+    want = nm(U)
+    return bool(want) and any(s0 < len(w) and w[s0] not in _JOIN and nm(w[s0:s0 + 2 * len(U) + 1])[:len(want)] == want for s0 in (k + 1, k + 2))
+
+
+def _unit(t, s, g, sents):
+    """253 (c): a count's or a compare's unit stands within the two words after EACH of its values, in a sentence that carries that value's own name; the
+    Director's own pair under the Director's own unit is drawn as the card draws it."""
+    U = _wd(s.get("unit") or "")
+    if not U: return ""
+    own = _own(g); same = _plain(s["unit"]) == _plain((g or {}).get("unit", ""))
+    for e in (({"name": s["label"], "value": s["to"]},) if t == "count" else (s["a"], s["b"])):
+        if same and (_plain(e["name"]), _f(e["value"])) in own: continue
+        A = _anchors(e["name"]); ok = False
+        for sent in sents:
+            w = _wd(sent)
+            if all(a in w for a in A): ok = ok or any(x[0].isdigit() and _eq(_f(x), float(e["value"])) and _unit_at(U, w, k) for k, x in enumerate(w))      # RUL-U3p 2b: right behind the value, as written or by its one name in _UNIT
+        if not ok: return f"a unit the script does not give to that value: {MD._fmt(float(e['value']), s['unit'])}"
     return ""
 
 
@@ -260,8 +327,17 @@ def verify(scene, graphic, texts):
             return f"a word the script does not have: {w}"
     if "%" in str(s.get("unit") or "") and not ("%" in low or "percent" in vocab or "per cent" in low or any("%" in x for x in gs)):      # U1 (AFD-%): "%" has no letters to ask - asked as itself
         return "a word the script does not have: %"
-    if t in ("compare", "part", "ladder"):
-        why = _pairs(t, s, g, sentences(texts))
+    if t in ("compare", "part", "ladder", "count"):
+        sents = sentences(texts); why = _pairs(t, s, g, sents)
+        if not why and t in ("count", "compare"): why = _unit(t, s, g, sents)
+        if not why and t == "part" and not _states(sents, "pct", DRAWN._pct_text(100.0 * float(s["part"]["value"]) / float(s["whole"]["value"])), [_anchors(s["part"]["name"])]):
+            why = "a percentage the script does not state"
+        if not why and t == "compare":
+            a, b = float(s["a"]["value"]), float(s["b"]["value"]); own = _own(g)
+            both_own = g.get("kind") == "compare" and all((_plain(e["name"]), _f(e["value"])) in own for e in (s["a"], s["b"]))      # the Director's own two pairs: the card's own comparison
+            if not both_own and not any(_pairs("compare", s, None, [x]) == "" for x in sents) \
+               and not _states(sents, "x", DRAWN._ratio_text(max(a, b) / min(a, b)), [_anchors(s["a"]["name"]), _anchors(s["b"]["name"])]):
+                why = "a comparison the script does not make"
         if why: return why
     if t == "flow": return _causes(s["links"], texts)
     return ""
@@ -454,6 +530,15 @@ def audit(master, job):
             out += [((m["f0"] + m["nf"] / 2) / f_, (m["i"], m["k"])) for m in st_]
             r["ok"] = False; r["why"] = "its frame could not be read on the finished file" if g is None else f"its text reached only {v:.1f} to 1 on the finished file"      # the reason drawn_shown asks for
     return out
+
+
+def audit_failed(job, e):
+    """256 (a): the audit itself raised. Every scene still on record as proved - drawn on the file, or re-drawn by a repair before the audit ran - gets the
+    reason drawn_shown asks for, and every state still recorded drawn is returned as audit returns an unreadable one: (middle second, (i, k)) - its still."""
+    why = f"the audit could not run ({type(e).__name__}): shown as its still"
+    for r in (getattr(job, "drawn", {}) or {}).values():
+        if isinstance(r, dict) and (r.get("ok") or not r.get("why")): r.update(ok=False, why=why)
+    return [((m["f0"] + m["nf"] / 2) / float(job.fps), (m["i"], m["k"])) for m in job.segmeta if m.get("drawn")]
 
 
 def shown_report(master, shots, drawn):

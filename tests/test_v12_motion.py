@@ -370,6 +370,18 @@ def test_check_living_characters_passes_drawn_or_absent_and_nothing_else(ladder,
     assert all(FMT.rule("living_characters", f) == "must" for f in ("F1", "F2", "F3")) and "living_characters" not in FMT.DEVICES      # no format can make it optional
     setting("LIVING_CHARACTERS_ON", "FALSE"); s, ev = CON.p_living({"shots": react, "absent": 0}); assert s == CON.FAIL       # switched off, a planned cutaway has no art to show: never 'not applicable'
 
+def test_the_cast_check_says_a_cutaway_whose_mouth_never_moved(ladder, setting, tmp_path, monkeypatch):
+    """RULINGS_U3k DRAWN-1: a cutaway with no usable mouth picture (mouth_rule "none") is SAID in the PASS words, never held (H42 is measured, not gated)."""
+    from whatifs import living as LV
+    react = [{"type": "still"}, {"type": "reaction", "speaker": "SKEPTIC"}, {"type": "reaction", "speaker": "JUDGE"}]
+    setting("CHIP_DRAWN_ONLY_ON", "FALSE"); _sheets(tmp_path, ("GRIMM", "ROSA"))
+    monkeypatch.setattr(LV, "USED", [{"blinks": 2, "mouth_frames": 0, "mouth_rule": "none", "shape_err": 0}, {"blinks": 1, "mouth_frames": 6, "mouth_rule": "voice", "shape_err": 0}])
+    s, ev = CON.p_living({"shots": react, "absent": 0})
+    assert s == CON.PASS and ev.endswith("(3 blinks, 6 talking frames in this job; 1 with the mouth shut: no usable mouth picture)"), ev
+    monkeypatch.setattr(LV, "USED", [{"blinks": 2, "mouth_frames": 3, "mouth_rule": "voice", "shape_err": 0}, {"blinks": 1, "mouth_frames": 6, "mouth_rule": "voice", "shape_err": 0}])
+    s, ev = CON.p_living({"shots": react, "absent": 0})
+    assert s == CON.PASS and "mouth shut" not in ev, ev
+
 def test_no_prompt_asks_for_a_silhouette_and_the_rule_cannot_come_back(ladder):
     assert "silhouette" not in inspect.getsource(FE).lower()                                                      # the format engine told three roles to show presenters as silhouettes
     assert "A PRESENTER IS DRAWN OR ABSENT" in inspect.getsource(FE) and "presenter silhouettes" not in open(os.path.join(ROOT, "whatifs", "qc.py"), encoding="utf-8").read()
@@ -630,10 +642,10 @@ def test_the_sweep_makes_an_id_bad_when_a_rule_was_not_walked(ladder):
 def test_the_batch_is_wired_protected_and_documented():
     prot = open(os.path.join(ROOT, "tools", "repair.py"), encoding="utf-8").read()
     assert '"whatifs/motion.py"' in prot and '"whatifs/stock.py"' in prot and {"whatifs/motion.py", "whatifs/stock.py"} <= set(REG.DEPTS["D6"]["wraps"])
-    stage = {f[0]: f[1] for f in CON.FEATURES}; assert len(stage) == len(CON.FEATURES) == 74          # v12 DRAWN step 1: + drawn_plan; step 2: + drawn_shown. v12 V4 step 3: + strategy_live (BY DESIGN). v12 V1c step 1: + viewer_floor; step 3: + makers_line; step 4: + one_story (pins moved BY DESIGN)
+    stage = {f[0]: f[1] for f in CON.FEATURES}; assert len(stage) == len(CON.FEATURES) == 76          # v12 DRAWN-b L1a: + short_look. v12 DRAWN step 1: + drawn_plan; step 2: + drawn_shown. v12 V4 step 3: + strategy_live (BY DESIGN). v12 V1c step 1: + viewer_floor; step 3: + makers_line; step 4: + one_story (pins moved BY DESIGN)
     assert (stage["moving_share"], stage["stock_share"], stage["short_moving"], stage["short_sound"], stage["living_characters"]) == ("final", "final", "short_file", "short_file", "final")
     assert [REG.check_owner(k) for k in ("moving_share", "stock_share", "short_moving", "short_sound")] == ["D6", "D6", "D6", "D7"]
-    assert RND.SHOW_CHECKS == 62 and all(k not in RND.ORG_CHECKS and k in RND.metrics() for k in ("moving_share", "stock_share", "short_moving", "short_sound"))
+    assert RND.SHOW_CHECKS == 64 and all(k not in RND.ORG_CHECKS and k in RND.metrics() for k in ("moving_share", "stock_share", "short_moving", "short_sound"))
     assert REG.GATE_RUNS["short_file"] == ("D8", "short_file_gate") and ("whatifs/shorts2.py", "short_file_gate") in REG.ENTRY["D8"] and REG.EPISODE_RUNS["short_file"][-1] == ("D14", "make")
     for k, dept, owner, checks in (("MOVING_SHARE_LONG", "D1", "", ("moving_share",)),      # v12 V4: moved to D1 (BY DESIGN)
                                     ("MOVING_SHARE_MIN_LONG", "D6", "down", ("moving_share",)), ("STOCK_SHARE_MAX_PCT", "D6", "up", ("stock_share",)),

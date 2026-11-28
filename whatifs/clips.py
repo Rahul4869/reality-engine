@@ -11,7 +11,7 @@ SHAPES_OK = ("follows", "inferred")  # where a clip's shape comes from: the page
 STALE_PCT = 0.10                    # the listing's base price moved by more than this: the model's page must be read again
 SHAPE_TOL = 0.12                    # how far a clip's shape (width / height) may be from its start picture's before it counts as another shape
 LICENSED = "commercial"             # the only licence word of a provider's listing under which a clip is ever bought (v12 V2d-b: one model in use was "research")
-ROLE_CELL = {"hero": "FAL_HERO_MODEL", "living": "FAL_LIVING_MODEL"}      # the two things a clip model is bought for, and the cell that names the model of each
+ROLE_CELL = {"hero": "FAL_HERO_MODEL", "living": "FAL_LIVING_MODEL", "restyle": "FAL_RESTYLE_MODEL"}      # the two things a clip model is bought for, and the cell that names the model of each
 
 def on(): return S("CLIP_VALUE_ON", bool)
 
@@ -84,21 +84,28 @@ def args(r, image_url, prompt, seconds):
     """The request body of one clip, built from the model's row and nothing else: the prompt, the start picture in the field the row names, the
     seconds as the row's kind of value, the size where the model has a size field, and the row's own extra fields. Pure."""
     n = secs(r, seconds)
-    body = {"prompt": prompt, str(r.get("start") or "image_url"): image_url, "duration": str(n) if str(r.get("dur") or "int") == "str" else n}
+    body = {"prompt": prompt, str(r.get("start") or "image_url"): image_url}
+    if str(r.get("dur") or "int") != "none": body["duration"] = str(n) if str(r.get("dur") or "int") == "str" else n      # v12 DRAWN-b (3.5): a restyle row has no duration field (its clip is as long as its input)
     if r.get("res_field") and r.get("res") not in (None, "", "-"): body[str(r["res_field"])] = r["res"]
     body.update(r.get("extra") or {})
     return body
 
 # ------------------------------------------------------------------ the rule
-def issues(r, dead=()):
+def issues(r, dead=(), role="hero"):
     """Why this row cannot be the hero ([] = it can): it takes a start picture, gives an upright clip for an upright picture, has a price at the size
-    it buys, is long enough for a scene, is listed and alive."""
+    it buys, is long enough for a scene, is listed and alive. v12 DRAWN-b (3.5, F-13): role "restyle" asks a video start ('video_url') and no
+    minimum length, and refuses a row whose listed price moved (stale); every other role refuses a video-start row."""
     p = []
-    if not str(r.get("start") or "").strip(): p.append("no field for a start picture")
+    st_ = str(r.get("start") or "").strip()
+    if role == "restyle":
+        if st_ != "video_url": p.append("a restyle row takes the cutaway in its field 'video_url'")
+        if r.get("stale"): p.append("its listed price moved: its page must be read again")
+    elif not st_: p.append("no field for a start picture")
+    elif st_ == "video_url": p.append("a video-start row restyles a video: it never makes a clip from a picture")
     if str(r.get("shape") or "") not in SHAPES_OK: p.append("nothing says its clip takes the shape of the start picture")
     if usd_s(r) is None or usd_s(r) <= 0: p.append("no price at the size it would be bought in")
     if str(r.get("lic") or "").strip().lower() != LICENSED: p.append(f"its licence is '{r.get('lic') or 'not stated'}', not {LICENSED}")
-    if int(r.get("max_s") or 0) < SCENE_S: p.append(f"its longest clip is under {SCENE_S} seconds")
+    if role != "restyle" and int(r.get("max_s") or 0) < SCENE_S: p.append(f"its longest clip is under {SCENE_S} seconds")
     if str(r.get("status") or "active") != "active": p.append(f"fal lists it as {r.get('status')}")
     if r.get("schema"): p.append(f"its inputs changed: {r.get('schema')}")
     if r.get("id") in set(dead): p.append("it is failing or retired")
@@ -133,6 +140,35 @@ def choice(dead=(), rows=None, role="hero"):
     rows = table() if rows is None else rows; cur = str(S(ROLE_CELL[role]) or "")
     gone = set(dead) | {r["id"] for r in rows if not STW.usable(r["id"])}
     return pick(rows, G.line_usd_s(), None if cur in gone else floor_of(cur, rows), gone)
+
+# ------------------------------------------------------------------ v12 DRAWN-b (3.5): the restyle trial arm - a row of the market behind four locks
+def restyle_table():
+    """The restyle rows (cell RESTYLE_MODELS, the clip market's own row format); the built-in rows when the cell cannot be read."""
+    rows = _rows(S("RESTYLE_MODELS")); return rows if rows is not None else (_rows(DEFAULTS["RESTYLE_MODELS"][0]) or [])
+
+def restyle(within_line=True):
+    """The row a code-made cutaway is RESTYLED with - None unless the owner's switch RESTYLE_ON is TRUE, RESTYLE_SHARE_PCT is above 0 and the row
+    FAL_RESTYLE_MODEL names can be bought (a video start, a price, a commercial licence, listed and alive) at or under the month's line: paid from
+    the motion money or not at all. within_line=False is the estimate's own call (the line is computed FROM the estimate)."""
+    if not S("RESTYLE_ON", bool) or S("RESTYLE_SHARE_PCT", int) <= 0: return None
+    rid = str(S("FAL_RESTYLE_MODEL") or "").strip(); r = row(rid, restyle_table()) if rid else None
+    if r is None or issues(r, role="restyle"): return None
+    if not within_line: return r
+    from whatifs import governor as G
+    return r if usd_s(r) <= G.line_usd_s() + 1e-9 else None
+
+def restyle_preflight():
+    """(ok, words): where the restyle trial stands - off, no row, a row that cannot be bought (a licence, a moved price), above the month's line,
+    or buyable at its price and share. Pre-flight shows it as a warning row, never a block."""
+    if not S("RESTYLE_ON", bool): return True, "the restyle trial is built and off (RESTYLE_ON is the owner's switch)"
+    from whatifs import governor as G
+    rid = str(S("FAL_RESTYLE_MODEL") or "").strip(); r = row(rid, restyle_table()) if rid else None
+    if r is None: return False, f"{rid or 'no model'} has no row in RESTYLE_MODELS: nothing is restyled"
+    bad = issues(r, role="restyle")
+    if bad: return False, f"{rid}: " + "; ".join(bad)
+    line = G.line_usd_s()
+    if usd_s(r) > line + 1e-9: return False, f"{rid} costs USD {usd_s(r):g} a second, above the month's line USD {line:.3f}: nothing is restyled"
+    return True, f"{rid} can be bought at USD {usd_s(r):g} a second (share {S('RESTYLE_SHARE_PCT', int)}%)"
 
 # ------------------------------------------------------------------ the live listing: what a program CAN read
 def _props(doc):
@@ -193,6 +229,10 @@ def review(now=None):
     if not on(): return {}
     from whatifs import steward as STW
     rows = refresh(); cur = str(S("FAL_HERO_MODEL") or ""); out = {"hero": cur, "stale": [r["id"] for r in rows if r.get("stale")]}
+    rr = restyle_table()                                          # v12 DRAWN-b (3.5): the restyle row is read weekly from fal's listing like every row (status, licence, schema, a moved price)
+    if rr:
+        was = json.dumps(rr, sort_keys=True); nr = refresh(rows=rr, save=False)
+        if json.dumps(nr, sort_keys=True) != was: set_setting("RESTYLE_MODELS", json.dumps(nr))
     for r in rows:
         if not r.get("stale"): continue
         try:

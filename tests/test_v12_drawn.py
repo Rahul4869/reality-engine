@@ -103,13 +103,13 @@ def test_verify_refuses_a_number_a_word_a_pair_or_an_arrow_the_script_does_not_s
     assert SCN.verify(_cmp("The Moon", 384000, "The Sun", 150000000), G_LABEL, ("", c1, "")) == ""
     gp = {"kind": "counter", "label": "Your share of the air", "from": 0, "to": 1, "unit": ""}; ln = "Oxygen is 21 of every 100 parts of all the air."
     part = lambda pn, pv, wn, wv, label="Your share of the air": {"v": 1, "template": "part", "variant": 0, "slots": {"label": label, "part": {"name": pn, "value": pv}, "whole": {"name": wn, "value": wv}}, "cues": []}
-    assert SCN.verify(part("Oxygen", 21, "All the air", 100), gp, ("", ln, "")) == ""
+    assert SCN.verify(part("Oxygen", 21, "All the air", 100), gp, ("", ln, "So oxygen is 21 percent of it.")) == ""      # DRAWN-b A0b (253 (b)), moved by design: a part is drawn only where a line says its percentage
     assert SCN.verify(part("All the air", 21, "Oxygen", 100), gp, ("", ln, "")).startswith("a value the script does not give to that name")       # names swapped
     gp_sleep = {"kind": "counter", "label": "Sleep in a day", "from": 0, "to": 1, "unit": ""}
     assert SCN.verify(part("Minutes you sleep", 10, "Hours of a day", 24, "Sleep in a day"), gp_sleep, ("", "You sleep 10 minutes out of the 24 hours of a day.", "")) \
         == "a part and its whole in different units: minutes and hours"          # AFD F2: never "42%" for 10 minutes of 24 hours
-    assert SCN.verify(part("Sleep", 10, "A day", 1440, "Sleep in a day"), gp_sleep, ("", "You sleep 10 minutes out of the 1,440 minutes of a day.", "")) == ""      # one unit: a true share
-    assert SCN.verify(part("Sleep", 1, "A day", 24, "Sleep in a day"), gp_sleep, ("", "You sleep 1 hour out of the 24 hours of a day.", "")) == ""      # U1 (AFD-unit): "hour" and "hours" are ONE unit
+    assert SCN.verify(part("Sleep", 10, "A day", 1440, "Sleep in a day"), gp_sleep, ("", "You sleep 10 minutes out of the 1,440 minutes of a day.", "So you sleep 0.7 percent of a day.")) == ""      # one unit: a true share (RUL-U3p 2: its percentage said - DRAWN-b 253 (b))
+    assert SCN.verify(part("Sleep", 1, "A day", 24, "Sleep in a day"), gp_sleep, ("", "You sleep 1 hour out of the 24 hours of a day.", "So you sleep 4.2 percent of a day.")) == ""      # U1 (AFD-unit): "hour" and "hours" are ONE unit (RUL-U3p 2: its percentage said - 253 (b))
     assert SCN.verify(part("Minutes you sleep", 10, "Hours of a day", 24, "Sleep in a day"), gp_sleep, ("", "You sleep 10 more minutes out of the 24 hours of a day.", "")) \
         == "a part and its whole in different units: minutes and hours"          # U1 (AFD-unit): one word between the amount and its unit still reads the unit
     gc = {"kind": "counter", "label": "Cities in history", "from": 0, "to": 1, "unit": ""}
@@ -526,10 +526,11 @@ def test_the_l1_trial_measures_both_backends_and_its_rule_decides(capsys):
 # ------------------------------------------------------------------ P19: the talking cast stays off until DRAWN-b (the finisher's C-P19)
 def test_the_talking_cast_stays_off_by_default_until_drawn_b(setting):
     from whatifs import living as LV, manage as MG
-    assert core.DEFAULTS["LIVING_CHARACTERS_ON"][0] == "FALSE"                               # off by default (P19: no widened face before DRAWN-b)
+    assert core.DEFAULTS["LIVING_CHARACTERS_ON"][0] == "TRUE"                                # DRAWN-b B1 (F-2): on by default again - only art he locked himself, at its own shape
     setting("LIVING_CHARACTERS_ON", core.DEFAULTS["LIVING_CHARACTERS_ON"][0])             # the cell as a fresh Sheet holds it
-    core.store().append("Character_Sheets", [{"ts": core.iso(), "character": "VALE", "expression": "neutral", "file": "drive:test-vale-neutral", "status": "LOCKED"}])
-    assert not LV.has_art("DIRECTOR")                                                       # approved art - and still no cutaway is planned
+    core.store().append("Character_Sheets", [{"ts": core.iso(), "character": "VALE", "expression": "neutral", "file": "drive:test-vale-neutral", "status": "LOCKED",
+                                              "approved_at": core.iso() + " (default)"}])      # DRAWN-b B1: a lock by default after 72 h
+    assert not LV.has_art("DIRECTOR")                                                       # approved by default only - still no cutaway is planned (LIVING_HIS_LOCK_ONLY)
     setting("LIVING_CHARACTERS_ON", "TRUE"); setting("V12DRAWN_FLIPS_DONE", "")              # a Sheet that still holds the OLD default
     assert MG.v12drawn_upgrade(core.store()) == ["LIVING_CHARACTERS_ON"] and not core.S("LIVING_CHARACTERS_ON", bool)
     setting("LIVING_CHARACTERS_ON", "TRUE")
@@ -613,6 +614,17 @@ def test_afd_f6_the_rehearsals_inside_line_prints_the_inside_rules_own_words():
     sets = [a for a in ast.walk(fn) if isinstance(a, ast.Assign) and a.lineno < pr.lineno and name in {x.id for t in a.targets for x in ast.walk(t) if isinstance(x, ast.Name)}]
     last = max(sets, key=lambda a: a.lineno)
     assert isinstance(last.value, ast.Call) and getattr(last.value.func, "id", "") == "inside12", ast.unparse(last)      # AFD F6: never the drawn arm's words
+
+
+def test_an_audit_that_raised_leaves_no_proved_scene_without_its_reason():
+    """256 (a), the review of record: a scene a repair re-drew BEFORE the audit has no drawn state left - it still needs its reason, or drawn_shown holds the film."""
+    import types
+    job = types.SimpleNamespace(fps=30, drawn={3: {"ok": True, "why": "", "L": {"W": 640, "H": 360}}, 5: {"ok": True, "why": "", "L": {"W": 640, "H": 360}}, 7: {"ok": False, "why": "the render failed: planted"}},
+                                segmeta=[{"i": 3, "k": 0, "f0": 0, "nf": 30, "drawn": True}, {"i": 5, "k": 0, "f0": 30, "nf": 30, "drawn": False}, {"i": 7, "k": 0, "f0": 60, "nf": 30, "drawn": False}])
+    why = "the audit could not run (RuntimeError): shown as its still"
+    assert SCN.audit_failed(job, RuntimeError("planted")) == [(0.5, (3, 0))]                  # the one state still drawn: its still
+    assert (job.drawn[3]["ok"], job.drawn[3]["why"]) == (False, why) and (job.drawn[5]["ok"], job.drawn[5]["why"]) == (False, why)      # 5: re-drawn by a repair before the audit
+    assert job.drawn[7] == {"ok": False, "why": "the render failed: planted"}                 # a reason already on record stays
 
 
 def test_f4_a_writers_odd_reply_never_raises(monkeypatch):
@@ -717,6 +729,43 @@ def test_t5_the_sweeps_judge_of_the_drawn_arm_and_the_check_on_a_state_outside_i
     assert CON.p_drawn_shown({"master": None, "shots": withsc, "drawn": {"plan": {"arm": False}, "proof": {}, "L": {}, "states": states}})[0] == "FAIL"
 
 
+def test_the_rehearsal_prints_each_judges_words_under_its_own_label():
+    """Open issue 260: the drawn judge's words never stand under the label "inside the format:" - between the inside judge's answer and its print no
+    line gives `said12` another value, and the rehearsal itself asserts whose words it prints."""
+    import inspect, re
+    from tools import rehearsal as RH
+    src = inspect.getsource(RH); k = "ok12, said12 = inside12(core12, epid)"; a = src.index(k); b = src.index('print("inside the format:", said12[:420])')
+    assert a < b and not re.search(r"\bsaid12\s*=[^=]", src[a + len(k):b]), "another judge's words reach the line 'inside the format:'"
+    assert 'okd12, saidd12 = drawn12(core12, epid)' in src[a:b] and 'print("drawn:", saidd12[:300])' in src[a:b]
+    assert 'assert said12.startswith("inside the format held:")' in src[a:b]
+
+
+@pytest.mark.parametrize("template", ["ladder", "compare", "flow", "part"])
+def test_the_sweep_plants_each_template_on_the_first_explaining_moment(setting, monkeypatch, template):
+    """Open issue 261: the sweep's planting brings each template of the kit through the REAL plan step and the REAL gate check - verify is asked as in production."""
+    from tools import sweep as SW
+    from whatifs import contract as CON
+    _arm_on(setting); monkeypatch.setattr(SCN, "place", SCN.place); monkeypatch.setattr(SCN, "ask", SCN.ask)      # the planting's two names are put back after the test
+    lines = ["You wake up.", "Something is off.", "The room is quiet.", "You look outside.", "Nothing moves."]
+    units = _units(lines); total = units[-1]["end"] + 0.3; shots = [_gshot() if k == 2 else {"type": "still", "prompt": "p"} for k in range(len(units))]
+    seen = SW.plant_template(template); d = {}
+    out = SCN.place(shots, units, "EP2031030708" + str(30 + SW.DRAWN_PLANTS.index(template)), d, total, True)
+    assert seen == {"i": 2} and d["drawn"]["scenes"][0]["by"] in ("writer", "code") and out[2]["scene"]["template"] == template, (template, d["drawn"]["scenes"])
+    assert CON.p_drawn_plan({"shots": out, "units": units, "d": d, "total": total})[0] == "PASS"
+
+
+def test_the_sweeps_judge_of_a_planted_template_both_ways(setting):
+    """Open issue 261: an id is good only when the planted template stands in what a viewer saw AND both drawn checks passed."""
+    from tools import sweep as SW
+    def film(ep, shown):
+        core.store().append("Feature_Ledger", [{"episode_id": ep, "feature": "drawn_plan", "status": "PASS", "evidence": "the drawn arm held: planted"}, {"episode_id": ep, "feature": "drawn_shown", "status": shown, "evidence": "the drawn arm held: 1 scene(s) drawn" if shown == "PASS" else "planted fail"}])
+        core.store().append("Video_Features", [{"video_key": ep, "arm": json.dumps({"drawn": ["ladder1"]})}])
+    film("EP203103070834", "PASS"); ok, why = SW.drawn_template_of(core, "EP203103070834", "ladder")
+    assert ok is True and why.startswith("the drawn arm drew the planted template: ladder1")
+    ok, why = SW.drawn_template_of(core, "EP203103070834", "part"); assert ok is False and "was not drawn on the finished file" in why
+    film("EP203103070835", "FAIL"); assert SW.drawn_template_of(core, "EP203103070835", "ladder")[0] is False      # a film its check failed is never good, whatever its record says
+
+
 def test_t6_the_resumes_two_guards(setting):
     _arm_on(setting); shots, units, total = _film()
     rec = lambda u: {"unit": u, "template": "count", "variant": 1, "slots": DRAWN.from_graphic(G_COUNT)[0]["slots"], "cues": [], "by": "code", "why": ""}
@@ -756,3 +805,122 @@ def test_t7_the_sweeps_drawn_moments_set_three_cells_and_only_under_its_flag():
     assert {k: v for k, v in after.items() if before.get(k) != v} == {"DRAWN_SHARE_PCT": "100", "GRAPHICS_FREE_SEC": "0", "DRAWN_MIN_S": "1.0"}      # those three cells and no other
     lines = [l.strip() for l in inspect.getsource(SW.one).splitlines() if "drawn_moments()" in l]
     assert lines and all(l.startswith("if drawn: drawn_moments()") for l in lines), lines                               # one() calls it only under the flag
+
+
+# ------------------------------------------------------------------ DRAWN-b A0a: the three findings of DRAWN's Fable re-audit
+def test_a_writers_count_under_another_nouns_number_is_refused():
+    """The Fable re-audit, open issue 253 (a): a writer's count passed on its number and its words alone - nothing tied the number to the label."""
+    from whatifs import scenes as SCN
+    g = {"kind": "counter", "label": "People on Earth", "from": 0, "to": 8000000000, "unit": "people"}
+    texts = ("", "8 billion people share 3 trillion trees on Earth.", "")
+    def count(label, to, unit): return {"v": 1, "template": "count", "variant": 0, "slots": {"label": label, "from": 0.0, "to": float(to), "unit": unit}, "cues": []}
+    assert SCN.verify(count("Trees on Earth", 8e9, "trees"), g, texts).startswith("a value the script does not give to that name")   # the people's number under the trees
+    assert SCN.verify(count("Trees on Earth", 3e12, "trees"), g, texts) == ""                                                       # the trees' own number, in its own sentence
+    assert SCN.verify(count("People on Earth", 8e9, "people"), g, texts) == ""                                                      # the Director's own card: by construction, as before
+    g2 = {"kind": "counter", "label": "Pillows airborne", "from": 0, "to": 8000000000, "unit": ""}
+    assert SCN.verify({"v": 1, "template": "count", "variant": 0, "slots": {"label": "Pillows airborne", "from": 8e9, "to": 8e9, "unit": ""}, "cues": []}, g2, ("", "Tonight 8 billion of them float away.", "")) == ""      # the Director's own pair in a writer's scene (not the code's scene) with no sentence of its own
+
+
+def test_a_denied_cause_is_no_arrow():
+    """The Fable re-audit, R2-F6, made whole: an arrow is refused when its own sentence, the sentence a "So" reaches back to or the NEXT sentence holds a denial - each bad line beside its good twin."""
+    c = lambda links, *lines: SCN._causes(links, tuple(lines) + ("",) * (3 - len(lines)))
+    no = "an arrow the script does not state"
+    assert c(["cold weather", "a cold"], "", "You catch a cold, but not because the weather is cold.").startswith(no)          # the denial BEFORE the cause word
+    assert c(["cold weather", "a cold"], "", "You catch a cold, but because the weather is cold.") == ""
+    assert c(["cold weather", "a cold"], "", "Cold weather causes no cold.").startswith(no)                                    # AFTER it
+    assert c(["cold weather", "a cold"], "", "Cold weather causes a cold.") == ""
+    assert c(["the moon stops", "the tides rise"], "", "The moon stops, so the tides never rise.").startswith(no)
+    assert c(["the moon stops", "the tides rise"], "", "The moon stops, so the tides rise.") == ""
+    assert c(["The table tilts", "The cup falls"], "", "The cup falls, but it isn't because the table tilts.").startswith(no)  # the "n't"
+    assert c(["The table tilts", "The cup falls"], "", "The cup falls, but it is because the table tilts.") == ""
+    assert c(["cold weather", "a cold"], "The weather is not cold.", "So you catch a cold.").startswith(no)                   # the sentence a "So" reaches back to
+    assert c(["cold weather", "a cold"], "The weather is cold.", "So you catch a cold.") == ""
+    assert c(["cold weather", "a cold"], "", "You think cold weather causes a cold. It doesn't.").startswith(no)              # the denial in the NEXT sentence
+    assert c(["cold weather", "a cold"], "", "You think cold weather causes a cold. It does.") == ""
+    assert c(["cold weather", "a cold"], "", "It is a myth that cold weather causes a cold.").startswith(no)                  # a denial without "not"
+    assert c(["cold weather", "a cold"], "", "It is a fact that cold weather causes a cold.") == ""
+    assert c(["cold weather", "a cold"], "", "It is untrue that cold weather causes a cold.").startswith(no)                  # RUL-U3p 1: one of DRAWN-b's nine still denies - a second DENY had silenced it
+    assert c(["cold weather", "a cold"], "", "It is true that cold weather causes a cold.") == ""
+    import ast
+    body = ast.parse(open(os.path.join(ROOT, "whatifs", "scenes.py"), encoding="utf-8").read()).body
+    assert sum(isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "DENY" for t in n.targets) for n in body) == 1      # RUL-U3p 1: ONE list of denials - a second copy rebinds the first silently (RB-U1-d)
+
+
+# ------------------------------------------------------------------ DRAWN-b A0b: a computed percentage, ratio or unit is drawn only as the voice says it
+def test_a_part_is_drawn_only_when_a_line_says_its_percentage():
+    """253 (b): a part is drawn only where one sentence says, as a percentage and about the part's own name, exactly the share the kit will write."""
+    two = ("There are 8 billion people on Earth.", "Only 2 billion of them own a car.")
+    sc = {"v": 1, "template": "part", "variant": 0, "slots": {"label": "People on Earth own a car", "part": {"name": "Own a car", "value": 2e9}, "whole": {"name": "People on Earth", "value": 8e9}}, "cues": []}
+    ver = lambda third, s=sc: SCN.verify(s, {}, two + (third,))
+    no = "a percentage the script does not state"
+    assert ver("So about 25 percent of people on Earth own a car.") == "" and ver("So 25% of them own a car.") == "" and ver("So 25 per cent of them own a car.") == ""
+    assert ver("So 60 percent rent, and only 25 percent own a car.") == ""                                    # two figures: the nearer is the part's
+    assert ver("") == no                                                                                       # both numbers said, the share never
+    assert ver("So about 40 percent of people on Earth own a car.") == no                                      # another figure
+    assert ver("About 25 percent of homes burn.") == no                                                        # the right figure about something else
+    assert ver("So 25 percent rent, and only 60 percent own a car.") == no                                     # another figure stands nearer the name
+    assert ver("It takes 25 minutes to own a car.") == no                                                      # the right number, not said as a percentage
+    assert ver("So twenty-five percent of them own a car.") == no                                              # in words: the pilot's open issue (vii), on the safe side
+    two1 = (two[0], "Only 1 billion of them own a car.")
+    sc1 = dict(sc, slots=dict(sc["slots"], part={"name": "Own a car", "value": 1e9}))
+    ver1 = lambda third: SCN.verify(sc1, {}, two1 + (third,))                                                  # a share of 12.5, written "12%" by the kit
+    assert ver1("So about 12 percent of them own a car.") == ""
+    assert ver1("So about 13 percent of them own a car.") == no and ver1("So about 12.5 percent of them own a car.") == no
+
+
+def test_a_compare_is_drawn_only_when_one_sentence_gives_both_values_or_a_line_says_the_ratio():
+    """253 (b): a compare's badge is drawn only where one sentence gives both values to their names, or one sentence says, as a ratio and about one of its names, exactly the badge."""
+    W = lambda *t: SCN.verify(_cmp("Blue whale", 150, "Elephant", 6, label="A blue whale weighs", unit="tons"), {}, tuple(t) + ("",) * (3 - len(t)))
+    two = ("A blue whale weighs 150 tons.", "An elephant weighs 6 tons.")
+    no = "a comparison the script does not make"
+    assert W("A blue whale weighs 150 tons, an elephant 6 tons.") == ""                                       # (i) one sentence gives both values
+    assert W(*two, "The blue whale is 25 times heavier.") == "" and W(*two, "The blue whale is 25x heavier.") == "" and W(*two, "The blue whale is 25-fold heavier.") == ""      # (ii) the ratio said
+    assert W(*two) == no                                                                                       # two sentences, no ratio said
+    assert W(*two, "The blue whale is 10 times heavier.") == no
+    assert W(*two, "The blue whale eats 25 times a day.") == no and W(*two, "The blue whale eats 25 times as much.") == ""      # FC-2: "25 times a day" is a rate, not a ratio
+    assert W(*two, "The ship is 25 times heavier.") == no                                                     # the right ratio about something else
+    assert W(*two, "The blue whale is twenty-five times heavier.") == no                                      # in words
+    far = lambda third: SCN.verify(_cmp("The Moon", 384000, "The Sun", 150000000), G_LABEL, ("The Moon is 384,000 km away.", "The Sun is 150 million km away.", third))
+    assert far("The Sun is 391 times farther than the Moon.") == "" and far("The Sun is 400 times farther than the Moon.") == no      # the ratio is 390.6, the badge "391x"
+    two2 = ("A blue whale weighs 12 tons.", "An elephant weighs 6 tons.")
+    W2 = lambda *t: SCN.verify(_cmp("Blue whale", 12, "Elephant", 6, label="A blue whale weighs", unit="tons"), {}, tuple(t) + ("",) * (3 - len(t)))
+    assert W2(*two2, "The blue whale is twice as heavy.") == "" and W2(*two2, "The elephant is half as heavy.") == ""      # the badge "2.0x"
+    assert W2(*two2, "The blue whale is three times as heavy.") == no
+    assert W2(*two2, "The blue whale is half a ton heavier.") == no and W2(*two2, "The blue whale eats twice a day.") == no      # a ratio word directly followed by "a" or "an" is not read
+    assert W2(*two2, "Half the crew left.") == no                                                             # a ratio word in a sentence that carries neither name
+
+
+def test_a_unit_stands_behind_each_of_its_values_or_the_scene_is_refused():
+    """253 (c): a count's or a compare's unit stands within the two words after EACH of its values, in a sentence that carries that value's own name."""
+    why = "a unit the script does not give to that value"
+    assert SCN.verify(_cmp("Whale", 150, "Bus", 60, label="A whale weighs", unit="tons"), {}, ("A whale weighs 150 tons and a bus carries 60 people.", "", "")) == why + ": 60 tons"
+    dropped = "A blue whale weighs 150 tons, an elephant 6."
+    assert SCN.verify(_cmp("Blue whale", 150, "Elephant", 6, label="A blue whale weighs", unit="tons"), {}, (dropped, "", "")).startswith(why)      # natural English drops the second unit: refused with it
+    assert SCN.verify(_cmp("Blue whale", 150, "Elephant", 6, label="A blue whale weighs", unit=""), {}, (dropped, "", "")) == ""                     # and drawn without it
+    g = {"kind": "counter", "label": "People on Earth", "from": 0, "to": 8000000000, "unit": "people"}
+    texts = ("", "8 billion people share 3 trillion trees on Earth.", "")
+    def count(label, to, unit): return SCN.verify({"v": 1, "template": "count", "variant": 0, "slots": {"label": label, "from": 0.0, "to": float(to), "unit": unit}, "cues": []}, g, texts)
+    assert count("People on Earth", 8e9, "trees") == why + ": 8.00 billion trees"                             # the Director's own pair under ANOTHER unit
+    assert count("Trees on Earth", 3e12, "people").startswith(why) and count("Trees on Earth", 3e12, "trees") == ""
+    gp = {"kind": "counter", "label": "Pillows airborne", "from": 0, "to": 8000000000, "unit": "pillows"}
+    mine = lambda unit: SCN.verify({"v": 1, "template": "count", "variant": 0, "slots": {"label": "Pillows airborne", "from": 8e9, "to": 8e9, "unit": unit}, "cues": []}, gp, ("", "Tonight 8 billion of them float away.", ""))
+    assert mine("pillows") == "" and mine("them").startswith(why)                                              # the Director's own pair under the Director's own unit: drawn as the card draws it
+    sun = "The Moon is 384,000 kilometres away and the Sun is 150,000,000 {} away."
+    assert SCN.verify(_cmp("The Moon", 384000, "The Sun", 150000000), G_LABEL, ("", sun.format("kilometres"), "")) == ""          # RUL-U3p 2b: "km" is the voice's "kilometres" behind EACH value
+    assert SCN.verify(_cmp("The Moon", 384000, "The Sun", 150000000), G_LABEL, ("", sun.format("miles"), "")).startswith(why)      # another unit behind one value: refused
+
+
+def test_the_plan_step_and_the_gate_keep_the_card_where_the_share_is_not_said(setting, monkeypatch):
+    """253 (b) through the REAL plan step and the REAL gate check: a writer's part is drawn where the share is said, the Director's card stays where it is not, and the gate asks verify again."""
+    from whatifs import contract as CON
+    _arm_on(setting); lines = ["You wake up.", "There are 8 billion people on Earth.", "Only 2 billion of them own a car.", "So about 25 percent of people on Earth own a car.", "You look outside."]
+    units = _units(lines); total = units[-1]["end"] + 0.3; shots = [_gshot() if k == 2 else {"type": "still", "prompt": "p"} for k in range(len(units))]
+    part = {"unit": 2, "template": "part", "slots": {"label": "People on Earth own a car", "part": {"name": "Own a car", "value": 2e9}, "whole": {"name": "People on Earth", "value": 8e9}}, "cues": []}
+    monkeypatch.setattr(SCN, "ask", lambda ep, wanted: {2: part}); d = {}
+    out = SCN.place(shots, units, "EP203103070820", d, total, True)
+    assert d["drawn"]["scenes"][0]["by"] == "writer" and out[2]["scene"]["template"] == "part" and CON.p_drawn_plan({"shots": out, "units": units, "d": d, "total": total})[0] == "PASS"
+    units2 = _units(lines[:3] + ["Most of them walk."] + lines[4:]); d2 = {}
+    out2 = SCN.place(shots, units2, "EP203103070821", d2, total, True); rec = d2["drawn"]["scenes"][0]
+    assert rec["by"] == "code" and rec["why"] == "a percentage the script does not state" and out2[2]["scene"]["template"] == "count"      # the Director's card content stays, the reason on record
+    st, why = CON.p_drawn_plan({"shots": [dict(s, scene=dict(out[2]["scene"])) if k == 2 else s for k, s in enumerate(out2)], "units": units2, "d": d2, "total": total})
+    assert st == "FAIL" and "a percentage the script does not state" in why                 # the gate asks verify AGAIN: a planted mark does not pass

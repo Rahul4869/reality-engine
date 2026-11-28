@@ -178,6 +178,28 @@ def floor_of(core, ep, climbed=False):
     return True, (("the floor was void by its canary: " if void else "the floor judged: ") + words("viewer_floor")[:220] + " | " + words("makers_line")[:110] + " | "
                   + words("one_story")[:140])
 
+def look_of(core, ep, short=None, long=False):
+    """v12 DRAWN-b (L1c, L3, D13; R16 (a)): (ok, words) - THE SWEEP WALKS THE LOOK. `short_look` of a Short's own id (mode short, `short=ep`), of a
+    rehearsal or produce id on ITS Short (`short="SH" + ep[2:]`); `short=None` = the id has no Short (a long video made under an override): nothing of a
+    Short is asked. L3: `long=True` (the rehearsal and produce modes) also asks `look_bar` of the id's own long video - every such id has one, so a
+    missing `look_bar` row is always a failure. Each verdict asked must be its newest row's PASS, or N/A with evidence that begins 'void by its canary';
+    a missing row, any other 'not applicable' (a first fail "below the bar once", "not judged", the bar switched off) or a FAIL makes the id bad. The
+    words begin 'the look bar judged: ' (with nothing judged but a void: 'the look bar was void by its canary: '), in the form of floor_of."""
+    from whatifs import contract as CON
+    asked = ([("look_bar", ep)] if long else []) + ([("short_look", short)] if short is not None else [])
+    if not asked: return True, f"the look bar asked nothing of {ep}: it has no Short (made under an override)"
+    judged, void = [], []
+    for feat, who in asked:
+        row = {}
+        for r in core.store().rows("Feature_Ledger"):
+            if r.get("episode_id") == who and r.get("feature") == feat: row = r          # the latest verdict
+        st, ev = str(row.get("status") or "missing"), str(row.get("evidence") or "")
+        if st == CON.PASS: judged.append(who + ": " + ev[:260])
+        elif st == CON.NA and ev.startswith("void by its canary"): void.append(who + ": " + ev[len("void by its canary"):].lstrip(": ")[:260])
+        else: return False, f"{feat} {st} on {who}: {ev[:160]}"
+    if judged: return True, "the look bar judged: " + " | ".join(judged + ["void by its canary: " + v for v in void])
+    return True, "the look bar was void by its canary: " + " | ".join(void)
+
 def hd_of(core, ids):
     """v12 B-OWNER (PART 9, R24): (ok, words) - THE SWEEP WALKS THE HD GATE. Asked only of a run with the organisation on (the runs in which the sweep
     set HD_GATE_ON TRUE; the rehearsal sets it itself): every Short made in the run (`ids`) went up private and was made public by the gate - the
@@ -246,7 +268,45 @@ def drawn_moments():
     set_setting("DRAWN_SHARE_PCT", "100"); set_setting("GRAPHICS_FREE_SEC", "0"); set_setting("DRAWN_MIN_S", "1.0")
 
 
-def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10, drawn=False):
+DRAWN_PLANTS = ("ladder", "compare", "flow", "part")          # open issue 261: count is the offline film's own template
+
+
+def plant_template(template):
+    """Open issue 261 (the flag --drawn-template, in this id's own process only): the film's FIRST explaining moment carries `template` - ladder and
+    compare as the Director's own graphic (the code's own scene of it), flow as a line that says "because" (the offline writer's own flow), part as the
+    writer's scene over a line that SAYS its share. scenes.verify, the layout, the proof, the audit and both checks run as in production: nothing is
+    switched off. Returns the dict that receives the planted unit's index under "i"."""
+    from whatifs import scenes as SCN
+    assert template in DRAWN_PLANTS, template
+    real, real_ask, seen = SCN.place, SCN.ask, {}
+    def place(shots, units, ep, d, total, fresh):
+        idx = sorted(SCN.slots(shots, units, total)) if (SCN.on() and fresh and d.get("drawn") is None and SCN.arm(ep)) else []
+        if idx:
+            i = seen["i"] = idx[0]; label = str((shots[i].get("graphic") or {}).get("label") or "")[:48]
+            if template == "ladder": shots[i]["graphic"] = {"kind": "timeline", "label": label, "events": [{"t": "Hour 1", "text": "The tide clock stalls"}, {"t": "Day 1", "text": "The beaches are strange"}]}
+            elif template == "compare": shots[i]["graphic"] = {"kind": "compare", "label": label, "unit": "tons", "a": {"name": "Blue whale", "value": 150}, "b": {"name": "Elephant", "value": 6}}
+            elif template == "flow": units[i]["text"] = "The cup falls because the table tilts."
+            else:
+                units[i]["text"] = "There are 8 billion people on Earth. Only 2 billion of them own a car. So about 25 percent of people on Earth own a car."
+                part = {"unit": i, "template": "part", "slots": {"label": "People on Earth own a car", "part": {"name": "Own a car", "value": 2e9}, "whole": {"name": "People on Earth", "value": 8e9}}, "cues": []}
+                SCN.ask = lambda ep_, wanted: {**real_ask(ep_, wanted), i: part}          # the memo's dict(..., **{i: part}) raises "keywords must be strings": the unit index is an int
+        return real(shots, units, ep, d, total, fresh)
+    SCN.place = place; return seen
+
+
+def drawn_template_of(core, ep, template):
+    """Open issue 261: (ok, words) - the planted template was DRAWN on this id's finished film: both drawn checks PASS (drawn_of) and the film's own
+    record of what a viewer saw (Video_Features.arm["drawn"], compositions like "ladder1") holds one of that template."""
+    ok, said = drawn_of(core, ep)
+    row = next((x for x in core.store().rows("Video_Features") if x.get("video_key") == ep), None)
+    try: seen = [str(x) for x in (json.loads(row["arm"]).get("drawn") or [])] if row else []
+    except Exception: seen = []
+    hit = [x for x in seen if x.startswith(template)]
+    if ok and "not in the drawn arm" not in said and hit: return True, f"the drawn arm drew the planted template: {hit[0]} | {said[:200]}"
+    return False, f"the planted template {template} was not drawn on the finished file (drawn: {', '.join(seen) or 'nothing'}) | {said[:200]}"
+
+
+def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10, drawn=False, template=""):
     os.environ.update(WI_FAKE="1", WI_SMALL="1", WI_WORK=os.path.join(work, "work"), PYTHONUTF8="1")
     for k in KEYS: os.environ.pop(k, None)
     os.makedirs(os.environ["WI_WORK"], exist_ok=True); sys.path.insert(0, repo)
@@ -301,6 +361,8 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10, drawn=False):
                     if not ok_h: late.append("the HD gate: " + res["hd"][:240])
             ok_w, res["screens"] = screens_of(core, [ep])                              # v12 B-OWNER: THE SWEEP WALKS HIS TWO SCREENS - the register, the window at the wire, the planted morning and evening
             if not ok_w: late.append("his two screens: " + res["screens"][:240])
+            ok_l, res["look"] = look_of(core, ep, short=ep)                            # v12 DRAWN-b (L1c): THE SWEEP WALKS THE LOOK - the Short under test was looked at blind beside his sheets
+            if not ok_l: late.append("the look bar: " + res["look"][:240])
             res["problems"] = [f"the first Short: {x}" for x in (r0.get("failed") or ([r0.get("why")] if not r0.get("ok") else []))] + [str(x) for x in (r.get("failed") or [])] + late + ([] if okr or not r.get("ok") else [f"release sheet: {whyr[:200]}"])
             if r0.get("ok") and r.get("ok") and os.path.exists(str(r.get("path") or "")) and okr and not late and r.get("status") == "POSTED":
                 res["outcome"] = "ok"; res["short"] = f"{r0.get('format')}>{r.get('format')}"; res["release"] = ("approved:" if approve else "") + "+".join(x["state"] for x in REL.records(ep))
@@ -329,6 +391,9 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10, drawn=False):
             if res["outcome"] == "ok":                                              # v12 B-OWNER: THE SWEEP WALKS HIS TWO SCREENS - judged again on the rehearsal's Sheet (nothing is sent twice)
                 ok_w, res["screens"] = screens_of(core, [ep])
                 if not ok_w: res["outcome"] = "odd"; res["problems"].append("his two screens: " + res["screens"]); res["error"] = res["screens"][:300]
+            if res["outcome"] == "ok":                                              # v12 DRAWN-b (L1c): THE SWEEP WALKS THE LOOK - the rehearsal's long video, on its Short (R16 (a))
+                ok_l, res["look"] = look_of(core, ep, short="SH" + ep[2:], long=True)
+                if not ok_l: res["outcome"] = "odd"; res["problems"].append("the look bar: " + res["look"]); res["error"] = res["look"][:300]
         else:                                                                      # the recipe of the end-to-end test in tests/test_v12_org.py
             core._store = core.LocalStore(os.path.join(work, "sheet.json")); core._store.ensure_tabs(); core._settings_cache = None
             for k, v in TEST_SETTINGS.items(): core.set_setting(k, v)
@@ -338,6 +403,7 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10, drawn=False):
             MG.setup(); core.set_setting("VOICE", "C")
             if not org: core.set_setting("ORG_ON", "FALSE")
             if drawn: drawn_moments()                                             # v12 DRAWN (DQ-3): the flag --drawn-moments - after the setup, before the long video
+            if drawn and template: plant_template(template)                          # open issue 261: the flag --drawn-template
             slot = (core.now_utc() + dt.timedelta(hours=slot_h)).strftime("%Y-%m-%dT%H:%M:%SZ")
             if climb(core, ep): res["ladder"] = "climbed"                          # v12 V2c-b: every topic starts as a Short - the long video of this id is about its promoted Short
             r = EP.produce(slot, episode_id=ep)
@@ -363,6 +429,9 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10, drawn=False):
             if res["outcome"] == "ok":                                              # v12 DRAWN: THE SWEEP WALKS THE DRAWN SCENES - in the arm both checks PASS, outside it both say so
                 ok_d, res["drawn"] = drawn_of(core, ep)
                 if not ok_d: res["outcome"] = "odd"; res["problems"].append("the drawn scenes: " + res["drawn"]); res["error"] = res["drawn"][:300]
+            if res["outcome"] == "ok" and drawn and template:                        # open issue 261: THE PLANTED TEMPLATE WAS DRAWN ON THE WHOLE PATH
+                ok_t, res["drawn_template"] = drawn_template_of(core, ep, template)
+                if not ok_t: res["outcome"] = "odd"; res["problems"].append("the planted template: " + res["drawn_template"]); res["error"] = res["drawn_template"][:300]
             if res["outcome"] == "ok":                                              # v12 V1c: THE SWEEP WALKS THE FLOOR, HIS LINE AND ONE STORY - judged by first-time viewers, his line kept, the thumbnail the opening
                 ok_f, res["floor"] = floor_of(core, ep, climbed=res.get("ladder") == "climbed")
                 if not ok_f: res["outcome"] = "odd"; res["problems"].append("the floor, his line or one story: " + res["floor"]); res["error"] = res["floor"][:300]
@@ -375,6 +444,9 @@ def one(ep, work, repo=ROOT, org=True, mode="produce", slot_h=10, drawn=False):
             if res["outcome"] == "ok":                                              # v12 B-OWNER: THE SWEEP WALKS HIS TWO SCREENS - the register, the window at the wire, the planted morning and evening
                 ok_w, res["screens"] = screens_of(core, [ep])
                 if not ok_w: res["outcome"] = "odd"; res["problems"].append("his two screens: " + res["screens"]); res["error"] = res["screens"][:300]
+            if res["outcome"] == "ok":                                              # v12 DRAWN-b (L1c): THE SWEEP WALKS THE LOOK - a long video that climbed, on its Short; one made under an override has none (R16 (a))
+                ok_l, res["look"] = look_of(core, ep, short="SH" + ep[2:] if res.get("ladder") == "climbed" else None, long=True)
+                if not ok_l: res["outcome"] = "odd"; res["problems"].append("the look bar: " + res["look"]); res["error"] = res["look"][:300]
         res.update(evidence(core, ep, org))
     except BaseException as e:                                                      # a crash is a result too: the last line of the traceback names it
         if isinstance(e, KeyboardInterrupt): raise
@@ -419,7 +491,7 @@ def evidence(core, ep, org):
 def child(ep, a, base):
     work = os.path.join(base, ep); shutil.rmtree(work, ignore_errors=True); os.makedirs(work, exist_ok=True)
     logp = os.path.join(a.logs, ep + ".log")
-    cmd = [sys.executable, os.path.abspath(__file__), "--one", ep, "--work", work, "--repo", a.repo, "--mode", a.mode, "--slot-h", str(a.slot_h)] + (["--org", "off"] if a.org == "off" else []) + (["--drawn-moments"] if a.drawn_moments else [])
+    cmd = [sys.executable, os.path.abspath(__file__), "--one", ep, "--work", work, "--repo", a.repo, "--mode", a.mode, "--slot-h", str(a.slot_h)] + (["--org", "off"] if a.org == "off" else []) + (["--drawn-moments"] if a.drawn_moments else []) + (["--drawn-template", a.drawn_template] if a.drawn_template else [])
     env = dict(os.environ, WI_FAKE="1", WI_SMALL="1", PYTHONUTF8="1"); t0 = time.time()
     try:
         with open(logp, "w", encoding="utf-8", errors="replace") as lf:
@@ -531,6 +603,7 @@ def summary(results):
             "drawn_held": sum(1 for r in results if str(r.get("drawn") or "").startswith("the drawn arm held:") and r["outcome"] == "ok"),          # v12 DRAWN: every long-video id
             "drawn_ids": sum(1 for r in results if _drew(r.get("drawn")) and r["outcome"] == "ok"),                                                  # ... and a FLOOR: ids that drew a scene
             "floor_judged": sum(1 for r in results if str(r.get("floor") or "").startswith("the floor judged") and r["outcome"] == "ok"),
+            "look_judged": sum(1 for r in results if str(r.get("look") or "").startswith("the look bar judged") and r["outcome"] == "ok"),          # v12 DRAWN-b (L1c): the block holds it on C, D and E; L3: every produce and rehearsal id also asks look_bar (R16 (a))
             "strategy_month_held": sum(1 for r in results if str(r.get("strategy") or "").startswith("the month's decision held") and r["outcome"] == "ok"),      # v12 V4
             "hd_gated": sum(1 for r in results if str(r.get("hd") or "").startswith("the HD gate held") and r["outcome"] == "ok"),          # v12 B-OWNER: asked only of runs with the organisation on (R24)
             "owner_road_ok": sum(1 for r in results if str(r.get("screens") or "").startswith("the owner's road held") and r["outcome"] == "ok"),      # v12 B-OWNER: every id
@@ -545,8 +618,9 @@ def main(argv=None):
     p.add_argument("--jobs", type=int, default=3); p.add_argument("--out", default=""); p.add_argument("--work", default=""); p.add_argument("--repo", default=ROOT)
     p.add_argument("--slot-h", type=int, default=10); p.add_argument("--timeout", type=int, default=TIMEOUT_S); p.add_argument("--keep", action="store_true"); p.add_argument("--one", default="")
     p.add_argument("--drawn-moments", action="store_true", help="v12 DRAWN: every id in the drawn arm, explaining moments from the first second and from 1.0 s - the offline film keeps none under the defaults: 0 of 80 ids, DQ-3")
+    p.add_argument("--drawn-template", default="", choices=("",) + DRAWN_PLANTS, help="open issue 261: with --drawn-moments, the id's first explaining moment carries this template of the kit")
     a = p.parse_args(argv); a.repo = os.path.abspath(a.repo)
-    if a.one: return 0 if one(a.one, os.path.abspath(a.work or tempfile.mkdtemp(prefix="sweep_")), a.repo, a.org == "on", a.mode, a.slot_h, a.drawn_moments)["outcome"] == "ok" else 1
+    if a.one: return 0 if one(a.one, os.path.abspath(a.work or tempfile.mkdtemp(prefix="sweep_")), a.repo, a.org == "on", a.mode, a.slot_h, a.drawn_moments, a.drawn_template)["outcome"] == "ok" else 1
     base = os.path.abspath(a.work or tempfile.mkdtemp(prefix="sweep_"))
     if inside(base, ROOT) or inside(base, a.repo): sys.exit("the work folder must be OUTSIDE the repo")
     out = os.path.abspath(a.out or os.path.join(base, "sweep_results.txt")); a.logs = os.path.join(base, "_logs"); os.makedirs(a.logs, exist_ok=True)

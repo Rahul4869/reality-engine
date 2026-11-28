@@ -40,14 +40,15 @@ def masters_plan():
         out.append({"character": c["id"], "expression": "master", "prompt": p, "retry": q, "hash": hashlib.sha256(p.encode()).hexdigest()[:16]})
     return out
 
-def identity_score(ref, new, who):
-    """Vision judge: is the new picture the same character as the reference (0-10)? None when unavailable."""
+def identity_score(ref, new, who, episode="SHEETS"):
+    """Vision judge: is the new picture the same character as the reference (0-10)? None when unavailable. v12 DRAWN-b (C9): `episode` is the
+    film the judgement is booked to (the masters' own call keeps "SHEETS")."""
     try:
         import base64
         from whatifs.models import ask_vision
         imgs = [("image/png", base64.b64encode(open(x, "rb").read()).decode()) for x in (ref, new)]
         r = ask_vision("Compare the two images. Is the second the SAME character as the first (face shape, hair, age, costume), restyled? "
-                       "JSON only: {\"score\": 0-10, \"why\": \"short\"}", f"Character: {who}", imgs, "SHEETS")
+                       "JSON only: {\"score\": 0-10, \"why\": \"short\"}", f"Character: {who}", imgs, episode)
         return float((r or {}).get("score"))
     except Exception: return None
 

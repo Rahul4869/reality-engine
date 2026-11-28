@@ -296,14 +296,23 @@ def _reverse(src, out, sec):
                    check=True, timeout=300)
     return out
 
+def _accent():
+    """v12 DRAWN-b L4 (memo 3.4; item 190; miss 279's house kit): THE one accent of every word the code draws on a Short - the kit's own
+    `drawn.PALETTE["b"]`, named once in the kit and read here, the amber of the long video's cards and diagrams: (r, g, b) for a picture (the cover),
+    and the ASS colour &H00BBGGRR for the captions (the spoken word lit, the promise text). `overlay.COLOURS` is not an accent (a speaker's colour)."""
+    from whatifs import drawn as DRAWN
+    r, g, b = DRAWN.PALETTE["b"]
+    return (r, g, b), "&H00%02X%02X%02X" % (b, g, r)
+
 def _ass(tl, path, promise, W, H, margin):
     """Captions word by word (the spoken word lights up) `margin` of the height above the bottom edge, and the promise text at the top from the first frame."""
+    rgb, acc = _accent()                                       # v12 DRAWN-b L4: the kit's accent, never a colour of its own
     fs = int(H * 0.042); hs = int(H * 0.05)
     head = ("[Script Info]\nScriptType: v4.00+\nPlayResX: %d\nPlayResY: %d\n\n[V4+ Styles]\n"
             "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n"
-            "Style: Cap,Anton,%d,&H00FFFFFF,&H0000D7FF,&H00000000,&H64000000,1,0,0,0,100,100,1,0,1,%d,2,2,60,60,%d,1\n"
-            "Style: Hook,Anton,%d,&H0000D7FF,&H00FFFFFF,&H00000000,&H64000000,1,0,0,0,100,100,1,0,1,%d,3,8,60,60,%d,1\n\n[Events]\n"
-            "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n") % (W, H, fs, max(2, fs // 9), int(H * margin), hs, max(3, hs // 8), int(H * 0.12))
+            "Style: Cap,Anton,%d,&H00FFFFFF,%s,&H00000000,&H64000000,1,0,0,0,100,100,1,0,1,%d,2,2,60,60,%d,1\n"
+            "Style: Hook,Anton,%d,%s,&H00FFFFFF,&H00000000,&H64000000,1,0,0,0,100,100,1,0,1,%d,3,8,60,60,%d,1\n\n[Events]\n"
+            "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n") % (W, H, fs, acc, max(2, fs // 9), int(H * margin), hs, acc, max(3, hs // 8), int(H * 0.12))
     def ts(t): h, m = int(t // 3600), int(t % 3600 // 60); return f"{h}:{m:02d}:{t % 60:05.2f}"
     ev = [f"Dialogue: 1,{ts(0)},{ts(2.6)},Hook,,0,0,0,,{promise.upper()}"] if promise else []
     for u in tl.get("units") or []:
@@ -315,7 +324,7 @@ def _ass(tl, path, promise, W, H, margin):
             g = ws[i:i + 3]
             for j, cur in enumerate(g):
                 end = g[j + 1]["s"] if j + 1 < len(g) else cur["e"]
-                parts = [("{\\c&H0000D7FF&}" + str(x["w"]).upper() + "{\\r}") if k == j else str(x["w"]).upper() for k, x in enumerate(g)]
+                parts = [("{\\c" + acc + "&}" + str(x["w"]).upper() + "{\\r}") if k == j else str(x["w"]).upper() for k, x in enumerate(g)]
                 ev.append(f"Dialogue: 0,{ts(cur['s'])},{ts(max(end, cur['s'] + 0.05))},Cap,,0,0,0,," + " ".join(parts))
     with open(path, "w", encoding="utf-8") as f: f.write(head + "\n".join(ev) + "\n")
     return path
@@ -345,8 +354,25 @@ def cover(frame, text, path):
     if words:
         d = ImageDraw.Draw(im); f = font(max(24, W // 10)); y = int(H * 0.12)
         for line in SP._wrap(d, words, f, int(W * 0.88))[:3]:
-            w = d.textlength(line, font=f); d.text(((W - w) / 2 + 3, y + 3), line, font=f, fill=(0, 0, 0)); d.text(((W - w) / 2, y), line, font=f, fill=(255, 214, 0)); y += int(f.size * 1.15)
+            w = d.textlength(line, font=f); d.text(((W - w) / 2 + 3, y + 3), line, font=f, fill=(0, 0, 0)); d.text(((W - w) / 2, y), line, font=f, fill=_accent()[0]); y += int(f.size * 1.15)
     im.save(path, "JPEG", quality=92); return path
+
+def _assemble(shots, clips, snd, ass, fd, out, total, grade=""):
+    """v12 DRAWN-b (L2): the Short's clips, sound and captions joined into its file - `make`'s own lines, moved word for word; `grade` (the house
+    grade, `render.GRADE`) stands UNDER the captions, never over them. `ass` and `fd` as `make` quoted them."""
+    from whatifs import specials as SP
+    W, H = SP._vsize()
+    inputs, filt = [], []
+    for k, (s, c) in enumerate(zip(shots, clips)):
+        inputs += ["-i", c]
+        sec = float(s["end"]) - float(s["start"])
+        filt.append(f"[{k}:v]setpts={slow_of(s):.4f}*PTS,scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1,fps={FPS},tpad=stop_mode=clone:stop_duration=6,"
+                    f"trim=0:{sec:.3f},setpts=PTS-STARTPTS,format=yuv420p[v{k}]")
+    filt.append("".join(f"[v{k}]" for k in range(len(clips))) + f"concat=n={len(clips)}:v=1:a=0[body]")
+    filt.append(f"[body]{grade + ',' if grade else ''}ass={ass}:fontsdir={fd}[vout]")
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error"] + inputs + ["-i", snd, "-filter_complex", ";".join(filt), "-map", "[vout]", "-map", f"{len(clips)}:a", "-t", f"{total:.2f}",
+                    "-c:v", "libx264", "-preset", "veryfast", "-crf", "19", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", out], check=True, timeout=900)
+    return out
 
 def make(sc, v, pl, ep, wd):
     """The Short itself: each planned shot is one clip of the hero model, started on its own picture or on the frame the clip before ended on; the
@@ -378,21 +404,22 @@ def make(sc, v, pl, ep, wd):
     snd = SP._mix(bed, [(v["wav"], 0.0)], os.path.join(wd, "mix.wav"))
     fd = os.path.abspath("fonts") if os.path.isdir("fonts") else "/usr/share/fonts"
     if os.name == "nt": ass, fd = ("'" + p.replace("\\", "/").replace(":", "\\:") + "'" for p in (ass, fd))      # Windows dev laptops only: a drive colon breaks ffmpeg filter arguments
-    inputs, filt = [], []
-    for k, (s, c) in enumerate(zip(shots, clips)):
-        inputs += ["-i", c]
-        sec = float(s["end"]) - float(s["start"])
-        filt.append(f"[{k}:v]setpts={slow_of(s):.4f}*PTS,scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1,fps={FPS},tpad=stop_mode=clone:stop_duration=6,"
-                    f"trim=0:{sec:.3f},setpts=PTS-STARTPTS,format=yuv420p[v{k}]")
-    filt.append("".join(f"[v{k}]" for k in range(len(clips))) + f"concat=n={len(clips)}:v=1:a=0[body]")
-    filt.append(f"[body]ass={ass}:fontsdir={fd}[vout]")
     out = os.path.join(wd, f"{ep}.mp4")
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error"] + inputs + ["-i", snd, "-filter_complex", ";".join(filt), "-map", "[vout]", "-map", f"{len(clips)}:a", "-t", f"{total:.2f}",
-                    "-c:v", "libx264", "-preset", "veryfast", "-crf", "19", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", out], check=True, timeout=900)
+    from whatifs import render as RN
+    _assemble(shots, clips, snd, ass, fd, out, total, grade=RN.GRADE if S("SHORT_GRADE_ON", bool) else "")      # v12 DRAWN-b (L2): the house grade on every Short only with the arm on
     cov = ""
     try: cov = cover(os.path.join(wd, "f0.png"), str((pl.get("promise") or {}).get("text") or sc.get("title") or ""), os.path.join(wd, "cover.jpg"))
     except Exception as e: log(f"the cover of Short {ep} was not drawn ({scrub(e)[:100]}): the platforms pick a frame", "WARN", ep)
-    return {"path": out, "seconds": round(total, 2), "clips": paid, "paid_s": paid_s, "pictures": pics, "loop_diff": _loop_diff(out), "cover": cov, "sound": sound_kind}
+    return {"path": out, "seconds": round(total, 2), "clips": paid, "paid_s": paid_s, "pictures": pics, "loop_diff": _loop_diff(out), "cover": cov, "sound": sound_kind,
+            "parts": {"clips": clips, "snd": snd, "ass": ass, "fd": fd, "total": total}}      # v12 DRAWN-b (L2): what `regrade` joins again
+
+def regrade(made, shots):
+    """The look bar's free fix of a Short: the SAME paid clips, sound and captions joined again with the house grade under the captions. Buys nothing."""
+    from whatifs import render as RN
+    p = made["parts"]
+    _assemble(shots, p["clips"], p["snd"], p["ass"], p["fd"], made["path"] + ".look.mp4", p["total"], grade=RN.GRADE)
+    os.replace(made["path"] + ".look.mp4", made["path"])
+    return {"loop_diff": _loop_diff(made["path"]), "graded": True}
 
 def m_make(r):
     return {k: (r or {}).get(k, 0) for k in ("seconds", "clips", "paid_s", "pictures", "loop_diff")}
@@ -487,7 +514,22 @@ def run(force=False, publish=True, now=None, episode_id=None):
             gf = None
             from whatifs import motion as MOT                    # v12 V2d-b: THE FINISHED FILE has a gate of its own - does every half second move, does it sound from its first frame?
             if MOT.on():
-                fctx = {"ep": ep, "short_file": {"path": made["path"], "units": v["timeline"].get("units") or [], "sound": made.get("sound")}}
+                lk = None
+                from whatifs.org import look as LOOK                 # v12 DRAWN-b (L1a, L2): the look bar - one strong judge looks at the finished Short blind, beside his reference sheets; below it once, the Short is re-graded for free and looked at again
+                if LOOK.on():
+                    again_ok = True; always = S("SHORT_GRADE_ON", bool)              # with the lever on, `make` has graded this Short already: nothing free is left to change
+                    if "grade" in LOOK.logged_fix(ep) and not always:                # change 11: a later pass makes the Short its stored verdict was given to
+                        try: made.update(regrade(made, pl["shots"]))
+                        except Exception as e: again_ok = False; log(f"Short {ep}: its logged look fix could not be made again ({scrub(e)[:100]}) - not judged, not held", "WARN", ep)
+                    if again_ok:
+                        lk = LOOK.plain(ORG.work("D13", "short_look", ep, lambda b: LOOK.run(b, ep, made["path"], wd, "short"), measure=LOOK.m_run))
+                        if lk.get("status") == "fail" and not lk.get("fix"):
+                            fx = "none" if always else "grade"
+                            try:
+                                if fx == "grade": made.update(regrade(made, pl["shots"]))
+                                lk = LOOK.plain(ORG.work("D13", "short_look", ep, lambda b: LOOK.run(b, ep, made["path"], wd, "short", fixed=fx), measure=LOOK.m_run))
+                            except Exception as e: log(f"Short {ep}: the look fix failed ({scrub(e)[:100]}) - the Short stays as it was made", "WARN", ep)
+                fctx = {"ep": ep, "short_file": {"path": made["path"], "units": v["timeline"].get("units") or [], "sound": made.get("sound")}, "look": lk}
                 gf = ORG.work("D8", "short_file_gate", ep, lambda b: CON.run("short_file", fctx, ep), measure=WR.m_gate, lesson=WR.gate_lessons, emit=_gate_memos(ep, "short_file"), settle=_gate_settle(ep, "short_file"))
         out = made["path"]
         footage = LAD.keep(ep, wd, sc, pl, v["timeline"])          # v12 V2c-b: what the Short was made of is kept - the opening of the long video its topic may earn
@@ -513,12 +555,16 @@ def run(force=False, publish=True, now=None, episode_id=None):
         except Exception: pass
         log(f"Short failed (nothing posted): {scrub(e)[:200]}", "WARN", ep); return {"ok": False, "why": scrub(e)[:200]}
 
+def _ev(e, n=150, tail=70):
+    """A check's words for his card: whole when they fit; else their start and their END, ' ... ' between - a check says last what was tried."""
+    e = str(e); return e if len(e) <= n else e[:n - tail - 5].rstrip() + " ... " + e[-tail:].lstrip()
+
 def _file_hold(rec, gf, publish):
     """v12 V2d-b: a finished Short whose FILE failed a check (a second that does not move, no sound in its first frame). Its clips are paid, so it is
     MADE and kept on its record - and it is NOT handed to Publishing. The owner gets ONE message with the film and the reason; his Approve sends
     it out through the same door as any approved Short (specials.approve -> release.approved); without his tap it stays unposted. The department
     that owns the failed check has its problem memo from the gate. Never raises. Returns what changed on the record."""
-    ep = rec["id"]; failed = [f for f, _ in gf["failed"]]; why = "; ".join(f"{f}: {str(e)[:150]}" for f, e in gf["failed"])[:420]
+    ep = rec["id"]; failed = [f for f, _ in gf["failed"]]; why = "; ".join(f"{f}: {_ev(e)}" for f, e in gf["failed"])[:500]
     upd = {"status": ("FILE_HELD (" + ", ".join(failed) + ")")[:120]}
     log(f"Short {ep} is made and HELD by the gate of its finished file, not handed to Publishing: {why}", "WARN", ep)
     if publish:

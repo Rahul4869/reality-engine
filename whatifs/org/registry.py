@@ -29,8 +29,8 @@ DEPTS = {
             "wraps": ("whatifs/packaging.py", "whatifs/art.py"), "levers": ("PROMISE_BY_SEC",), "takes": ()},
     "D6":  {"mission": "stills, animated scenes, living characters, particles, micro-cuts, the render", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/media.py", "whatifs/anim.py", "whatifs/living.py", "whatifs/render.py", "whatifs/shotplan.py", "whatifs/opening.py", "whatifs/clips.py", "whatifs/motion.py", "whatifs/stock.py", "whatifs/path.py", "whatifs/drawn.py", "whatifs/scenes.py"),
-            "levers": ("ANIM_SHOTS", "VISUAL_CHANGE_MAX_S", "PARTICLES_ON", "LIVING_CHARACTERS_ON", "CAMERA_MOTION", "OPENING_FIT", "OPENING_ENLARGE_MAX", "MOVING_SHARE_MIN_LONG", "STOCK_SHARE_MAX_PCT", "ACT_MIN_S", "PLACE_CHANGES_PER_MIN_MAX",
-                       "DRAWN_TEXT_MIN_PCT"), "takes": ()},      # v12 DRAWN: the drawn scenes' smallest text (the arm's share is D1's: the memo's design question E, D1 wired by V4)      # v12 V2c-b2b: the opening from the Short's footage
+            "levers": ("ANIM_SHOTS", "VISUAL_CHANGE_MAX_S", "PARTICLES_ON", "LIVING_CHARACTERS_ON", "RESTYLE_SHARE_PCT", "CAMERA_MOTION", "OPENING_FIT", "OPENING_ENLARGE_MAX", "MOVING_SHARE_MIN_LONG", "STOCK_SHARE_MAX_PCT", "ACT_MIN_S", "PLACE_CHANGES_PER_MIN_MAX",
+                       "DRAWN_TEXT_MIN_PCT", "SHORT_GRADE_ON"), "takes": ()},      # v12 DRAWN: the drawn scenes' smallest text (the arm's share is D1's: the memo's design question E, D1 wired by V4)      # v12 V2c-b2b: the opening from the Short's footage
     "D7":  {"mission": "voices, sound worlds, story events, the music bed, the pause before a punchline", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/voice.py", "whatifs/tts_gemini.py", "whatifs/sound.py"), "levers": ("SOUND_DESIGN_ON", "TTS_ENGINE", "SHORT_SOUND_BY_S", "MAKER_LINE_MAX_WORDS"), "takes": ()},
     "D8":  {"mission": "the Feature Contract, the Impact Map, the enforcement matrix, problem memos, the repair loop", "cadence": "episode", "cap_inr": None, "inject": "brief",
@@ -50,7 +50,7 @@ DEPTS = {
             "levers": ("NUMBERS_PER_MIN_MAX", "GRAPHICS_MAX_LONG", "GRAPHICS_FREE_SEC", "BREATH_EVERY_S", "PLAIN_HARD_PER_MIN_MAX", "PLAIN_OPENING_HARD_MAX", "PLAIN_HARD_PER_SENTENCE_MAX",
                        "SHORT_HOOK_WORDS_MAX", "SHORT_HOOK_BY_S", "SHORT_NUMBERS_MAX", "SHORT_EXPERT_MAX", "SHORT_PROMISE_WORDS_MAX",
                        "INSIDE_MIN_PCT_F1", "INSIDE_MIN_PCT_F2", "INSIDE_MIN_PCT_F3", "LECTURE_MAX_F1", "LECTURE_MAX_F2", "LECTURE_MAX_F3", "ENDING_FREE_S",
-                       "VIEW_FLOOR_WATCH_S", "VIEW_FLOOR_EYE_WAIT_H", "VIEW_FLOOR_REFS_MAX", "VIEW_FLOOR_DOWNS_MAX"), "takes": ()},      # v12 V1c: the judged floor's minute, the owner's eye, his references and down-canaries
+                       "VIEW_FLOOR_WATCH_S", "VIEW_FLOOR_EYE_WAIT_H", "VIEW_FLOOR_REFS_MAX", "VIEW_FLOOR_DOWNS_MAX", "LOOK_BAR_PCT"), "takes": ()},      # v12 V1c: the judged floor's minute, the owner's eye, his references and down-canaries
     "D14": {"mission": "the short video as a product of its own: its formats, its brief, three scripts judged blind, every second animated, the loop - built to win alone, never a cut-down", "cadence": "episode", "cap_inr": None, "inject": "brief",
             "wraps": ("whatifs/shorts2.py",),
             "levers": ("SHORT_SHARE_S1", "SHORT_SHARE_S2", "SHORT_SHARE_S3", "SHORT_MIN_S", "SHORT_MAX_S_S1", "SHORT_MAX_S_S2", "SHORT_MAX_S_S3",
@@ -80,7 +80,7 @@ CREATIVE_RUNS = (("D4", "write"), ("D5", "package"), ("D6", "plan"))      # judg
 ENTRY = {
     "D4":  (("whatifs/episode.py", "write"), ("whatifs/preview.py", "draft")),      # v12 B6a: pre-production writing is a D4 run too
     "D5":  (("whatifs/episode.py", "package"),),
-    "D6":  (("whatifs/episode.py", "plan"), ("whatifs/episode.py", "assets"), ("whatifs/episode.py", "render"), ("whatifs/episode.py", "drawn")),      # v12 DRAWN: the explaining moments (only with DRAWN_ON: not an EPISODE_RUN)
+    "D6":  (("whatifs/episode.py", "plan"), ("whatifs/episode.py", "assets"), ("whatifs/episode.py", "render"), ("whatifs/episode.py", "drawn"), ("whatifs/episode.py", "look_fix")),      # v12 DRAWN: the explaining moments (only with DRAWN_ON: not an EPISODE_RUN)
     "D7":  (("whatifs/episode.py", "voice"), ("whatifs/shorts2.py", "short_voice")),      # v12 V2c: a Short is voiced by the same voice job
     "D8":  (("whatifs/episode.py", "script_gate"), ("whatifs/episode.py", "final_gate"), ("whatifs/shorts2.py", "short_gate"), ("whatifs/shorts2.py", "short_file_gate"), ("whatifs/release.py", "release_gate")),      # v12 V2c-b2: the gate after a Short's uploads
     "D9":  (("whatifs/episode.py", "publish"), ("whatifs/release.py", "short_publish")),      # v12 V2c-b2: a Short goes out through Publishing's own run
@@ -90,7 +90,7 @@ ENTRY = {
     "D1":  (("whatifs/cli.py", "review"),),                                          # v12 V4: Strategy's daily review, in the learning job's strategy round
     "D11": (("whatifs/cli.py", "watch"),),                                           # v12 V4: Finance's daily watch, in the learning job's strategy round
     "D12": (("whatifs/org/execute.py", "operate"),),
-    "D13": (("whatifs/episode.py", "seat"), ("whatifs/episode.py", "probe"), ("whatifs/shorts2.py", "short_seat"), ("whatifs/episode.py", "floor"), ("whatifs/org/verdicts.py", "verdict")),      # v12 V1: the viewer's seat, right before the Animation Director; V2c: the seat for a Short; V1c: the judged floor (never demanded by a gate: it runs only on a film the measured checks passed) and his verdict scoring it (on his tap)
+    "D13": (("whatifs/episode.py", "seat"), ("whatifs/episode.py", "probe"), ("whatifs/shorts2.py", "short_seat"), ("whatifs/episode.py", "floor"), ("whatifs/org/verdicts.py", "verdict"), ("whatifs/shorts2.py", "short_look"), ("whatifs/episode.py", "look")),      # v12 V1: the viewer's seat, right before the Animation Director; V2c: the seat for a Short; V1c: the judged floor (never demanded by a gate: it runs only on a film the measured checks passed) and his verdict scoring it (on his tap)
     "D14": (("whatifs/shorts2.py", "write"), ("whatifs/shorts2.py", "make")),                                        # v12 V2c: the Shorts Studio writes and makes every standalone Short
 }
 # Departments with no run of their own yet -> the build batch that wires them. A RATCHET: this list may only shrink (tests/test_v12_org.py).
@@ -122,6 +122,7 @@ CHECK_OWNER = {
     "viewer_floor": "D13",                                                                                                          # v12 V1c: the judged floor
     "makers_line": "D7",                                                                                                            # v12 V1c: the maker's line
     "one_story": "D5",                                                                                                              # v12 V1c: one story (the thumbnail is the picture the film opens on)
+    "short_look": "D13", "look_bar": "D13",                                                                                                            # v12 DRAWN-b: the look bar for a Short
     "drawn_plan": "D6", "drawn_shown": "D6",                                                                                        # v12 DRAWN: the drawn scenes on the shot list and on the finished file
 }
 

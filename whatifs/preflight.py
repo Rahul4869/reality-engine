@@ -25,6 +25,12 @@ def run(need_voice=True):
                 ts = WA.template_status(); add("whatsapp", ts == "APPROVED", f"the Open template is {ts or 'not readable'} at Meta", critical=False)
             else: add("whatsapp", False, "WhatsApp is not set up: the dashboard and e-mail carry everything", critical=False)
         except Exception as e: add("whatsapp", False, scrub(e)[:120], critical=False)
+    try:                                               # v12 DRAWN-b L1b: the look bar's kit (his reference sheets, cell LOOK_REFS, filed once by `python -m whatifs.cli look_kit`); a warning, never a block
+        import json; from whatifs.core import S; from whatifs.org import look as LOOK
+        ks = json.loads(str(S("LOOK_REFS") or "").strip() or "[]"); n = sum(1 for e in ks if e.get("file") and e.get("sha")) if isinstance(ks, list) else 0
+        lwhy = f"{n} reference sheet(s) filed" if n else ("offline: two stand-in sheets" if LOOK.FAKE else "no look kit: the look bar is void on every real film until `python -m whatifs.cli look_kit` files his sheets")
+        add("look kit", n > 0 or LOOK.FAKE, lwhy, critical=False)
+    except Exception as e: add("look kit", False, f"the look kit cannot be read ({scrub(e)[:100]})", critical=False)
     if FAKE: return r
     for k in ("ANTHROPIC_KEY", "GEMINI_KEY", "FAL_KEY", "SHEET_ID", "G_REFRESH", "G_CLIENT_ID", "G_CLIENT_KEY"):
         add(f"key {k}", bool(env(k)), "present" if env(k) else "MISSING (GitHub Actions secret)")
@@ -56,6 +62,9 @@ def run(need_voice=True):
     try:                                               # v12 V2d: the hero clip model is on fal's listing, active, and still takes what its row says; a warning, never a block (the Steward's next model stands ready)
         from whatifs import clips as CL; cok, cwhy = CL.preflight(); add("clip model", cok, cwhy, critical=False)
     except Exception as e: add("clip model", False, scrub(e)[:120], critical=False)
+    try:                                               # v12 DRAWN-b (3.5): where the restyle trial stands - a warning, never a block
+        from whatifs import clips as CLR; rok, rwhy = CLR.restyle_preflight(); add("restyle", rok, rwhy, critical=False)
+    except Exception as e: add("restyle", False, scrub(e)[:120], critical=False)
     add("fonts", os.path.exists("fonts/Anton-Regular.ttf") or os.path.exists("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"), "headline font (falls back to a plain font)", critical=False)
     return r
 

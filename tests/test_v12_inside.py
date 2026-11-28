@@ -646,7 +646,7 @@ def test_the_camera_path_is_wired_owners_levers_protected_and_classified():
     a, p = LV.LEVERS["ACT_MIN_S"], LV.LEVERS["PLACE_CHANGES_PER_MIN_MAX"]
     assert REG.may_change("D6", "ACT_MIN_S") and REG.may_change("D6", "PLACE_CHANGES_PER_MIN_MAX")
     assert (a["lo"], a["hi"], a["step"], a["checks"]) == (6, 30, 2, ("camera_path",)) and (p["lo"], p["hi"], p["step"], p["owner"], p["checks"]) == (0.5, 3, 0.25, "up", ("camera_path",))
-    assert all(k not in RND.ORG_CHECKS and k in RND.metrics() for k in ("camera_path", "camera_shown")) and RND.SHOW_CHECKS == 62          # v12 DRAWN step 1: + drawn_plan; step 2: + drawn_shown. v12 V1c step 1: + viewer_floor; step 3: + makers_line; step 4: + one_story (pins moved BY DESIGN)
+    assert all(k not in RND.ORG_CHECKS and k in RND.metrics() for k in ("camera_path", "camera_shown")) and RND.SHOW_CHECKS == 64          # v12 DRAWN step 1: + drawn_plan; step 2: + drawn_shown. v12 V1c step 1: + viewer_floor; step 3: + makers_line; step 4: + one_story (pins moved BY DESIGN)
     assert (core.DEFAULTS["CAMERA_PATH_ON"][0], core.DEFAULTS["ACT_MIN_S"][0], core.DEFAULTS["PLACE_CHANGES_PER_MIN_MAX"][0]) == ("TRUE", "12", "1.5")
 
 def test_the_render_draws_a_path_still_from_the_pool_in_its_direction_never_pull_or_roll(camera, setting):
@@ -709,7 +709,7 @@ def _render_record(tmp_path, monkeypatch, setting, fail=None, shape=None):
         if fail is not None:
             real = RN.parallax_segment
             monkeypatch.setattr(RN, "parallax_segment", lambda img, p, *a, **k: (_ for _ in ()).throw(RuntimeError("planted")) if f"seg{fail:03d}" in p else real(img, p, *a, **k))
-        job = EP.Job(files=files, shots=shots, units=u, vo=type("V", (), {"duration": t})(), out=str(tmp_path), ep="EPREC", rx=[], d={}, fps=RN.fps())
+        job = EP.Job(files=files, shots=shots, units=u, vo=type("V", (), {"duration": t, "wav_path": ""})(), out=str(tmp_path), ep="EPREC", rx=[], d={}, fps=RN.fps())      # v12 DRAWN-b C10: "" = no file - the mouth flaps by the older rule
         with pytest.raises(Stop): EP._render(job)
     return job, shots
 

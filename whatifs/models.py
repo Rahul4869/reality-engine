@@ -155,6 +155,7 @@ ROUTES = {
     "short_writer": ("script", "creative"),          # v12 V2c: a Short is written (and fixed once) by the model that writes the long script
     "probe_gemini": ("flash", "judge"), "probe_claude": ("haiku", "chore"),          # v12 V1b: the promise line-up's two cheap readers (the right answer is known to code: no taste call)
     "floor_gemini": ("board_g", "judge"), "floor_claude": ("board_c", "judge"),      # v12 V1c: the judged floor's two first-time viewers - the Board's own chains (strong, one family each)
+    "look_claude": ("board_c", "judge"),                                                      # v12 DRAWN-b: the look bar's one strong judge (D13) - the Board's own Claude chain
     "owner_desk": ("board_c", "judge"),      # v12 B-OWNER (PART 5, R17 (9 c)): his input is weighed by the Board's own chain - strong, one family, no cheap fall-back (hard rule 9)
 }
 SAVER_MEDIUM = ("scout", "showrunner", "bible", "premise_judge", "memo", "objections", "director", "director_read", "hooks", "packager", "immersion")
@@ -741,15 +742,15 @@ def _watch_parts(views, prompt):
     for v in views: out += [{"text": f"OPENING {v['label']}:"}, {"inlineData": {"mimeType": "video/mp4", "data": _b64(v["clip"])}}]
     return out + [{"text": prompt}]
 
-def _watch_content(views, prompt):
+def _watch_content(views, prompt, caption=None):
     """What the family that sees pictures only is sent: for each view its letter and its film strip (one picture every 2 seconds, sound off); the prompt last."""
     out = []
     for v in views:
-        out.append({"type": "text", "text": f"OPENING {v['label']} (one picture every 2 seconds, sound off):"})
+        out.append({"type": "text", "text": caption.format(label=v["label"]) if caption else f"OPENING {v['label']} (one picture every 2 seconds, sound off):"})
         out += [{"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": _b64(f)}} for f in v.get("frames") or []]
     return out + [{"type": "text", "text": prompt}]
 
-def ask_watch(role, system, prompt, views, max_tokens=800, think=8000, waits=(90, 240), tight=False, episode=None):
+def ask_watch(role, system, prompt, views, max_tokens=800, think=8000, waits=(90, 240), tight=False, episode=None, caption=None):
     """v12 V1c (the judged floor): ONE look of a first-time viewer - the openings of `views` ([{label, clip, frames}], in the order shown) and the prompt, to
     the chain of `role` (Gemini watches and hears the clips; Claude sees the film strips). Returns the parsed JSON (with "_tight" = True when the answer came
     from an attempt that carried TIGHT_NOTE) or raises RuntimeError. A failed attempt is judged by what was PAID for it, never by an error's words:
@@ -761,9 +762,9 @@ def ask_watch(role, system, prompt, views, max_tokens=800, think=8000, waits=(90
     if ASK_TAPS: system = _tap(task, system, prompt)
     _CALL.last = {}
     if FAKE:
-        from whatifs.fakes import fake_watch
+        from whatifs.fakes import fake_watch, fake_look
         if chain_key in CHAINS and CHAINS[chain_key][0][0] == "c": simulate_claude(CHAINS[chain_key][0][1], system, prompt, max_tokens, False, effort_for(task, ecls), episode)
-        out = fake_watch(prompt, views)
+        out = fake_look(prompt, views) if str(prompt).startswith("FILMS: ") else fake_watch(prompt, views)
         p0, r0 = CHAINS[chain_key][0] if chain_key in CHAINS else ("c", _family(chain_key))
         _note_call("claude" if p0 == "c" else "gemini", r0, f"fake-{r0}", 0.0)
         res = parse_json(out)
@@ -779,7 +780,7 @@ def ask_watch(role, system, prompt, views, max_tokens=800, think=8000, waits=(90
             pr = str(prompt) + (TIGHT_NOTE if t else ""); eff = (lower[eff0 if eff0 in EFFORTS else ""] if t else eff0)
             s0 = _C.month_spend()
             try:
-                if prov == "c": txt = _claude(r, system, pr, max_tokens, 0.2, False, episode, eff, task=task, content=_watch_content(views, pr), think=think)
+                if prov == "c": txt = _claude(r, system, pr, max_tokens, 0.2, False, episode, eff, task=task, content=_watch_content(views, pr, caption), think=think)
                 else: txt = _gemini(r, str(system), pr, max_tokens, 0.2, False, True, episode=episode, parts=_watch_parts(views, pr), think=think)
             except Exception as e:
                 last = e

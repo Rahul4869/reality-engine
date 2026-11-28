@@ -338,12 +338,14 @@ class Job:
         self.video = RN.concat([m["path"] for m in self.segmeta], os.path.join(self.out, "video.mp4"))
         aud = os.path.join(self.out, "mix.wav")
         self.master = RN.mux(self.video, aud, os.path.join(self.out, "master.mp4")); return self.master
+    @RN.fixed
     def rerender_times(self, times, only=None):
         """Re-render only the segments around the given seconds (a black or frozen stretch) with a different crop and grade, then re-stitch.
         v12 DRAWN: only = a set of (i, k) - exactly those states (the drawn scenes' audit); None = every state near the seconds, as before."""
         self.fixn += 1; fps = self.fps; hit = [m for m in self.segmeta if any(m["f0"] / fps - 1.0 <= t <= (m["f0"] + m["nf"]) / fps + 1.0 for t in times)
                                                and (only is None or (m["i"], m["k"]) in only)]
         RN.set_overlay(self.overlay)
+        RN.set_fix(1.5 if "particles" in (getattr(self, "look_fix", None) or ()) else 1.0)      # a re-drawn segment has its film's own particle density (RULINGS_U2c 3)
         for m in hit:
             img = m.get("img") or next((p for _, p in sorted(self.files["img"].items())), None); RN.set_cursor(m["f0"])
             from whatifs import path as PATH
@@ -401,11 +403,30 @@ class Job:
         if done: self.fixn += 1; self.render_all()
         return max(0.0, spent())
 
+def _restyle_piece(ep, out, i, k, spk_, u_, t0, nf, path, ovl, fxk, f0, wav):
+    """v12 DRAWN-b (3.5, F-10): the restyle arm at a reaction cutaway piece the code drew (`path` holds it). The source is rendered AGAIN with nothing
+    over it (a restyle garbles text), restyled once a video, and the restyled piece - its overlay put back - is rendered to path + ".rst.mp4" and put
+    on `path` only after that render returned. A failure anywhere leaves the code-made piece as it is: the video is never held for a restyle."""
+    from whatifs import living as LV
+    fps = RN.fps(); tmp = path + ".rst.mp4"
+    try:
+        src_ = os.path.join(out, f"cut{i:03d}_{k}.mp4")
+        if not os.path.exists(os.path.join(out, f"rst{i:03d}_{k}.mp4")): RN.set_overlay(None); LV.render(spk_, u_.get("text", ""), u_.get("words"), t0, src_, nf, ep, seed=f"{ep}{i}", wav=wav, record=False)
+        if LV.restyle(src_, spk_, ep, i, k, nf / fps):
+            RN.set_overlay(RN.with_fx(ovl, fxk, nf, f"{ep}{i}{k}", f0)); RN.set_cursor(f0); RN.clip_segment(os.path.join(out, f"rst{i:03d}_{k}.mp4"), tmp, nf)
+            os.replace(tmp, path); LV.USED[-1]["restyled"] = True
+    except Exception as e:
+        log(f"restyle of cutaway {i}.{k} not used: {scrub(e)[:100]} -> the code-made cutaway", "WARN", ep)
+        if os.path.exists(tmp): os.remove(tmp)
+    finally: RN.set_overlay(RN.with_fx(ovl, fxk, nf, f"{ep}{i}{k}", f0)); RN.set_cursor(f0)
+
+@RN.fixed
 def _render(job):
     """Segment boundaries = narration unit starts (the narration is the master clock). Long units are split into 2-3 shots (wide + detail) to keep a cut every
     ~5-7 s. v8.2: re-used pictures get their own crop (Director 'focus') and colour grade; the speaker tag and reaction effects are blended in by code; every
     segment is recorded in job.segmeta so a fix can re-render just a few of them."""
     files, shots, units, vo, out, ep = job.files, job.shots, job.units, job.vo, job.out, job.ep
+    lf_ = set(getattr(job, "look_fix", None) or ())                # v12 DRAWN-b (L3): the levers of the look's free fix for THIS render (empty = as first made)
     total = vo.duration; fps = RN.fps(); bounds = [0.0] + [u["start"] for u in units[1:]] + [total]
     segs = []; prev_img = None; reuse = 0
     parts = []; job.chips = []                                       # v12 V2b: the name chips the renderer really drew [(start, end, speaker)] - check living_characters reads them
@@ -451,16 +472,22 @@ def _render(job):
             so = SFX.ShowOverlay(units, plan, ww, wh, fps, seed=ep, hero_spans=hero, impacts=imp, portraits=pics)
             if so.active(): parts.insert(0, so); job.show_overlay = so
         except Exception as e: log(f"show devices skipped: {e}", "WARN", ep)
-    atm = atmosphere_layer(ep, units, shots, plan if plan else {}, fps, getattr(job, "show_overlay", None))      # v9.1 (None when off / safe mode / failed)
+    if "light" in lf_:                                              # v12 DRAWN-b (L3): the light lever - the Atmosphere pack one level up, inside its own caps; said, never claimed
+        lv_ = int((plan or {}).get("intensity") or 1); fx_lv_ = str(S("ATMOSPHERE_LEVEL") or "auto").strip().lower()
+        log(f"the look's free fix: light - the Atmosphere pack at plan intensity {min(3, lv_ + 1)} for this render" + (" (already at its top: nothing gained)" if lv_ >= 3 else "")
+            + (f" - the fixed ATMOSPHERE_LEVEL {fx_lv_} still wins" if fx_lv_ in ("0", "1", "2", "3") else ""), episode=ep)
+    atm = atmosphere_layer(ep, units, shots, dict(plan or {}, intensity=min(3, int((plan or {}).get("intensity") or 1) + 1)) if "light" in lf_ else (plan if plan else {}), fps, getattr(job, "show_overlay", None))      # v9.1 (None when off / safe mode / failed)
     if atm is not None: parts.insert(0, atm); job.atmosphere = atm
     job.overlay = RX.Stack(parts) if any(parts) else None
     strong = set(ROOM.opening_units(units)) | set(RX.peak_units(units)); dyn = str(S("CAMERA_MOTION") or "dynamic").strip().lower() != "gentle"      # v8.9
     RN._LAST["move"] = None
+    RN.set_fix(1.5 if "particles" in lf_ else 1.0)                  # v12 DRAWN-b (L3): the particles lever - a livelier place (1.5 times the density) for this render only
     from whatifs import v91 as _V91
     micro_ = _V91.on("MICRO_CUTS_ON", ep)                                      # v9.3: computed once per render
     MERGED_UNITS.clear()                                                         # v11.1: a still line under UNIT_MERGE_SEC (own picture or not) continues the previous shot (no sub-second picture flash = no overload)
     from whatifs import motion as MOT, stock as STK                              # v12 V2d-b: A PAID CLIP IS SHOWN WHOLE - a clip longer than its line runs on into
     ladder_ = MOT.on(); clip_s_ = {}; job.absent = 0; job.drawn = {}             # the stills that follow, and no micro-cut ever shows its start picture in its place
+    from whatifs import living as LV0; LV0.USED.clear()          # v12 DRAWN-b (L3, R16 change 26): the living cutaways of THIS render - contract.p_living counts the published film's
     from whatifs import scenes as SCN                                            # v12 DRAWN (C10): the render imports the drawn scenes itself (job.drawn: each scene's proof and L)
     MOT.merge(bounds, shots, MERGED_UNITS, keep=MOT.MOVING if ladder_ else ("kling",))      # ... and a line that carries a paid clip is never merged away (red 1: its clip began late and lost its end)
     if ladder_:
@@ -483,7 +510,7 @@ def _render(job):
         if own: prev_img = own; prev_i = i
         pm_ = s.get("path") if path_ else None
         from whatifs.shotplan import pieces_for as _pieces_for
-        opening_ = a < S("OPENING_WINDOW_SEC", float)
+        opening_ = a < S("OPENING_WINDOW_SEC", float) or "framing" in lf_      # v12 DRAWN-b (L3): the framing lever - every still line is cut as often as the opening's
         sc_ = s.get("scene") if (s["type"] == "graphic" and SCN.on()) else None; dr_ = None      # v12 DRAWN: drawn or its still is decided on THE layout of the render, before the line is cut
         if sc_:
             try: dr_ = SCN.proof(sc_, units, i, dur, fps)
@@ -524,15 +551,16 @@ def _render(job):
                 elif s["type"] == "reaction":                    # v9.2: the code-made reaction cutaway (no image bought)
                     from whatifs import shotplan as SP, living as LV
                     spk_ = s.get("speaker") or units[i].get("speaker"); u_ = units[i] if i < len(units) else {}
-                    done_ = LV.render(spk_, u_.get("text", ""), u_.get("words"), float(u_.get("start", 0) or 0), path, nf, ep, seed=f"{ep}{i}") \
+                    done_ = LV.render(spk_, u_.get("text", ""), u_.get("words"), float(u_.get("start", 0) or 0) + cut[k] / fps, path, nf, ep, seed=f"{ep}{i}", wav=vo.wav_path) \
                         if S("LIVING_CHARACTERS_ON", bool) else None             # v11.1 (K167): the approved character, blinking / breathing / talking
+                    if done_ and LV.restyle_arm(ep, i, k): _restyle_piece(ep, out, i, k, spk_, u_, float(u_.get("start", 0) or 0) + cut[k] / fps, nf, path, ovl, fxk, f0, vo.wav_path)      # v12 DRAWN-b (3.5): the restyle arm - built and off (RESTYLE_ON is his switch)
                     if not done_:                                # v12 V2d-b: DRAWN OR ABSENT - no approved art, no character: the picture before continues (no shape is ever drawn)
                         job.absent += 1
                         if img: RN.parallax_segment(img, path, nf, seed=f"{ep}{i}{k}", detail=True, look=RN.LOOKS[(reuse + 1) % len(RN.LOOKS)], world=_world_of_unit(u_),
                                                     **({"sign": pm_["sign"], "pool": PATH.MOVES} if pm_ else {}))      # v12 V2b: the picture that continues is a still of its act - the act's direction, the path's pool
                         else: RN.graphic_segment({"label": "", "from": 0, "to": 0}, None, path, nf)
                 elif img:
-                    RN.parallax_segment(img, path, nf, seed=f"{ep}{i}{k}", detail=((k + reuse) % 2 == 1), focus=s.get("focus"), look=None if own else RN.LOOKS[reuse % len(RN.LOOKS)], energy="high" if (i in strong and k == 0) else "calm",
+                    RN.parallax_segment(img, path, nf, seed=f"{ep}{i}{k}", detail=((k + reuse) % 2 == 1), focus=s.get("focus"), look=None if own else RN.LOOKS[reuse % len(RN.LOOKS)], energy="high" if ((i in strong or "framing" in lf_) and k == 0) else "calm",
                                        move=s.get("camera") if k == 0 else None,      # v8.9: the Director's suggested move (validated in render.pick_move)
                                        world=_world_of_unit(units[i] if i < len(units) else {}),   # v11 (K161b): the particle look follows the scene
                                        **({"sign": pm_["sign"], "pool": PATH.MOVES} if pm_ else {}))      # v12 V2b: the camera path - one direction of travel, never backwards or rolled
@@ -739,6 +767,13 @@ def produce(slot_iso, episode_id=None, eps_left=None, fix=False):
         raise
     finally: FMT.use(""); flush_log()
 
+def _look_lever_acts(x, ep):
+    """Can this lever of the look's free fix change THIS film? light: the Atmosphere pack is on and its level follows the plan (a fixed ATMOSPHERE_LEVEL
+    wins in atmosphere.level_for); particles: PARTICLES_ON; framing: always (the first piece of every still line then moves at high energy)."""
+    from whatifs import v91 as V91
+    if x == "light": return bool(V91.on("ATMOSPHERE_ON", ep)) and str(S("ATMOSPHERE_LEVEL") or "auto").strip().lower() not in ("0", "1", "2", "3")
+    return S("PARTICLES_ON", bool) if x == "particles" else x == "framing"
+
 def atmosphere_layer(ep, units, shots, plan, fps, show_overlay=None):
     """v9.1 Atmosphere Pack as the FIRST overlay of the stack (HUD / pins / meter / chips are drawn on top). None when ATMOSPHERE_ON is off, in safe mode,
     or when building it fails (then it is off for this episode only and the render goes on exactly as v9)."""
@@ -770,7 +805,23 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     d, room, shots, pkg, chs, hook_rec = S_["d"], S_["room"], S_["shots"], tidy_pkg(S_["pkg"]), S_["chs"], S_["hook_rec"]
     rx = reaction_events(units, shots)
     job = Job(ep=ep, out=out, files=files, shots=shots, units=units, vo=vo, tl=tl, rx=rx, fps=RN.fps(), srt=os.path.join(out, "captions.srt"), overlay=None, rhythm=d.get("rhythm_plan") or {}, d=d)
+    from whatifs.org import look as LOOK                          # v12 DRAWN-b (L3): the look bar of the long video (D13) - a later pass renders ONCE, under the levers its stored verdict was given to
+    if LOOK.on(): job.look_fix = {x for x in LOOK.logged_fix(ep) if x != "grade"}
     t_r0 = time.time(); master = ORG.work("D6", "render", ep, lambda b: job.render_all(), measure=WR.m_render); RN.srt(tl, job.srt)
+    lk_ = None                                                   # v12 DRAWN-b (L3): looked at BEFORE QC - a fix re-renders the film, and every measure after this reads the file that is published
+    if LOOK.on():
+        lk_ = LOOK.plain(ORG.work("D13", "look", ep, lambda b: LOOK.run(b, ep, master, out, "long"), measure=LOOK.m_run))
+        if lk_.get("status") == "fail" and not lk_.get("fix"):
+            fx_ = [x for x in LOOK.fix_of(lk_) if x != "grade" and _look_lever_acts(x, ep)]      # a lever that cannot act is not counted as a fix; none left = the second look confirms ("none")
+            prev_, made_ = set(getattr(job, "look_fix", None) or ()), False          # RULINGS_U2k 3 + RULINGS_U3d 8: the levers the first film was made under; did the fix render make the film?
+            try:
+                if fx_:
+                    job.look_fix = set(fx_); master = ORG.work("D6", "look_fix", ep, lambda b: job.render_all(), measure=WR.m_render); made_ = True; RN.srt(tl, job.srt)
+                lk_ = LOOK.plain(ORG.work("D13", "look", ep, lambda b: LOOK.run(b, ep, master, out, "long", fixed=",".join(fx_) or "none"), measure=LOOK.m_run))
+            except Exception as e:
+                if made_: lk_ = {"status": "void", "why": f"its free fix ({', '.join(fx_)}) was rendered and is the film; the second look could not run ({type(e).__name__}), so nothing is held"}
+                log(f"the look fix of {ep} failed ({scrub(e)[:100]}) - " + (("the first film is rendered again under its own levers" if fx_ else "the film stays as rendered") if not made_ else "the fixed film stands, not looked at again"), "WARN", ep)
+                if not made_ and fx_: job.look_fix = prev_; master = job.render_all(); log(f"the first film of {ep} was rendered again under its own levers ({', '.join(sorted(prev_)) or 'none'}); this render has no D6 Sessions row of its own", "WARN", ep)          # RULINGS_U3d 8 (U2k 3 (a)): a failed fix render has written over the first film's files (TYPED_DRAWN-b 16) - the first film is made again, so the film published is the one its record names
     atm_ = getattr(job, "atmosphere", None)                      # v9.1: render minutes per episode + the atmosphere's share and any automatic degrade
     try: st.update("Episodes", "episode_id", ep, {"render_min": round((time.time() - t_r0) / 60, 2), "atmos_json": json.dumps({"overhead_pct": round(atm_.overhead_pct(), 1),
                    "dropped": atm_.dropped, "pulses": len({p for p, _ in atm_.pulse_log})}) if atm_ else ""})
@@ -808,7 +859,10 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
         return held
     if not chk["ok"]: log("QC failed but HOLD_ON_QC_FAIL is FALSE - uploading anyway (not recommended)", "ERROR")
     from whatifs import scenes as SCN                           # v12 DRAWN: the finished file is measured; a scene that cannot be read there becomes its still BEFORE the gate
-    bad_ = SCN.audit(master, job) if SCN.on() else []
+    try: bad_ = SCN.audit(master, job) if SCN.on() else []
+    except Exception as e:                                       # 256 (a): an error inside the audit never holds a video - every drawn scene is shown as its still
+        bad_ = SCN.audit_failed(job, e)
+        log(f"drawn: the audit of the finished file failed ({type(e).__name__}) -> every drawn scene is its still", "WARN", ep)
     if bad_:
         job.rerender_times([t for t, _ in bad_], only={k for _, k in bad_}); master = job.master
         log(f"drawn: {len(bad_)} scene state(s) could not be read on the finished file -> their still", "WARN", ep)
@@ -851,6 +905,7 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     from whatifs.org import verdicts as VER_
     cctx["maker_used"] = str((VER_._row(mk_["ref"]) or {}).get("line_used") or "") if mk_ else ""
     k_ = MAKER.k(mk_); cctx["maker_states"] = [(m_["i"], m_.get("type"), m_.get("src")) for m_ in sm_ if k_ and m_["i"] >= len(units) - k_]
+    cctx["look"] = lk_                                           # v12 DRAWN-b (L3, R16 change 16): BEFORE the measured checks - pre["failed"] then holds look_bar, so no jury is paid for a film the look holds
     pre = CON.run("final", dict(cctx, critique={"hook": 10, "clarity": 10, "humour": 10, "visual_variety": 10, "audio": 10, "accuracy": 10}), ep, write=False)   # measured checks first (not logged)
     from whatifs.org import floor as FLOOR, verdicts as VER     # v12 V1c (D13): the judged floor - only a film every measured check passed is paid a jury; his approved films are its references
     if FLOOR.on() and not pre["failed"]: cctx["floor"] = FLOOR.plain(ORG.work("D13", "floor", ep, lambda b: FLOOR.run(b, ep, master, out, VER.references(ep), VER.downs(ep)), measure=FLOOR.m_run))
@@ -866,6 +921,9 @@ def _finish(st, ep, out, S_, files, vo, tl, units, fix, slot_iso, stage):
     if not g["ok"]:
         if [f for f, _ in g["failed"]] == ["viewer_floor"]:        # v12 V1c: held by the floor alone - its own card (watch the minute; publish anyway or drop it), ONE message, no mail
             FLOOR.hold_card(ep, title, cctx.get("floor"))
+            return _hold(st, ep, out, {"problems": [{"code": "contract:" + f, "detail": str(ev)} for f, ev in g["failed"]]}, notes, fix, mail=False)
+        if [f for f, _ in g["failed"]] == ["look_bar"]:            # v12 DRAWN-b (L3): held by the look alone - its own card (publish anyway or drop it), ONE message, no mail
+            LOOK.hold_card(ep, title, cctx.get("look"))
             return _hold(st, ep, out, {"problems": [{"code": "contract:" + f, "detail": str(ev)} for f, ev in g["failed"]]}, notes, fix, mail=False)
         held = _hold(st, ep, out, {"problems": [{"code": "contract:" + f, "detail": str(ev)} for f, ev in g["failed"]]}, notes, fix)   # AFB F2 (the B-OWNER audit): the hold first, as CA3-1's quality hold - a `hold_sweep` in the gap never closes the card of a video still read VISUALS
         CON.owner_card(ep, "final", g["failed"], "Nothing was uploaded.")

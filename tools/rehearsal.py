@@ -177,10 +177,21 @@ def run(ep_id=None):
         from tools.sweep import drawn_of as drawn12                                # v12 DRAWN: THE DRAWN SCENES - in the arm, both checks PASS, as the sweep judges them
         okd12, saidd12 = drawn12(core12, epid); assert okd12 and "not in the drawn arm" not in saidd12, ("the drawn scenes did not hold", saidd12)      # AFD F6: its own names - "inside the format:" below prints the inside rule's words
         print("drawn:", saidd12[:300])
+        from whatifs import living as LV12                                         # v12 DRAWN-b (B1): THE CAST - the rehearsal plants no art (its film stays as accepted):
+        bent12 = [u for u in LV12.USED if float(u.get("shape_err") or 0) > 0.01]   # whatever cutaway a record names is the art at its own shape
+        assert not bent12, ("a cutaway drew the approved art out of its own shape", bent12)
+        print("cast:", len(LV12.USED), "cutaway record(s)", [(u.get("character"), u.get("size"), u.get("shape_err"), u.get("mouth_rule")) for u in LV12.USED][:4])
         fmt2b = str(json.loads(e12["draw_json"]).get("format") or "")                 # the long video's format: what the older asserts below expect follows it
         own2b = S("ENDINGS_ON", bool) and FMT12.ending(fmt2b) != "tease"               # a format with its own ending carries its own asks (3.3)
         voices2b = set(FMT12.FORMATS[fmt2b]["voices"]) if fmt2b in FMT12.FORMATS and len(FMT12.FORMATS[fmt2b]["voices"]) == 1 else {"DIRECTOR", "SKEPTIC"}      # F3: one voice
-        print("inside the format:", said12[:420])
+        assert said12.startswith("inside the format held:"), ("the line 'inside the format:' would print another judge's words", said12[:120]); print("inside the format:", said12[:420])
+        from tools.sweep import look_of as look12                                  # v12 DRAWN-b (L1c): THE LOOK BAR - both Shorts of the rehearsal were looked at blind beside his sheets and PASSED, as the sweep judges them
+        okl12, saidl12 = zip(*(look12(core12, epid, short=s + epid[2:]) for s in ("SH", "SHB")))
+        assert all(okl12) and all(x.startswith("the look bar judged: ") for x in saidl12), ("a Short of the rehearsal did not pass the look bar", saidl12)
+        print("look:", " | ".join(x[:200] for x in saidl12))
+        okb12, saidb12 = look12(core12, epid, long=True)                        # v12 DRAWN-b (L3): the rehearsal's long video passed its own look bar too (R16 (b))
+        assert okb12 and saidb12.startswith("the look bar judged: "), ("the rehearsal's long video did not pass the look bar", saidb12)
+        print("look (long):", saidb12[:200])
         # v12 V1c: THE FLOOR, HIS LINE, ONE STORY - two first-time viewers of two model families named the long video over the stand-in of the video he rejected
         # (offline the stand-in itself), the film ends on the line he typed for the topic the ladder USED, and its thumbnail is the picture it opens on (3.10).
         from tools.sweep import floor_of as floor1c

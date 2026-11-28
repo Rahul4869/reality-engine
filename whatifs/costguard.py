@@ -65,12 +65,12 @@ def lines(kind="long", kling=None, stills=None, living=None, table_read=None, fm
         else:
             n_clips, per, pics, sec = short_shots(fmt); hero_s = CL.paid_s(per, n_clips)
         n_var = max(1, S("SHORTS_VARIANTS", int))
-        from whatifs.org import finance as FIN
+        from whatifs.org import finance as FIN, look as LOOK              # v12 DRAWN-b: the look bar's session is in every Short's estimate
         boost = FIN.boost("THINK_BOOST_VARIANTS")                         # v12 V4: more scripts while the Claude credit's lane is open (closed: the base's lines, key for key)
         return [_line("hero_clips", "every second of the Short but the loop's: clips of the hero model", hero_s, hero_inr, "visuals", "s", "hero_clip", {"clip_kling": n_clips}),
                 _line("pictures", "the start picture of each beat", pics, MD.still_usd(*SH._still_size()) * u, "visuals", "", "image", {"image": pics}),
                 _line("writing", f"{n_var} scripts, the blind jury, one fix", 1, S("REPLAN_SHORT_INR", float), "ai_writing", "", None, {"text:short_writer": n_var + 1}),
-                _line("voice", "the guide's voice, by the second", 1, voice_inr(sec), "tts", "", "gemini_tts", {"voice_job": 1})] +                ([_line("boost_variants", f"{boost} more scripts while the Claude credit lasts", boost, S("SHORT_VARIANT_EST_INR", float), "ai_writing", "", None, {"text:short_writer": boost})] if boost > 0 else [])
+                _line("voice", "the guide's voice, by the second", 1, voice_inr(sec), "tts", "", "gemini_tts", {"voice_job": 1})] +                ([_line("boost_variants", f"{boost} more scripts while the Claude credit lasts", boost, S("SHORT_VARIANT_EST_INR", float), "ai_writing", "", None, {"text:short_writer": boost})] if boost > 0 else []) + ([_line("look", "the look bar: one strong judge answers eight questions about the film's pictures beside the owner's reference sheets", 1, S("LOOK_EST_INR", float), "ai_writing", "", None, {"watch:look_claude": 2})] if LOOK.on() else [])
     ladder = kind == "ladder"; full = G.TIERS[0]
     k = S("KLING_CLIPS", int) if kling is None else int(kling)
     if ladder: k = max(0, k - 1)                                          # the scene at second 0 is the Short's footage: paid when the Short was made
@@ -99,6 +99,20 @@ def lines(kind="long", kling=None, stills=None, living=None, table_read=None, fm
     from whatifs.org import floor as FLOOR                                # v12 V1c: the judged floor's session (two looks of each judge) - its estimate, not a bill
     if FLOOR.on(): L.append(_line("floor", "the judged floor: two strong first-time viewers of two model families watch the opening beside the rejected video's", 1,
                                   S("VIEW_FLOOR_EST_INR", float), "ai_writing", "", None, {"watch:floor_gemini": 2, "watch:floor_claude": 2}))
+    rr_ = CL.restyle(within_line=False)                                   # v12 DRAWN-b (3.5): the restyle arm - a line ONLY while it can fire (within_line=False: the line is computed FROM this table)
+    if rr_ is not None: L.append(_line("restyle", "reaction cutaways restyled through the clip market's restyle row: an experiment arm", S("RESTYLE_EST_S", float),
+                                       CL.usd_s(rr_) * u, "visuals", "s", "restyle_clip", None))
+    if rr_ is not None: L.append(_line("restyle_identity", "the identity check of each restyled piece: one vision judgement a piece (a bound, not a bill)",      # v12 DRAWN-b (C8)
+                                       int(S("RESTYLE_EST_S", float) // max(1, int(rr_.get("min_s") or 1))), S("RESTYLE_ID_EST_INR", float), "ai_writing", "", None, {"vision": None}))
+    from whatifs import living as LV                                      # v12 DRAWN-b (C12): the blink and mouth pictures still to buy and their judge - lines ONLY where a picture can still be bought
+    n = LV.variant_room()
+    if n > 0:
+        L.append(_line("living_variants", "the talking cast: blink and mouth pictures still to buy", n, S("PRICE_GEM_IMAGE_USD", float) * u, "visuals", "",
+                       "image_ref", {"image_ref": n}))
+        L.append(_line("living_identity", "the talking cast: the identity check of each blink or mouth picture", n, S("RESTYLE_ID_EST_INR", float),
+                       "ai_writing", "", None, {"vision": None}))
+    from whatifs.org import look as LOOK                                  # v12 DRAWN-b: the look bar's one session (one strong judge) - its estimate, not a bill
+    if LOOK.on(): L.append(_line("look", "the look bar: one strong judge answers eight questions about the film's pictures beside the owner's reference sheets", 1, S("LOOK_EST_INR", float), "ai_writing", "", None, {"watch:look_claude": 2}))
     from whatifs import scenes as SCN                                     # v12 DRAWN: the drawn scenes' one writer's call - in EVERY long video's estimate (three in four do not pay it)
     if SCN.on() and S("DRAWN_SHARE_PCT", int) > 0: L.append(_line("drawn_scenes", "the explaining scenes drawn by code: one writer's call for the video's diagrams", 1,
                                                                     S("DRAWN_EST_INR", float), "ai_writing", "", None, {"text:scene": 1}))

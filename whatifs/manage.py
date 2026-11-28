@@ -584,6 +584,8 @@ def learn():
     except Exception as x: log(f"v12 V2c flips skipped: {scrub(x)}", "WARN")
     try: v12drawn_upgrade(st)                                    # v12 DRAWN (P19): the talking cast off until DRAWN-b
     except Exception as x: log(f"v12 DRAWN flips skipped: {scrub(x)}", "WARN")
+    try: v12drawnb_upgrade(st)                                   # v12 DRAWN-b (F-2): the talking cast on again - only his own lock, at its own shape
+    except Exception as x: log(f"v12 DRAWN-b flips skipped: {scrub(x)}", "WARN")
     try: v12v2cb_upgrade(st)                                     # v12 V2c-b: the Shorts cadence is set in weeks now (3 a week, 12 a month); the old cells are marked
     except Exception as x: log(f"v12 V2c-b move skipped: {scrub(x)}", "WARN")
     try: v12v2cb2_upgrade(st)                                    # v12 V2c-b2: 'made' is a field of a Short's record now; the Shorts an older job made get it once
@@ -855,6 +857,21 @@ def v12drawn_upgrade(st):
         if k in done: set_setting(k, new)
     set_setting("V12DRAWN_FLIPS_DONE", iso() + " " + (",".join(done) or "none"))
     if done: log("v12 DRAWN: the talking cast is off until its art can be shown at its own shape (P19): " + ", ".join(done))
+    return done
+
+# v12 DRAWN-b (F-2, open issues 247 and 255): the talking cast is ON again by default - step B1 shows only art he locked himself (LIVING_HIS_LOCK_ONLY),
+# whole at its own shape (living.frame_of). DRAWN's own move is undone once, only where DRAWN's move wrote the FALSE (a FALSE he typed is never touched).
+V12DRAWNB_FLIPS = (("LIVING_CHARACTERS_ON", "FALSE", "TRUE"),)
+
+def v12drawnb_upgrade(st):
+    """ONE time: LIVING_CHARACTERS_ON FALSE -> TRUE where DRAWN's own move wrote the FALSE (its key stands in V12DRAWN_FLIPS_DONE). Never runs twice."""
+    if str(S("V12DRAWNB_FLIPS_DONE") or "").strip(): return []
+    have = {r.get("key"): str(r.get("value", "")).strip() for r in st.rows("Settings")}; drawn = str(S("V12DRAWN_FLIPS_DONE") or "")
+    done = [k for k, old, new in V12DRAWNB_FLIPS if have.get(k) == old and k in drawn]
+    for k, old, new in V12DRAWNB_FLIPS:
+        if k in done: set_setting(k, new)
+    set_setting("V12DRAWNB_FLIPS_DONE", iso() + " " + (",".join(done) or "none"))
+    if done: log("v12 DRAWN-b: the talking cast is on again - only art he locked himself, at its own shape (F-2): " + ", ".join(done))
     return done
 
 # v12 V2c-b (the ladder): the Shorts cadence is set in weeks - 3 Shorts a week, 12 a month (SHORTS_PER_WEEK, SHORTS_PER_MONTH). The three cells
@@ -1446,6 +1463,8 @@ def setup():
     except Exception as x: log(f"v12 V2c flips skipped: {scrub(x)}", "WARN")
     try: v12drawn_upgrade(st)                                    # v12 DRAWN (P19): the talking cast off until DRAWN-b
     except Exception as x: log(f"v12 DRAWN flips skipped: {scrub(x)}", "WARN")
+    try: v12drawnb_upgrade(st)                                   # v12 DRAWN-b (F-2): the talking cast on again - only his own lock, at its own shape
+    except Exception as x: log(f"v12 DRAWN-b flips skipped: {scrub(x)}", "WARN")
     try: v12v2cb_upgrade(st)                                     # v12 V2c-b: the Shorts cadence is set in weeks now (3 a week, 12 a month); the old cells are marked
     except Exception as x: log(f"v12 V2c-b move skipped: {scrub(x)}", "WARN")
     try: v12v2cb2_upgrade(st)                                    # v12 V2c-b2: 'made' is a field of a Short's record now; the Shorts an older job made get it once

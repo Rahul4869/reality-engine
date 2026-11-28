@@ -193,6 +193,44 @@ def _fal_video(model, image_url, image_path, prompt, path, episode, hero, price_
     _dl(url, path)
     return path
 
+def restyle(video_path, prompt, path, episode, seconds):
+    """v12 DRAWN-b (3.5, F-10): ONE restyled copy of a code-made cutaway, bought by the second from the clip market's restyle row (clips.restyle());
+    its cost row is written before the download, in seconds. Offline: a stand-in made from the cutaway itself - same length, colour turned. The
+    reply is written to path + ".part" and put on `path` only when its shape AND its length are the cutaway's; on any failure the part is removed
+    and it raises: the caller keeps the code-made cutaway."""
+    import base64, math
+    from whatifs import clips as CL
+    r = CL.restyle()
+    if r is None: raise RuntimeError("no restyle row can be bought")
+    n = max(1, int(math.ceil(float(seconds) - 1e-6)))
+    if n < int(r.get("min_s") or 1) or n > int(r.get("max_s") or 0): raise RuntimeError(f"a {float(seconds):.1f}-second cutaway is outside the row's clip lengths")
+    part = path + ".part"
+    try:
+        if FAKE:
+            cost("restyle_clip", "fal", n, 0.0, episode)
+            subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", video_path, "-vf", "hue=h=40:s=1.15,format=yuv420p", "-an", "-c:v", "libx264", "-preset", "veryfast",
+                            "-crf", "20", "-f", "mp4", part], check=True, timeout=300)
+        else:
+            if not fal_allowed(): raise RuntimeError("fal credit exhausted")
+            small = path + ".src.mp4"                                 # the source at the row's size, sent as a data URI
+            subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", video_path, "-vf", "scale=-2:720", "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", small],
+                           check=True, timeout=300)
+            url = "data:video/mp4;base64," + base64.b64encode(open(small, "rb").read()).decode()
+            out = fal_run(r["id"], CL.args(r, url, prompt, n), timeout=1500)
+            cost("restyle_clip", "fal", n, CL.usd_s(r) * n, episode)      # logged before the download, in seconds
+            v = (out.get("video") or {}).get("url")
+            if not v: raise RuntimeError(f"no video in fal reply: {str(out)[:200]}")
+            _dl(v, part)
+        from whatifs.render import probe_dur
+        same, words = CL.shape_ok(part, video_path)
+        if not same: raise RuntimeError(f"the restyled cutaway came back in another shape ({words})")
+        if not (abs(probe_dur(part) - probe_dur(video_path)) <= 0.1): raise RuntimeError("the restyled cutaway came back at another length: it is not played")
+        os.replace(part, path)
+    except Exception:
+        if os.path.exists(part): os.remove(part)
+        raise
+    return path
+
 # ---------------- free real footage ----------------
 def stock(query, path, episode, need_s=None):
     """One clip of free real footage (NASA first, then Pexels) with its RECORD beside the file (whatifs/stock.py: where it came from, how it is credited).

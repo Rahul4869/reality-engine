@@ -16,6 +16,7 @@ def watch(monkeypatch):
     rv = M.ask_vision; monkeypatch.setattr(M, "ask_vision", lambda *a, **k: (c.update(["vision"]), rv(*a, **k))[1])
     rs = MD.still; monkeypatch.setattr(MD, "still", lambda *a, **k: (c.update(["image_premium" if k.get("premium") else "image"]), rs(*a, **k))[1])
     rn = MD.animate; monkeypatch.setattr(MD, "animate", lambda *a, **k: (c.update(["clip_kling" if k.get("hero") else "clip"]), rn(*a, **k))[1])
+    rr = MD.restyle; monkeypatch.setattr(MD, "restyle", lambda *a, **k: (c.update(["restyle"]), rr(*a, **k))[1])      # v12 DRAWN-b (3.5): every restyled piece bought
     from whatifs import anim as AN                                   # v10.2: reference-locked start frames from Google's image model are a paid call too
     rg = AN.gemini_image; monkeypatch.setattr(AN, "gemini_image", lambda *a, **k: (c.update(["image_ref"]), rg(*a, **k))[1])
     if hasattr(M, "ask_batch"):
@@ -111,6 +112,11 @@ V12V2DB_ADDED = {"image": 10}
 # nothing else new. Its money is the line "floor" of the cost model. (The older tests run with the floor off: tests/conftest.py, OLD_VIEW.)
 V12V1C_ADDED = {"watch:floor_gemini": 2, "watch:floor_claude": 2}
 
+# v12 DRAWN-b (the look bar): ONE session per finished film - one strong judge (the Board's Claude chain) sees twelve pictures of the film beside the
+# owner's reference sheets, its flattened twin and the rejected video's; at most two in one production pass (a first fail, then the session after its free
+# fix). Its money is the line "look" of the cost model (calls {"watch:look_claude": 2}, a ceiling). The older tests run with the bar off: tests/conftest.py, OLD_LOOK.
+V12DRAWNB_ADDED = {"watch:look_claude": 2}
+
 # v12 V4 (Finance, the boost that ends by itself): while the Claude credit's lane is open and THINK_BOOST_VARIANTS is 2, a Short asks two more scripts of
 # its writers (the blind jury sees five). Counted on a Short with the lane open (tests/test_v12_strategy.py); a long video is unchanged, and with the lane
 # closed - the older tests, the default - a Short is unchanged too. Its money is the line "boost_variants" of the cost model.
@@ -127,5 +133,6 @@ def allowed_base(base):
     for k, v in V12V1B_ADDED.items(): out[k] = out.get(k, 0) + v
     for k, v in V12V2DB_ADDED.items(): out[k] = out.get(k, 0) + v
     for k, v in V12V1C_ADDED.items(): out[k] = out.get(k, 0) + v
+    for k, v in V12DRAWNB_ADDED.items(): out[k] = out.get(k, 0) + v
     return out
 

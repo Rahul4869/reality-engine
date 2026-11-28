@@ -34,7 +34,7 @@ TEMPLATES = {
               "slots": {"label": 48, "from": "number", "to": "number", "unit": 16},
               "gold": {"v": 1, "template": "count", "variant": 0, "slots": {"label": "Pillows that float away tonight", "from": 0, "to": 8000000000, "unit": "pillows"},
                        "cues": ["pillows"]},
-              "anti": "never for two quantities side by side (that is compare) or a number the line does not say"},
+              "anti": "never for two quantities side by side (that is compare) or a number the line does not say, or a unit that does not stand right behind that number in the line"},
     "ladder": {"use": "two to five steps in the order the script tells them, each a time or place and what happens there",
                "feel": "escalation: each rung bigger than the last",
                "slots": {"label": 48, "rungs": {"list": [2, 5], "each": {"t": 14, "text": 34}}},
@@ -46,7 +46,7 @@ TEMPLATES = {
                 "slots": {"label": 48, "unit": 8, "a": {"name": 22, "value": "number"}, "b": {"name": 22, "value": "number"}},
                 "gold": {"v": 1, "template": "compare", "variant": 0, "slots": {"label": "How far away they are", "unit": "km",
                          "a": {"name": "The Moon", "value": 384000}, "b": {"name": "The Sun", "value": 150000000}}, "cues": []},
-                "anti": "never for two values the line does not give to those two names, or for values of different units"},
+                "anti": "never for two values the line does not give to those two names, or for values of different units, or where no single sentence gives both values and no line says in digits how many times one is the other"},
     "flow": {"use": "two to four things where the line says that one causes the next, listed from cause to effect",
              "feel": "consequence: what happens next, step by step",
              "slots": {"label": 48, "links": {"list": [2, 4], "each": 34}},
@@ -58,7 +58,7 @@ TEMPLATES = {
              "slots": {"label": 48, "part": {"name": 22, "value": "number"}, "whole": {"name": 22, "value": "number"}},
              "gold": {"v": 1, "template": "part", "variant": 0, "slots": {"label": "Your share of the air", "part": {"name": "Oxygen", "value": 21},
                       "whole": {"name": "All the air", "value": 100}}, "cues": []},
-             "anti": "never for two separate amounts (that is compare) or a part that is not inside its whole"},
+             "anti": "never for two separate amounts (that is compare) or a part that is not inside its whole, or where no line says the percentage itself in digits"},
 }
 
 
